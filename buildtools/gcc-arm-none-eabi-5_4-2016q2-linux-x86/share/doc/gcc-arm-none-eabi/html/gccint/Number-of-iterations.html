@@ -1,0 +1,107 @@
+<html lang="en">
+<head>
+<title>Number of iterations - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation" title="Loop Analysis and Representation">
+<link rel="prev" href="loop_002div.html#loop_002div" title="loop-iv">
+<link rel="next" href="Dependency-analysis.html#Dependency-analysis" title="Dependency analysis">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Number-of-iterations"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Dependency-analysis.html#Dependency-analysis">Dependency analysis</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="loop_002div.html#loop_002div">loop-iv</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation">Loop Analysis and Representation</a>
+<hr>
+</div>
+
+<h3 class="section">15.7 Number of iterations analysis</h3>
+
+<p><a name="index-Number-of-iterations-analysis-3238"></a>
+Both on GIMPLE and on RTL, there are functions available to determine
+the number of iterations of a loop, with a similar interface.  The
+number of iterations of a loop in GCC is defined as the number of
+executions of the loop latch.  In many cases, it is not possible to
+determine the number of iterations unconditionally &ndash; the determined
+number is correct only if some assumptions are satisfied.  The analysis
+tries to verify these conditions using the information contained in the
+program; if it fails, the conditions are returned together with the
+result.  The following information and conditions are provided by the
+analysis:
+
+     <ul>
+<li><code>assumptions</code>: If this condition is false, the rest of
+the information is invalid. 
+<li><code>noloop_assumptions</code> on RTL, <code>may_be_zero</code> on GIMPLE: If
+this condition is true, the loop exits in the first iteration. 
+<li><code>infinite</code>: If this condition is true, the loop is infinite. 
+This condition is only available on RTL.  On GIMPLE, conditions for
+finiteness of the loop are included in <code>assumptions</code>. 
+<li><code>niter_expr</code> on RTL, <code>niter</code> on GIMPLE: The expression
+that gives number of iterations.  The number of iterations is defined as
+the number of executions of the loop latch. 
+</ul>
+
+ <p>Both on GIMPLE and on RTL, it necessary for the induction variable
+analysis framework to be initialized (SCEV on GIMPLE, loop-iv on RTL). 
+On GIMPLE, the results are stored to <code>struct tree_niter_desc</code>
+structure.  Number of iterations before the loop is exited through a
+given exit can be determined using <code>number_of_iterations_exit</code>
+function.  On RTL, the results are returned in <code>struct niter_desc</code>
+structure.  The corresponding function is named
+<code>check_simple_exit</code>.  There are also functions that pass through
+all the exits of a loop and try to find one with easy to determine
+number of iterations &ndash; <code>find_loop_niter</code> on GIMPLE and
+<code>find_simple_exit</code> on RTL.  Finally, there are functions that
+provide the same information, but additionally cache it, so that
+repeated calls to number of iterations are not so costly &ndash;
+<code>number_of_latch_executions</code> on GIMPLE and <code>get_simple_loop_desc</code>
+on RTL.
+
+ <p>Note that some of these functions may behave slightly differently than
+others &ndash; some of them return only the expression for the number of
+iterations, and fail if there are some assumptions.  The function
+<code>number_of_latch_executions</code> works only for single-exit loops. 
+The function <code>number_of_cond_exit_executions</code> can be used to
+determine number of executions of the exit condition of a single-exit
+loop (i.e., the <code>number_of_latch_executions</code> increased by one).
+
+ </body></html>
+

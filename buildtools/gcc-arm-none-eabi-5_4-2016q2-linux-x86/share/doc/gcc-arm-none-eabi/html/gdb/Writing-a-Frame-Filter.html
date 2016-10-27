@@ -1,0 +1,312 @@
+<html lang="en">
+<head>
+<title>Writing a Frame Filter - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Python-API.html#Python-API" title="Python API">
+<link rel="prev" href="Frame-Decorator-API.html#Frame-Decorator-API" title="Frame Decorator API">
+<link rel="next" href="Unwinding-Frames-in-Python.html#Unwinding-Frames-in-Python" title="Unwinding Frames in Python">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Writing-a-Frame-Filter"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Unwinding-Frames-in-Python.html#Unwinding-Frames-in-Python">Unwinding Frames in Python</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Frame-Decorator-API.html#Frame-Decorator-API">Frame Decorator API</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Python-API.html#Python-API">Python API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.2.2.11 Writing a Frame Filter</h5>
+
+<p><a name="index-writing-a-frame-filter-1989"></a>
+There are three basic elements that a frame filter must implement: it
+must correctly implement the documented interface (see <a href="Frame-Filter-API.html#Frame-Filter-API">Frame Filter API</a>), it must register itself with <span class="sc">gdb</span>, and finally, it must
+decide if it is to work on the data provided by <span class="sc">gdb</span>.  In all
+cases, whether it works on the iterator or not, each frame filter must
+return an iterator.  A bare-bones frame filter follows the pattern in
+the following example.
+
+<pre class="smallexample">     import gdb
+     
+     class FrameFilter():
+     
+         def __init__(self):
+             # Frame filter attribute creation.
+             #
+             # 'name' is the name of the filter that GDB will display.
+             #
+             # 'priority' is the priority of the filter relative to other
+             # filters.
+             #
+             # 'enabled' is a boolean that indicates whether this filter is
+             # enabled and should be executed.
+     
+             self.name = "Foo"
+             self.priority = 100
+             self.enabled = True
+     
+             # Register this frame filter with the global frame_filters
+             # dictionary.
+             gdb.frame_filters[self.name] = self
+     
+         def filter(self, frame_iter):
+             # Just return the iterator.
+             return frame_iter
+</pre>
+   <p>The frame filter in the example above implements the three
+requirements for all frame filters.  It implements the API, self
+registers, and makes a decision on the iterator (in this case, it just
+returns the iterator untouched).
+
+   <p>The first step is attribute creation and assignment, and as shown in
+the comments the filter assigns the following attributes:  <code>name</code>,
+<code>priority</code> and whether the filter should be enabled with the
+<code>enabled</code> attribute.
+
+   <p>The second step is registering the frame filter with the dictionary or
+dictionaries that the frame filter has interest in.  As shown in the
+comments, this filter just registers itself with the global dictionary
+<code>gdb.frame_filters</code>.  As noted earlier, <code>gdb.frame_filters</code>
+is a dictionary that is initialized in the <code>gdb</code> module when
+<span class="sc">gdb</span> starts.  What dictionary a filter registers with is an
+important consideration.  Generally, if a filter is specific to a set
+of code, it should be registered either in the <code>objfile</code> or
+<code>progspace</code> dictionaries as they are specific to the program
+currently loaded in <span class="sc">gdb</span>.  The global dictionary is always
+present in <span class="sc">gdb</span> and is never unloaded.  Any filters registered
+with the global dictionary will exist until <span class="sc">gdb</span> exits.  To
+avoid filters that may conflict, it is generally better to register
+frame filters against the dictionaries that more closely align with
+the usage of the filter currently in question.  See <a href="Python-Auto_002dloading.html#Python-Auto_002dloading">Python Auto-loading</a>, for further information on auto-loading Python scripts.
+
+   <p><span class="sc">gdb</span> takes a hands-off approach to frame filter registration,
+therefore it is the frame filter's responsibility to ensure
+registration has occurred, and that any exceptions are handled
+appropriately.  In particular, you may wish to handle exceptions
+relating to Python dictionary key uniqueness.  It is mandatory that
+the dictionary key is the same as frame filter's <code>name</code>
+attribute.  When a user manages frame filters (see <a href="Frame-Filter-Management.html#Frame-Filter-Management">Frame Filter Management</a>), the names <span class="sc">gdb</span> will display are those contained
+in the <code>name</code> attribute.
+
+   <p>The final step of this example is the implementation of the
+<code>filter</code> method.  As shown in the example comments, we define the
+<code>filter</code> method and note that the method must take an iterator,
+and also must return an iterator.  In this bare-bones example, the
+frame filter is not very useful as it just returns the iterator
+untouched.  However this is a valid operation for frame filters that
+have the <code>enabled</code> attribute set, but decide not to operate on
+any frames.
+
+   <p>In the next example, the frame filter operates on all frames and
+utilizes a frame decorator to perform some work on the frames. 
+See <a href="Frame-Decorator-API.html#Frame-Decorator-API">Frame Decorator API</a>, for further information on the frame
+decorator interface.
+
+   <p>This example works on inlined frames.  It highlights frames which are
+inlined by tagging them with an &ldquo;[inlined]&rdquo; tag.  By applying a
+frame decorator to all frames with the Python <code>itertools imap</code>
+method, the example defers actions to the frame decorator.  Frame
+decorators are only processed when <span class="sc">gdb</span> prints the backtrace.
+
+   <p>This introduces a new decision making topic: whether to perform
+decision making operations at the filtering step, or at the printing
+step.  In this example's approach, it does not perform any filtering
+decisions at the filtering step beyond mapping a frame decorator to
+each frame.  This allows the actual decision making to be performed
+when each frame is printed.  This is an important consideration, and
+well worth reflecting upon when designing a frame filter.  An issue
+that frame filters should avoid is unwinding the stack if possible. 
+Some stacks can run very deep, into the tens of thousands in some
+cases.  To search every frame to determine if it is inlined ahead of
+time may be too expensive at the filtering step.  The frame filter
+cannot know how many frames it has to iterate over, and it would have
+to iterate through them all.  This ends up duplicating effort as
+<span class="sc">gdb</span> performs this iteration when it prints the frames.
+
+   <p>In this example decision making can be deferred to the printing step. 
+As each frame is printed, the frame decorator can examine each frame
+in turn when <span class="sc">gdb</span> iterates.  From a performance viewpoint,
+this is the most appropriate decision to make as it avoids duplicating
+the effort that the printing step would undertake anyway.  Also, if
+there are many frame filters unwinding the stack during filtering, it
+can substantially delay the printing of the backtrace which will
+result in large memory usage, and a poor user experience.
+
+<pre class="smallexample">     class InlineFilter():
+     
+         def __init__(self):
+             self.name = "InlinedFrameFilter"
+             self.priority = 100
+             self.enabled = True
+             gdb.frame_filters[self.name] = self
+     
+         def filter(self, frame_iter):
+             frame_iter = itertools.imap(InlinedFrameDecorator,
+                                         frame_iter)
+             return frame_iter
+</pre>
+   <p>This frame filter is somewhat similar to the earlier example, except
+that the <code>filter</code> method applies a frame decorator object called
+<code>InlinedFrameDecorator</code> to each element in the iterator.  The
+<code>imap</code> Python method is light-weight.  It does not proactively
+iterate over the iterator, but rather creates a new iterator which
+wraps the existing one.
+
+   <p>Below is the frame decorator for this example.
+
+<pre class="smallexample">     class InlinedFrameDecorator(FrameDecorator):
+     
+         def __init__(self, fobj):
+             super(InlinedFrameDecorator, self).__init__(fobj)
+     
+         def function(self):
+             frame = fobj.inferior_frame()
+             name = str(frame.name())
+     
+             if frame.type() == gdb.INLINE_FRAME:
+                 name = name + " [inlined]"
+     
+             return name
+</pre>
+   <p>This frame decorator only defines and overrides the <code>function</code>
+method.  It lets the supplied <code>FrameDecorator</code>, which is shipped
+with <span class="sc">gdb</span>, perform the other work associated with printing
+this frame.
+
+   <p>The combination of these two objects create this output from a
+backtrace:
+
+<pre class="smallexample">     #0  0x004004e0 in bar () at inline.c:11
+     #1  0x00400566 in max [inlined] (b=6, a=12) at inline.c:21
+     #2  0x00400566 in main () at inline.c:31
+</pre>
+   <p>So in the case of this example, a frame decorator is applied to all
+frames, regardless of whether they may be inlined or not.  As
+<span class="sc">gdb</span> iterates over the iterator produced by the frame filters,
+<span class="sc">gdb</span> executes each frame decorator which then makes a decision
+on what to print in the <code>function</code> callback.  Using a strategy
+like this is a way to defer decisions on the frame content to printing
+time.
+
+<h4 class="subheading">Eliding Frames</h4>
+
+<p>It might be that the above example is not desirable for representing
+inlined frames, and a hierarchical approach may be preferred.  If we
+want to hierarchically represent frames, the <code>elided</code> frame
+decorator interface might be preferable.
+
+   <p>This example approaches the issue with the <code>elided</code> method.  This
+example is quite long, but very simplistic.  It is out-of-scope for
+this section to write a complete example that comprehensively covers
+all approaches of finding and printing inlined frames.  However, this
+example illustrates the approach an author might use.
+
+   <p>This example comprises of three sections.
+
+<pre class="smallexample">     class InlineFrameFilter():
+     
+         def __init__(self):
+             self.name = "InlinedFrameFilter"
+             self.priority = 100
+             self.enabled = True
+             gdb.frame_filters[self.name] = self
+     
+         def filter(self, frame_iter):
+             return ElidingInlineIterator(frame_iter)
+</pre>
+   <p>This frame filter is very similar to the other examples.  The only
+difference is this frame filter is wrapping the iterator provided to
+it (<code>frame_iter</code>) with a custom iterator called
+<code>ElidingInlineIterator</code>.  This again defers actions to when
+<span class="sc">gdb</span> prints the backtrace, as the iterator is not traversed
+until printing.
+
+   <p>The iterator for this example is as follows.  It is in this section of
+the example where decisions are made on the content of the backtrace.
+
+<pre class="smallexample">     class ElidingInlineIterator:
+         def __init__(self, ii):
+             self.input_iterator = ii
+     
+         def __iter__(self):
+             return self
+     
+         def next(self):
+             frame = next(self.input_iterator)
+     
+             if frame.inferior_frame().type() != gdb.INLINE_FRAME:
+                 return frame
+     
+             try:
+                 eliding_frame = next(self.input_iterator)
+             except StopIteration:
+                 return frame
+             return ElidingFrameDecorator(eliding_frame, [frame])
+</pre>
+   <p>This iterator implements the Python iterator protocol.  When the
+<code>next</code> function is called (when <span class="sc">gdb</span> prints each frame),
+the iterator checks if this frame decorator, <code>frame</code>, is wrapping
+an inlined frame.  If it is not, it returns the existing frame decorator
+untouched.  If it is wrapping an inlined frame, it assumes that the
+inlined frame was contained within the next oldest frame,
+<code>eliding_frame</code>, which it fetches.  It then creates and returns a
+frame decorator, <code>ElidingFrameDecorator</code>, which contains both the
+elided frame, and the eliding frame.
+
+<pre class="smallexample">     class ElidingInlineDecorator(FrameDecorator):
+     
+         def __init__(self, frame, elided_frames):
+             super(ElidingInlineDecorator, self).__init__(frame)
+             self.frame = frame
+             self.elided_frames = elided_frames
+     
+         def elided(self):
+             return iter(self.elided_frames)
+</pre>
+   <p>This frame decorator overrides one function and returns the inlined
+frame in the <code>elided</code> method.  As before it lets
+<code>FrameDecorator</code> do the rest of the work involved in printing
+this frame.  This produces the following output.
+
+<pre class="smallexample">     #0  0x004004e0 in bar () at inline.c:11
+     #2  0x00400529 in main () at inline.c:25
+         #1  0x00400529 in max (b=6, a=12) at inline.c:15
+</pre>
+   <p>In that output, <code>max</code> which has been inlined into <code>main</code> is
+printed hierarchically.  Another approach would be to combine the
+<code>function</code> method, and the <code>elided</code> method to both print a
+marker in the inlined frame, and also show the hierarchical
+relationship.
+
+   </body></html>
+

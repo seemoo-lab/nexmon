@@ -1,0 +1,84 @@
+<html lang="en">
+<head>
+<title>Adding a new GIMPLE statement code - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="GIMPLE.html#GIMPLE" title="GIMPLE">
+<link rel="prev" href="Sequence-iterators.html#Sequence-iterators" title="Sequence iterators">
+<link rel="next" href="Statement-and-operand-traversals.html#Statement-and-operand-traversals" title="Statement and operand traversals">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Adding-a-new-GIMPLE-statement-code"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Statement-and-operand-traversals.html#Statement-and-operand-traversals">Statement and operand traversals</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Sequence-iterators.html#Sequence-iterators">Sequence iterators</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="GIMPLE.html#GIMPLE">GIMPLE</a>
+<hr>
+</div>
+
+<h3 class="section">11.11 Adding a new GIMPLE statement code</h3>
+
+<p><a name="index-Adding-a-new-GIMPLE-statement-code-2500"></a>
+The first step in adding a new GIMPLE statement code, is
+modifying the file <code>gimple.def</code>, which contains all the GIMPLE
+codes.  Then you must add a corresponding gimple_statement_base subclass
+located in <code>gimple.h</code>.  This in turn, will require you to add a
+corresponding <code>GTY</code> tag in <code>gsstruct.def</code>, and code to handle
+this tag in <code>gss_for_code</code> which is located in <code>gimple.c</code>.
+
+ <p>In order for the garbage collector to know the size of the
+structure you created in <code>gimple.h</code>, you need to add a case to
+handle your new GIMPLE statement in <code>gimple_size</code> which is located
+in <code>gimple.c</code>.
+
+ <p>You will probably want to create a function to build the new
+gimple statement in <code>gimple.c</code>.  The function should be called
+<code>gimple_build_</code><var>new-tuple-name</var>, and should return the new tuple
+as a pointer to the appropriate gimple_statement_base subclass.
+
+ <p>If your new statement requires accessors for any members or
+operands it may have, put simple inline accessors in
+<code>gimple.h</code> and any non-trivial accessors in <code>gimple.c</code> with a
+corresponding prototype in <code>gimple.h</code>.
+
+ <p>You should add the new statement subclass to the class hierarchy diagram
+in <code>gimple.texi</code>.
+
+ </body></html>
+

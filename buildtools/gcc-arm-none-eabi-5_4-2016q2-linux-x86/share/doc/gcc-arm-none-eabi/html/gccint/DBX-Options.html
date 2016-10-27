@@ -1,0 +1,208 @@
+<html lang="en">
+<head>
+<title>DBX Options - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Debugging-Info.html#Debugging-Info" title="Debugging Info">
+<link rel="prev" href="All-Debuggers.html#All-Debuggers" title="All Debuggers">
+<link rel="next" href="DBX-Hooks.html#DBX-Hooks" title="DBX Hooks">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="DBX-Options"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="DBX-Hooks.html#DBX-Hooks">DBX Hooks</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="All-Debuggers.html#All-Debuggers">All Debuggers</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Debugging-Info.html#Debugging-Info">Debugging Info</a>
+<hr>
+</div>
+
+<h4 class="subsection">17.21.2 Specific Options for DBX Output</h4>
+
+<!-- prevent bad page break with this line -->
+<p>These are specific options for DBX output.
+
+<div class="defun">
+&mdash; Macro: <b>DBX_DEBUGGING_INFO</b><var><a name="index-DBX_005fDEBUGGING_005fINFO-4754"></a></var><br>
+<blockquote><p>Define this macro if GCC should produce debugging output for DBX
+in response to the <samp><span class="option">-g</span></samp> option. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>XCOFF_DEBUGGING_INFO</b><var><a name="index-XCOFF_005fDEBUGGING_005fINFO-4755"></a></var><br>
+<blockquote><p>Define this macro if GCC should produce XCOFF format debugging output
+in response to the <samp><span class="option">-g</span></samp> option.  This is a variant of DBX format. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DEFAULT_GDB_EXTENSIONS</b><var><a name="index-DEFAULT_005fGDB_005fEXTENSIONS-4756"></a></var><br>
+<blockquote><p>Define this macro to control whether GCC should by default generate
+GDB's extended version of DBX debugging information (assuming DBX-format
+debugging information is enabled at all).  If you don't define the
+macro, the default is 1: always generate the extended information
+if there is any occasion to. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DEBUG_SYMS_TEXT</b><var><a name="index-DEBUG_005fSYMS_005fTEXT-4757"></a></var><br>
+<blockquote><p>Define this macro if all <code>.stabs</code> commands should be output while
+in the text section. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_STABS_OP</b><var><a name="index-ASM_005fSTABS_005fOP-4758"></a></var><br>
+<blockquote><p>A C string constant, including spacing, naming the assembler pseudo op to
+use instead of <code>"\t.stabs\t"</code> to define an ordinary debugging symbol. 
+If you don't define this macro, <code>"\t.stabs\t"</code> is used.  This macro
+applies only to DBX debugging information format. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_STABD_OP</b><var><a name="index-ASM_005fSTABD_005fOP-4759"></a></var><br>
+<blockquote><p>A C string constant, including spacing, naming the assembler pseudo op to
+use instead of <code>"\t.stabd\t"</code> to define a debugging symbol whose
+value is the current location.  If you don't define this macro,
+<code>"\t.stabd\t"</code> is used.  This macro applies only to DBX debugging
+information format. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_STABN_OP</b><var><a name="index-ASM_005fSTABN_005fOP-4760"></a></var><br>
+<blockquote><p>A C string constant, including spacing, naming the assembler pseudo op to
+use instead of <code>"\t.stabn\t"</code> to define a debugging symbol with no
+name.  If you don't define this macro, <code>"\t.stabn\t"</code> is used.  This
+macro applies only to DBX debugging information format. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DBX_NO_XREFS</b><var><a name="index-DBX_005fNO_005fXREFS-4761"></a></var><br>
+<blockquote><p>Define this macro if DBX on your system does not support the construct
+&lsquo;<samp><span class="samp">xs</span><var>tagname</var></samp>&rsquo;.  On some systems, this construct is used to
+describe a forward reference to a structure named <var>tagname</var>. 
+On other systems, this construct is not supported at all. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DBX_CONTIN_LENGTH</b><var><a name="index-DBX_005fCONTIN_005fLENGTH-4762"></a></var><br>
+<blockquote><p>A symbol name in DBX-format debugging information is normally
+continued (split into two separate <code>.stabs</code> directives) when it
+exceeds a certain length (by default, 80 characters).  On some
+operating systems, DBX requires this splitting; on others, splitting
+must not be done.  You can inhibit splitting by defining this macro
+with the value zero.  You can override the default splitting-length by
+defining this macro as an expression for the length you desire. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DBX_CONTIN_CHAR</b><var><a name="index-DBX_005fCONTIN_005fCHAR-4763"></a></var><br>
+<blockquote><p>Normally continuation is indicated by adding a &lsquo;<samp><span class="samp">\</span></samp>&rsquo; character to
+the end of a <code>.stabs</code> string when a continuation follows.  To use
+a different character instead, define this macro as a character
+constant for the character you want to use.  Do not define this macro
+if backslash is correct for your system. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DBX_STATIC_STAB_DATA_SECTION</b><var><a name="index-DBX_005fSTATIC_005fSTAB_005fDATA_005fSECTION-4764"></a></var><br>
+<blockquote><p>Define this macro if it is necessary to go to the data section before
+outputting the &lsquo;<samp><span class="samp">.stabs</span></samp>&rsquo; pseudo-op for a non-global static
+variable. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DBX_TYPE_DECL_STABS_CODE</b><var><a name="index-DBX_005fTYPE_005fDECL_005fSTABS_005fCODE-4765"></a></var><br>
+<blockquote><p>The value to use in the &ldquo;code&rdquo; field of the <code>.stabs</code> directive
+for a typedef.  The default is <code>N_LSYM</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DBX_STATIC_CONST_VAR_CODE</b><var><a name="index-DBX_005fSTATIC_005fCONST_005fVAR_005fCODE-4766"></a></var><br>
+<blockquote><p>The value to use in the &ldquo;code&rdquo; field of the <code>.stabs</code> directive
+for a static variable located in the text section.  DBX format does not
+provide any &ldquo;right&rdquo; way to do this.  The default is <code>N_FUN</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DBX_REGPARM_STABS_CODE</b><var><a name="index-DBX_005fREGPARM_005fSTABS_005fCODE-4767"></a></var><br>
+<blockquote><p>The value to use in the &ldquo;code&rdquo; field of the <code>.stabs</code> directive
+for a parameter passed in registers.  DBX format does not provide any
+&ldquo;right&rdquo; way to do this.  The default is <code>N_RSYM</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DBX_REGPARM_STABS_LETTER</b><var><a name="index-DBX_005fREGPARM_005fSTABS_005fLETTER-4768"></a></var><br>
+<blockquote><p>The letter to use in DBX symbol data to identify a symbol as a parameter
+passed in registers.  DBX format does not customarily provide any way to
+do this.  The default is <code>'P'</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DBX_FUNCTION_FIRST</b><var><a name="index-DBX_005fFUNCTION_005fFIRST-4769"></a></var><br>
+<blockquote><p>Define this macro if the DBX information for a function and its
+arguments should precede the assembler code for the function.  Normally,
+in DBX format, the debugging information entirely follows the assembler
+code. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DBX_BLOCKS_FUNCTION_RELATIVE</b><var><a name="index-DBX_005fBLOCKS_005fFUNCTION_005fRELATIVE-4770"></a></var><br>
+<blockquote><p>Define this macro, with value 1, if the value of a symbol describing
+the scope of a block (<code>N_LBRAC</code> or <code>N_RBRAC</code>) should be
+relative to the start of the enclosing function.  Normally, GCC uses
+an absolute address. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DBX_LINES_FUNCTION_RELATIVE</b><var><a name="index-DBX_005fLINES_005fFUNCTION_005fRELATIVE-4771"></a></var><br>
+<blockquote><p>Define this macro, with value 1, if the value of a symbol indicating
+the current line number (<code>N_SLINE</code>) should be relative to the
+start of the enclosing function.  Normally, GCC uses an absolute address. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DBX_USE_BINCL</b><var><a name="index-DBX_005fUSE_005fBINCL-4772"></a></var><br>
+<blockquote><p>Define this macro if GCC should generate <code>N_BINCL</code> and
+<code>N_EINCL</code> stabs for included header files, as on Sun systems.  This
+macro also directs GCC to output a type number as a pair of a file
+number and a type number within the file.  Normally, GCC does not
+generate <code>N_BINCL</code> or <code>N_EINCL</code> stabs, and it outputs a single
+number for a type number. 
+</p></blockquote></div>
+
+ </body></html>
+

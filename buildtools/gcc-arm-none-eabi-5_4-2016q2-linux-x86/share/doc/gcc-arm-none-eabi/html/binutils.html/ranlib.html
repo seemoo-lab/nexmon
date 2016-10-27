@@ -1,0 +1,99 @@
+<html lang="en">
+<head>
+<title>ranlib - GNU Binary Utilities</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Binary Utilities">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="objdump.html#objdump" title="objdump">
+<link rel="next" href="size.html#size" title="size">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled ``GNU Free Documentation License''.
+
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="ranlib"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="size.html#size">size</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="objdump.html#objdump">objdump</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">5 ranlib</h2>
+
+<p><a name="index-ranlib-110"></a><a name="index-archive-contents-111"></a><a name="index-symbol-index-112"></a>
+<!-- man title ranlib generate index to archive. -->
+
+<pre class="smallexample">     <!-- man begin SYNOPSIS ranlib -->
+     ranlib [<samp><span class="option">--plugin</span></samp> <var>name</var>] [<samp><span class="option">-DhHvVt</span></samp>] <var>archive</var>
+     <!-- man end -->
+</pre>
+   <!-- man begin DESCRIPTION ranlib -->
+   <p><samp><span class="command">ranlib</span></samp> generates an index to the contents of an archive and
+stores it in the archive.  The index lists each symbol defined by a
+member of an archive that is a relocatable object file.
+
+   <p>You may use &lsquo;<samp><span class="samp">nm -s</span></samp>&rsquo; or &lsquo;<samp><span class="samp">nm --print-armap</span></samp>&rsquo; to list this index.
+
+   <p>An archive with such an index speeds up linking to the library and
+allows routines in the library to call each other without regard to
+their placement in the archive.
+
+   <p>The <span class="sc">gnu</span> <samp><span class="command">ranlib</span></samp> program is another form of <span class="sc">gnu</span> <samp><span class="command">ar</span></samp>; running
+<samp><span class="command">ranlib</span></samp> is completely equivalent to executing &lsquo;<samp><span class="samp">ar -s</span></samp>&rsquo;. 
+See <a href="ar.html#ar">ar</a>.
+
+<!-- man end -->
+<!-- man begin OPTIONS ranlib -->
+     <dl>
+<dt><samp><span class="env">-h</span></samp><dt><samp><span class="env">-H</span></samp><dt><samp><span class="env">--help</span></samp><dd>Show usage information for <samp><span class="command">ranlib</span></samp>.
+
+     <br><dt><samp><span class="env">-v</span></samp><dt><samp><span class="env">-V</span></samp><dt><samp><span class="env">--version</span></samp><dd>Show the version number of <samp><span class="command">ranlib</span></samp>.
+
+     <br><dt><samp><span class="env">-D</span></samp><dd><a name="index-deterministic-archives-113"></a><a name="index-g_t_002d_002denable_002ddeterministic_002darchives-114"></a>Operate in <em>deterministic</em> mode.  The symbol map archive member's
+header will show zero for the UID, GID, and timestamp.  When this
+option is used, multiple runs will produce identical output files.
+
+     <p>If <samp><span class="file">binutils</span></samp> was configured with
+<samp><span class="option">--enable-deterministic-archives</span></samp>, then this mode is on by
+default.  It can be disabled with the &lsquo;<samp><span class="samp">-U</span></samp>&rsquo; option, described
+below.
+
+     <br><dt><samp><span class="env">-t</span></samp><dd>Update the timestamp of the symbol map of an archive.
+
+     <br><dt><samp><span class="env">-U</span></samp><dd><a name="index-deterministic-archives-115"></a><a name="index-g_t_002d_002denable_002ddeterministic_002darchives-116"></a>Do <em>not</em> operate in <em>deterministic</em> mode.  This is the
+inverse of the &lsquo;<samp><span class="samp">-D</span></samp>&rsquo; option, above: the archive index will get
+actual UID, GID, timestamp, and file mode values.
+
+     <p>If <samp><span class="file">binutils</span></samp> was configured <em>without</em>
+<samp><span class="option">--enable-deterministic-archives</span></samp>, then this mode is on by
+default.
+
+   </dl>
+
+<!-- man end -->
+   </body></html>
+

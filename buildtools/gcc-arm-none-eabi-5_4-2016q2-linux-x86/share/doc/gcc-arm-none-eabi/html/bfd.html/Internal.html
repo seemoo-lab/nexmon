@@ -1,0 +1,239 @@
+<html lang="en">
+<head>
+<title>Internal - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="BFD-front-end.html#BFD-front-end" title="BFD front end">
+<link rel="prev" href="Opening-and-Closing.html#Opening-and-Closing" title="Opening and Closing">
+<link rel="next" href="File-Caching.html#File-Caching" title="File Caching">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Internal"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="File-Caching.html#File-Caching">File Caching</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Opening-and-Closing.html#Opening-and-Closing">Opening and Closing</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="BFD-front-end.html#BFD-front-end">BFD front end</a>
+<hr>
+</div>
+
+<h3 class="section">2.15 Implementation details</h3>
+
+<h4 class="subsection">2.15.1 Internal functions</h4>
+
+<p><strong>Description</strong><br>
+These routines are used within BFD. 
+They are not intended for export, but are documented here for
+completeness.
+
+   <p><a name="index-bfd_005fwrite_005fbigendian_005f4byte_005fint-2232"></a>
+
+<h5 class="subsubsection">2.15.1.1 <code>bfd_write_bigendian_4byte_int</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     bfd_boolean bfd_write_bigendian_4byte_int (bfd *, unsigned int);
+</pre>
+   <p><strong>Description</strong><br>
+Write a 4 byte integer <var>i</var> to the output BFD <var>abfd</var>, in big
+endian order regardless of what else is going on.  This is useful in
+archives.
+
+   <p><a name="index-bfd_005fput_005fsize-2233"></a>
+
+<h5 class="subsubsection">2.15.1.2 <code>bfd_put_size</code></h5>
+
+<p><a name="index-bfd_005fget_005fsize-2234"></a>
+
+<h5 class="subsubsection">2.15.1.3 <code>bfd_get_size</code></h5>
+
+<p><strong>Description</strong><br>
+These macros as used for reading and writing raw data in
+sections; each access (except for bytes) is vectored through
+the target format of the BFD and mangled accordingly. The
+mangling performs any necessary endian translations and
+removes alignment restrictions.  Note that types accepted and
+returned by these macros are identical so they can be swapped
+around in macros&mdash;for example, <samp><span class="file">libaout.h</span></samp> defines <code>GET_WORD</code>
+to either <code>bfd_get_32</code> or <code>bfd_get_64</code>.
+
+   <p>In the put routines, <var>val</var> must be a <code>bfd_vma</code>.  If we are on a
+system without prototypes, the caller is responsible for making
+sure that is true, with a cast if necessary.  We don't cast
+them in the macro definitions because that would prevent <code>lint</code>
+or <code>gcc -Wall</code> from detecting sins such as passing a pointer. 
+To detect calling these with less than a <code>bfd_vma</code>, use
+<code>gcc -Wconversion</code> on a host with 64 bit <code>bfd_vma</code>'s.
+<pre class="example">     
+     /* Byte swapping macros for user section data.  */
+     
+     #define bfd_put_8(abfd, val, ptr) \
+       ((void) (*((unsigned char *) (ptr)) = (val) &amp; 0xff))
+     #define bfd_put_signed_8 \
+       bfd_put_8
+     #define bfd_get_8(abfd, ptr) \
+       (*(const unsigned char *) (ptr) &amp; 0xff)
+     #define bfd_get_signed_8(abfd, ptr) \
+       (((*(const unsigned char *) (ptr) &amp; 0xff) ^ 0x80) - 0x80)
+     
+     #define bfd_put_16(abfd, val, ptr) \
+       BFD_SEND (abfd, bfd_putx16, ((val),(ptr)))
+     #define bfd_put_signed_16 \
+       bfd_put_16
+     #define bfd_get_16(abfd, ptr) \
+       BFD_SEND (abfd, bfd_getx16, (ptr))
+     #define bfd_get_signed_16(abfd, ptr) \
+       BFD_SEND (abfd, bfd_getx_signed_16, (ptr))
+     
+     #define bfd_put_32(abfd, val, ptr) \
+       BFD_SEND (abfd, bfd_putx32, ((val),(ptr)))
+     #define bfd_put_signed_32 \
+       bfd_put_32
+     #define bfd_get_32(abfd, ptr) \
+       BFD_SEND (abfd, bfd_getx32, (ptr))
+     #define bfd_get_signed_32(abfd, ptr) \
+       BFD_SEND (abfd, bfd_getx_signed_32, (ptr))
+     
+     #define bfd_put_64(abfd, val, ptr) \
+       BFD_SEND (abfd, bfd_putx64, ((val), (ptr)))
+     #define bfd_put_signed_64 \
+       bfd_put_64
+     #define bfd_get_64(abfd, ptr) \
+       BFD_SEND (abfd, bfd_getx64, (ptr))
+     #define bfd_get_signed_64(abfd, ptr) \
+       BFD_SEND (abfd, bfd_getx_signed_64, (ptr))
+     
+     #define bfd_get(bits, abfd, ptr)                       \
+       ((bits) == 8 ? (bfd_vma) bfd_get_8 (abfd, ptr)       \
+        : (bits) == 16 ? bfd_get_16 (abfd, ptr)             \
+        : (bits) == 32 ? bfd_get_32 (abfd, ptr)             \
+        : (bits) == 64 ? bfd_get_64 (abfd, ptr)             \
+        : (abort (), (bfd_vma) - 1))
+     
+     #define bfd_put(bits, abfd, val, ptr)                  \
+       ((bits) == 8 ? bfd_put_8  (abfd, val, ptr)           \
+        : (bits) == 16 ? bfd_put_16 (abfd, val, ptr)                \
+        : (bits) == 32 ? bfd_put_32 (abfd, val, ptr)                \
+        : (bits) == 64 ? bfd_put_64 (abfd, val, ptr)                \
+        : (abort (), (void) 0))
+     
+</pre>
+   <p><a name="index-bfd_005fh_005fput_005fsize-2235"></a>
+
+<h5 class="subsubsection">2.15.1.4 <code>bfd_h_put_size</code></h5>
+
+<p><strong>Description</strong><br>
+These macros have the same function as their <code>bfd_get_x</code>
+brethren, except that they are used for removing information
+for the header records of object files. Believe it or not,
+some object files keep their header records in big endian
+order and their data in little endian order.
+<pre class="example">     
+     /* Byte swapping macros for file header data.  */
+     
+     #define bfd_h_put_8(abfd, val, ptr) \
+       bfd_put_8 (abfd, val, ptr)
+     #define bfd_h_put_signed_8(abfd, val, ptr) \
+       bfd_put_8 (abfd, val, ptr)
+     #define bfd_h_get_8(abfd, ptr) \
+       bfd_get_8 (abfd, ptr)
+     #define bfd_h_get_signed_8(abfd, ptr) \
+       bfd_get_signed_8 (abfd, ptr)
+     
+     #define bfd_h_put_16(abfd, val, ptr) \
+       BFD_SEND (abfd, bfd_h_putx16, (val, ptr))
+     #define bfd_h_put_signed_16 \
+       bfd_h_put_16
+     #define bfd_h_get_16(abfd, ptr) \
+       BFD_SEND (abfd, bfd_h_getx16, (ptr))
+     #define bfd_h_get_signed_16(abfd, ptr) \
+       BFD_SEND (abfd, bfd_h_getx_signed_16, (ptr))
+     
+     #define bfd_h_put_32(abfd, val, ptr) \
+       BFD_SEND (abfd, bfd_h_putx32, (val, ptr))
+     #define bfd_h_put_signed_32 \
+       bfd_h_put_32
+     #define bfd_h_get_32(abfd, ptr) \
+       BFD_SEND (abfd, bfd_h_getx32, (ptr))
+     #define bfd_h_get_signed_32(abfd, ptr) \
+       BFD_SEND (abfd, bfd_h_getx_signed_32, (ptr))
+     
+     #define bfd_h_put_64(abfd, val, ptr) \
+       BFD_SEND (abfd, bfd_h_putx64, (val, ptr))
+     #define bfd_h_put_signed_64 \
+       bfd_h_put_64
+     #define bfd_h_get_64(abfd, ptr) \
+       BFD_SEND (abfd, bfd_h_getx64, (ptr))
+     #define bfd_h_get_signed_64(abfd, ptr) \
+       BFD_SEND (abfd, bfd_h_getx_signed_64, (ptr))
+     
+     /* Aliases for the above, which should eventually go away.  */
+     
+     #define H_PUT_64  bfd_h_put_64
+     #define H_PUT_32  bfd_h_put_32
+     #define H_PUT_16  bfd_h_put_16
+     #define H_PUT_8   bfd_h_put_8
+     #define H_PUT_S64 bfd_h_put_signed_64
+     #define H_PUT_S32 bfd_h_put_signed_32
+     #define H_PUT_S16 bfd_h_put_signed_16
+     #define H_PUT_S8  bfd_h_put_signed_8
+     #define H_GET_64  bfd_h_get_64
+     #define H_GET_32  bfd_h_get_32
+     #define H_GET_16  bfd_h_get_16
+     #define H_GET_8   bfd_h_get_8
+     #define H_GET_S64 bfd_h_get_signed_64
+     #define H_GET_S32 bfd_h_get_signed_32
+     #define H_GET_S16 bfd_h_get_signed_16
+     #define H_GET_S8  bfd_h_get_signed_8
+     
+     
+</pre>
+   <p><a name="index-bfd_005flog2-2236"></a>
+
+<h5 class="subsubsection">2.15.1.5 <code>bfd_log2</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     unsigned int bfd_log2 (bfd_vma x);
+</pre>
+   <p><strong>Description</strong><br>
+Return the log base 2 of the value supplied, rounded up.  E.g., an
+<var>x</var> of 1025 returns 11.  A <var>x</var> of 0 returns 0.
+
+   </body></html>
+

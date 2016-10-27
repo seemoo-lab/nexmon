@@ -1,0 +1,79 @@
+<html lang="en">
+<head>
+<title>Block Structure - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Program-Structure.html#Program-Structure" title="Program Structure">
+<link rel="prev" href="Nested-Procedures.html#Nested-Procedures" title="Nested Procedures">
+<link rel="next" href="Alternate-Entry-Points.html#Alternate-Entry-Points" title="Alternate Entry Points">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Block-Structure"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Alternate-Entry-Points.html#Alternate-Entry-Points">Alternate Entry Points</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Nested-Procedures.html#Nested-Procedures">Nested Procedures</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Program-Structure.html#Program-Structure">Program Structure</a>
+<hr>
+</div>
+
+<h3 class="section">2.7 Block Structure</h3>
+
+<p><a name="index-N_005fLBRAC-18"></a><a name="index-N_005fRBRAC-19"></a><!-- For GCC 2.5.8 or so stabs-in-coff, these are absolute instead of -->
+<!-- function relative (as documented below).  But GDB has never been able -->
+<!-- to deal with that (it had wanted them to be relative to the file, but -->
+<!-- I just fixed that (between GDB 4.12 and 4.13)), so it is function -->
+<!-- relative just like ELF and SOM and the below documentation. -->
+The program's block structure is represented by the <code>N_LBRAC</code> (left
+brace) and the <code>N_RBRAC</code> (right brace) stab types.  The variables
+defined inside a block precede the <code>N_LBRAC</code> symbol for most
+compilers, including GCC.  Other compilers, such as the Convex, Acorn
+RISC machine, and Sun <code>acc</code> compilers, put the variables after the
+<code>N_LBRAC</code> symbol.  The values of the <code>N_LBRAC</code> and
+<code>N_RBRAC</code> symbols are the start and end addresses of the code of
+the block, respectively.  For most machines, they are relative to the
+starting address of this source file.  For the Gould NP1, they are
+absolute.  For stabs in sections (see <a href="Stab-Sections.html#Stab-Sections">Stab Sections</a>), they are
+relative to the function in which they occur.
+
+   <p>The <code>N_LBRAC</code> and <code>N_RBRAC</code> stabs that describe the block
+scope of a procedure are located after the <code>N_FUN</code> stab that
+represents the procedure itself.
+
+   <p>Sun documents the desc field of <code>N_LBRAC</code> and
+<code>N_RBRAC</code> symbols as containing the nesting level of the block. 
+However, dbx seems to not care, and GCC always sets desc to
+zero.
+
+   <p><a name="index-g_t_002ebb-20"></a><a name="index-g_t_002ebe-21"></a><a name="index-C_005fBLOCK-22"></a>For XCOFF, block scope is indicated with <code>C_BLOCK</code> symbols.  If the
+name of the symbol is &lsquo;<samp><span class="samp">.bb</span></samp>&rsquo;, then it is the beginning of the block;
+if the name of the symbol is &lsquo;<samp><span class="samp">.be</span></samp>&rsquo;; it is the end of the block.
+
+   </body></html>
+

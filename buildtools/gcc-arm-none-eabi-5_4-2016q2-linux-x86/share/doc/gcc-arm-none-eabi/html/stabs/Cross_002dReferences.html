@@ -1,0 +1,85 @@
+<html lang="en">
+<head>
+<title>Cross-References - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Types.html#Types" title="Types">
+<link rel="prev" href="Miscellaneous-Types.html#Miscellaneous-Types" title="Miscellaneous Types">
+<link rel="next" href="Subranges.html#Subranges" title="Subranges">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Cross-References"></a>
+<a name="Cross_002dReferences"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Subranges.html#Subranges">Subranges</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Miscellaneous-Types.html#Miscellaneous-Types">Miscellaneous Types</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Types.html#Types">Types</a>
+<hr>
+</div>
+
+<h3 class="section">5.3 Cross-References to Other Types</h3>
+
+<p>A type can be used before it is defined; one common way to deal with
+that situation is just to use a type reference to a type which has not
+yet been defined.
+
+   <p>Another way is with the &lsquo;<samp><span class="samp">x</span></samp>&rsquo; type descriptor, which is followed by
+&lsquo;<samp><span class="samp">s</span></samp>&rsquo; for a structure tag, &lsquo;<samp><span class="samp">u</span></samp>&rsquo; for a union tag, or &lsquo;<samp><span class="samp">e</span></samp>&rsquo; for
+a enumerator tag, followed by the name of the tag, followed by &lsquo;<samp><span class="samp">:</span></samp>&rsquo;. 
+If the name contains &lsquo;<samp><span class="samp">::</span></samp>&rsquo; between a &lsquo;<samp><span class="samp">&lt;</span></samp>&rsquo; and &lsquo;<samp><span class="samp">&gt;</span></samp>&rsquo; pair (for
+C<tt>++</tt> templates), such a &lsquo;<samp><span class="samp">::</span></samp>&rsquo; does not end the name&mdash;only a single
+&lsquo;<samp><span class="samp">:</span></samp>&rsquo; ends the name; see <a href="Nested-Symbols.html#Nested-Symbols">Nested Symbols</a>.
+
+   <p>For example, the following C declarations:
+
+<pre class="example">     struct foo;
+     struct foo *bar;
+</pre>
+   <p class="noindent">produce:
+
+<pre class="example">     .stabs "bar:G16=*17=xsfoo:",32,0,0,0
+</pre>
+   <p>Not all debuggers support the &lsquo;<samp><span class="samp">x</span></samp>&rsquo; type descriptor, so on some
+machines GCC does not use it.  I believe that for the above example it
+would just emit a reference to type 17 and never define it, but I
+haven't verified that.
+
+   <p>Modula-2 imported types, at least on AIX, use the &lsquo;<samp><span class="samp">i</span></samp>&rsquo; type
+descriptor, which is followed by the name of the module from which the
+type is imported, followed by &lsquo;<samp><span class="samp">:</span></samp>&rsquo;, followed by the name of the
+type.  There is then optionally a comma followed by type information for
+the type.  This differs from merely naming the type (see <a href="Typedefs.html#Typedefs">Typedefs</a>) in
+that it identifies the module; I don't understand whether the name of
+the type given here is always just the same as the name we are giving
+it, or whether this type descriptor is used with a nameless stab
+(see <a href="String-Field.html#String-Field">String Field</a>), or what.  The symbol ends with &lsquo;<samp><span class="samp">;</span></samp>&rsquo;.
+
+   </body></html>
+

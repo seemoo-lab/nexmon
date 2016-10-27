@@ -1,0 +1,202 @@
+<html lang="en">
+<head>
+<title>Scalar Return - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stack-and-Calling.html#Stack-and-Calling" title="Stack and Calling">
+<link rel="prev" href="Register-Arguments.html#Register-Arguments" title="Register Arguments">
+<link rel="next" href="Aggregate-Return.html#Aggregate-Return" title="Aggregate Return">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Scalar-Return"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Aggregate-Return.html#Aggregate-Return">Aggregate Return</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Register-Arguments.html#Register-Arguments">Register Arguments</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stack-and-Calling.html#Stack-and-Calling">Stack and Calling</a>
+<hr>
+</div>
+
+<h4 class="subsection">17.9.8 How Scalar Function Values Are Returned</h4>
+
+<p><a name="index-return-values-in-registers-4267"></a><a name="index-values_002c-returned-by-functions-4268"></a><a name="index-scalars_002c-returned-as-values-4269"></a>
+This section discusses the macros that control returning scalars as
+values&mdash;values that can fit in registers.
+
+<div class="defun">
+&mdash; Target Hook: rtx <b>TARGET_FUNCTION_VALUE</b> (<var>const_tree ret_type, const_tree fn_decl_or_type, bool outgoing</var>)<var><a name="index-TARGET_005fFUNCTION_005fVALUE-4270"></a></var><br>
+<blockquote>
+      <p>Define this to return an RTX representing the place where a function
+returns or receives a value of data type <var>ret_type</var>, a tree node
+representing a data type.  <var>fn_decl_or_type</var> is a tree node
+representing <code>FUNCTION_DECL</code> or <code>FUNCTION_TYPE</code> of a
+function being called.  If <var>outgoing</var> is false, the hook should
+compute the register in which the caller will see the return value. 
+Otherwise, the hook should return an RTX representing the place where
+a function returns a value.
+
+      <p>On many machines, only <code>TYPE_MODE (</code><var>ret_type</var><code>)</code> is relevant. 
+(Actually, on most machines, scalar values are returned in the same
+place regardless of mode.)  The value of the expression is usually a
+<code>reg</code> RTX for the hard register where the return value is stored. 
+The value can also be a <code>parallel</code> RTX, if the return value is in
+multiple places.  See <code>TARGET_FUNCTION_ARG</code> for an explanation of the
+<code>parallel</code> form.   Note that the callee will populate every
+location specified in the <code>parallel</code>, but if the first element of
+the <code>parallel</code> contains the whole return value, callers will use
+that element as the canonical location and ignore the others.  The m68k
+port uses this type of <code>parallel</code> to return pointers in both
+&lsquo;<samp><span class="samp">%a0</span></samp>&rsquo; (the canonical location) and &lsquo;<samp><span class="samp">%d0</span></samp>&rsquo;.
+
+      <p>If <code>TARGET_PROMOTE_FUNCTION_RETURN</code> returns true, you must apply
+the same promotion rules specified in <code>PROMOTE_MODE</code> if
+<var>valtype</var> is a scalar type.
+
+      <p>If the precise function being called is known, <var>func</var> is a tree
+node (<code>FUNCTION_DECL</code>) for it; otherwise, <var>func</var> is a null
+pointer.  This makes it possible to use a different value-returning
+convention for specific functions when all their calls are
+known.
+
+      <p>Some target machines have &ldquo;register windows&rdquo; so that the register in
+which a function returns its value is not the same as the one in which
+the caller sees the value.  For such machines, you should return
+different RTX depending on <var>outgoing</var>.
+
+      <p><code>TARGET_FUNCTION_VALUE</code> is not used for return values with
+aggregate data types, because these are returned in another way.  See
+<code>TARGET_STRUCT_VALUE_RTX</code> and related macros, below. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>FUNCTION_VALUE</b> (<var>valtype, func</var>)<var><a name="index-FUNCTION_005fVALUE-4271"></a></var><br>
+<blockquote><p>This macro has been deprecated.  Use <code>TARGET_FUNCTION_VALUE</code> for
+a new target instead. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>LIBCALL_VALUE</b> (<var>mode</var>)<var><a name="index-LIBCALL_005fVALUE-4272"></a></var><br>
+<blockquote><p>A C expression to create an RTX representing the place where a library
+function returns a value of mode <var>mode</var>.
+
+      <p>Note that &ldquo;library function&rdquo; in this context means a compiler
+support routine, used to perform arithmetic, whose name is known
+specially by the compiler and was not mentioned in the C code being
+compiled. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: rtx <b>TARGET_LIBCALL_VALUE</b> (<var>machine_mode mode, const_rtx fun</var>)<var><a name="index-TARGET_005fLIBCALL_005fVALUE-4273"></a></var><br>
+<blockquote><p>Define this hook if the back-end needs to know the name of the libcall
+function in order to determine where the result should be returned.
+
+      <p>The mode of the result is given by <var>mode</var> and the name of the called
+library function is given by <var>fun</var>.  The hook should return an RTX
+representing the place where the library function result will be returned.
+
+      <p>If this hook is not defined, then LIBCALL_VALUE will be used. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>FUNCTION_VALUE_REGNO_P</b> (<var>regno</var>)<var><a name="index-FUNCTION_005fVALUE_005fREGNO_005fP-4274"></a></var><br>
+<blockquote><p>A C expression that is nonzero if <var>regno</var> is the number of a hard
+register in which the values of called function may come back.
+
+      <p>A register whose use for returning values is limited to serving as the
+second of a pair (for a value of type <code>double</code>, say) need not be
+recognized by this macro.  So for most machines, this definition
+suffices:
+
+     <pre class="smallexample">          #define FUNCTION_VALUE_REGNO_P(N) ((N) == 0)
+</pre>
+      <p>If the machine has register windows, so that the caller and the called
+function use different registers for the return value, this macro
+should recognize only the caller's register numbers.
+
+      <p>This macro has been deprecated.  Use <code>TARGET_FUNCTION_VALUE_REGNO_P</code>
+for a new target instead. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_FUNCTION_VALUE_REGNO_P</b> (<var>const unsigned int regno</var>)<var><a name="index-TARGET_005fFUNCTION_005fVALUE_005fREGNO_005fP-4275"></a></var><br>
+<blockquote><p>A target hook that return <code>true</code> if <var>regno</var> is the number of a hard
+register in which the values of called function may come back.
+
+      <p>A register whose use for returning values is limited to serving as the
+second of a pair (for a value of type <code>double</code>, say) need not be
+recognized by this target hook.
+
+      <p>If the machine has register windows, so that the caller and the called
+function use different registers for the return value, this target hook
+should recognize only the caller's register numbers.
+
+      <p>If this hook is not defined, then FUNCTION_VALUE_REGNO_P will be used. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>APPLY_RESULT_SIZE</b><var><a name="index-APPLY_005fRESULT_005fSIZE-4276"></a></var><br>
+<blockquote><p>Define this macro if &lsquo;<samp><span class="samp">untyped_call</span></samp>&rsquo; and &lsquo;<samp><span class="samp">untyped_return</span></samp>&rsquo;
+need more space than is implied by <code>FUNCTION_VALUE_REGNO_P</code> for
+saving and restoring an arbitrary return value. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_OMIT_STRUCT_RETURN_REG</b><var><a name="index-TARGET_005fOMIT_005fSTRUCT_005fRETURN_005fREG-4277"></a></var><br>
+<blockquote><p>Normally, when a function returns a structure by memory, the address
+is passed as an invisible pointer argument, but the compiler also
+arranges to return the address from the function like it would a normal
+pointer return value.  Define this to true if that behaviour is
+undesirable on your target. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_RETURN_IN_MSB</b> (<var>const_tree type</var>)<var><a name="index-TARGET_005fRETURN_005fIN_005fMSB-4278"></a></var><br>
+<blockquote><p>This hook should return true if values of type <var>type</var> are returned
+at the most significant end of a register (in other words, if they are
+padded at the least significant end).  You can assume that <var>type</var>
+is returned in a register; the caller is required to check this.
+
+      <p>Note that the register provided by <code>TARGET_FUNCTION_VALUE</code> must
+be able to hold the complete return value.  For example, if a 1-, 2-
+or 3-byte structure is returned at the most significant end of a
+4-byte register, <code>TARGET_FUNCTION_VALUE</code> should provide an
+<code>SImode</code> rtx. 
+</p></blockquote></div>
+
+ </body></html>
+

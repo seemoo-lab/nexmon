@@ -1,0 +1,126 @@
+<html lang="en">
+<head>
+<title>Line Tables In Python - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Python-API.html#Python-API" title="Python API">
+<link rel="prev" href="Symbol-Tables-In-Python.html#Symbol-Tables-In-Python" title="Symbol Tables In Python">
+<link rel="next" href="Breakpoints-In-Python.html#Breakpoints-In-Python" title="Breakpoints In Python">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Line-Tables-In-Python"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Breakpoints-In-Python.html#Breakpoints-In-Python">Breakpoints In Python</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Symbol-Tables-In-Python.html#Symbol-Tables-In-Python">Symbol Tables In Python</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Python-API.html#Python-API">Python API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.2.2.28 Manipulating line tables using Python</h5>
+
+<p><a name="index-line-tables-in-python-2277"></a><a name="index-gdb_002eLineTable-2278"></a>
+Python code can request and inspect line table information from a
+symbol table that is loaded in <span class="sc">gdb</span>.  A line table is a
+mapping of source lines to their executable locations in memory.  To
+acquire the line table information for a particular symbol table, use
+the <code>linetable</code> function (see <a href="Symbol-Tables-In-Python.html#Symbol-Tables-In-Python">Symbol Tables In Python</a>).
+
+   <p>A <code>gdb.LineTable</code> is iterable.  The iterator returns
+<code>LineTableEntry</code> objects that correspond to the source line and
+address for each line table entry.  <code>LineTableEntry</code> objects have
+the following attributes:
+
+<div class="defun">
+&mdash; Variable: <b>LineTableEntry.line</b><var><a name="index-LineTableEntry_002eline-2279"></a></var><br>
+<blockquote><p>The source line number for this line table entry.  This number
+corresponds to the actual line of source.  This attribute is not
+writable. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: <b>LineTableEntry.pc</b><var><a name="index-LineTableEntry_002epc-2280"></a></var><br>
+<blockquote><p>The address that is associated with the line table entry where the
+executable code for that source line resides in memory.  This
+attribute is not writable. 
+</p></blockquote></div>
+
+   <p>As there can be multiple addresses for a single source line, you may
+receive multiple <code>LineTableEntry</code> objects with matching
+<code>line</code> attributes, but with different <code>pc</code> attributes.  The
+iterator is sorted in ascending <code>pc</code> order.  Here is a small
+example illustrating iterating over a line table.
+
+<pre class="smallexample">     symtab = gdb.selected_frame().find_sal().symtab
+     linetable = symtab.linetable()
+     for line in linetable:
+        print "Line: "+str(line.line)+" Address: "+hex(line.pc)
+</pre>
+   <p>This will have the following output:
+
+<pre class="smallexample">     Line: 33 Address: 0x4005c8L
+     Line: 37 Address: 0x4005caL
+     Line: 39 Address: 0x4005d2L
+     Line: 40 Address: 0x4005f8L
+     Line: 42 Address: 0x4005ffL
+     Line: 44 Address: 0x400608L
+     Line: 42 Address: 0x40060cL
+     Line: 45 Address: 0x400615L
+</pre>
+   <p>In addition to being able to iterate over a <code>LineTable</code>, it also
+has the following direct access methods:
+
+<div class="defun">
+&mdash; Function: <b>LineTable.line</b> (<var>line</var>)<var><a name="index-LineTable_002eline-2281"></a></var><br>
+<blockquote><p>Return a Python <code>Tuple</code> of <code>LineTableEntry</code> objects for any
+entries in the line table for the given <var>line</var>, which specifies
+the source code line.  If there are no entries for that source code
+<var>line</var>, the Python <code>None</code> is returned. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>LineTable.has_line</b> (<var>line</var>)<var><a name="index-LineTable_002ehas_005fline-2282"></a></var><br>
+<blockquote><p>Return a Python <code>Boolean</code> indicating whether there is an entry in
+the line table for this source line.  Return <code>True</code> if an entry
+is found, or <code>False</code> if not. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>LineTable.source_lines</b> ()<var><a name="index-LineTable_002esource_005flines-2283"></a></var><br>
+<blockquote><p>Return a Python <code>List</code> of the source line numbers in the symbol
+table.  Only lines with executable code locations are returned.  The
+contents of the <code>List</code> will just be the source line entries
+represented as Python <code>Long</code> values. 
+</p></blockquote></div>
+
+   </body></html>
+

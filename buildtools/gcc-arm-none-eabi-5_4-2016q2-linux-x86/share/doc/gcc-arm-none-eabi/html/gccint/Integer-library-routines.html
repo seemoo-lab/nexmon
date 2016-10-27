@@ -1,0 +1,249 @@
+<html lang="en">
+<head>
+<title>Integer library routines - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Libgcc.html#Libgcc" title="Libgcc">
+<link rel="next" href="Soft-float-library-routines.html#Soft-float-library-routines" title="Soft float library routines">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Integer-library-routines"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Soft-float-library-routines.html#Soft-float-library-routines">Soft float library routines</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Libgcc.html#Libgcc">Libgcc</a>
+<hr>
+</div>
+
+<h3 class="section">4.1 Routines for integer arithmetic</h3>
+
+<p>The integer arithmetic routines are used on platforms that don't provide
+hardware support for arithmetic operations on some modes.
+
+<h4 class="subsection">4.1.1 Arithmetic functions</h4>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__ashlsi3</b> (<var>int a, int b</var>)<var><a name="index-g_t_005f_005fashlsi3-17"></a></var><br>
+&mdash; Runtime Function: long <b>__ashldi3</b> (<var>long a, int b</var>)<var><a name="index-g_t_005f_005fashldi3-18"></a></var><br>
+&mdash; Runtime Function: long long <b>__ashlti3</b> (<var>long long a, int b</var>)<var><a name="index-g_t_005f_005fashlti3-19"></a></var><br>
+<blockquote><p>These functions return the result of shifting <var>a</var> left by <var>b</var> bits. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__ashrsi3</b> (<var>int a, int b</var>)<var><a name="index-g_t_005f_005fashrsi3-20"></a></var><br>
+&mdash; Runtime Function: long <b>__ashrdi3</b> (<var>long a, int b</var>)<var><a name="index-g_t_005f_005fashrdi3-21"></a></var><br>
+&mdash; Runtime Function: long long <b>__ashrti3</b> (<var>long long a, int b</var>)<var><a name="index-g_t_005f_005fashrti3-22"></a></var><br>
+<blockquote><p>These functions return the result of arithmetically shifting <var>a</var> right
+by <var>b</var> bits. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__divsi3</b> (<var>int a, int b</var>)<var><a name="index-g_t_005f_005fdivsi3-23"></a></var><br>
+&mdash; Runtime Function: long <b>__divdi3</b> (<var>long a, long b</var>)<var><a name="index-g_t_005f_005fdivdi3-24"></a></var><br>
+&mdash; Runtime Function: long long <b>__divti3</b> (<var>long long a, long long b</var>)<var><a name="index-g_t_005f_005fdivti3-25"></a></var><br>
+<blockquote><p>These functions return the quotient of the signed division of <var>a</var> and
+<var>b</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__lshrsi3</b> (<var>int a, int b</var>)<var><a name="index-g_t_005f_005flshrsi3-26"></a></var><br>
+&mdash; Runtime Function: long <b>__lshrdi3</b> (<var>long a, int b</var>)<var><a name="index-g_t_005f_005flshrdi3-27"></a></var><br>
+&mdash; Runtime Function: long long <b>__lshrti3</b> (<var>long long a, int b</var>)<var><a name="index-g_t_005f_005flshrti3-28"></a></var><br>
+<blockquote><p>These functions return the result of logically shifting <var>a</var> right by
+<var>b</var> bits. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__modsi3</b> (<var>int a, int b</var>)<var><a name="index-g_t_005f_005fmodsi3-29"></a></var><br>
+&mdash; Runtime Function: long <b>__moddi3</b> (<var>long a, long b</var>)<var><a name="index-g_t_005f_005fmoddi3-30"></a></var><br>
+&mdash; Runtime Function: long long <b>__modti3</b> (<var>long long a, long long b</var>)<var><a name="index-g_t_005f_005fmodti3-31"></a></var><br>
+<blockquote><p>These functions return the remainder of the signed division of <var>a</var>
+and <var>b</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__mulsi3</b> (<var>int a, int b</var>)<var><a name="index-g_t_005f_005fmulsi3-32"></a></var><br>
+&mdash; Runtime Function: long <b>__muldi3</b> (<var>long a, long b</var>)<var><a name="index-g_t_005f_005fmuldi3-33"></a></var><br>
+&mdash; Runtime Function: long long <b>__multi3</b> (<var>long long a, long long b</var>)<var><a name="index-g_t_005f_005fmulti3-34"></a></var><br>
+<blockquote><p>These functions return the product of <var>a</var> and <var>b</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: long <b>__negdi2</b> (<var>long a</var>)<var><a name="index-g_t_005f_005fnegdi2-35"></a></var><br>
+&mdash; Runtime Function: long long <b>__negti2</b> (<var>long long a</var>)<var><a name="index-g_t_005f_005fnegti2-36"></a></var><br>
+<blockquote><p>These functions return the negation of <var>a</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: unsigned int <b>__udivsi3</b> (<var>unsigned int a, unsigned int b</var>)<var><a name="index-g_t_005f_005fudivsi3-37"></a></var><br>
+&mdash; Runtime Function: unsigned long <b>__udivdi3</b> (<var>unsigned long a, unsigned long b</var>)<var><a name="index-g_t_005f_005fudivdi3-38"></a></var><br>
+&mdash; Runtime Function: unsigned long long <b>__udivti3</b> (<var>unsigned long long a, unsigned long long b</var>)<var><a name="index-g_t_005f_005fudivti3-39"></a></var><br>
+<blockquote><p>These functions return the quotient of the unsigned division of <var>a</var>
+and <var>b</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: unsigned long <b>__udivmoddi4</b> (<var>unsigned long a, unsigned long b, unsigned long *c</var>)<var><a name="index-g_t_005f_005fudivmoddi4-40"></a></var><br>
+&mdash; Runtime Function: unsigned long long <b>__udivmodti4</b> (<var>unsigned long long a, unsigned long long b, unsigned long long *c</var>)<var><a name="index-g_t_005f_005fudivmodti4-41"></a></var><br>
+<blockquote><p>These functions calculate both the quotient and remainder of the unsigned
+division of <var>a</var> and <var>b</var>.  The return value is the quotient, and
+the remainder is placed in variable pointed to by <var>c</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: unsigned int <b>__umodsi3</b> (<var>unsigned int a, unsigned int b</var>)<var><a name="index-g_t_005f_005fumodsi3-42"></a></var><br>
+&mdash; Runtime Function: unsigned long <b>__umoddi3</b> (<var>unsigned long a, unsigned long b</var>)<var><a name="index-g_t_005f_005fumoddi3-43"></a></var><br>
+&mdash; Runtime Function: unsigned long long <b>__umodti3</b> (<var>unsigned long long a, unsigned long long b</var>)<var><a name="index-g_t_005f_005fumodti3-44"></a></var><br>
+<blockquote><p>These functions return the remainder of the unsigned division of <var>a</var>
+and <var>b</var>. 
+</p></blockquote></div>
+
+<h4 class="subsection">4.1.2 Comparison functions</h4>
+
+<p>The following functions implement integral comparisons.  These functions
+implement a low-level compare, upon which the higher level comparison
+operators (such as less than and greater than or equal to) can be
+constructed.  The returned values lie in the range zero to two, to allow
+the high-level operators to be implemented by testing the returned
+result using either signed or unsigned comparison.
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__cmpdi2</b> (<var>long a, long b</var>)<var><a name="index-g_t_005f_005fcmpdi2-45"></a></var><br>
+&mdash; Runtime Function: int <b>__cmpti2</b> (<var>long long a, long long b</var>)<var><a name="index-g_t_005f_005fcmpti2-46"></a></var><br>
+<blockquote><p>These functions perform a signed comparison of <var>a</var> and <var>b</var>.  If
+<var>a</var> is less than <var>b</var>, they return 0; if <var>a</var> is greater than
+<var>b</var>, they return 2; and if <var>a</var> and <var>b</var> are equal they return 1. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__ucmpdi2</b> (<var>unsigned long a, unsigned long b</var>)<var><a name="index-g_t_005f_005fucmpdi2-47"></a></var><br>
+&mdash; Runtime Function: int <b>__ucmpti2</b> (<var>unsigned long long a, unsigned long long b</var>)<var><a name="index-g_t_005f_005fucmpti2-48"></a></var><br>
+<blockquote><p>These functions perform an unsigned comparison of <var>a</var> and <var>b</var>. 
+If <var>a</var> is less than <var>b</var>, they return 0; if <var>a</var> is greater than
+<var>b</var>, they return 2; and if <var>a</var> and <var>b</var> are equal they return 1. 
+</p></blockquote></div>
+
+<h4 class="subsection">4.1.3 Trapping arithmetic functions</h4>
+
+<p>The following functions implement trapping arithmetic.  These functions
+call the libc function <code>abort</code> upon signed arithmetic overflow.
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__absvsi2</b> (<var>int a</var>)<var><a name="index-g_t_005f_005fabsvsi2-49"></a></var><br>
+&mdash; Runtime Function: long <b>__absvdi2</b> (<var>long a</var>)<var><a name="index-g_t_005f_005fabsvdi2-50"></a></var><br>
+<blockquote><p>These functions return the absolute value of <var>a</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__addvsi3</b> (<var>int a, int b</var>)<var><a name="index-g_t_005f_005faddvsi3-51"></a></var><br>
+&mdash; Runtime Function: long <b>__addvdi3</b> (<var>long a, long b</var>)<var><a name="index-g_t_005f_005faddvdi3-52"></a></var><br>
+<blockquote><p>These functions return the sum of <var>a</var> and <var>b</var>; that is
+<var>a</var><code> + </code><var>b</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__mulvsi3</b> (<var>int a, int b</var>)<var><a name="index-g_t_005f_005fmulvsi3-53"></a></var><br>
+&mdash; Runtime Function: long <b>__mulvdi3</b> (<var>long a, long b</var>)<var><a name="index-g_t_005f_005fmulvdi3-54"></a></var><br>
+<blockquote><p>The functions return the product of <var>a</var> and <var>b</var>; that is
+<var>a</var><code> * </code><var>b</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__negvsi2</b> (<var>int a</var>)<var><a name="index-g_t_005f_005fnegvsi2-55"></a></var><br>
+&mdash; Runtime Function: long <b>__negvdi2</b> (<var>long a</var>)<var><a name="index-g_t_005f_005fnegvdi2-56"></a></var><br>
+<blockquote><p>These functions return the negation of <var>a</var>; that is <code>-</code><var>a</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__subvsi3</b> (<var>int a, int b</var>)<var><a name="index-g_t_005f_005fsubvsi3-57"></a></var><br>
+&mdash; Runtime Function: long <b>__subvdi3</b> (<var>long a, long b</var>)<var><a name="index-g_t_005f_005fsubvdi3-58"></a></var><br>
+<blockquote><p>These functions return the difference between <var>b</var> and <var>a</var>;
+that is <var>a</var><code> - </code><var>b</var>. 
+</p></blockquote></div>
+
+<h4 class="subsection">4.1.4 Bit operations</h4>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__clzsi2</b> (<var>unsigned int a</var>)<var><a name="index-g_t_005f_005fclzsi2-59"></a></var><br>
+&mdash; Runtime Function: int <b>__clzdi2</b> (<var>unsigned long a</var>)<var><a name="index-g_t_005f_005fclzdi2-60"></a></var><br>
+&mdash; Runtime Function: int <b>__clzti2</b> (<var>unsigned long long a</var>)<var><a name="index-g_t_005f_005fclzti2-61"></a></var><br>
+<blockquote><p>These functions return the number of leading 0-bits in <var>a</var>, starting
+at the most significant bit position.  If <var>a</var> is zero, the result is
+undefined. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__ctzsi2</b> (<var>unsigned int a</var>)<var><a name="index-g_t_005f_005fctzsi2-62"></a></var><br>
+&mdash; Runtime Function: int <b>__ctzdi2</b> (<var>unsigned long a</var>)<var><a name="index-g_t_005f_005fctzdi2-63"></a></var><br>
+&mdash; Runtime Function: int <b>__ctzti2</b> (<var>unsigned long long a</var>)<var><a name="index-g_t_005f_005fctzti2-64"></a></var><br>
+<blockquote><p>These functions return the number of trailing 0-bits in <var>a</var>, starting
+at the least significant bit position.  If <var>a</var> is zero, the result is
+undefined. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__ffsdi2</b> (<var>unsigned long a</var>)<var><a name="index-g_t_005f_005fffsdi2-65"></a></var><br>
+&mdash; Runtime Function: int <b>__ffsti2</b> (<var>unsigned long long a</var>)<var><a name="index-g_t_005f_005fffsti2-66"></a></var><br>
+<blockquote><p>These functions return the index of the least significant 1-bit in <var>a</var>,
+or the value zero if <var>a</var> is zero.  The least significant bit is index
+one. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__paritysi2</b> (<var>unsigned int a</var>)<var><a name="index-g_t_005f_005fparitysi2-67"></a></var><br>
+&mdash; Runtime Function: int <b>__paritydi2</b> (<var>unsigned long a</var>)<var><a name="index-g_t_005f_005fparitydi2-68"></a></var><br>
+&mdash; Runtime Function: int <b>__parityti2</b> (<var>unsigned long long a</var>)<var><a name="index-g_t_005f_005fparityti2-69"></a></var><br>
+<blockquote><p>These functions return the value zero if the number of bits set in
+<var>a</var> is even, and the value one otherwise. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__popcountsi2</b> (<var>unsigned int a</var>)<var><a name="index-g_t_005f_005fpopcountsi2-70"></a></var><br>
+&mdash; Runtime Function: int <b>__popcountdi2</b> (<var>unsigned long a</var>)<var><a name="index-g_t_005f_005fpopcountdi2-71"></a></var><br>
+&mdash; Runtime Function: int <b>__popcountti2</b> (<var>unsigned long long a</var>)<var><a name="index-g_t_005f_005fpopcountti2-72"></a></var><br>
+<blockquote><p>These functions return the number of bits set in <var>a</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int32_t <b>__bswapsi2</b> (<var>int32_t a</var>)<var><a name="index-g_t_005f_005fbswapsi2-73"></a></var><br>
+&mdash; Runtime Function: int64_t <b>__bswapdi2</b> (<var>int64_t a</var>)<var><a name="index-g_t_005f_005fbswapdi2-74"></a></var><br>
+<blockquote><p>These functions return the <var>a</var> byteswapped. 
+</p></blockquote></div>
+
+ </body></html>
+

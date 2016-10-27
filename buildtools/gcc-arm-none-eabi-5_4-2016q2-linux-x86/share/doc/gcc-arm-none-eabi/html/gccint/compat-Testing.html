@@ -1,0 +1,152 @@
+<html lang="en">
+<head>
+<title>compat Testing - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Testsuites.html#Testsuites" title="Testsuites">
+<link rel="prev" href="profopt-Testing.html#profopt-Testing" title="profopt Testing">
+<link rel="next" href="Torture-Tests.html#Torture-Tests" title="Torture Tests">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="compat-Testing"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Torture-Tests.html#Torture-Tests">Torture Tests</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="profopt-Testing.html#profopt-Testing">profopt Testing</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Testsuites.html#Testsuites">Testsuites</a>
+<hr>
+</div>
+
+<h3 class="section">7.9 Support for testing binary compatibility</h3>
+
+<p>The file <samp><span class="file">compat.exp</span></samp> provides language-independent support for
+binary compatibility testing.  It supports testing interoperability of
+two compilers that follow the same ABI, or of multiple sets of
+compiler options that should not affect binary compatibility.  It is
+intended to be used for testsuites that complement ABI testsuites.
+
+ <p>A test supported by this framework has three parts, each in a
+separate source file: a main program and two pieces that interact
+with each other to split up the functionality being tested.
+
+     <dl>
+<dt><samp><var>testname</var><span class="file">_main.</span><var>suffix</var></samp><dd>Contains the main program, which calls a function in file
+<samp><var>testname</var><span class="file">_x.</span><var>suffix</var></samp>.
+
+     <br><dt><samp><var>testname</var><span class="file">_x.</span><var>suffix</var></samp><dd>Contains at least one call to a function in
+<samp><var>testname</var><span class="file">_y.</span><var>suffix</var></samp>.
+
+     <br><dt><samp><var>testname</var><span class="file">_y.</span><var>suffix</var></samp><dd>Shares data with, or gets arguments from,
+<samp><var>testname</var><span class="file">_x.</span><var>suffix</var></samp>. 
+</dl>
+
+ <p>Within each test, the main program and one functional piece are
+compiled by the GCC under test.  The other piece can be compiled by
+an alternate compiler.  If no alternate compiler is specified,
+then all three source files are all compiled by the GCC under test. 
+You can specify pairs of sets of compiler options.  The first element
+of such a pair specifies options used with the GCC under test, and the
+second element of the pair specifies options used with the alternate
+compiler.  Each test is compiled with each pair of options.
+
+ <p><samp><span class="file">compat.exp</span></samp> defines default pairs of compiler options. 
+These can be overridden by defining the environment variable
+<samp><span class="env">COMPAT_OPTIONS</span></samp> as:
+
+<pre class="smallexample">     COMPAT_OPTIONS="[list [list {<var>tst1</var>} {<var>alt1</var>}]
+       ...[list {<var>tstn</var>} {<var>altn</var>}]]"
+</pre>
+ <p>where <var>tsti</var> and <var>alti</var> are lists of options, with <var>tsti</var>
+used by the compiler under test and <var>alti</var> used by the alternate
+compiler.  For example, with
+<code>[list [list {-g -O0} {-O3}] [list {-fpic} {-fPIC -O2}]]</code>,
+the test is first built with <samp><span class="option">-g -O0</span></samp> by the compiler under
+test and with <samp><span class="option">-O3</span></samp> by the alternate compiler.  The test is
+built a second time using <samp><span class="option">-fpic</span></samp> by the compiler under test
+and <samp><span class="option">-fPIC -O2</span></samp> by the alternate compiler.
+
+ <p>An alternate compiler is specified by defining an environment
+variable to be the full pathname of an installed compiler; for C
+define <samp><span class="env">ALT_CC_UNDER_TEST</span></samp>, and for C++ define
+<samp><span class="env">ALT_CXX_UNDER_TEST</span></samp>.  These will be written to the
+<samp><span class="file">site.exp</span></samp> file used by DejaGnu.  The default is to build each
+test with the compiler under test using the first of each pair of
+compiler options from <samp><span class="env">COMPAT_OPTIONS</span></samp>.  When
+<samp><span class="env">ALT_CC_UNDER_TEST</span></samp> or
+<samp><span class="env">ALT_CXX_UNDER_TEST</span></samp> is <code>same</code>, each test is built using
+the compiler under test but with combinations of the options from
+<samp><span class="env">COMPAT_OPTIONS</span></samp>.
+
+ <p>To run only the C++ compatibility suite using the compiler under test
+and another version of GCC using specific compiler options, do the
+following from <samp><var>objdir</var><span class="file">/gcc</span></samp>:
+
+<pre class="smallexample">     rm site.exp
+     make -k \
+       ALT_CXX_UNDER_TEST=${alt_prefix}/bin/g++ \
+       COMPAT_OPTIONS="<var>lists as shown above</var>" \
+       check-c++ \
+       RUNTESTFLAGS="compat.exp"
+</pre>
+ <p>A test that fails when the source files are compiled with different
+compilers, but passes when the files are compiled with the same
+compiler, demonstrates incompatibility of the generated code or
+runtime support.  A test that fails for the alternate compiler but
+passes for the compiler under test probably tests for a bug that was
+fixed in the compiler under test but is present in the alternate
+compiler.
+
+ <p>The binary compatibility tests support a small number of test framework
+commands that appear within comments in a test file.
+
+     <dl>
+<dt><code>dg-require-*</code><dd>These commands can be used in <samp><var>testname</var><span class="file">_main.</span><var>suffix</var></samp>
+to skip the test if specific support is not available on the target.
+
+     <br><dt><code>dg-options</code><dd>The specified options are used for compiling this particular source
+file, appended to the options from <samp><span class="env">COMPAT_OPTIONS</span></samp>.  When this
+command appears in <samp><var>testname</var><span class="file">_main.</span><var>suffix</var></samp> the options
+are also used to link the test program.
+
+     <br><dt><code>dg-xfail-if</code><dd>This command can be used in a secondary source file to specify that
+compilation is expected to fail for particular options on particular
+targets. 
+</dl>
+
+ </body></html>
+

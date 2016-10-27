@@ -1,0 +1,102 @@
+<html lang="en">
+<head>
+<title>Source Files - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Program-Structure.html#Program-Structure" title="Program Structure">
+<link rel="prev" href="Main-Program.html#Main-Program" title="Main Program">
+<link rel="next" href="Include-Files.html#Include-Files" title="Include Files">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Source-Files"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Include-Files.html#Include-Files">Include Files</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Main-Program.html#Main-Program">Main Program</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Program-Structure.html#Program-Structure">Program Structure</a>
+<hr>
+</div>
+
+<h3 class="section">2.2 Paths and Names of the Source Files</h3>
+
+<p><a name="index-N_005fSO-2"></a>Before any other stabs occur, there must be a stab specifying the source
+file.  This information is contained in a symbol of stab type
+<code>N_SO</code>; the string field contains the name of the file.  The
+value of the symbol is the start address of the portion of the
+text section corresponding to that file.
+
+   <p>Some compilers use the desc field to indicate the language of the
+source file.  Sun's compilers started this usage, and the first
+constants are derived from their documentation.  Languages added
+by gcc/gdb start at 0x32 to avoid conflict with languages Sun may
+add in the future.  A desc field with a value 0 indicates that no
+language has been specified via this mechanism.
+
+     <dl>
+<dt><code>N_SO_AS</code> (0x1)<dd>Assembly language
+<br><dt><code>N_SO_C</code>  (0x2)<dd>K&amp;R traditional C
+<br><dt><code>N_SO_ANSI_C</code> (0x3)<dd>ANSI C
+<br><dt><code>N_SO_CC</code>  (0x4)<dd>C++
+<br><dt><code>N_SO_FORTRAN</code> (0x5)<dd>Fortran
+<br><dt><code>N_SO_PASCAL</code> (0x6)<dd>Pascal
+<br><dt><code>N_SO_FORTRAN90</code> (0x7)<dd>Fortran90
+<br><dt><code>N_SO_OBJC</code> (0x32)<dd>Objective-C
+<br><dt><code>N_SO_OBJCPLUS</code> (0x33)<dd>Objective-C++
+</dl>
+
+   <p>Some compilers (for example, GCC2 and SunOS4 <samp><span class="file">/bin/cc</span></samp>) also
+include the directory in which the source was compiled, in a second
+<code>N_SO</code> symbol preceding the one containing the file name.  This
+symbol can be distinguished by the fact that it ends in a slash.  Code
+from the <code>cfront</code> C<tt>++</tt> compiler can have additional <code>N_SO</code> symbols for
+nonexistent source files after the <code>N_SO</code> for the real source file;
+these are believed to contain no useful information.
+
+   <p>For example:
+
+<pre class="example">     .stabs "/cygint/s1/users/jcm/play/",100,0,0,Ltext0     # <span class="roman">100 is N_SO</span>
+     .stabs "hello.c",100,0,0,Ltext0
+             .text
+     Ltext0:
+</pre>
+   <p><a name="index-C_005fFILE-3"></a>Instead of <code>N_SO</code> symbols, XCOFF uses a <code>.file</code> assembler
+directive which assembles to a <code>C_FILE</code> symbol; explaining this in
+detail is outside the scope of this document.
+
+<!-- FIXME: Exactly when should the empty N_SO be used?  Why? -->
+   <p>If it is useful to indicate the end of a source file, this is done with
+an <code>N_SO</code> symbol with an empty string for the name.  The value is
+the address of the end of the text section for the file.  For some
+systems, there is no indication of the end of a source file, and you
+just need to figure it ended when you see an <code>N_SO</code> for a different
+source file, or a symbol ending in <code>.o</code> (which at least some
+linkers insert to mark the start of a new <code>.o</code> file).
+
+   </body></html>
+

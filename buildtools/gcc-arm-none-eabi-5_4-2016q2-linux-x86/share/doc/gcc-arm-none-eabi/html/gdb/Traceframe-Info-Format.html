@@ -1,0 +1,100 @@
+<html lang="en">
+<head>
+<title>Traceframe Info Format - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Remote-Protocol.html#Remote-Protocol" title="Remote Protocol">
+<link rel="prev" href="Thread-List-Format.html#Thread-List-Format" title="Thread List Format">
+<link rel="next" href="Branch-Trace-Format.html#Branch-Trace-Format" title="Branch Trace Format">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Traceframe-Info-Format"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Branch-Trace-Format.html#Branch-Trace-Format">Branch Trace Format</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Thread-List-Format.html#Thread-List-Format">Thread List Format</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Remote-Protocol.html#Remote-Protocol">Remote Protocol</a>
+<hr>
+</div>
+
+<h3 class="section">E.18 Traceframe Info Format</h3>
+
+<p><a name="index-traceframe-info-format-3492"></a>
+To be able to know which objects in the inferior can be examined when
+inspecting a tracepoint hit, <span class="sc">gdb</span> needs to obtain the list of
+memory ranges, registers and trace state variables that have been
+collected in a traceframe.
+
+   <p>This list is obtained using the &lsquo;<samp><span class="samp">qXfer:traceframe-info:read</span></samp>&rsquo;
+(see <a href="qXfer-traceframe-info-read.html#qXfer-traceframe-info-read">qXfer traceframe info read</a>) packet and is an XML document.
+
+   <p><span class="sc">gdb</span> must be linked with the Expat library to support XML
+traceframe info discovery.  See <a href="Expat.html#Expat">Expat</a>.
+
+   <p>The top-level structure of the document is shown below:
+
+<pre class="smallexample">     &lt;?xml version="1.0"?&gt;
+     &lt;!DOCTYPE traceframe-info
+               PUBLIC "+//IDN gnu.org//DTD GDB Memory Map V1.0//EN"
+                      "http://sourceware.org/gdb/gdb-traceframe-info.dtd"&gt;
+     &lt;traceframe-info&gt;
+        block...
+     &lt;/traceframe-info&gt;
+</pre>
+   <p>Each traceframe block can be either:
+
+     <ul>
+<li>A region of collected memory starting at <var>addr</var> and extending for
+<var>length</var> bytes from there:
+
+     <pre class="smallexample">          &lt;memory start="<var>addr</var>" length="<var>length</var>"/&gt;
+</pre>
+     <li>A block indicating trace state variable numbered <var>number</var> has been
+collected:
+
+     <pre class="smallexample">          &lt;tvar id="<var>number</var>"/&gt;
+</pre>
+     </ul>
+
+   <p>The formal DTD for the traceframe info format is given below:
+
+<pre class="smallexample">     &lt;!ELEMENT traceframe-info  (memory | tvar)* &gt;
+     &lt;!ATTLIST traceframe-info  version CDATA   #FIXED  "1.0"&gt;
+     
+     &lt;!ELEMENT memory        EMPTY&gt;
+     &lt;!ATTLIST memory        start   CDATA   #REQUIRED
+                             length  CDATA   #REQUIRED&gt;
+     &lt;!ELEMENT tvar&gt;
+     &lt;!ATTLIST tvar          id      CDATA   #REQUIRED&gt;
+</pre>
+   </body></html>
+

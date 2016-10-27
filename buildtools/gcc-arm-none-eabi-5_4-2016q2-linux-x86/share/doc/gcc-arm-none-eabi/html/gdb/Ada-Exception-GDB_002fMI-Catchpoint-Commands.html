@@ -1,0 +1,127 @@
+<html lang="en">
+<head>
+<title>Ada Exception GDB/MI Catchpoint Commands - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="GDB_002fMI-Catchpoint-Commands.html#GDB_002fMI-Catchpoint-Commands" title="GDB/MI Catchpoint Commands">
+<link rel="prev" href="Shared-Library-GDB_002fMI-Catchpoint-Commands.html#Shared-Library-GDB_002fMI-Catchpoint-Commands" title="Shared Library GDB/MI Catchpoint Commands">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Ada-Exception-GDB%2fMI-Catchpoint-Commands"></a>
+<a name="Ada-Exception-GDB_002fMI-Catchpoint-Commands"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Shared-Library-GDB_002fMI-Catchpoint-Commands.html#Shared-Library-GDB_002fMI-Catchpoint-Commands">Shared Library GDB/MI Catchpoint Commands</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="GDB_002fMI-Catchpoint-Commands.html#GDB_002fMI-Catchpoint-Commands">GDB/MI Catchpoint Commands</a>
+<hr>
+</div>
+
+<h4 class="subsection">27.9.2 Ada Exception <span class="sc">gdb/mi</span> Catchpoints</h4>
+
+<p>The following <span class="sc">gdb/mi</span> commands can be used to create catchpoints
+that stop the execution when Ada exceptions are being raised.
+
+<h4 class="subheading">The <code>-catch-assert</code> Command</h4>
+
+<p><a name="index-g_t_002dcatch_002dassert-2888"></a>
+
+<h5 class="subsubheading">Synopsis</h5>
+
+<pre class="smallexample">      -catch-assert [ -c <var>condition</var>] [ -d ] [ -t ]
+</pre>
+   <p>Add a catchpoint for failed Ada assertions.
+
+   <p>The possible optional parameters for this command are:
+
+     <dl>
+<dt>&lsquo;<samp><span class="samp">-c </span><var>condition</var></samp>&rsquo;<dd>Make the catchpoint conditional on <var>condition</var>. 
+<br><dt>&lsquo;<samp><span class="samp">-d</span></samp>&rsquo;<dd>Create a disabled catchpoint. 
+<br><dt>&lsquo;<samp><span class="samp">-t</span></samp>&rsquo;<dd>Create a temporary catchpoint. 
+</dl>
+
+<h5 class="subsubheading"><span class="sc">gdb</span> Command</h5>
+
+<p>The corresponding <span class="sc">gdb</span> command is &lsquo;<samp><span class="samp">catch assert</span></samp>&rsquo;.
+
+<h5 class="subsubheading">Example</h5>
+
+<pre class="smallexample">     -catch-assert
+     ^done,bkptno="5",bkpt={number="5",type="breakpoint",disp="keep",
+     enabled="y",addr="0x0000000000404888",what="failed Ada assertions",
+     thread-groups=["i1"],times="0",
+     original-location="__gnat_debug_raise_assert_failure"}
+     (gdb)
+</pre>
+<h4 class="subheading">The <code>-catch-exception</code> Command</h4>
+
+<p><a name="index-g_t_002dcatch_002dexception-2889"></a>
+
+<h5 class="subsubheading">Synopsis</h5>
+
+<pre class="smallexample">      -catch-exception [ -c <var>condition</var>] [ -d ] [ -e <var>exception-name</var> ]
+         [ -t ] [ -u ]
+</pre>
+   <p>Add a catchpoint stopping when Ada exceptions are raised. 
+By default, the command stops the program when any Ada exception
+gets raised.  But it is also possible, by using some of the
+optional parameters described below, to create more selective
+catchpoints.
+
+   <p>The possible optional parameters for this command are:
+
+     <dl>
+<dt>&lsquo;<samp><span class="samp">-c </span><var>condition</var></samp>&rsquo;<dd>Make the catchpoint conditional on <var>condition</var>. 
+<br><dt>&lsquo;<samp><span class="samp">-d</span></samp>&rsquo;<dd>Create a disabled catchpoint. 
+<br><dt>&lsquo;<samp><span class="samp">-e </span><var>exception-name</var></samp>&rsquo;<dd>Only stop when <var>exception-name</var> is raised.  This option cannot
+be used combined with &lsquo;<samp><span class="samp">-u</span></samp>&rsquo;. 
+<br><dt>&lsquo;<samp><span class="samp">-t</span></samp>&rsquo;<dd>Create a temporary catchpoint. 
+<br><dt>&lsquo;<samp><span class="samp">-u</span></samp>&rsquo;<dd>Stop only when an unhandled exception gets raised.  This option
+cannot be used combined with &lsquo;<samp><span class="samp">-e</span></samp>&rsquo;. 
+</dl>
+
+<h5 class="subsubheading"><span class="sc">gdb</span> Command</h5>
+
+<p>The corresponding <span class="sc">gdb</span> commands are &lsquo;<samp><span class="samp">catch exception</span></samp>&rsquo;
+and &lsquo;<samp><span class="samp">catch exception unhandled</span></samp>&rsquo;.
+
+<h5 class="subsubheading">Example</h5>
+
+<pre class="smallexample">     -catch-exception -e Program_Error
+     ^done,bkptno="4",bkpt={number="4",type="breakpoint",disp="keep",
+     enabled="y",addr="0x0000000000404874",
+     what="`Program_Error' Ada exception", thread-groups=["i1"],
+     times="0",original-location="__gnat_debug_raise_exception"}
+     (gdb)
+</pre>
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+   </body></html>
+

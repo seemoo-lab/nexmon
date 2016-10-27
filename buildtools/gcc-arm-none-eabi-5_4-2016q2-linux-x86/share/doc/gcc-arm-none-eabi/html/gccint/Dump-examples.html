@@ -1,0 +1,97 @@
+<html lang="en">
+<head>
+<title>Dump examples - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Optimization-info.html#Optimization-info" title="Optimization info">
+<link rel="prev" href="Dump-types.html#Dump-types" title="Dump types">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Dump-examples"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Dump-types.html#Dump-types">Dump types</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Optimization-info.html#Optimization-info">Optimization info</a>
+<hr>
+</div>
+
+<h4 class="subsection">9.7.6 Dump examples</h4>
+
+<p><a name="index-dump-examples-1711"></a>
+<pre class="smallexample">     gcc -O3 -fopt-info-missed=missed.all
+</pre>
+ <p>outputs missed optimization report from all the passes into
+<samp><span class="file">missed.all</span></samp>.
+
+ <p>As another example,
+<pre class="smallexample">     gcc -O3 -fopt-info-inline-optimized-missed=inline.txt
+</pre>
+ <p>will output information about missed optimizations as well as
+optimized locations from all the inlining passes into
+<samp><span class="file">inline.txt</span></samp>.
+
+ <p>If the <var>filename</var> is provided, then the dumps from all the
+applicable optimizations are concatenated into the <samp><span class="file">filename</span></samp>. 
+Otherwise the dump is output onto <samp><span class="file">stderr</span></samp>. If <var>options</var> is
+omitted, it defaults to <samp><span class="option">all-all</span></samp>, which means dump all
+available optimization info from all the passes. In the following
+example, all optimization info is output on to <samp><span class="file">stderr</span></samp>.
+
+<pre class="smallexample">     gcc -O3 -fopt-info
+</pre>
+ <p>Note that <samp><span class="option">-fopt-info-vec-missed</span></samp> behaves the same as
+<samp><span class="option">-fopt-info-missed-vec</span></samp>.
+
+ <p>As another example, consider
+
+<pre class="smallexample">     gcc -fopt-info-vec-missed=vec.miss -fopt-info-loop-optimized=loop.opt
+</pre>
+ <p>Here the two output file names <samp><span class="file">vec.miss</span></samp> and <samp><span class="file">loop.opt</span></samp> are
+in conflict since only one output file is allowed. In this case, only
+the first option takes effect and the subsequent options are
+ignored. Thus only the <samp><span class="file">vec.miss</span></samp> is produced which containts
+dumps from the vectorizer about missed opportunities.
+
+<!-- Copyright (C) 2004-2015 Free Software Foundation, Inc. -->
+<!-- This is part of the GCC manual. -->
+<!-- For copying conditions, see the file gcc.texi. -->
+<!--  -->
+<!-- GENERIC -->
+<!--  -->
+ </body></html>
+

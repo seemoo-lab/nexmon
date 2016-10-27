@@ -1,0 +1,91 @@
+<html lang="en">
+<head>
+<title>Defining Mode Iterators - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Mode-Iterators.html#Mode-Iterators" title="Mode Iterators">
+<link rel="next" href="Substitutions.html#Substitutions" title="Substitutions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Defining-Mode-Iterators"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Substitutions.html#Substitutions">Substitutions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Mode-Iterators.html#Mode-Iterators">Mode Iterators</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">16.23.1.1 Defining Mode Iterators</h5>
+
+<p><a name="index-define_005fmode_005fiterator-3838"></a>
+The syntax for defining a mode iterator is:
+
+<pre class="smallexample">     (define_mode_iterator <var>name</var> [(<var>mode1</var> "<var>cond1</var>") ... (<var>moden</var> "<var>condn</var>")])
+</pre>
+ <p>This allows subsequent <samp><span class="file">.md</span></samp> file constructs to use the mode suffix
+<code>:</code><var>name</var>.  Every construct that does so will be expanded
+<var>n</var> times, once with every use of <code>:</code><var>name</var> replaced by
+<code>:</code><var>mode1</var>, once with every use replaced by <code>:</code><var>mode2</var>,
+and so on.  In the expansion for a particular <var>modei</var>, every
+C condition will also require that <var>condi</var> be true.
+
+ <p>For example:
+
+<pre class="smallexample">     (define_mode_iterator P [(SI "Pmode == SImode") (DI "Pmode == DImode")])
+</pre>
+ <p>defines a new mode suffix <code>:P</code>.  Every construct that uses
+<code>:P</code> will be expanded twice, once with every <code>:P</code> replaced
+by <code>:SI</code> and once with every <code>:P</code> replaced by <code>:DI</code>. 
+The <code>:SI</code> version will only apply if <code>Pmode == SImode</code> and
+the <code>:DI</code> version will only apply if <code>Pmode == DImode</code>.
+
+ <p>As with other <samp><span class="file">.md</span></samp> conditions, an empty string is treated
+as &ldquo;always true&rdquo;.  <code>(</code><var>mode</var><code> "")</code> can also be abbreviated
+to <var>mode</var>.  For example:
+
+<pre class="smallexample">     (define_mode_iterator GPR [SI (DI "TARGET_64BIT")])
+</pre>
+ <p>means that the <code>:DI</code> expansion only applies if <code>TARGET_64BIT</code>
+but that the <code>:SI</code> expansion has no such constraint.
+
+ <p>Iterators are applied in the order they are defined.  This can be
+significant if two iterators are used in a construct that requires
+substitutions.  See <a href="Substitutions.html#Substitutions">Substitutions</a>.
+
+ </body></html>
+

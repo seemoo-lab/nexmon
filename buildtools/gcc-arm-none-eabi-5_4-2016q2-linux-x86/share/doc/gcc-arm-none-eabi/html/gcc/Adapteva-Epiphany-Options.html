@@ -1,0 +1,169 @@
+<html lang="en">
+<head>
+<title>Adapteva Epiphany Options - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Submodel-Options.html#Submodel-Options" title="Submodel Options">
+<link rel="prev" href="AArch64-Options.html#AArch64-Options" title="AArch64 Options">
+<link rel="next" href="ARC-Options.html#ARC-Options" title="ARC Options">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Adapteva-Epiphany-Options"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="ARC-Options.html#ARC-Options">ARC Options</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="AArch64-Options.html#AArch64-Options">AArch64 Options</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Submodel-Options.html#Submodel-Options">Submodel Options</a>
+<hr>
+</div>
+
+<h4 class="subsection">3.17.2 Adapteva Epiphany Options</h4>
+
+<p>These &lsquo;<samp><span class="samp">-m</span></samp>&rsquo; options are defined for Adapteva Epiphany:
+
+     <dl>
+<dt><code>-mhalf-reg-file</code><dd><a name="index-mhalf_002dreg_002dfile-1291"></a>Don't allocate any register in the range <code>r32</code><small class="dots">...</small><code>r63</code>. 
+That allows code to run on hardware variants that lack these registers.
+
+     <br><dt><code>-mprefer-short-insn-regs</code><dd><a name="index-mprefer_002dshort_002dinsn_002dregs-1292"></a>Preferrentially allocate registers that allow short instruction generation. 
+This can result in increased instruction count, so this may either reduce or
+increase overall code size.
+
+     <br><dt><code>-mbranch-cost=</code><var>num</var><dd><a name="index-mbranch_002dcost-1293"></a>Set the cost of branches to roughly <var>num</var> &ldquo;simple&rdquo; instructions. 
+This cost is only a heuristic and is not guaranteed to produce
+consistent results across releases.
+
+     <br><dt><code>-mcmove</code><dd><a name="index-mcmove-1294"></a>Enable the generation of conditional moves.
+
+     <br><dt><code>-mnops=</code><var>num</var><dd><a name="index-mnops-1295"></a>Emit <var>num</var> NOPs before every other generated instruction.
+
+     <br><dt><code>-mno-soft-cmpsf</code><dd><a name="index-mno_002dsoft_002dcmpsf-1296"></a>For single-precision floating-point comparisons, emit an <code>fsub</code> instruction
+and test the flags.  This is faster than a software comparison, but can
+get incorrect results in the presence of NaNs, or when two different small
+numbers are compared such that their difference is calculated as zero. 
+The default is <samp><span class="option">-msoft-cmpsf</span></samp>, which uses slower, but IEEE-compliant,
+software comparisons.
+
+     <br><dt><code>-mstack-offset=</code><var>num</var><dd><a name="index-mstack_002doffset-1297"></a>Set the offset between the top of the stack and the stack pointer. 
+E.g., a value of 8 means that the eight bytes in the range <code>sp+0...sp+7</code>
+can be used by leaf functions without stack allocation. 
+Values other than &lsquo;<samp><span class="samp">8</span></samp>&rsquo; or &lsquo;<samp><span class="samp">16</span></samp>&rsquo; are untested and unlikely to work. 
+Note also that this option changes the ABI; compiling a program with a
+different stack offset than the libraries have been compiled with
+generally does not work. 
+This option can be useful if you want to evaluate if a different stack
+offset would give you better code, but to actually use a different stack
+offset to build working programs, it is recommended to configure the
+toolchain with the appropriate <samp><span class="option">--with-stack-offset=</span><var>num</var></samp> option.
+
+     <br><dt><code>-mno-round-nearest</code><dd><a name="index-mno_002dround_002dnearest-1298"></a>Make the scheduler assume that the rounding mode has been set to
+truncating.  The default is <samp><span class="option">-mround-nearest</span></samp>.
+
+     <br><dt><code>-mlong-calls</code><dd><a name="index-mlong_002dcalls-1299"></a>If not otherwise specified by an attribute, assume all calls might be beyond
+the offset range of the <code>b</code> / <code>bl</code> instructions, and therefore load the
+function address into a register before performing a (otherwise direct) call. 
+This is the default.
+
+     <br><dt><code>-mshort-calls</code><dd><a name="index-short_002dcalls-1300"></a>If not otherwise specified by an attribute, assume all direct calls are
+in the range of the <code>b</code> / <code>bl</code> instructions, so use these instructions
+for direct calls.  The default is <samp><span class="option">-mlong-calls</span></samp>.
+
+     <br><dt><code>-msmall16</code><dd><a name="index-msmall16-1301"></a>Assume addresses can be loaded as 16-bit unsigned values.  This does not
+apply to function addresses for which <samp><span class="option">-mlong-calls</span></samp> semantics
+are in effect.
+
+     <br><dt><code>-mfp-mode=</code><var>mode</var><dd><a name="index-mfp_002dmode-1302"></a>Set the prevailing mode of the floating-point unit. 
+This determines the floating-point mode that is provided and expected
+at function call and return time.  Making this mode match the mode you
+predominantly need at function start can make your programs smaller and
+faster by avoiding unnecessary mode switches.
+
+     <p><var>mode</var> can be set to one the following values:
+
+          <dl>
+<dt>&lsquo;<samp><span class="samp">caller</span></samp>&rsquo;<dd>Any mode at function entry is valid, and retained or restored when
+the function returns, and when it calls other functions. 
+This mode is useful for compiling libraries or other compilation units
+you might want to incorporate into different programs with different
+prevailing FPU modes, and the convenience of being able to use a single
+object file outweighs the size and speed overhead for any extra
+mode switching that might be needed, compared with what would be needed
+with a more specific choice of prevailing FPU mode.
+
+          <br><dt>&lsquo;<samp><span class="samp">truncate</span></samp>&rsquo;<dd>This is the mode used for floating-point calculations with
+truncating (i.e. round towards zero) rounding mode.  That includes
+conversion from floating point to integer.
+
+          <br><dt>&lsquo;<samp><span class="samp">round-nearest</span></samp>&rsquo;<dd>This is the mode used for floating-point calculations with
+round-to-nearest-or-even rounding mode.
+
+          <br><dt>&lsquo;<samp><span class="samp">int</span></samp>&rsquo;<dd>This is the mode used to perform integer calculations in the FPU, e.g. 
+integer multiply, or integer multiply-and-accumulate. 
+</dl>
+
+     <p>The default is <samp><span class="option">-mfp-mode=caller</span></samp>
+
+     <br><dt><code>-mnosplit-lohi</code><dt><code>-mno-postinc</code><dt><code>-mno-postmodify</code><dd><a name="index-mnosplit_002dlohi-1303"></a><a name="index-mno_002dpostinc-1304"></a><a name="index-mno_002dpostmodify-1305"></a>Code generation tweaks that disable, respectively, splitting of 32-bit
+loads, generation of post-increment addresses, and generation of
+post-modify addresses.  The defaults are <samp><span class="option">msplit-lohi</span></samp>,
+<samp><span class="option">-mpost-inc</span></samp>, and <samp><span class="option">-mpost-modify</span></samp>.
+
+     <br><dt><code>-mnovect-double</code><dd><a name="index-mno_002dvect_002ddouble-1306"></a>Change the preferred SIMD mode to SImode.  The default is
+<samp><span class="option">-mvect-double</span></samp>, which uses DImode as preferred SIMD mode.
+
+     <br><dt><code>-max-vect-align=</code><var>num</var><dd><a name="index-max_002dvect_002dalign-1307"></a>The maximum alignment for SIMD vector mode types. 
+<var>num</var> may be 4 or 8.  The default is 8. 
+Note that this is an ABI change, even though many library function
+interfaces are unaffected if they don't use SIMD vector modes
+in places that affect size and/or alignment of relevant types.
+
+     <br><dt><code>-msplit-vecmove-early</code><dd><a name="index-msplit_002dvecmove_002dearly-1308"></a>Split vector moves into single word moves before reload.  In theory this
+can give better register allocation, but so far the reverse seems to be
+generally the case.
+
+     <br><dt><code>-m1reg-</code><var>reg</var><dd><a name="index-m1reg_002d-1309"></a>Specify a register to hold the constant &minus;1, which makes loading small negative
+constants and certain bitmasks faster. 
+Allowable values for <var>reg</var> are &lsquo;<samp><span class="samp">r43</span></samp>&rsquo; and &lsquo;<samp><span class="samp">r63</span></samp>&rsquo;,
+which specify use of that register as a fixed register,
+and &lsquo;<samp><span class="samp">none</span></samp>&rsquo;, which means that no register is used for this
+purpose.  The default is <samp><span class="option">-m1reg-none</span></samp>.
+
+ </dl>
+
+ </body></html>
+

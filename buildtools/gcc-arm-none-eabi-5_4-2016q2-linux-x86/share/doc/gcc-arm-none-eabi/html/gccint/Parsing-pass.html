@@ -1,0 +1,121 @@
+<html lang="en">
+<head>
+<title>Parsing pass - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Passes.html#Passes" title="Passes">
+<link rel="next" href="Cilk-Plus-Transformation.html#Cilk-Plus-Transformation" title="Cilk Plus Transformation">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Parsing-pass"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Cilk-Plus-Transformation.html#Cilk-Plus-Transformation">Cilk Plus Transformation</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Passes.html#Passes">Passes</a>
+<hr>
+</div>
+
+<h3 class="section">9.1 Parsing pass</h3>
+
+<p><a name="index-GENERIC-1672"></a><a name="index-lang_005fhooks_002eparse_005ffile-1673"></a>The language front end is invoked only once, via
+<code>lang_hooks.parse_file</code>, to parse the entire input.  The language
+front end may use any intermediate language representation deemed
+appropriate.  The C front end uses GENERIC trees (see <a href="GENERIC.html#GENERIC">GENERIC</a>), plus
+a double handful of language specific tree codes defined in
+<samp><span class="file">c-common.def</span></samp>.  The Fortran front end uses a completely different
+private representation.
+
+ <p><a name="index-GIMPLE-1674"></a><a name="index-gimplification-1675"></a><a name="index-gimplifier-1676"></a><a name="index-language_002dindependent-intermediate-representation-1677"></a><a name="index-intermediate-representation-lowering-1678"></a><a name="index-lowering_002c-language_002ddependent-intermediate-representation-1679"></a>At some point the front end must translate the representation used in the
+front end to a representation understood by the language-independent
+portions of the compiler.  Current practice takes one of two forms. 
+The C front end manually invokes the gimplifier (see <a href="GIMPLE.html#GIMPLE">GIMPLE</a>) on each function,
+and uses the gimplifier callbacks to convert the language-specific tree
+nodes directly to GIMPLE before passing the function off to be compiled. 
+The Fortran front end converts from a private representation to GENERIC,
+which is later lowered to GIMPLE when the function is compiled.  Which
+route to choose probably depends on how well GENERIC (plus extensions)
+can be made to match up with the source language and necessary parsing
+data structures.
+
+ <p>BUG: Gimplification must occur before nested function lowering,
+and nested function lowering must be done by the front end before
+passing the data off to cgraph.
+
+ <p>TODO: Cgraph should control nested function lowering.  It would
+only be invoked when it is certain that the outer-most function
+is used.
+
+ <p>TODO: Cgraph needs a gimplify_function callback.  It should be
+invoked when (1) it is certain that the function is used, (2)
+warning flags specified by the user require some amount of
+compilation in order to honor, (3) the language indicates that
+semantic analysis is not complete until gimplification occurs. 
+Hum<small class="dots">...</small> this sounds overly complicated.  Perhaps we should just
+have the front end gimplify always; in most cases it's only one
+function call.
+
+ <p>The front end needs to pass all function definitions and top level
+declarations off to the middle-end so that they can be compiled and
+emitted to the object file.  For a simple procedural language, it is
+usually most convenient to do this as each top level declaration or
+definition is seen.  There is also a distinction to be made between
+generating functional code and generating complete debug information. 
+The only thing that is absolutely required for functional code is that
+function and data <em>definitions</em> be passed to the middle-end.  For
+complete debug information, function, data and type declarations
+should all be passed as well.
+
+ <p><a name="index-rest_005fof_005fdecl_005fcompilation-1680"></a><a name="index-rest_005fof_005ftype_005fcompilation-1681"></a><a name="index-cgraph_005ffinalize_005ffunction-1682"></a>In any case, the front end needs each complete top-level function or
+data declaration, and each data definition should be passed to
+<code>rest_of_decl_compilation</code>.  Each complete type definition should
+be passed to <code>rest_of_type_compilation</code>.  Each function definition
+should be passed to <code>cgraph_finalize_function</code>.
+
+ <p>TODO: I know rest_of_compilation currently has all sorts of
+RTL generation semantics.  I plan to move all code generation
+bits (both Tree and RTL) to compile_function.  Should we hide
+cgraph from the front ends and move back to rest_of_compilation
+as the official interface?  Possibly we should rename all three
+interfaces such that the names match in some meaningful way and
+that is more descriptive than "rest_of".
+
+ <p>The middle-end will, at its option, emit the function and data
+definitions immediately or queue them for later processing.
+
+ </body></html>
+

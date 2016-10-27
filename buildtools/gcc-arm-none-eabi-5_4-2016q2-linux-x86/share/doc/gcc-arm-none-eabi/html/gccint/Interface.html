@@ -1,0 +1,116 @@
+<html lang="en">
+<head>
+<title>Interface - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Portability.html#Portability" title="Portability">
+<link rel="next" href="Libgcc.html#Libgcc" title="Libgcc">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Interface"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Libgcc.html#Libgcc">Libgcc</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Portability.html#Portability">Portability</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">3 Interfacing to GCC Output</h2>
+
+<p><a name="index-interfacing-to-GCC-output-7"></a><a name="index-run_002dtime-conventions-8"></a><a name="index-function-call-conventions-9"></a><a name="index-conventions_002c-run_002dtime-10"></a>
+GCC is normally configured to use the same function calling convention
+normally in use on the target system.  This is done with the
+machine-description macros described (see <a href="Target-Macros.html#Target-Macros">Target Macros</a>).
+
+ <p><a name="index-unions_002c-returning-11"></a><a name="index-structures_002c-returning-12"></a><a name="index-returning-structures-and-unions-13"></a>However, returning of structure and union values is done differently on
+some target machines.  As a result, functions compiled with PCC
+returning such types cannot be called from code compiled with GCC,
+and vice versa.  This does not cause trouble often because few Unix
+library routines return structures or unions.
+
+ <p>GCC code returns structures and unions that are 1, 2, 4 or 8 bytes
+long in the same registers used for <code>int</code> or <code>double</code> return
+values.  (GCC typically allocates variables of such types in
+registers also.)  Structures and unions of other sizes are returned by
+storing them into an address passed by the caller (usually in a
+register).  The target hook <code>TARGET_STRUCT_VALUE_RTX</code>
+tells GCC where to pass this address.
+
+ <p>By contrast, PCC on most target machines returns structures and unions
+of any size by copying the data into an area of static storage, and then
+returning the address of that storage as if it were a pointer value. 
+The caller must copy the data from that memory area to the place where
+the value is wanted.  This is slower than the method used by GCC, and
+fails to be reentrant.
+
+ <p>On some target machines, such as RISC machines and the 80386, the
+standard system convention is to pass to the subroutine the address of
+where to return the value.  On these machines, GCC has been
+configured to be compatible with the standard compiler, when this method
+is used.  It may not be compatible for structures of 1, 2, 4 or 8 bytes.
+
+ <p><a name="index-argument-passing-14"></a><a name="index-passing-arguments-15"></a>GCC uses the system's standard convention for passing arguments.  On
+some machines, the first few arguments are passed in registers; in
+others, all are passed on the stack.  It would be possible to use
+registers for argument passing on any machine, and this would probably
+result in a significant speedup.  But the result would be complete
+incompatibility with code that follows the standard convention.  So this
+change is practical only if you are switching to GCC as the sole C
+compiler for the system.  We may implement register argument passing on
+certain machines once we have a complete GNU system so that we can
+compile the libraries with GCC.
+
+ <p>On some machines (particularly the SPARC), certain types of arguments
+are passed &ldquo;by invisible reference&rdquo;.  This means that the value is
+stored in memory, and the address of the memory location is passed to
+the subroutine.
+
+ <p><a name="index-g_t_0040code_007blongjmp_007d-and-automatic-variables-16"></a>If you use <code>longjmp</code>, beware of automatic variables.  ISO C says that
+automatic variables that are not declared <code>volatile</code> have undefined
+values after a <code>longjmp</code>.  And this is all GCC promises to do,
+because it is very difficult to restore register variables correctly, and
+one of GCC's features is that it can put variables in registers without
+your asking it to.
+
+<!-- Copyright (C) 2003-2015 Free Software Foundation, Inc. -->
+<!-- This is part of the GCC manual. -->
+<!-- For copying conditions, see the file gcc.texi. -->
+<!-- Contributed by Aldy Hernandez <aldy@quesejoda.com> -->
+ </body></html>
+

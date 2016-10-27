@@ -1,0 +1,172 @@
+<html lang="en">
+<head>
+<title>Maintaining the CFG - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Control-Flow.html#Control-Flow" title="Control Flow">
+<link rel="prev" href="Profile-information.html#Profile-information" title="Profile information">
+<link rel="next" href="Liveness-information.html#Liveness-information" title="Liveness information">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Maintaining-the-CFG"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Liveness-information.html#Liveness-information">Liveness information</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Profile-information.html#Profile-information">Profile information</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Control-Flow.html#Control-Flow">Control Flow</a>
+<hr>
+</div>
+
+<h3 class="section">14.4 Maintaining the CFG</h3>
+
+<p><a name="index-cfghooks_002eh-3205"></a>
+An important task of each compiler pass is to keep both the control
+flow graph and all profile information up-to-date.  Reconstruction of
+the control flow graph after each pass is not an option, since it may be
+very expensive and lost profile information cannot be reconstructed at
+all.
+
+ <p>GCC has two major intermediate representations, and both use the
+<code>basic_block</code> and <code>edge</code> data types to represent control
+flow.  Both representations share as much of the CFG maintenance code
+as possible.  For each representation, a set of <dfn>hooks</dfn> is defined
+so that each representation can provide its own implementation of CFG
+manipulation routines when necessary.  These hooks are defined in
+<samp><span class="file">cfghooks.h</span></samp>.  There are hooks for almost all common CFG
+manipulations, including block splitting and merging, edge redirection
+and creating and deleting basic blocks.  These hooks should provide
+everything you need to maintain and manipulate the CFG in both the RTL
+and <code>GIMPLE</code> representation.
+
+ <p>At the moment, the basic block boundaries are maintained transparently
+when modifying instructions, so there rarely is a need to move them
+manually (such as in case someone wants to output instruction outside
+basic block explicitly).
+
+ <p><a name="index-BLOCK_005fFOR_005fINSN_002c-gimple_005fbb-3206"></a>In the RTL representation, each instruction has a
+<code>BLOCK_FOR_INSN</code> value that represents pointer to the basic block
+that contains the instruction.  In the <code>GIMPLE</code> representation, the
+function <code>gimple_bb</code> returns a pointer to the basic block
+containing the queried statement.
+
+ <p><a name="index-GIMPLE-statement-iterators-3207"></a>When changes need to be applied to a function in its <code>GIMPLE</code>
+representation, <dfn>GIMPLE statement iterators</dfn> should be used.  These
+iterators provide an integrated abstraction of the flow graph and the
+instruction stream.  Block statement iterators are constructed using
+the <code>gimple_stmt_iterator</code> data structure and several modifiers are
+available, including the following:
+
+     <dl>
+<dt><code>gsi_start</code><a name="index-gsi_005fstart-3208"></a><dd>This function initializes a <code>gimple_stmt_iterator</code> that points to
+the first non-empty statement in a basic block.
+
+     <br><dt><code>gsi_last</code><a name="index-gsi_005flast-3209"></a><dd>This function initializes a <code>gimple_stmt_iterator</code> that points to
+the last statement in a basic block.
+
+     <br><dt><code>gsi_end_p</code><a name="index-gsi_005fend_005fp-3210"></a><dd>This predicate is <code>true</code> if a <code>gimple_stmt_iterator</code>
+represents the end of a basic block.
+
+     <br><dt><code>gsi_next</code><a name="index-gsi_005fnext-3211"></a><dd>This function takes a <code>gimple_stmt_iterator</code> and makes it point to
+its successor.
+
+     <br><dt><code>gsi_prev</code><a name="index-gsi_005fprev-3212"></a><dd>This function takes a <code>gimple_stmt_iterator</code> and makes it point to
+its predecessor.
+
+     <br><dt><code>gsi_insert_after</code><a name="index-gsi_005finsert_005fafter-3213"></a><dd>This function inserts a statement after the <code>gimple_stmt_iterator</code>
+passed in.  The final parameter determines whether the statement
+iterator is updated to point to the newly inserted statement, or left
+pointing to the original statement.
+
+     <br><dt><code>gsi_insert_before</code><a name="index-gsi_005finsert_005fbefore-3214"></a><dd>This function inserts a statement before the <code>gimple_stmt_iterator</code>
+passed in.  The final parameter determines whether the statement
+iterator is updated to point to the newly inserted statement, or left
+pointing to the original  statement.
+
+     <br><dt><code>gsi_remove</code><a name="index-gsi_005fremove-3215"></a><dd>This function removes the <code>gimple_stmt_iterator</code> passed in and
+rechains the remaining statements in a basic block, if any. 
+</dl>
+
+ <p><a name="index-BB_005fHEAD_002c-BB_005fEND-3216"></a>In the RTL representation, the macros <code>BB_HEAD</code> and <code>BB_END</code>
+may be used to get the head and end <code>rtx</code> of a basic block.  No
+abstract iterators are defined for traversing the insn chain, but you
+can just use <code>NEXT_INSN</code> and <code>PREV_INSN</code> instead.  See <a href="Insns.html#Insns">Insns</a>.
+
+ <p><a name="index-purge_005fdead_005fedges-3217"></a>Usually a code manipulating pass simplifies the instruction stream and
+the flow of control, possibly eliminating some edges.  This may for
+example happen when a conditional jump is replaced with an
+unconditional jump, but also when simplifying possibly trapping
+instruction to non-trapping while compiling Java.  Updating of edges
+is not transparent and each optimization pass is required to do so
+manually.  However only few cases occur in practice.  The pass may
+call <code>purge_dead_edges</code> on a given basic block to remove
+superfluous edges, if any.
+
+ <p><a name="index-redirect_005fedge_005fand_005fbranch_002c-redirect_005fjump-3218"></a>Another common scenario is redirection of branch instructions, but
+this is best modeled as redirection of edges in the control flow graph
+and thus use of <code>redirect_edge_and_branch</code> is preferred over more
+low level functions, such as <code>redirect_jump</code> that operate on RTL
+chain only.  The CFG hooks defined in <samp><span class="file">cfghooks.h</span></samp> should provide
+the complete API required for manipulating and maintaining the CFG.
+
+ <p><a name="index-split_005fblock-3219"></a>It is also possible that a pass has to insert control flow instruction
+into the middle of a basic block, thus creating an entry point in the
+middle of the basic block, which is impossible by definition: The
+block must be split to make sure it only has one entry point, i.e. the
+head of the basic block.  The CFG hook <code>split_block</code> may be used
+when an instruction in the middle of a basic block has to become the
+target of a jump or branch instruction.
+
+ <p><a name="index-insert_005finsn_005fon_005fedge-3220"></a><a name="index-commit_005fedge_005finsertions-3221"></a><a name="index-gsi_005finsert_005fon_005fedge-3222"></a><a name="index-gsi_005fcommit_005fedge_005finserts-3223"></a><a name="index-edge-splitting-3224"></a>For a global optimizer, a common operation is to split edges in the
+flow graph and insert instructions on them.  In the RTL
+representation, this can be easily done using the
+<code>insert_insn_on_edge</code> function that emits an instruction
+&ldquo;on the edge&rdquo;, caching it for a later <code>commit_edge_insertions</code>
+call that will take care of moving the inserted instructions off the
+edge into the instruction stream contained in a basic block.  This
+includes the creation of new basic blocks where needed.  In the
+<code>GIMPLE</code> representation, the equivalent functions are
+<code>gsi_insert_on_edge</code> which inserts a block statement
+iterator on an edge, and <code>gsi_commit_edge_inserts</code> which flushes
+the instruction to actual instruction stream.
+
+ <p><a name="index-verify_005fflow_005finfo-3225"></a><a name="index-CFG-verification-3226"></a>While debugging the optimization pass, the <code>verify_flow_info</code>
+function may be useful to find bugs in the control flow graph updating
+code.
+
+ </body></html>
+

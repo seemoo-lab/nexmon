@@ -1,0 +1,100 @@
+<html lang="en">
+<head>
+<title>loop-iv - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation" title="Loop Analysis and Representation">
+<link rel="prev" href="Scalar-evolutions.html#Scalar-evolutions" title="Scalar evolutions">
+<link rel="next" href="Number-of-iterations.html#Number-of-iterations" title="Number of iterations">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="loop-iv"></a>
+<a name="loop_002div"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Number-of-iterations.html#Number-of-iterations">Number of iterations</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Scalar-evolutions.html#Scalar-evolutions">Scalar evolutions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation">Loop Analysis and Representation</a>
+<hr>
+</div>
+
+<h3 class="section">15.6 IV analysis on RTL</h3>
+
+<p><a name="index-IV-analysis-on-RTL-3237"></a>
+The induction variable on RTL is simple and only allows analysis of
+affine induction variables, and only in one loop at once.  The interface
+is declared in <samp><span class="file">cfgloop.h</span></samp>.  Before analyzing induction variables
+in a loop L, <code>iv_analysis_loop_init</code> function must be called on L. 
+After the analysis (possibly calling <code>iv_analysis_loop_init</code> for
+several loops) is finished, <code>iv_analysis_done</code> should be called. 
+The following functions can be used to access the results of the
+analysis:
+
+     <ul>
+<li><code>iv_analyze</code>: Analyzes a single register used in the given
+insn.  If no use of the register in this insn is found, the following
+insns are scanned, so that this function can be called on the insn
+returned by get_condition. 
+<li><code>iv_analyze_result</code>: Analyzes result of the assignment in the
+given insn. 
+<li><code>iv_analyze_expr</code>: Analyzes a more complicated expression. 
+All its operands are analyzed by <code>iv_analyze</code>, and hence they must
+be used in the specified insn or one of the following insns. 
+</ul>
+
+ <p>The description of the induction variable is provided in <code>struct
+rtx_iv</code>.  In order to handle subregs, the representation is a bit
+complicated; if the value of the <code>extend</code> field is not
+<code>UNKNOWN</code>, the value of the induction variable in the i-th
+iteration is
+
+<pre class="smallexample">     delta + mult * extend_{extend_mode} (subreg_{mode} (base + i * step)),
+</pre>
+ <p>with the following exception:  if <code>first_special</code> is true, then the
+value in the first iteration (when <code>i</code> is zero) is <code>delta +
+mult * base</code>.  However, if <code>extend</code> is equal to <code>UNKNOWN</code>,
+then <code>first_special</code> must be false, <code>delta</code> 0, <code>mult</code> 1
+and the value in the i-th iteration is
+
+<pre class="smallexample">     subreg_{mode} (base + i * step)
+</pre>
+ <p>The function <code>get_iv_value</code> can be used to perform these
+calculations.
+
+ </body></html>
+

@@ -1,0 +1,242 @@
+<html lang="en">
+<head>
+<title>Frame Decorator API - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Python-API.html#Python-API" title="Python API">
+<link rel="prev" href="Frame-Filter-API.html#Frame-Filter-API" title="Frame Filter API">
+<link rel="next" href="Writing-a-Frame-Filter.html#Writing-a-Frame-Filter" title="Writing a Frame Filter">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Frame-Decorator-API"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Writing-a-Frame-Filter.html#Writing-a-Frame-Filter">Writing a Frame Filter</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Frame-Filter-API.html#Frame-Filter-API">Frame Filter API</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Python-API.html#Python-API">Python API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.2.2.10 Decorating Frames.</h5>
+
+<p><a name="index-frame-decorator-api-1980"></a>
+Frame decorators are sister objects to frame filters (see <a href="Frame-Filter-API.html#Frame-Filter-API">Frame Filter API</a>).  Frame decorators are applied by a frame filter and can
+only be used in conjunction with frame filters.
+
+   <p>The purpose of a frame decorator is to customize the printed content
+of each <code>gdb.Frame</code> in commands where frame filters are executed. 
+This concept is called decorating a frame.  Frame decorators decorate
+a <code>gdb.Frame</code> with Python code contained within each API call. 
+This separates the actual data contained in a <code>gdb.Frame</code> from
+the decorated data produced by a frame decorator.  This abstraction is
+necessary to maintain integrity of the data contained in each
+<code>gdb.Frame</code>.
+
+   <p>Frame decorators have a mandatory interface, defined below.
+
+   <p><span class="sc">gdb</span> already contains a frame decorator called
+<code>FrameDecorator</code>.  This contains substantial amounts of
+boilerplate code to decorate the content of a <code>gdb.Frame</code>.  It is
+recommended that other frame decorators inherit and extend this
+object, and only to override the methods needed.
+
+<div class="defun">
+&mdash; Function: <b>FrameDecorator.elided</b> (<var>self</var>)<var><a name="index-FrameDecorator_002eelided-1981"></a></var><br>
+<blockquote>
+        <p>The <code>elided</code> method groups frames together in a hierarchical
+system.  An example would be an interpreter, where multiple low-level
+frames make up a single call in the interpreted language.  In this
+example, the frame filter would elide the low-level frames and present
+a single high-level frame, representing the call in the interpreted
+language, to the user.
+
+        <p>The <code>elided</code> function must return an iterable and this iterable
+must contain the frames that are being elided wrapped in a suitable
+frame decorator.  If no frames are being elided this function may
+return an empty iterable, or <code>None</code>.  Elided frames are indented
+from normal frames in a <code>CLI</code> backtrace, or in the case of
+<code>GDB/MI</code>, are placed in the <code>children</code> field of the eliding
+frame.
+
+        <p>It is the frame filter's task to also filter out the elided frames from
+the source iterator.  This will avoid printing the frame twice. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>FrameDecorator.function</b> (<var>self</var>)<var><a name="index-FrameDecorator_002efunction-1982"></a></var><br>
+<blockquote>
+        <p>This method returns the name of the function in the frame that is to
+be printed.
+
+        <p>This method must return a Python string describing the function, or
+<code>None</code>.
+
+        <p>If this function returns <code>None</code>, <span class="sc">gdb</span> will not print any
+data for this field. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>FrameDecorator.address</b> (<var>self</var>)<var><a name="index-FrameDecorator_002eaddress-1983"></a></var><br>
+<blockquote>
+        <p>This method returns the address of the frame that is to be printed.
+
+        <p>This method must return a Python numeric integer type of sufficient
+size to describe the address of the frame, or <code>None</code>.
+
+        <p>If this function returns a <code>None</code>, <span class="sc">gdb</span> will not print
+any data for this field. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>FrameDecorator.filename</b> (<var>self</var>)<var><a name="index-FrameDecorator_002efilename-1984"></a></var><br>
+<blockquote>
+        <p>This method returns the filename and path associated with this frame.
+
+        <p>This method must return a Python string containing the filename and
+the path to the object file backing the frame, or <code>None</code>.
+
+        <p>If this function returns a <code>None</code>, <span class="sc">gdb</span> will not print
+any data for this field. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>FrameDecorator.line</b> (<var>self</var>)<var>:<a name="index-FrameDecorator_002eline-1985"></a></var><br>
+<blockquote>
+        <p>This method returns the line number associated with the current
+position within the function addressed by this frame.
+
+        <p>This method must return a Python integer type, or <code>None</code>.
+
+        <p>If this function returns a <code>None</code>, <span class="sc">gdb</span> will not print
+any data for this field. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>FrameDecorator.frame_args</b> (<var>self</var>)<var><a name="index-FrameDecorator_002eframe_005fargs-1986"></a></var><br>
+<blockquote><p><a name="frame_005fargs"></a>This method must return an iterable, or <code>None</code>.  Returning an
+empty iterable, or <code>None</code> means frame arguments will not be
+printed for this frame.  This iterable must contain objects that
+implement two methods, described here.
+
+        <p>This object must implement a <code>argument</code> method which takes a
+single <code>self</code> parameter and must return a <code>gdb.Symbol</code>
+(see <a href="Symbols-In-Python.html#Symbols-In-Python">Symbols In Python</a>), or a Python string.  The object must also
+implement a <code>value</code> method which takes a single <code>self</code>
+parameter and must return a <code>gdb.Value</code> (see <a href="Values-From-Inferior.html#Values-From-Inferior">Values From Inferior</a>), a Python value, or <code>None</code>.  If the <code>value</code>
+method returns <code>None</code>, and the <code>argument</code> method returns a
+<code>gdb.Symbol</code>, <span class="sc">gdb</span> will look-up and print the value of
+the <code>gdb.Symbol</code> automatically.
+
+        <p>A brief example:
+
+     <pre class="smallexample">          class SymValueWrapper():
+          
+              def __init__(self, symbol, value):
+                  self.sym = symbol
+                  self.val = value
+          
+              def value(self):
+                  return self.val
+          
+              def symbol(self):
+                  return self.sym
+          
+          class SomeFrameDecorator()
+          ...
+          ...
+              def frame_args(self):
+                  args = []
+                  try:
+                      block = self.inferior_frame.block()
+                  except:
+                      return None
+          
+                  # Iterate over all symbols in a block.  Only add
+                  # symbols that are arguments.
+                  for sym in block:
+                      if not sym.is_argument:
+                          continue
+                      args.append(SymValueWrapper(sym,None))
+          
+                  # Add example synthetic argument.
+                  args.append(SymValueWrapper(``foo'', 42))
+          
+                  return args
+</pre>
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>FrameDecorator.frame_locals</b> (<var>self</var>)<var><a name="index-FrameDecorator_002eframe_005flocals-1987"></a></var><br>
+<blockquote>
+        <p>This method must return an iterable or <code>None</code>.  Returning an
+empty iterable, or <code>None</code> means frame local arguments will not be
+printed for this frame.
+
+        <p>The object interface, the description of the various strategies for
+reading frame locals, and the example are largely similar to those
+described in the <code>frame_args</code> function, (see <a href="frame_005fargs.html#frame_005fargs">The frame filter frame_args function</a>).  Below is a modified example:
+
+     <pre class="smallexample">          class SomeFrameDecorator()
+          ...
+          ...
+              def frame_locals(self):
+                  vars = []
+                  try:
+                      block = self.inferior_frame.block()
+                  except:
+                      return None
+          
+                  # Iterate over all symbols in a block.  Add all
+                  # symbols, except arguments.
+                  for sym in block:
+                      if sym.is_argument:
+                          continue
+                      vars.append(SymValueWrapper(sym,None))
+          
+                  # Add an example of a synthetic local variable.
+                  vars.append(SymValueWrapper(``bar'', 99))
+          
+                  return vars
+</pre>
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>FrameDecorator.inferior_frame</b> (<var>self</var>)<var>:<a name="index-FrameDecorator_002einferior_005fframe-1988"></a></var><br>
+<blockquote>
+        <p>This method must return the underlying <code>gdb.Frame</code> that this
+frame decorator is decorating.  <span class="sc">gdb</span> requires the underlying
+frame for internal frame information to determine how to print certain
+values when printing a frame. 
+</p></blockquote></div>
+
+   </body></html>
+

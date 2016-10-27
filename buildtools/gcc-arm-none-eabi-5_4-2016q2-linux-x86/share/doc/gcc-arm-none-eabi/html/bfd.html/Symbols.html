@@ -1,0 +1,92 @@
+<html lang="en">
+<head>
+<title>Symbols - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="BFD-front-end.html#BFD-front-end" title="BFD front end">
+<link rel="prev" href="Sections.html#Sections" title="Sections">
+<link rel="next" href="Archives.html#Archives" title="Archives">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Symbols"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Archives.html#Archives">Archives</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Sections.html#Sections">Sections</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="BFD-front-end.html#BFD-front-end">BFD front end</a>
+<hr>
+</div>
+
+<h3 class="section">2.7 Symbols</h3>
+
+<p>BFD tries to maintain as much symbol information as it can when
+it moves information from file to file. BFD passes information
+to applications though the <code>asymbol</code> structure. When the
+application requests the symbol table, BFD reads the table in
+the native form and translates parts of it into the internal
+format. To maintain more than the information passed to
+applications, some targets keep some information &ldquo;behind the
+scenes&rdquo; in a structure only the particular back end knows
+about. For example, the coff back end keeps the original
+symbol table structure as well as the canonical structure when
+a BFD is read in. On output, the coff back end can reconstruct
+the output symbol table so that no information is lost, even
+information unique to coff which BFD doesn't know or
+understand. If a coff symbol table were read, but were written
+through an a.out back end, all the coff specific information
+would be lost. The symbol table of a BFD
+is not necessarily read in until a canonicalize request is
+made. Then the BFD back end fills in a table provided by the
+application with pointers to the canonical information.  To
+output symbols, the application provides BFD with a table of
+pointers to pointers to <code>asymbol</code>s. This allows applications
+like the linker to output a symbol as it was read, since the &ldquo;behind
+the scenes&rdquo; information will be still available.
+
+<ul class="menu">
+<li><a accesskey="1" href="Reading-Symbols.html#Reading-Symbols">Reading Symbols</a>
+<li><a accesskey="2" href="Writing-Symbols.html#Writing-Symbols">Writing Symbols</a>
+<li><a accesskey="3" href="Mini-Symbols.html#Mini-Symbols">Mini Symbols</a>
+<li><a accesskey="4" href="typedef-asymbol.html#typedef-asymbol">typedef asymbol</a>
+<li><a accesskey="5" href="symbol-handling-functions.html#symbol-handling-functions">symbol handling functions</a>
+</ul>
+
+   </body></html>
+

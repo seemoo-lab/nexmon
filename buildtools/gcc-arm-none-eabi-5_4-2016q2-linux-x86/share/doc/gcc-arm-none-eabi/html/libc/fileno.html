@@ -1,0 +1,81 @@
+<html lang="en">
+<head>
+<title>fileno - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stdio.html#Stdio" title="Stdio">
+<link rel="prev" href="fgetws.html#fgetws" title="fgetws">
+<link rel="next" href="fmemopen.html#fmemopen" title="fmemopen">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="fileno"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="fmemopen.html#fmemopen">fmemopen</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="fgetws.html#fgetws">fgetws</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stdio.html#Stdio">Stdio</a>
+<hr>
+</div>
+
+<h3 class="section">4.15 <code>fileno</code>, <code>fileno_unlocked</code>&mdash;return file descriptor associated with stream</h3>
+
+<p><a name="index-fileno-197"></a><a name="index-fileno_005funlocked-198"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;stdio.h&gt;
+     int fileno(FILE *<var>fp</var>);
+     
+     #define _BSD_SOURCE
+     #include &lt;stdio.h&gt;
+     int fileno_unlocked(FILE *<var>fp</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+You can use <code>fileno</code> to return the file descriptor identified by <var>fp</var>.
+
+   <p><code>fileno_unlocked</code> is a non-thread-safe version of <code>fileno</code>. 
+<code>fileno_unlocked</code> may only safely be used within a scope
+protected by flockfile() (or ftrylockfile()) and funlockfile().  This
+function may safely be used in a multi-threaded program if and only
+if they are called while the invoking thread owns the (FILE *)
+object, as is the case after a successful call to the flockfile() or
+ftrylockfile() functions.  If threads are disabled, then
+<code>fileno_unlocked</code> is equivalent to <code>fileno</code>.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+<code>fileno</code> returns a non-negative integer when successful. 
+If <var>fp</var> is not an open stream, <code>fileno</code> returns -1.
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+<code>fileno</code> is not part of ANSI C. 
+POSIX requires <code>fileno</code>.
+
+   <p><code>fileno_unlocked</code> is a BSD extension also provided by GNU libc.
+
+   <p>Supporting OS subroutines required: none.
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

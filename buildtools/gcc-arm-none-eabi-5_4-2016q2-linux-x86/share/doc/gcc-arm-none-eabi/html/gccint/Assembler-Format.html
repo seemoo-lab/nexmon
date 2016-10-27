@@ -1,0 +1,78 @@
+<html lang="en">
+<head>
+<title>Assembler Format - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Macros.html#Target-Macros" title="Target Macros">
+<link rel="prev" href="PIC.html#PIC" title="PIC">
+<link rel="next" href="Debugging-Info.html#Debugging-Info" title="Debugging Info">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Assembler-Format"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Debugging-Info.html#Debugging-Info">Debugging Info</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="PIC.html#PIC">PIC</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Macros.html#Target-Macros">Target Macros</a>
+<hr>
+</div>
+
+<h3 class="section">17.20 Defining the Output Assembler Language</h3>
+
+<p>This section describes macros whose principal purpose is to describe how
+to write instructions in assembler language&mdash;rather than what the
+instructions do.
+
+<ul class="menu">
+<li><a accesskey="1" href="File-Framework.html#File-Framework">File Framework</a>:        Structural information for the assembler file. 
+<li><a accesskey="2" href="Data-Output.html#Data-Output">Data Output</a>:           Output of constants (numbers, strings, addresses). 
+<li><a accesskey="3" href="Uninitialized-Data.html#Uninitialized-Data">Uninitialized Data</a>:    Output of uninitialized variables. 
+<li><a accesskey="4" href="Label-Output.html#Label-Output">Label Output</a>:          Output and generation of labels. 
+<li><a accesskey="5" href="Initialization.html#Initialization">Initialization</a>:        General principles of initialization
+                         and termination routines. 
+<li><a accesskey="6" href="Macros-for-Initialization.html#Macros-for-Initialization">Macros for Initialization</a>
+                         Specific macros that control the handling of
+                         initialization and termination routines. 
+<li><a accesskey="7" href="Instruction-Output.html#Instruction-Output">Instruction Output</a>:    Output of actual instructions. 
+<li><a accesskey="8" href="Dispatch-Tables.html#Dispatch-Tables">Dispatch Tables</a>:       Output of jump tables. 
+<li><a accesskey="9" href="Exception-Region-Output.html#Exception-Region-Output">Exception Region Output</a>:  Output of exception region code. 
+<li><a href="Alignment-Output.html#Alignment-Output">Alignment Output</a>:      Pseudo ops for alignment and skipping data. 
+</ul>
+
+ </body></html>
+

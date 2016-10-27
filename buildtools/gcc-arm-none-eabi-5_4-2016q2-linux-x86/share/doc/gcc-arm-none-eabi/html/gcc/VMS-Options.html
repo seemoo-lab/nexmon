@@ -1,0 +1,75 @@
+<html lang="en">
+<head>
+<title>VMS Options - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Submodel-Options.html#Submodel-Options" title="Submodel Options">
+<link rel="prev" href="Visium-Options.html#Visium-Options" title="Visium Options">
+<link rel="next" href="VxWorks-Options.html#VxWorks-Options" title="VxWorks Options">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="VMS-Options"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="VxWorks-Options.html#VxWorks-Options">VxWorks Options</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Visium-Options.html#Visium-Options">Visium Options</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Submodel-Options.html#Submodel-Options">Submodel Options</a>
+<hr>
+</div>
+
+<h4 class="subsection">3.17.51 VMS Options</h4>
+
+<p>These &lsquo;<samp><span class="samp">-m</span></samp>&rsquo; options are defined for the VMS implementations:
+
+     <dl>
+<dt><code>-mvms-return-codes</code><dd><a name="index-mvms_002dreturn_002dcodes-2643"></a>Return VMS condition codes from <code>main</code>. The default is to return POSIX-style
+condition (e.g. error) codes.
+
+     <br><dt><code>-mdebug-main=</code><var>prefix</var><dd><a name="index-mdebug_002dmain_003d_0040var_007bprefix_007d-2644"></a>Flag the first routine whose name starts with <var>prefix</var> as the main
+routine for the debugger.
+
+     <br><dt><code>-mmalloc64</code><dd><a name="index-mmalloc64-2645"></a>Default to 64-bit memory allocation routines.
+
+     <br><dt><code>-mpointer-size=</code><var>size</var><dd><a name="index-mpointer_002dsize_003d_0040var_007bsize_007d-2646"></a>Set the default size of pointers. Possible options for <var>size</var> are
+&lsquo;<samp><span class="samp">32</span></samp>&rsquo; or &lsquo;<samp><span class="samp">short</span></samp>&rsquo; for 32 bit pointers, &lsquo;<samp><span class="samp">64</span></samp>&rsquo; or &lsquo;<samp><span class="samp">long</span></samp>&rsquo;
+for 64 bit pointers, and &lsquo;<samp><span class="samp">no</span></samp>&rsquo; for supporting only 32 bit pointers. 
+The later option disables <code>pragma pointer_size</code>. 
+</dl>
+
+ </body></html>
+

@@ -1,0 +1,144 @@
+<html lang="en">
+<head>
+<title>C++ Attributes - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="C_002b_002b-Extensions.html#C_002b_002b-Extensions" title="C++ Extensions">
+<link rel="prev" href="Bound-member-functions.html#Bound-member-functions" title="Bound member functions">
+<link rel="next" href="Function-Multiversioning.html#Function-Multiversioning" title="Function Multiversioning">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="C++-Attributes"></a>
+<a name="C_002b_002b-Attributes"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Function-Multiversioning.html#Function-Multiversioning">Function Multiversioning</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Bound-member-functions.html#Bound-member-functions">Bound member functions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="C_002b_002b-Extensions.html#C_002b_002b-Extensions">C++ Extensions</a>
+<hr>
+</div>
+
+<h3 class="section">7.7 C++-Specific Variable, Function, and Type Attributes</h3>
+
+<p>Some attributes only make sense for C++ programs.
+
+     <dl>
+<dt><code>abi_tag ("</code><var>tag</var><code>", ...)</code><dd><a name="index-g_t_0040code_007babi_005ftag_007d-function-attribute-4226"></a><a name="index-g_t_0040code_007babi_005ftag_007d-variable-attribute-4227"></a><a name="index-g_t_0040code_007babi_005ftag_007d-type-attribute-4228"></a>The <code>abi_tag</code> attribute can be applied to a function, variable, or class
+declaration.  It modifies the mangled name of the entity to
+incorporate the tag name, in order to distinguish the function or
+class from an earlier version with a different ABI; perhaps the class
+has changed size, or the function has a different return type that is
+not encoded in the mangled name.
+
+     <p>The attribute can also be applied to an inline namespace, but does not
+affect the mangled name of the namespace; in this case it is only used
+for <samp><span class="option">-Wabi-tag</span></samp> warnings and automatic tagging of functions and
+variables.  Tagging inline namespaces is generally preferable to
+tagging individual declarations, but the latter is sometimes
+necessary, such as when only certain members of a class need to be
+tagged.
+
+     <p>The argument can be a list of strings of arbitrary length.  The
+strings are sorted on output, so the order of the list is
+unimportant.
+
+     <p>A redeclaration of an entity must not add new ABI tags,
+since doing so would change the mangled name.
+
+     <p>The ABI tags apply to a name, so all instantiations and
+specializations of a template have the same tags.  The attribute will
+be ignored if applied to an explicit specialization or instantiation.
+
+     <p>The <samp><span class="option">-Wabi-tag</span></samp> flag enables a warning about a class which does
+not have all the ABI tags used by its subobjects and virtual functions; for users with code
+that needs to coexist with an earlier ABI, using this option can help
+to find all affected types that need to be tagged.
+
+     <p>When a type involving an ABI tag is used as the type of a variable or
+return type of a function where that tag is not already present in the
+signature of the function, the tag is automatically applied to the
+variable or function.  <samp><span class="option">-Wabi-tag</span></samp> also warns about this
+situation; this warning can be avoided by explicitly tagging the
+variable or function or moving it into a tagged inline namespace.
+
+     <br><dt><code>init_priority (</code><var>priority</var><code>)</code><dd><a name="index-g_t_0040code_007binit_005fpriority_007d-variable-attribute-4229"></a>
+In Standard C++, objects defined at namespace scope are guaranteed to be
+initialized in an order in strict accordance with that of their definitions
+<em>in a given translation unit</em>.  No guarantee is made for initializations
+across translation units.  However, GNU C++ allows users to control the
+order of initialization of objects defined at namespace scope with the
+<code>init_priority</code> attribute by specifying a relative <var>priority</var>,
+a constant integral expression currently bounded between 101 and 65535
+inclusive.  Lower numbers indicate a higher priority.
+
+     <p>In the following example, <code>A</code> would normally be created before
+<code>B</code>, but the <code>init_priority</code> attribute reverses that order:
+
+     <pre class="smallexample">          Some_Class  A  __attribute__ ((init_priority (2000)));
+          Some_Class  B  __attribute__ ((init_priority (543)));
+</pre>
+     <p class="noindent">Note that the particular values of <var>priority</var> do not matter; only their
+relative ordering.
+
+     <br><dt><code>java_interface</code><dd><a name="index-g_t_0040code_007bjava_005finterface_007d-type-attribute-4230"></a>
+This type attribute informs C++ that the class is a Java interface.  It may
+only be applied to classes declared within an <code>extern "Java"</code> block. 
+Calls to methods declared in this interface are dispatched using GCJ's
+interface table mechanism, instead of regular virtual table dispatch.
+
+     <br><dt><code>warn_unused</code><dd><a name="index-g_t_0040code_007bwarn_005funused_007d-type-attribute-4231"></a>
+For C++ types with non-trivial constructors and/or destructors it is
+impossible for the compiler to determine whether a variable of this
+type is truly unused if it is not referenced. This type attribute
+informs the compiler that variables of this type should be warned
+about if they appear to be unused, just like variables of fundamental
+types.
+
+     <p>This attribute is appropriate for types which just represent a value,
+such as <code>std::string</code>; it is not appropriate for types which
+control a resource, such as <code>std::mutex</code>.
+
+     <p>This attribute is also accepted in C, but it is unnecessary because C
+does not have constructors or destructors.
+
+ </dl>
+
+ <p>See also <a href="Namespace-Association.html#Namespace-Association">Namespace Association</a>.
+
+ </body></html>
+

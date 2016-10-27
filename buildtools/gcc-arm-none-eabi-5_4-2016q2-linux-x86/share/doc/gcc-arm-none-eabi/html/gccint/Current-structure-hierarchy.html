@@ -1,0 +1,100 @@
+<html lang="en">
+<head>
+<title>Current structure hierarchy - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Internal-structure.html#Internal-structure" title="Internal structure">
+<link rel="next" href="Adding-new-DECL-node-types.html#Adding-new-DECL-node-types" title="Adding new DECL node types">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Current-structure-hierarchy"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Adding-new-DECL-node-types.html#Adding-new-DECL-node-types">Adding new DECL node types</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Internal-structure.html#Internal-structure">Internal structure</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">10.4.2.1 Current structure hierarchy</h5>
+
+     <dl>
+<dt><code>struct tree_decl_minimal</code><dd>This is the minimal structure to inherit from in order for common
+<code>DECL</code> macros to work.  The fields it contains are a unique ID,
+source location, context, and name.
+
+     <br><dt><code>struct tree_decl_common</code><dd>This structure inherits from <code>struct tree_decl_minimal</code>.  It
+contains fields that most <code>DECL</code> nodes need, such as a field to
+store alignment, machine mode, size, and attributes.
+
+     <br><dt><code>struct tree_field_decl</code><dd>This structure inherits from <code>struct tree_decl_common</code>.  It is
+used to represent <code>FIELD_DECL</code>.
+
+     <br><dt><code>struct tree_label_decl</code><dd>This structure inherits from <code>struct tree_decl_common</code>.  It is
+used to represent <code>LABEL_DECL</code>.
+
+     <br><dt><code>struct tree_translation_unit_decl</code><dd>This structure inherits from <code>struct tree_decl_common</code>.  It is
+used to represent <code>TRANSLATION_UNIT_DECL</code>.
+
+     <br><dt><code>struct tree_decl_with_rtl</code><dd>This structure inherits from <code>struct tree_decl_common</code>.  It
+contains a field to store the low-level RTL associated with a
+<code>DECL</code> node.
+
+     <br><dt><code>struct tree_result_decl</code><dd>This structure inherits from <code>struct tree_decl_with_rtl</code>.  It is
+used to represent <code>RESULT_DECL</code>.
+
+     <br><dt><code>struct tree_const_decl</code><dd>This structure inherits from <code>struct tree_decl_with_rtl</code>.  It is
+used to represent <code>CONST_DECL</code>.
+
+     <br><dt><code>struct tree_parm_decl</code><dd>This structure inherits from <code>struct tree_decl_with_rtl</code>.  It is
+used to represent <code>PARM_DECL</code>.
+
+     <br><dt><code>struct tree_decl_with_vis</code><dd>This structure inherits from <code>struct tree_decl_with_rtl</code>.  It
+contains fields necessary to store visibility information, as well as
+a section name and assembler name.
+
+     <br><dt><code>struct tree_var_decl</code><dd>This structure inherits from <code>struct tree_decl_with_vis</code>.  It is
+used to represent <code>VAR_DECL</code>.
+
+     <br><dt><code>struct tree_function_decl</code><dd>This structure inherits from <code>struct tree_decl_with_vis</code>.  It is
+used to represent <code>FUNCTION_DECL</code>.
+
+</dl>
+
+
+ </body></html>
+

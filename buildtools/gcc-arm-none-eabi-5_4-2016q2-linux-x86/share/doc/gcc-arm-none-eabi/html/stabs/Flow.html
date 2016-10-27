@@ -1,0 +1,73 @@
+<html lang="en">
+<head>
+<title>Flow - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Overview.html#Overview" title="Overview">
+<link rel="next" href="Stabs-Format.html#Stabs-Format" title="Stabs Format">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Flow"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Stabs-Format.html#Stabs-Format">Stabs Format</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Overview.html#Overview">Overview</a>
+<hr>
+</div>
+
+<h3 class="section">1.1 Overview of Debugging Information Flow</h3>
+
+<p>The GNU C compiler compiles C source in a <samp><span class="file">.c</span></samp> file into assembly
+language in a <samp><span class="file">.s</span></samp> file, which the assembler translates into
+a <samp><span class="file">.o</span></samp> file, which the linker combines with other <samp><span class="file">.o</span></samp> files and
+libraries to produce an executable file.
+
+   <p>With the &lsquo;<samp><span class="samp">-g</span></samp>&rsquo; option, GCC puts in the <samp><span class="file">.s</span></samp> file additional
+debugging information, which is slightly transformed by the assembler
+and linker, and carried through into the final executable.  This
+debugging information describes features of the source file like line
+numbers, the types and scopes of variables, and function names,
+parameters, and scopes.
+
+   <p>For some object file formats, the debugging information is encapsulated
+in assembler directives known collectively as <dfn>stab</dfn> (symbol table)
+directives, which are interspersed with the generated code.  Stabs are
+the native format for debugging information in the a.out and XCOFF
+object file formats.  The GNU tools can also emit stabs in the COFF and
+ECOFF object file formats.
+
+   <p>The assembler adds the information from stabs to the symbol information
+it places by default in the symbol table and the string table of the
+<samp><span class="file">.o</span></samp> file it is building.  The linker consolidates the <samp><span class="file">.o</span></samp>
+files into one executable file, with one symbol table and one string
+table.  Debuggers use the symbol and string tables in the executable as
+a source of debugging information about the program.
+
+   </body></html>
+

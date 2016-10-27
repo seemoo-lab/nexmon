@@ -1,0 +1,85 @@
+<html lang="en">
+<head>
+<title>Omega - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation" title="Loop Analysis and Representation">
+<link rel="prev" href="Dependency-analysis.html#Dependency-analysis" title="Dependency analysis">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Omega"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Dependency-analysis.html#Dependency-analysis">Dependency analysis</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation">Loop Analysis and Representation</a>
+<hr>
+</div>
+
+<h3 class="section">15.9 Omega a solver for linear programming problems</h3>
+
+<p><a name="index-Omega-a-solver-for-linear-programming-problems-3240"></a>
+The data dependence analysis contains several solvers triggered
+sequentially from the less complex ones to the more sophisticated. 
+For ensuring the consistency of the results of these solvers, a data
+dependence check pass has been implemented based on two different
+solvers.  The second method that has been integrated to GCC is based
+on the Omega dependence solver, written in the 1990's by William Pugh
+and David Wonnacott.  Data dependence tests can be formulated using a
+subset of the Presburger arithmetics that can be translated to linear
+constraint systems.  These linear constraint systems can then be
+solved using the Omega solver.
+
+ <p>The Omega solver is using Fourier-Motzkin's algorithm for variable
+elimination: a linear constraint system containing <code>n</code> variables
+is reduced to a linear constraint system with <code>n-1</code> variables. 
+The Omega solver can also be used for solving other problems that can
+be expressed under the form of a system of linear equalities and
+inequalities.  The Omega solver is known to have an exponential worst
+case, also known under the name of &ldquo;omega nightmare&rdquo; in the
+literature, but in practice, the omega test is known to be efficient
+for the common data dependence tests.
+
+ <p>The interface used by the Omega solver for describing the linear
+programming problems is described in <samp><span class="file">omega.h</span></samp>, and the solver is
+<code>omega_solve_problem</code>.
+
+<!-- Copyright (C) 1988-2015 Free Software Foundation, Inc. -->
+<!-- This is part of the GCC manual. -->
+<!-- For copying conditions, see the file gcc.texi. -->
+ </body></html>
+

@@ -1,0 +1,102 @@
+<html lang="en">
+<head>
+<title>PIC - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Macros.html#Target-Macros" title="Target Macros">
+<link rel="prev" href="Sections.html#Sections" title="Sections">
+<link rel="next" href="Assembler-Format.html#Assembler-Format" title="Assembler Format">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="PIC"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Assembler-Format.html#Assembler-Format">Assembler Format</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Sections.html#Sections">Sections</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Macros.html#Target-Macros">Target Macros</a>
+<hr>
+</div>
+
+<h3 class="section">17.19 Position Independent Code</h3>
+
+<p><a name="index-position-independent-code-4550"></a><a name="index-PIC-4551"></a>
+This section describes macros that help implement generation of position
+independent code.  Simply defining these macros is not enough to
+generate valid PIC; you must also add support to the hook
+<code>TARGET_LEGITIMATE_ADDRESS_P</code> and to the macro
+<code>PRINT_OPERAND_ADDRESS</code>, as well as <code>LEGITIMIZE_ADDRESS</code>.  You
+must modify the definition of &lsquo;<samp><span class="samp">movsi</span></samp>&rsquo; to do something appropriate
+when the source operand contains a symbolic address.  You may also
+need to alter the handling of switch statements so that they use
+relative addresses. 
+<!-- i rearranged the order of the macros above to try to force one of -->
+<!-- them to the next line, to eliminate an overfull hbox. -mew 10feb93 -->
+
+<div class="defun">
+&mdash; Macro: <b>PIC_OFFSET_TABLE_REGNUM</b><var><a name="index-PIC_005fOFFSET_005fTABLE_005fREGNUM-4552"></a></var><br>
+<blockquote><p>The register number of the register used to address a table of static
+data addresses in memory.  In some cases this register is defined by a
+processor's &ldquo;application binary interface&rdquo; (ABI).  When this macro
+is defined, RTL is generated for this register once, as with the stack
+pointer and frame pointer registers.  If this macro is not defined, it
+is up to the machine-dependent files to allocate such a register (if
+necessary).  Note that this register must be fixed when in use (e.g. 
+when <code>flag_pic</code> is true). 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>PIC_OFFSET_TABLE_REG_CALL_CLOBBERED</b><var><a name="index-PIC_005fOFFSET_005fTABLE_005fREG_005fCALL_005fCLOBBERED-4553"></a></var><br>
+<blockquote><p>A C expression that is nonzero if the register defined by
+<code>PIC_OFFSET_TABLE_REGNUM</code> is clobbered by calls.  If not defined,
+the default is zero.  Do not define
+this macro if <code>PIC_OFFSET_TABLE_REGNUM</code> is not defined. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>LEGITIMATE_PIC_OPERAND_P</b> (<var>x</var>)<var><a name="index-LEGITIMATE_005fPIC_005fOPERAND_005fP-4554"></a></var><br>
+<blockquote><p>A C expression that is nonzero if <var>x</var> is a legitimate immediate
+operand on the target machine when generating position independent code. 
+You can assume that <var>x</var> satisfies <code>CONSTANT_P</code>, so you need not
+check this.  You can also assume <var>flag_pic</var> is true, so you need not
+check it either.  You need not define this macro if all constants
+(including <code>SYMBOL_REF</code>) can be immediate operands when generating
+position independent code. 
+</p></blockquote></div>
+
+ </body></html>
+

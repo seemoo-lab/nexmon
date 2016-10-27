@@ -1,0 +1,110 @@
+<html lang="en">
+<head>
+<title>Require Support - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Test-Directives.html#Test-Directives" title="Test Directives">
+<link rel="prev" href="Add-Options.html#Add-Options" title="Add Options">
+<link rel="next" href="Final-Actions.html#Final-Actions" title="Final Actions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Require-Support"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Final-Actions.html#Final-Actions">Final Actions</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Add-Options.html#Add-Options">Add Options</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Test-Directives.html#Test-Directives">Test Directives</a>
+<hr>
+</div>
+
+<h4 class="subsection">7.2.5 Variants of <code>dg-require-</code><var>support</var></h4>
+
+<p>A few of the <code>dg-require</code> directives take arguments.
+
+     <dl>
+<dt><code>dg-require-iconv </code><var>codeset</var><dd>Skip the test if the target does not support iconv.  <var>codeset</var> is
+the codeset to convert to.
+
+     <br><dt><code>dg-require-profiling </code><var>profopt</var><dd>Skip the test if the target does not support profiling with option
+<var>profopt</var>.
+
+     <br><dt><code>dg-require-visibility </code><var>vis</var><dd>Skip the test if the target does not support the <code>visibility</code> attribute. 
+If <var>vis</var> is <code>""</code>, support for <code>visibility("hidden")</code> is
+checked, for <code>visibility("</code><var>vis</var><code>")</code> otherwise. 
+</dl>
+
+ <p>The original <code>dg-require</code> directives were defined before there
+was support for effective-target keywords.  The directives that do not
+take arguments could be replaced with effective-target keywords.
+
+     <dl>
+<dt><code>dg-require-alias ""</code><dd>Skip the test if the target does not support the &lsquo;<samp><span class="samp">alias</span></samp>&rsquo; attribute.
+
+     <br><dt><code>dg-require-ascii-locale ""</code><dd>Skip the test if the host does not support an ASCII locale.
+
+     <br><dt><code>dg-require-compat-dfp ""</code><dd>Skip this test unless both compilers in a <samp><span class="file">compat</span></samp> testsuite
+support decimal floating point.
+
+     <br><dt><code>dg-require-cxa-atexit ""</code><dd>Skip the test if the target does not support <code>__cxa_atexit</code>. 
+This is equivalent to <code>dg-require-effective-target cxa_atexit</code>.
+
+     <br><dt><code>dg-require-dll ""</code><dd>Skip the test if the target does not support DLL attributes.
+
+     <br><dt><code>dg-require-fork ""</code><dd>Skip the test if the target does not support <code>fork</code>.
+
+     <br><dt><code>dg-require-gc-sections ""</code><dd>Skip the test if the target's linker does not support the
+<code>--gc-sections</code> flags. 
+This is equivalent to <code>dg-require-effective-target gc-sections</code>.
+
+     <br><dt><code>dg-require-host-local ""</code><dd>Skip the test if the host is remote, rather than the same as the build
+system.  Some tests are incompatible with DejaGnu's handling of remote
+hosts, which involves copying the source file to the host and compiling
+it with a relative path and "<code>-o a.out</code>".
+
+     <br><dt><code>dg-require-mkfifo ""</code><dd>Skip the test if the target does not support <code>mkfifo</code>.
+
+     <br><dt><code>dg-require-named-sections ""</code><dd>Skip the test is the target does not support named sections. 
+This is equivalent to <code>dg-require-effective-target named_sections</code>.
+
+     <br><dt><code>dg-require-weak ""</code><dd>Skip the test if the target does not support weak symbols.
+
+     <br><dt><code>dg-require-weak-override ""</code><dd>Skip the test if the target does not support overriding weak symbols. 
+</dl>
+
+ </body></html>
+

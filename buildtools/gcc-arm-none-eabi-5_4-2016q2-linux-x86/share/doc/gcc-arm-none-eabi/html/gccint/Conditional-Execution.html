@@ -1,0 +1,137 @@
+<html lang="en">
+<head>
+<title>Conditional Execution - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Machine-Desc.html#Machine-Desc" title="Machine Desc">
+<link rel="prev" href="Insn-Attributes.html#Insn-Attributes" title="Insn Attributes">
+<link rel="next" href="Define-Subst.html#Define-Subst" title="Define Subst">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Conditional-Execution"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Define-Subst.html#Define-Subst">Define Subst</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Insn-Attributes.html#Insn-Attributes">Insn Attributes</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Machine-Desc.html#Machine-Desc">Machine Desc</a>
+<hr>
+</div>
+
+<h3 class="section">16.20 Conditional Execution</h3>
+
+<p><a name="index-conditional-execution-3819"></a><a name="index-predication-3820"></a>
+A number of architectures provide for some form of conditional
+execution, or predication.  The hallmark of this feature is the
+ability to nullify most of the instructions in the instruction set. 
+When the instruction set is large and not entirely symmetric, it
+can be quite tedious to describe these forms directly in the
+<samp><span class="file">.md</span></samp> file.  An alternative is the <code>define_cond_exec</code> template.
+
+ <p><a name="index-define_005fcond_005fexec-3821"></a>
+<pre class="smallexample">     (define_cond_exec
+       [<var>predicate-pattern</var>]
+       "<var>condition</var>"
+       "<var>output-template</var>"
+       "<var>optional-insn-attribues</var>")
+</pre>
+ <p><var>predicate-pattern</var> is the condition that must be true for the
+insn to be executed at runtime and should match a relational operator. 
+One can use <code>match_operator</code> to match several relational operators
+at once.  Any <code>match_operand</code> operands must have no more than one
+alternative.
+
+ <p><var>condition</var> is a C expression that must be true for the generated
+pattern to match.
+
+ <p><a name="index-current_005finsn_005fpredicate-3822"></a><var>output-template</var> is a string similar to the <code>define_insn</code>
+output template (see <a href="Output-Template.html#Output-Template">Output Template</a>), except that the &lsquo;<samp><span class="samp">*</span></samp>&rsquo;
+and &lsquo;<samp><span class="samp">@</span></samp>&rsquo; special cases do not apply.  This is only useful if the
+assembly text for the predicate is a simple prefix to the main insn. 
+In order to handle the general case, there is a global variable
+<code>current_insn_predicate</code> that will contain the entire predicate
+if the current insn is predicated, and will otherwise be <code>NULL</code>.
+
+ <p><var>optional-insn-attributes</var> is an optional vector of attributes that gets
+appended to the insn attributes of the produced cond_exec rtx. It can
+be used to add some distinguishing attribute to cond_exec rtxs produced
+that way. An example usage would be to use this attribute in conjunction
+with attributes on the main pattern to disable particular alternatives under
+certain conditions.
+
+ <p>When <code>define_cond_exec</code> is used, an implicit reference to
+the <code>predicable</code> instruction attribute is made. 
+See <a href="Insn-Attributes.html#Insn-Attributes">Insn Attributes</a>.  This attribute must be a boolean (i.e. have
+exactly two elements in its <var>list-of-values</var>), with the possible
+values being <code>no</code> and <code>yes</code>.  The default and all uses in
+the insns must be a simple constant, not a complex expressions.  It
+may, however, depend on the alternative, by using a comma-separated
+list of values.  If that is the case, the port should also define an
+<code>enabled</code> attribute (see <a href="Disable-Insn-Alternatives.html#Disable-Insn-Alternatives">Disable Insn Alternatives</a>), which
+should also allow only <code>no</code> and <code>yes</code> as its values.
+
+ <p>For each <code>define_insn</code> for which the <code>predicable</code>
+attribute is true, a new <code>define_insn</code> pattern will be
+generated that matches a predicated version of the instruction. 
+For example,
+
+<pre class="smallexample">     (define_insn "addsi"
+       [(set (match_operand:SI 0 "register_operand" "r")
+             (plus:SI (match_operand:SI 1 "register_operand" "r")
+                      (match_operand:SI 2 "register_operand" "r")))]
+       "<var>test1</var>"
+       "add %2,%1,%0")
+     
+     (define_cond_exec
+       [(ne (match_operand:CC 0 "register_operand" "c")
+            (const_int 0))]
+       "<var>test2</var>"
+       "(%0)")
+</pre>
+ <p class="noindent">generates a new pattern
+
+<pre class="smallexample">     (define_insn ""
+       [(cond_exec
+          (ne (match_operand:CC 3 "register_operand" "c") (const_int 0))
+          (set (match_operand:SI 0 "register_operand" "r")
+               (plus:SI (match_operand:SI 1 "register_operand" "r")
+                        (match_operand:SI 2 "register_operand" "r"))))]
+       "(<var>test2</var>) &amp;&amp; (<var>test1</var>)"
+       "(%3) add %2,%1,%0")
+</pre>
+ </body></html>
+

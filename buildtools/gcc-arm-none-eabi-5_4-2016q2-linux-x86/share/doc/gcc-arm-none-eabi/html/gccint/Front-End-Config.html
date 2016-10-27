@@ -1,0 +1,103 @@
+<html lang="en">
+<head>
+<title>Front End Config - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Front-End.html#Front-End" title="Front End">
+<link rel="prev" href="Front-End-Directory.html#Front-End-Directory" title="Front End Directory">
+<link rel="next" href="Front-End-Makefile.html#Front-End-Makefile" title="Front End Makefile">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Front-End-Config"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Front-End-Makefile.html#Front-End-Makefile">Front End Makefile</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Front-End-Directory.html#Front-End-Directory">Front End Directory</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Front-End.html#Front-End">Front End</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">6.3.8.2 The Front End <samp><span class="file">config-lang.in</span></samp> File</h5>
+
+<p>Each language subdirectory contains a <samp><span class="file">config-lang.in</span></samp> file. 
+This file is a shell script that may define some variables describing
+the language:
+
+     <dl>
+<dt><code>language</code><dd>This definition must be present, and gives the name of the language
+for some purposes such as arguments to <samp><span class="option">--enable-languages</span></samp>. 
+<br><dt><code>lang_requires</code><dd>If defined, this variable lists (space-separated) language front ends
+other than C that this front end requires to be enabled (with the
+names given being their <code>language</code> settings).  For example, the
+Java front end depends on the C++ front end, so sets
+&lsquo;<samp><span class="samp">lang_requires=c++</span></samp>&rsquo;. 
+<br><dt><code>subdir_requires</code><dd>If defined, this variable lists (space-separated) front end directories
+other than C that this front end requires to be present.  For example,
+the Objective-C++ front end uses source files from the C++ and
+Objective-C front ends, so sets &lsquo;<samp><span class="samp">subdir_requires="cp objc"</span></samp>&rsquo;. 
+<br><dt><code>target_libs</code><dd>If defined, this variable lists (space-separated) targets in the top
+level <samp><span class="file">Makefile</span></samp> to build the runtime libraries for this
+language, such as <code>target-libobjc</code>. 
+<br><dt><code>lang_dirs</code><dd>If defined, this variable lists (space-separated) top level
+directories (parallel to <samp><span class="file">gcc</span></samp>), apart from the runtime libraries,
+that should not be configured if this front end is not built. 
+<br><dt><code>build_by_default</code><dd>If defined to &lsquo;<samp><span class="samp">no</span></samp>&rsquo;, this language front end is not built unless
+enabled in a <samp><span class="option">--enable-languages</span></samp> argument.  Otherwise, front
+ends are built by default, subject to any special logic in
+<samp><span class="file">configure.ac</span></samp> (as is present to disable the Ada front end if the
+Ada compiler is not already installed). 
+<br><dt><code>boot_language</code><dd>If defined to &lsquo;<samp><span class="samp">yes</span></samp>&rsquo;, this front end is built in stage1 of the
+bootstrap.  This is only relevant to front ends written in their own
+languages. 
+<br><dt><code>compilers</code><dd>If defined, a space-separated list of compiler executables that will
+be run by the driver.  The names here will each end
+with &lsquo;<samp><span class="samp">\$(exeext)</span></samp>&rsquo;. 
+<br><dt><code>outputs</code><dd>If defined, a space-separated list of files that should be generated
+by <samp><span class="file">configure</span></samp> substituting values in them.  This mechanism can
+be used to create a file <samp><var>language</var><span class="file">/Makefile</span></samp> from
+<samp><var>language</var><span class="file">/Makefile.in</span></samp>, but this is deprecated, building
+everything from the single <samp><span class="file">gcc/Makefile</span></samp> is preferred. 
+<br><dt><code>gtfiles</code><dd>If defined, a space-separated list of files that should be scanned by
+<samp><span class="file">gengtype.c</span></samp> to generate the garbage collection tables and routines for
+this language.  This excludes the files that are common to all front
+ends.  See <a href="Type-Information.html#Type-Information">Type Information</a>.
+
+ </dl>
+
+ </body></html>
+

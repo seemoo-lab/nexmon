@@ -1,0 +1,191 @@
+<html lang="en">
+<head>
+<title>Option file format - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Options.html#Options" title="Options">
+<link rel="next" href="Option-properties.html#Option-properties" title="Option properties">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Option-file-format"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Option-properties.html#Option-properties">Option properties</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Options.html#Options">Options</a>
+<hr>
+</div>
+
+<h3 class="section">8.1 Option file format</h3>
+
+<p>Option files are a simple list of records in which each field occupies
+its own line and in which the records themselves are separated by
+blank lines.  Comments may appear on their own line anywhere within
+the file and are preceded by semicolons.  Whitespace is allowed before
+the semicolon.
+
+ <p>The files can contain the following types of record:
+
+     <ul>
+<li>A language definition record.  These records have two fields: the
+string &lsquo;<samp><span class="samp">Language</span></samp>&rsquo; and the name of the language.  Once a language
+has been declared in this way, it can be used as an option property. 
+See <a href="Option-properties.html#Option-properties">Option properties</a>.
+
+     <li>A target specific save record to save additional information. These
+records have two fields: the string &lsquo;<samp><span class="samp">TargetSave</span></samp>&rsquo;, and a
+declaration type to go in the <code>cl_target_option</code> structure.
+
+     <li>A variable record to define a variable used to store option
+information.  These records have two fields: the string
+&lsquo;<samp><span class="samp">Variable</span></samp>&rsquo;, and a declaration of the type and name of the
+variable, optionally with an initializer (but without any trailing
+&lsquo;<samp><span class="samp">;</span></samp>&rsquo;).  These records may be used for variables used for many
+options where declaring the initializer in a single option definition
+record, or duplicating it in many records, would be inappropriate, or
+for variables set in option handlers rather than referenced by
+<code>Var</code> properties.
+
+     <li>A variable record to define a variable used to store option
+information.  These records have two fields: the string
+&lsquo;<samp><span class="samp">TargetVariable</span></samp>&rsquo;, and a declaration of the type and name of the
+variable, optionally with an initializer (but without any trailing
+&lsquo;<samp><span class="samp">;</span></samp>&rsquo;).  &lsquo;<samp><span class="samp">TargetVariable</span></samp>&rsquo; is a combination of &lsquo;<samp><span class="samp">Variable</span></samp>&rsquo;
+and &lsquo;<samp><span class="samp">TargetSave</span></samp>&rsquo; records in that the variable is defined in the
+<code>gcc_options</code> structure, but these variables are also stored in
+the <code>cl_target_option</code> structure.  The variables are saved in the
+target save code and restored in the target restore code.
+
+     <li>A variable record to record any additional files that the
+<samp><span class="file">options.h</span></samp> file should include.  This is useful to provide
+enumeration or structure definitions needed for target variables. 
+These records have two fields: the string &lsquo;<samp><span class="samp">HeaderInclude</span></samp>&rsquo; and the
+name of the include file.
+
+     <li>A variable record to record any additional files that the
+<samp><span class="file">options.c</span></samp> or <samp><span class="file">options-save.c</span></samp> file should include.  This
+is useful to provide
+inline functions needed for target variables and/or <code>#ifdef</code>
+sequences to properly set up the initialization.  These records have
+two fields: the string &lsquo;<samp><span class="samp">SourceInclude</span></samp>&rsquo; and the name of the
+include file.
+
+     <li>An enumeration record to define a set of strings that may be used as
+arguments to an option or options.  These records have three fields:
+the string &lsquo;<samp><span class="samp">Enum</span></samp>&rsquo;, a space-separated list of properties and help
+text used to describe the set of strings in <samp><span class="option">--help</span></samp> output. 
+Properties use the same format as option properties; the following are
+valid:
+          <dl>
+<dt><code>Name(</code><var>name</var><code>)</code><dd>This property is required; <var>name</var> must be a name (suitable for use
+in C identifiers) used to identify the set of strings in <code>Enum</code>
+option properties.
+
+          <br><dt><code>Type(</code><var>type</var><code>)</code><dd>This property is required; <var>type</var> is the C type for variables set
+by options using this enumeration together with <code>Var</code>.
+
+          <br><dt><code>UnknownError(</code><var>message</var><code>)</code><dd>The message <var>message</var> will be used as an error message if the
+argument is invalid; for enumerations without <code>UnknownError</code>, a
+generic error message is used.  <var>message</var> should contain a single
+&lsquo;<samp><span class="samp">%qs</span></samp>&rsquo; format, which will be used to format the invalid argument. 
+</dl>
+
+     <li>An enumeration value record to define one of the strings in a set
+given in an &lsquo;<samp><span class="samp">Enum</span></samp>&rsquo; record.  These records have two fields: the
+string &lsquo;<samp><span class="samp">EnumValue</span></samp>&rsquo; and a space-separated list of properties. 
+Properties use the same format as option properties; the following are
+valid:
+          <dl>
+<dt><code>Enum(</code><var>name</var><code>)</code><dd>This property is required; <var>name</var> says which &lsquo;<samp><span class="samp">Enum</span></samp>&rsquo; record
+this &lsquo;<samp><span class="samp">EnumValue</span></samp>&rsquo; record corresponds to.
+
+          <br><dt><code>String(</code><var>string</var><code>)</code><dd>This property is required; <var>string</var> is the string option argument
+being described by this record.
+
+          <br><dt><code>Value(</code><var>value</var><code>)</code><dd>This property is required; it says what value (representable as
+<code>int</code>) should be used for the given string.
+
+          <br><dt><code>Canonical</code><dd>This property is optional.  If present, it says the present string is
+the canonical one among all those with the given value.  Other strings
+yielding that value will be mapped to this one so specs do not need to
+handle them.
+
+          <br><dt><code>DriverOnly</code><dd>This property is optional.  If present, the present string will only
+be accepted by the driver.  This is used for cases such as
+<samp><span class="option">-march=native</span></samp> that are processed by the driver so that
+&lsquo;<samp><span class="samp">gcc -v</span></samp>&rsquo; shows how the options chosen depended on the system on
+which the compiler was run. 
+</dl>
+
+     <li>An option definition record.  These records have the following fields:
+          <ol type=1 start=1>
+<li>the name of the option, with the leading &ldquo;-&rdquo; removed
+<li>a space-separated list of option properties (see <a href="Option-properties.html#Option-properties">Option properties</a>)
+<li>the help text to use for <samp><span class="option">--help</span></samp> (omitted if the second field
+contains the <code>Undocumented</code> property).
+          </ol>
+
+     <p>By default, all options beginning with &ldquo;f&rdquo;, &ldquo;W&rdquo; or &ldquo;m&rdquo; are
+implicitly assumed to take a &ldquo;no-&rdquo; form.  This form should not be
+listed separately.  If an option beginning with one of these letters
+does not have a &ldquo;no-&rdquo; form, you can use the <code>RejectNegative</code>
+property to reject it.
+
+     <p>The help text is automatically line-wrapped before being displayed. 
+Normally the name of the option is printed on the left-hand side of
+the output and the help text is printed on the right.  However, if the
+help text contains a tab character, the text to the left of the tab is
+used instead of the option's name and the text to the right of the
+tab forms the help text.  This allows you to elaborate on what type
+of argument the option takes.
+
+     <li>A target mask record.  These records have one field of the form
+&lsquo;<samp><span class="samp">Mask(</span><var>x</var><span class="samp">)</span></samp>&rsquo;.  The options-processing script will automatically
+allocate a bit in <code>target_flags</code> (see <a href="Run_002dtime-Target.html#Run_002dtime-Target">Run-time Target</a>) for
+each mask name <var>x</var> and set the macro <code>MASK_</code><var>x</var> to the
+appropriate bitmask.  It will also declare a <code>TARGET_</code><var>x</var>
+macro that has the value 1 when bit <code>MASK_</code><var>x</var> is set and
+0 otherwise.
+
+     <p>They are primarily intended to declare target masks that are not
+associated with user options, either because these masks represent
+internal switches or because the options are not available on all
+configurations and yet the masks always need to be defined. 
+</ul>
+
+ </body></html>
+

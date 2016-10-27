@@ -1,0 +1,105 @@
+<html lang="en">
+<head>
+<title>Constants - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Program-Structure.html#Program-Structure" title="Program Structure">
+<link rel="next" href="Variables.html#Variables" title="Variables">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Constants"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Variables.html#Variables">Variables</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Program-Structure.html#Program-Structure">Program Structure</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">3 Constants</h2>
+
+<p>The &lsquo;<samp><span class="samp">c</span></samp>&rsquo; symbol descriptor indicates that this stab represents a
+constant.  This symbol descriptor is an exception to the general rule
+that symbol descriptors are followed by type information.  Instead, it
+is followed by &lsquo;<samp><span class="samp">=</span></samp>&rsquo; and one of the following:
+
+     <dl>
+<dt><code>b </code><var>value</var><dd>Boolean constant.  <var>value</var> is a numeric value; I assume it is 0 for
+false or 1 for true.
+
+     <br><dt><code>c </code><var>value</var><dd>Character constant.  <var>value</var> is the numeric value of the constant.
+
+     <br><dt><code>e </code><var>type-information</var><code> , </code><var>value</var><dd>Constant whose value can be represented as integral. 
+<var>type-information</var> is the type of the constant, as it would appear
+after a symbol descriptor (see <a href="String-Field.html#String-Field">String Field</a>).  <var>value</var> is the
+numeric value of the constant.  GDB 4.9 does not actually get the right
+value if <var>value</var> does not fit in a host <code>int</code>, but it does not
+do anything violent, and future debuggers could be extended to accept
+integers of any size (whether unsigned or not).  This constant type is
+usually documented as being only for enumeration constants, but GDB has
+never imposed that restriction; I don't know about other debuggers.
+
+     <br><dt><code>i </code><var>value</var><dd>Integer constant.  <var>value</var> is the numeric value.  The type is some
+sort of generic integer type (for GDB, a host <code>int</code>); to specify
+the type explicitly, use &lsquo;<samp><span class="samp">e</span></samp>&rsquo; instead.
+
+     <br><dt><code>r </code><var>value</var><dd>Real constant.  <var>value</var> is the real value, which can be &lsquo;<samp><span class="samp">INF</span></samp>&rsquo;
+(optionally preceded by a sign) for infinity, &lsquo;<samp><span class="samp">QNAN</span></samp>&rsquo; for a quiet
+NaN (not-a-number), or &lsquo;<samp><span class="samp">SNAN</span></samp>&rsquo; for a signalling NaN.  If it is a
+normal number the format is that accepted by the C library function
+<code>atof</code>.
+
+     <br><dt><code>s </code><var>string</var><dd>String constant.  <var>string</var> is a string enclosed in either &lsquo;<samp><span class="samp">'</span></samp>&rsquo;
+(in which case &lsquo;<samp><span class="samp">'</span></samp>&rsquo; characters within the string are represented as
+&lsquo;<samp><span class="samp">\'</span></samp>&rsquo; or &lsquo;<samp><span class="samp">"</span></samp>&rsquo; (in which case &lsquo;<samp><span class="samp">"</span></samp>&rsquo; characters within the
+string are represented as &lsquo;<samp><span class="samp">\"</span></samp>&rsquo;).
+
+     <br><dt><code>S </code><var>type-information</var><code> , </code><var>elements</var><code> , </code><var>bits</var><code> , </code><var>pattern</var><dd>Set constant.  <var>type-information</var> is the type of the constant, as it
+would appear after a symbol descriptor (see <a href="String-Field.html#String-Field">String Field</a>). 
+<var>elements</var> is the number of elements in the set (does this means
+how many bits of <var>pattern</var> are actually used, which would be
+redundant with the type, or perhaps the number of bits set in
+<var>pattern</var>?  I don't get it), <var>bits</var> is the number of bits in the
+constant (meaning it specifies the length of <var>pattern</var>, I think),
+and <var>pattern</var> is a hexadecimal representation of the set.  AIX
+documentation refers to a limit of 32 bytes, but I see no reason why
+this limit should exist.  This form could probably be used for arbitrary
+constants, not just sets; the only catch is that <var>pattern</var> should be
+understood to be target, not host, byte order and format. 
+</dl>
+
+   <p>The boolean, character, string, and set constants are not supported by
+GDB 4.9, but it ignores them.  GDB 4.8 and earlier gave an error
+message and refused to read symbols from the file containing the
+constants.
+
+   <p>The above information is followed by &lsquo;<samp><span class="samp">;</span></samp>&rsquo;.
+
+   </body></html>
+

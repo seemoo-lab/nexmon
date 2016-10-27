@@ -1,0 +1,76 @@
+<html lang="en">
+<head>
+<title>gcore man - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Man-Pages.html#Man-Pages" title="Man Pages">
+<link rel="prev" href="gdbserver-man.html#gdbserver-man" title="gdbserver man">
+<link rel="next" href="gdbinit-man.html#gdbinit-man" title="gdbinit man">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="gcore-man"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="gdbinit-man.html#gdbinit-man">gdbinit man</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="gdbserver-man.html#gdbserver-man">gdbserver man</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Man-Pages.html#Man-Pages">Man Pages</a>
+<hr>
+</div>
+
+<h3 class="heading">gcore</h3>
+
+<!-- man title gcore Generate a core file of a running program -->
+<pre class="format"><!-- man begin SYNOPSIS gcore -->
+gcore [-o <var>filename</var>] <var>pid</var>
+<!-- man end -->
+</pre>
+<!-- man begin DESCRIPTION gcore -->
+   <p>Generate a core dump of a running program with process ID <var>pid</var>. 
+Produced file is equivalent to a kernel produced core file as if the process
+crashed (and if <kbd>ulimit -c</kbd> were used to set up an appropriate core dump
+limit).  Unlike after a crash, after <samp><span class="command">gcore</span></samp> the program remains
+running without any change. 
+<!-- man end -->
+
+<!-- man begin OPTIONS gcore -->
+     <dl>
+<dt><samp><span class="env">-o </span><var>filename</var></samp><dd>The optional argument
+<var>filename</var> specifies the file name where to put the core dump. 
+If not specified, the file name defaults to <samp><span class="file">core.</span><var>pid</var></samp>,
+where <var>pid</var> is the running program process ID. 
+</dl>
+   <!-- man end -->
+
+<!-- man begin SEEALSO gcore -->
+<!-- man end -->
+   </body></html>
+

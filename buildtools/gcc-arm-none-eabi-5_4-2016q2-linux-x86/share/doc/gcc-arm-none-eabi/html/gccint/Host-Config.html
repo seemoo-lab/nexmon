@@ -1,0 +1,78 @@
+<html lang="en">
+<head>
+<title>Host Config - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Target-Macros.html#Target-Macros" title="Target Macros">
+<link rel="next" href="Fragments.html#Fragments" title="Fragments">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Host-Config"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Fragments.html#Fragments">Fragments</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Target-Macros.html#Target-Macros">Target Macros</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">18 Host Configuration</h2>
+
+<p><a name="index-host-configuration-5021"></a>
+Most details about the machine and system on which the compiler is
+actually running are detected by the <samp><span class="command">configure</span></samp> script.  Some
+things are impossible for <samp><span class="command">configure</span></samp> to detect; these are
+described in two ways, either by macros defined in a file named
+<samp><span class="file">xm-</span><var>machine</var><span class="file">.h</span></samp> or by hook functions in the file specified
+by the <var>out_host_hook_obj</var> variable in <samp><span class="file">config.gcc</span></samp>.  (The
+intention is that very few hosts will need a header file but nearly
+every fully supported host will need to override some hooks.)
+
+ <p>If you need to define only a few macros, and they have simple
+definitions, consider using the <code>xm_defines</code> variable in your
+<samp><span class="file">config.gcc</span></samp> entry instead of creating a host configuration
+header.  See <a href="System-Config.html#System-Config">System Config</a>.
+
+<ul class="menu">
+<li><a accesskey="1" href="Host-Common.html#Host-Common">Host Common</a>:          Things every host probably needs implemented. 
+<li><a accesskey="2" href="Filesystem.html#Filesystem">Filesystem</a>:           Your host can't have the letter `a' in filenames? 
+<li><a accesskey="3" href="Host-Misc.html#Host-Misc">Host Misc</a>:            Rare configuration options for hosts. 
+</ul>
+
+ </body></html>
+

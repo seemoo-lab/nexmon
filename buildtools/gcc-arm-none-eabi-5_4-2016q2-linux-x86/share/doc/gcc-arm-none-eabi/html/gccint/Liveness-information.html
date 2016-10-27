@@ -1,0 +1,98 @@
+<html lang="en">
+<head>
+<title>Liveness information - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Control-Flow.html#Control-Flow" title="Control Flow">
+<link rel="prev" href="Maintaining-the-CFG.html#Maintaining-the-CFG" title="Maintaining the CFG">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Liveness-information"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Maintaining-the-CFG.html#Maintaining-the-CFG">Maintaining the CFG</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Control-Flow.html#Control-Flow">Control Flow</a>
+<hr>
+</div>
+
+<h3 class="section">14.5 Liveness information</h3>
+
+<p><a name="index-Liveness-representation-3227"></a>Liveness information is useful to determine whether some register is
+&ldquo;live&rdquo; at given point of program, i.e. that it contains a value that
+may be used at a later point in the program.  This information is
+used, for instance, during register allocation, as the pseudo
+registers only need to be assigned to a unique hard register or to a
+stack slot if they are live.  The hard registers and stack slots may
+be freely reused for other values when a register is dead.
+
+ <p>Liveness information is available in the back end starting with
+<code>pass_df_initialize</code> and ending with <code>pass_df_finish</code>.  Three
+flavors of live analysis are available: With <code>LR</code>, it is possible
+to determine at any point <code>P</code> in the function if the register may be
+used on some path from <code>P</code> to the end of the function.  With
+<code>UR</code>, it is possible to determine if there is a path from the
+beginning of the function to <code>P</code> that defines the variable. 
+<code>LIVE</code> is the intersection of the <code>LR</code> and <code>UR</code> and a
+variable is live at <code>P</code> if there is both an assignment that reaches
+it from the beginning of the function and a use that can be reached on
+some path from <code>P</code> to the end of the function.
+
+ <p>In general <code>LIVE</code> is the most useful of the three.  The macros
+<code>DF_[LR,UR,LIVE]_[IN,OUT]</code> can be used to access this information. 
+The macros take a basic block number and return a bitmap that is indexed
+by the register number.  This information is only guaranteed to be up to
+date after calls are made to <code>df_analyze</code>.  See the file
+<code>df-core.c</code> for details on using the dataflow.
+
+ <p><a name="index-REG_005fDEAD_002c-REG_005fUNUSED-3228"></a>The liveness information is stored partly in the RTL instruction stream
+and partly in the flow graph.  Local information is stored in the
+instruction stream: Each instruction may contain <code>REG_DEAD</code> notes
+representing that the value of a given register is no longer needed, or
+<code>REG_UNUSED</code> notes representing that the value computed by the
+instruction is never used.  The second is useful for instructions
+computing multiple values at once.
+
+<!-- Copyright (C) 2006-2015 Free Software Foundation, Inc. -->
+<!-- Free Software Foundation, Inc. -->
+<!-- This is part of the GCC manual. -->
+<!-- For copying conditions, see the file gcc.texi. -->
+<!--  -->
+<!-- Loop Representation -->
+<!--  -->
+ </body></html>
+

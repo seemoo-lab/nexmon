@@ -1,0 +1,81 @@
+<html lang="en">
+<head>
+<title>Nios II Options - Using as</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using as">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="NiosII_002dDependent.html#NiosII_002dDependent" title="NiosII-Dependent">
+<link rel="next" href="Nios-II-Syntax.html#Nios-II-Syntax" title="Nios II Syntax">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled ``GNU Free Documentation License''.
+
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Nios-II-Options"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Nios-II-Syntax.html#Nios-II-Syntax">Nios II Syntax</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="NiosII_002dDependent.html#NiosII_002dDependent">NiosII-Dependent</a>
+<hr>
+</div>
+
+<h4 class="subsection">9.31.1 Options</h4>
+
+<p><a name="index-Nios-II-options-1666"></a><a name="index-options-for-Nios-II-1667"></a>
+<!-- man begin OPTIONS -->
+     
+<a name="index-g_t_0040code_007brelax_002dsection_007d-command-line-option_002c-Nios-II-1668"></a>
+<dl><dt><code>-relax-section</code><dd>Replace identified out-of-range branches with PC-relative <code>jmp</code>
+sequences when possible.  The generated code sequences are suitable
+for use in position-independent code, but there is a practical limit
+on the extended branch range because of the length of the sequences. 
+This option is the default.
+
+     <p><a name="index-g_t_0040code_007brelax_002dall_007d-command-line-option_002c-Nios-II-1669"></a><br><dt><code>-relax-all</code><dd>Replace branch instructions not determinable to be in range
+and all call instructions with <code>jmp</code> and <code>callr</code> sequences
+(respectively).  This option generates absolute relocations against the
+target symbols and is not appropriate for position-independent code.
+
+     <p><a name="index-g_t_0040code_007bno_002drelax_007d-command-line-option_002c-Nios-II-1670"></a><br><dt><code>-no-relax</code><dd>Do not replace any branches or calls.
+
+     <p><a name="index-g_t_0040code_007bEB_007d-command-line-option_002c-Nios-II-1671"></a><br><dt><code>-EB</code><dd>Generate big-endian output.
+
+     <p><a name="index-g_t_0040code_007bEL_007d-command-line-option_002c-Nios-II-1672"></a><br><dt><code>-EL</code><dd>Generate little-endian output.  This is the default.
+
+     <p><a name="index-g_t_0040code_007bmarch_007d-command-line-option_002c-Nios-II-1673"></a><br><dt><code>-march=</code><var>architecture</var><dd>This option specifies the target architecture.  The assembler issues
+an error message if an attempt is made to assemble an instruction which
+will not execute on the target architecture.  The following architecture
+names are recognized:
+<code>r1</code>,
+<code>r2</code>. 
+The default is <code>r1</code>.
+
+   </dl>
+   <!-- man end -->
+
+   </body></html>
+

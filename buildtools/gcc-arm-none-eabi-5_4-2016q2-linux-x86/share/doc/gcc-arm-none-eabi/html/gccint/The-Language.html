@@ -1,0 +1,296 @@
+<html lang="en">
+<head>
+<title>The Language - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Match-and-Simplify.html#Match-and-Simplify" title="Match and Simplify">
+<link rel="prev" href="GIMPLE-API.html#GIMPLE-API" title="GIMPLE API">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="The-Language"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="GIMPLE-API.html#GIMPLE-API">GIMPLE API</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Match-and-Simplify.html#Match-and-Simplify">Match and Simplify</a>
+<hr>
+</div>
+
+<h3 class="section">25.2 The Language</h3>
+
+<p><a name="index-The-Language-5126"></a>
+The language to write expression simplifications in resembles other
+domain-specific languages GCC uses.  Thus it is lispy.  Lets start
+with an example from the match.pd file:
+
+<pre class="smallexample">     (simplify
+       (bit_and @0 integer_all_onesp)
+       @0)
+</pre>
+ <p>This example contains all required parts of an expression simplification. 
+A simplification is wrapped inside a <code>(simplify ...)</code> expression. 
+That contains at least two operands - an expression that is matched
+with the GIMPLE or GENERIC IL and a replacement expression that is
+returned if the match was successful.
+
+ <p>Expressions have an operator ID, <code>bit_and</code> in this case.  Expressions can
+be lower-case tree codes with <code>_expr</code> stripped off or builtin
+function code names in all-caps, like <code>BUILT_IN_SQRT</code>.
+
+ <p><code>@n</code> denotes a so-called capture.  It captures the operand and lets
+you refer to it in other places of the match-and-simplify.  In the
+above example it is refered to in the replacement expression.  Captures
+are <code>@</code> followed by a number or an identifier.
+
+<pre class="smallexample">     (simplify
+       (bit_xor @0 @0)
+       { build_zero_cst (type); })
+</pre>
+ <p>In this example <code>@0</code> is mentioned twice which constrains the matched
+expression to have two equal operands.  This example also introduces
+operands written in C code.  These can be used in the expression
+replacements and are supposed to evaluate to a tree node which has to
+be a valid GIMPLE operand (so you cannot generate expressions in C code).
+
+<pre class="smallexample">     (simplify
+       (trunc_mod integer_zerop@0 @1)
+       (if (!integer_zerop (@1)))
+       @0)
+</pre>
+ <p>Here <code>@0</code> captures the first operand of the trunc_mod expression
+which is also predicated with <code>integer_zerop</code>.  Expression operands
+may be either expressions, predicates or captures.  Captures
+can be unconstrained or capture expresions or predicates.
+
+ <p>This example introduces an optional operand of simplify,
+the if-expression.  This condition is evaluated after the
+expression matched in the IL and is required to evaluate to true
+to enable the replacement expression.  The expression operand
+of the <code>if</code> is a standard C expression which may contain references
+to captures.
+
+ <p>A <code>if</code> expression can be used to specify a common condition
+for multiple simplify patterns, avoiding the need
+to repeat that multiple times:
+
+<pre class="smallexample">     (if (!TYPE_SATURATING (type)
+          &amp;&amp; !FLOAT_TYPE_P (type) &amp;&amp; !FIXED_POINT_TYPE_P (type))
+       (simplify
+         (minus (plus @0 @1) @0)
+         @1)
+       (simplify
+         (minus (minus @0 @1) @0)
+         (negate @1)))
+</pre>
+ <p>Ifs can be nested.
+
+ <p>Captures can also be used for capturing results of sub-expressions.
+
+<pre class="smallexample">     #if GIMPLE
+     (simplify
+       (pointer_plus (addr@2 @0) INTEGER_CST_P@1)
+       (if (is_gimple_min_invariant (@2)))
+       {
+         HOST_WIDE_INT off;
+         tree base = get_addr_base_and_unit_offset (@0, &amp;off);
+         off += tree_to_uhwi (@1);
+         /* Now with that we should be able to simply write
+            (addr (mem_ref (addr @base) (plus @off @1)))  */
+         build1 (ADDR_EXPR, type,
+                 build2 (MEM_REF, TREE_TYPE (TREE_TYPE (@2)),
+                         build_fold_addr_expr (base),
+                         build_int_cst (ptr_type_node, off)));
+       })
+     #endif
+</pre>
+ <p>In the above example, <code>@2</code> captures the result of the expression
+<code>(addr @0)</code>.  For outermost expression only its type can be captured,
+and the keyword <code>type</code> is reserved for this purpose.  The above
+example also gives a way to conditionalize patterns to only apply
+to <code>GIMPLE</code> or <code>GENERIC</code> by means of using the pre-defined
+preprocessor macros <code>GIMPLE</code> and <code>GENERIC</code> and using
+preprocessor directives.
+
+<pre class="smallexample">     (simplify
+       (bit_and:c integral_op_p@0 (bit_ior:c (bit_not @0) @1))
+       (bit_and @1 @0))
+</pre>
+ <p>Here we introduce flags on match expressions.  There is currently
+a single flag, <code>c</code>, which denotes that the expression should
+be also matched commutated.  Thus the above match expression
+is really the following four match expressions:
+
+ <p>(bit_and integral_op_p@0 (bit_ior (bit_not @0) @1))
+  (bit_and (bit_ior (bit_not @0) @1) integral_op_p@0)
+  (bit_and integral_op_p@0 (bit_ior @1 (bit_not @0)))
+  (bit_and (bit_ior @1 (bit_not @0)) integral_op_p@0)
+
+ <p>Usual canonicalizations you know from GENERIC expressions are
+applied before matching, so for example constant operands always
+come second in commutative expressions.
+
+ <p>More features exist to avoid too much repetition.
+
+<pre class="smallexample">     (for op (plus pointer_plus minus bit_ior bit_xor)
+       (simplify
+         (op @0 integer_zerop)
+         @0))
+</pre>
+ <p>A <code>for</code> expression can be used to repeat a pattern for each
+operator specified, substituting <code>op</code>.  <code>for</code> can be
+nested and a <code>for</code> can have multiple operators to iterate.
+
+<pre class="smallexample">     (for opa (plus minus)
+          opb (minus plus)
+       (for opc (plus minus)
+         (simplify...
+</pre>
+ <p>In this example the pattern will be repeated four times with
+<code>opa, opb, opc</code> being <code>plus, minus, plus</code>,
+<code>plus, minus, minus</code>, <code>minus, plus, plus</code>,
+<code>minus, plus, minus</code>.
+
+ <p>To avoid repeating operator lists in <code>for</code> you can name
+them via
+
+<pre class="smallexample">     (define_operator_list pmm plus minus mult)
+</pre>
+ <p>and use them in <code>for</code> operator lists where they get expanded.
+
+<pre class="smallexample">     (for opa (pmm trunc_div)
+      (simplify...
+</pre>
+ <p>So this example iterates over <code>plus</code>, <code>minus</code>, <code>mult</code>
+and <code>trunc_div</code>.
+
+ <p>Using operator lists can also remove the need to explicitely write
+a <code>for</code>.  All operator list uses that appear in a <code>simplify</code>
+or <code>match</code> pattern in operator positions will implicitely
+be added to a new <code>for</code>.  For example
+
+<pre class="smallexample">     (define_operator_list SQRT BUILT_IN_SQRTF BUILT_IN_SQRT BUILT_IN_SQRTL)
+     (define_operator_list POW BUILT_IN_POWF BUILT_IN_POW BUILT_IN_POWL)
+     (simplify
+      (SQRT (POW @0 @1))
+      (POW (abs @0) (mult @1 { built_real (TREE_TYPE (@1), dconsthalf); })))
+</pre>
+ <p>is the same as
+
+<pre class="smallexample">     (for SQRT (BUILT_IN_SQRTF BUILT_IN_SQRT BUILT_IN_SQRTL)
+          POW (BUILT_IN_POWF BUILT_IN_POW BUILT_IN_POWL)
+      (simplify
+       (SQRT (POW @0 @1))
+       (POW (abs @0) (mult @1 { built_real (TREE_TYPE (@1), dconsthalf); }))))
+</pre>
+ <p>Another building block are <code>with</code> expressions in the
+result expression which nest the generated code in a new C block
+followed by its argument:
+
+<pre class="smallexample">     (simplify
+      (convert (mult @0 @1))
+      (with { tree utype = unsigned_type_for (type); }
+       (convert (mult (convert:utype @0) (convert:utype @1)))))
+</pre>
+ <p>This allows code nested in the <code>with</code> to refer to the declared
+variables.  In the above case we use the feature to specify the
+type of a generated expression with the <code>:type</code> syntax where
+<code>type</code> needs to be an identifier that refers to the desired type. 
+Usually the types of the generated result expressions are
+determined from the context, but sometimes like in the above case
+it is required that you specify them explicitely.
+
+ <p>As intermediate conversions are often optional there is a way to
+avoid the need to repeat patterns both with and without such
+conversions.  Namely you can mark a conversion as being optional
+with a <code>?</code>:
+
+<pre class="smallexample">     (simplify
+      (eq (convert@0 @1) (convert? @2))
+      (eq @1 (convert @2)))
+</pre>
+ <p>which will match both <code>(eq (convert @1) (convert @2))</code> and
+<code>(eq (convert @1) @2)</code>.  The optional converts are supposed
+to be all either present or not, thus
+<code>(eq (convert? @1) (convert? @2))</code> will result in two
+patterns only.  If you want to match all four combinations you
+have access to two additional conditional converts as in
+<code>(eq (convert1? @1) (convert2? @2))</code>.
+
+ <p>Predicates available from the GCC middle-end need to be made
+available explicitely via <code>define_predicates</code>:
+
+<pre class="smallexample">     (define_predicates
+      integer_onep integer_zerop integer_all_onesp)
+</pre>
+ <p>You can also define predicates using the pattern matching language
+and the <code>match</code> form:
+
+<pre class="smallexample">     (match negate_expr_p
+      INTEGER_CST
+      (if (TYPE_OVERFLOW_WRAPS (type)
+           || may_negate_without_overflow_p (t))))
+     (match negate_expr_p
+      (negate @0))
+</pre>
+ <p>This shows that for <code>match</code> expressions there is <code>t</code>
+available which captures the outermost expression (something
+not possible in the <code>simplify</code> context).  As you can see
+<code>match</code> has an identifier as first operand which is how
+you refer to the predicate in patterns.  Multiple <code>match</code>
+for the same identifier add additional cases where the predicate
+matches.
+
+ <p>Predicates can also match an expression in which case you need
+to provide a template specifying the identifier and where to
+get its operands from:
+
+<pre class="smallexample">     (match (logical_inverted_value @0)
+      (eq @0 integer_zerop))
+     (match (logical_inverted_value @0)
+      (bit_not truth_valued_p@0))
+</pre>
+ <p>You can use the above predicate like
+
+<pre class="smallexample">     (simplify
+      (bit_and @0 (logical_inverted_value @0))
+      { build_zero_cst (type); })
+</pre>
+ <p>Which will match a bitwise and of an operand with its logical
+inverted value.
+
+ </body></html>
+

@@ -1,0 +1,147 @@
+<html lang="en">
+<head>
+<title>GDB/MI Breakpoint Information - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="GDB_002fMI-Output-Records.html#GDB_002fMI-Output-Records" title="GDB/MI Output Records">
+<link rel="prev" href="GDB_002fMI-Async-Records.html#GDB_002fMI-Async-Records" title="GDB/MI Async Records">
+<link rel="next" href="GDB_002fMI-Frame-Information.html#GDB_002fMI-Frame-Information" title="GDB/MI Frame Information">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="GDB%2fMI-Breakpoint-Information"></a>
+<a name="GDB_002fMI-Breakpoint-Information"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="GDB_002fMI-Frame-Information.html#GDB_002fMI-Frame-Information">GDB/MI Frame Information</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="GDB_002fMI-Async-Records.html#GDB_002fMI-Async-Records">GDB/MI Async Records</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="GDB_002fMI-Output-Records.html#GDB_002fMI-Output-Records">GDB/MI Output Records</a>
+<hr>
+</div>
+
+<h4 class="subsection">27.5.4 <span class="sc">gdb/mi</span> Breakpoint Information</h4>
+
+<p>When <span class="sc">gdb</span> reports information about a breakpoint, a
+tracepoint, a watchpoint, or a catchpoint, it uses a tuple with the
+following fields:
+
+     <dl>
+<dt><code>number</code><dd>The breakpoint number.  For a breakpoint that represents one location
+of a multi-location breakpoint, this will be a dotted pair, like
+&lsquo;<samp><span class="samp">1.2</span></samp>&rsquo;.
+
+     <br><dt><code>type</code><dd>The type of the breakpoint.  For ordinary breakpoints this will be
+&lsquo;<samp><span class="samp">breakpoint</span></samp>&rsquo;, but many values are possible.
+
+     <br><dt><code>catch-type</code><dd>If the type of the breakpoint is &lsquo;<samp><span class="samp">catchpoint</span></samp>&rsquo;, then this
+indicates the exact type of catchpoint.
+
+     <br><dt><code>disp</code><dd>This is the breakpoint disposition&mdash;either &lsquo;<samp><span class="samp">del</span></samp>&rsquo;, meaning that
+the breakpoint will be deleted at the next stop, or &lsquo;<samp><span class="samp">keep</span></samp>&rsquo;,
+meaning that the breakpoint will not be deleted.
+
+     <br><dt><code>enabled</code><dd>This indicates whether the breakpoint is enabled, in which case the
+value is &lsquo;<samp><span class="samp">y</span></samp>&rsquo;, or disabled, in which case the value is &lsquo;<samp><span class="samp">n</span></samp>&rsquo;. 
+Note that this is not the same as the field <code>enable</code>.
+
+     <br><dt><code>addr</code><dd>The address of the breakpoint.  This may be a hexidecimal number,
+giving the address; or the string &lsquo;<samp><span class="samp">&lt;PENDING&gt;</span></samp>&rsquo;, for a pending
+breakpoint; or the string &lsquo;<samp><span class="samp">&lt;MULTIPLE&gt;</span></samp>&rsquo;, for a breakpoint with
+multiple locations.  This field will not be present if no address can
+be determined.  For example, a watchpoint does not have an address.
+
+     <br><dt><code>func</code><dd>If known, the function in which the breakpoint appears. 
+If not known, this field is not present.
+
+     <br><dt><code>filename</code><dd>The name of the source file which contains this function, if known. 
+If not known, this field is not present.
+
+     <br><dt><code>fullname</code><dd>The full file name of the source file which contains this function, if
+known.  If not known, this field is not present.
+
+     <br><dt><code>line</code><dd>The line number at which this breakpoint appears, if known. 
+If not known, this field is not present.
+
+     <br><dt><code>at</code><dd>If the source file is not known, this field may be provided.  If
+provided, this holds the address of the breakpoint, possibly followed
+by a symbol name.
+
+     <br><dt><code>pending</code><dd>If this breakpoint is pending, this field is present and holds the
+text used to set the breakpoint, as entered by the user.
+
+     <br><dt><code>evaluated-by</code><dd>Where this breakpoint's condition is evaluated, either &lsquo;<samp><span class="samp">host</span></samp>&rsquo; or
+&lsquo;<samp><span class="samp">target</span></samp>&rsquo;.
+
+     <br><dt><code>thread</code><dd>If this is a thread-specific breakpoint, then this identifies the
+thread in which the breakpoint can trigger.
+
+     <br><dt><code>task</code><dd>If this breakpoint is restricted to a particular Ada task, then this
+field will hold the task identifier.
+
+     <br><dt><code>cond</code><dd>If the breakpoint is conditional, this is the condition expression.
+
+     <br><dt><code>ignore</code><dd>The ignore count of the breakpoint.
+
+     <br><dt><code>enable</code><dd>The enable count of the breakpoint.
+
+     <br><dt><code>traceframe-usage</code><dd>FIXME.
+
+     <br><dt><code>static-tracepoint-marker-string-id</code><dd>For a static tracepoint, the name of the static tracepoint marker.
+
+     <br><dt><code>mask</code><dd>For a masked watchpoint, this is the mask.
+
+     <br><dt><code>pass</code><dd>A tracepoint's pass count.
+
+     <br><dt><code>original-location</code><dd>The location of the breakpoint as originally specified by the user. 
+This field is optional.
+
+     <br><dt><code>times</code><dd>The number of times the breakpoint has been hit.
+
+     <br><dt><code>installed</code><dd>This field is only given for tracepoints.  This is either &lsquo;<samp><span class="samp">y</span></samp>&rsquo;,
+meaning that the tracepoint is installed, or &lsquo;<samp><span class="samp">n</span></samp>&rsquo;, meaning that it
+is not.
+
+     <br><dt><code>what</code><dd>Some extra data, the exact contents of which are type-dependent.
+
+   </dl>
+
+   <p>For example, here is what the output of <code>-break-insert</code>
+(see <a href="GDB_002fMI-Breakpoint-Commands.html#GDB_002fMI-Breakpoint-Commands">GDB/MI Breakpoint Commands</a>) might be:
+
+<pre class="smallexample">     -&gt; -break-insert main
+     &lt;- ^done,bkpt={number="1",type="breakpoint",disp="keep",
+         enabled="y",addr="0x08048564",func="main",file="myprog.c",
+         fullname="/home/nickrob/myprog.c",line="68",thread-groups=["i1"],
+         times="0"}
+     &lt;- (gdb)
+</pre>
+   </body></html>
+

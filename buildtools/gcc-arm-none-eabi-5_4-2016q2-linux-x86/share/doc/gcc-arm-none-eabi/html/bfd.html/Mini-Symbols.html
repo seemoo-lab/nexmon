@@ -1,0 +1,77 @@
+<html lang="en">
+<head>
+<title>Mini Symbols - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Symbols.html#Symbols" title="Symbols">
+<link rel="prev" href="Writing-Symbols.html#Writing-Symbols" title="Writing Symbols">
+<link rel="next" href="typedef-asymbol.html#typedef-asymbol" title="typedef asymbol">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Mini-Symbols"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="typedef-asymbol.html#typedef-asymbol">typedef asymbol</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Writing-Symbols.html#Writing-Symbols">Writing Symbols</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Symbols.html#Symbols">Symbols</a>
+<hr>
+</div>
+
+<h4 class="subsection">2.7.3 Mini Symbols</h4>
+
+<p>Mini symbols provide read-only access to the symbol table. 
+They use less memory space, but require more time to access. 
+They can be useful for tools like nm or objdump, which may
+have to handle symbol tables of extremely large executables.
+
+   <p>The <code>bfd_read_minisymbols</code> function will read the symbols
+into memory in an internal form.  It will return a <code>void *</code>
+pointer to a block of memory, a symbol count, and the size of
+each symbol.  The pointer is allocated using <code>malloc</code>, and
+should be freed by the caller when it is no longer needed.
+
+   <p>The function <code>bfd_minisymbol_to_symbol</code> will take a pointer
+to a minisymbol, and a pointer to a structure returned by
+<code>bfd_make_empty_symbol</code>, and return a <code>asymbol</code> structure. 
+The return value may or may not be the same as the value from
+<code>bfd_make_empty_symbol</code> which was passed in.
+
+   </body></html>
+

@@ -1,0 +1,98 @@
+<html lang="en">
+<head>
+<title>Adding symbols from an object file - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Adding-Symbols-to-the-Hash-Table.html#Adding-Symbols-to-the-Hash-Table" title="Adding Symbols to the Hash Table">
+<link rel="prev" href="Differing-file-formats.html#Differing-file-formats" title="Differing file formats">
+<link rel="next" href="Adding-symbols-from-an-archive.html#Adding-symbols-from-an-archive" title="Adding symbols from an archive">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Adding-symbols-from-an-object-file"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Adding-symbols-from-an-archive.html#Adding-symbols-from-an-archive">Adding symbols from an archive</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Differing-file-formats.html#Differing-file-formats">Differing file formats</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Adding-Symbols-to-the-Hash-Table.html#Adding-Symbols-to-the-Hash-Table">Adding Symbols to the Hash Table</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">2.17.2.2 Adding symbols from an object file</h5>
+
+<p>When the <code>_bfd_link_add_symbols</code> routine is passed an object
+file, it must add all externally visible symbols in that
+object file to the hash table.  The actual work of adding the
+symbol to the hash table is normally handled by the function
+<code>_bfd_generic_link_add_one_symbol</code>.  The
+<code>_bfd_link_add_symbols</code> routine is responsible for reading
+all the symbols from the object file and passing the correct
+information to <code>_bfd_generic_link_add_one_symbol</code>.
+
+   <p>The <code>_bfd_link_add_symbols</code> routine should not use
+<code>bfd_canonicalize_symtab</code> to read the symbols.  The point of
+providing this routine is to avoid the overhead of converting
+the symbols into generic <code>asymbol</code> structures.
+
+   <p><a name="index-g_t_005fbfd_005fgeneric_005flink_005fadd_005fone_005fsymbol-2246"></a><code>_bfd_generic_link_add_one_symbol</code> handles the details of
+combining common symbols, warning about multiple definitions,
+and so forth.  It takes arguments which describe the symbol to
+add, notably symbol flags, a section, and an offset.  The
+symbol flags include such things as <code>BSF_WEAK</code> or
+<code>BSF_INDIRECT</code>.  The section is a section in the object
+file, or something like <code>bfd_und_section_ptr</code> for an undefined
+symbol or <code>bfd_com_section_ptr</code> for a common symbol.
+
+   <p>If the <code>_bfd_final_link</code> routine is also going to need to
+read the symbol information, the <code>_bfd_link_add_symbols</code>
+routine should save it somewhere attached to the object file
+BFD.  However, the information should only be saved if the
+<code>keep_memory</code> field of the <code>info</code> argument is TRUE, so
+that the <code>-no-keep-memory</code> linker switch is effective.
+
+   <p>The a.out function which adds symbols from an object file is
+<code>aout_link_add_object_symbols</code>, and most of the interesting
+work is in <code>aout_link_add_symbols</code>.  The latter saves
+pointers to the hash tables entries created by
+<code>_bfd_generic_link_add_one_symbol</code> indexed by symbol number,
+so that the <code>_bfd_final_link</code> routine does not have to call
+the hash table lookup routine to locate the entry.
+
+   </body></html>
+

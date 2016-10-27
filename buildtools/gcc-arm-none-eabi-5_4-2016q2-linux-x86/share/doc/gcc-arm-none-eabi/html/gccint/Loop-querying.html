@@ -1,0 +1,116 @@
+<html lang="en">
+<head>
+<title>Loop querying - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation" title="Loop Analysis and Representation">
+<link rel="prev" href="Loop-representation.html#Loop-representation" title="Loop representation">
+<link rel="next" href="Loop-manipulation.html#Loop-manipulation" title="Loop manipulation">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Loop-querying"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Loop-manipulation.html#Loop-manipulation">Loop manipulation</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Loop-representation.html#Loop-representation">Loop representation</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation">Loop Analysis and Representation</a>
+<hr>
+</div>
+
+<h3 class="section">15.2 Loop querying</h3>
+
+<p><a name="index-Loop-querying-3231"></a>
+The functions to query the information about loops are declared in
+<samp><span class="file">cfgloop.h</span></samp>.  Some of the information can be taken directly from
+the structures.  <code>loop_father</code> field of each basic block contains
+the innermost loop to that the block belongs.  The most useful fields of
+loop structure (that are kept up-to-date at all times) are:
+
+     <ul>
+<li><code>header</code>, <code>latch</code>: Header and latch basic blocks of the
+loop. 
+<li><code>num_nodes</code>: Number of basic blocks in the loop (including
+the basic blocks of the sub-loops). 
+<li><code>depth</code>: The depth of the loop in the loops tree, i.e., the
+number of super-loops of the loop. 
+<li><code>outer</code>, <code>inner</code>, <code>next</code>: The super-loop, the first
+sub-loop, and the sibling of the loop in the loops tree. 
+</ul>
+
+ <p>There are other fields in the loop structures, many of them used only by
+some of the passes, or not updated during CFG changes; in general, they
+should not be accessed directly.
+
+ <p>The most important functions to query loop structures are:
+
+     <ul>
+<li><code>flow_loops_dump</code>: Dumps the information about loops to a
+file. 
+<li><code>verify_loop_structure</code>: Checks consistency of the loop
+structures. 
+<li><code>loop_latch_edge</code>: Returns the latch edge of a loop. 
+<li><code>loop_preheader_edge</code>: If loops have preheaders, returns
+the preheader edge of a loop. 
+<li><code>flow_loop_nested_p</code>: Tests whether loop is a sub-loop of
+another loop. 
+<li><code>flow_bb_inside_loop_p</code>: Tests whether a basic block belongs
+to a loop (including its sub-loops). 
+<li><code>find_common_loop</code>: Finds the common super-loop of two loops. 
+<li><code>superloop_at_depth</code>: Returns the super-loop of a loop with
+the given depth. 
+<li><code>tree_num_loop_insns</code>, <code>num_loop_insns</code>: Estimates the
+number of insns in the loop, on GIMPLE and on RTL. 
+<li><code>loop_exit_edge_p</code>: Tests whether edge is an exit from a
+loop. 
+<li><code>mark_loop_exit_edges</code>: Marks all exit edges of all loops
+with <code>EDGE_LOOP_EXIT</code> flag. 
+<li><code>get_loop_body</code>, <code>get_loop_body_in_dom_order</code>,
+<code>get_loop_body_in_bfs_order</code>: Enumerates the basic blocks in the
+loop in depth-first search order in reversed CFG, ordered by dominance
+relation, and breath-first search order, respectively. 
+<li><code>single_exit</code>: Returns the single exit edge of the loop, or
+<code>NULL</code> if the loop has more than one exit.  You can only use this
+function if LOOPS_HAVE_MARKED_SINGLE_EXITS property is used. 
+<li><code>get_loop_exit_edges</code>: Enumerates the exit edges of a loop. 
+<li><code>just_once_each_iteration_p</code>: Returns true if the basic block
+is executed exactly once during each iteration of a loop (that is, it
+does not belong to a sub-loop, and it dominates the latch of the loop). 
+</ul>
+
+ </body></html>
+

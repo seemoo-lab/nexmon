@@ -1,0 +1,77 @@
+<html lang="en">
+<head>
+<title>Front End Directory - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Front-End.html#Front-End" title="Front End">
+<link rel="next" href="Front-End-Config.html#Front-End-Config" title="Front End Config">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Front-End-Directory"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Front-End-Config.html#Front-End-Config">Front End Config</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Front-End.html#Front-End">Front End</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">6.3.8.1 The Front End <samp><var>language</var></samp> Directory</h5>
+
+<p>A front end <samp><var>language</var></samp> directory contains the source files
+of that front end (but not of any runtime libraries, which should be
+outside the <samp><span class="file">gcc</span></samp> directory).  This includes documentation, and
+possibly some subsidiary programs built alongside the front end. 
+Certain files are special and other parts of the compiler depend on
+their names:
+
+     <dl>
+<dt><samp><span class="file">config-lang.in</span></samp><dd>This file is required in all language subdirectories.  See <a href="Front-End-Config.html#Front-End-Config">The Front End <samp><span class="file">config-lang.in</span></samp> File</a>, for details of
+its contents
+<br><dt><samp><span class="file">Make-lang.in</span></samp><dd>This file is required in all language subdirectories.  See <a href="Front-End-Makefile.html#Front-End-Makefile">The Front End <samp><span class="file">Make-lang.in</span></samp> File</a>, for details of its
+contents. 
+<br><dt><samp><span class="file">lang.opt</span></samp><dd>This file registers the set of switches that the front end accepts on
+the command line, and their <samp><span class="option">--help</span></samp> text.  See <a href="Options.html#Options">Options</a>. 
+<br><dt><samp><span class="file">lang-specs.h</span></samp><dd>This file provides entries for <code>default_compilers</code> in
+<samp><span class="file">gcc.c</span></samp> which override the default of giving an error that a
+compiler for that language is not installed. 
+<br><dt><samp><var>language</var><span class="file">-tree.def</span></samp><dd>This file, which need not exist, defines any language-specific tree
+codes. 
+</dl>
+
+ </body></html>
+

@@ -1,0 +1,91 @@
+<html lang="en">
+<head>
+<title>Internal flags - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="LTO.html#LTO" title="LTO">
+<link rel="prev" href="WHOPR.html#WHOPR" title="WHOPR">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Internal-flags"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="WHOPR.html#WHOPR">WHOPR</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="LTO.html#LTO">LTO</a>
+<hr>
+</div>
+
+<h3 class="section">24.5 Internal flags controlling <code>lto1</code></h3>
+
+<p>The following flags are passed into <samp><span class="command">lto1</span></samp> and are not
+meant to be used directly from the command line.
+
+     <ul>
+<li>-fwpa
+<a name="index-fwpa-5107"></a>This option runs the serial part of the link-time optimizer
+performing the inter-procedural propagation (WPA mode).  The
+compiler reads in summary information from all inputs and
+performs an analysis based on summary information only.  It
+generates object files for subsequent runs of the link-time
+optimizer where individual object files are optimized using both
+summary information from the WPA mode and the actual function
+bodies.  It then drives the LTRANS phase.
+
+     <li>-fltrans
+<a name="index-fltrans-5108"></a>This option runs the link-time optimizer in the
+local-transformation (LTRANS) mode, which reads in output from a
+previous run of the LTO in WPA mode.  In the LTRANS mode, LTO
+optimizes an object and produces the final assembly.
+
+     <li>-fltrans-output-list=<var>file</var>
+<a name="index-fltrans_002doutput_002dlist-5109"></a>This option specifies a file to which the names of LTRANS output
+files are written.  This option is only meaningful in conjunction
+with <samp><span class="option">-fwpa</span></samp>.
+
+     <li>-fresolution=<var>file</var>
+<a name="index-fresolution-5110"></a>This option specifies the linker resolution file.  This option is
+only meaningful in conjunction with <samp><span class="option">-fwpa</span></samp> and as option
+to pass through to the LTO linker plugin. 
+</ul>
+
+<!-- Copyright (C) 2014-2015 Free Software Foundation, Inc. -->
+<!-- Free Software Foundation, Inc. -->
+<!-- This is part of the GCC manual. -->
+<!-- For copying conditions, see the file gcc.texi. -->
+ </body></html>
+

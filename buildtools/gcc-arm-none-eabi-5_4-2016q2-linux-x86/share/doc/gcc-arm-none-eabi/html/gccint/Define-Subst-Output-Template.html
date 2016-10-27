@@ -1,0 +1,92 @@
+<html lang="en">
+<head>
+<title>Define Subst Output Template - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Define-Subst.html#Define-Subst" title="Define Subst">
+<link rel="prev" href="Define-Subst-Pattern-Matching.html#Define-Subst-Pattern-Matching" title="Define Subst Pattern Matching">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Define-Subst-Output-Template"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Define-Subst-Pattern-Matching.html#Define-Subst-Pattern-Matching">Define Subst Pattern Matching</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Define-Subst.html#Define-Subst">Define Subst</a>
+<hr>
+</div>
+
+<h4 class="subsection">16.21.3 Generation of output template in <code>define_subst</code></h4>
+
+<p><a name="index-define_005fsubst-3827"></a>
+If all necessary checks for <code>define_subst</code> application pass, a new
+RTL-pattern, based on the output-template, is created to replace the old
+template.  Like in input-patterns, meanings of some RTL expressions are
+changed when they are used in output-patterns of a <code>define_subst</code>. 
+Thus, <code>match_dup</code> is used for copying the whole expression from the
+original pattern, which matched corresponding <code>match_operand</code> from
+the input pattern.
+
+ <p><code>match_dup N</code> is used in the output template to be replaced with
+the expression from the original pattern, which matched
+<code>match_operand N</code> from the input pattern.  As a consequence,
+<code>match_dup</code> cannot be used to point to <code>match_operand</code>s from
+the output pattern, it should always refer to a <code>match_operand</code>
+from the input pattern.
+
+ <p>In the output template one can refer to the expressions from the
+original pattern and create new ones.  For instance, some operands could
+be added by means of standard <code>match_operand</code>.
+
+ <p>After replacing <code>match_dup</code> with some RTL-subtree from the original
+pattern, it could happen that several <code>match_operand</code>s in the
+output pattern have the same indexes.  It is unknown, how many and what
+indexes would be used in the expression which would replace
+<code>match_dup</code>, so such conflicts in indexes are inevitable.  To
+overcome this issue, <code>match_operands</code> and <code>match_operators</code>,
+which were introduced into the output pattern, are renumerated when all
+<code>match_dup</code>s are replaced.
+
+ <p>Number of alternatives in <code>match_operand</code>s introduced into the
+output template <code>M</code> could differ from the number of alternatives in
+the original pattern <code>N</code>, so in the resultant pattern there would
+be <code>N*M</code> alternatives.  Thus, constraints from the original pattern
+would be duplicated <code>N</code> times, constraints from the output pattern
+would be duplicated <code>M</code> times, producing all possible combinations.
+
+ </body></html>
+

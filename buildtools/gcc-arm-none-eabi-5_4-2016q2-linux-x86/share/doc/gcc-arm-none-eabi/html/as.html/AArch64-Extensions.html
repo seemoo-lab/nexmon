@@ -1,0 +1,89 @@
+<html lang="en">
+<head>
+<title>AArch64 Extensions - Using as</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using as">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="AArch64_002dDependent.html#AArch64_002dDependent" title="AArch64-Dependent">
+<link rel="prev" href="AArch64-Options.html#AArch64-Options" title="AArch64 Options">
+<link rel="next" href="AArch64-Syntax.html#AArch64-Syntax" title="AArch64 Syntax">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled ``GNU Free Documentation License''.
+
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="AArch64-Extensions"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="AArch64-Syntax.html#AArch64-Syntax">AArch64 Syntax</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="AArch64-Options.html#AArch64-Options">AArch64 Options</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="AArch64_002dDependent.html#AArch64_002dDependent">AArch64-Dependent</a>
+<hr>
+</div>
+
+<h4 class="subsection">9.1.2 Architecture Extensions</h4>
+
+<p>The table below lists the permitted architecture extensions that are
+supported by the assembler and the conditions under which they are
+automatically enabled.
+
+   <p>Multiple extensions may be specified, separated by a <code>+</code>. 
+Extension mnemonics may also be removed from those the assembler
+accepts.  This is done by prepending <code>no</code> to the option that adds
+the extension.  Extensions that are removed must be listed after all
+extensions that have been added.
+
+   <p>Enabling an extension that requires other extensions will
+automatically cause those extensions to be enabled.  Similarly,
+disabling an extension that is required by other extensions will
+automatically cause those extensions to be disabled.
+
+   <p><table summary=""><tr align="left"><th valign="top" width="12%">Extension </th><th valign="top" width="17%">Minimum Architecture </th><th valign="top" width="17%">Enabled by default
+ </th><th valign="top" width="54%">Description
+<br></th></tr><tr align="left"><td valign="top" width="12%"><code>crc</code> </td><td valign="top" width="17%">ARMv8-A </td><td valign="top" width="17%">ARMv8.1-A or later
+ </td><td valign="top" width="54%">Enable CRC instructions. 
+<br></td></tr><tr align="left"><td valign="top" width="12%"><code>crypto</code> </td><td valign="top" width="17%">ARMv8-A </td><td valign="top" width="17%">No
+ </td><td valign="top" width="54%">Enable cryptographic extensions.  This implies <code>fp</code> and <code>simd</code>. 
+<br></td></tr><tr align="left"><td valign="top" width="12%"><code>fp</code> </td><td valign="top" width="17%">ARMv8-A </td><td valign="top" width="17%">ARMv8-A or later
+ </td><td valign="top" width="54%">Enable floating-point extensions. 
+<br></td></tr><tr align="left"><td valign="top" width="12%"><code>simd</code> </td><td valign="top" width="17%">ARMv8-A </td><td valign="top" width="17%">ARMv8-A or later
+ </td><td valign="top" width="54%">Enable Advanced SIMD extensions.  This implies <code>fp</code>. 
+<br></td></tr><tr align="left"><td valign="top" width="12%"><code>pan</code> </td><td valign="top" width="17%">ARMv8-A </td><td valign="top" width="17%">ARMv8-A or later
+ </td><td valign="top" width="54%">Enable Privileged Access Never support. 
+<br></td></tr><tr align="left"><td valign="top" width="12%"><code>lor</code> </td><td valign="top" width="17%">ARMv8-A </td><td valign="top" width="17%">ARMv8-A or later
+ </td><td valign="top" width="54%">Enable Limited Ordering Regions extensions. 
+<br></td></tr><tr align="left"><td valign="top" width="12%"><code>rdma</code> </td><td valign="top" width="17%">ARMv8-A </td><td valign="top" width="17%">ARMv8-A or later
+ </td><td valign="top" width="54%">Enable ARMv8.1 Advanced SIMD extensions.  This implies <code>simd</code>. 
+<br></td></tr><tr align="left"><td valign="top" width="12%"><code>fp16</code> </td><td valign="top" width="17%">ARMv8.2-A </td><td valign="top" width="17%">ARMv8.2-A or later
+ </td><td valign="top" width="54%">Enable ARMv8.2 16-bit floating-point support.  This implies
+ <code>fp</code>. 
+<br></td></tr><tr align="left"><td valign="top" width="12%"><code>profile</code> </td><td valign="top" width="17%">ARMv8.2-A </td><td valign="top" width="17%">No
+ </td><td valign="top" width="54%">Enable statistical profiling extensions.
+   <br></td></tr></table>
+
+   </body></html>
+

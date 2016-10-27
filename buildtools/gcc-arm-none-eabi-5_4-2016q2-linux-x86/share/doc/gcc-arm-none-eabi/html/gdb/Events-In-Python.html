@@ -1,0 +1,246 @@
+<html lang="en">
+<head>
+<title>Events In Python - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Python-API.html#Python-API" title="Python API">
+<link rel="prev" href="Inferiors-In-Python.html#Inferiors-In-Python" title="Inferiors In Python">
+<link rel="next" href="Threads-In-Python.html#Threads-In-Python" title="Threads In Python">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Events-In-Python"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Threads-In-Python.html#Threads-In-Python">Threads In Python</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Inferiors-In-Python.html#Inferiors-In-Python">Inferiors In Python</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Python-API.html#Python-API">Python API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.2.2.17 Events In Python</h5>
+
+<p><a name="index-inferior-events-in-Python-2023"></a>
+<span class="sc">gdb</span> provides a general event facility so that Python code can be
+notified of various state changes, particularly changes that occur in
+the inferior.
+
+   <p>An <dfn>event</dfn> is just an object that describes some state change.  The
+type of the object and its attributes will vary depending on the details
+of the change.  All the existing events are described below.
+
+   <p>In order to be notified of an event, you must register an event handler
+with an <dfn>event registry</dfn>.  An event registry is an object in the
+<code>gdb.events</code> module which dispatches particular events.  A registry
+provides methods to register and unregister event handlers:
+
+<div class="defun">
+&mdash; Function: <b>EventRegistry.connect</b> (<var>object</var>)<var><a name="index-EventRegistry_002econnect-2024"></a></var><br>
+<blockquote><p>Add the given callable <var>object</var> to the registry.  This object will be
+called when an event corresponding to this registry occurs. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>EventRegistry.disconnect</b> (<var>object</var>)<var><a name="index-EventRegistry_002edisconnect-2025"></a></var><br>
+<blockquote><p>Remove the given <var>object</var> from the registry.  Once removed, the object
+will no longer receive notifications of events. 
+</p></blockquote></div>
+
+   <p>Here is an example:
+
+<pre class="smallexample">     def exit_handler (event):
+         print "event type: exit"
+         print "exit code: %d" % (event.exit_code)
+     
+     gdb.events.exited.connect (exit_handler)
+</pre>
+   <p>In the above example we connect our handler <code>exit_handler</code> to the
+registry <code>events.exited</code>.  Once connected, <code>exit_handler</code> gets
+called when the inferior exits.  The argument <dfn>event</dfn> in this example is
+of type <code>gdb.ExitedEvent</code>.  As you can see in the example the
+<code>ExitedEvent</code> object has an attribute which indicates the exit code of
+the inferior.
+
+   <p>The following is a listing of the event registries that are available and
+details of the events they emit:
+
+     <dl>
+<dt><code>events.cont</code><dd>Emits <code>gdb.ThreadEvent</code>.
+
+     <p>Some events can be thread specific when <span class="sc">gdb</span> is running in non-stop
+mode.  When represented in Python, these events all extend
+<code>gdb.ThreadEvent</code>.  Note, this event is not emitted directly; instead,
+events which are emitted by this or other modules might extend this event. 
+Examples of these events are <code>gdb.BreakpointEvent</code> and
+<code>gdb.ContinueEvent</code>.
+
+     <div class="defun">
+&mdash; Variable: <b>ThreadEvent.inferior_thread</b><var><a name="index-ThreadEvent_002einferior_005fthread-2026"></a></var><br>
+<blockquote> <p>In non-stop mode this attribute will be set to the specific thread which was
+involved in the emitted event. Otherwise, it will be set to <code>None</code>. 
+</p></blockquote></div>
+
+     <p>Emits <code>gdb.ContinueEvent</code> which extends <code>gdb.ThreadEvent</code>.
+
+     <p>This event indicates that the inferior has been continued after a stop. For
+inherited attribute refer to <code>gdb.ThreadEvent</code> above.
+
+     <br><dt><code>events.exited</code><dd>Emits <code>events.ExitedEvent</code> which indicates that the inferior has exited. 
+<code>events.ExitedEvent</code> has two attributes:
+
+     <div class="defun">
+&mdash; Variable: <b>ExitedEvent.exit_code</b><var><a name="index-ExitedEvent_002eexit_005fcode-2027"></a></var><br>
+<blockquote> <p>An integer representing the exit code, if available, which the inferior
+has returned.  (The exit code could be unavailable if, for example,
+<span class="sc">gdb</span> detaches from the inferior.) If the exit code is unavailable,
+the attribute does not exist. 
+</p></blockquote></div>
+
+     <div class="defun">
+&mdash; Variable: <b>ExitedEvent</b><var> inferior<a name="index-ExitedEvent-2028"></a></var><br>
+<blockquote> <p>A reference to the inferior which triggered the <code>exited</code> event. 
+</p></blockquote></div>
+
+     <br><dt><code>events.stop</code><dd>Emits <code>gdb.StopEvent</code> which extends <code>gdb.ThreadEvent</code>.
+
+     <p>Indicates that the inferior has stopped.  All events emitted by this registry
+extend StopEvent.  As a child of <code>gdb.ThreadEvent</code>, <code>gdb.StopEvent</code>
+will indicate the stopped thread when <span class="sc">gdb</span> is running in non-stop
+mode.  Refer to <code>gdb.ThreadEvent</code> above for more details.
+
+     <p>Emits <code>gdb.SignalEvent</code> which extends <code>gdb.StopEvent</code>.
+
+     <p>This event indicates that the inferior or one of its threads has received as
+signal.  <code>gdb.SignalEvent</code> has the following attributes:
+
+     <div class="defun">
+&mdash; Variable: <b>SignalEvent.stop_signal</b><var><a name="index-SignalEvent_002estop_005fsignal-2029"></a></var><br>
+<blockquote> <p>A string representing the signal received by the inferior.  A list of possible
+signal values can be obtained by running the command <code>info signals</code> in
+the <span class="sc">gdb</span> command prompt. 
+</p></blockquote></div>
+
+     <p>Also emits  <code>gdb.BreakpointEvent</code> which extends <code>gdb.StopEvent</code>.
+
+     <p><code>gdb.BreakpointEvent</code> event indicates that one or more breakpoints have
+been hit, and has the following attributes:
+
+     <div class="defun">
+&mdash; Variable: <b>BreakpointEvent.breakpoints</b><var><a name="index-BreakpointEvent_002ebreakpoints-2030"></a></var><br>
+<blockquote> <p>A sequence containing references to all the breakpoints (type
+<code>gdb.Breakpoint</code>) that were hit. 
+See <a href="Breakpoints-In-Python.html#Breakpoints-In-Python">Breakpoints In Python</a>, for details of the <code>gdb.Breakpoint</code> object. 
+</p></blockquote></div>
+
+     <div class="defun">
+&mdash; Variable: <b>BreakpointEvent.breakpoint</b><var><a name="index-BreakpointEvent_002ebreakpoint-2031"></a></var><br>
+<blockquote> <p>A reference to the first breakpoint that was hit. 
+This function is maintained for backward compatibility and is now deprecated
+in favor of the <code>gdb.BreakpointEvent.breakpoints</code> attribute. 
+</p></blockquote></div>
+
+     <br><dt><code>events.new_objfile</code><dd>Emits <code>gdb.NewObjFileEvent</code> which indicates that a new object file has
+been loaded by <span class="sc">gdb</span>.  <code>gdb.NewObjFileEvent</code> has one attribute:
+
+     <div class="defun">
+&mdash; Variable: <b>NewObjFileEvent.new_objfile</b><var><a name="index-NewObjFileEvent_002enew_005fobjfile-2032"></a></var><br>
+<blockquote> <p>A reference to the object file (<code>gdb.Objfile</code>) which has been loaded. 
+See <a href="Objfiles-In-Python.html#Objfiles-In-Python">Objfiles In Python</a>, for details of the <code>gdb.Objfile</code> object. 
+</p></blockquote></div>
+
+     <br><dt><code>events.clear_objfiles</code><dd>Emits <code>gdb.ClearObjFilesEvent</code> which indicates that the list of object
+files for a program space has been reset. 
+<code>gdb.ClearObjFilesEvent</code> has one attribute:
+
+     <div class="defun">
+&mdash; Variable: <b>ClearObjFilesEvent.progspace</b><var><a name="index-ClearObjFilesEvent_002eprogspace-2033"></a></var><br>
+<blockquote> <p>A reference to the program space (<code>gdb.Progspace</code>) whose objfile list has
+been cleared.  See <a href="Progspaces-In-Python.html#Progspaces-In-Python">Progspaces In Python</a>. 
+</p></blockquote></div>
+
+     <br><dt><code>events.inferior_call_pre</code><dd>Emits <code>gdb.InferiorCallPreEvent</code> which indicates that a function in
+the inferior is about to be called.
+
+     <div class="defun">
+&mdash; Variable: <b>InferiorCallPreEvent.ptid</b><var><a name="index-InferiorCallPreEvent_002eptid-2034"></a></var><br>
+<blockquote> <p>The thread in which the call will be run. 
+</p></blockquote></div>
+
+     <div class="defun">
+&mdash; Variable: <b>InferiorCallPreEvent.address</b><var><a name="index-InferiorCallPreEvent_002eaddress-2035"></a></var><br>
+<blockquote> <p>The location of the function to be called. 
+</p></blockquote></div>
+
+     <br><dt><code>events.inferior_call_post</code><dd>Emits <code>gdb.InferiorCallPostEvent</code> which indicates that a function in
+the inferior has returned.
+
+     <div class="defun">
+&mdash; Variable: <b>InferiorCallPostEvent.ptid</b><var><a name="index-InferiorCallPostEvent_002eptid-2036"></a></var><br>
+<blockquote> <p>The thread in which the call was run. 
+</p></blockquote></div>
+
+     <div class="defun">
+&mdash; Variable: <b>InferiorCallPostEvent.address</b><var><a name="index-InferiorCallPostEvent_002eaddress-2037"></a></var><br>
+<blockquote> <p>The location of the function that was called. 
+</p></blockquote></div>
+
+     <br><dt><code>events.memory_changed</code><dd>Emits <code>gdb.MemoryChangedEvent</code> which indicates that the memory of the
+inferior has been modified by the <span class="sc">gdb</span> user, for instance via a
+command like <code>set&nbsp;*addr&nbsp;=&nbsp;value</code><!-- /@w -->.  The event has the following
+attributes:
+
+     <div class="defun">
+&mdash; Variable: <b>MemoryChangedEvent.address</b><var><a name="index-MemoryChangedEvent_002eaddress-2038"></a></var><br>
+<blockquote> <p>The start address of the changed region. 
+</p></blockquote></div>
+
+     <div class="defun">
+&mdash; Variable: <b>MemoryChangedEvent.length</b><var><a name="index-MemoryChangedEvent_002elength-2039"></a></var><br>
+<blockquote> <p>Length in bytes of the changed region. 
+</p></blockquote></div>
+
+     <br><dt><code>events.register_changed</code><dd>Emits <code>gdb.RegisterChangedEvent</code> which indicates that a register in the
+inferior has been modified by the <span class="sc">gdb</span> user.
+
+     <div class="defun">
+&mdash; Variable: <b>RegisterChangedEvent.frame</b><var><a name="index-RegisterChangedEvent_002eframe-2040"></a></var><br>
+<blockquote> <p>A gdb.Frame object representing the frame in which the register was modified. 
+</p></blockquote></div>
+
+     <div class="defun">
+&mdash; Variable: <b>RegisterChangedEvent.regnum</b><var><a name="index-RegisterChangedEvent_002eregnum-2041"></a></var><br>
+<blockquote> <p>Denotes which register was modified. 
+</p></blockquote></div>
+
+   </dl>
+
+   </body></html>
+

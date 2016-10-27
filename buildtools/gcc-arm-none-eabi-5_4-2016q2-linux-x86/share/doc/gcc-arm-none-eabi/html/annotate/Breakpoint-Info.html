@@ -1,0 +1,94 @@
+<html lang="en">
+<head>
+<title>Breakpoint Info - GDB's Obsolete Annotations</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GDB's Obsolete Annotations">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Errors.html#Errors" title="Errors">
+<link rel="next" href="Invalidation.html#Invalidation" title="Invalidation">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1994-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Breakpoint-Info"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Invalidation.html#Invalidation">Invalidation</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Errors.html#Errors">Errors</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">10 Information on Breakpoints</h2>
+
+<p><em>Breakpoint Annotations have been removed.  </em><span class="sc">gdb/mi</span><em> instead
+provides breakpoint commands.</em>
+
+   <p><a name="index-annotations-for-breakpoints-64"></a>The output from the <code>info breakpoints</code> command is annotated as follows:
+
+   <p><a name="index-breakpoints_002dheaders-65"></a><a name="index-breakpoints_002dtable-66"></a>
+<pre class="smallexample">     ^Z^Zbreakpoints-headers
+     <var>header-entry</var>
+     ^Z^Zbreakpoints-table
+</pre>
+   <p class="noindent">where <var>header-entry</var> has the same syntax as an entry (see below) but
+instead of containing data, it contains strings which are intended to
+convey the meaning of each field to the user.  This is followed by any
+number of entries.  If a field does not apply for this entry, it is
+omitted.  Fields may contain trailing whitespace.  Each entry consists
+of:
+
+   <p><a name="index-record-67"></a><a name="index-field-68"></a>
+<pre class="smallexample">     ^Z^Zrecord
+     ^Z^Zfield 0
+     <var>number</var>
+     ^Z^Zfield 1
+     <var>type</var>
+     ^Z^Zfield 2
+     <var>disposition</var>
+     ^Z^Zfield 3
+     <var>enable</var>
+     ^Z^Zfield 4
+     <var>address</var>
+     ^Z^Zfield 5
+     <var>what</var>
+     ^Z^Zfield 6
+     <var>frame</var>
+     ^Z^Zfield 7
+     <var>condition</var>
+     ^Z^Zfield 8
+     <var>ignore-count</var>
+     ^Z^Zfield 9
+     <var>commands</var>
+</pre>
+   <p>Note that <var>address</var> is intended for user consumption&mdash;the syntax
+varies depending on the language.
+
+   <p>The output ends with
+
+   <p><a name="index-breakpoints_002dtable_002dend-69"></a>
+<pre class="smallexample">     ^Z^Zbreakpoints-table-end
+</pre>
+   </body></html>
+

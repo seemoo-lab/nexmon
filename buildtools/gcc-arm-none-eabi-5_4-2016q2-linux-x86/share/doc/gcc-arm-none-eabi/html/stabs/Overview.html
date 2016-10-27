@@ -1,0 +1,79 @@
+<html lang="en">
+<head>
+<title>Overview - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="index.html#Top" title="Top">
+<link rel="next" href="Program-Structure.html#Program-Structure" title="Program Structure">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<h1 class="settitle">STABS</h1>
+<div class="node">
+<p>
+<a name="Overview"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Program-Structure.html#Program-Structure">Program Structure</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="index.html#Top">Top</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">1 Overview of Stabs</h2>
+
+<p><dfn>Stabs</dfn> refers to a format for information that describes a program
+to a debugger.  This format was apparently invented by
+Peter Kessler at
+the University of California at Berkeley, for the <code>pdx</code> Pascal
+debugger; the format has spread widely since then.
+
+   <p>This document is one of the few published sources of documentation on
+stabs.  It is believed to be comprehensive for stabs used by C.  The
+lists of symbol descriptors (see <a href="Symbol-Descriptors.html#Symbol-Descriptors">Symbol Descriptors</a>) and type
+descriptors (see <a href="Type-Descriptors.html#Type-Descriptors">Type Descriptors</a>) are believed to be completely
+comprehensive.  Stabs for COBOL-specific features and for variant
+records (used by Pascal and Modula-2) are poorly documented here.
+
+<!-- FIXME: Need to document all OS9000 stuff in GDB; see all references -->
+<!-- to os9k_stabs in stabsread.c. -->
+   <p>Other sources of information on stabs are <cite>Dbx and Dbxtool
+Interfaces</cite>, 2nd edition, by Sun, 1988, and <cite>AIX Version 3.2 Files
+Reference</cite>, Fourth Edition, September 1992, "dbx Stabstring Grammar" in
+the a.out section, page 2-31.  This document is believed to incorporate
+the information from those two sources except where it explicitly directs
+you to them for more information.
+
+<ul class="menu">
+<li><a accesskey="1" href="Flow.html#Flow">Flow</a>: 			Overview of debugging information flow
+<li><a accesskey="2" href="Stabs-Format.html#Stabs-Format">Stabs Format</a>: 		Overview of stab format
+<li><a accesskey="3" href="String-Field.html#String-Field">String Field</a>: 		The string field
+<li><a accesskey="4" href="C-Example.html#C-Example">C Example</a>: 			A simple example in C source
+<li><a accesskey="5" href="Assembly-Code.html#Assembly-Code">Assembly Code</a>: 		The simple example at the assembly level
+</ul>
+
+   </body></html>
+

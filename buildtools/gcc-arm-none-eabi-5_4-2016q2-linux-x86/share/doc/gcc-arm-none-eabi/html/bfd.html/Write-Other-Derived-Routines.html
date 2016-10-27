@@ -1,0 +1,83 @@
+<html lang="en">
+<head>
+<title>Write Other Derived Routines - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Deriving-a-New-Hash-Table-Type.html#Deriving-a-New-Hash-Table-Type" title="Deriving a New Hash Table Type">
+<link rel="prev" href="Write-the-Derived-Creation-Routine.html#Write-the-Derived-Creation-Routine" title="Write the Derived Creation Routine">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Write-Other-Derived-Routines"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Write-the-Derived-Creation-Routine.html#Write-the-Derived-Creation-Routine">Write the Derived Creation Routine</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Deriving-a-New-Hash-Table-Type.html#Deriving-a-New-Hash-Table-Type">Deriving a New Hash Table Type</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">2.18.4.3 Write other derived routines</h5>
+
+<p>You will want to write other routines for your new hash table,
+as well.
+
+   <p>You will want an initialization routine which calls the
+initialization routine of the hash table you are deriving from
+and initializes any other local fields.  For the linker hash
+table, this is <code>_bfd_link_hash_table_init</code> in <code>linker.c</code>.
+
+   <p>You will want a lookup routine which calls the lookup routine
+of the hash table you are deriving from and casts the result. 
+The linker hash table uses <code>bfd_link_hash_lookup</code> in
+<code>linker.c</code> (this actually takes an additional argument which
+it uses to decide how to return the looked up value).
+
+   <p>You may want a traversal routine.  This should just call the
+traversal routine of the hash table you are deriving from with
+appropriate casts.  The linker hash table uses
+<code>bfd_link_hash_traverse</code> in <code>linker.c</code>.
+
+   <p>These routines may simply be defined as macros.  For example,
+the a.out backend linker hash table, which is derived from the
+linker hash table, uses macros for the lookup and traversal
+routines.  These are <code>aout_link_hash_lookup</code> and
+<code>aout_link_hash_traverse</code> in aoutx.h.
+
+   </body></html>
+

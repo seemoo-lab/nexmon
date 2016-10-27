@@ -1,0 +1,70 @@
+<html lang="en">
+<head>
+<title>Register Variables - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Variables.html#Variables" title="Variables">
+<link rel="prev" href="Global-Variables.html#Global-Variables" title="Global Variables">
+<link rel="next" href="Common-Blocks.html#Common-Blocks" title="Common Blocks">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Register-Variables"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Common-Blocks.html#Common-Blocks">Common Blocks</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Global-Variables.html#Global-Variables">Global Variables</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Variables.html#Variables">Variables</a>
+<hr>
+</div>
+
+<h3 class="section">4.3 Register Variables</h3>
+
+<p><a name="index-N_005fRSYM-29"></a><a name="index-C_005fRSYM-30"></a><!-- According to an old version of this manual, AIX uses C_RPSYM instead -->
+<!-- of C_RSYM.  I am skeptical; this should be verified. -->
+Register variables have their own stab type, <code>N_RSYM</code>
+(<code>C_RSYM</code> for XCOFF), and their own symbol descriptor, &lsquo;<samp><span class="samp">r</span></samp>&rsquo;. 
+The stab's value is the number of the register where the variable data
+will be stored. 
+<!-- .stabs "name:type",N_RSYM,0,RegSize,RegNumber (Sun doc) -->
+
+   <p>AIX defines a separate symbol descriptor &lsquo;<samp><span class="samp">d</span></samp>&rsquo; for floating point
+registers.  This seems unnecessary; why not just just give floating
+point registers different register numbers?  I have not verified whether
+the compiler actually uses &lsquo;<samp><span class="samp">d</span></samp>&rsquo;.
+
+   <p>If the register is explicitly allocated to a global variable, but not
+initialized, as in:
+
+<pre class="example">     register int g_bar asm ("%g5");
+</pre>
+   <p class="noindent">then the stab may be emitted at the end of the object file, with
+the other bss symbols.
+
+   </body></html>
+

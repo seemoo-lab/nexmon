@@ -1,0 +1,85 @@
+<html lang="en">
+<head>
+<title>clearerr - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stdio.html#Stdio" title="Stdio">
+<link rel="next" href="diprintf.html#diprintf" title="diprintf">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="clearerr"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="diprintf.html#diprintf">diprintf</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stdio.html#Stdio">Stdio</a>
+<hr>
+</div>
+
+<h3 class="section">4.1 <code>clearerr</code>, <code>clearerr_unlocked</code>&mdash;clear file or stream error indicator</h3>
+
+<p><a name="index-clearerr-151"></a><a name="index-clearerr_005funlocked-152"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;stdio.h&gt;
+     void clearerr(FILE *<var>fp</var>);
+     
+     #define _BSD_SOURCE
+     #include &lt;stdio.h&gt;
+     void clearerr_unlocked(FILE *<var>fp</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+The <code>stdio</code> functions maintain an error indicator with each file
+pointer <var>fp</var>, to record whether any read or write errors have
+occurred on the associated file or stream.  Similarly, it maintains an
+end-of-file indicator to record whether there is no more data in the
+file.
+
+   <p>Use <code>clearerr</code> to reset both of these indicators.
+
+   <p>See <code>ferror</code> and <code>feof</code> to query the two indicators.
+
+   <p><code>clearerr_unlocked</code> is a non-thread-safe version of <code>clearerr</code>. 
+<code>clearerr_unlocked</code> may only safely be used within a scope
+protected by flockfile() (or ftrylockfile()) and funlockfile().  This
+function may safely be used in a multi-threaded program if and only
+if they are called while the invoking thread owns the (FILE *)
+object, as is the case after a successful call to the flockfile() or
+ftrylockfile() functions.  If threads are disabled, then
+<code>clearerr_unlocked</code> is equivalent to <code>clearerr</code>.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+<code>clearerr</code> does not return a result.
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+ANSI C requires <code>clearerr</code>.
+
+   <p><code>clearerr_unlocked</code> is a BSD extension also provided by GNU libc.
+
+   <p>No supporting OS subroutines are required.
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

@@ -1,0 +1,154 @@
+<html lang="en">
+<head>
+<title>Symbol-table - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="mmo.html#mmo" title="mmo">
+<link rel="prev" href="File-layout.html#File-layout" title="File layout">
+<link rel="next" href="mmo-section-mapping.html#mmo-section-mapping" title="mmo section mapping">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Symbol-table"></a>
+<a name="Symbol_002dtable"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="mmo-section-mapping.html#mmo-section-mapping">mmo section mapping</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="File-layout.html#File-layout">File layout</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="mmo.html#mmo">mmo</a>
+<hr>
+</div>
+
+<h4 class="subsection">3.5.2 Symbol table format</h4>
+
+<p>From mmixal.w (or really, the generated mmixal.tex) in the
+MMIXware package which also contains the <samp><span class="command">mmix</span></samp> simulator:
+&ldquo;Symbols are stored and retrieved by means of a &lsquo;<samp><span class="samp">ternary
+search trie</span></samp>&rsquo;, following ideas of Bentley and Sedgewick. (See
+ACM&ndash;SIAM Symp. on Discrete Algorithms &lsquo;<samp><span class="samp">8</span></samp>&rsquo; (1997), 360&ndash;369;
+R.Sedgewick, &lsquo;<samp><span class="samp">Algorithms in C</span></samp>&rsquo; (Reading, Mass. 
+Addison&ndash;Wesley, 1998), &lsquo;<samp><span class="samp">15.4</span></samp>&rsquo;.)  Each trie node stores a
+character, and there are branches to subtries for the cases where
+a given character is less than, equal to, or greater than the
+character in the trie.  There also is a pointer to a symbol table
+entry if a symbol ends at the current node.&rdquo;
+
+   <p>So it's a tree encoded as a stream of bytes.  The stream of bytes
+acts on a single virtual global symbol, adding and removing
+characters and signalling complete symbol points.  Here, we read
+the stream and create symbols at the completion points.
+
+   <p>First, there's a control byte <code>m</code>.  If any of the listed bits
+in <code>m</code> is nonzero, we execute what stands at the right, in
+the listed order:
+
+<pre class="example">      (MMO3_LEFT)
+      0x40 - Traverse left trie.
+             (Read a new command byte and recurse.)
+     
+      (MMO3_SYMBITS)
+      0x2f - Read the next byte as a character and store it in the
+             current character position; increment character position.
+             Test the bits of <code>m</code>:
+     
+             (MMO3_WCHAR)
+             0x80 - The character is 16-bit (so read another byte,
+                    merge into current character.
+     
+             (MMO3_TYPEBITS)
+             0xf  - We have a complete symbol; parse the type, value
+                    and serial number and do what should be done
+                    with a symbol.  The type and length information
+                    is in j = (m &amp; 0xf).
+     
+                    (MMO3_REGQUAL_BITS)
+                    j == 0xf: A register variable.  The following
+                              byte tells which register.
+                    j &lt;= 8:   An absolute symbol.  Read j bytes as the
+                              big-endian number the symbol equals.
+                              A j = 2 with two zero bytes denotes an
+                              unknown symbol.
+                    j &gt; 8:    As with j &lt;= 8, but add (0x20 &lt;&lt; 56)
+                              to the value in the following j - 8
+                              bytes.
+     
+                    Then comes the serial number, as a variant of
+                    uleb128, but better named ubeb128:
+                    Read bytes and shift the previous value left 7
+                    (multiply by 128).  Add in the new byte, repeat
+                    until a byte has bit 7 set.  The serial number
+                    is the computed value minus 128.
+     
+             (MMO3_MIDDLE)
+             0x20 - Traverse middle trie.  (Read a new command byte
+                    and recurse.)  Decrement character position.
+     
+      (MMO3_RIGHT)
+      0x10 - Traverse right trie.  (Read a new command byte and
+             recurse.)
+</pre>
+   <p>Let's look again at the <code>lop_stab</code> for the trivial file
+(see <a href="File-layout.html#File-layout">File layout</a>).
+
+<pre class="example">      0x980b0000 - lop_stab for ":Main" = 0, serial 1.
+      0x203a4040
+      0x10404020
+      0x4d206120
+      0x69016e00
+      0x81000000
+</pre>
+   <p>This forms the trivial trie (note that the path between &ldquo;:&rdquo; and
+&ldquo;M&rdquo; is redundant):
+
+<pre class="example">      203a     ":"
+      40       /
+      40      /
+      10      \
+      40      /
+      40     /
+      204d  "M"
+      2061  "a"
+      2069  "i"
+      016e  "n" is the last character in a full symbol, and
+            with a value represented in one byte.
+      00    The value is 0.
+      81    The serial number is 1.
+</pre>
+   </body></html>
+

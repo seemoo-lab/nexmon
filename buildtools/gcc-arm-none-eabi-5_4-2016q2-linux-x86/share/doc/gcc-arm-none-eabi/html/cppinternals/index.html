@@ -1,0 +1,103 @@
+<html lang="en">
+<head>
+<title>The GNU C Preprocessor Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="The GNU C Preprocessor Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="#Top">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<h1 class="settitle">The GNU C Preprocessor Internals</h1>
+<div class="contents">
+<h2>Table of Contents</h2>
+<ul>
+<li><a name="toc_Top" href="index.html#Top">The GNU C Preprocessor Internals</a>
+<li><a name="toc_Top" href="index.html#Top">1 Cpplib&mdash;the GNU C Preprocessor</a>
+<li><a name="toc_Conventions" href="Conventions.html#Conventions">Conventions</a>
+<li><a name="toc_Lexer" href="Lexer.html#Lexer">The Lexer</a>
+<ul>
+<li><a href="Lexer.html#Lexer">Overview</a>
+<li><a href="Lexer.html#Lexer">Lexing a token</a>
+<li><a href="Lexer.html#Lexer">Lexing a line</a>
+</li></ul>
+<li><a name="toc_Hash-Nodes" href="Hash-Nodes.html#Hash-Nodes">Hash Nodes</a>
+<li><a name="toc_Macro-Expansion" href="Macro-Expansion.html#Macro-Expansion">Macro Expansion Algorithm</a>
+<ul>
+<li><a href="Macro-Expansion.html#Macro-Expansion">Internal representation of macros</a>
+<li><a href="Macro-Expansion.html#Macro-Expansion">Macro expansion overview</a>
+<li><a href="Macro-Expansion.html#Macro-Expansion">Scanning the replacement list for macros to expand</a>
+<li><a href="Macro-Expansion.html#Macro-Expansion">Looking for a function-like macro's opening parenthesis</a>
+<li><a href="Macro-Expansion.html#Macro-Expansion">Marking tokens ineligible for future expansion</a>
+</li></ul>
+<li><a name="toc_Token-Spacing" href="Token-Spacing.html#Token-Spacing">Token Spacing</a>
+<li><a name="toc_Line-Numbering" href="Line-Numbering.html#Line-Numbering">Line numbering</a>
+<ul>
+<li><a href="Line-Numbering.html#Line-Numbering">Just which line number anyway?</a>
+<li><a href="Line-Numbering.html#Line-Numbering">Representation of line numbers</a>
+</li></ul>
+<li><a name="toc_Guard-Macros" href="Guard-Macros.html#Guard-Macros">The Multiple-Include Optimization</a>
+<li><a name="toc_Files" href="Files.html#Files">File Handling</a>
+<li><a name="toc_Concept-Index" href="Concept-Index.html#Concept-Index">Concept Index</a>
+</li></ul>
+</div>
+
+
+
+<div class="node">
+<p>
+<a name="Top"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Conventions.html#Conventions">Conventions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="../index.html#dir">(dir)</a>
+<hr>
+</div>
+
+<h2 class="unnumbered">The GNU C Preprocessor Internals</h2>
+
+<h2 class="chapter">1 Cpplib&mdash;the GNU C Preprocessor</h2>
+
+<p>The GNU C preprocessor is
+implemented as a library, <dfn>cpplib</dfn>, so it can be easily shared between
+a stand-alone preprocessor, and a preprocessor integrated with the C,
+C++ and Objective-C front ends.  It is also available for use by other
+programs, though this is not recommended as its exposed interface has
+not yet reached a point of reasonable stability.
+
+   <p>The library has been written to be re-entrant, so that it can be used
+to preprocess many files simultaneously if necessary.  It has also been
+written with the preprocessing token as the fundamental unit; the
+preprocessor in previous versions of GCC would operate on text strings
+as the fundamental unit.
+
+   <p>This brief manual documents the internals of cpplib, and explains some
+of the tricky issues.  It is intended that, along with the comments in
+the source code, a reasonably competent C programmer should be able to
+figure out what the code is doing, and why things have been implemented
+the way they have.
+
+<ul class="menu">
+<li><a accesskey="1" href="Conventions.html#Conventions">Conventions</a>:          Conventions used in the code. 
+<li><a accesskey="2" href="Lexer.html#Lexer">Lexer</a>:                The combined C, C++ and Objective-C Lexer. 
+<li><a accesskey="3" href="Hash-Nodes.html#Hash-Nodes">Hash Nodes</a>:           All identifiers are entered into a hash table. 
+<li><a accesskey="4" href="Macro-Expansion.html#Macro-Expansion">Macro Expansion</a>:      Macro expansion algorithm. 
+<li><a accesskey="5" href="Token-Spacing.html#Token-Spacing">Token Spacing</a>:        Spacing and paste avoidance issues. 
+<li><a accesskey="6" href="Line-Numbering.html#Line-Numbering">Line Numbering</a>:       Tracking location within files. 
+<li><a accesskey="7" href="Guard-Macros.html#Guard-Macros">Guard Macros</a>:         Optimizing header files with guard macros. 
+<li><a accesskey="8" href="Files.html#Files">Files</a>:                File handling. 
+<li><a accesskey="9" href="Concept-Index.html#Concept-Index">Concept Index</a>:        Index. 
+</ul>
+
+   </body></html>
+

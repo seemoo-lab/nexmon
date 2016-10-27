@@ -1,0 +1,83 @@
+<html lang="en">
+<head>
+<title>What BFD Version 2 Can Do - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Overview.html#Overview" title="Overview">
+<link rel="prev" href="How-It-Works.html#How-It-Works" title="How It Works">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="What-BFD-Version-2-Can-Do"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="How-It-Works.html#How-It-Works">How It Works</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Overview.html#Overview">Overview</a>
+<hr>
+</div>
+
+<h3 class="section">1.3 What BFD Version 2 Can Do</h3>
+
+<!-- This summary of BFD is shared by the BFD and LD docs. -->
+<!-- Copyright (C) 2012-2015 Free Software Foundation, Inc. -->
+<p>When an object file is opened, BFD subroutines automatically determine
+the format of the input object file.  They then build a descriptor in
+memory with pointers to routines that will be used to access elements of
+the object file's data structures.
+
+   <p>As different information from the object files is required,
+BFD reads from different sections of the file and processes them. 
+For example, a very common operation for the linker is processing symbol
+tables.  Each BFD back end provides a routine for converting
+between the object file's representation of symbols and an internal
+canonical format. When the linker asks for the symbol table of an object
+file, it calls through a memory pointer to the routine from the
+relevant BFD back end which reads and converts the table into a canonical
+form.  The linker then operates upon the canonical form. When the link is
+finished and the linker writes the output file's symbol table,
+another BFD back end routine is called to take the newly
+created symbol table and convert it into the chosen output format.
+
+<ul class="menu">
+<li><a accesskey="1" href="BFD-information-loss.html#BFD-information-loss">BFD information loss</a>: 	Information Loss
+<li><a accesskey="2" href="Canonical-format.html#Canonical-format">Canonical format</a>: 		The BFD	canonical object-file format
+</ul>
+
+   </body></html>
+

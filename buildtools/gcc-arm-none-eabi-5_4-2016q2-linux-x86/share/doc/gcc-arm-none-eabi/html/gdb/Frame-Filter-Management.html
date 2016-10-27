@@ -1,0 +1,179 @@
+<html lang="en">
+<head>
+<title>Frame Filter Management - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stack.html#Stack" title="Stack">
+<link rel="prev" href="Backtrace.html#Backtrace" title="Backtrace">
+<link rel="next" href="Selection.html#Selection" title="Selection">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Frame-Filter-Management"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Selection.html#Selection">Selection</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Backtrace.html#Backtrace">Backtrace</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stack.html#Stack">Stack</a>
+<hr>
+</div>
+
+<h3 class="section">8.3 Management of Frame Filters.</h3>
+
+<p><a name="index-managing-frame-filters-502"></a>
+Frame filters are Python based utilities to manage and decorate the
+output of frames.  See <a href="Frame-Filter-API.html#Frame-Filter-API">Frame Filter API</a>, for further information.
+
+   <p>Managing frame filters is performed by several commands available
+within <span class="sc">gdb</span>, detailed here.
+
+     
+<a name="index-info-frame_002dfilter-503"></a>
+<dl><dt><code>info frame-filter</code><dd>Print a list of installed frame filters from all dictionaries, showing
+their name, priority and enabled status.
+
+     <p><a name="index-disable-frame_002dfilter-504"></a><a name="disable-frame_002dfilter-all"></a><br><dt><code>disable frame-filter </code><var>filter-dictionary</var> <var>filter-name</var><dd>Disable a frame filter in the dictionary matching
+<var>filter-dictionary</var> and <var>filter-name</var>.  The
+<var>filter-dictionary</var> may be <code>all</code>, <code>global</code>,
+<code>progspace</code>, or the name of the object file where the frame filter
+dictionary resides.  When <code>all</code> is specified, all frame filters
+across all dictionaries are disabled.  The <var>filter-name</var> is the name
+of the frame filter and is used when <code>all</code> is not the option for
+<var>filter-dictionary</var>.  A disabled frame-filter is not deleted, it
+may be enabled again later.
+
+     <p><a name="index-enable-frame_002dfilter-505"></a><br><dt><code>enable frame-filter </code><var>filter-dictionary</var> <var>filter-name</var><dd>Enable a frame filter in the dictionary matching
+<var>filter-dictionary</var> and <var>filter-name</var>.  The
+<var>filter-dictionary</var> may be <code>all</code>, <code>global</code>,
+<code>progspace</code> or the name of the object file where the frame filter
+dictionary resides.  When <code>all</code> is specified, all frame filters across
+all dictionaries are enabled.  The <var>filter-name</var> is the name of the frame
+filter and is used when <code>all</code> is not the option for
+<var>filter-dictionary</var>.
+
+     <p>Example:
+
+     <pre class="smallexample">          (gdb) info frame-filter
+          
+          global frame-filters:
+            Priority  Enabled  Name
+            1000      No       PrimaryFunctionFilter
+            100       Yes      Reverse
+          
+          progspace /build/test frame-filters:
+            Priority  Enabled  Name
+            100       Yes      ProgspaceFilter
+          
+          objfile /build/test frame-filters:
+            Priority  Enabled  Name
+            999       Yes      BuildProgra Filter
+          
+          (gdb) disable frame-filter /build/test BuildProgramFilter
+          (gdb) info frame-filter
+          
+          global frame-filters:
+            Priority  Enabled  Name
+            1000      No       PrimaryFunctionFilter
+            100       Yes      Reverse
+          
+          progspace /build/test frame-filters:
+            Priority  Enabled  Name
+            100       Yes      ProgspaceFilter
+          
+          objfile /build/test frame-filters:
+            Priority  Enabled  Name
+            999       No       BuildProgramFilter
+          
+          (gdb) enable frame-filter global PrimaryFunctionFilter
+          (gdb) info frame-filter
+          
+          global frame-filters:
+            Priority  Enabled  Name
+            1000      Yes      PrimaryFunctionFilter
+            100       Yes      Reverse
+          
+          progspace /build/test frame-filters:
+            Priority  Enabled  Name
+            100       Yes      ProgspaceFilter
+          
+          objfile /build/test frame-filters:
+            Priority  Enabled  Name
+            999       No       BuildProgramFilter
+</pre>
+     <p><a name="index-set-frame_002dfilter-priority-506"></a><br><dt><code>set frame-filter priority </code><var>filter-dictionary</var> <var>filter-name</var> <var>priority</var><dd>Set the <var>priority</var> of a frame filter in the dictionary matching
+<var>filter-dictionary</var>, and the frame filter name matching
+<var>filter-name</var>.  The <var>filter-dictionary</var> may be <code>global</code>,
+<code>progspace</code> or the name of the object file where the frame filter
+dictionary resides.  The <var>priority</var> is an integer.
+
+     <p><a name="index-show-frame_002dfilter-priority-507"></a><br><dt><code>show frame-filter priority </code><var>filter-dictionary</var> <var>filter-name</var><dd>Show the <var>priority</var> of a frame filter in the dictionary matching
+<var>filter-dictionary</var>, and the frame filter name matching
+<var>filter-name</var>.  The <var>filter-dictionary</var> may be <code>global</code>,
+<code>progspace</code> or the name of the object file where the frame filter
+dictionary resides.
+
+     <p>Example:
+
+     <pre class="smallexample">          (gdb) info frame-filter
+          
+          global frame-filters:
+            Priority  Enabled  Name
+            1000      Yes      PrimaryFunctionFilter
+            100       Yes      Reverse
+          
+          progspace /build/test frame-filters:
+            Priority  Enabled  Name
+            100       Yes      ProgspaceFilter
+          
+          objfile /build/test frame-filters:
+            Priority  Enabled  Name
+            999       No       BuildProgramFilter
+          
+          (gdb) set frame-filter priority global Reverse 50
+          (gdb) info frame-filter
+          
+          global frame-filters:
+            Priority  Enabled  Name
+            1000      Yes      PrimaryFunctionFilter
+            50        Yes      Reverse
+          
+          progspace /build/test frame-filters:
+            Priority  Enabled  Name
+            100       Yes      ProgspaceFilter
+          
+          objfile /build/test frame-filters:
+            Priority  Enabled  Name
+            999       No       BuildProgramFilter
+</pre>
+     </dl>
+
+   </body></html>
+

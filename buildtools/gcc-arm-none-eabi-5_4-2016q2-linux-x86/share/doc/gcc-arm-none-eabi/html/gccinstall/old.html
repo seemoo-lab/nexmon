@@ -1,0 +1,201 @@
+<html lang="en">
+<head>
+<title>Installing GCC: Old documentation</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Installing GCC: Old documentation">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="top" href="#Top">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, the Front-Cover texts being (a) (see below), and
+with the Back-Cover Texts being (b) (see below).  A copy of the
+license is included in the section entitled "GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<h1 class="settitle">Installing GCC: Old documentation</h1>
+<h1 align="center">Old installation documentation</h1>
+
+   <p>Note most of this information is out of date and superseded by the
+previous chapters of this manual.  It is provided for historical
+reference only, because of a lack of volunteers to merge it into the
+main manual.
+
+   <p>Here is the procedure for installing GCC on a GNU or Unix system.
+
+     <ol type=1 start=1>
+<li>If you have chosen a configuration for GCC which requires other GNU
+tools (such as GAS or the GNU linker) instead of the standard system
+tools, install the required tools in the build directory under the names
+<samp><span class="file">as</span></samp>, <samp><span class="file">ld</span></samp> or whatever is appropriate.
+
+     <p>Alternatively, you can do subsequent compilation using a value of the
+<code>PATH</code> environment variable such that the necessary GNU tools come
+before the standard system tools.
+
+     <li>Specify the host, build and target machine configurations.  You do this
+when you run the <samp><span class="file">configure</span></samp> script.
+
+     <p>The <dfn>build</dfn> machine is the system which you are using, the
+<dfn>host</dfn> machine is the system where you want to run the resulting
+compiler (normally the build machine), and the <dfn>target</dfn> machine is
+the system for which you want the compiler to generate code.
+
+     <p>If you are building a compiler to produce code for the machine it runs
+on (a native compiler), you normally do not need to specify any operands
+to <samp><span class="file">configure</span></samp>; it will try to guess the type of machine you are on
+and use that as the build, host and target machines.  So you don't need
+to specify a configuration when building a native compiler unless
+<samp><span class="file">configure</span></samp> cannot figure out what your configuration is or guesses
+wrong.
+
+     <p>In those cases, specify the build machine's <dfn>configuration name</dfn>
+with the <samp><span class="option">--host</span></samp> option; the host and target will default to be
+the same as the host machine.
+
+     <p>Here is an example:
+
+     <pre class="smallexample">          ./configure --host=sparc-sun-sunos4.1
+</pre>
+     <p>A configuration name may be canonical or it may be more or less
+abbreviated.
+
+     <p>A canonical configuration name has three parts, separated by dashes. 
+It looks like this: &lsquo;<samp><var>cpu</var><span class="samp">-</span><var>company</var><span class="samp">-</span><var>system</var></samp>&rsquo;. 
+(The three parts may themselves contain dashes; <samp><span class="file">configure</span></samp>
+can figure out which dashes serve which purpose.)  For example,
+&lsquo;<samp><span class="samp">m68k-sun-sunos4.1</span></samp>&rsquo; specifies a Sun 3.
+
+     <p>You can also replace parts of the configuration by nicknames or aliases. 
+For example, &lsquo;<samp><span class="samp">sun3</span></samp>&rsquo; stands for &lsquo;<samp><span class="samp">m68k-sun</span></samp>&rsquo;, so
+&lsquo;<samp><span class="samp">sun3-sunos4.1</span></samp>&rsquo; is another way to specify a Sun 3.
+
+     <p>You can specify a version number after any of the system types, and some
+of the CPU types.  In most cases, the version is irrelevant, and will be
+ignored.  So you might as well specify the version if you know it.
+
+     <p>See <a href="#Configurations">Configurations</a>, for a list of supported configuration names and
+notes on many of the configurations.  You should check the notes in that
+section before proceeding any further with the installation of GCC.
+
+        </ol>
+
+   <p><h2><a name="Configurations"></a>Configurations Supported by GCC</h2><a name="index-configurations-supported-by-GCC-1"></a>
+Here are the possible CPU types:
+
+   <blockquote>
+<!-- gmicro, fx80, spur and tahoe omitted since they don't work. -->
+1750a, a29k, alpha, arm, avr, c<var>n</var>, clipper, dsp16xx, elxsi, fr30, h8300,
+hppa1.0, hppa1.1, i370, i386, i486, i586, i686, i786, i860, i960, ip2k, m32r,
+m68000, m68k, m88k, mcore, mips, mipsel, mips64, mips64el,
+mn10200, mn10300, ns32k, pdp11, powerpc, powerpcle, romp, rs6000, sh, sparc,
+sparclite, sparc64, v850, vax, we32k. 
+</blockquote>
+
+   <p>Here are the recognized company names.  As you can see, customary
+abbreviations are used rather than the longer official names.
+
+<!-- What should be done about merlin, tek*, dolphin? -->
+   <blockquote>
+acorn, alliant, altos, apollo, apple, att, bull,
+cbm, convergent, convex, crds, dec, dg, dolphin,
+elxsi, encore, harris, hitachi, hp, ibm, intergraph, isi,
+mips, motorola, ncr, next, ns, omron, plexus,
+sequent, sgi, sony, sun, tti, unicom, wrs. 
+</blockquote>
+
+   <p>The company name is meaningful only to disambiguate when the rest of
+the information supplied is insufficient.  You can omit it, writing
+just &lsquo;<samp><var>cpu</var><span class="samp">-</span><var>system</var></samp>&rsquo;, if it is not needed.  For example,
+&lsquo;<samp><span class="samp">vax-ultrix4.2</span></samp>&rsquo; is equivalent to &lsquo;<samp><span class="samp">vax-dec-ultrix4.2</span></samp>&rsquo;.
+
+   <p>Here is a list of system types:
+
+   <blockquote>
+386bsd, aix, acis, amigaos, aos, aout, aux, bosx, bsd, clix, coff, ctix, cxux,
+dgux, dynix, ebmon, ecoff, elf, esix, freebsd, hms, genix, gnu, linux,
+linux-gnu, hiux, hpux, iris, irix, isc, luna, lynxos, mach, minix, msdos, mvs,
+netbsd, newsos, nindy, ns, osf, osfrose, ptx, riscix, riscos, rtu, sco, sim,
+solaris, sunos, sym, sysv, udi, ultrix, unicos, uniplus, unos, vms, vsta,
+vxworks, winnt, xenix. 
+</blockquote>
+
+<p class="noindent">You can omit the system type; then <samp><span class="file">configure</span></samp> guesses the
+operating system from the CPU and company.
+
+   <p>You can add a version number to the system type; this may or may not
+make a difference.  For example, you can write &lsquo;<samp><span class="samp">bsd4.3</span></samp>&rsquo; or
+&lsquo;<samp><span class="samp">bsd4.4</span></samp>&rsquo; to distinguish versions of BSD.  In practice, the version
+number is most needed for &lsquo;<samp><span class="samp">sysv3</span></samp>&rsquo; and &lsquo;<samp><span class="samp">sysv4</span></samp>&rsquo;, which are often
+treated differently.
+
+   <p>&lsquo;<samp><span class="samp">linux-gnu</span></samp>&rsquo; is the canonical name for the GNU/Linux target; however
+GCC will also accept &lsquo;<samp><span class="samp">linux</span></samp>&rsquo;.  The version of the kernel in use is
+not relevant on these systems.  A suffix such as &lsquo;<samp><span class="samp">libc1</span></samp>&rsquo; or &lsquo;<samp><span class="samp">aout</span></samp>&rsquo;
+distinguishes major versions of the C library; all of the suffixed versions
+are obsolete.
+
+   <p>If you specify an impossible combination such as &lsquo;<samp><span class="samp">i860-dg-vms</span></samp>&rsquo;,
+then you may get an error message from <samp><span class="file">configure</span></samp>, or it may
+ignore part of the information and do the best it can with the rest. 
+<samp><span class="file">configure</span></samp> always prints the canonical name for the alternative
+that it used.  GCC does not support all possible alternatives.
+
+   <p>Often a particular model of machine has a name.  Many machine names are
+recognized as aliases for CPU/company combinations.  Thus, the machine
+name &lsquo;<samp><span class="samp">sun3</span></samp>&rsquo;, mentioned above, is an alias for &lsquo;<samp><span class="samp">m68k-sun</span></samp>&rsquo;. 
+Sometimes we accept a company name as a machine name, when the name is
+popularly used for a particular machine.  Here is a table of the known
+machine names:
+
+   <blockquote>
+3300, 3b1, 3b<var>n</var>, 7300, altos3068, altos,
+apollo68, att-7300, balance,
+convex-c<var>n</var>, crds, decstation-3100,
+decstation, delta, encore,
+fx2800, gmicro, hp7<var>nn</var>, hp8<var>nn</var>,
+hp9k2<var>nn</var>, hp9k3<var>nn</var>, hp9k7<var>nn</var>,
+hp9k8<var>nn</var>, iris4d, iris, isi68,
+m3230, magnum, merlin, miniframe,
+mmax, news-3600, news800, news, next,
+pbd, pc532, pmax, powerpc, powerpcle, ps2, risc-news,
+rtpc, sun2, sun386i, sun386, sun3,
+sun4, symmetry, tower-32, tower. 
+</blockquote>
+
+<p class="noindent">Remember that a machine name specifies both the cpu type and the company
+name. 
+<hr />
+<p><a href="./index.html">Return to the GCC Installation page</a>
+
+<!-- ***GFDL******************************************************************** -->
+<!-- *************************************************************************** -->
+<!-- Part 6 The End of the Document -->
+</body></html>
+

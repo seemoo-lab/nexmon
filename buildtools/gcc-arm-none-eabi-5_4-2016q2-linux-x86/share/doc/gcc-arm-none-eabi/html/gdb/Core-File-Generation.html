@@ -1,0 +1,106 @@
+<html lang="en">
+<head>
+<title>Core File Generation - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Data.html#Data" title="Data">
+<link rel="prev" href="Dump_002fRestore-Files.html#Dump_002fRestore-Files" title="Dump/Restore Files">
+<link rel="next" href="Character-Sets.html#Character-Sets" title="Character Sets">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Core-File-Generation"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Character-Sets.html#Character-Sets">Character Sets</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Dump_002fRestore-Files.html#Dump_002fRestore-Files">Dump/Restore Files</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Data.html#Data">Data</a>
+<hr>
+</div>
+
+<h3 class="section">10.19 How to Produce a Core File from Your Program</h3>
+
+<p><a name="index-dump-core-from-inferior-752"></a>
+A <dfn>core file</dfn> or <dfn>core dump</dfn> is a file that records the memory
+image of a running process and its process status (register values
+etc.).  Its primary use is post-mortem debugging of a program that
+crashed while it ran outside a debugger.  A program that crashes
+automatically produces a core file, unless this feature is disabled by
+the user.  See <a href="Files.html#Files">Files</a>, for information on invoking <span class="sc">gdb</span> in
+the post-mortem debugging mode.
+
+   <p>Occasionally, you may wish to produce a core file of the program you
+are debugging in order to preserve a snapshot of its state. 
+<span class="sc">gdb</span> has a special command for that.
+
+     
+<a name="index-gcore-753"></a>
+<a name="index-generate_002dcore_002dfile-754"></a>
+<dl><dt><code>generate-core-file [</code><var>file</var><code>]</code><dt><code>gcore [</code><var>file</var><code>]</code><dd>Produce a core dump of the inferior process.  The optional argument
+<var>file</var> specifies the file name where to put the core dump.  If not
+specified, the file name defaults to <samp><span class="file">core.</span><var>pid</var></samp>, where
+<var>pid</var> is the inferior process ID.
+
+     <p>Note that this command is implemented only for some systems (as of
+this writing, <span class="sc">gnu</span>/Linux, FreeBSD, Solaris, and S390).
+
+     <p>On <span class="sc">gnu</span>/Linux, this command can take into account the value of the
+file <samp><span class="file">/proc/</span><var>pid</var><span class="file">/coredump_filter</span></samp> when generating the core
+dump (see <a href="set-use_002dcoredump_002dfilter.html#set-use_002dcoredump_002dfilter">set use-coredump-filter</a>).
+
+     <p><a name="index-set-use_002dcoredump_002dfilter-755"></a><a name="set-use_002dcoredump_002dfilter"></a><br><dt><code>set use-coredump-filter on</code><dt><code>set use-coredump-filter off</code><dd>Enable or disable the use of the file
+<samp><span class="file">/proc/</span><var>pid</var><span class="file">/coredump_filter</span></samp> when generating core dump
+files.  This file is used by the Linux kernel to decide what types of
+memory mappings will be dumped or ignored when generating a core dump
+file.  <var>pid</var> is the process ID of a currently running process.
+
+     <p>To make use of this feature, you have to write in the
+<samp><span class="file">/proc/</span><var>pid</var><span class="file">/coredump_filter</span></samp> file a value, in hexadecimal,
+which is a bit mask representing the memory mapping types.  If a bit
+is set in the bit mask, then the memory mappings of the corresponding
+types will be dumped; otherwise, they will be ignored.  This
+configuration is inherited by child processes.  For more information
+about the bits that can be set in the
+<samp><span class="file">/proc/</span><var>pid</var><span class="file">/coredump_filter</span></samp> file, please refer to the
+manpage of <code>core(5)</code>.
+
+     <p>By default, this option is <code>on</code>.  If this option is turned
+<code>off</code>, <span class="sc">gdb</span> does not read the <samp><span class="file">coredump_filter</span></samp> file
+and instead uses the same default value as the Linux kernel in order
+to decide which pages will be dumped in the core dump file.  This
+value is currently <code>0x33</code>, which means that bits <code>0</code>
+(anonymous private mappings), <code>1</code> (anonymous shared mappings),
+<code>4</code> (ELF headers) and <code>5</code> (private huge pages) are active. 
+This will cause these memory mappings to be dumped automatically. 
+</dl>
+
+   </body></html>
+

@@ -1,0 +1,69 @@
+<html lang="en">
+<head>
+<title>Traditional Other Types - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Traditional-Builtin-Types.html#Traditional-Builtin-Types" title="Traditional Builtin Types">
+<link rel="prev" href="Traditional-Integer-Types.html#Traditional-Integer-Types" title="Traditional Integer Types">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Traditional-Other-Types"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Traditional-Integer-Types.html#Traditional-Integer-Types">Traditional Integer Types</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Traditional-Builtin-Types.html#Traditional-Builtin-Types">Traditional Builtin Types</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">5.1.1.2 Traditional Other Types</h5>
+
+<p>If the upper bound of a subrange is 0 and the lower bound is positive,
+the type is a floating point type, and the lower bound of the subrange
+indicates the number of bytes in the type:
+
+<pre class="example">     .stabs "float:t12=r1;4;0;",128,0,0,0
+     .stabs "double:t13=r1;8;0;",128,0,0,0
+</pre>
+   <p>However, GCC writes <code>long double</code> the same way it writes
+<code>double</code>, so there is no way to distinguish.
+
+<pre class="example">     .stabs "long double:t14=r1;8;0;",128,0,0,0
+</pre>
+   <p>Complex types are defined the same way as floating-point types; there is
+no way to distinguish a single-precision complex from a double-precision
+floating-point type.
+
+   <p>The C <code>void</code> type is defined as itself:
+
+<pre class="example">     .stabs "void:t15=15",128,0,0,0
+</pre>
+   <p>I'm not sure how a boolean type is represented.
+
+   </body></html>
+

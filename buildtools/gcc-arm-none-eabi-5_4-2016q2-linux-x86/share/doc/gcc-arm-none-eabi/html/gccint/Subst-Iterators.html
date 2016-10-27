@@ -1,0 +1,99 @@
+<html lang="en">
+<head>
+<title>Subst Iterators - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Iterators.html#Iterators" title="Iterators">
+<link rel="prev" href="Int-Iterators.html#Int-Iterators" title="Int Iterators">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Subst-Iterators"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Int-Iterators.html#Int-Iterators">Int Iterators</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Iterators.html#Iterators">Iterators</a>
+<hr>
+</div>
+
+<h4 class="subsection">16.23.4 Subst Iterators</h4>
+
+<p><a name="index-subst-iterators-in-_0040file_007b_002emd_007d-files-3846"></a><a name="index-define_005fsubst-3847"></a><a name="index-define_005fsubst_005fattr-3848"></a>
+Subst iterators are special type of iterators with the following
+restrictions: they could not be declared explicitly, they always have
+only two values, and they do not have explicit dedicated name. 
+Subst-iterators are triggered only when corresponding subst-attribute is
+used in RTL-pattern.
+
+ <p>Subst iterators transform templates in the following way: the templates
+are duplicated, the subst-attributes in these templates are replaced
+with the corresponding values, and a new attribute is implicitly added
+to the given <code>define_insn</code>/<code>define_expand</code>.  The name of the
+added attribute matches the name of <code>define_subst</code>.  Such
+attributes are declared implicitly, and it is not allowed to have a
+<code>define_attr</code> named as a <code>define_subst</code>.
+
+ <p>Each subst iterator is linked to a <code>define_subst</code>.  It is declared
+implicitly by the first appearance of the corresponding
+<code>define_subst_attr</code>, and it is not allowed to define it explicitly.
+
+ <p>Declarations of subst-attributes have the following syntax:
+
+ <p><a name="index-define_005fsubst_005fattr-3849"></a>
+<pre class="smallexample">     (define_subst_attr "<var>name</var>"
+       "<var>subst-name</var>"
+       "<var>no-subst-value</var>"
+       "<var>subst-applied-value</var>")
+</pre>
+ <p><var>name</var> is a string with which the given subst-attribute could be
+referred to.
+
+ <p><var>subst-name</var> shows which <code>define_subst</code> should be applied to an
+RTL-template if the given subst-attribute is present in the
+RTL-template.
+
+ <p><var>no-subst-value</var> is a value with which subst-attribute would be
+replaced in the first copy of the original RTL-template.
+
+ <p><var>subst-applied-value</var> is a value with which subst-attribute would be
+replaced in the second copy of the original RTL-template.
+
+<!-- Copyright (C) 1988-2015 Free Software Foundation, Inc. -->
+<!-- This is part of the GCC manual. -->
+<!-- For copying conditions, see the file gcc.texi. -->
+ </body></html>
+

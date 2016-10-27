@@ -1,0 +1,131 @@
+<html lang="en">
+<head>
+<title>gdb.types - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Python-modules.html#Python-modules" title="Python modules">
+<link rel="prev" href="gdb_002eprinting.html#gdb_002eprinting" title="gdb.printing">
+<link rel="next" href="gdb_002eprompt.html#gdb_002eprompt" title="gdb.prompt">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="gdb.types"></a>
+<a name="gdb_002etypes"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="gdb_002eprompt.html#gdb_002eprompt">gdb.prompt</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="gdb_002eprinting.html#gdb_002eprinting">gdb.printing</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Python-modules.html#Python-modules">Python modules</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.2.4.2 gdb.types</h5>
+
+<p><a name="index-gdb_002etypes-2342"></a>
+This module provides a collection of utilities for working with
+<code>gdb.Type</code> objects.
+
+     <dl>
+<dt><code>get_basic_type (</code><var>type</var><code>)</code><dd>Return <var>type</var> with const and volatile qualifiers stripped,
+and with typedefs and C<tt>++</tt> references converted to the underlying type.
+
+     <p>C<tt>++</tt> example:
+
+     <pre class="smallexample">          typedef const int const_int;
+          const_int foo (3);
+          const_int&amp; foo_ref (foo);
+          int main () { return 0; }
+</pre>
+     <p>Then in gdb:
+
+     <pre class="smallexample">          (gdb) start
+          (gdb) python import gdb.types
+          (gdb) python foo_ref = gdb.parse_and_eval("foo_ref")
+          (gdb) python print gdb.types.get_basic_type(foo_ref.type)
+          int
+</pre>
+     <br><dt><code>has_field (</code><var>type</var><code>, </code><var>field</var><code>)</code><dd>Return <code>True</code> if <var>type</var>, assumed to be a type with fields
+(e.g., a structure or union), has field <var>field</var>.
+
+     <br><dt><code>make_enum_dict (</code><var>enum_type</var><code>)</code><dd>Return a Python <code>dictionary</code> type produced from <var>enum_type</var>.
+
+     <br><dt><code>deep_items (</code><var>type</var><code>)</code><dd>Returns a Python iterator similar to the standard
+<code>gdb.Type.iteritems</code> method, except that the iterator returned
+by <code>deep_items</code> will recursively traverse anonymous struct or
+union fields.  For example:
+
+     <pre class="smallexample">          struct A
+          {
+              int a;
+              union {
+                  int b0;
+                  int b1;
+              };
+          };
+</pre>
+     <p class="noindent">Then in <span class="sc">gdb</span>:
+     <pre class="smallexample">          (gdb) python import gdb.types
+          (gdb) python struct_a = gdb.lookup_type("struct A")
+          (gdb) python print struct_a.keys ()
+          {['a', '']}
+          (gdb) python print [k for k,v in gdb.types.deep_items(struct_a)]
+          {['a', 'b0', 'b1']}
+</pre>
+     <br><dt><code>get_type_recognizers ()</code><dd>Return a list of the enabled type recognizers for the current context. 
+This is called by <span class="sc">gdb</span> during the type-printing process
+(see <a href="Type-Printing-API.html#Type-Printing-API">Type Printing API</a>).
+
+     <br><dt><code>apply_type_recognizers (recognizers, type_obj)</code><dd>Apply the type recognizers, <var>recognizers</var>, to the type object
+<var>type_obj</var>.  If any recognizer returns a string, return that
+string.  Otherwise, return <code>None</code>.  This is called by
+<span class="sc">gdb</span> during the type-printing process (see <a href="Type-Printing-API.html#Type-Printing-API">Type Printing API</a>).
+
+     <br><dt><code>register_type_printer (locus, printer)</code><dd>This is a convenience function to register a type printer
+<var>printer</var>.  The printer must implement the type printer protocol. 
+The <var>locus</var> argument is either a <code>gdb.Objfile</code>, in which case
+the printer is registered with that objfile; a <code>gdb.Progspace</code>,
+in which case the printer is registered with that progspace; or
+<code>None</code>, in which case the printer is registered globally.
+
+     <br><dt><code>TypePrinter</code><dd>This is a base class that implements the type printer protocol.  Type
+printers are encouraged, but not required, to derive from this class. 
+It defines a constructor:
+
+     <div class="defun">
+&mdash; Method on TypePrinter: <b>__init__</b> (<var>self, name</var>)<var><a name="index-g_t_005f_005finit_005f_005f-on-TypePrinter-2343"></a></var><br>
+<blockquote> <p>Initialize the type printer with the given name.  The new printer
+starts in the enabled state. 
+</p></blockquote></div>
+
+   </dl>
+
+   </body></html>
+

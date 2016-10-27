@@ -1,0 +1,106 @@
+<html lang="en">
+<head>
+<title>Loop manipulation - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation" title="Loop Analysis and Representation">
+<link rel="prev" href="Loop-querying.html#Loop-querying" title="Loop querying">
+<link rel="next" href="LCSSA.html#LCSSA" title="LCSSA">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Loop-manipulation"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="LCSSA.html#LCSSA">LCSSA</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Loop-querying.html#Loop-querying">Loop querying</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation">Loop Analysis and Representation</a>
+<hr>
+</div>
+
+<h3 class="section">15.3 Loop manipulation</h3>
+
+<p><a name="index-Loop-manipulation-3232"></a>
+The loops tree can be manipulated using the following functions:
+
+     <ul>
+<li><code>flow_loop_tree_node_add</code>: Adds a node to the tree. 
+<li><code>flow_loop_tree_node_remove</code>: Removes a node from the tree. 
+<li><code>add_bb_to_loop</code>: Adds a basic block to a loop. 
+<li><code>remove_bb_from_loops</code>: Removes a basic block from loops. 
+</ul>
+
+ <p>Most low-level CFG functions update loops automatically.  The following
+functions handle some more complicated cases of CFG manipulations:
+
+     <ul>
+<li><code>remove_path</code>: Removes an edge and all blocks it dominates. 
+<li><code>split_loop_exit_edge</code>: Splits exit edge of the loop,
+ensuring that PHI node arguments remain in the loop (this ensures that
+loop-closed SSA form is preserved).  Only useful on GIMPLE. 
+</ul>
+
+ <p>Finally, there are some higher-level loop transformations implemented. 
+While some of them are written so that they should work on non-innermost
+loops, they are mostly untested in that case, and at the moment, they
+are only reliable for the innermost loops:
+
+     <ul>
+<li><code>create_iv</code>: Creates a new induction variable.  Only works on
+GIMPLE.  <code>standard_iv_increment_position</code> can be used to find a
+suitable place for the iv increment. 
+<li><code>duplicate_loop_to_header_edge</code>,
+<code>tree_duplicate_loop_to_header_edge</code>: These functions (on RTL and
+on GIMPLE) duplicate the body of the loop prescribed number of times on
+one of the edges entering loop header, thus performing either loop
+unrolling or loop peeling.  <code>can_duplicate_loop_p</code>
+(<code>can_unroll_loop_p</code> on GIMPLE) must be true for the duplicated
+loop. 
+<li><code>loop_version</code>, <code>tree_ssa_loop_version</code>: These function
+create a copy of a loop, and a branch before them that selects one of
+them depending on the prescribed condition.  This is useful for
+optimizations that need to verify some assumptions in runtime (one of
+the copies of the loop is usually left unchanged, while the other one is
+transformed in some way). 
+<li><code>tree_unroll_loop</code>: Unrolls the loop, including peeling the
+extra iterations to make the number of iterations divisible by unroll
+factor, updating the exit condition, and removing the exits that now
+cannot be taken.  Works only on GIMPLE. 
+</ul>
+
+ </body></html>
+

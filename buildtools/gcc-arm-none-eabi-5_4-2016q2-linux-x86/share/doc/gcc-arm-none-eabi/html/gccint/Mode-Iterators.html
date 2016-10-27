@@ -1,0 +1,81 @@
+<html lang="en">
+<head>
+<title>Mode Iterators - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Iterators.html#Iterators" title="Iterators">
+<link rel="next" href="Code-Iterators.html#Code-Iterators" title="Code Iterators">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Mode-Iterators"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Code-Iterators.html#Code-Iterators">Code Iterators</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Iterators.html#Iterators">Iterators</a>
+<hr>
+</div>
+
+<h4 class="subsection">16.23.1 Mode Iterators</h4>
+
+<p><a name="index-mode-iterators-in-_0040file_007b_002emd_007d-files-3837"></a>
+Ports often need to define similar patterns for two or more different modes. 
+For example:
+
+     <ul>
+<li>If a processor has hardware support for both single and double
+floating-point arithmetic, the <code>SFmode</code> patterns tend to be
+very similar to the <code>DFmode</code> ones.
+
+     <li>If a port uses <code>SImode</code> pointers in one configuration and
+<code>DImode</code> pointers in another, it will usually have very similar
+<code>SImode</code> and <code>DImode</code> patterns for manipulating pointers. 
+</ul>
+
+ <p>Mode iterators allow several patterns to be instantiated from one
+<samp><span class="file">.md</span></samp> file template.  They can be used with any type of
+rtx-based construct, such as a <code>define_insn</code>,
+<code>define_split</code>, or <code>define_peephole2</code>.
+
+<ul class="menu">
+<li><a accesskey="1" href="Defining-Mode-Iterators.html#Defining-Mode-Iterators">Defining Mode Iterators</a>:  Defining a new mode iterator. 
+<li><a accesskey="2" href="Substitutions.html#Substitutions">Substitutions</a>:            Combining mode iterators with substitutions
+<li><a accesskey="3" href="Examples.html#Examples">Examples</a>:                 Examples
+</ul>
+
+ </body></html>
+

@@ -1,0 +1,110 @@
+<html lang="en">
+<head>
+<title>Configure Terms - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Source-Tree.html#Source-Tree" title="Source Tree">
+<link rel="next" href="Top-Level.html#Top-Level" title="Top Level">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Configure-Terms"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Top-Level.html#Top-Level">Top Level</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Source-Tree.html#Source-Tree">Source Tree</a>
+<hr>
+</div>
+
+<h3 class="section">6.1 Configure Terms and History</h3>
+
+<p><a name="index-configure-terms-1662"></a><a name="index-canadian-1663"></a>
+The configure and build process has a long and colorful history, and can
+be confusing to anyone who doesn't know why things are the way they are. 
+While there are other documents which describe the configuration process
+in detail, here are a few things that everyone working on GCC should
+know.
+
+ <p>There are three system names that the build knows about: the machine you
+are building on (<dfn>build</dfn>), the machine that you are building for
+(<dfn>host</dfn>), and the machine that GCC will produce code for
+(<dfn>target</dfn>).  When you configure GCC, you specify these with
+<samp><span class="option">--build=</span></samp>, <samp><span class="option">--host=</span></samp>, and <samp><span class="option">--target=</span></samp>.
+
+ <p>Specifying the host without specifying the build should be avoided, as
+<samp><span class="command">configure</span></samp> may (and once did) assume that the host you specify
+is also the build, which may not be true.
+
+ <p>If build, host, and target are all the same, this is called a
+<dfn>native</dfn>.  If build and host are the same but target is different,
+this is called a <dfn>cross</dfn>.  If build, host, and target are all
+different this is called a <dfn>canadian</dfn> (for obscure reasons dealing
+with Canada's political party and the background of the person working
+on the build at that time).  If host and target are the same, but build
+is different, you are using a cross-compiler to build a native for a
+different system.  Some people call this a <dfn>host-x-host</dfn>,
+<dfn>crossed native</dfn>, or <dfn>cross-built native</dfn>.  If build and target
+are the same, but host is different, you are using a cross compiler to
+build a cross compiler that produces code for the machine you're
+building on.  This is rare, so there is no common way of describing it. 
+There is a proposal to call this a <dfn>crossback</dfn>.
+
+ <p>If build and host are the same, the GCC you are building will also be
+used to build the target libraries (like <code>libstdc++</code>).  If build and host
+are different, you must have already built and installed a cross
+compiler that will be used to build the target libraries (if you
+configured with <samp><span class="option">--target=foo-bar</span></samp>, this compiler will be called
+<samp><span class="command">foo-bar-gcc</span></samp>).
+
+ <p>In the case of target libraries, the machine you're building for is the
+machine you specified with <samp><span class="option">--target</span></samp>.  So, build is the machine
+you're building on (no change there), host is the machine you're
+building for (the target libraries are built for the target, so host is
+the target you specified), and target doesn't apply (because you're not
+building a compiler, you're building libraries).  The configure/make
+process will adjust these variables as needed.  It also sets
+<code>$with_cross_host</code> to the original <samp><span class="option">--host</span></samp> value in case you
+need it.
+
+ <p>The <code>libiberty</code> support library is built up to three times: once
+for the host, once for the target (even if they are the same), and once
+for the build if build and host are different.  This allows it to be
+used by all programs which are generated in the course of the build
+process.
+
+ </body></html>
+

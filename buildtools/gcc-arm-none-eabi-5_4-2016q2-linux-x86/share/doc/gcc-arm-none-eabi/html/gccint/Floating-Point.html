@@ -1,0 +1,159 @@
+<html lang="en">
+<head>
+<title>Floating Point - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Macros.html#Target-Macros" title="Target Macros">
+<link rel="prev" href="Debugging-Info.html#Debugging-Info" title="Debugging Info">
+<link rel="next" href="Mode-Switching.html#Mode-Switching" title="Mode Switching">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Floating-Point"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Mode-Switching.html#Mode-Switching">Mode Switching</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Debugging-Info.html#Debugging-Info">Debugging Info</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Macros.html#Target-Macros">Target Macros</a>
+<hr>
+</div>
+
+<h3 class="section">17.22 Cross Compilation and Floating Point</h3>
+
+<p><a name="index-cross-compilation-and-floating-point-4804"></a><a name="index-floating-point-and-cross-compilation-4805"></a>
+While all modern machines use twos-complement representation for integers,
+there are a variety of representations for floating point numbers.  This
+means that in a cross-compiler the representation of floating point numbers
+in the compiled program may be different from that used in the machine
+doing the compilation.
+
+ <p>Because different representation systems may offer different amounts of
+range and precision, all floating point constants must be represented in
+the target machine's format.  Therefore, the cross compiler cannot
+safely use the host machine's floating point arithmetic; it must emulate
+the target's arithmetic.  To ensure consistency, GCC always uses
+emulation to work with floating point values, even when the host and
+target floating point formats are identical.
+
+ <p>The following macros are provided by <samp><span class="file">real.h</span></samp> for the compiler to
+use.  All parts of the compiler which generate or optimize
+floating-point calculations must use these macros.  They may evaluate
+their operands more than once, so operands must not have side effects.
+
+<div class="defun">
+&mdash; Macro: <b>REAL_VALUE_TYPE</b><var><a name="index-REAL_005fVALUE_005fTYPE-4806"></a></var><br>
+<blockquote><p>The C data type to be used to hold a floating point value in the target
+machine's format.  Typically this is a <code>struct</code> containing an
+array of <code>HOST_WIDE_INT</code>, but all code should treat it as an opaque
+quantity. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: int <b>REAL_VALUES_EQUAL</b> (<var>REAL_VALUE_TYPE x, REAL_VALUE_TYPE y</var>)<var><a name="index-REAL_005fVALUES_005fEQUAL-4807"></a></var><br>
+<blockquote><p>Compares for equality the two values, <var>x</var> and <var>y</var>.  If the target
+floating point format supports negative zeroes and/or NaNs,
+&lsquo;<samp><span class="samp">REAL_VALUES_EQUAL (-0.0, 0.0)</span></samp>&rsquo; is true, and
+&lsquo;<samp><span class="samp">REAL_VALUES_EQUAL (NaN, NaN)</span></samp>&rsquo; is false. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: int <b>REAL_VALUES_LESS</b> (<var>REAL_VALUE_TYPE x, REAL_VALUE_TYPE y</var>)<var><a name="index-REAL_005fVALUES_005fLESS-4808"></a></var><br>
+<blockquote><p>Tests whether <var>x</var> is less than <var>y</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: HOST_WIDE_INT <b>REAL_VALUE_FIX</b> (<var>REAL_VALUE_TYPE x</var>)<var><a name="index-REAL_005fVALUE_005fFIX-4809"></a></var><br>
+<blockquote><p>Truncates <var>x</var> to a signed integer, rounding toward zero. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: unsigned HOST_WIDE_INT <b>REAL_VALUE_UNSIGNED_FIX</b> (<var>REAL_VALUE_TYPE x</var>)<var><a name="index-REAL_005fVALUE_005fUNSIGNED_005fFIX-4810"></a></var><br>
+<blockquote><p>Truncates <var>x</var> to an unsigned integer, rounding toward zero.  If
+<var>x</var> is negative, returns zero. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: REAL_VALUE_TYPE <b>REAL_VALUE_ATOF</b> (<var>const char *string, machine_mode mode</var>)<var><a name="index-REAL_005fVALUE_005fATOF-4811"></a></var><br>
+<blockquote><p>Converts <var>string</var> into a floating point number in the target machine's
+representation for mode <var>mode</var>.  This routine can handle both
+decimal and hexadecimal floating point constants, using the syntax
+defined by the C language for both. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: int <b>REAL_VALUE_NEGATIVE</b> (<var>REAL_VALUE_TYPE x</var>)<var><a name="index-REAL_005fVALUE_005fNEGATIVE-4812"></a></var><br>
+<blockquote><p>Returns 1 if <var>x</var> is negative (including negative zero), 0 otherwise. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: int <b>REAL_VALUE_ISINF</b> (<var>REAL_VALUE_TYPE x</var>)<var><a name="index-REAL_005fVALUE_005fISINF-4813"></a></var><br>
+<blockquote><p>Determines whether <var>x</var> represents infinity (positive or negative). 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: int <b>REAL_VALUE_ISNAN</b> (<var>REAL_VALUE_TYPE x</var>)<var><a name="index-REAL_005fVALUE_005fISNAN-4814"></a></var><br>
+<blockquote><p>Determines whether <var>x</var> represents a &ldquo;NaN&rdquo; (not-a-number). 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: void <b>REAL_ARITHMETIC</b> (<var>REAL_VALUE_TYPE output, enum tree_code code, REAL_VALUE_TYPE x, REAL_VALUE_TYPE y</var>)<var><a name="index-REAL_005fARITHMETIC-4815"></a></var><br>
+<blockquote><p>Calculates an arithmetic operation on the two floating point values
+<var>x</var> and <var>y</var>, storing the result in <var>output</var> (which must be a
+variable).
+
+      <p>The operation to be performed is specified by <var>code</var>.  Only the
+following codes are supported: <code>PLUS_EXPR</code>, <code>MINUS_EXPR</code>,
+<code>MULT_EXPR</code>, <code>RDIV_EXPR</code>, <code>MAX_EXPR</code>, <code>MIN_EXPR</code>.
+
+      <p>If <code>REAL_ARITHMETIC</code> is asked to evaluate division by zero and the
+target's floating point format cannot represent infinity, it will call
+<code>abort</code>.  Callers should check for this situation first, using
+<code>MODE_HAS_INFINITIES</code>.  See <a href="Storage-Layout.html#Storage-Layout">Storage Layout</a>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: REAL_VALUE_TYPE <b>REAL_VALUE_NEGATE</b> (<var>REAL_VALUE_TYPE x</var>)<var><a name="index-REAL_005fVALUE_005fNEGATE-4816"></a></var><br>
+<blockquote><p>Returns the negative of the floating point value <var>x</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: REAL_VALUE_TYPE <b>REAL_VALUE_ABS</b> (<var>REAL_VALUE_TYPE x</var>)<var><a name="index-REAL_005fVALUE_005fABS-4817"></a></var><br>
+<blockquote><p>Returns the absolute value of <var>x</var>. 
+</p></blockquote></div>
+
+ </body></html>
+

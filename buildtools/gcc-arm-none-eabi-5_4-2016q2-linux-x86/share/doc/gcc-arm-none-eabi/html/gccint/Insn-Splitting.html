@@ -1,0 +1,271 @@
+<html lang="en">
+<head>
+<title>Insn Splitting - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Machine-Desc.html#Machine-Desc" title="Machine Desc">
+<link rel="prev" href="Expander-Definitions.html#Expander-Definitions" title="Expander Definitions">
+<link rel="next" href="Including-Patterns.html#Including-Patterns" title="Including Patterns">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Insn-Splitting"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Including-Patterns.html#Including-Patterns">Including Patterns</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Expander-Definitions.html#Expander-Definitions">Expander Definitions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Machine-Desc.html#Machine-Desc">Machine Desc</a>
+<hr>
+</div>
+
+<h3 class="section">16.16 Defining How to Split Instructions</h3>
+
+<p><a name="index-insn-splitting-3701"></a><a name="index-instruction-splitting-3702"></a><a name="index-splitting-instructions-3703"></a>
+There are two cases where you should specify how to split a pattern
+into multiple insns.  On machines that have instructions requiring
+delay slots (see <a href="Delay-Slots.html#Delay-Slots">Delay Slots</a>) or that have instructions whose
+output is not available for multiple cycles (see <a href="Processor-pipeline-description.html#Processor-pipeline-description">Processor pipeline description</a>), the compiler phases that optimize these cases need to
+be able to move insns into one-instruction delay slots.  However, some
+insns may generate more than one machine instruction.  These insns
+cannot be placed into a delay slot.
+
+ <p>Often you can rewrite the single insn as a list of individual insns,
+each corresponding to one machine instruction.  The disadvantage of
+doing so is that it will cause the compilation to be slower and require
+more space.  If the resulting insns are too complex, it may also
+suppress some optimizations.  The compiler splits the insn if there is a
+reason to believe that it might improve instruction or delay slot
+scheduling.
+
+ <p>The insn combiner phase also splits putative insns.  If three insns are
+merged into one insn with a complex expression that cannot be matched by
+some <code>define_insn</code> pattern, the combiner phase attempts to split
+the complex pattern into two insns that are recognized.  Usually it can
+break the complex pattern into two patterns by splitting out some
+subexpression.  However, in some other cases, such as performing an
+addition of a large constant in two insns on a RISC machine, the way to
+split the addition into two insns is machine-dependent.
+
+ <p><a name="index-define_005fsplit-3704"></a>The <code>define_split</code> definition tells the compiler how to split a
+complex insn into several simpler insns.  It looks like this:
+
+<pre class="smallexample">     (define_split
+       [<var>insn-pattern</var>]
+       "<var>condition</var>"
+       [<var>new-insn-pattern-1</var>
+        <var>new-insn-pattern-2</var>
+        ...]
+       "<var>preparation-statements</var>")
+</pre>
+ <p><var>insn-pattern</var> is a pattern that needs to be split and
+<var>condition</var> is the final condition to be tested, as in a
+<code>define_insn</code>.  When an insn matching <var>insn-pattern</var> and
+satisfying <var>condition</var> is found, it is replaced in the insn list
+with the insns given by <var>new-insn-pattern-1</var>,
+<var>new-insn-pattern-2</var>, etc.
+
+ <p>The <var>preparation-statements</var> are similar to those statements that
+are specified for <code>define_expand</code> (see <a href="Expander-Definitions.html#Expander-Definitions">Expander Definitions</a>)
+and are executed before the new RTL is generated to prepare for the
+generated code or emit some insns whose pattern is not fixed.  Unlike
+those in <code>define_expand</code>, however, these statements must not
+generate any new pseudo-registers.  Once reload has completed, they also
+must not allocate any space in the stack frame.
+
+ <p>Patterns are matched against <var>insn-pattern</var> in two different
+circumstances.  If an insn needs to be split for delay slot scheduling
+or insn scheduling, the insn is already known to be valid, which means
+that it must have been matched by some <code>define_insn</code> and, if
+<code>reload_completed</code> is nonzero, is known to satisfy the constraints
+of that <code>define_insn</code>.  In that case, the new insn patterns must
+also be insns that are matched by some <code>define_insn</code> and, if
+<code>reload_completed</code> is nonzero, must also satisfy the constraints
+of those definitions.
+
+ <p>As an example of this usage of <code>define_split</code>, consider the following
+example from <samp><span class="file">a29k.md</span></samp>, which splits a <code>sign_extend</code> from
+<code>HImode</code> to <code>SImode</code> into a pair of shift insns:
+
+<pre class="smallexample">     (define_split
+       [(set (match_operand:SI 0 "gen_reg_operand" "")
+             (sign_extend:SI (match_operand:HI 1 "gen_reg_operand" "")))]
+       ""
+       [(set (match_dup 0)
+             (ashift:SI (match_dup 1)
+                        (const_int 16)))
+        (set (match_dup 0)
+             (ashiftrt:SI (match_dup 0)
+                          (const_int 16)))]
+       "
+     { operands[1] = gen_lowpart (SImode, operands[1]); }")
+</pre>
+ <p>When the combiner phase tries to split an insn pattern, it is always the
+case that the pattern is <em>not</em> matched by any <code>define_insn</code>. 
+The combiner pass first tries to split a single <code>set</code> expression
+and then the same <code>set</code> expression inside a <code>parallel</code>, but
+followed by a <code>clobber</code> of a pseudo-reg to use as a scratch
+register.  In these cases, the combiner expects exactly two new insn
+patterns to be generated.  It will verify that these patterns match some
+<code>define_insn</code> definitions, so you need not do this test in the
+<code>define_split</code> (of course, there is no point in writing a
+<code>define_split</code> that will never produce insns that match).
+
+ <p>Here is an example of this use of <code>define_split</code>, taken from
+<samp><span class="file">rs6000.md</span></samp>:
+
+<pre class="smallexample">     (define_split
+       [(set (match_operand:SI 0 "gen_reg_operand" "")
+             (plus:SI (match_operand:SI 1 "gen_reg_operand" "")
+                      (match_operand:SI 2 "non_add_cint_operand" "")))]
+       ""
+       [(set (match_dup 0) (plus:SI (match_dup 1) (match_dup 3)))
+        (set (match_dup 0) (plus:SI (match_dup 0) (match_dup 4)))]
+     "
+     {
+       int low = INTVAL (operands[2]) &amp; 0xffff;
+       int high = (unsigned) INTVAL (operands[2]) &gt;&gt; 16;
+     
+       if (low &amp; 0x8000)
+         high++, low |= 0xffff0000;
+     
+       operands[3] = GEN_INT (high &lt;&lt; 16);
+       operands[4] = GEN_INT (low);
+     }")
+</pre>
+ <p>Here the predicate <code>non_add_cint_operand</code> matches any
+<code>const_int</code> that is <em>not</em> a valid operand of a single add
+insn.  The add with the smaller displacement is written so that it
+can be substituted into the address of a subsequent operation.
+
+ <p>An example that uses a scratch register, from the same file, generates
+an equality comparison of a register and a large constant:
+
+<pre class="smallexample">     (define_split
+       [(set (match_operand:CC 0 "cc_reg_operand" "")
+             (compare:CC (match_operand:SI 1 "gen_reg_operand" "")
+                         (match_operand:SI 2 "non_short_cint_operand" "")))
+        (clobber (match_operand:SI 3 "gen_reg_operand" ""))]
+       "find_single_use (operands[0], insn, 0)
+        &amp;&amp; (GET_CODE (*find_single_use (operands[0], insn, 0)) == EQ
+            || GET_CODE (*find_single_use (operands[0], insn, 0)) == NE)"
+       [(set (match_dup 3) (xor:SI (match_dup 1) (match_dup 4)))
+        (set (match_dup 0) (compare:CC (match_dup 3) (match_dup 5)))]
+       "
+     {
+       /* <span class="roman">Get the constant we are comparing against, C, and see what it
+          looks like sign-extended to 16 bits.  Then see what constant
+          could be XOR'ed with C to get the sign-extended value.</span>  */
+     
+       int c = INTVAL (operands[2]);
+       int sextc = (c &lt;&lt; 16) &gt;&gt; 16;
+       int xorv = c ^ sextc;
+     
+       operands[4] = GEN_INT (xorv);
+       operands[5] = GEN_INT (sextc);
+     }")
+</pre>
+ <p>To avoid confusion, don't write a single <code>define_split</code> that
+accepts some insns that match some <code>define_insn</code> as well as some
+insns that don't.  Instead, write two separate <code>define_split</code>
+definitions, one for the insns that are valid and one for the insns that
+are not valid.
+
+ <p>The splitter is allowed to split jump instructions into sequence of
+jumps or create new jumps in while splitting non-jump instructions.  As
+the central flowgraph and branch prediction information needs to be updated,
+several restriction apply.
+
+ <p>Splitting of jump instruction into sequence that over by another jump
+instruction is always valid, as compiler expect identical behavior of new
+jump.  When new sequence contains multiple jump instructions or new labels,
+more assistance is needed.  Splitter is required to create only unconditional
+jumps, or simple conditional jump instructions.  Additionally it must attach a
+<code>REG_BR_PROB</code> note to each conditional jump.  A global variable
+<code>split_branch_probability</code> holds the probability of the original branch in case
+it was a simple conditional jump, &minus;1 otherwise.  To simplify
+recomputing of edge frequencies, the new sequence is required to have only
+forward jumps to the newly created labels.
+
+ <p><a name="index-define_005finsn_005fand_005fsplit-3705"></a>For the common case where the pattern of a define_split exactly matches the
+pattern of a define_insn, use <code>define_insn_and_split</code>.  It looks like
+this:
+
+<pre class="smallexample">     (define_insn_and_split
+       [<var>insn-pattern</var>]
+       "<var>condition</var>"
+       "<var>output-template</var>"
+       "<var>split-condition</var>"
+       [<var>new-insn-pattern-1</var>
+        <var>new-insn-pattern-2</var>
+        ...]
+       "<var>preparation-statements</var>"
+       [<var>insn-attributes</var>])
+     
+</pre>
+ <p><var>insn-pattern</var>, <var>condition</var>, <var>output-template</var>, and
+<var>insn-attributes</var> are used as in <code>define_insn</code>.  The
+<var>new-insn-pattern</var> vector and the <var>preparation-statements</var> are used as
+in a <code>define_split</code>.  The <var>split-condition</var> is also used as in
+<code>define_split</code>, with the additional behavior that if the condition starts
+with &lsquo;<samp><span class="samp">&amp;&amp;</span></samp>&rsquo;, the condition used for the split will be the constructed as a
+logical &ldquo;and&rdquo; of the split condition with the insn condition.  For example,
+from i386.md:
+
+<pre class="smallexample">     (define_insn_and_split "zero_extendhisi2_and"
+       [(set (match_operand:SI 0 "register_operand" "=r")
+          (zero_extend:SI (match_operand:HI 1 "register_operand" "0")))
+        (clobber (reg:CC 17))]
+       "TARGET_ZERO_EXTEND_WITH_AND &amp;&amp; !optimize_size"
+       "#"
+       "&amp;&amp; reload_completed"
+       [(parallel [(set (match_dup 0)
+                        (and:SI (match_dup 0) (const_int 65535)))
+                   (clobber (reg:CC 17))])]
+       ""
+       [(set_attr "type" "alu1")])
+     
+</pre>
+ <p>In this case, the actual split condition will be
+&lsquo;<samp><span class="samp">TARGET_ZERO_EXTEND_WITH_AND &amp;&amp; !optimize_size &amp;&amp; reload_completed</span></samp>&rsquo;.
+
+ <p>The <code>define_insn_and_split</code> construction provides exactly the same
+functionality as two separate <code>define_insn</code> and <code>define_split</code>
+patterns.  It exists for compactness, and as a maintenance tool to prevent
+having to ensure the two patterns' templates match.
+
+ </body></html>
+

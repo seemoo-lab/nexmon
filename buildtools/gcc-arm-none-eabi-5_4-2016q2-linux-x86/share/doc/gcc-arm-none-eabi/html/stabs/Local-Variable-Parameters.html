@@ -1,0 +1,107 @@
+<html lang="en">
+<head>
+<title>Local Variable Parameters - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Parameters.html#Parameters" title="Parameters">
+<link rel="prev" href="Register-Parameters.html#Register-Parameters" title="Register Parameters">
+<link rel="next" href="Reference-Parameters.html#Reference-Parameters" title="Reference Parameters">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Local-Variable-Parameters"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Reference-Parameters.html#Reference-Parameters">Reference Parameters</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Register-Parameters.html#Register-Parameters">Register Parameters</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Parameters.html#Parameters">Parameters</a>
+<hr>
+</div>
+
+<h4 class="subsection">4.7.2 Storing Parameters as Local Variables</h4>
+
+<p>There is a case similar to an argument in a register, which is an
+argument that is actually stored as a local variable.  Sometimes this
+happens when the argument was passed in a register and then the compiler
+stores it as a local variable.  If possible, the compiler should claim
+that it's in a register, but this isn't always done.
+
+   <p>If a parameter is passed as one type and converted to a smaller type by
+the prologue (for example, the parameter is declared as a <code>float</code>,
+but the calling conventions specify that it is passed as a
+<code>double</code>), then GCC2 (sometimes) uses a pair of symbols.  The first
+symbol uses symbol descriptor &lsquo;<samp><span class="samp">p</span></samp>&rsquo; and the type which is passed. 
+The second symbol has the type and location which the parameter actually
+has after the prologue.  For example, suppose the following C code
+appears with no prototypes involved:
+
+<pre class="example">     void
+     subr (f)
+          float f;
+     {
+</pre>
+   <p>if <code>f</code> is passed as a double at stack offset 8, and the prologue
+converts it to a float in register number 0, then the stabs look like:
+
+<pre class="example">     .stabs "f:p13",160,0,3,8   # <span class="roman">160 is </span><code>N_PSYM</code><span class="roman">, here 13 is </span><code>double</code>
+     .stabs "f:r12",64,0,3,0    # <span class="roman">64 is </span><code>N_RSYM</code><span class="roman">, here 12 is </span><code>float</code>
+</pre>
+   <p>In both stabs 3 is the line number where <code>f</code> is declared
+(see <a href="Line-Numbers.html#Line-Numbers">Line Numbers</a>).
+
+   <p><a name="index-N_005fLSYM_002c-for-parameter-48"></a>GCC, at least on the 960, has another solution to the same problem.  It
+uses a single &lsquo;<samp><span class="samp">p</span></samp>&rsquo; symbol descriptor for an argument which is stored
+as a local variable but uses <code>N_LSYM</code> instead of <code>N_PSYM</code>.  In
+this case, the value of the symbol is an offset relative to the local
+variables for that function, not relative to the arguments; on some
+machines those are the same thing, but not on all.
+
+<!-- This is mostly just background info; the part that logically belongs -->
+<!-- here is the last sentence. -->
+   <p>On the VAX or on other machines in which the calling convention includes
+the number of words of arguments actually passed, the debugger (GDB at
+least) uses the parameter symbols to keep track of whether it needs to
+print nameless arguments in addition to the formal parameters which it
+has printed because each one has a stab.  For example, in
+
+<pre class="example">     extern int fprintf (FILE *stream, char *format, ...);
+     ...
+     fprintf (stdout, "%d\n", x);
+</pre>
+   <p>there are stabs for <code>stream</code> and <code>format</code>.  On most machines,
+the debugger can only print those two arguments (because it has no way
+of knowing that additional arguments were passed), but on the VAX or
+other machines with a calling convention which indicates the number of
+words of arguments, the debugger can print all three arguments.  To do
+so, the parameter symbol (symbol descriptor &lsquo;<samp><span class="samp">p</span></samp>&rsquo;) (not necessarily
+&lsquo;<samp><span class="samp">r</span></samp>&rsquo; or symbol descriptor omitted symbols) needs to contain the
+actual type as passed (for example, <code>double</code> not <code>float</code> if it
+is passed as a double and converted to a float).
+
+   </body></html>
+

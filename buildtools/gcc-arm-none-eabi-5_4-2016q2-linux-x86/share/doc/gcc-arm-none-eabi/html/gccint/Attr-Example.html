@@ -1,0 +1,107 @@
+<html lang="en">
+<head>
+<title>Attr Example - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Insn-Attributes.html#Insn-Attributes" title="Insn Attributes">
+<link rel="prev" href="Tagging-Insns.html#Tagging-Insns" title="Tagging Insns">
+<link rel="next" href="Insn-Lengths.html#Insn-Lengths" title="Insn Lengths">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Attr-Example"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Insn-Lengths.html#Insn-Lengths">Insn Lengths</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Tagging-Insns.html#Tagging-Insns">Tagging Insns</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Insn-Attributes.html#Insn-Attributes">Insn Attributes</a>
+<hr>
+</div>
+
+<h4 class="subsection">16.19.4 Example of Attribute Specifications</h4>
+
+<p><a name="index-attribute-specifications-example-3766"></a><a name="index-attribute-specifications-3767"></a>
+The judicious use of defaulting is important in the efficient use of
+insn attributes.  Typically, insns are divided into <dfn>types</dfn> and an
+attribute, customarily called <code>type</code>, is used to represent this
+value.  This attribute is normally used only to define the default value
+for other attributes.  An example will clarify this usage.
+
+ <p>Assume we have a RISC machine with a condition code and in which only
+full-word operations are performed in registers.  Let us assume that we
+can divide all insns into loads, stores, (integer) arithmetic
+operations, floating point operations, and branches.
+
+ <p>Here we will concern ourselves with determining the effect of an insn on
+the condition code and will limit ourselves to the following possible
+effects:  The condition code can be set unpredictably (clobbered), not
+be changed, be set to agree with the results of the operation, or only
+changed if the item previously set into the condition code has been
+modified.
+
+ <p>Here is part of a sample <samp><span class="file">md</span></samp> file for such a machine:
+
+<pre class="smallexample">     (define_attr "type" "load,store,arith,fp,branch" (const_string "arith"))
+     
+     (define_attr "cc" "clobber,unchanged,set,change0"
+                  (cond [(eq_attr "type" "load")
+                             (const_string "change0")
+                         (eq_attr "type" "store,branch")
+                             (const_string "unchanged")
+                         (eq_attr "type" "arith")
+                             (if_then_else (match_operand:SI 0 "" "")
+                                           (const_string "set")
+                                           (const_string "clobber"))]
+                        (const_string "clobber")))
+     
+     (define_insn ""
+       [(set (match_operand:SI 0 "general_operand" "=r,r,m")
+             (match_operand:SI 1 "general_operand" "r,m,r"))]
+       ""
+       "@
+        move %0,%1
+        load %0,%1
+        store %0,%1"
+       [(set_attr "type" "arith,load,store")])
+</pre>
+ <p>Note that we assume in the above example that arithmetic operations
+performed on quantities smaller than a machine word clobber the condition
+code since they will set the condition code to a value corresponding to the
+full-word result.
+
+ </body></html>
+

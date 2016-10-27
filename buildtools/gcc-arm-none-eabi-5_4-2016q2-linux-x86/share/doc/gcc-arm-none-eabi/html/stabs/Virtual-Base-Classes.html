@@ -1,0 +1,90 @@
+<html lang="en">
+<head>
+<title>Virtual Base Classes - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Cplusplus.html#Cplusplus" title="Cplusplus">
+<link rel="prev" href="Inheritance.html#Inheritance" title="Inheritance">
+<link rel="next" href="Static-Members.html#Static-Members" title="Static Members">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Virtual-Base-Classes"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Static-Members.html#Static-Members">Static Members</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Inheritance.html#Inheritance">Inheritance</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Cplusplus.html#Cplusplus">Cplusplus</a>
+<hr>
+</div>
+
+<h3 class="section">8.13 Virtual Base Classes</h3>
+
+<p>A derived class object consists of a concatenation in memory of the data
+areas defined by each base class, starting with the leftmost and ending
+with the rightmost in the list of base classes.  The exception to this
+rule is for virtual inheritance.  In the example above, class <code>D</code>
+inherits virtually from base class <code>B</code>.  This means that an
+instance of a <code>D</code> object will not contain its own <code>B</code> part but
+merely a pointer to a <code>B</code> part, known as a virtual base pointer.
+
+   <p>In a derived class stab, the base offset part of the derivation
+information, described above, shows how the base class parts are
+ordered.  The base offset for a virtual base class is always given as 0. 
+Notice that the base offset for <code>B</code> is given as 0 even though
+<code>B</code> is not the first base class.  The first base class <code>A</code>
+starts at offset 0.
+
+   <p>The field information part of the stab for class <code>D</code> describes the field
+which is the pointer to the virtual base class <code>B</code>. The vbase pointer
+name is &lsquo;<samp><span class="samp">$vb</span></samp>&rsquo; followed by a type reference to the virtual base class. 
+Since the type id for <code>B</code> in this example is 25, the vbase pointer name
+is &lsquo;<samp><span class="samp">$vb25</span></samp>&rsquo;.
+
+<!-- FIXME!! fake linebreaks below -->
+<pre class="smallexample">     .stabs "D:Tt31=s32!3,000,20;100,25;0264,28;$vb25:24,128;Ddat:1,
+            160,32;A_virt::32=##1;:i;2A*-2147483647;20;;B_virt::32:i;
+            2A*-2147483647;25;;C_virt::32:i;2A*-2147483647;28;;D_virt:
+            :32:i;2A*-2147483646;31;;;~%20;",128,0,0,0
+</pre>
+   <p>Following the name and a semicolon is a type reference describing the
+type of the virtual base class pointer, in this case 24.  Type 24 was
+defined earlier as the type of the <code>B</code> class <code>this</code> pointer.  The
+<code>this</code> pointer for a class is a pointer to the class type.
+
+<pre class="example">     .stabs "this:P24=*25=xsB:",64,0,0,8
+</pre>
+   <p>Finally the field offset part of the vbase pointer field description
+shows that the vbase pointer is the first field in the <code>D</code> object,
+before any data fields defined by the class.  The layout of a <code>D</code>
+class object is a follows, <code>Adat</code> at 0, the vtable pointer for
+<code>A</code> at 32, <code>Cdat</code> at 64, the vtable pointer for C at 96, the
+virtual base pointer for <code>B</code> at 128, and <code>Ddat</code> at 160.
+
+   </body></html>
+

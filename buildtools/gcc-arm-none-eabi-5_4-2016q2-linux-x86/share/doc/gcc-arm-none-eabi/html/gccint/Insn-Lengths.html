@@ -1,0 +1,135 @@
+<html lang="en">
+<head>
+<title>Insn Lengths - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Insn-Attributes.html#Insn-Attributes" title="Insn Attributes">
+<link rel="prev" href="Attr-Example.html#Attr-Example" title="Attr Example">
+<link rel="next" href="Constant-Attributes.html#Constant-Attributes" title="Constant Attributes">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Insn-Lengths"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Constant-Attributes.html#Constant-Attributes">Constant Attributes</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Attr-Example.html#Attr-Example">Attr Example</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Insn-Attributes.html#Insn-Attributes">Insn Attributes</a>
+<hr>
+</div>
+
+<h4 class="subsection">16.19.5 Computing the Length of an Insn</h4>
+
+<p><a name="index-insn-lengths_002c-computing-3768"></a><a name="index-computing-the-length-of-an-insn-3769"></a>
+For many machines, multiple types of branch instructions are provided, each
+for different length branch displacements.  In most cases, the assembler
+will choose the correct instruction to use.  However, when the assembler
+cannot do so, GCC can when a special attribute, the <code>length</code>
+attribute, is defined.  This attribute must be defined to have numeric
+values by specifying a null string in its <code>define_attr</code>.
+
+ <p>In the case of the <code>length</code> attribute, two additional forms of
+arithmetic terms are allowed in test expressions:
+
+     
+<a name="index-g_t_0040code_007bmatch_005fdup_007d-and-attributes-3770"></a>
+<dl><dt><code>(match_dup </code><var>n</var><code>)</code><dd>This refers to the address of operand <var>n</var> of the current insn, which
+must be a <code>label_ref</code>.
+
+     <p><a name="index-g_t_0040code_007bpc_007d-and-attributes-3771"></a><br><dt><code>(pc)</code><dd>For non-branch instructions and backward branch instructions, this refers
+to the address of the current insn.  But for forward branch instructions,
+this refers to the address of the next insn, because the length of the
+current insn is to be computed. 
+</dl>
+
+ <p><a name="index-g_t_0040code_007baddr_005fvec_007d_002c-length-of-3772"></a><a name="index-g_t_0040code_007baddr_005fdiff_005fvec_007d_002c-length-of-3773"></a>For normal insns, the length will be determined by value of the
+<code>length</code> attribute.  In the case of <code>addr_vec</code> and
+<code>addr_diff_vec</code> insn patterns, the length is computed as
+the number of vectors multiplied by the size of each vector.
+
+ <p>Lengths are measured in addressable storage units (bytes).
+
+ <p>Note that it is possible to call functions via the <code>symbol_ref</code>
+mechanism to compute the length of an insn.  However, if you use this
+mechanism you must provide dummy clauses to express the maximum length
+without using the function call.  You can an example of this in the
+<code>pa</code> machine description for the <code>call_symref</code> pattern.
+
+ <p>The following macros can be used to refine the length computation:
+
+     
+<a name="index-ADJUST_005fINSN_005fLENGTH-3774"></a>
+<dl><dt><code>ADJUST_INSN_LENGTH (</code><var>insn</var><code>, </code><var>length</var><code>)</code><dd>If defined, modifies the length assigned to instruction <var>insn</var> as a
+function of the context in which it is used.  <var>length</var> is an lvalue
+that contains the initially computed length of the insn and should be
+updated with the correct length of the insn.
+
+     <p>This macro will normally not be required.  A case in which it is
+required is the ROMP.  On this machine, the size of an <code>addr_vec</code>
+insn must be increased by two to compensate for the fact that alignment
+may be required. 
+</dl>
+
+ <p><a name="index-get_005fattr_005flength-3775"></a>The routine that returns <code>get_attr_length</code> (the value of the
+<code>length</code> attribute) can be used by the output routine to
+determine the form of the branch instruction to be written, as the
+example below illustrates.
+
+ <p>As an example of the specification of variable-length branches, consider
+the IBM 360.  If we adopt the convention that a register will be set to
+the starting address of a function, we can jump to labels within 4k of
+the start using a four-byte instruction.  Otherwise, we need a six-byte
+sequence to load the address from memory and then branch to it.
+
+ <p>On such a machine, a pattern for a branch instruction might be specified
+as follows:
+
+<pre class="smallexample">     (define_insn "jump"
+       [(set (pc)
+             (label_ref (match_operand 0 "" "")))]
+       ""
+     {
+        return (get_attr_length (insn) == 4
+                ? "b %l0" : "l r15,=a(%l0); br r15");
+     }
+       [(set (attr "length")
+             (if_then_else (lt (match_dup 0) (const_int 4096))
+                           (const_int 4)
+                           (const_int 6)))])
+</pre>
+ </body></html>
+

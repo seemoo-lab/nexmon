@@ -1,0 +1,69 @@
+<html lang="en">
+<head>
+<title>cabs - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Complex.html#Complex" title="Complex">
+<link rel="next" href="cacos.html#cacos" title="cacos">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="cabs"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="cacos.html#cacos">cacos</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Complex.html#Complex">Complex</a>
+<hr>
+</div>
+
+<h3 class="section">2.1 <code>cabs</code>, <code>cabsf</code>, <code>cabsl</code>&mdash;complex absolute-value</h3>
+
+<p><a name="index-cabs-158"></a><a name="index-cabsf-159"></a><a name="index-cabsl-160"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;complex.h&gt;
+     double cabs(double complex <var>z</var>);
+     float cabsf(float complex <var>z</var>);
+     long double cabsl(long double complex <var>z</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+These functions compute compute the complex absolute value
+(also called norm, modulus, or magnitude) of <var>z</var>.
+
+   <p><code>cabsf</code> is identical to <code>cabs</code>, except that it performs
+its calculations on <code>float complex</code>.
+
+   <p><code>cabsl</code> is identical to <code>cabs</code>, except that it performs
+its calculations on <code>long double complex</code>.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+The cabs* functions return the complex absolute value.
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+<code>cabs</code>, <code>cabsf</code> and <code>cabsl</code> are ISO C99
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

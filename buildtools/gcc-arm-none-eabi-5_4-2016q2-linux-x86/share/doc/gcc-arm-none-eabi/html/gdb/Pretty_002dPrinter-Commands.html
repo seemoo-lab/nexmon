@@ -1,0 +1,127 @@
+<html lang="en">
+<head>
+<title>Pretty-Printer Commands - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Pretty-Printing.html#Pretty-Printing" title="Pretty Printing">
+<link rel="prev" href="Pretty_002dPrinter-Example.html#Pretty_002dPrinter-Example" title="Pretty-Printer Example">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Pretty-Printer-Commands"></a>
+<a name="Pretty_002dPrinter-Commands"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Pretty_002dPrinter-Example.html#Pretty_002dPrinter-Example">Pretty-Printer Example</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Pretty-Printing.html#Pretty-Printing">Pretty Printing</a>
+<hr>
+</div>
+
+<h4 class="subsection">10.9.3 Pretty-Printer Commands</h4>
+
+<p><a name="index-pretty_002dprinter-commands-668"></a>
+     
+<a name="index-info-pretty_002dprinter-669"></a>
+<dl><dt><code>info pretty-printer [</code><var>object-regexp</var><code> [</code><var>name-regexp</var><code>]]</code><dd>Print the list of installed pretty-printers. 
+This includes disabled pretty-printers, which are marked as such.
+
+     <p><var>object-regexp</var> is a regular expression matching the objects
+whose pretty-printers to list. 
+Objects can be <code>global</code>, the program space's file
+(see <a href="Progspaces-In-Python.html#Progspaces-In-Python">Progspaces In Python</a>),
+and the object files within that program space (see <a href="Objfiles-In-Python.html#Objfiles-In-Python">Objfiles In Python</a>). 
+See <a href="Selecting-Pretty_002dPrinters.html#Selecting-Pretty_002dPrinters">Selecting Pretty-Printers</a>, for details on how <span class="sc">gdb</span>
+looks up a printer from these three objects.
+
+     <p><var>name-regexp</var> is a regular expression matching the name of the printers
+to list.
+
+     <p><a name="index-disable-pretty_002dprinter-670"></a><br><dt><code>disable pretty-printer [</code><var>object-regexp</var><code> [</code><var>name-regexp</var><code>]]</code><dd>Disable pretty-printers matching <var>object-regexp</var> and <var>name-regexp</var>. 
+A disabled pretty-printer is not forgotten, it may be enabled again later.
+
+     <p><a name="index-enable-pretty_002dprinter-671"></a><br><dt><code>enable pretty-printer [</code><var>object-regexp</var><code> [</code><var>name-regexp</var><code>]]</code><dd>Enable pretty-printers matching <var>object-regexp</var> and <var>name-regexp</var>. 
+</dl>
+
+   <p>Example:
+
+   <p>Suppose we have three pretty-printers installed: one from library1.so
+named <code>foo</code> that prints objects of type <code>foo</code>, and
+another from library2.so named <code>bar</code> that prints two types of objects,
+<code>bar1</code> and <code>bar2</code>.
+
+<pre class="smallexample">     (gdb) info pretty-printer
+     library1.so:
+       foo
+     library2.so:
+       bar
+         bar1
+         bar2
+     (gdb) info pretty-printer library2
+     library2.so:
+       bar
+         bar1
+         bar2
+     (gdb) disable pretty-printer library1
+     1 printer disabled
+     2 of 3 printers enabled
+     (gdb) info pretty-printer
+     library1.so:
+       foo [disabled]
+     library2.so:
+       bar
+         bar1
+         bar2
+     (gdb) disable pretty-printer library2 bar:bar1
+     1 printer disabled
+     1 of 3 printers enabled
+     (gdb) info pretty-printer library2
+     library1.so:
+       foo [disabled]
+     library2.so:
+       bar
+         bar1 [disabled]
+         bar2
+     (gdb) disable pretty-printer library2 bar
+     1 printer disabled
+     0 of 3 printers enabled
+     (gdb) info pretty-printer library2
+     library1.so:
+       foo [disabled]
+     library2.so:
+       bar [disabled]
+         bar1 [disabled]
+         bar2
+</pre>
+   <p>Note that for <code>bar</code> the entire printer can be disabled,
+as can each individual subprinter.
+
+   </body></html>
+

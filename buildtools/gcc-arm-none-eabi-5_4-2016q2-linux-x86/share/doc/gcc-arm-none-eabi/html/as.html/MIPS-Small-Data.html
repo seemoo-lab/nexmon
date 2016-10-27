@@ -1,0 +1,97 @@
+<html lang="en">
+<head>
+<title>MIPS Small Data - Using as</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using as">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="MIPS_002dDependent.html#MIPS_002dDependent" title="MIPS-Dependent">
+<link rel="prev" href="MIPS-Symbol-Sizes.html#MIPS-Symbol-Sizes" title="MIPS Symbol Sizes">
+<link rel="next" href="MIPS-ISA.html#MIPS-ISA" title="MIPS ISA">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled ``GNU Free Documentation License''.
+
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="MIPS-Small-Data"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="MIPS-ISA.html#MIPS-ISA">MIPS ISA</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="MIPS-Symbol-Sizes.html#MIPS-Symbol-Sizes">MIPS Symbol Sizes</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="MIPS_002dDependent.html#MIPS_002dDependent">MIPS-Dependent</a>
+<hr>
+</div>
+
+<h4 class="subsection">9.27.4 Controlling the use of small data accesses</h4>
+
+<!-- This section deliberately glosses over the possibility of using -G -->
+<!-- in SVR4-style PIC, as could be done on IRIX.  We don't support that. -->
+<p><a name="index-small-data_002c-MIPS-1496"></a><a name="index-g_t_0040code_007bgp_007d-register_002c-MIPS-1497"></a>It often takes several instructions to load the address of a symbol. 
+For example, when &lsquo;<samp><span class="samp">addr</span></samp>&rsquo; is a 32-bit symbol, the non-PIC expansion
+of &lsquo;<samp><span class="samp">dla $4,addr</span></samp>&rsquo; is usually:
+
+<pre class="smallexample">     lui     $4,%hi(addr)
+     daddiu  $4,$4,%lo(addr)
+</pre>
+   <p>The sequence is much longer when &lsquo;<samp><span class="samp">addr</span></samp>&rsquo; is a 64-bit symbol. 
+See <a href="MIPS-Symbol-Sizes.html#MIPS-Symbol-Sizes">Directives to override the size of symbols</a>.
+
+   <p>In order to cut down on this overhead, most embedded MIPS systems
+set aside a 64-kilobyte &ldquo;small data&rdquo; area and guarantee that all
+data of size <var>n</var> and smaller will be placed in that area. 
+The limit <var>n</var> is passed to both the assembler and the linker
+using the command-line option <samp><span class="option">-G </span><var>n</var></samp>, see <a href="MIPS-Options.html#MIPS-Options">Assembler options</a>.  Note that the same value of <var>n</var> must be used
+when linking and when assembling all input files to the link; any
+inconsistency could cause a relocation overflow error.
+
+   <p>The size of an object in the <code>.bss</code> section is set by the
+<code>.comm</code> or <code>.lcomm</code> directive that defines it.  The size of
+an external object may be set with the <code>.extern</code> directive.  For
+example, &lsquo;<samp><span class="samp">.extern sym,4</span></samp>&rsquo; declares that the object at <code>sym</code>
+is 4 bytes in length, while leaving <code>sym</code> otherwise undefined.
+
+   <p>When no <samp><span class="option">-G</span></samp> option is given, the default limit is 8 bytes. 
+The option <samp><span class="option">-G 0</span></samp> prevents any data from being automatically
+classified as small.
+
+   <p>It is also possible to mark specific objects as small by putting them
+in the special sections <code>.sdata</code> and <code>.sbss</code>, which are
+&ldquo;small&rdquo; counterparts of <code>.data</code> and <code>.bss</code> respectively. 
+The toolchain will treat such data as small regardless of the
+<samp><span class="option">-G</span></samp> setting.
+
+   <p>On startup, systems that support a small data area are expected to
+initialize register <code>$28</code>, also known as <code>$gp</code>, in such a
+way that small data can be accessed using a 16-bit offset from that
+register.  For example, when &lsquo;<samp><span class="samp">addr</span></samp>&rsquo; is small data,
+the &lsquo;<samp><span class="samp">dla $4,addr</span></samp>&rsquo; instruction above is equivalent to:
+
+<pre class="smallexample">     daddiu  $4,$28,%gp_rel(addr)
+</pre>
+   <p>Small data is not supported for SVR4-style PIC.
+
+   </body></html>
+

@@ -1,0 +1,111 @@
+<html lang="en">
+<head>
+<title>Lazy Strings In Guile - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Guile-API.html#Guile-API" title="Guile API">
+<link rel="prev" href="Breakpoints-In-Guile.html#Breakpoints-In-Guile" title="Breakpoints In Guile">
+<link rel="next" href="Architectures-In-Guile.html#Architectures-In-Guile" title="Architectures In Guile">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Lazy-Strings-In-Guile"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Architectures-In-Guile.html#Architectures-In-Guile">Architectures In Guile</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Breakpoints-In-Guile.html#Breakpoints-In-Guile">Breakpoints In Guile</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Guile-API.html#Guile-API">Guile API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.3.3.20 Guile representation of lazy strings.</h5>
+
+<p><a name="index-lazy-strings-in-guile-2702"></a><a name="index-g_t_003cgdb_003alazy_002dstring_003e-2703"></a>
+A <dfn>lazy string</dfn> is a string whose contents is not retrieved or
+encoded until it is needed.
+
+   <p>A <code>&lt;gdb:lazy-string&gt;</code> is represented in <span class="sc">gdb</span> as an
+<code>address</code> that points to a region of memory, an <code>encoding</code>
+that will be used to encode that region of memory, and a <code>length</code>
+to delimit the region of memory that represents the string.  The
+difference between a <code>&lt;gdb:lazy-string&gt;</code> and a string wrapped within
+a <code>&lt;gdb:value&gt;</code> is that a <code>&lt;gdb:lazy-string&gt;</code> will be treated
+differently by <span class="sc">gdb</span> when printing.  A <code>&lt;gdb:lazy-string&gt;</code> is
+retrieved and encoded during printing, while a <code>&lt;gdb:value&gt;</code>
+wrapping a string is immediately retrieved and encoded on creation.
+
+   <p>The following lazy-string-related procedures are provided by the
+<code>(gdb)</code> module:
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>lazy-string?</b><var> object<a name="index-lazy_002dstring_003f-2704"></a></var><br>
+<blockquote><p>Return <code>#t</code> if <var>object</var> is an object of type <code>&lt;gdb:lazy-string&gt;</code>. 
+Otherwise return <code>#f</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>lazy-string-address</b><var> lazy-sring<a name="index-lazy_002dstring_002daddress-2705"></a></var><br>
+<blockquote><p>Return the address of <var>lazy-string</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>lazy-string-length</b><var> lazy-string<a name="index-lazy_002dstring_002dlength-2706"></a></var><br>
+<blockquote><p>Return the length of <var>lazy-string</var> in characters.  If the
+length is -1, then the string will be fetched and encoded up to the
+first null of appropriate width. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>lazy-string-encoding</b><var> lazy-string<a name="index-lazy_002dstring_002dencoding-2707"></a></var><br>
+<blockquote><p>Return the encoding that will be applied to <var>lazy-string</var>
+when the string is printed by <span class="sc">gdb</span>.  If the encoding is not
+set, or contains an empty string,  then <span class="sc">gdb</span> will select the
+most appropriate encoding when the string is printed. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>lazy-string-type</b><var> lazy-string<a name="index-lazy_002dstring_002dtype-2708"></a></var><br>
+<blockquote><p>Return the type that is represented by <var>lazy-string</var>'s type. 
+For a lazy string this will always be a pointer type.  To
+resolve this to the lazy string's character type, use <code>type-target-type</code>. 
+See <a href="Types-In-Guile.html#Types-In-Guile">Types In Guile</a>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>lazy-string-&gt;value</b><var> lazy-string<a name="index-lazy_002dstring_002d_003evalue-2709"></a></var><br>
+<blockquote><p>Convert the <code>&lt;gdb:lazy-string&gt;</code> to a <code>&lt;gdb:value&gt;</code>.  This value
+will point to the string in memory, but will lose all the delayed
+retrieval, encoding and handling that <span class="sc">gdb</span> applies to a
+<code>&lt;gdb:lazy-string&gt;</code>. 
+</p></blockquote></div>
+
+   </body></html>
+

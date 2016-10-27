@@ -1,0 +1,125 @@
+<html lang="en">
+<head>
+<title>ARC-Regs - Using as</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using as">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="ARC-Syntax.html#ARC-Syntax" title="ARC Syntax">
+<link rel="prev" href="ARC_002dChars.html#ARC_002dChars" title="ARC-Chars">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled ``GNU Free Documentation License''.
+
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="ARC-Regs"></a>
+<a name="ARC_002dRegs"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="ARC_002dChars.html#ARC_002dChars">ARC-Chars</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="ARC-Syntax.html#ARC-Syntax">ARC Syntax</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">9.3.2.2 Register Names</h5>
+
+<p><a name="index-ARC-register-names-616"></a><a name="index-register-names_002c-ARC-617"></a>The ARC assembler uses the following register names for its core
+registers:
+
+     <dl>
+<dt><code>r0-r31</code><dd><a name="index-core-general-registers_002c-ARC-618"></a><a name="index-ARC-core-general-registers-619"></a>The core general registers.  Registers <code>r26</code> through <code>r31</code>
+have special functions, and are usually referred to by those synonyms.
+
+     <br><dt><code>gp</code><dd><a name="index-global-pointer_002c-ARC-620"></a><a name="index-ARC-global-pointer-621"></a>The global pointer and a synonym for <code>r26</code>.
+
+     <br><dt><code>fp</code><dd><a name="index-frame-pointer_002c-ARC-622"></a><a name="index-ARC-frame-pointer-623"></a>The frame pointer and a synonym for <code>r27</code>.
+
+     <br><dt><code>sp</code><dd><a name="index-stack-pointer_002c-ARC-624"></a><a name="index-ARC-stack-pointer-625"></a>The stack pointer and a synonym for <code>r28</code>.
+
+     <br><dt><code>ilink1</code><dd><a name="index-level-1-interrupt-link-register_002c-ARC-626"></a><a name="index-ARC-level-1-interrupt-link-register-627"></a>For ARC 600 and ARC 700, the level 1 interrupt link register and a
+synonym for <code>r29</code>.  Not supported for ARCv2.
+
+     <br><dt><code>ilink</code><dd><a name="index-interrupt-link-register_002c-ARC-628"></a><a name="index-ARC-interrupt-link-register-629"></a>For ARCv2, the interrupt link register and a synonym for <code>r29</code>. 
+Not supported for ARC 600 and ARC 700.
+
+     <br><dt><code>ilink2</code><dd><a name="index-level-2-interrupt-link-register_002c-ARC-630"></a><a name="index-ARC-level-2-interrupt-link-register-631"></a>For ARC 600 and ARC 700, the level 2 interrupt link register and a
+synonym for <code>r30</code>.  Not supported for ARC v2.
+
+     <br><dt><code>blink</code><dd><a name="index-link-register_002c-ARC-632"></a><a name="index-ARC-link-register-633"></a>The link register and a synonym for <code>r31</code>.
+
+     <br><dt><code>r32-r59</code><dd><a name="index-extension-core-registers_002c-ARC-634"></a><a name="index-ARC-extension-core-registers-635"></a>The extension core registers.
+
+     <br><dt><code>lp_count</code><dd><a name="index-loop-counter_002c-ARC-636"></a><a name="index-ARC-loop-counter-637"></a>The loop count register.
+
+     <br><dt><code>pcl</code><dd><a name="index-word-aligned-program-counter_002c-ARC-638"></a><a name="index-ARC-word-aligned-program-counter-639"></a>The word aligned program counter.
+
+   </dl>
+
+   <p>In addition the ARC processor has a large number of <em>auxiliary
+registers</em>.  The precise set depends on the extensions being
+supported, but the following baseline set are always defined:
+
+     <dl>
+<dt><code>identity</code><dd><a name="index-Processor-Identification-register_002c-ARC-640"></a><a name="index-ARC-Processor-Identification-register-641"></a>Processor Identification register.  Auxiliary register address 0x4.
+
+     <br><dt><code>pc</code><dd><a name="index-Program-Counter_002c-ARC-642"></a><a name="index-ARC-Program-Counter-643"></a>Program Counter.  Auxiliary register address 0x6.
+
+     <br><dt><code>status32</code><dd><a name="index-Status-register_002c-ARC-644"></a><a name="index-ARC-Status-register-645"></a>Status register.  Auxiliary register address 0x0a.
+
+     <br><dt><code>bta</code><dd><a name="index-Branch-Target-Address_002c-ARC-646"></a><a name="index-ARC-Branch-Target-Address-647"></a>Branch Target Address.  Auxiliary register address 0x412.
+
+     <br><dt><code>ecr</code><dd><a name="index-Exception-Cause-Register_002c-ARC-648"></a><a name="index-ARC-Exception-Cause-Register-649"></a>Exception Cause Register.  Auxiliary register address 0x403.
+
+     <br><dt><code>int_vector_base</code><dd><a name="index-Interrupt-Vector-Base-address_002c-ARC-650"></a><a name="index-ARC-Interrupt-Vector-Base-address-651"></a>Interrupt Vector Base address.  Auxiliary register address 0x25.
+
+     <br><dt><code>status32_p0</code><dd><a name="index-Stored-STATUS32-register-on-entry-to-level-P0-interrupts_002c-ARC-652"></a><a name="index-ARC-Stored-STATUS32-register-on-entry-to-level-P0-interrupts-653"></a>Stored STATUS32 register on entry to level P0 interrupts.  Auxiliary
+register address 0xb.
+
+     <br><dt><code>aux_user_sp</code><dd><a name="index-Saved-User-Stack-Pointer_002c-ARC-654"></a><a name="index-ARC-Saved-User-Stack-Pointer-655"></a>Saved User Stack Pointer.  Auxiliary register address 0xd.
+
+     <br><dt><code>eret</code><dd><a name="index-Exception-Return-Address_002c-ARC-656"></a><a name="index-ARC-Exception-Return-Address-657"></a>Exception Return Address.  Auxiliary register address 0x400.
+
+     <br><dt><code>erbta</code><dd><a name="index-BTA-saved-on-exception-entry_002c-ARC-658"></a><a name="index-ARC-BTA-saved-on-exception-entry-659"></a>BTA saved on exception entry.  Auxiliary register address 0x401.
+
+     <br><dt><code>erstatus</code><dd><a name="index-STATUS32-saved-on-exception_002c-ARC-660"></a><a name="index-ARC-STATUS32-saved-on-exception-661"></a>STATUS32 saved on exception.  Auxiliary register address 0x402.
+
+     <br><dt><code>bcr_ver</code><dd><a name="index-Build-Configuration-Registers-Version_002c-ARC-662"></a><a name="index-ARC-Build-Configuration-Registers-Version-663"></a>Build Configuration Registers Version.  Auxiliary register address 0x60.
+
+     <br><dt><code>bta_link_build</code><dd><a name="index-Build-configuration-for_003a-BTA-Registers_002c-ARC-664"></a><a name="index-ARC-Build-configuration-for_003a-BTA-Registers-665"></a>Build configuration for: BTA Registers.  Auxiliary register address 0x63.
+
+     <br><dt><code>vecbase_ac_build</code><dd><a name="index-Build-configuration-for_003a-Interrupts_002c-ARC-666"></a><a name="index-ARC-Build-configuration-for_003a-Interrupts-667"></a>Build configuration for: Interrupts.  Auxiliary register address 0x68.
+
+     <br><dt><code>rf_build</code><dd><a name="index-Build-configuration-for_003a-Core-Registers_002c-ARC-668"></a><a name="index-ARC-Build-configuration-for_003a-Core-Registers-669"></a>Build configuration for: Core Registers.  Auxiliary register address 0x6e.
+
+     <br><dt><code>dccm_build</code><dd><a name="index-DCCM-RAM-Configuration-Register_002c-ARC-670"></a><a name="index-ARC-DCCM-RAM-Configuration-Register-671"></a>DCCM RAM Configuration Register.  Auxiliary register address 0xc1.
+
+   </dl>
+
+   <p>Additional auxiliary register names are defined according to the
+processor architecture version and extensions selected by the options.
+
+   </body></html>
+

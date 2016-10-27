@@ -1,0 +1,79 @@
+<html lang="en">
+<head>
+<title>libthread_db.so.1 file - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Auto_002dloading.html#Auto_002dloading" title="Auto-loading">
+<link rel="prev" href="Init-File-in-the-Current-Directory.html#Init-File-in-the-Current-Directory" title="Init File in the Current Directory">
+<link rel="next" href="Auto_002dloading-safe-path.html#Auto_002dloading-safe-path" title="Auto-loading safe path">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="libthread_db.so.1-file"></a>
+<a name="libthread_005fdb_002eso_002e1-file"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Auto_002dloading-safe-path.html#Auto_002dloading-safe-path">Auto-loading safe path</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Init-File-in-the-Current-Directory.html#Init-File-in-the-Current-Directory">Init File in the Current Directory</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Auto_002dloading.html#Auto_002dloading">Auto-loading</a>
+<hr>
+</div>
+
+<h4 class="subsection">22.7.2 Automatically loading thread debugging library</h4>
+
+<p><a name="index-auto_002dloading-libthread_005fdb_002eso_002e1-1687"></a>
+This feature is currently present only on <span class="sc">gnu</span>/Linux native hosts.
+
+   <p><span class="sc">gdb</span> reads in some cases thread debugging library from places specific
+to the inferior (see <a href="set-libthread_002ddb_002dsearch_002dpath.html#set-libthread_002ddb_002dsearch_002dpath">set libthread-db-search-path</a>).
+
+   <p>The special &lsquo;<samp><span class="samp">libthread-db-search-path</span></samp>&rsquo; entry &lsquo;<samp><span class="samp">$sdir</span></samp>&rsquo; is processed
+without checking this &lsquo;<samp><span class="samp">set auto-load libthread-db</span></samp>&rsquo; switch as system
+libraries have to be trusted in general.  In all other cases of
+&lsquo;<samp><span class="samp">libthread-db-search-path</span></samp>&rsquo; entries <span class="sc">gdb</span> checks first if &lsquo;<samp><span class="samp">set
+auto-load libthread-db</span></samp>&rsquo; is enabled before trying to open such thread debugging
+library.
+
+   <p>Note that loading of this debugging library also requires accordingly configured
+<code>auto-load safe-path</code> (see <a href="Auto_002dloading-safe-path.html#Auto_002dloading-safe-path">Auto-loading safe path</a>).
+
+     <dl>
+<a name="set-auto_002dload-libthread_002ddb"></a><a name="index-set-auto_002dload-libthread_002ddb-1688"></a><dt><code>set auto-load libthread-db [on|off]</code><dd>Enable or disable the auto-loading of inferior specific thread debugging library.
+
+     <p><a name="show-auto_002dload-libthread_002ddb"></a><a name="index-show-auto_002dload-libthread_002ddb-1689"></a><br><dt><code>show auto-load libthread-db</code><dd>Show whether auto-loading of inferior specific thread debugging library is
+enabled or disabled.
+
+     <p><a name="info-auto_002dload-libthread_002ddb"></a><a name="index-info-auto_002dload-libthread_002ddb-1690"></a><br><dt><code>info auto-load libthread-db</code><dd>Print the list of all loaded inferior specific thread debugging libraries and
+for each such library print list of inferior <var>pid</var>s using it. 
+</dl>
+
+   </body></html>
+

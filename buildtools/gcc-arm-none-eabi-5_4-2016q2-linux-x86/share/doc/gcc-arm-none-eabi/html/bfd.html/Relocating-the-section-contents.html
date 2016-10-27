@@ -1,0 +1,91 @@
+<html lang="en">
+<head>
+<title>Relocating the section contents - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Performing-the-Final-Link.html#Performing-the-Final-Link" title="Performing the Final Link">
+<link rel="prev" href="Information-provided-by-the-linker.html#Information-provided-by-the-linker" title="Information provided by the linker">
+<link rel="next" href="Writing-the-symbol-table.html#Writing-the-symbol-table" title="Writing the symbol table">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Relocating-the-section-contents"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Writing-the-symbol-table.html#Writing-the-symbol-table">Writing the symbol table</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Information-provided-by-the-linker.html#Information-provided-by-the-linker">Information provided by the linker</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Performing-the-Final-Link.html#Performing-the-Final-Link">Performing the Final Link</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">2.17.3.2 Relocating the section contents</h5>
+
+<p>The <code>_bfd_final_link</code> function should look through the
+<code>link_order</code> structures attached to each section of the
+output file.  Each <code>link_order</code> structure should either be
+handled specially, or it should be passed to the function
+<code>_bfd_default_link_order</code> which will do the right thing
+(<code>_bfd_default_link_order</code> is defined in <code>linker.c</code>).
+
+   <p>For efficiency, a <code>link_order</code> of type
+<code>bfd_indirect_link_order</code> whose associated section belongs
+to a BFD of the same format as the output BFD must be handled
+specially.  This type of <code>link_order</code> describes part of an
+output section in terms of a section belonging to one of the
+input files.  The <code>_bfd_final_link</code> function should read the
+contents of the section and any associated relocs, apply the
+relocs to the section contents, and write out the modified
+section contents.  If performing a relocatable link, the
+relocs themselves must also be modified and written out.
+
+   <p><a name="index-g_t_005fbfd_005frelocate_005fcontents-2250"></a><a name="index-g_t_005fbfd_005ffinal_005flink_005frelocate-2251"></a>The functions <code>_bfd_relocate_contents</code> and
+<code>_bfd_final_link_relocate</code> provide some general support for
+performing the actual relocations, notably overflow checking. 
+Their arguments include information about the symbol the
+relocation is against and a <code>reloc_howto_type</code> argument
+which describes the relocation to perform.  These functions
+are defined in <code>reloc.c</code>.
+
+   <p>The a.out function which handles reading, relocating, and
+writing section contents is <code>aout_link_input_section</code>.  The
+actual relocation is done in <code>aout_link_input_section_std</code>
+and <code>aout_link_input_section_ext</code>.
+
+   </body></html>
+

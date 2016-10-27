@@ -1,0 +1,102 @@
+<html lang="en">
+<head>
+<title>Files - The GNU C Preprocessor Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="The GNU C Preprocessor Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Guard-Macros.html#Guard-Macros" title="Guard Macros">
+<link rel="next" href="Concept-Index.html#Concept-Index" title="Concept Index">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Files"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Concept-Index.html#Concept-Index">Concept Index</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Guard-Macros.html#Guard-Macros">Guard Macros</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="unnumbered">File Handling</h2>
+
+<p><a name="index-files-21"></a>
+Fairly obviously, the file handling code of cpplib resides in the file
+<samp><span class="file">files.c</span></samp>.  It takes care of the details of file searching,
+opening, reading and caching, for both the main source file and all the
+headers it recursively includes.
+
+   <p>The basic strategy is to minimize the number of system calls.  On many
+systems, the basic <code>open ()</code> and <code>fstat ()</code> system calls can
+be quite expensive.  For every <code>#include</code>-d file, we need to try
+all the directories in the search path until we find a match.  Some
+projects, such as glibc, pass twenty or thirty include paths on the
+command line, so this can rapidly become time consuming.
+
+   <p>For a header file we have not encountered before we have little choice
+but to do this.  However, it is often the case that the same headers are
+repeatedly included, and in these cases we try to avoid repeating the
+filesystem queries whilst searching for the correct file.
+
+   <p>For each file we try to open, we store the constructed path in a splay
+tree.  This path first undergoes simplification by the function
+<code>_cpp_simplify_pathname</code>.  For example,
+<samp><span class="file">/usr/include/bits/../foo.h</span></samp> is simplified to
+<samp><span class="file">/usr/include/foo.h</span></samp> before we enter it in the splay tree and try
+to <code>open ()</code> the file.  CPP will then find subsequent uses of
+<samp><span class="file">foo.h</span></samp>, even as <samp><span class="file">/usr/include/foo.h</span></samp>, in the splay tree and
+save system calls.
+
+   <p>Further, it is likely the file contents have also been cached, saving a
+<code>read ()</code> system call.  We don't bother caching the contents of
+header files that are re-inclusion protected, and whose re-inclusion
+macro is defined when we leave the header file for the first time.  If
+the host supports it, we try to map suitably large files into memory,
+rather than reading them in directly.
+
+   <p>The include paths are internally stored on a null-terminated
+singly-linked list, starting with the <code>"header.h"</code> directory search
+chain, which then links into the <code>&lt;header.h&gt;</code> directory chain.
+
+   <p>Files included with the <code>&lt;foo.h&gt;</code> syntax start the lookup directly
+in the second half of this chain.  However, files included with the
+<code>"foo.h"</code> syntax start at the beginning of the chain, but with one
+extra directory prepended.  This is the directory of the current file;
+the one containing the <code>#include</code> directive.  Prepending this
+directory on a per-file basis is handled by the function
+<code>search_from</code>.
+
+   <p>Note that a header included with a directory component, such as
+<code>#include "mydir/foo.h"</code> and opened as
+<samp><span class="file">/usr/local/include/mydir/foo.h</span></samp>, will have the complete path minus
+the basename &lsquo;<samp><span class="samp">foo.h</span></samp>&rsquo; as the current directory.
+
+   <p>Enough information is stored in the splay tree that CPP can immediately
+tell whether it can skip the header file because of the multiple include
+optimization, whether the file didn't exist or couldn't be opened for
+some reason, or whether the header was flagged not to be re-used, as it
+is with the obsolete <code>#import</code> directive.
+
+   <p>For the benefit of MS-DOS filesystems with an 8.3 filename limitation,
+CPP offers the ability to treat various include file names as aliases
+for the real header files with shorter names.  The map from one to the
+other is found in a special file called &lsquo;<samp><span class="samp">header.gcc</span></samp>&rsquo;, stored in the
+command line (or system) include directories to which the mapping
+applies.  This may be higher up the directory tree than the full path to
+the file minus the base name.
+
+   </body></html>
+

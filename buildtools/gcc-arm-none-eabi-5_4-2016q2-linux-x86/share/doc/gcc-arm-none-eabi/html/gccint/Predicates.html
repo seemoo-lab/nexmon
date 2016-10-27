@@ -1,0 +1,115 @@
+<html lang="en">
+<head>
+<title>Predicates - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Machine-Desc.html#Machine-Desc" title="Machine Desc">
+<link rel="prev" href="Output-Statement.html#Output-Statement" title="Output Statement">
+<link rel="next" href="Constraints.html#Constraints" title="Constraints">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Predicates"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Constraints.html#Constraints">Constraints</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Output-Statement.html#Output-Statement">Output Statement</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Machine-Desc.html#Machine-Desc">Machine Desc</a>
+<hr>
+</div>
+
+<h3 class="section">16.7 Predicates</h3>
+
+<p><a name="index-predicates-3277"></a><a name="index-operand-predicates-3278"></a><a name="index-operator-predicates-3279"></a>
+A predicate determines whether a <code>match_operand</code> or
+<code>match_operator</code> expression matches, and therefore whether the
+surrounding instruction pattern will be used for that combination of
+operands.  GCC has a number of machine-independent predicates, and you
+can define machine-specific predicates as needed.  By convention,
+predicates used with <code>match_operand</code> have names that end in
+&lsquo;<samp><span class="samp">_operand</span></samp>&rsquo;, and those used with <code>match_operator</code> have names
+that end in &lsquo;<samp><span class="samp">_operator</span></samp>&rsquo;.
+
+ <p>All predicates are Boolean functions (in the mathematical sense) of
+two arguments: the RTL expression that is being considered at that
+position in the instruction pattern, and the machine mode that the
+<code>match_operand</code> or <code>match_operator</code> specifies.  In this
+section, the first argument is called <var>op</var> and the second argument
+<var>mode</var>.  Predicates can be called from C as ordinary two-argument
+functions; this can be useful in output templates or other
+machine-specific code.
+
+ <p>Operand predicates can allow operands that are not actually acceptable
+to the hardware, as long as the constraints give reload the ability to
+fix them up (see <a href="Constraints.html#Constraints">Constraints</a>).  However, GCC will usually generate
+better code if the predicates specify the requirements of the machine
+instructions as closely as possible.  Reload cannot fix up operands
+that must be constants (&ldquo;immediate operands&rdquo;); you must use a
+predicate that allows only constants, or else enforce the requirement
+in the extra condition.
+
+ <p><a name="index-predicates-and-machine-modes-3280"></a><a name="index-normal-predicates-3281"></a><a name="index-special-predicates-3282"></a>Most predicates handle their <var>mode</var> argument in a uniform manner. 
+If <var>mode</var> is <code>VOIDmode</code> (unspecified), then <var>op</var> can have
+any mode.  If <var>mode</var> is anything else, then <var>op</var> must have the
+same mode, unless <var>op</var> is a <code>CONST_INT</code> or integer
+<code>CONST_DOUBLE</code>.  These RTL expressions always have
+<code>VOIDmode</code>, so it would be counterproductive to check that their
+mode matches.  Instead, predicates that accept <code>CONST_INT</code> and/or
+integer <code>CONST_DOUBLE</code> check that the value stored in the
+constant will fit in the requested mode.
+
+ <p>Predicates with this behavior are called <dfn>normal</dfn>. 
+<samp><span class="command">genrecog</span></samp> can optimize the instruction recognizer based on
+knowledge of how normal predicates treat modes.  It can also diagnose
+certain kinds of common errors in the use of normal predicates; for
+instance, it is almost always an error to use a normal predicate
+without specifying a mode.
+
+ <p>Predicates that do something different with their <var>mode</var> argument
+are called <dfn>special</dfn>.  The generic predicates
+<code>address_operand</code> and <code>pmode_register_operand</code> are special
+predicates.  <samp><span class="command">genrecog</span></samp> does not do any optimizations or
+diagnosis when special predicates are used.
+
+<ul class="menu">
+<li><a accesskey="1" href="Machine_002dIndependent-Predicates.html#Machine_002dIndependent-Predicates">Machine-Independent Predicates</a>:   Predicates available to all back ends. 
+<li><a accesskey="2" href="Defining-Predicates.html#Defining-Predicates">Defining Predicates</a>:              How to write machine-specific predicate
+                                    functions. 
+</ul>
+
+ </body></html>
+

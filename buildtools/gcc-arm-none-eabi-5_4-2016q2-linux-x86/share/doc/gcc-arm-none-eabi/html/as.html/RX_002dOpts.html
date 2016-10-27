@@ -1,0 +1,129 @@
+<html lang="en">
+<head>
+<title>RX-Opts - Using as</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using as">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="RX_002dDependent.html#RX_002dDependent" title="RX-Dependent">
+<link rel="next" href="RX_002dModifiers.html#RX_002dModifiers" title="RX-Modifiers">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled ``GNU Free Documentation License''.
+
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="RX-Opts"></a>
+<a name="RX_002dOpts"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="RX_002dModifiers.html#RX_002dModifiers">RX-Modifiers</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="RX_002dDependent.html#RX_002dDependent">RX-Dependent</a>
+<hr>
+</div>
+
+<h4 class="subsection">9.37.1 RX Options</h4>
+
+<p><a name="index-options_002c-RX-1840"></a><a name="index-RX-options-1841"></a>
+The Renesas RX port of <code>as</code> has a few target specfic
+command line options:
+
+     
+<a name="index-g_t_0040samp_007b_002dm32bit_002ddoubles_007d-1842"></a>
+<dl><dt><code>-m32bit-doubles</code><dd>This option controls the ABI and indicates to use a 32-bit float ABI. 
+It has no effect on the assembled instructions, but it does influence
+the behaviour of the &lsquo;<samp><span class="samp">.double</span></samp>&rsquo; pseudo-op. 
+This is the default.
+
+     <p><a name="index-g_t_0040samp_007b_002dm64bit_002ddoubles_007d-1843"></a><br><dt><code>-m64bit-doubles</code><dd>This option controls the ABI and indicates to use a 64-bit float ABI. 
+It has no effect on the assembled instructions, but it does influence
+the behaviour of the &lsquo;<samp><span class="samp">.double</span></samp>&rsquo; pseudo-op.
+
+     <p><a name="index-g_t_0040samp_007b_002dmbig_002dendian_007d-1844"></a><br><dt><code>-mbig-endian</code><dd>This option controls the ABI and indicates to use a big-endian data
+ABI.  It has no effect on the assembled instructions, but it does
+influence the behaviour of the &lsquo;<samp><span class="samp">.short</span></samp>&rsquo;, &lsquo;<samp><span class="samp">.hword</span></samp>&rsquo;, &lsquo;<samp><span class="samp">.int</span></samp>&rsquo;,
+&lsquo;<samp><span class="samp">.word</span></samp>&rsquo;, &lsquo;<samp><span class="samp">.long</span></samp>&rsquo;, &lsquo;<samp><span class="samp">.quad</span></samp>&rsquo; and &lsquo;<samp><span class="samp">.octa</span></samp>&rsquo; pseudo-ops.
+
+     <p><a name="index-g_t_0040samp_007b_002dmlittle_002dendian_007d-1845"></a><br><dt><code>-mlittle-endian</code><dd>This option controls the ABI and indicates to use a little-endian data
+ABI.  It has no effect on the assembled instructions, but it does
+influence the behaviour of the &lsquo;<samp><span class="samp">.short</span></samp>&rsquo;, &lsquo;<samp><span class="samp">.hword</span></samp>&rsquo;, &lsquo;<samp><span class="samp">.int</span></samp>&rsquo;,
+&lsquo;<samp><span class="samp">.word</span></samp>&rsquo;, &lsquo;<samp><span class="samp">.long</span></samp>&rsquo;, &lsquo;<samp><span class="samp">.quad</span></samp>&rsquo; and &lsquo;<samp><span class="samp">.octa</span></samp>&rsquo; pseudo-ops. 
+This is the default.
+
+     <p><a name="index-g_t_0040samp_007b_002dmuse_002dconventional_002dsection_002dnames_007d-1846"></a><br><dt><code>-muse-conventional-section-names</code><dd>This option controls the default names given to the code (.text),
+initialised data (.data) and uninitialised data sections (.bss).
+
+     <p><a name="index-g_t_0040samp_007b_002dmuse_002drenesas_002dsection_002dnames_007d-1847"></a><br><dt><code>-muse-renesas-section-names</code><dd>This option controls the default names given to the code (.P),
+initialised data (.D_1) and uninitialised data sections (.B_1). 
+This is the default.
+
+     <p><a name="index-g_t_0040samp_007b_002dmsmall_002ddata_002dlimit_007d-1848"></a><br><dt><code>-msmall-data-limit</code><dd>This option tells the assembler that the small data limit feature of
+the RX port of GCC is being used.  This results in the assembler
+generating an undefined reference to a symbol called <code>__gp</code> for
+use by the relocations that are needed to support the small data limit
+feature.   This option is not enabled by default as it would otherwise
+pollute the symbol table.
+
+     <p><a name="index-g_t_0040samp_007b_002dmpid_007d-1849"></a><br><dt><code>-mpid</code><dd>This option tells the assembler that the position independent data of the
+RX port of GCC is being used.  This results in the assembler
+generating an undefined reference to a symbol called <code>__pid_base</code>,
+and also setting the RX_PID flag bit in the e_flags field of the ELF
+header of the object file.
+
+     <p><a name="index-g_t_0040samp_007b_002dmint_002dregister_007d-1850"></a><br><dt><code>-mint-register=</code><var>num</var><dd>This option tells the assembler how many registers have been reserved
+for use by interrupt handlers.  This is needed in order to compute the
+correct values for the <code>%gpreg</code> and <code>%pidreg</code> meta registers.
+
+     <p><a name="index-g_t_0040samp_007b_002dmgcc_002dabi_007d-1851"></a><br><dt><code>-mgcc-abi</code><dd>This option tells the assembler that the old GCC ABI is being used by
+the assembled code.  With this version of the ABI function arguments
+that are passed on the stack are aligned to a 32-bit boundary.
+
+     <p><a name="index-g_t_0040samp_007b_002dmrx_002dabi_007d-1852"></a><br><dt><code>-mrx-abi</code><dd>This option tells the assembler that the official RX ABI is being used
+by the assembled code.  With this version of the ABI function
+arguments that are passed on the stack are aligned to their natural
+alignments.  This option is the default.
+
+     <p><a name="index-g_t_0040samp_007b_002dmcpu_003d_007d-1853"></a><br><dt><code>-mcpu=</code><var>name</var><dd>This option tells the assembler the target CPU type.  Currently the
+<code>rx200</code>, <code>rx600</code> and <code>rx610</code> are recognised as valid
+cpu names.  Attempting to assemble an instruction not supported by the
+indicated cpu type will result in an error message being generated.
+
+     <p><a name="index-g_t_0040samp_007b_002dmno_002dallow_002dstring_002dinsns_007d-1854"></a><br><dt><code>-mno-allow-string-insns</code><dd>This option tells the assembler to mark the object file that it is
+building as one that does not use the string instructions
+<code>SMOVF</code>, <code>SCMPU</code>, <code>SMOVB</code>, <code>SMOVU</code>, <code>SUNTIL</code>
+<code>SWHILE</code> or the <code>RMPA</code> instruction.  In addition the mark
+tells the linker to complain if an attempt is made to link the binary
+with another one that does use any of these instructions.
+
+     <p>Note - the inverse of this option, <code>-mallow-string-insns</code>, is
+not needed.  The assembler automatically detects the use of the
+the instructions in the source code and labels the resulting
+object file appropriately.  If no string instructions are detected
+then the object file is labelled as being one that can be linked with
+either string-using or string-banned object files. 
+</dl>
+
+   </body></html>
+

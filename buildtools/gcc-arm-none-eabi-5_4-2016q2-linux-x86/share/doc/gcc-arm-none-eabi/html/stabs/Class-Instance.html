@@ -1,0 +1,66 @@
+<html lang="en">
+<head>
+<title>Class Instance - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Cplusplus.html#Cplusplus" title="Cplusplus">
+<link rel="prev" href="Simple-Classes.html#Simple-Classes" title="Simple Classes">
+<link rel="next" href="Methods.html#Methods" title="Methods">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Class-Instance"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Methods.html#Methods">Methods</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Simple-Classes.html#Simple-Classes">Simple Classes</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Cplusplus.html#Cplusplus">Cplusplus</a>
+<hr>
+</div>
+
+<h3 class="section">8.5 Class Instance</h3>
+
+<p>As shown above, describing even a simple C<tt>++</tt> class definition is
+accomplished by massively extending the stab format used in C to
+describe structure types.  However, once the class is defined, C stabs
+with no modifications can be used to describe class instances.  The
+following source:
+
+<pre class="example">     main () {
+             baseA AbaseA;
+     }
+</pre>
+   <p class="noindent">yields the following stab describing the class instance.  It looks no
+different from a standard C stab describing a local variable.
+
+<pre class="display">     .stabs "name:type_ref(baseA)", N_LSYM, NIL, NIL, frame_ptr_offset
+</pre>
+   <pre class="example">     .stabs "AbaseA:20",128,0,0,-20
+</pre>
+   </body></html>
+

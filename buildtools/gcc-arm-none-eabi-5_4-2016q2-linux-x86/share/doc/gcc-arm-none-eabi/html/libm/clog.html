@@ -1,0 +1,69 @@
+<html lang="en">
+<head>
+<title>clog - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Complex.html#Complex" title="Complex">
+<link rel="prev" href="cimag.html#cimag" title="cimag">
+<link rel="next" href="clog10.html#clog10" title="clog10">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="clog"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="clog10.html#clog10">clog10</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="cimag.html#cimag">cimag</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Complex.html#Complex">Complex</a>
+<hr>
+</div>
+
+<h3 class="section">2.13 <code>clog</code>, <code>clogf</code>&mdash;complex base-e logarithm</h3>
+
+<p><a name="index-clog-184"></a><a name="index-clogf-185"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;complex.h&gt;
+     double complex clog(double complex <var>z</var>);
+     float complex clogf(float complex <var>z</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+These functions compute the complex natural (base-<var>e</var>) logarithm
+of <var>z</var>, with a branch cut along the negative real axis.
+
+   <p><code>clogf</code> is identical to <code>clog</code>, except that it performs
+its calculations on <code>floats complex</code>.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+The clog functions return the complex natural logarithm value, in
+the range of a strip mathematically unbounded along the real axis
+and in the interval [-i*pi , +i*pi] along the imaginary axis.
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+<code>clog</code> and <code>clogf</code> are ISO C99
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

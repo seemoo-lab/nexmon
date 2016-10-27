@@ -1,0 +1,105 @@
+<html lang="en">
+<head>
+<title>Host Misc - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Host-Config.html#Host-Config" title="Host Config">
+<link rel="prev" href="Filesystem.html#Filesystem" title="Filesystem">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Host-Misc"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Filesystem.html#Filesystem">Filesystem</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Host-Config.html#Host-Config">Host Config</a>
+<hr>
+</div>
+
+<h3 class="section">18.3 Host Misc</h3>
+
+<p><a name="index-configuration-file-5042"></a><a name="index-g_t_0040file_007bxm_002d_0040var_007bmachine_007d_002eh_007d-5043"></a>
+     <dl>
+<dt><code>FATAL_EXIT_CODE</code><a name="index-FATAL_005fEXIT_005fCODE-5044"></a><dd>A C expression for the status code to be returned when the compiler
+exits after serious errors.  The default is the system-provided macro
+&lsquo;<samp><span class="samp">EXIT_FAILURE</span></samp>&rsquo;, or &lsquo;<samp><span class="samp">1</span></samp>&rsquo; if the system doesn't define that
+macro.  Define this macro only if these defaults are incorrect.
+
+     <br><dt><code>SUCCESS_EXIT_CODE</code><a name="index-SUCCESS_005fEXIT_005fCODE-5045"></a><dd>A C expression for the status code to be returned when the compiler
+exits without serious errors.  (Warnings are not serious errors.)  The
+default is the system-provided macro &lsquo;<samp><span class="samp">EXIT_SUCCESS</span></samp>&rsquo;, or &lsquo;<samp><span class="samp">0</span></samp>&rsquo; if
+the system doesn't define that macro.  Define this macro only if these
+defaults are incorrect.
+
+     <br><dt><code>USE_C_ALLOCA</code><a name="index-USE_005fC_005fALLOCA-5046"></a><dd>Define this macro if GCC should use the C implementation of <code>alloca</code>
+provided by <samp><span class="file">libiberty.a</span></samp>.  This only affects how some parts of the
+compiler itself allocate memory.  It does not change code generation.
+
+     <p>When GCC is built with a compiler other than itself, the C <code>alloca</code>
+is always used.  This is because most other implementations have serious
+bugs.  You should define this macro only on a system where no
+stack-based <code>alloca</code> can possibly work.  For instance, if a system
+has a small limit on the size of the stack, GCC's builtin <code>alloca</code>
+will not work reliably.
+
+     <br><dt><code>COLLECT2_HOST_INITIALIZATION</code><a name="index-COLLECT2_005fHOST_005fINITIALIZATION-5047"></a><dd>If defined, a C statement (sans semicolon) that performs host-dependent
+initialization when <code>collect2</code> is being initialized.
+
+     <br><dt><code>GCC_DRIVER_HOST_INITIALIZATION</code><a name="index-GCC_005fDRIVER_005fHOST_005fINITIALIZATION-5048"></a><dd>If defined, a C statement (sans semicolon) that performs host-dependent
+initialization when a compilation driver is being initialized.
+
+     <br><dt><code>HOST_LONG_LONG_FORMAT</code><a name="index-HOST_005fLONG_005fLONG_005fFORMAT-5049"></a><dd>If defined, the string used to indicate an argument of type <code>long
+long</code> to functions like <code>printf</code>.  The default value is
+<code>"ll"</code>.
+
+     <br><dt><code>HOST_LONG_FORMAT</code><a name="index-HOST_005fLONG_005fFORMAT-5050"></a><dd>If defined, the string used to indicate an argument of type <code>long</code>
+to functions like <code>printf</code>.  The default value is <code>"l"</code>.
+
+     <br><dt><code>HOST_PTR_PRINTF</code><a name="index-HOST_005fPTR_005fPRINTF-5051"></a><dd>If defined, the string used to indicate an argument of type <code>void *</code>
+to functions like <code>printf</code>.  The default value is <code>"%p"</code>. 
+</dl>
+
+ <p>In addition, if <samp><span class="command">configure</span></samp> generates an incorrect definition of
+any of the macros in <samp><span class="file">auto-host.h</span></samp>, you can override that
+definition in a host configuration header.  If you need to do this,
+first see if it is possible to fix <samp><span class="command">configure</span></samp>.
+
+<!-- Copyright (C) 1988-2015 Free Software Foundation, Inc. -->
+<!-- This is part of the GCC manual. -->
+<!-- For copying conditions, see the file gcc.texi. -->
+ </body></html>
+

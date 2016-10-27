@@ -1,0 +1,128 @@
+<html lang="en">
+<head>
+<title>Symbol Descriptors - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Stab-Types.html#Stab-Types" title="Stab Types">
+<link rel="next" href="Type-Descriptors.html#Type-Descriptors" title="Type Descriptors">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Symbol-Descriptors"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Type-Descriptors.html#Type-Descriptors">Type Descriptors</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Stab-Types.html#Stab-Types">Stab Types</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="appendix">Appendix B Table of Symbol Descriptors</h2>
+
+<p>The symbol descriptor is the character which follows the colon in many
+stabs, and which tells what kind of stab it is.  See <a href="String-Field.html#String-Field">String Field</a>,
+for more information about their use.
+
+<!-- Please keep this alphabetical -->
+     <dl>
+<!-- In TeX, this looks great, digit is in italics.  But makeinfo insists -->
+<!-- on putting it in `', not realizing that @var should override @code. -->
+<!-- I don't know of any way to make makeinfo do the right thing.  Seems -->
+<!-- like a makeinfo bug to me. -->
+<dt><var>digit</var><dt><code>(</code><dt><code>-</code><dd>Variable on the stack; see <a href="Stack-Variables.html#Stack-Variables">Stack Variables</a>.
+
+     <br><dt><code>:</code><dd>C<tt>++</tt> nested symbol; see See <a href="Nested-Symbols.html#Nested-Symbols">Nested Symbols</a>.
+
+     <br><dt><code>a</code><dd>Parameter passed by reference in register; see <a href="Reference-Parameters.html#Reference-Parameters">Reference Parameters</a>.
+
+     <br><dt><code>b</code><dd>Based variable; see <a href="Based-Variables.html#Based-Variables">Based Variables</a>.
+
+     <br><dt><code>c</code><dd>Constant; see <a href="Constants.html#Constants">Constants</a>.
+
+     <br><dt><code>C</code><dd>Conformant array bound (Pascal, maybe other languages); <a href="Conformant-Arrays.html#Conformant-Arrays">Conformant Arrays</a>.  Name of a caught exception (GNU C<tt>++</tt>).  These can be
+distinguished because the latter uses <code>N_CATCH</code> and the former uses
+another symbol type.
+
+     <br><dt><code>d</code><dd>Floating point register variable; see <a href="Register-Variables.html#Register-Variables">Register Variables</a>.
+
+     <br><dt><code>D</code><dd>Parameter in floating point register; see <a href="Register-Parameters.html#Register-Parameters">Register Parameters</a>.
+
+     <br><dt><code>f</code><dd>File scope function; see <a href="Procedures.html#Procedures">Procedures</a>.
+
+     <br><dt><code>F</code><dd>Global function; see <a href="Procedures.html#Procedures">Procedures</a>.
+
+     <br><dt><code>G</code><dd>Global variable; see <a href="Global-Variables.html#Global-Variables">Global Variables</a>.
+
+     <br><dt><code>i</code><dd>See <a href="Register-Parameters.html#Register-Parameters">Register Parameters</a>.
+
+     <br><dt><code>I</code><dd>Internal (nested) procedure; see <a href="Nested-Procedures.html#Nested-Procedures">Nested Procedures</a>.
+
+     <br><dt><code>J</code><dd>Internal (nested) function; see <a href="Nested-Procedures.html#Nested-Procedures">Nested Procedures</a>.
+
+     <br><dt><code>L</code><dd>Label name (documented by AIX, no further information known).
+
+     <br><dt><code>m</code><dd>Module; see <a href="Procedures.html#Procedures">Procedures</a>.
+
+     <br><dt><code>p</code><dd>Argument list parameter; see <a href="Parameters.html#Parameters">Parameters</a>.
+
+     <br><dt><code>pP</code><dd>See <a href="Parameters.html#Parameters">Parameters</a>.
+
+     <br><dt><code>pF</code><dd>Fortran Function parameter; see <a href="Parameters.html#Parameters">Parameters</a>.
+
+     <br><dt><code>P</code><dd>Unfortunately, three separate meanings have been independently invented
+for this symbol descriptor.  At least the GNU and Sun uses can be
+distinguished by the symbol type.  Global Procedure (AIX) (symbol type
+used unknown); see <a href="Procedures.html#Procedures">Procedures</a>.  Register parameter (GNU) (symbol
+type <code>N_PSYM</code>); see <a href="Parameters.html#Parameters">Parameters</a>.  Prototype of function
+referenced by this file (Sun <code>acc</code>) (symbol type <code>N_FUN</code>).
+
+     <br><dt><code>Q</code><dd>Static Procedure; see <a href="Procedures.html#Procedures">Procedures</a>.
+
+     <br><dt><code>R</code><dd>Register parameter; see <a href="Register-Parameters.html#Register-Parameters">Register Parameters</a>.
+
+     <br><dt><code>r</code><dd>Register variable; see <a href="Register-Variables.html#Register-Variables">Register Variables</a>.
+
+     <br><dt><code>S</code><dd>File scope variable; see <a href="Statics.html#Statics">Statics</a>.
+
+     <br><dt><code>s</code><dd>Local variable (OS9000).
+
+     <br><dt><code>t</code><dd>Type name; see <a href="Typedefs.html#Typedefs">Typedefs</a>.
+
+     <br><dt><code>T</code><dd>Enumeration, structure, or union tag; see <a href="Typedefs.html#Typedefs">Typedefs</a>.
+
+     <br><dt><code>v</code><dd>Parameter passed by reference; see <a href="Reference-Parameters.html#Reference-Parameters">Reference Parameters</a>.
+
+     <br><dt><code>V</code><dd>Procedure scope static variable; see <a href="Statics.html#Statics">Statics</a>.
+
+     <br><dt><code>x</code><dd>Conformant array; see <a href="Conformant-Arrays.html#Conformant-Arrays">Conformant Arrays</a>.
+
+     <br><dt><code>X</code><dd>Function return variable; see <a href="Parameters.html#Parameters">Parameters</a>. 
+</dl>
+
+   </body></html>
+

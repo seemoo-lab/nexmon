@@ -1,0 +1,79 @@
+<html lang="en">
+<head>
+<title>Adding Symbols to the Hash Table - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Linker-Functions.html#Linker-Functions" title="Linker Functions">
+<link rel="prev" href="Creating-a-Linker-Hash-Table.html#Creating-a-Linker-Hash-Table" title="Creating a Linker Hash Table">
+<link rel="next" href="Performing-the-Final-Link.html#Performing-the-Final-Link" title="Performing the Final Link">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Adding-Symbols-to-the-Hash-Table"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Performing-the-Final-Link.html#Performing-the-Final-Link">Performing the Final Link</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Creating-a-Linker-Hash-Table.html#Creating-a-Linker-Hash-Table">Creating a Linker Hash Table</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Linker-Functions.html#Linker-Functions">Linker Functions</a>
+<hr>
+</div>
+
+<h4 class="subsection">2.17.2 Adding symbols to the hash table</h4>
+
+<p><a name="index-g_t_005fbfd_005flink_005fadd_005fsymbols-in-target-vector-2244"></a><a name="index-target-vector-_0028_005fbfd_005flink_005fadd_005fsymbols_0029-2245"></a>The linker proper will call the <code>_bfd_link_add_symbols</code>
+entry point for each object file or archive which is to be
+linked (typically these are the files named on the command
+line, but some may also come from the linker script).  The
+entry point is responsible for examining the file.  For an
+object file, BFD must add any relevant symbol information to
+the hash table.  For an archive, BFD must determine which
+elements of the archive should be used and adding them to the
+link.
+
+   <p>The a.out version of this entry point is
+<code>NAME(aout,link_add_symbols)</code>.
+
+<ul class="menu">
+<li><a accesskey="1" href="Differing-file-formats.html#Differing-file-formats">Differing file formats</a>
+<li><a accesskey="2" href="Adding-symbols-from-an-object-file.html#Adding-symbols-from-an-object-file">Adding symbols from an object file</a>
+<li><a accesskey="3" href="Adding-symbols-from-an-archive.html#Adding-symbols-from-an-archive">Adding symbols from an archive</a>
+</ul>
+
+   </body></html>
+

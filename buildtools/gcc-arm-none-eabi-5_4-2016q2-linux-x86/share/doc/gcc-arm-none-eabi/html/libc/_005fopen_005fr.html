@@ -1,0 +1,54 @@
+<html lang="en">
+<head>
+<title>_open_r - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Reentrant-Syscalls.html#Reentrant-Syscalls" title="Reentrant Syscalls">
+<link rel="prev" href="_005flseek_005fr.html#g_t_005flseek_005fr" title="_lseek_r">
+<link rel="next" href="_005fread_005fr.html#g_t_005fread_005fr" title="_read_r">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="_open_r"></a>
+<a name="g_t_005fopen_005fr"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="_005fread_005fr.html#g_t_005fread_005fr">_read_r</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="_005flseek_005fr.html#g_t_005flseek_005fr">_lseek_r</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Reentrant-Syscalls.html#Reentrant-Syscalls">Reentrant Syscalls</a>
+<hr>
+</div>
+
+<h4 class="subsection">12.2.8 <code>_open_r</code>&mdash;Reentrant version of open</h4>
+
+<p><a name="index-g_t_005fopen_005fr-543"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;reent.h&gt;
+     int _open_r(struct _reent *<var>ptr</var>,
+         const char *<var>file</var>, int <var>flags</var>, int <var>mode</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+This is a reentrant version of <code>open</code>.  It
+takes a pointer to the global data block, which holds
+<code>errno</code>.
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

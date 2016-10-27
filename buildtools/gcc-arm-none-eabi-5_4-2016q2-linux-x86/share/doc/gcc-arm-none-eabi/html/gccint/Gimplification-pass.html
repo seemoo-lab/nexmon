@@ -1,0 +1,89 @@
+<html lang="en">
+<head>
+<title>Gimplification pass - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Passes.html#Passes" title="Passes">
+<link rel="prev" href="Cilk-Plus-Transformation.html#Cilk-Plus-Transformation" title="Cilk Plus Transformation">
+<link rel="next" href="Pass-manager.html#Pass-manager" title="Pass manager">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Gimplification-pass"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Pass-manager.html#Pass-manager">Pass manager</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Cilk-Plus-Transformation.html#Cilk-Plus-Transformation">Cilk Plus Transformation</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Passes.html#Passes">Passes</a>
+<hr>
+</div>
+
+<h3 class="section">9.3 Gimplification pass</h3>
+
+<p><a name="index-gimplification-1684"></a><a name="index-GIMPLE-1685"></a><dfn>Gimplification</dfn> is a whimsical term for the process of converting
+the intermediate representation of a function into the GIMPLE language
+(see <a href="GIMPLE.html#GIMPLE">GIMPLE</a>).  The term stuck, and so words like &ldquo;gimplification&rdquo;,
+&ldquo;gimplify&rdquo;, &ldquo;gimplifier&rdquo; and the like are sprinkled throughout this
+section of code.
+
+ <p>While a front end may certainly choose to generate GIMPLE directly if
+it chooses, this can be a moderately complex process unless the
+intermediate language used by the front end is already fairly simple. 
+Usually it is easier to generate GENERIC trees plus extensions
+and let the language-independent gimplifier do most of the work.
+
+ <p><a name="index-gimplify_005ffunction_005ftree-1686"></a><a name="index-gimplify_005fexpr-1687"></a><a name="index-lang_005fhooks_002egimplify_005fexpr-1688"></a>The main entry point to this pass is <code>gimplify_function_tree</code>
+located in <samp><span class="file">gimplify.c</span></samp>.  From here we process the entire
+function gimplifying each statement in turn.  The main workhorse
+for this pass is <code>gimplify_expr</code>.  Approximately everything
+passes through here at least once, and it is from here that we
+invoke the <code>lang_hooks.gimplify_expr</code> callback.
+
+ <p>The callback should examine the expression in question and return
+<code>GS_UNHANDLED</code> if the expression is not a language specific
+construct that requires attention.  Otherwise it should alter the
+expression in some way to such that forward progress is made toward
+producing valid GIMPLE.  If the callback is certain that the
+transformation is complete and the expression is valid GIMPLE, it
+should return <code>GS_ALL_DONE</code>.  Otherwise it should return
+<code>GS_OK</code>, which will cause the expression to be processed again. 
+If the callback encounters an error during the transformation (because
+the front end is relying on the gimplification process to finish
+semantic checks), it should return <code>GS_ERROR</code>.
+
+ </body></html>
+

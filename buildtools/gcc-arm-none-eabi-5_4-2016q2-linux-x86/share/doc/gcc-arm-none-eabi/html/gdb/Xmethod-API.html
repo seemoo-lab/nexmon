@@ -1,0 +1,160 @@
+<html lang="en">
+<head>
+<title>Xmethod API - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Python-API.html#Python-API" title="Python API">
+<link rel="prev" href="Xmethods-In-Python.html#Xmethods-In-Python" title="Xmethods In Python">
+<link rel="next" href="Writing-an-Xmethod.html#Writing-an-Xmethod" title="Writing an Xmethod">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Xmethod-API"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Writing-an-Xmethod.html#Writing-an-Xmethod">Writing an Xmethod</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Xmethods-In-Python.html#Xmethods-In-Python">Xmethods In Python</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Python-API.html#Python-API">Python API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.2.2.14 Xmethod API</h5>
+
+<p><a name="index-xmethod-API-1996"></a>
+The <span class="sc">gdb</span> Python API provides classes, interfaces and functions
+to implement, register and manipulate xmethods. 
+See <a href="Xmethods-In-Python.html#Xmethods-In-Python">Xmethods In Python</a>.
+
+   <p>An xmethod matcher should be an instance of a class derived from
+<code>XMethodMatcher</code> defined in the module <code>gdb.xmethod</code>, or an
+object with similar interface and attributes.  An instance of
+<code>XMethodMatcher</code> has the following attributes:
+
+<div class="defun">
+&mdash; Variable: <b>name</b><var><a name="index-name-1997"></a></var><br>
+<blockquote><p>The name of the matcher. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: <b>enabled</b><var><a name="index-enabled-1998"></a></var><br>
+<blockquote><p>A boolean value indicating whether the matcher is enabled or disabled. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: <b>methods</b><var><a name="index-methods-1999"></a></var><br>
+<blockquote><p>A list of named methods managed by the matcher.  Each object in the list
+is an instance of the class <code>XMethod</code> defined in the module
+<code>gdb.xmethod</code>, or any object with the following attributes:
+
+          <dl>
+<dt><code>name</code><dd>Name of the xmethod which should be unique for each xmethod
+managed by the matcher.
+
+          <br><dt><code>enabled</code><dd>A boolean value indicating whether the xmethod is enabled or
+disabled.
+
+        </dl>
+
+        <p>The class <code>XMethod</code> is a convenience class with same
+attributes as above along with the following constructor:
+
+     <div class="defun">
+&mdash; Function: <b>XMethod.__init__</b> (<var>self, name</var>)<var><a name="index-XMethod_002e_005f_005finit_005f_005f-2000"></a></var><br>
+<blockquote> <p>Constructs an enabled xmethod with name <var>name</var>. 
+</p></blockquote></div>
+        </p></blockquote></div>
+
+<p class="noindent">The <code>XMethodMatcher</code> class has the following methods:
+
+<div class="defun">
+&mdash; Function: <b>XMethodMatcher.__init__</b> (<var>self, name</var>)<var><a name="index-XMethodMatcher_002e_005f_005finit_005f_005f-2001"></a></var><br>
+<blockquote><p>Constructs an enabled xmethod matcher with name <var>name</var>.  The
+<code>methods</code> attribute is initialized to <code>None</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>XMethodMatcher.match</b> (<var>self, class_type, method_name</var>)<var><a name="index-XMethodMatcher_002ematch-2002"></a></var><br>
+<blockquote><p>Derived classes should override this method.  It should return a
+xmethod worker object (or a sequence of xmethod worker
+objects) matching the <var>class_type</var> and <var>method_name</var>. 
+<var>class_type</var> is a <code>gdb.Type</code> object, and <var>method_name</var>
+is a string value.  If the matcher manages named methods as listed in
+its <code>methods</code> attribute, then only those worker objects whose
+corresponding entries in the <code>methods</code> list are enabled should be
+returned. 
+</p></blockquote></div>
+
+   <p>An xmethod worker should be an instance of a class derived from
+<code>XMethodWorker</code> defined in the module <code>gdb.xmethod</code>,
+or support the following interface:
+
+<div class="defun">
+&mdash; Function: <b>XMethodWorker.get_arg_types</b> (<var>self</var>)<var><a name="index-XMethodWorker_002eget_005farg_005ftypes-2003"></a></var><br>
+<blockquote><p>This method returns a sequence of <code>gdb.Type</code> objects corresponding
+to the arguments that the xmethod takes.  It can return an empty
+sequence or <code>None</code> if the xmethod does not take any arguments. 
+If the xmethod takes a single argument, then a single
+<code>gdb.Type</code> object corresponding to it can be returned. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>XMethodWorker.get_result_type</b> (<var>self, *args</var>)<var><a name="index-XMethodWorker_002eget_005fresult_005ftype-2004"></a></var><br>
+<blockquote><p>This method returns a <code>gdb.Type</code> object representing the type
+of the result of invoking this xmethod. 
+The <var>args</var> argument is the same tuple of arguments that would be
+passed to the <code>__call__</code> method of this worker. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>XMethodWorker.__call__</b> (<var>self, *args</var>)<var><a name="index-XMethodWorker_002e_005f_005fcall_005f_005f-2005"></a></var><br>
+<blockquote><p>This is the method which does the <em>work</em> of the xmethod.  The
+<var>args</var> arguments is the tuple of arguments to the xmethod.  Each
+element in this tuple is a gdb.Value object.  The first element is
+always the <code>this</code> pointer value. 
+</p></blockquote></div>
+
+   <p>For <span class="sc">gdb</span> to lookup xmethods, the xmethod matchers
+should be registered using the following function defined in the module
+<code>gdb.xmethod</code>:
+
+<div class="defun">
+&mdash; Function: <b>register_xmethod_matcher</b> (<var>locus, matcher, replace=False</var>)<var><a name="index-register_005fxmethod_005fmatcher-2006"></a></var><br>
+<blockquote><p>The <code>matcher</code> is registered with <code>locus</code>, replacing an
+existing matcher with the same name as <code>matcher</code> if
+<code>replace</code> is <code>True</code>.  <code>locus</code> can be a
+<code>gdb.Objfile</code> object (see <a href="Objfiles-In-Python.html#Objfiles-In-Python">Objfiles In Python</a>), or a
+<code>gdb.Progspace</code> object (see <a href="Progspaces-In-Python.html#Progspaces-In-Python">Progspaces In Python</a>), or
+<code>None</code>.  If it is <code>None</code>, then <code>matcher</code> is registered
+globally. 
+</p></blockquote></div>
+
+   </body></html>
+

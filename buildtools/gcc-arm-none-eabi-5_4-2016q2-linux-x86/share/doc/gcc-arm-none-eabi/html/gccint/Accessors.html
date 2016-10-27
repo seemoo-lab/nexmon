@@ -1,0 +1,114 @@
+<html lang="en">
+<head>
+<title>Accessors - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="RTL.html#RTL" title="RTL">
+<link rel="prev" href="RTL-Classes.html#RTL-Classes" title="RTL Classes">
+<link rel="next" href="Special-Accessors.html#Special-Accessors" title="Special Accessors">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Accessors"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Special-Accessors.html#Special-Accessors">Special Accessors</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="RTL-Classes.html#RTL-Classes">RTL Classes</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="RTL.html#RTL">RTL</a>
+<hr>
+</div>
+
+<h3 class="section">13.3 Access to Operands</h3>
+
+<p><a name="index-accessors-2557"></a><a name="index-access-to-operands-2558"></a><a name="index-operand-access-2559"></a>
+<a name="index-XEXP-2560"></a><a name="index-XINT-2561"></a><a name="index-XWINT-2562"></a><a name="index-XSTR-2563"></a>Operands of expressions are accessed using the macros <code>XEXP</code>,
+<code>XINT</code>, <code>XWINT</code> and <code>XSTR</code>.  Each of these macros takes
+two arguments: an expression-pointer (RTX) and an operand number
+(counting from zero).  Thus,
+
+<pre class="smallexample">     XEXP (<var>x</var>, 2)
+</pre>
+ <p class="noindent">accesses operand 2 of expression <var>x</var>, as an expression.
+
+<pre class="smallexample">     XINT (<var>x</var>, 2)
+</pre>
+ <p class="noindent">accesses the same operand as an integer.  <code>XSTR</code>, used in the same
+fashion, would access it as a string.
+
+ <p>Any operand can be accessed as an integer, as an expression or as a string. 
+You must choose the correct method of access for the kind of value actually
+stored in the operand.  You would do this based on the expression code of
+the containing expression.  That is also how you would know how many
+operands there are.
+
+ <p>For example, if <var>x</var> is a <code>subreg</code> expression, you know that it has
+two operands which can be correctly accessed as <code>XEXP (</code><var>x</var><code>, 0)</code>
+and <code>XINT (</code><var>x</var><code>, 1)</code>.  If you did <code>XINT (</code><var>x</var><code>, 0)</code>, you
+would get the address of the expression operand but cast as an integer;
+that might occasionally be useful, but it would be cleaner to write
+<code>(int) XEXP (</code><var>x</var><code>, 0)</code>.  <code>XEXP (</code><var>x</var><code>, 1)</code> would also
+compile without error, and would return the second, integer operand cast as
+an expression pointer, which would probably result in a crash when
+accessed.  Nothing stops you from writing <code>XEXP (</code><var>x</var><code>, 28)</code> either,
+but this will access memory past the end of the expression with
+unpredictable results.
+
+ <p>Access to operands which are vectors is more complicated.  You can use the
+macro <code>XVEC</code> to get the vector-pointer itself, or the macros
+<code>XVECEXP</code> and <code>XVECLEN</code> to access the elements and length of a
+vector.
+
+     
+<a name="index-XVEC-2564"></a>
+<dl><dt><code>XVEC (</code><var>exp</var><code>, </code><var>idx</var><code>)</code><dd>Access the vector-pointer which is operand number <var>idx</var> in <var>exp</var>.
+
+     <p><a name="index-XVECLEN-2565"></a><br><dt><code>XVECLEN (</code><var>exp</var><code>, </code><var>idx</var><code>)</code><dd>Access the length (number of elements) in the vector which is
+in operand number <var>idx</var> in <var>exp</var>.  This value is an <code>int</code>.
+
+     <p><a name="index-XVECEXP-2566"></a><br><dt><code>XVECEXP (</code><var>exp</var><code>, </code><var>idx</var><code>, </code><var>eltnum</var><code>)</code><dd>Access element number <var>eltnum</var> in the vector which is
+in operand number <var>idx</var> in <var>exp</var>.  This value is an RTX.
+
+     <p>It is up to you to make sure that <var>eltnum</var> is not negative
+and is less than <code>XVECLEN (</code><var>exp</var><code>, </code><var>idx</var><code>)</code>. 
+</dl>
+
+ <p>All the macros defined in this section expand into lvalues and therefore
+can be used to assign the operands, lengths and vector elements as well as
+to access them.
+
+ </body></html>
+

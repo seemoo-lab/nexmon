@@ -1,0 +1,64 @@
+<html lang="en">
+<head>
+<title>rpmatch - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stdlib.html#Stdlib" title="Stdlib">
+<link rel="prev" href="rand48.html#rand48" title="rand48">
+<link rel="next" href="strtod.html#strtod" title="strtod">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="rpmatch"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="strtod.html#strtod">strtod</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="rand48.html#rand48">rand48</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stdlib.html#Stdlib">Stdlib</a>
+<hr>
+</div>
+
+<h3 class="section">2.36 <code>rpmatch</code>&mdash;determine whether response to question is affirmative or negative</h3>
+
+<p><a name="index-rpmatch-82"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;stdlib.h&gt;
+     int rpmatch(const char *<var>response</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+The <code>rpmatch</code> function determines whether <var>response</var> is an affirmative
+or negative response to a question according to the current locale.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+<code>rpmatch</code> returns 1 if <var>response</var> is affirmative, 0 if negative, or -1
+if not recognized as either.
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+<code>rpmatch</code> is a BSD extension also found in glibc.
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

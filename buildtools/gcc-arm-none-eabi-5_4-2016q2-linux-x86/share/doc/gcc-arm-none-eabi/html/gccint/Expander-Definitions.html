@@ -1,0 +1,240 @@
+<html lang="en">
+<head>
+<title>Expander Definitions - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Machine-Desc.html#Machine-Desc" title="Machine Desc">
+<link rel="prev" href="Insn-Canonicalizations.html#Insn-Canonicalizations" title="Insn Canonicalizations">
+<link rel="next" href="Insn-Splitting.html#Insn-Splitting" title="Insn Splitting">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Expander-Definitions"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Insn-Splitting.html#Insn-Splitting">Insn Splitting</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Insn-Canonicalizations.html#Insn-Canonicalizations">Insn Canonicalizations</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Machine-Desc.html#Machine-Desc">Machine Desc</a>
+<hr>
+</div>
+
+<h3 class="section">16.15 Defining RTL Sequences for Code Generation</h3>
+
+<p><a name="index-expander-definitions-3694"></a><a name="index-code-generation-RTL-sequences-3695"></a><a name="index-defining-RTL-sequences-for-code-generation-3696"></a>
+On some target machines, some standard pattern names for RTL generation
+cannot be handled with single insn, but a sequence of RTL insns can
+represent them.  For these target machines, you can write a
+<code>define_expand</code> to specify how to generate the sequence of RTL.
+
+ <p><a name="index-define_005fexpand-3697"></a>A <code>define_expand</code> is an RTL expression that looks almost like a
+<code>define_insn</code>; but, unlike the latter, a <code>define_expand</code> is used
+only for RTL generation and it can produce more than one RTL insn.
+
+ <p>A <code>define_expand</code> RTX has four operands:
+
+     <ul>
+<li>The name.  Each <code>define_expand</code> must have a name, since the only
+use for it is to refer to it by name.
+
+     <li>The RTL template.  This is a vector of RTL expressions representing
+a sequence of separate instructions.  Unlike <code>define_insn</code>, there
+is no implicit surrounding <code>PARALLEL</code>.
+
+     <li>The condition, a string containing a C expression.  This expression is
+used to express how the availability of this pattern depends on
+subclasses of target machine, selected by command-line options when GCC
+is run.  This is just like the condition of a <code>define_insn</code> that
+has a standard name.  Therefore, the condition (if present) may not
+depend on the data in the insn being matched, but only the
+target-machine-type flags.  The compiler needs to test these conditions
+during initialization in order to learn exactly which named instructions
+are available in a particular run.
+
+     <li>The preparation statements, a string containing zero or more C
+statements which are to be executed before RTL code is generated from
+the RTL template.
+
+     <p>Usually these statements prepare temporary registers for use as
+internal operands in the RTL template, but they can also generate RTL
+insns directly by calling routines such as <code>emit_insn</code>, etc. 
+Any such insns precede the ones that come from the RTL template.
+
+     <li>Optionally, a vector containing the values of attributes. See <a href="Insn-Attributes.html#Insn-Attributes">Insn Attributes</a>. 
+</ul>
+
+ <p>Every RTL insn emitted by a <code>define_expand</code> must match some
+<code>define_insn</code> in the machine description.  Otherwise, the compiler
+will crash when trying to generate code for the insn or trying to optimize
+it.
+
+ <p>The RTL template, in addition to controlling generation of RTL insns,
+also describes the operands that need to be specified when this pattern
+is used.  In particular, it gives a predicate for each operand.
+
+ <p>A true operand, which needs to be specified in order to generate RTL from
+the pattern, should be described with a <code>match_operand</code> in its first
+occurrence in the RTL template.  This enters information on the operand's
+predicate into the tables that record such things.  GCC uses the
+information to preload the operand into a register if that is required for
+valid RTL code.  If the operand is referred to more than once, subsequent
+references should use <code>match_dup</code>.
+
+ <p>The RTL template may also refer to internal &ldquo;operands&rdquo; which are
+temporary registers or labels used only within the sequence made by the
+<code>define_expand</code>.  Internal operands are substituted into the RTL
+template with <code>match_dup</code>, never with <code>match_operand</code>.  The
+values of the internal operands are not passed in as arguments by the
+compiler when it requests use of this pattern.  Instead, they are computed
+within the pattern, in the preparation statements.  These statements
+compute the values and store them into the appropriate elements of
+<code>operands</code> so that <code>match_dup</code> can find them.
+
+ <p>There are two special macros defined for use in the preparation statements:
+<code>DONE</code> and <code>FAIL</code>.  Use them with a following semicolon,
+as a statement.
+
+     
+<a name="index-DONE-3698"></a>
+<dl><dt><code>DONE</code><dd>Use the <code>DONE</code> macro to end RTL generation for the pattern.  The
+only RTL insns resulting from the pattern on this occasion will be
+those already emitted by explicit calls to <code>emit_insn</code> within the
+preparation statements; the RTL template will not be generated.
+
+     <p><a name="index-FAIL-3699"></a><br><dt><code>FAIL</code><dd>Make the pattern fail on this occasion.  When a pattern fails, it means
+that the pattern was not truly available.  The calling routines in the
+compiler will try other strategies for code generation using other patterns.
+
+     <p>Failure is currently supported only for binary (addition, multiplication,
+shifting, etc.) and bit-field (<code>extv</code>, <code>extzv</code>, and <code>insv</code>)
+operations. 
+</dl>
+
+ <p>If the preparation falls through (invokes neither <code>DONE</code> nor
+<code>FAIL</code>), then the <code>define_expand</code> acts like a
+<code>define_insn</code> in that the RTL template is used to generate the
+insn.
+
+ <p>The RTL template is not used for matching, only for generating the
+initial insn list.  If the preparation statement always invokes
+<code>DONE</code> or <code>FAIL</code>, the RTL template may be reduced to a simple
+list of operands, such as this example:
+
+<pre class="smallexample">     (define_expand "addsi3"
+       [(match_operand:SI 0 "register_operand" "")
+        (match_operand:SI 1 "register_operand" "")
+        (match_operand:SI 2 "register_operand" "")]
+       ""
+       "
+     {
+       handle_add (operands[0], operands[1], operands[2]);
+       DONE;
+     }")
+</pre>
+ <p>Here is an example, the definition of left-shift for the SPUR chip:
+
+<pre class="smallexample">     (define_expand "ashlsi3"
+       [(set (match_operand:SI 0 "register_operand" "")
+             (ashift:SI
+               (match_operand:SI 1 "register_operand" "")
+               (match_operand:SI 2 "nonmemory_operand" "")))]
+       ""
+       "
+</pre>
+ <pre class="smallexample">     {
+       if (GET_CODE (operands[2]) != CONST_INT
+           || (unsigned) INTVAL (operands[2]) &gt; 3)
+         FAIL;
+     }")
+</pre>
+ <p class="noindent">This example uses <code>define_expand</code> so that it can generate an RTL insn
+for shifting when the shift-count is in the supported range of 0 to 3 but
+fail in other cases where machine insns aren't available.  When it fails,
+the compiler tries another strategy using different patterns (such as, a
+library call).
+
+ <p>If the compiler were able to handle nontrivial condition-strings in
+patterns with names, then it would be possible to use a
+<code>define_insn</code> in that case.  Here is another case (zero-extension
+on the 68000) which makes more use of the power of <code>define_expand</code>:
+
+<pre class="smallexample">     (define_expand "zero_extendhisi2"
+       [(set (match_operand:SI 0 "general_operand" "")
+             (const_int 0))
+        (set (strict_low_part
+               (subreg:HI
+                 (match_dup 0)
+                 0))
+             (match_operand:HI 1 "general_operand" ""))]
+       ""
+       "operands[1] = make_safe_from (operands[1], operands[0]);")
+</pre>
+ <p class="noindent"><a name="index-make_005fsafe_005ffrom-3700"></a>Here two RTL insns are generated, one to clear the entire output operand
+and the other to copy the input operand into its low half.  This sequence
+is incorrect if the input operand refers to [the old value of] the output
+operand, so the preparation statement makes sure this isn't so.  The
+function <code>make_safe_from</code> copies the <code>operands[1]</code> into a
+temporary register if it refers to <code>operands[0]</code>.  It does this
+by emitting another RTL insn.
+
+ <p>Finally, a third example shows the use of an internal operand. 
+Zero-extension on the SPUR chip is done by <code>and</code>-ing the result
+against a halfword mask.  But this mask cannot be represented by a
+<code>const_int</code> because the constant value is too large to be legitimate
+on this machine.  So it must be copied into a register with
+<code>force_reg</code> and then the register used in the <code>and</code>.
+
+<pre class="smallexample">     (define_expand "zero_extendhisi2"
+       [(set (match_operand:SI 0 "register_operand" "")
+             (and:SI (subreg:SI
+                       (match_operand:HI 1 "register_operand" "")
+                       0)
+                     (match_dup 2)))]
+       ""
+       "operands[2]
+          = force_reg (SImode, GEN_INT (65535)); ")
+</pre>
+ <p><em>Note:</em> If the <code>define_expand</code> is used to serve a
+standard binary or unary arithmetic operation or a bit-field operation,
+then the last insn it generates must not be a <code>code_label</code>,
+<code>barrier</code> or <code>note</code>.  It must be an <code>insn</code>,
+<code>jump_insn</code> or <code>call_insn</code>.  If you don't need a real insn
+at the end, emit an insn to copy the result of the operation into
+itself.  Such an insn will generate no code, but it can avoid problems
+in the compiler.
+
+ </body></html>
+

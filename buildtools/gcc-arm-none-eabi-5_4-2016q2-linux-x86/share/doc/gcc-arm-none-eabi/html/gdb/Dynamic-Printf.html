@@ -1,0 +1,138 @@
+<html lang="en">
+<head>
+<title>Dynamic Printf - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Breakpoints.html#Breakpoints" title="Breakpoints">
+<link rel="prev" href="Break-Commands.html#Break-Commands" title="Break Commands">
+<link rel="next" href="Save-Breakpoints.html#Save-Breakpoints" title="Save Breakpoints">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Dynamic-Printf"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Save-Breakpoints.html#Save-Breakpoints">Save Breakpoints</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Break-Commands.html#Break-Commands">Break Commands</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Breakpoints.html#Breakpoints">Breakpoints</a>
+<hr>
+</div>
+
+<h4 class="subsection">5.1.8 Dynamic Printf</h4>
+
+<p><a name="index-dynamic-printf-308"></a><a name="index-dprintf-309"></a>The dynamic printf command <code>dprintf</code> combines a breakpoint with
+formatted printing of your program's data to give you the effect of
+inserting <code>printf</code> calls into your program on-the-fly, without
+having to recompile it.
+
+   <p>In its most basic form, the output goes to the GDB console.  However,
+you can set the variable <code>dprintf-style</code> for alternate handling. 
+For instance, you can ask to format the output by calling your
+program's <code>printf</code> function.  This has the advantage that the
+characters go to the program's output device, so they can recorded in
+redirects to files and so forth.
+
+   <p>If you are doing remote debugging with a stub or agent, you can also
+ask to have the printf handled by the remote agent.  In addition to
+ensuring that the output goes to the remote program's device along
+with any other output the program might produce, you can also ask that
+the dprintf remain active even after disconnecting from the remote
+target.  Using the stub/agent is also more efficient, as it can do
+everything without needing to communicate with <span class="sc">gdb</span>.
+
+     
+<a name="index-dprintf-310"></a>
+<dl><dt><code>dprintf </code><var>location</var><code>,</code><var>template</var><code>,</code><var>expression</var><code>[,</code><var>expression</var><code>...]</code><dd>Whenever execution reaches <var>location</var>, print the values of one or
+more <var>expressions</var> under the control of the string <var>template</var>. 
+To print several values, separate them with commas.
+
+     <br><dt><code>set dprintf-style </code><var>style</var><dd>Set the dprintf output to be handled in one of several different
+styles enumerated below.  A change of style affects all existing
+dynamic printfs immediately.  (If you need individual control over the
+print commands, simply define normal breakpoints with
+explicitly-supplied command lists.)
+
+     <br><dt><code>gdb</code><dd><a name="index-dprintf_002dstyle-gdb-311"></a>Handle the output using the <span class="sc">gdb</span> <code>printf</code> command.
+
+     <br><dt><code>call</code><dd><a name="index-dprintf_002dstyle-call-312"></a>Handle the output by calling a function in your program (normally
+<code>printf</code>).
+
+     <br><dt><code>agent</code><dd><a name="index-dprintf_002dstyle-agent-313"></a>Have the remote debugging agent (such as <code>gdbserver</code>) handle
+the output itself.  This style is only available for agents that
+support running commands on the target.
+
+     <br><dt><code>set dprintf-function </code><var>function</var><dd>Set the function to call if the dprintf style is <code>call</code>.  By
+default its value is <code>printf</code>.  You may set it to any expression. 
+that <span class="sc">gdb</span> can evaluate to a function, as per the <code>call</code>
+command.
+
+     <br><dt><code>set dprintf-channel </code><var>channel</var><dd>Set a &ldquo;channel&rdquo; for dprintf.  If set to a non-empty value,
+<span class="sc">gdb</span> will evaluate it as an expression and pass the result as
+a first argument to the <code>dprintf-function</code>, in the manner of
+<code>fprintf</code> and similar functions.  Otherwise, the dprintf format
+string will be the first argument, in the manner of <code>printf</code>.
+
+     <p>As an example, if you wanted <code>dprintf</code> output to go to a logfile
+that is a standard I/O stream assigned to the variable <code>mylog</code>,
+you could do the following:
+
+     <pre class="example">          (gdb) set dprintf-style call
+          (gdb) set dprintf-function fprintf
+          (gdb) set dprintf-channel mylog
+          (gdb) dprintf 25,"at line 25, glob=%d\n",glob
+          Dprintf 1 at 0x123456: file main.c, line 25.
+          (gdb) info break
+          1       dprintf        keep y   0x00123456 in main at main.c:25
+                  call (void) fprintf (mylog,"at line 25, glob=%d\n",glob)
+                  continue
+          (gdb)
+</pre>
+     <p>Note that the <code>info break</code> displays the dynamic printf commands
+as normal breakpoint commands; you can thus easily see the effect of
+the variable settings.
+
+     <br><dt><code>set disconnected-dprintf on</code><dt><code>set disconnected-dprintf off</code><dd><a name="index-set-disconnected_002ddprintf-314"></a>Choose whether <code>dprintf</code> commands should continue to run if
+<span class="sc">gdb</span> has disconnected from the target.  This only applies
+if the <code>dprintf-style</code> is <code>agent</code>.
+
+     <br><dt><code>show disconnected-dprintf off</code><dd><a name="index-show-disconnected_002ddprintf-315"></a>Show the current choice for disconnected <code>dprintf</code>.
+
+   </dl>
+
+   <p><span class="sc">gdb</span> does not check the validity of function and channel,
+relying on you to supply values that are meaningful for the contexts
+in which they are being used.  For instance, the function and channel
+may be the values of local variables, but if that is the case, then
+all enabled dynamic prints must be at locations within the scope of
+those locals.  If evaluation fails, <span class="sc">gdb</span> will report an error.
+
+   </body></html>
+

@@ -1,0 +1,129 @@
+<html lang="en">
+<head>
+<title>define_peephole2 - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Peephole-Definitions.html#Peephole-Definitions" title="Peephole Definitions">
+<link rel="prev" href="define_005fpeephole.html#define_005fpeephole" title="define_peephole">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="define_peephole2"></a>
+<a name="define_005fpeephole2"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="define_005fpeephole.html#define_005fpeephole">define_peephole</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Peephole-Definitions.html#Peephole-Definitions">Peephole Definitions</a>
+<hr>
+</div>
+
+<h4 class="subsection">16.18.2 RTL to RTL Peephole Optimizers</h4>
+
+<p><a name="index-define_005fpeephole2-3716"></a>
+The <code>define_peephole2</code> definition tells the compiler how to
+substitute one sequence of instructions for another sequence,
+what additional scratch registers may be needed and what their
+lifetimes must be.
+
+<pre class="smallexample">     (define_peephole2
+       [<var>insn-pattern-1</var>
+        <var>insn-pattern-2</var>
+        ...]
+       "<var>condition</var>"
+       [<var>new-insn-pattern-1</var>
+        <var>new-insn-pattern-2</var>
+        ...]
+       "<var>preparation-statements</var>")
+</pre>
+ <p>The definition is almost identical to <code>define_split</code>
+(see <a href="Insn-Splitting.html#Insn-Splitting">Insn Splitting</a>) except that the pattern to match is not a
+single instruction, but a sequence of instructions.
+
+ <p>It is possible to request additional scratch registers for use in the
+output template.  If appropriate registers are not free, the pattern
+will simply not match.
+
+ <p><a name="index-match_005fscratch-3717"></a><a name="index-match_005fdup-3718"></a>Scratch registers are requested with a <code>match_scratch</code> pattern at
+the top level of the input pattern.  The allocated register (initially) will
+be dead at the point requested within the original sequence.  If the scratch
+is used at more than a single point, a <code>match_dup</code> pattern at the
+top level of the input pattern marks the last position in the input sequence
+at which the register must be available.
+
+ <p>Here is an example from the IA-32 machine description:
+
+<pre class="smallexample">     (define_peephole2
+       [(match_scratch:SI 2 "r")
+        (parallel [(set (match_operand:SI 0 "register_operand" "")
+                        (match_operator:SI 3 "arith_or_logical_operator"
+                          [(match_dup 0)
+                           (match_operand:SI 1 "memory_operand" "")]))
+                   (clobber (reg:CC 17))])]
+       "! optimize_size &amp;&amp; ! TARGET_READ_MODIFY"
+       [(set (match_dup 2) (match_dup 1))
+        (parallel [(set (match_dup 0)
+                        (match_op_dup 3 [(match_dup 0) (match_dup 2)]))
+                   (clobber (reg:CC 17))])]
+       "")
+</pre>
+ <p class="noindent">This pattern tries to split a load from its use in the hopes that we'll be
+able to schedule around the memory load latency.  It allocates a single
+<code>SImode</code> register of class <code>GENERAL_REGS</code> (<code>"r"</code>) that needs
+to be live only at the point just before the arithmetic.
+
+ <p>A real example requiring extended scratch lifetimes is harder to come by,
+so here's a silly made-up example:
+
+<pre class="smallexample">     (define_peephole2
+       [(match_scratch:SI 4 "r")
+        (set (match_operand:SI 0 "" "") (match_operand:SI 1 "" ""))
+        (set (match_operand:SI 2 "" "") (match_dup 1))
+        (match_dup 4)
+        (set (match_operand:SI 3 "" "") (match_dup 1))]
+       "/* <span class="roman">determine 1 does not overlap 0 and 2</span> */"
+       [(set (match_dup 4) (match_dup 1))
+        (set (match_dup 0) (match_dup 4))
+        (set (match_dup 2) (match_dup 4))
+        (set (match_dup 3) (match_dup 4))]
+       "")
+</pre>
+ <p class="noindent">If we had not added the <code>(match_dup 4)</code> in the middle of the input
+sequence, it might have been the case that the register we chose at the
+beginning of the sequence is killed by the first or second <code>set</code>.
+
+ </body></html>
+

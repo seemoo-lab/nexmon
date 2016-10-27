@@ -1,0 +1,96 @@
+<html lang="en">
+<head>
+<title>Identifiers - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Tree-overview.html#Tree-overview" title="Tree overview">
+<link rel="prev" href="Macros-and-Functions.html#Macros-and-Functions" title="Macros and Functions">
+<link rel="next" href="Containers.html#Containers" title="Containers">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Identifiers"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Containers.html#Containers">Containers</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Macros-and-Functions.html#Macros-and-Functions">Macros and Functions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Tree-overview.html#Tree-overview">Tree overview</a>
+<hr>
+</div>
+
+<h4 class="subsection">10.2.2 Identifiers</h4>
+
+<p><a name="index-identifier-1726"></a><a name="index-name-1727"></a><a name="index-IDENTIFIER_005fNODE-1728"></a>
+An <code>IDENTIFIER_NODE</code> represents a slightly more general concept
+than the standard C or C++ concept of identifier.  In particular, an
+<code>IDENTIFIER_NODE</code> may contain a &lsquo;<samp><span class="samp">$</span></samp>&rsquo;, or other extraordinary
+characters.
+
+ <p>There are never two distinct <code>IDENTIFIER_NODE</code>s representing the
+same identifier.  Therefore, you may use pointer equality to compare
+<code>IDENTIFIER_NODE</code>s, rather than using a routine like
+<code>strcmp</code>.  Use <code>get_identifier</code> to obtain the unique
+<code>IDENTIFIER_NODE</code> for a supplied string.
+
+ <p>You can use the following macros to access identifiers:
+     <dl>
+<dt><code>IDENTIFIER_POINTER</code><a name="index-IDENTIFIER_005fPOINTER-1729"></a><dd>The string represented by the identifier, represented as a
+<code>char*</code>.  This string is always <code>NUL</code>-terminated, and contains
+no embedded <code>NUL</code> characters.
+
+     <br><dt><code>IDENTIFIER_LENGTH</code><a name="index-IDENTIFIER_005fLENGTH-1730"></a><dd>The length of the string returned by <code>IDENTIFIER_POINTER</code>, not
+including the trailing <code>NUL</code>.  This value of
+<code>IDENTIFIER_LENGTH (x)</code> is always the same as <code>strlen
+(IDENTIFIER_POINTER (x))</code>.
+
+     <br><dt><code>IDENTIFIER_OPNAME_P</code><a name="index-IDENTIFIER_005fOPNAME_005fP-1731"></a><dd>This predicate holds if the identifier represents the name of an
+overloaded operator.  In this case, you should not depend on the
+contents of either the <code>IDENTIFIER_POINTER</code> or the
+<code>IDENTIFIER_LENGTH</code>.
+
+     <br><dt><code>IDENTIFIER_TYPENAME_P</code><a name="index-IDENTIFIER_005fTYPENAME_005fP-1732"></a><dd>This predicate holds if the identifier represents the name of a
+user-defined conversion operator.  In this case, the <code>TREE_TYPE</code> of
+the <code>IDENTIFIER_NODE</code> holds the type to which the conversion
+operator converts.
+
+ </dl>
+
+<!--  -->
+<!-- Containers -->
+<!--  -->
+ </body></html>
+

@@ -1,0 +1,120 @@
+<html lang="en">
+<head>
+<title>Protections - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Cplusplus.html#Cplusplus" title="Cplusplus">
+<link rel="prev" href="Member-Type-Descriptor.html#Member-Type-Descriptor" title="Member Type Descriptor">
+<link rel="next" href="Method-Modifiers.html#Method-Modifiers" title="Method Modifiers">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Protections"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Method-Modifiers.html#Method-Modifiers">Method Modifiers</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Member-Type-Descriptor.html#Member-Type-Descriptor">Member Type Descriptor</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Cplusplus.html#Cplusplus">Cplusplus</a>
+<hr>
+</div>
+
+<h3 class="section">8.9 Protections</h3>
+
+<p>In the simple class definition shown above all member data and
+functions were publicly accessible.  The example that follows
+contrasts public, protected and privately accessible fields and shows
+how these protections are encoded in C<tt>++</tt> stabs.
+
+   <p>If the character following the &lsquo;<samp><var>field-name</var><span class="samp">:</span></samp>&rsquo; part of the
+string is &lsquo;<samp><span class="samp">/</span></samp>&rsquo;, then the next character is the visibility.  &lsquo;<samp><span class="samp">0</span></samp>&rsquo;
+means private, &lsquo;<samp><span class="samp">1</span></samp>&rsquo; means protected, and &lsquo;<samp><span class="samp">2</span></samp>&rsquo; means public. 
+Debuggers should ignore visibility characters they do not recognize, and
+assume a reasonable default (such as public) (GDB 4.11 does not, but
+this should be fixed in the next GDB release).  If no visibility is
+specified the field is public.  The visibility &lsquo;<samp><span class="samp">9</span></samp>&rsquo; means that the
+field has been optimized out and is public (there is no way to specify
+an optimized out field with a private or protected visibility). 
+Visibility &lsquo;<samp><span class="samp">9</span></samp>&rsquo; is not supported by GDB 4.11; this should be fixed
+in the next GDB release.
+
+   <p>The following C<tt>++</tt> source:
+
+<pre class="example">     class vis {
+     private:
+             int   priv;
+     protected:
+             char  prot;
+     public:
+             float pub;
+     };
+</pre>
+   <p class="noindent">generates the following stab:
+
+<pre class="example">     # <span class="roman">128 is N_LSYM</span>
+     .stabs "vis:T19=s12priv:/01,0,32;prot:/12,32,8;pub:12,64,32;;",128,0,0,0
+</pre>
+   <p>&lsquo;<samp><span class="samp">vis:T19=s12</span></samp>&rsquo; indicates that type number 19 is a 12 byte structure
+named <code>vis</code> The <code>priv</code> field has public visibility
+(&lsquo;<samp><span class="samp">/0</span></samp>&rsquo;), type int (&lsquo;<samp><span class="samp">1</span></samp>&rsquo;), and offset and size &lsquo;<samp><span class="samp">,0,32;</span></samp>&rsquo;. 
+The <code>prot</code> field has protected visibility (&lsquo;<samp><span class="samp">/1</span></samp>&rsquo;), type char
+(&lsquo;<samp><span class="samp">2</span></samp>&rsquo;) and offset and size &lsquo;<samp><span class="samp">,32,8;</span></samp>&rsquo;.  The <code>pub</code> field has
+type float (&lsquo;<samp><span class="samp">12</span></samp>&rsquo;), and offset and size &lsquo;<samp><span class="samp">,64,32;</span></samp>&rsquo;.
+
+   <p>Protections for member functions are signified by one digit embedded in
+the field part of the stab describing the method.  The digit is 0 if
+private, 1 if protected and 2 if public.  Consider the C<tt>++</tt> class
+definition below:
+
+<pre class="example">     class all_methods {
+     private:
+             int   priv_meth(int in){return in;};
+     protected:
+             char  protMeth(char in){return in;};
+     public:
+             float pubMeth(float in){return in;};
+     };
+</pre>
+   <p>It generates the following stab.  The digit in question is to the left
+of an &lsquo;<samp><span class="samp">A</span></samp>&rsquo; in each case.  Notice also that in this case two symbol
+descriptors apply to the class name struct tag and struct type.
+
+<pre class="display">     .stabs "class_name:sym_desc(struct tag&amp;type)type_def(21)=
+             sym_desc(struct)struct_bytes(1)
+             meth_name::type_def(22)=sym_desc(method)returning(int);
+             :args(int);protection(private)modifier(normal)virtual(no);
+             meth_name::type_def(23)=sym_desc(method)returning(char);
+             :args(char);protection(protected)modifier(normal)virtual(no);
+             meth_name::type_def(24)=sym_desc(method)returning(float);
+             :args(float);protection(public)modifier(normal)virtual(no);;",
+             N_LSYM,NIL,NIL,NIL
+</pre>
+   <pre class="smallexample">     .stabs "all_methods:Tt21=s1priv_meth::22=##1;:i;0A.;protMeth::23=##2;:c;1A.;
+             pubMeth::24=##12;:f;2A.;;",128,0,0,0
+</pre>
+   </body></html>
+

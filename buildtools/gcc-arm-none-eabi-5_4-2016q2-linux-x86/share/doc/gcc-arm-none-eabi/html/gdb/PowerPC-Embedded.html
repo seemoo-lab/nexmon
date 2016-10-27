@@ -1,0 +1,132 @@
+<html lang="en">
+<head>
+<title>PowerPC Embedded - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Embedded-Processors.html#Embedded-Processors" title="Embedded Processors">
+<link rel="prev" href="MIPS-Embedded.html#MIPS-Embedded" title="MIPS Embedded">
+<link rel="next" href="PA.html#PA" title="PA">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="PowerPC-Embedded"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="PA.html#PA">PA</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="MIPS-Embedded.html#MIPS-Embedded">MIPS Embedded</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Embedded-Processors.html#Embedded-Processors">Embedded Processors</a>
+<hr>
+</div>
+
+<h4 class="subsection">21.3.6 PowerPC Embedded</h4>
+
+<p><a name="index-DVC-register-1546"></a><span class="sc">gdb</span> supports using the DVC (Data Value Compare) register to
+implement in hardware simple hardware watchpoint conditions of the form:
+
+<pre class="smallexample">     (gdb) watch <var>ADDRESS|VARIABLE</var> \
+       if  <var>ADDRESS|VARIABLE</var> == <var>CONSTANT EXPRESSION</var>
+</pre>
+   <p>The DVC register will be automatically used when <span class="sc">gdb</span> detects
+such pattern in a condition expression, and the created watchpoint uses one
+debug register (either the <code>exact-watchpoints</code> option is on and the
+variable is scalar, or the variable has a length of one byte).  This feature
+is available in native <span class="sc">gdb</span> running on a Linux kernel version 2.6.34
+or newer.
+
+   <p>When running on PowerPC embedded processors, <span class="sc">gdb</span> automatically uses
+ranged hardware watchpoints, unless the <code>exact-watchpoints</code> option is on,
+in which case watchpoints using only one debug register are created when
+watching variables of scalar types.
+
+   <p>You can create an artificial array to watch an arbitrary memory
+region using one of the following commands (see <a href="Expressions.html#Expressions">Expressions</a>):
+
+<pre class="smallexample">     (gdb) watch *((char *) <var>address</var>)@<var>length</var>
+     (gdb) watch {char[<var>length</var>]} <var>address</var>
+</pre>
+   <p>PowerPC embedded processors support masked watchpoints.  See the discussion
+about the <code>mask</code> argument in <a href="Set-Watchpoints.html#Set-Watchpoints">Set Watchpoints</a>.
+
+   <p><a name="index-ranged-breakpoint-1547"></a>PowerPC embedded processors support hardware accelerated
+<dfn>ranged breakpoints</dfn>.  A ranged breakpoint stops execution of
+the inferior whenever it executes an instruction at any address within
+the range it specifies.  To set a ranged breakpoint in <span class="sc">gdb</span>,
+use the <code>break-range</code> command.
+
+   <p><span class="sc">gdb</span> provides the following PowerPC-specific commands:
+
+     
+<a name="index-break_002drange-1548"></a>
+<dl><dt><code>break-range </code><var>start-location</var><code>, </code><var>end-location</var><dd>Set a breakpoint for an address range given by
+<var>start-location</var> and <var>end-location</var>, which can specify a function name,
+a line number, an offset of lines from the current line or from the start
+location, or an address of an instruction (see <a href="Specify-Location.html#Specify-Location">Specify Location</a>,
+for a list of all the possible ways to specify a <var>location</var>.) 
+The breakpoint will stop execution of the inferior whenever it
+executes an instruction at any address within the specified range,
+(including <var>start-location</var> and <var>end-location</var>.)
+
+     <p><a name="index-set-powerpc-1549"></a><br><dt><code>set powerpc soft-float</code><dt><code>show powerpc soft-float</code><dd>Force <span class="sc">gdb</span> to use (or not use) a software floating point calling
+convention.  By default, <span class="sc">gdb</span> selects the calling convention based
+on the selected architecture and the provided executable file.
+
+     <br><dt><code>set powerpc vector-abi</code><dt><code>show powerpc vector-abi</code><dd>Force <span class="sc">gdb</span> to use the specified calling convention for vector
+arguments and return values.  The valid options are &lsquo;<samp><span class="samp">auto</span></samp>&rsquo;;
+&lsquo;<samp><span class="samp">generic</span></samp>&rsquo;, to avoid vector registers even if they are present;
+&lsquo;<samp><span class="samp">altivec</span></samp>&rsquo;, to use AltiVec registers; and &lsquo;<samp><span class="samp">spe</span></samp>&rsquo; to use SPE
+registers.  By default, <span class="sc">gdb</span> selects the calling convention
+based on the selected architecture and the provided executable file.
+
+     <br><dt><code>set powerpc exact-watchpoints</code><dt><code>show powerpc exact-watchpoints</code><dd>Allow <span class="sc">gdb</span> to use only one debug register when watching a variable
+of scalar type, thus assuming that the variable is accessed through the
+address of its first byte.
+
+     <p><a name="index-target-dink32-1550"></a><br><dt><code>target dink32 </code><var>dev</var><dd>DINK32 ROM monitor.
+
+     <p><a name="index-target-ppcbug-1551"></a><br><dt><code>target ppcbug </code><var>dev</var><dd><a name="index-target-ppcbug1-1552"></a><br><dt><code>target ppcbug1 </code><var>dev</var><dd>PPCBUG ROM monitor for PowerPC.
+
+     <p><a name="index-target-sds-1553"></a><br><dt><code>target sds </code><var>dev</var><dd>SDS monitor, running on a PowerPC board (such as Motorola's ADS). 
+</dl>
+
+   <p><a name="index-SDS-protocol-1554"></a>The following commands specific to the SDS protocol are supported
+by <span class="sc">gdb</span>:
+
+     <dl>
+<dt><code>set sdstimeout </code><var>nsec</var><dd><a name="index-set-sdstimeout-1555"></a>Set the timeout for SDS protocol reads to be <var>nsec</var> seconds.  The
+default is 2 seconds.
+
+     <br><dt><code>show sdstimeout</code><dd><a name="index-show-sdstimeout-1556"></a>Show the current value of the SDS timeout.
+
+     <br><dt><code>sds </code><var>command</var><dd><a name="index-sds_0040r_007b_002c-a-command_007d-1557"></a>Send the specified <var>command</var> string to the SDS monitor. 
+</dl>
+
+   </body></html>
+

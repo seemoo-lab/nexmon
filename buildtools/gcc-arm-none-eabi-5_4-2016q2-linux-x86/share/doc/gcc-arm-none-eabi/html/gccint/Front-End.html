@@ -1,0 +1,129 @@
+<html lang="en">
+<head>
+<title>Front End - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="gcc-Directory.html#gcc-Directory" title="gcc Directory">
+<link rel="prev" href="Documentation.html#Documentation" title="Documentation">
+<link rel="next" href="Back-End.html#Back-End" title="Back End">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Front-End"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Back-End.html#Back-End">Back End</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Documentation.html#Documentation">Documentation</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="gcc-Directory.html#gcc-Directory">gcc Directory</a>
+<hr>
+</div>
+
+<h4 class="subsection">6.3.8 Anatomy of a Language Front End</h4>
+
+<p>A front end for a language in GCC has the following parts:
+
+     <ul>
+<li>A directory <samp><var>language</var></samp> under <samp><span class="file">gcc</span></samp> containing source
+files for that front end.  See <a href="Front-End-Directory.html#Front-End-Directory">The Front End <samp><var>language</var></samp> Directory</a>, for details. 
+<li>A mention of the language in the list of supported languages in
+<samp><span class="file">gcc/doc/install.texi</span></samp>. 
+<li>A mention of the name under which the language's runtime library is
+recognized by <samp><span class="option">--enable-shared=</span><var>package</var></samp> in the
+documentation of that option in <samp><span class="file">gcc/doc/install.texi</span></samp>. 
+<li>A mention of any special prerequisites for building the front end in
+the documentation of prerequisites in <samp><span class="file">gcc/doc/install.texi</span></samp>. 
+<li>Details of contributors to that front end in
+<samp><span class="file">gcc/doc/contrib.texi</span></samp>.  If the details are in that front end's
+own manual then there should be a link to that manual's list in
+<samp><span class="file">contrib.texi</span></samp>. 
+<li>Information about support for that language in
+<samp><span class="file">gcc/doc/frontends.texi</span></samp>. 
+<li>Information about standards for that language, and the front end's
+support for them, in <samp><span class="file">gcc/doc/standards.texi</span></samp>.  This may be a
+link to such information in the front end's own manual. 
+<li>Details of source file suffixes for that language and <samp><span class="option">-x
+</span><var>lang</var></samp> options supported, in <samp><span class="file">gcc/doc/invoke.texi</span></samp>. 
+<li>Entries in <code>default_compilers</code> in <samp><span class="file">gcc.c</span></samp> for source file
+suffixes for that language. 
+<li>Preferably testsuites, which may be under <samp><span class="file">gcc/testsuite</span></samp> or
+runtime library directories.  FIXME: document somewhere how to write
+testsuite harnesses. 
+<li>Probably a runtime library for the language, outside the <samp><span class="file">gcc</span></samp>
+directory.  FIXME: document this further. 
+<li>Details of the directories of any runtime libraries in
+<samp><span class="file">gcc/doc/sourcebuild.texi</span></samp>. 
+<li>Check targets in <samp><span class="file">Makefile.def</span></samp> for the top-level <samp><span class="file">Makefile</span></samp>
+to check just the compiler or the compiler and runtime library for the
+language. 
+</ul>
+
+ <p>If the front end is added to the official GCC source repository, the
+following are also necessary:
+
+     <ul>
+<li>At least one Bugzilla component for bugs in that front end and runtime
+libraries.  This category needs to be added to the Bugzilla database. 
+<li>Normally, one or more maintainers of that front end listed in
+<samp><span class="file">MAINTAINERS</span></samp>. 
+<li>Mentions on the GCC web site in <samp><span class="file">index.html</span></samp> and
+<samp><span class="file">frontends.html</span></samp>, with any relevant links on
+<samp><span class="file">readings.html</span></samp>.  (Front ends that are not an official part of
+GCC may also be listed on <samp><span class="file">frontends.html</span></samp>, with relevant links.) 
+<li>A news item on <samp><span class="file">index.html</span></samp>, and possibly an announcement on the
+<a href="mailto:gcc-announce@gcc.gnu.org">gcc-announce@gcc.gnu.org</a> mailing list. 
+<li>The front end's manuals should be mentioned in
+<samp><span class="file">maintainer-scripts/update_web_docs_svn</span></samp> (see <a href="Texinfo-Manuals.html#Texinfo-Manuals">Texinfo Manuals</a>)
+and the online manuals should be linked to from
+<samp><span class="file">onlinedocs/index.html</span></samp>. 
+<li>Any old releases or CVS repositories of the front end, before its
+inclusion in GCC, should be made available on the GCC FTP site
+<a href="ftp://gcc.gnu.org/pub/gcc/old-releases/">ftp://gcc.gnu.org/pub/gcc/old-releases/</a>. 
+<li>The release and snapshot script <samp><span class="file">maintainer-scripts/gcc_release</span></samp>
+should be updated to generate appropriate tarballs for this front end. 
+<li>If this front end includes its own version files that include the
+current date, <samp><span class="file">maintainer-scripts/update_version</span></samp> should be
+updated accordingly. 
+</ul>
+
+<ul class="menu">
+<li><a accesskey="1" href="Front-End-Directory.html#Front-End-Directory">Front End Directory</a>:   The front end <samp><var>language</var></samp> directory. 
+<li><a accesskey="2" href="Front-End-Config.html#Front-End-Config">Front End Config</a>:      The front end <samp><span class="file">config-lang.in</span></samp> file. 
+<li><a accesskey="3" href="Front-End-Makefile.html#Front-End-Makefile">Front End Makefile</a>:    The front end <samp><span class="file">Make-lang.in</span></samp> file. 
+</ul>
+
+ </body></html>
+

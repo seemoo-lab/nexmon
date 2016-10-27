@@ -1,0 +1,144 @@
+<html lang="en">
+<head>
+<title>Tree overview - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="GENERIC.html#GENERIC" title="GENERIC">
+<link rel="prev" href="Deficiencies.html#Deficiencies" title="Deficiencies">
+<link rel="next" href="Types.html#Types" title="Types">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Tree-overview"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Types.html#Types">Types</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Deficiencies.html#Deficiencies">Deficiencies</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="GENERIC.html#GENERIC">GENERIC</a>
+<hr>
+</div>
+
+<h3 class="section">10.2 Overview</h3>
+
+<p><a name="index-tree-1713"></a><a name="index-TREE_005fCODE-1714"></a>
+The central data structure used by the internal representation is the
+<code>tree</code>.  These nodes, while all of the C type <code>tree</code>, are of
+many varieties.  A <code>tree</code> is a pointer type, but the object to
+which it points may be of a variety of types.  From this point forward,
+we will refer to trees in ordinary type, rather than in <code>this
+font</code>, except when talking about the actual C type <code>tree</code>.
+
+ <p>You can tell what kind of node a particular tree is by using the
+<code>TREE_CODE</code> macro.  Many, many macros take trees as input and
+return trees as output.  However, most macros require a certain kind of
+tree node as input.  In other words, there is a type-system for trees,
+but it is not reflected in the C type-system.
+
+ <p>For safety, it is useful to configure GCC with <samp><span class="option">--enable-checking</span></samp>. 
+Although this results in a significant performance penalty (since all
+tree types are checked at run-time), and is therefore inappropriate in a
+release version, it is extremely helpful during the development process.
+
+ <p>Many macros behave as predicates.  Many, although not all, of these
+predicates end in &lsquo;<samp><span class="samp">_P</span></samp>&rsquo;.  Do not rely on the result type of these
+macros being of any particular type.  You may, however, rely on the fact
+that the type can be compared to <code>0</code>, so that statements like
+<pre class="smallexample">     if (TEST_P (t) &amp;&amp; !TEST_P (y))
+       x = 1;
+</pre>
+ <p class="noindent">and
+<pre class="smallexample">     int i = (TEST_P (t) != 0);
+</pre>
+ <p class="noindent">are legal.  Macros that return <code>int</code> values now may be changed to
+return <code>tree</code> values, or other pointers in the future.  Even those
+that continue to return <code>int</code> may return multiple nonzero codes
+where previously they returned only zero and one.  Therefore, you should
+not write code like
+<pre class="smallexample">     if (TEST_P (t) == 1)
+</pre>
+ <p class="noindent">as this code is not guaranteed to work correctly in the future.
+
+ <p>You should not take the address of values returned by the macros or
+functions described here.  In particular, no guarantee is given that the
+values are lvalues.
+
+ <p>In general, the names of macros are all in uppercase, while the names of
+functions are entirely in lowercase.  There are rare exceptions to this
+rule.  You should assume that any macro or function whose name is made
+up entirely of uppercase letters may evaluate its arguments more than
+once.  You may assume that a macro or function whose name is made up
+entirely of lowercase letters will evaluate its arguments only once.
+
+ <p>The <code>error_mark_node</code> is a special tree.  Its tree code is
+<code>ERROR_MARK</code>, but since there is only ever one node with that code,
+the usual practice is to compare the tree against
+<code>error_mark_node</code>.  (This test is just a test for pointer
+equality.)  If an error has occurred during front-end processing the
+flag <code>errorcount</code> will be set.  If the front end has encountered
+code it cannot handle, it will issue a message to the user and set
+<code>sorrycount</code>.  When these flags are set, any macro or function
+which normally returns a tree of a particular kind may instead return
+the <code>error_mark_node</code>.  Thus, if you intend to do any processing of
+erroneous code, you must be prepared to deal with the
+<code>error_mark_node</code>.
+
+ <p>Occasionally, a particular tree slot (like an operand to an expression,
+or a particular field in a declaration) will be referred to as
+&ldquo;reserved for the back end&rdquo;.  These slots are used to store RTL when
+the tree is converted to RTL for use by the GCC back end.  However, if
+that process is not taking place (e.g., if the front end is being hooked
+up to an intelligent editor), then those slots may be used by the
+back end presently in use.
+
+ <p>If you encounter situations that do not match this documentation, such
+as tree nodes of types not mentioned here, or macros documented to
+return entities of a particular kind that instead return entities of
+some different kind, you have found a bug, either in the front end or in
+the documentation.  Please report these bugs as you would any other
+bug.
+
+<ul class="menu">
+<li><a accesskey="1" href="Macros-and-Functions.html#Macros-and-Functions">Macros and Functions</a>: Macros and functions that can be used with all trees. 
+<li><a accesskey="2" href="Identifiers.html#Identifiers">Identifiers</a>:          The names of things. 
+<li><a accesskey="3" href="Containers.html#Containers">Containers</a>:           Lists and vectors. 
+</ul>
+
+<!--  -->
+<!-- Trees -->
+<!--  -->
+ </body></html>
+

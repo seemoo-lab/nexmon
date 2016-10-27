@@ -1,0 +1,79 @@
+<html lang="en">
+<head>
+<title>Method Modifiers - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Cplusplus.html#Cplusplus" title="Cplusplus">
+<link rel="prev" href="Protections.html#Protections" title="Protections">
+<link rel="next" href="Virtual-Methods.html#Virtual-Methods" title="Virtual Methods">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Method-Modifiers"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Virtual-Methods.html#Virtual-Methods">Virtual Methods</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Protections.html#Protections">Protections</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Cplusplus.html#Cplusplus">Cplusplus</a>
+<hr>
+</div>
+
+<h3 class="section">8.10 Method Modifiers (<code>const</code>, <code>volatile</code>, <code>const volatile</code>)</h3>
+
+<p>&lt;&lt; based on a6.C &gt;&gt;
+
+   <p>In the class example described above all the methods have the normal
+modifier.  This method modifier information is located just after the
+protection information for the method.  This field has four possible
+character values.  Normal methods use &lsquo;<samp><span class="samp">A</span></samp>&rsquo;, const methods use
+&lsquo;<samp><span class="samp">B</span></samp>&rsquo;, volatile methods use &lsquo;<samp><span class="samp">C</span></samp>&rsquo;, and const volatile methods use
+&lsquo;<samp><span class="samp">D</span></samp>&rsquo;.  Consider the class definition below:
+
+<pre class="example">     class A {
+     public:
+             int ConstMeth (int arg) const { return arg; };
+             char VolatileMeth (char arg) volatile { return arg; };
+             float ConstVolMeth (float arg) const volatile {return arg; };
+     };
+</pre>
+   <p>This class is described by the following stab:
+
+<pre class="display">     .stabs "class(A):sym_desc(struct)type_def(20)=type_desc(struct)struct_bytes(1)
+             meth_name(ConstMeth)::type_def(21)sym_desc(method)
+             returning(int);:arg(int);protection(public)modifier(const)virtual(no);
+             meth_name(VolatileMeth)::type_def(22)=sym_desc(method)
+             returning(char);:arg(char);protection(public)modifier(volatile)virt(no)
+             meth_name(ConstVolMeth)::type_def(23)=sym_desc(method)
+             returning(float);:arg(float);protection(public)modifier(const volatile)
+             virtual(no);;", <small class="dots">...</small>
+</pre>
+   <pre class="example">     .stabs "A:T20=s1ConstMeth::21=##1;:i;2B.;VolatileMeth::22=##2;:c;2C.;
+                  ConstVolMeth::23=##12;:f;2D.;;",128,0,0,0
+</pre>
+   </body></html>
+

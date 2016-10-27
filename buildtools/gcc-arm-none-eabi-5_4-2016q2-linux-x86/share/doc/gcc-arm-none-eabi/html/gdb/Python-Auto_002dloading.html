@@ -1,0 +1,98 @@
+<html lang="en">
+<head>
+<title>Python Auto-loading - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Python.html#Python" title="Python">
+<link rel="prev" href="Python-API.html#Python-API" title="Python API">
+<link rel="next" href="Python-modules.html#Python-modules" title="Python modules">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Python-Auto-loading"></a>
+<a name="Python-Auto_002dloading"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Python-modules.html#Python-modules">Python modules</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Python-API.html#Python-API">Python API</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Python.html#Python">Python</a>
+<hr>
+</div>
+
+<h4 class="subsection">23.2.3 Python Auto-loading</h4>
+
+<p><a name="index-Python-auto_002dloading-2335"></a>
+When a new object file is read (for example, due to the <code>file</code>
+command, or because the inferior has loaded a shared library),
+<span class="sc">gdb</span> will look for Python support scripts in several ways:
+<samp><var>objfile</var><span class="file">-gdb.py</span></samp> and <code>.debug_gdb_scripts</code> section. 
+See <a href="Auto_002dloading-extensions.html#Auto_002dloading-extensions">Auto-loading extensions</a>.
+
+   <p>The auto-loading feature is useful for supplying application-specific
+debugging commands and scripts.
+
+   <p>Auto-loading can be enabled or disabled,
+and the list of auto-loaded scripts can be printed.
+
+     <dl>
+<a name="set-auto_002dload-python_002dscripts"></a><a name="index-set-auto_002dload-python_002dscripts-2336"></a><dt><code>set auto-load python-scripts [on|off]</code><dd>Enable or disable the auto-loading of Python scripts.
+
+     <p><a name="show-auto_002dload-python_002dscripts"></a><a name="index-show-auto_002dload-python_002dscripts-2337"></a><br><dt><code>show auto-load python-scripts</code><dd>Show whether auto-loading of Python scripts is enabled or disabled.
+
+     <p><a name="info-auto_002dload-python_002dscripts"></a><a name="index-info-auto_002dload-python_002dscripts-2338"></a><a name="index-print-list-of-auto_002dloaded-Python-scripts-2339"></a><br><dt><code>info auto-load python-scripts [</code><var>regexp</var><code>]</code><dd>Print the list of all Python scripts that <span class="sc">gdb</span> auto-loaded.
+
+     <p>Also printed is the list of Python scripts that were mentioned in
+the <code>.debug_gdb_scripts</code> section and were either not found
+(see <a href="dotdebug_005fgdb_005fscripts-section.html#dotdebug_005fgdb_005fscripts-section">dotdebug_gdb_scripts section</a>) or were not auto-loaded due to
+<code>auto-load safe-path</code> rejection (see <a href="Auto_002dloading.html#Auto_002dloading">Auto-loading</a>). 
+This is useful because their names are not printed when <span class="sc">gdb</span>
+tries to load them and fails.  There may be many of them, and printing
+an error message for each one is problematic.
+
+     <p>If <var>regexp</var> is supplied only Python scripts with matching names are printed.
+
+     <p>Example:
+
+     <pre class="smallexample">          (gdb) info auto-load python-scripts
+          Loaded Script
+          Yes    py-section-script.py
+                 full name: /tmp/py-section-script.py
+          No     my-foo-pretty-printers.py
+</pre>
+     </dl>
+
+   <p>When reading an auto-loaded file or script, <span class="sc">gdb</span> sets the
+<dfn>current objfile</dfn>.  This is available via the <code>gdb.current_objfile</code>
+function (see <a href="Objfiles-In-Python.html#Objfiles-In-Python">Objfiles In Python</a>).  This can be useful for
+registering objfile-specific pretty-printers and frame-filters.
+
+   </body></html>
+

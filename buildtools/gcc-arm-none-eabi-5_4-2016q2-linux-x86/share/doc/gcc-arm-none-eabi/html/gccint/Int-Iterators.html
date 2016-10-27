@@ -1,0 +1,122 @@
+<html lang="en">
+<head>
+<title>Int Iterators - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Iterators.html#Iterators" title="Iterators">
+<link rel="prev" href="Code-Iterators.html#Code-Iterators" title="Code Iterators">
+<link rel="next" href="Subst-Iterators.html#Subst-Iterators" title="Subst Iterators">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Int-Iterators"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Subst-Iterators.html#Subst-Iterators">Subst Iterators</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Code-Iterators.html#Code-Iterators">Code Iterators</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Iterators.html#Iterators">Iterators</a>
+<hr>
+</div>
+
+<h4 class="subsection">16.23.3 Int Iterators</h4>
+
+<p><a name="index-int-iterators-in-_0040file_007b_002emd_007d-files-3843"></a><a name="index-define_005fint_005fiterator-3844"></a><a name="index-define_005fint_005fattr-3845"></a>
+Int iterators operate in a similar way to code iterators.  See <a href="Code-Iterators.html#Code-Iterators">Code Iterators</a>.
+
+ <p>The construct:
+
+<pre class="smallexample">     (define_int_iterator <var>name</var> [(<var>int1</var> "<var>cond1</var>") ... (<var>intn</var> "<var>condn</var>")])
+</pre>
+ <p>defines a pseudo integer constant <var>name</var> that can be instantiated as
+<var>inti</var> if condition <var>condi</var> is true.  Each <var>int</var>
+must have the same rtx format.  See <a href="RTL-Classes.html#RTL-Classes">RTL Classes</a>. Int iterators can appear
+in only those rtx fields that have 'i' as the specifier. This means that
+each <var>int</var> has to be a constant defined using define_constant or
+define_c_enum.
+
+ <p>As with mode and code iterators, each pattern that uses <var>name</var> will be
+expanded <var>n</var> times, once with all uses of <var>name</var> replaced by
+<var>int1</var>, once with all uses replaced by <var>int2</var>, and so on. 
+See <a href="Defining-Mode-Iterators.html#Defining-Mode-Iterators">Defining Mode Iterators</a>.
+
+ <p>It is possible to define attributes for ints as well as for codes and modes. 
+Attributes are defined using:
+
+<pre class="smallexample">     (define_int_attr <var>name</var> [(<var>int1</var> "<var>value1</var>") ... (<var>intn</var> "<var>valuen</var>")])
+</pre>
+ <p>Here's an example of int iterators in action, taken from the ARM port:
+
+<pre class="smallexample">     (define_int_iterator QABSNEG [UNSPEC_VQABS UNSPEC_VQNEG])
+     
+     (define_int_attr absneg [(UNSPEC_VQABS "abs") (UNSPEC_VQNEG "neg")])
+     
+     (define_insn "neon_vq&lt;absneg&gt;&lt;mode&gt;"
+       [(set (match_operand:VDQIW 0 "s_register_operand" "=w")
+     	(unspec:VDQIW [(match_operand:VDQIW 1 "s_register_operand" "w")
+     		       (match_operand:SI 2 "immediate_operand" "i")]
+     		      QABSNEG))]
+       "TARGET_NEON"
+       "vq&lt;absneg&gt;.&lt;V_s_elem&gt;\t%&lt;V_reg&gt;0, %&lt;V_reg&gt;1"
+       [(set_attr "type" "neon_vqneg_vqabs")]
+     )
+     
+</pre>
+ <p>This is equivalent to:
+
+<pre class="smallexample">     (define_insn "neon_vqabs&lt;mode&gt;"
+       [(set (match_operand:VDQIW 0 "s_register_operand" "=w")
+     	(unspec:VDQIW [(match_operand:VDQIW 1 "s_register_operand" "w")
+     		       (match_operand:SI 2 "immediate_operand" "i")]
+     		      UNSPEC_VQABS))]
+       "TARGET_NEON"
+       "vqabs.&lt;V_s_elem&gt;\t%&lt;V_reg&gt;0, %&lt;V_reg&gt;1"
+       [(set_attr "type" "neon_vqneg_vqabs")]
+     )
+     
+     (define_insn "neon_vqneg&lt;mode&gt;"
+       [(set (match_operand:VDQIW 0 "s_register_operand" "=w")
+     	(unspec:VDQIW [(match_operand:VDQIW 1 "s_register_operand" "w")
+     		       (match_operand:SI 2 "immediate_operand" "i")]
+     		      UNSPEC_VQNEG))]
+       "TARGET_NEON"
+       "vqneg.&lt;V_s_elem&gt;\t%&lt;V_reg&gt;0, %&lt;V_reg&gt;1"
+       [(set_attr "type" "neon_vqneg_vqabs")]
+     )
+     
+</pre>
+ </body></html>
+

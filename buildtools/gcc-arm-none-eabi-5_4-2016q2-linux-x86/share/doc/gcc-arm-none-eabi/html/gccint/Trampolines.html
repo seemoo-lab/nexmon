@@ -1,0 +1,188 @@
+<html lang="en">
+<head>
+<title>Trampolines - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Macros.html#Target-Macros" title="Target Macros">
+<link rel="prev" href="Varargs.html#Varargs" title="Varargs">
+<link rel="next" href="Library-Calls.html#Library-Calls" title="Library Calls">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Trampolines"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Library-Calls.html#Library-Calls">Library Calls</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Varargs.html#Varargs">Varargs</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Macros.html#Target-Macros">Target Macros</a>
+<hr>
+</div>
+
+<h3 class="section">17.11 Trampolines for Nested Functions</h3>
+
+<p><a name="index-trampolines-for-nested-functions-4343"></a><a name="index-nested-functions_002c-trampolines-for-4344"></a>
+A <dfn>trampoline</dfn> is a small piece of code that is created at run time
+when the address of a nested function is taken.  It normally resides on
+the stack, in the stack frame of the containing function.  These macros
+tell GCC how to generate code to allocate and initialize a
+trampoline.
+
+ <p>The instructions in the trampoline must do two things: load a constant
+address into the static chain register, and jump to the real address of
+the nested function.  On CISC machines such as the m68k, this requires
+two instructions, a move immediate and a jump.  Then the two addresses
+exist in the trampoline as word-long immediate operands.  On RISC
+machines, it is often necessary to load each address into a register in
+two parts.  Then pieces of each address form separate immediate
+operands.
+
+ <p>The code generated to initialize the trampoline must store the variable
+parts&mdash;the static chain value and the function address&mdash;into the
+immediate operands of the instructions.  On a CISC machine, this is
+simply a matter of copying each address to a memory reference at the
+proper offset from the start of the trampoline.  On a RISC machine, it
+may be necessary to take out pieces of the address and store them
+separately.
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_ASM_TRAMPOLINE_TEMPLATE</b> (<var>FILE *f</var>)<var><a name="index-TARGET_005fASM_005fTRAMPOLINE_005fTEMPLATE-4345"></a></var><br>
+<blockquote><p>This hook is called by <code>assemble_trampoline_template</code> to output,
+on the stream <var>f</var>, assembler code for a block of data that contains
+the constant parts of a trampoline.  This code should not include a
+label&mdash;the label is taken care of automatically.
+
+      <p>If you do not define this hook, it means no template is needed
+for the target.  Do not define this hook on systems where the block move
+code to copy the trampoline into place would be larger than the code
+to generate it on the spot. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>TRAMPOLINE_SECTION</b><var><a name="index-TRAMPOLINE_005fSECTION-4346"></a></var><br>
+<blockquote><p>Return the section into which the trampoline template is to be placed
+(see <a href="Sections.html#Sections">Sections</a>).  The default value is <code>readonly_data_section</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>TRAMPOLINE_SIZE</b><var><a name="index-TRAMPOLINE_005fSIZE-4347"></a></var><br>
+<blockquote><p>A C expression for the size in bytes of the trampoline, as an integer. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>TRAMPOLINE_ALIGNMENT</b><var><a name="index-TRAMPOLINE_005fALIGNMENT-4348"></a></var><br>
+<blockquote><p>Alignment required for trampolines, in bits.
+
+      <p>If you don't define this macro, the value of <code>FUNCTION_ALIGNMENT</code>
+is used for aligning trampolines. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_TRAMPOLINE_INIT</b> (<var>rtx m_tramp, tree fndecl, rtx static_chain</var>)<var><a name="index-TARGET_005fTRAMPOLINE_005fINIT-4349"></a></var><br>
+<blockquote><p>This hook is called to initialize a trampoline. 
+<var>m_tramp</var> is an RTX for the memory block for the trampoline; <var>fndecl</var>
+is the <code>FUNCTION_DECL</code> for the nested function; <var>static_chain</var> is an
+RTX for the static chain value that should be passed to the function
+when it is called.
+
+      <p>If the target defines <code>TARGET_ASM_TRAMPOLINE_TEMPLATE</code>, then the
+first thing this hook should do is emit a block move into <var>m_tramp</var>
+from the memory block returned by <code>assemble_trampoline_template</code>. 
+Note that the block move need only cover the constant parts of the
+trampoline.  If the target isolates the variable parts of the trampoline
+to the end, not all <code>TRAMPOLINE_SIZE</code> bytes need be copied.
+
+      <p>If the target requires any other actions, such as flushing caches or
+enabling stack execution, these actions should be performed after
+initializing the trampoline proper. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: rtx <b>TARGET_TRAMPOLINE_ADJUST_ADDRESS</b> (<var>rtx addr</var>)<var><a name="index-TARGET_005fTRAMPOLINE_005fADJUST_005fADDRESS-4350"></a></var><br>
+<blockquote><p>This hook should perform any machine-specific adjustment in
+the address of the trampoline.  Its argument contains the address of the
+memory block that was passed to <code>TARGET_TRAMPOLINE_INIT</code>.  In case
+the address to be used for a function call should be different from the
+address at which the template was stored, the different address should
+be returned; otherwise <var>addr</var> should be returned unchanged. 
+If this hook is not defined, <var>addr</var> will be used for function calls. 
+</p></blockquote></div>
+
+ <p>Implementing trampolines is difficult on many machines because they have
+separate instruction and data caches.  Writing into a stack location
+fails to clear the memory in the instruction cache, so when the program
+jumps to that location, it executes the old contents.
+
+ <p>Here are two possible solutions.  One is to clear the relevant parts of
+the instruction cache whenever a trampoline is set up.  The other is to
+make all trampolines identical, by having them jump to a standard
+subroutine.  The former technique makes trampoline execution faster; the
+latter makes initialization faster.
+
+ <p>To clear the instruction cache when a trampoline is initialized, define
+the following macro.
+
+<div class="defun">
+&mdash; Macro: <b>CLEAR_INSN_CACHE</b> (<var>beg, end</var>)<var><a name="index-CLEAR_005fINSN_005fCACHE-4351"></a></var><br>
+<blockquote><p>If defined, expands to a C expression clearing the <em>instruction
+cache</em> in the specified interval.  The definition of this macro would
+typically be a series of <code>asm</code> statements.  Both <var>beg</var> and
+<var>end</var> are both pointer expressions. 
+</p></blockquote></div>
+
+ <p>To use a standard subroutine, define the following macro.  In addition,
+you must make sure that the instructions in a trampoline fill an entire
+cache line with identical instructions, or else ensure that the
+beginning of the trampoline code is always aligned at the same point in
+its cache line.  Look in <samp><span class="file">m68k.h</span></samp> as a guide.
+
+<div class="defun">
+&mdash; Macro: <b>TRANSFER_FROM_TRAMPOLINE</b><var><a name="index-TRANSFER_005fFROM_005fTRAMPOLINE-4352"></a></var><br>
+<blockquote><p>Define this macro if trampolines need a special subroutine to do their
+work.  The macro should expand to a series of <code>asm</code> statements
+which will be compiled with GCC.  They go in a library function named
+<code>__transfer_from_trampoline</code>.
+
+      <p>If you need to avoid executing the ordinary prologue code of a compiled
+C function when you jump to the subroutine, you can do so by placing a
+special label of your own in the assembler code.  Use one <code>asm</code>
+statement to generate an assembler label, and another to make the label
+global.  Then trampolines can use that label to jump directly to your
+special assembler code. 
+</p></blockquote></div>
+
+ </body></html>
+

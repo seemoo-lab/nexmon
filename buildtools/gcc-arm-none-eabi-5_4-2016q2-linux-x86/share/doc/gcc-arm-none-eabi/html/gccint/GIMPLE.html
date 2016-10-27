@@ -1,0 +1,134 @@
+<html lang="en">
+<head>
+<title>GIMPLE - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="GENERIC.html#GENERIC" title="GENERIC">
+<link rel="next" href="Tree-SSA.html#Tree-SSA" title="Tree SSA">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="GIMPLE"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Tree-SSA.html#Tree-SSA">Tree SSA</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="GENERIC.html#GENERIC">GENERIC</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">11 GIMPLE</h2>
+
+<p><a name="index-GIMPLE-2132"></a>
+GIMPLE is a three-address representation derived from GENERIC by
+breaking down GENERIC expressions into tuples of no more than 3
+operands (with some exceptions like function calls).  GIMPLE was
+heavily influenced by the SIMPLE IL used by the McCAT compiler
+project at McGill University, though we have made some different
+choices.  For one thing, SIMPLE doesn't support <code>goto</code>.
+
+ <p>Temporaries are introduced to hold intermediate values needed to
+compute complex expressions. Additionally, all the control
+structures used in GENERIC are lowered into conditional jumps,
+lexical scopes are removed and exception regions are converted
+into an on the side exception region tree.
+
+ <p>The compiler pass which converts GENERIC into GIMPLE is referred to as
+the &lsquo;<samp><span class="samp">gimplifier</span></samp>&rsquo;.  The gimplifier works recursively, generating
+GIMPLE tuples out of the original GENERIC expressions.
+
+ <p>One of the early implementation strategies used for the GIMPLE
+representation was to use the same internal data structures used
+by front ends to represent parse trees. This simplified
+implementation because we could leverage existing functionality
+and interfaces. However, GIMPLE is a much more restrictive
+representation than abstract syntax trees (AST), therefore it
+does not require the full structural complexity provided by the
+main tree data structure.
+
+ <p>The GENERIC representation of a function is stored in the
+<code>DECL_SAVED_TREE</code> field of the associated <code>FUNCTION_DECL</code>
+tree node.  It is converted to GIMPLE by a call to
+<code>gimplify_function_tree</code>.
+
+ <p>If a front end wants to include language-specific tree codes in the tree
+representation which it provides to the back end, it must provide a
+definition of <code>LANG_HOOKS_GIMPLIFY_EXPR</code> which knows how to
+convert the front end trees to GIMPLE.  Usually such a hook will involve
+much of the same code for expanding front end trees to RTL.  This function
+can return fully lowered GIMPLE, or it can return GENERIC trees and let the
+main gimplifier lower them the rest of the way; this is often simpler. 
+GIMPLE that is not fully lowered is known as &ldquo;High GIMPLE&rdquo; and
+consists of the IL before the pass <code>pass_lower_cf</code>.  High GIMPLE
+contains some container statements like lexical scopes
+(represented by <code>GIMPLE_BIND</code>) and nested expressions (e.g.,
+<code>GIMPLE_TRY</code>), while &ldquo;Low GIMPLE&rdquo; exposes all of the
+implicit jumps for control and exception expressions directly in
+the IL and EH region trees.
+
+ <p>The C and C++ front ends currently convert directly from front end
+trees to GIMPLE, and hand that off to the back end rather than first
+converting to GENERIC.  Their gimplifier hooks know about all the
+<code>_STMT</code> nodes and how to convert them to GENERIC forms.  There
+was some work done on a genericization pass which would run first, but
+the existence of <code>STMT_EXPR</code> meant that in order to convert all
+of the C statements into GENERIC equivalents would involve walking the
+entire tree anyway, so it was simpler to lower all the way.  This
+might change in the future if someone writes an optimization pass
+which would work better with higher-level trees, but currently the
+optimizers all expect GIMPLE.
+
+ <p>You can request to dump a C-like representation of the GIMPLE form
+with the flag <samp><span class="option">-fdump-tree-gimple</span></samp>.
+
+<ul class="menu">
+<li><a accesskey="1" href="Tuple-representation.html#Tuple-representation">Tuple representation</a>
+<li><a accesskey="2" href="Class-hierarchy-of-GIMPLE-statements.html#Class-hierarchy-of-GIMPLE-statements">Class hierarchy of GIMPLE statements</a>
+<li><a accesskey="3" href="GIMPLE-instruction-set.html#GIMPLE-instruction-set">GIMPLE instruction set</a>
+<li><a accesskey="4" href="GIMPLE-Exception-Handling.html#GIMPLE-Exception-Handling">GIMPLE Exception Handling</a>
+<li><a accesskey="5" href="Temporaries.html#Temporaries">Temporaries</a>
+<li><a accesskey="6" href="Operands.html#Operands">Operands</a>
+<li><a accesskey="7" href="Manipulating-GIMPLE-statements.html#Manipulating-GIMPLE-statements">Manipulating GIMPLE statements</a>
+<li><a accesskey="8" href="Tuple-specific-accessors.html#Tuple-specific-accessors">Tuple specific accessors</a>
+<li><a accesskey="9" href="GIMPLE-sequences.html#GIMPLE-sequences">GIMPLE sequences</a>
+<li><a href="Sequence-iterators.html#Sequence-iterators">Sequence iterators</a>
+<li><a href="Adding-a-new-GIMPLE-statement-code.html#Adding-a-new-GIMPLE-statement-code">Adding a new GIMPLE statement code</a>
+<li><a href="Statement-and-operand-traversals.html#Statement-and-operand-traversals">Statement and operand traversals</a>
+</ul>
+
+ </body></html>
+

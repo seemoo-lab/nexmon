@@ -1,0 +1,195 @@
+<html lang="en">
+<head>
+<title>Exception Handling - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stack-and-Calling.html#Stack-and-Calling" title="Stack and Calling">
+<link rel="prev" href="Frame-Layout.html#Frame-Layout" title="Frame Layout">
+<link rel="next" href="Stack-Checking.html#Stack-Checking" title="Stack Checking">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Exception-Handling"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Stack-Checking.html#Stack-Checking">Stack Checking</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Frame-Layout.html#Frame-Layout">Frame Layout</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stack-and-Calling.html#Stack-and-Calling">Stack and Calling</a>
+<hr>
+</div>
+
+<h4 class="subsection">17.9.2 Exception Handling Support</h4>
+
+<p><a name="index-exception-handling-4169"></a>
+
+<div class="defun">
+&mdash; Macro: <b>EH_RETURN_DATA_REGNO</b> (<var>N</var>)<var><a name="index-EH_005fRETURN_005fDATA_005fREGNO-4170"></a></var><br>
+<blockquote><p>A C expression whose value is the <var>N</var>th register number used for
+data by exception handlers, or <code>INVALID_REGNUM</code> if fewer than
+<var>N</var> registers are usable.
+
+      <p>The exception handling library routines communicate with the exception
+handlers via a set of agreed upon registers.  Ideally these registers
+should be call-clobbered; it is possible to use call-saved registers,
+but may negatively impact code size.  The target must support at least
+2 data registers, but should define 4 if there are enough free registers.
+
+      <p>You must define this macro if you want to support call frame exception
+handling like that provided by DWARF 2. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>EH_RETURN_STACKADJ_RTX</b><var><a name="index-EH_005fRETURN_005fSTACKADJ_005fRTX-4171"></a></var><br>
+<blockquote><p>A C expression whose value is RTL representing a location in which
+to store a stack adjustment to be applied before function return. 
+This is used to unwind the stack to an exception handler's call frame. 
+It will be assigned zero on code paths that return normally.
+
+      <p>Typically this is a call-clobbered hard register that is otherwise
+untouched by the epilogue, but could also be a stack slot.
+
+      <p>Do not define this macro if the stack pointer is saved and restored
+by the regular prolog and epilog code in the call frame itself; in
+this case, the exception handling library routines will update the
+stack location to be restored in place.  Otherwise, you must define
+this macro if you want to support call frame exception handling like
+that provided by DWARF 2. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>EH_RETURN_HANDLER_RTX</b><var><a name="index-EH_005fRETURN_005fHANDLER_005fRTX-4172"></a></var><br>
+<blockquote><p>A C expression whose value is RTL representing a location in which
+to store the address of an exception handler to which we should
+return.  It will not be assigned on code paths that return normally.
+
+      <p>Typically this is the location in the call frame at which the normal
+return address is stored.  For targets that return by popping an
+address off the stack, this might be a memory address just below
+the <em>target</em> call frame rather than inside the current call
+frame.  If defined, <code>EH_RETURN_STACKADJ_RTX</code> will have already
+been assigned, so it may be used to calculate the location of the
+target call frame.
+
+      <p>Some targets have more complex requirements than storing to an
+address calculable during initial code generation.  In that case
+the <code>eh_return</code> instruction pattern should be used instead.
+
+      <p>If you want to support call frame exception handling, you must
+define either this macro or the <code>eh_return</code> instruction pattern. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>RETURN_ADDR_OFFSET</b><var><a name="index-RETURN_005fADDR_005fOFFSET-4173"></a></var><br>
+<blockquote><p>If defined, an integer-valued C expression for which rtl will be generated
+to add it to the exception handler address before it is searched in the
+exception handling tables, and to subtract it again from the address before
+using it to return to the exception handler. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_PREFERRED_EH_DATA_FORMAT</b> (<var>code, global</var>)<var><a name="index-ASM_005fPREFERRED_005fEH_005fDATA_005fFORMAT-4174"></a></var><br>
+<blockquote><p>This macro chooses the encoding of pointers embedded in the exception
+handling sections.  If at all possible, this should be defined such
+that the exception handling section will not require dynamic relocations,
+and so may be read-only.
+
+      <p><var>code</var> is 0 for data, 1 for code labels, 2 for function pointers. 
+<var>global</var> is true if the symbol may be affected by dynamic relocations. 
+The macro should return a combination of the <code>DW_EH_PE_*</code> defines
+as found in <samp><span class="file">dwarf2.h</span></samp>.
+
+      <p>If this macro is not defined, pointers will not be encoded but
+represented directly. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_MAYBE_OUTPUT_ENCODED_ADDR_RTX</b> (<var>file, encoding, size, addr, done</var>)<var><a name="index-ASM_005fMAYBE_005fOUTPUT_005fENCODED_005fADDR_005fRTX-4175"></a></var><br>
+<blockquote><p>This macro allows the target to emit whatever special magic is required
+to represent the encoding chosen by <code>ASM_PREFERRED_EH_DATA_FORMAT</code>. 
+Generic code takes care of pc-relative and indirect encodings; this must
+be defined if the target uses text-relative or data-relative encodings.
+
+      <p>This is a C statement that branches to <var>done</var> if the format was
+handled.  <var>encoding</var> is the format chosen, <var>size</var> is the number
+of bytes that the format occupies, <var>addr</var> is the <code>SYMBOL_REF</code>
+to be emitted. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>MD_FALLBACK_FRAME_STATE_FOR</b> (<var>context, fs</var>)<var><a name="index-MD_005fFALLBACK_005fFRAME_005fSTATE_005fFOR-4176"></a></var><br>
+<blockquote><p>This macro allows the target to add CPU and operating system specific
+code to the call-frame unwinder for use when there is no unwind data
+available.  The most common reason to implement this macro is to unwind
+through signal frames.
+
+      <p>This macro is called from <code>uw_frame_state_for</code> in
+<samp><span class="file">unwind-dw2.c</span></samp>, <samp><span class="file">unwind-dw2-xtensa.c</span></samp> and
+<samp><span class="file">unwind-ia64.c</span></samp>.  <var>context</var> is an <code>_Unwind_Context</code>;
+<var>fs</var> is an <code>_Unwind_FrameState</code>.  Examine <code>context-&gt;ra</code>
+for the address of the code being executed and <code>context-&gt;cfa</code> for
+the stack pointer value.  If the frame can be decoded, the register
+save addresses should be updated in <var>fs</var> and the macro should
+evaluate to <code>_URC_NO_REASON</code>.  If the frame cannot be decoded,
+the macro should evaluate to <code>_URC_END_OF_STACK</code>.
+
+      <p>For proper signal handling in Java this macro is accompanied by
+<code>MAKE_THROW_FRAME</code>, defined in <samp><span class="file">libjava/include/*-signal.h</span></samp> headers. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>MD_HANDLE_UNWABI</b> (<var>context, fs</var>)<var><a name="index-MD_005fHANDLE_005fUNWABI-4177"></a></var><br>
+<blockquote><p>This macro allows the target to add operating system specific code to the
+call-frame unwinder to handle the IA-64 <code>.unwabi</code> unwinding directive,
+usually used for signal or interrupt frames.
+
+      <p>This macro is called from <code>uw_update_context</code> in libgcc's
+<samp><span class="file">unwind-ia64.c</span></samp>.  <var>context</var> is an <code>_Unwind_Context</code>;
+<var>fs</var> is an <code>_Unwind_FrameState</code>.  Examine <code>fs-&gt;unwabi</code>
+for the abi and context in the <code>.unwabi</code> directive.  If the
+<code>.unwabi</code> directive can be handled, the register save addresses should
+be updated in <var>fs</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>TARGET_USES_WEAK_UNWIND_INFO</b><var><a name="index-TARGET_005fUSES_005fWEAK_005fUNWIND_005fINFO-4178"></a></var><br>
+<blockquote><p>A C expression that evaluates to true if the target requires unwind
+info to be given comdat linkage.  Define it to be <code>1</code> if comdat
+linkage is necessary.  The default is <code>0</code>. 
+</p></blockquote></div>
+
+ </body></html>
+

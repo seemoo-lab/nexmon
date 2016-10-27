@@ -1,0 +1,81 @@
+<html lang="en">
+<head>
+<title>Based Variables - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Variables.html#Variables" title="Variables">
+<link rel="prev" href="Statics.html#Statics" title="Statics">
+<link rel="next" href="Parameters.html#Parameters" title="Parameters">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Based-Variables"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Parameters.html#Parameters">Parameters</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Statics.html#Statics">Statics</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Variables.html#Variables">Variables</a>
+<hr>
+</div>
+
+<h3 class="section">4.6 Fortran Based Variables</h3>
+
+<p>Fortran (at least, the Sun and SGI dialects of FORTRAN-77) has a feature
+which allows allocating arrays with <code>malloc</code>, but which avoids
+blurring the line between arrays and pointers the way that C does.  In
+stabs such a variable uses the &lsquo;<samp><span class="samp">b</span></samp>&rsquo; symbol descriptor.
+
+   <p>For example, the Fortran declarations
+
+<pre class="example">     real foo, foo10(10), foo10_5(10,5)
+     pointer (foop, foo)
+     pointer (foo10p, foo10)
+     pointer (foo105p, foo10_5)
+</pre>
+   <p>produce the stabs
+
+<pre class="example">     foo:b6
+     foo10:bar3;1;10;6
+     foo10_5:bar3;1;5;ar3;1;10;6
+</pre>
+   <p>In this example, <code>real</code> is type 6 and type 3 is an integral type
+which is the type of the subscripts of the array (probably
+<code>integer</code>).
+
+   <p>The &lsquo;<samp><span class="samp">b</span></samp>&rsquo; symbol descriptor is like &lsquo;<samp><span class="samp">V</span></samp>&rsquo; in that it denotes a
+statically allocated symbol whose scope is local to a function; see
+See <a href="Statics.html#Statics">Statics</a>.  The value of the symbol, instead of being the address
+of the variable itself, is the address of a pointer to that variable. 
+So in the above example, the value of the <code>foo</code> stab is the address
+of a pointer to a real, the value of the <code>foo10</code> stab is the
+address of a pointer to a 10-element array of reals, and the value of
+the <code>foo10_5</code> stab is the address of a pointer to a 5-element array
+of 10-element arrays of reals.
+
+   </body></html>
+

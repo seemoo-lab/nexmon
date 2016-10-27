@@ -1,0 +1,180 @@
+<html lang="en">
+<head>
+<title>Special Accessors - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="RTL.html#RTL" title="RTL">
+<link rel="prev" href="Accessors.html#Accessors" title="Accessors">
+<link rel="next" href="Flags.html#Flags" title="Flags">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Special-Accessors"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Flags.html#Flags">Flags</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Accessors.html#Accessors">Accessors</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="RTL.html#RTL">RTL</a>
+<hr>
+</div>
+
+<h3 class="section">13.4 Access to Special Operands</h3>
+
+<p><a name="index-access-to-special-operands-2567"></a>
+Some RTL nodes have special annotations associated with them.
+
+     <dl>
+<dt><code>MEM</code><dd>
+          
+<a name="index-MEM_005fALIAS_005fSET-2568"></a>
+<dl><dt><code>MEM_ALIAS_SET (</code><var>x</var><code>)</code><dd>If 0, <var>x</var> is not in any alias set, and may alias anything.  Otherwise,
+<var>x</var> can only alias <code>MEM</code>s in a conflicting alias set.  This value
+is set in a language-dependent manner in the front-end, and should not be
+altered in the back-end.  In some front-ends, these numbers may correspond
+in some way to types, or other language-level entities, but they need not,
+and the back-end makes no such assumptions. 
+These set numbers are tested with <code>alias_sets_conflict_p</code>.
+
+          <p><a name="index-MEM_005fEXPR-2569"></a><br><dt><code>MEM_EXPR (</code><var>x</var><code>)</code><dd>If this register is known to hold the value of some user-level
+declaration, this is that tree node.  It may also be a
+<code>COMPONENT_REF</code>, in which case this is some field reference,
+and <code>TREE_OPERAND (</code><var>x</var><code>, 0)</code> contains the declaration,
+or another <code>COMPONENT_REF</code>, or null if there is no compile-time
+object associated with the reference.
+
+          <p><a name="index-MEM_005fOFFSET_005fKNOWN_005fP-2570"></a><br><dt><code>MEM_OFFSET_KNOWN_P (</code><var>x</var><code>)</code><dd>True if the offset of the memory reference from <code>MEM_EXPR</code> is known. 
+&lsquo;<samp><span class="samp">MEM_OFFSET (</span><var>x</var><span class="samp">)</span></samp>&rsquo; provides the offset if so.
+
+          <p><a name="index-MEM_005fOFFSET-2571"></a><br><dt><code>MEM_OFFSET (</code><var>x</var><code>)</code><dd>The offset from the start of <code>MEM_EXPR</code>.  The value is only valid if
+&lsquo;<samp><span class="samp">MEM_OFFSET_KNOWN_P (</span><var>x</var><span class="samp">)</span></samp>&rsquo; is true.
+
+          <p><a name="index-MEM_005fSIZE_005fKNOWN_005fP-2572"></a><br><dt><code>MEM_SIZE_KNOWN_P (</code><var>x</var><code>)</code><dd>True if the size of the memory reference is known. 
+&lsquo;<samp><span class="samp">MEM_SIZE (</span><var>x</var><span class="samp">)</span></samp>&rsquo; provides its size if so.
+
+          <p><a name="index-MEM_005fSIZE-2573"></a><br><dt><code>MEM_SIZE (</code><var>x</var><code>)</code><dd>The size in bytes of the memory reference. 
+This is mostly relevant for <code>BLKmode</code> references as otherwise
+the size is implied by the mode.  The value is only valid if
+&lsquo;<samp><span class="samp">MEM_SIZE_KNOWN_P (</span><var>x</var><span class="samp">)</span></samp>&rsquo; is true.
+
+          <p><a name="index-MEM_005fALIGN-2574"></a><br><dt><code>MEM_ALIGN (</code><var>x</var><code>)</code><dd>The known alignment in bits of the memory reference.
+
+          <p><a name="index-MEM_005fADDR_005fSPACE-2575"></a><br><dt><code>MEM_ADDR_SPACE (</code><var>x</var><code>)</code><dd>The address space of the memory reference.  This will commonly be zero
+for the generic address space. 
+</dl>
+
+     <br><dt><code>REG</code><dd>
+          
+<a name="index-ORIGINAL_005fREGNO-2576"></a>
+<dl><dt><code>ORIGINAL_REGNO (</code><var>x</var><code>)</code><dd>This field holds the number the register &ldquo;originally&rdquo; had; for a
+pseudo register turned into a hard reg this will hold the old pseudo
+register number.
+
+          <p><a name="index-REG_005fEXPR-2577"></a><br><dt><code>REG_EXPR (</code><var>x</var><code>)</code><dd>If this register is known to hold the value of some user-level
+declaration, this is that tree node.
+
+          <p><a name="index-REG_005fOFFSET-2578"></a><br><dt><code>REG_OFFSET (</code><var>x</var><code>)</code><dd>If this register is known to hold the value of some user-level
+declaration, this is the offset into that logical storage. 
+</dl>
+
+     <br><dt><code>SYMBOL_REF</code><dd>
+          
+<a name="index-SYMBOL_005fREF_005fDECL-2579"></a>
+<dl><dt><code>SYMBOL_REF_DECL (</code><var>x</var><code>)</code><dd>If the <code>symbol_ref</code> <var>x</var> was created for a <code>VAR_DECL</code> or
+a <code>FUNCTION_DECL</code>, that tree is recorded here.  If this value is
+null, then <var>x</var> was created by back end code generation routines,
+and there is no associated front end symbol table entry.
+
+          <p><code>SYMBOL_REF_DECL</code> may also point to a tree of class <code>'c'</code>,
+that is, some sort of constant.  In this case, the <code>symbol_ref</code>
+is an entry in the per-file constant pool; again, there is no associated
+front end symbol table entry.
+
+          <p><a name="index-SYMBOL_005fREF_005fCONSTANT-2580"></a><br><dt><code>SYMBOL_REF_CONSTANT (</code><var>x</var><code>)</code><dd>If &lsquo;<samp><span class="samp">CONSTANT_POOL_ADDRESS_P (</span><var>x</var><span class="samp">)</span></samp>&rsquo; is true, this is the constant
+pool entry for <var>x</var>.  It is null otherwise.
+
+          <p><a name="index-SYMBOL_005fREF_005fDATA-2581"></a><br><dt><code>SYMBOL_REF_DATA (</code><var>x</var><code>)</code><dd>A field of opaque type used to store <code>SYMBOL_REF_DECL</code> or
+<code>SYMBOL_REF_CONSTANT</code>.
+
+          <p><a name="index-SYMBOL_005fREF_005fFLAGS-2582"></a><br><dt><code>SYMBOL_REF_FLAGS (</code><var>x</var><code>)</code><dd>In a <code>symbol_ref</code>, this is used to communicate various predicates
+about the symbol.  Some of these are common enough to be computed by
+common code, some are specific to the target.  The common bits are:
+
+               
+<a name="index-SYMBOL_005fREF_005fFUNCTION_005fP-2583"></a>
+<a name="index-SYMBOL_005fFLAG_005fFUNCTION-2584"></a>
+<dl><dt><code>SYMBOL_FLAG_FUNCTION</code><dd>Set if the symbol refers to a function.
+
+               <p><a name="index-SYMBOL_005fREF_005fLOCAL_005fP-2585"></a><a name="index-SYMBOL_005fFLAG_005fLOCAL-2586"></a><br><dt><code>SYMBOL_FLAG_LOCAL</code><dd>Set if the symbol is local to this &ldquo;module&rdquo;. 
+See <code>TARGET_BINDS_LOCAL_P</code>.
+
+               <p><a name="index-SYMBOL_005fREF_005fEXTERNAL_005fP-2587"></a><a name="index-SYMBOL_005fFLAG_005fEXTERNAL-2588"></a><br><dt><code>SYMBOL_FLAG_EXTERNAL</code><dd>Set if this symbol is not defined in this translation unit. 
+Note that this is not the inverse of <code>SYMBOL_FLAG_LOCAL</code>.
+
+               <p><a name="index-SYMBOL_005fREF_005fSMALL_005fP-2589"></a><a name="index-SYMBOL_005fFLAG_005fSMALL-2590"></a><br><dt><code>SYMBOL_FLAG_SMALL</code><dd>Set if the symbol is located in the small data section. 
+See <code>TARGET_IN_SMALL_DATA_P</code>.
+
+               <p><a name="index-SYMBOL_005fFLAG_005fTLS_005fSHIFT-2591"></a><a name="index-SYMBOL_005fREF_005fTLS_005fMODEL-2592"></a><br><dt><code>SYMBOL_REF_TLS_MODEL (</code><var>x</var><code>)</code><dd>This is a multi-bit field accessor that returns the <code>tls_model</code>
+to be used for a thread-local storage symbol.  It returns zero for
+non-thread-local symbols.
+
+               <p><a name="index-SYMBOL_005fREF_005fHAS_005fBLOCK_005fINFO_005fP-2593"></a><a name="index-SYMBOL_005fFLAG_005fHAS_005fBLOCK_005fINFO-2594"></a><br><dt><code>SYMBOL_FLAG_HAS_BLOCK_INFO</code><dd>Set if the symbol has <code>SYMBOL_REF_BLOCK</code> and
+<code>SYMBOL_REF_BLOCK_OFFSET</code> fields.
+
+               <p><a name="index-SYMBOL_005fREF_005fANCHOR_005fP-2595"></a><a name="index-SYMBOL_005fFLAG_005fANCHOR-2596"></a><a name="index-g_t_0040option_007b_002dfsection_002danchors_007d-2597"></a><br><dt><code>SYMBOL_FLAG_ANCHOR</code><dd>Set if the symbol is used as a section anchor.  &ldquo;Section anchors&rdquo;
+are symbols that have a known position within an <code>object_block</code>
+and that can be used to access nearby members of that block. 
+They are used to implement <samp><span class="option">-fsection-anchors</span></samp>.
+
+               <p>If this flag is set, then <code>SYMBOL_FLAG_HAS_BLOCK_INFO</code> will be too. 
+</dl>
+
+          <p>Bits beginning with <code>SYMBOL_FLAG_MACH_DEP</code> are available for
+the target's use. 
+</dl>
+
+     <p><a name="index-SYMBOL_005fREF_005fBLOCK-2598"></a><br><dt><code>SYMBOL_REF_BLOCK (</code><var>x</var><code>)</code><dd>If &lsquo;<samp><span class="samp">SYMBOL_REF_HAS_BLOCK_INFO_P (</span><var>x</var><span class="samp">)</span></samp>&rsquo;, this is the
+&lsquo;<samp><span class="samp">object_block</span></samp>&rsquo; structure to which the symbol belongs,
+or <code>NULL</code> if it has not been assigned a block.
+
+     <p><a name="index-SYMBOL_005fREF_005fBLOCK_005fOFFSET-2599"></a><br><dt><code>SYMBOL_REF_BLOCK_OFFSET (</code><var>x</var><code>)</code><dd>If &lsquo;<samp><span class="samp">SYMBOL_REF_HAS_BLOCK_INFO_P (</span><var>x</var><span class="samp">)</span></samp>&rsquo;, this is the offset of <var>x</var>
+from the first object in &lsquo;<samp><span class="samp">SYMBOL_REF_BLOCK (</span><var>x</var><span class="samp">)</span></samp>&rsquo;.  The value is
+negative if <var>x</var> has not yet been assigned to a block, or it has not
+been given an offset within that block. 
+</dl>
+
+ </body></html>
+

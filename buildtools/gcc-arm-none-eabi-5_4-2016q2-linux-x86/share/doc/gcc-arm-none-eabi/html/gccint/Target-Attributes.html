@@ -1,0 +1,247 @@
+<html lang="en">
+<head>
+<title>Target Attributes - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Macros.html#Target-Macros" title="Target Macros">
+<link rel="prev" href="Mode-Switching.html#Mode-Switching" title="Mode Switching">
+<link rel="next" href="Emulated-TLS.html#Emulated-TLS" title="Emulated TLS">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Target-Attributes"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Emulated-TLS.html#Emulated-TLS">Emulated TLS</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Mode-Switching.html#Mode-Switching">Mode Switching</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Macros.html#Target-Macros">Target Macros</a>
+<hr>
+</div>
+
+<h3 class="section">17.24 Defining target-specific uses of <code>__attribute__</code></h3>
+
+<p><a name="index-target-attributes-4827"></a><a name="index-machine-attributes-4828"></a><a name="index-attributes_002c-target_002dspecific-4829"></a>
+Target-specific attributes may be defined for functions, data and types. 
+These are described using the following target hooks; they also need to
+be documented in <samp><span class="file">extend.texi</span></samp>.
+
+<div class="defun">
+&mdash; Target Hook: const struct attribute_spec * <b>TARGET_ATTRIBUTE_TABLE</b><var><a name="index-TARGET_005fATTRIBUTE_005fTABLE-4830"></a></var><br>
+<blockquote><p>If defined, this target hook points to an array of &lsquo;<samp><span class="samp">struct
+attribute_spec</span></samp>&rsquo; (defined in <samp><span class="file">tree.h</span></samp>) specifying the machine
+specific attributes for this target and some of the restrictions on the
+entities to which these attributes are applied and the arguments they
+take. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_ATTRIBUTE_TAKES_IDENTIFIER_P</b> (<var>const_tree name</var>)<var><a name="index-TARGET_005fATTRIBUTE_005fTAKES_005fIDENTIFIER_005fP-4831"></a></var><br>
+<blockquote><p>If defined, this target hook is a function which returns true if the
+machine-specific attribute named <var>name</var> expects an identifier
+given as its first argument to be passed on as a plain identifier, not
+subjected to name lookup.  If this is not defined, the default is
+false for all machine-specific attributes. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: int <b>TARGET_COMP_TYPE_ATTRIBUTES</b> (<var>const_tree type1, const_tree type2</var>)<var><a name="index-TARGET_005fCOMP_005fTYPE_005fATTRIBUTES-4832"></a></var><br>
+<blockquote><p>If defined, this target hook is a function which returns zero if the attributes on
+<var>type1</var> and <var>type2</var> are incompatible, one if they are compatible,
+and two if they are nearly compatible (which causes a warning to be
+generated).  If this is not defined, machine-specific attributes are
+supposed always to be compatible. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_SET_DEFAULT_TYPE_ATTRIBUTES</b> (<var>tree type</var>)<var><a name="index-TARGET_005fSET_005fDEFAULT_005fTYPE_005fATTRIBUTES-4833"></a></var><br>
+<blockquote><p>If defined, this target hook is a function which assigns default attributes to
+the newly defined <var>type</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: tree <b>TARGET_MERGE_TYPE_ATTRIBUTES</b> (<var>tree type1, tree type2</var>)<var><a name="index-TARGET_005fMERGE_005fTYPE_005fATTRIBUTES-4834"></a></var><br>
+<blockquote><p>Define this target hook if the merging of type attributes needs special
+handling.  If defined, the result is a list of the combined
+<code>TYPE_ATTRIBUTES</code> of <var>type1</var> and <var>type2</var>.  It is assumed
+that <code>comptypes</code> has already been called and returned 1.  This
+function may call <code>merge_attributes</code> to handle machine-independent
+merging. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: tree <b>TARGET_MERGE_DECL_ATTRIBUTES</b> (<var>tree olddecl, tree newdecl</var>)<var><a name="index-TARGET_005fMERGE_005fDECL_005fATTRIBUTES-4835"></a></var><br>
+<blockquote><p>Define this target hook if the merging of decl attributes needs special
+handling.  If defined, the result is a list of the combined
+<code>DECL_ATTRIBUTES</code> of <var>olddecl</var> and <var>newdecl</var>. 
+<var>newdecl</var> is a duplicate declaration of <var>olddecl</var>.  Examples of
+when this is needed are when one attribute overrides another, or when an
+attribute is nullified by a subsequent definition.  This function may
+call <code>merge_attributes</code> to handle machine-independent merging.
+
+      <p><a name="index-TARGET_005fDLLIMPORT_005fDECL_005fATTRIBUTES-4836"></a>If the only target-specific handling you require is &lsquo;<samp><span class="samp">dllimport</span></samp>&rsquo;
+for Microsoft Windows targets, you should define the macro
+<code>TARGET_DLLIMPORT_DECL_ATTRIBUTES</code> to <code>1</code>.  The compiler
+will then define a function called
+<code>merge_dllimport_decl_attributes</code> which can then be defined as
+the expansion of <code>TARGET_MERGE_DECL_ATTRIBUTES</code>.  You can also
+add <code>handle_dll_attribute</code> in the attribute table for your port
+to perform initial processing of the &lsquo;<samp><span class="samp">dllimport</span></samp>&rsquo; and
+&lsquo;<samp><span class="samp">dllexport</span></samp>&rsquo; attributes.  This is done in <samp><span class="file">i386/cygwin.h</span></samp> and
+<samp><span class="file">i386/i386.c</span></samp>, for example. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_VALID_DLLIMPORT_ATTRIBUTE_P</b> (<var>const_tree decl</var>)<var><a name="index-TARGET_005fVALID_005fDLLIMPORT_005fATTRIBUTE_005fP-4837"></a></var><br>
+<blockquote><p><var>decl</var> is a variable or function with <code>__attribute__((dllimport))</code> specified.  Use this hook if the target needs to add extra validation checks to <code>handle_dll_attribute</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>TARGET_DECLSPEC</b><var><a name="index-TARGET_005fDECLSPEC-4838"></a></var><br>
+<blockquote><p>Define this macro to a nonzero value if you want to treat
+<code>__declspec(X)</code> as equivalent to <code>__attribute((X))</code>.  By
+default, this behavior is enabled only for targets that define
+<code>TARGET_DLLIMPORT_DECL_ATTRIBUTES</code>.  The current implementation
+of <code>__declspec</code> is via a built-in macro, but you should not rely
+on this implementation detail. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_INSERT_ATTRIBUTES</b> (<var>tree node, tree *attr_ptr</var>)<var><a name="index-TARGET_005fINSERT_005fATTRIBUTES-4839"></a></var><br>
+<blockquote><p>Define this target hook if you want to be able to add attributes to a decl
+when it is being created.  This is normally useful for back ends which
+wish to implement a pragma by using the attributes which correspond to
+the pragma's effect.  The <var>node</var> argument is the decl which is being
+created.  The <var>attr_ptr</var> argument is a pointer to the attribute list
+for this decl.  The list itself should not be modified, since it may be
+shared with other decls, but attributes may be chained on the head of
+the list and <code>*</code><var>attr_ptr</var> modified to point to the new
+attributes, or a copy of the list may be made if further changes are
+needed. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_FUNCTION_ATTRIBUTE_INLINABLE_P</b> (<var>const_tree fndecl</var>)<var><a name="index-TARGET_005fFUNCTION_005fATTRIBUTE_005fINLINABLE_005fP-4840"></a></var><br>
+<blockquote><p><a name="index-inlining-4841"></a>This target hook returns <code>true</code> if it is OK to inline <var>fndecl</var>
+into the current function, despite its having target-specific
+attributes, <code>false</code> otherwise.  By default, if a function has a
+target specific attribute attached to it, it will not be inlined. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_OPTION_VALID_ATTRIBUTE_P</b> (<var>tree fndecl, tree name, tree args, int flags</var>)<var><a name="index-TARGET_005fOPTION_005fVALID_005fATTRIBUTE_005fP-4842"></a></var><br>
+<blockquote><p>This hook is called to parse <code>attribute(target("..."))</code>, which
+allows setting target-specific options on individual functions. 
+These function-specific options may differ
+from the options specified on the command line.  The hook should return
+<code>true</code> if the options are valid.
+
+      <p>The hook should set the <code>DECL_FUNCTION_SPECIFIC_TARGET</code> field in
+the function declaration to hold a pointer to a target-specific
+<code>struct cl_target_option</code> structure. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_OPTION_SAVE</b> (<var>struct cl_target_option *ptr, struct gcc_options *opts</var>)<var><a name="index-TARGET_005fOPTION_005fSAVE-4843"></a></var><br>
+<blockquote><p>This hook is called to save any additional target-specific information
+in the <code>struct cl_target_option</code> structure for function-specific
+options from the <code>struct gcc_options</code> structure. 
+See <a href="Option-file-format.html#Option-file-format">Option file format</a>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_OPTION_RESTORE</b> (<var>struct gcc_options *opts, struct cl_target_option *ptr</var>)<var><a name="index-TARGET_005fOPTION_005fRESTORE-4844"></a></var><br>
+<blockquote><p>This hook is called to restore any additional target-specific
+information in the <code>struct cl_target_option</code> structure for
+function-specific options to the <code>struct gcc_options</code> structure. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_OPTION_POST_STREAM_IN</b> (<var>struct cl_target_option *ptr</var>)<var><a name="index-TARGET_005fOPTION_005fPOST_005fSTREAM_005fIN-4845"></a></var><br>
+<blockquote><p>This hook is called to update target-specific information in the
+<code>struct cl_target_option</code> structure after it is streamed in from
+LTO bytecode. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_OPTION_PRINT</b> (<var>FILE *file, int indent, struct cl_target_option *ptr</var>)<var><a name="index-TARGET_005fOPTION_005fPRINT-4846"></a></var><br>
+<blockquote><p>This hook is called to print any additional target-specific
+information in the <code>struct cl_target_option</code> structure for
+function-specific options. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_OPTION_PRAGMA_PARSE</b> (<var>tree args, tree pop_target</var>)<var><a name="index-TARGET_005fOPTION_005fPRAGMA_005fPARSE-4847"></a></var><br>
+<blockquote><p>This target hook parses the options for <code>#pragma GCC target</code>, which
+sets the target-specific options for functions that occur later in the
+input stream.  The options accepted should be the same as those handled by the
+<code>TARGET_OPTION_VALID_ATTRIBUTE_P</code> hook. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_OPTION_OVERRIDE</b> (<var>void</var>)<var><a name="index-TARGET_005fOPTION_005fOVERRIDE-4848"></a></var><br>
+<blockquote><p>Sometimes certain combinations of command options do not make sense on
+a particular target machine.  You can override the hook
+<code>TARGET_OPTION_OVERRIDE</code> to take account of this.  This hooks is called
+once just after all the command options have been parsed.
+
+      <p>Don't use this hook to turn on various extra optimizations for
+<samp><span class="option">-O</span></samp>.  That is what <code>TARGET_OPTION_OPTIMIZATION</code> is for.
+
+      <p>If you need to do something whenever the optimization level is
+changed via the optimize attribute or pragma, see
+<code>TARGET_OVERRIDE_OPTIONS_AFTER_CHANGE</code>
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_OPTION_FUNCTION_VERSIONS</b> (<var>tree decl1, tree decl2</var>)<var><a name="index-TARGET_005fOPTION_005fFUNCTION_005fVERSIONS-4849"></a></var><br>
+<blockquote><p>This target hook returns <code>true</code> if <var>DECL1</var> and <var>DECL2</var> are
+versions of the same function.  <var>DECL1</var> and <var>DECL2</var> are function
+versions if and only if they have the same function signature and
+different target specific attributes, that is, they are compiled for
+different target machines. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_CAN_INLINE_P</b> (<var>tree caller, tree callee</var>)<var><a name="index-TARGET_005fCAN_005fINLINE_005fP-4850"></a></var><br>
+<blockquote><p>This target hook returns <code>false</code> if the <var>caller</var> function
+cannot inline <var>callee</var>, based on target specific information.  By
+default, inlining is not allowed if the callee function has function
+specific target options and the caller does not use the same options. 
+</p></blockquote></div>
+
+ </body></html>
+

@@ -1,0 +1,121 @@
+<html lang="en">
+<head>
+<title>fputwc - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stdio.html#Stdio" title="Stdio">
+<link rel="prev" href="fputs.html#fputs" title="fputs">
+<link rel="next" href="fputws.html#fputws" title="fputws">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="fputwc"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="fputws.html#fputws">fputws</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="fputs.html#fputs">fputs</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stdio.html#Stdio">Stdio</a>
+<hr>
+</div>
+
+<h3 class="section">4.22 <code>fputwc</code>, <code>putwc</code>, <code>fputwc_unlocked</code>, <code>putwc_unlocked</code>&mdash;write a wide character on a stream or file</h3>
+
+<p><a name="index-fputwc-214"></a><a name="index-fputwc_005funlocked-215"></a><a name="index-g_t_005ffputwc_005fr-216"></a><a name="index-g_t_005ffputwc_005funlocked_005fr-217"></a><a name="index-putwc-218"></a><a name="index-putwc_005funlocked-219"></a><a name="index-g_t_005fputwc_005fr-220"></a><a name="index-g_t_005fputwc_005funlocked_005fr-221"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;stdio.h&gt;
+     #include &lt;wchar.h&gt;
+     wint_t fputwc(wchar_t <var>wc</var>, FILE *<var>fp</var>);
+     
+     #define _GNU_SOURCE
+     #include &lt;stdio.h&gt;
+     #include &lt;wchar.h&gt;
+     wint_t fputwc_unlocked(wchar_t <var>wc</var>, FILE *<var>fp</var>);
+     
+     #include &lt;stdio.h&gt;
+     #include &lt;wchar.h&gt;
+     wint_t _fputwc_r(struct _reent *<var>ptr</var>, wchar_t <var>wc</var>, FILE *<var>fp</var>);
+     
+     #include &lt;stdio.h&gt;
+     #include &lt;wchar.h&gt;
+     wint_t _fputwc_unlocked_r(struct _reent *<var>ptr</var>, wchar_t <var>wc</var>, FILE *<var>fp</var>);
+     
+     #include &lt;stdio.h&gt;
+     #include &lt;wchar.h&gt;
+     wint_t putwc(wchar_t <var>wc</var>, FILE *<var>fp</var>);
+     
+     #define _GNU_SOURCE
+     #include &lt;stdio.h&gt;
+     #include &lt;wchar.h&gt;
+     wint_t putwc_unlocked(wchar_t <var>wc</var>, FILE *<var>fp</var>);
+     
+     #include &lt;stdio.h&gt;
+     #include &lt;wchar.h&gt;
+     wint_t _putwc_r(struct _reent *<var>ptr</var>, wchar_t <var>wc</var>, FILE *<var>fp</var>);
+     
+     #include &lt;stdio.h&gt;
+     #include &lt;wchar.h&gt;
+     wint_t _putwc_unlocked_r(struct _reent *<var>ptr</var>, wchar_t <var>wc</var>, FILE *<var>fp</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+<code>fputwc</code> writes the wide character argument <var>wc</var> to the file or
+stream identified by <var>fp</var>.
+
+   <p>If the file was opened with append mode (or if the stream cannot
+support positioning), then the new wide character goes at the end of the
+file or stream.  Otherwise, the new wide character is written at the
+current value of the position indicator, and the position indicator
+oadvances by one.
+
+   <p><code>fputwc_unlocked</code> is a non-thread-safe version of <code>fputwc</code>. 
+<code>fputwc_unlocked</code> may only safely be used within a scope
+protected by flockfile() (or ftrylockfile()) and funlockfile().  This
+function may safely be used in a multi-threaded program if and only
+if they are called while the invoking thread owns the (FILE *)
+object, as is the case after a successful call to the flockfile() or
+ftrylockfile() functions.  If threads are disabled, then
+<code>fputwc_unlocked</code> is equivalent to <code>fputwc</code>.
+
+   <p>The <code>putwc</code> and <code>putwc_unlocked</code> functions or macros function identically
+to <code>fputwc</code> and <code>fputwc_unlocked</code>.  They may be implemented as a macro, and
+may evaluate its argument more than once. There is no reason ever to use them.
+
+   <p>The <code>_fputwc_r</code>, <code>_putwc_r</code>, <code>_fputwc_unlocked_r</code>, and
+<code>_putwc_unlocked_r</code> functions are simply reentrant versions of the above
+that take an additional reentrant structure argument: <var>ptr</var>.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+If successful, <code>fputwc</code> and <code>putwc</code> return their argument <var>wc</var>. 
+If an error intervenes, the result is <code>EOF</code>.  You can use
+`<code>ferror(</code><var>fp</var><code>)</code>' to query for errors.
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+<code>fputwc</code> and <code>putwc</code> are required by C99 and POSIX.1-2001.
+
+   <p><code>fputwc_unlocked</code> and <code>putwc_unlocked</code> are GNU extensions.
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

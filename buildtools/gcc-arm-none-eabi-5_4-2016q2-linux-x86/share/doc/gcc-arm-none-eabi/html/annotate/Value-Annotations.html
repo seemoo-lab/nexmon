@@ -1,0 +1,141 @@
+<html lang="en">
+<head>
+<title>Value Annotations - GDB's Obsolete Annotations</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GDB's Obsolete Annotations">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Server-Prefix.html#Server-Prefix" title="Server Prefix">
+<link rel="next" href="Frame-Annotations.html#Frame-Annotations" title="Frame Annotations">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1994-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Value-Annotations"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Frame-Annotations.html#Frame-Annotations">Frame Annotations</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Server-Prefix.html#Server-Prefix">Server Prefix</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">5 Values</h2>
+
+<p><em>Value Annotations have been removed.  </em><span class="sc">gdb/mi</span><em> instead provides
+Variable Objects.</em>
+
+   <p><a name="index-annotations-for-values-3"></a>When a value is printed in various contexts, <span class="sc">gdb</span> uses
+annotations to delimit the value from the surrounding text.
+
+   <p><a name="index-value_002dhistory_002dbegin-4"></a><a name="index-value_002dhistory_002dvalue-5"></a><a name="index-value_002dhistory_002dend-6"></a>If a value is printed using <code>print</code> and added to the value history,
+the annotation looks like
+
+<pre class="smallexample">     ^Z^Zvalue-history-begin <var>history-number</var> <var>value-flags</var>
+     <var>history-string</var>
+     ^Z^Zvalue-history-value
+     <var>the-value</var>
+     ^Z^Zvalue-history-end
+</pre>
+   <p class="noindent">where <var>history-number</var> is the number it is getting in the value
+history, <var>history-string</var> is a string, such as &lsquo;<samp><span class="samp">$5 = </span></samp>&rsquo;, which
+introduces the value to the user, <var>the-value</var> is the output
+corresponding to the value itself, and <var>value-flags</var> is &lsquo;<samp><span class="samp">*</span></samp>&rsquo; for
+a value which can be dereferenced and &lsquo;<samp><span class="samp">-</span></samp>&rsquo; for a value which cannot.
+
+   <p><a name="index-value_002dbegin-7"></a><a name="index-value_002dend-8"></a>If the value is not added to the value history (it is an invalid float
+or it is printed with the <code>output</code> command), the annotation is similar:
+
+<pre class="smallexample">     ^Z^Zvalue-begin <var>value-flags</var>
+     <var>the-value</var>
+     ^Z^Zvalue-end
+</pre>
+   <p><a name="index-arg_002dbegin-9"></a><a name="index-arg_002dname_002dend-10"></a><a name="index-arg_002dvalue-11"></a><a name="index-arg_002dend-12"></a>When <span class="sc">gdb</span> prints an argument to a function (for example, in the output
+from the <code>backtrace</code> command), it annotates it as follows:
+
+<pre class="smallexample">     ^Z^Zarg-begin
+     <var>argument-name</var>
+     ^Z^Zarg-name-end
+     <var>separator-string</var>
+     ^Z^Zarg-value <var>value-flags</var>
+     <var>the-value</var>
+     ^Z^Zarg-end
+</pre>
+   <p class="noindent">where <var>argument-name</var> is the name of the argument,
+<var>separator-string</var> is text which separates the name from the value
+for the user's benefit (such as &lsquo;<samp><span class="samp">=</span></samp>&rsquo;), and <var>value-flags</var> and
+<var>the-value</var> have the same meanings as in a
+<code>value-history-begin</code> annotation.
+
+   <p><a name="index-field_002dbegin-13"></a><a name="index-field_002dname_002dend-14"></a><a name="index-field_002dvalue-15"></a><a name="index-field_002dend-16"></a>When printing a structure, <span class="sc">gdb</span> annotates it as follows:
+
+<pre class="smallexample">     ^Z^Zfield-begin <var>value-flags</var>
+     <var>field-name</var>
+     ^Z^Zfield-name-end
+     <var>separator-string</var>
+     ^Z^Zfield-value
+     <var>the-value</var>
+     ^Z^Zfield-end
+</pre>
+   <p class="noindent">where <var>field-name</var> is the name of the field, <var>separator-string</var>
+is text which separates the name from the value for the user's benefit
+(such as &lsquo;<samp><span class="samp">=</span></samp>&rsquo;), and <var>value-flags</var> and <var>the-value</var> have the
+same meanings as in a <code>value-history-begin</code> annotation.
+
+   <p>When printing an array, <span class="sc">gdb</span> annotates it as follows:
+
+<pre class="smallexample">     ^Z^Zarray-section-begin <var>array-index</var> <var>value-flags</var>
+</pre>
+   <p class="noindent">where <var>array-index</var> is the index of the first element being
+annotated and <var>value-flags</var> has the same meaning as in a
+<code>value-history-begin</code> annotation.  This is followed by any number
+of elements, where is element can be either a single element:
+
+   <p><a name="index-elt-17"></a>
+<pre class="smallexample">     &lsquo;<samp><span class="samp">,</span></samp>&rsquo; <var>whitespace</var>         ; <span class="roman">omitted for the first element</span>
+     <var>the-value</var>
+     ^Z^Zelt
+</pre>
+   <p>or a repeated element
+
+   <p><a name="index-elt_002drep-18"></a><a name="index-elt_002drep_002dend-19"></a>
+<pre class="smallexample">     &lsquo;<samp><span class="samp">,</span></samp>&rsquo; <var>whitespace</var>         ; <span class="roman">omitted for the first element</span>
+     <var>the-value</var>
+     ^Z^Zelt-rep <var>number-of-repetitions</var>
+     <var>repetition-string</var>
+     ^Z^Zelt-rep-end
+</pre>
+   <p>In both cases, <var>the-value</var> is the output for the value of the
+element and <var>whitespace</var> can contain spaces, tabs, and newlines.  In
+the repeated case, <var>number-of-repetitions</var> is the number of
+consecutive array elements which contain that value, and
+<var>repetition-string</var> is a string which is designed to convey to the
+user that repetition is being depicted.
+
+   <p><a name="index-array_002dsection_002dend-20"></a>Once all the array elements have been output, the array annotation is
+ended with
+
+<pre class="smallexample">     ^Z^Zarray-section-end
+</pre>
+   </body></html>
+

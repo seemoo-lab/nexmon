@@ -1,0 +1,184 @@
+<html lang="en">
+<head>
+<title>Basic Guile - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Guile-API.html#Guile-API" title="Guile API">
+<link rel="next" href="Guile-Configuration.html#Guile-Configuration" title="Guile Configuration">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Basic-Guile"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Guile-Configuration.html#Guile-Configuration">Guile Configuration</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Guile-API.html#Guile-API">Guile API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.3.3.1 Basic Guile</h5>
+
+<p><a name="index-guile-stdout-2356"></a><a name="index-guile-pagination-2357"></a>At startup, <span class="sc">gdb</span> overrides Guile's <code>current-output-port</code> and
+<code>current-error-port</code> to print using <span class="sc">gdb</span>'s output-paging streams. 
+A Guile program which outputs to one of these streams may have its
+output interrupted by the user (see <a href="Screen-Size.html#Screen-Size">Screen Size</a>).  In this
+situation, a Guile <code>signal</code> exception is thrown with value <code>SIGINT</code>.
+
+   <p>Guile's history mechanism uses the same naming as <span class="sc">gdb</span>'s,
+namely the user of dollar-variables (e.g., $1, $2, etc.). 
+The results of evaluations in Guile and in GDB are counted separately,
+<code>$1</code> in Guile is not the same value as <code>$1</code> in <span class="sc">gdb</span>.
+
+   <p><span class="sc">gdb</span> is not thread-safe.  If your Guile program uses multiple
+threads, you must be careful to only call <span class="sc">gdb</span>-specific
+functions in the <span class="sc">gdb</span> thread.
+
+   <p>Some care must be taken when writing Guile code to run in
+<span class="sc">gdb</span>.  Two things are worth noting in particular:
+
+     <ul>
+<li><span class="sc">gdb</span> installs handlers for <code>SIGCHLD</code> and <code>SIGINT</code>. 
+Guile code must not override these, or even change the options using
+<code>sigaction</code>.  If your program changes the handling of these
+signals, <span class="sc">gdb</span> will most likely stop working correctly.  Note
+that it is unfortunately common for GUI toolkits to install a
+<code>SIGCHLD</code> handler.
+
+     <li><span class="sc">gdb</span> takes care to mark its internal file descriptors as
+close-on-exec.  However, this cannot be done in a thread-safe way on
+all platforms.  Your Guile programs should be aware of this and
+should both create new file descriptors with the close-on-exec flag
+set and arrange to close unneeded file descriptors before starting a
+child process. 
+</ul>
+
+   <p><a name="index-guile-gdb-module-2358"></a><span class="sc">gdb</span> introduces a new Guile module, named <code>gdb</code>.  All
+methods and classes added by <span class="sc">gdb</span> are placed in this module. 
+<span class="sc">gdb</span> does not automatically <code>import</code> the <code>gdb</code> module,
+scripts must do this themselves.  There are various options for how to
+import a module, so <span class="sc">gdb</span> leaves the choice of how the <code>gdb</code>
+module is imported to the user. 
+To simplify interactive use, it is recommended to add one of the following
+to your ~/.gdbinit.
+
+<pre class="smallexample">     guile (use-modules (gdb))
+</pre>
+   <pre class="smallexample">     guile (use-modules ((gdb) #:renamer (symbol-prefix-proc 'gdb:)))
+</pre>
+   <p>Which one to choose depends on your preference. 
+The second one adds <code>gdb:</code> as a prefix to all module functions
+and variables.
+
+   <p>The rest of this manual assumes the <code>gdb</code> module has been imported
+without any prefix.  See the Guile documentation for <code>use-modules</code>
+for more information
+(see <a href="../guile/Using-Guile-Modules.html#Using-Guile-Modules">Using Guile Modules</a>).
+
+   <p>Example:
+
+<pre class="smallexample">     (gdb) guile (value-type (make-value 1))
+     ERROR: Unbound variable: value-type
+     Error while executing Scheme code.
+     (gdb) guile (use-modules (gdb))
+     (gdb) guile (value-type (make-value 1))
+     int
+     (gdb)
+</pre>
+   <p>The <code>(gdb)</code> module provides these basic Guile functions.
+
+<!-- TODO: line length -->
+<div class="defun">
+&mdash; Scheme Procedure: <b>execute</b><var> command </var><span class="roman">[</span><var>#:from-tty boolean</var><span class="roman">]</span> <span class="roman">[</span><var>#:to-string boolean</var><span class="roman">]</span><var><a name="index-execute-2359"></a></var><br>
+<blockquote><p>Evaluate <var>command</var>, a string, as a <span class="sc">gdb</span> CLI command. 
+If a <span class="sc">gdb</span> exception happens while <var>command</var> runs, it is
+translated as described in
+<a href="Guile-Exception-Handling.html#Guile-Exception-Handling">Guile Exception Handling</a>.
+
+        <p><var>from-tty</var> specifies whether <span class="sc">gdb</span> ought to consider this
+command as having originated from the user invoking it interactively. 
+It must be a boolean value.  If omitted, it defaults to <code>#f</code>.
+
+        <p>By default, any output produced by <var>command</var> is sent to
+<span class="sc">gdb</span>'s standard output (and to the log output if logging is
+turned on).  If the <var>to-string</var> parameter is
+<code>#t</code>, then output will be collected by <code>execute</code> and
+returned as a string.  The default is <code>#f</code>, in which case the
+return value is unspecified.  If <var>to-string</var> is <code>#t</code>, the
+<span class="sc">gdb</span> virtual terminal will be temporarily set to unlimited width
+and height, and its pagination will be disabled; see <a href="Screen-Size.html#Screen-Size">Screen Size</a>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>history-ref</b><var> number<a name="index-history_002dref-2360"></a></var><br>
+<blockquote><p>Return a value from <span class="sc">gdb</span>'s value history (see <a href="Value-History.html#Value-History">Value History</a>).  The <var>number</var> argument indicates which history element to return. 
+If <var>number</var> is negative, then <span class="sc">gdb</span> will take its absolute value
+and count backward from the last element (i.e., the most recent element) to
+find the value to return.  If <var>number</var> is zero, then <span class="sc">gdb</span> will
+return the most recent element.  If the element specified by <var>number</var>
+doesn't exist in the value history, a <code>gdb:error</code> exception will be
+raised.
+
+        <p>If no exception is raised, the return value is always an instance of
+<code>&lt;gdb:value&gt;</code> (see <a href="Values-From-Inferior-In-Guile.html#Values-From-Inferior-In-Guile">Values From Inferior In Guile</a>).
+
+        <p><em>Note:</em> <span class="sc">gdb</span>'s value history is independent of Guile's. 
+<code>$1</code> in <span class="sc">gdb</span>'s value history contains the result of evaluating
+an expression from <span class="sc">gdb</span>'s command line and <code>$1</code> from Guile's
+history contains the result of evaluating an expression from Guile's
+command line. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>history-append!</b><var> value<a name="index-history_002dappend_0021-2361"></a></var><br>
+<blockquote><p>Append <var>value</var>, an instance of <code>&lt;gdb:value&gt;</code>, to <span class="sc">gdb</span>'s
+value history.  Return its index in the history.
+
+        <p>Putting into history values returned by Guile extensions will allow
+the user convenient access to those values via CLI history
+facilities. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>parse-and-eval</b><var> expression<a name="index-parse_002dand_002deval-2362"></a></var><br>
+<blockquote><p>Parse <var>expression</var> as an expression in the current language,
+evaluate it, and return the result as a <code>&lt;gdb:value&gt;</code>. 
+The <var>expression</var> must be a string.
+
+        <p>This function can be useful when implementing a new command
+(see <a href="Commands-In-Guile.html#Commands-In-Guile">Commands In Guile</a>), as it provides a way to parse the
+command's arguments as an expression. 
+It is also is useful when computing values. 
+For example, it is the only way to get the value of a
+convenience variable (see <a href="Convenience-Vars.html#Convenience-Vars">Convenience Vars</a>) as a <code>&lt;gdb:value&gt;</code>. 
+</p></blockquote></div>
+
+   </body></html>
+

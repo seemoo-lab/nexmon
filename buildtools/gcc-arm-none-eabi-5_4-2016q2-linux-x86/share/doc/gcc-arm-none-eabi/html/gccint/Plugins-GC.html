@@ -1,0 +1,86 @@
+<html lang="en">
+<head>
+<title>Plugins GC - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Plugins.html#Plugins" title="Plugins">
+<link rel="prev" href="Plugins-pass.html#Plugins-pass" title="Plugins pass">
+<link rel="next" href="Plugins-description.html#Plugins-description" title="Plugins description">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Plugins-GC"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Plugins-description.html#Plugins-description">Plugins description</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Plugins-pass.html#Plugins-pass">Plugins pass</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Plugins.html#Plugins">Plugins</a>
+<hr>
+</div>
+
+<h3 class="section">23.4 Interacting with the GCC Garbage Collector</h3>
+
+<p>Some plugins may want to be informed when GGC (the GCC Garbage
+Collector) is running. They can register callbacks for the
+<code>PLUGIN_GGC_START</code> and <code>PLUGIN_GGC_END</code> events (for which
+the callback is called with a null <code>gcc_data</code>) to be notified of
+the start or end of the GCC garbage collection.
+
+ <p>Some plugins may need to have GGC mark additional data. This can be
+done by registering a callback (called with a null <code>gcc_data</code>)
+for the <code>PLUGIN_GGC_MARKING</code> event. Such callbacks can call the
+<code>ggc_set_mark</code> routine, preferably through the <code>ggc_mark</code> macro
+(and conversely, these routines should usually not be used in plugins
+outside of the <code>PLUGIN_GGC_MARKING</code> event).  Plugins that wish to hold
+weak references to gc data may also use this event to drop weak references when
+the object is about to be collected.  The <code>ggc_marked_p</code> function can be
+used to tell if an object is marked, or is about to  be collected.  The
+<code>gt_clear_cache</code> overloads which some types define may also be of use in
+managing weak references.
+
+ <p>Some plugins may need to add extra GGC root tables, e.g. to handle their own
+<code>GTY</code>-ed data. This can be done with the <code>PLUGIN_REGISTER_GGC_ROOTS</code>
+pseudo-event with a null callback and the extra root table (of type <code>struct
+ggc_root_tab*</code>) as <code>user_data</code>.  Running the
+ <code>gengtype -p </code><var>source-dir</var> <var>file-list</var> <var>plugin*.c</var><code> ...</code>
+utility generates these extra root tables.
+
+ <p>You should understand the details of memory management inside GCC
+before using <code>PLUGIN_GGC_MARKING</code> or <code>PLUGIN_REGISTER_GGC_ROOTS</code>.
+
+ </body></html>
+

@@ -1,0 +1,134 @@
+<html lang="en">
+<head>
+<title>Define Subst Example - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Define-Subst.html#Define-Subst" title="Define Subst">
+<link rel="next" href="Define-Subst-Pattern-Matching.html#Define-Subst-Pattern-Matching" title="Define Subst Pattern Matching">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Define-Subst-Example"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Define-Subst-Pattern-Matching.html#Define-Subst-Pattern-Matching">Define Subst Pattern Matching</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Define-Subst.html#Define-Subst">Define Subst</a>
+<hr>
+</div>
+
+<h4 class="subsection">16.21.1 <code>define_subst</code> Example</h4>
+
+<p><a name="index-define_005fsubst-3825"></a>
+To illustrate how <code>define_subst</code> works, let us examine a simple
+template transformation.
+
+ <p>Suppose there are two kinds of instructions: one that touches flags and
+the other that does not.  The instructions of the second type could be
+generated with the following <code>define_subst</code>:
+
+<pre class="smallexample">     (define_subst "add_clobber_subst"
+       [(set (match_operand:SI 0 "" "")
+             (match_operand:SI 1 "" ""))]
+       ""
+       [(set (match_dup 0)
+             (match_dup 1))
+        (clobber (reg:CC FLAGS_REG))]
+</pre>
+ <p>This <code>define_subst</code> can be applied to any RTL pattern containing
+<code>set</code> of mode SI and generates a copy with clobber when it is
+applied.
+
+ <p>Assume there is an RTL template for a <code>max</code> instruction to be used
+in <code>define_subst</code> mentioned above:
+
+<pre class="smallexample">     (define_insn "maxsi"
+       [(set (match_operand:SI 0 "register_operand" "=r")
+             (max:SI
+               (match_operand:SI 1 "register_operand" "r")
+               (match_operand:SI 2 "register_operand" "r")))]
+       ""
+       "max\t{%2, %1, %0|%0, %1, %2}"
+      [...])
+</pre>
+ <p>To mark the RTL template for <code>define_subst</code> application,
+subst-attributes are used.  They should be declared in advance:
+
+<pre class="smallexample">     (define_subst_attr "add_clobber_name" "add_clobber_subst" "_noclobber" "_clobber")
+</pre>
+ <p>Here &lsquo;<samp><span class="samp">add_clobber_name</span></samp>&rsquo; is the attribute name,
+&lsquo;<samp><span class="samp">add_clobber_subst</span></samp>&rsquo; is the name of the corresponding
+<code>define_subst</code>, the third argument (&lsquo;<samp><span class="samp">_noclobber</span></samp>&rsquo;) is the
+attribute value that would be substituted into the unchanged version of
+the source RTL template, and the last argument (&lsquo;<samp><span class="samp">_clobber</span></samp>&rsquo;) is the
+value that would be substituted into the second, transformed,
+version of the RTL template.
+
+ <p>Once the subst-attribute has been defined, it should be used in RTL
+templates which need to be processed by the <code>define_subst</code>.  So,
+the original RTL template should be changed:
+
+<pre class="smallexample">     (define_insn "maxsi&lt;add_clobber_name&gt;"
+       [(set (match_operand:SI 0 "register_operand" "=r")
+             (max:SI
+               (match_operand:SI 1 "register_operand" "r")
+               (match_operand:SI 2 "register_operand" "r")))]
+       ""
+       "max\t{%2, %1, %0|%0, %1, %2}"
+      [...])
+</pre>
+ <p>The result of the <code>define_subst</code> usage would look like the following:
+
+<pre class="smallexample">     (define_insn "maxsi_noclobber"
+       [(set (match_operand:SI 0 "register_operand" "=r")
+             (max:SI
+               (match_operand:SI 1 "register_operand" "r")
+               (match_operand:SI 2 "register_operand" "r")))]
+       ""
+       "max\t{%2, %1, %0|%0, %1, %2}"
+      [...])
+     (define_insn "maxsi_clobber"
+       [(set (match_operand:SI 0 "register_operand" "=r")
+             (max:SI
+               (match_operand:SI 1 "register_operand" "r")
+               (match_operand:SI 2 "register_operand" "r")))
+        (clobber (reg:CC FLAGS_REG))]
+       ""
+       "max\t{%2, %1, %0|%0, %1, %2}"
+      [...])
+</pre>
+ </body></html>
+

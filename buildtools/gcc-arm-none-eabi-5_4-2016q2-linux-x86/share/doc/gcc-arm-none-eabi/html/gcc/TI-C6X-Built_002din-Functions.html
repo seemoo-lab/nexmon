@@ -1,0 +1,93 @@
+<html lang="en">
+<head>
+<title>TI C6X Built-in Functions - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Builtins.html#Target-Builtins" title="Target Builtins">
+<link rel="prev" href="SPU-Built_002din-Functions.html#SPU-Built_002din-Functions" title="SPU Built-in Functions">
+<link rel="next" href="TILE_002dGx-Built_002din-Functions.html#TILE_002dGx-Built_002din-Functions" title="TILE-Gx Built-in Functions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="TI-C6X-Built-in-Functions"></a>
+<a name="TI-C6X-Built_002din-Functions"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="TILE_002dGx-Built_002din-Functions.html#TILE_002dGx-Built_002din-Functions">TILE-Gx Built-in Functions</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="SPU-Built_002din-Functions.html#SPU-Built_002din-Functions">SPU Built-in Functions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Builtins.html#Target-Builtins">Target Builtins</a>
+<hr>
+</div>
+
+<h4 class="subsection">6.58.27 TI C6X Built-in Functions</h4>
+
+<p>GCC provides intrinsics to access certain instructions of the TI C6X
+processors.  These intrinsics, listed below, are available after
+inclusion of the <code>c6x_intrinsics.h</code> header file.  They map directly
+to C6X instructions.
+
+<pre class="smallexample">     
+     int _sadd (int, int)
+     int _ssub (int, int)
+     int _sadd2 (int, int)
+     int _ssub2 (int, int)
+     long long _mpy2 (int, int)
+     long long _smpy2 (int, int)
+     int _add4 (int, int)
+     int _sub4 (int, int)
+     int _saddu4 (int, int)
+     
+     int _smpy (int, int)
+     int _smpyh (int, int)
+     int _smpyhl (int, int)
+     int _smpylh (int, int)
+     
+     int _sshl (int, int)
+     int _subc (int, int)
+     
+     int _avg2 (int, int)
+     int _avgu4 (int, int)
+     
+     int _clrr (int, int)
+     int _extr (int, int)
+     int _extru (int, int)
+     int _abs (int)
+     int _abs2 (int)
+     
+</pre>
+ </body></html>
+

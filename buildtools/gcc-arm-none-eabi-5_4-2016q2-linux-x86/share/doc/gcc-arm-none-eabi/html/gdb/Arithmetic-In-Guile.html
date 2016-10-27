@@ -1,0 +1,162 @@
+<html lang="en">
+<head>
+<title>Arithmetic In Guile - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Guile-API.html#Guile-API" title="Guile API">
+<link rel="prev" href="Values-From-Inferior-In-Guile.html#Values-From-Inferior-In-Guile" title="Values From Inferior In Guile">
+<link rel="next" href="Types-In-Guile.html#Types-In-Guile" title="Types In Guile">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Arithmetic-In-Guile"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Types-In-Guile.html#Types-In-Guile">Types In Guile</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Values-From-Inferior-In-Guile.html#Values-From-Inferior-In-Guile">Values From Inferior In Guile</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Guile-API.html#Guile-API">Guile API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.3.3.6 Arithmetic In Guile</h5>
+
+<p>The <code>(gdb)</code> module provides several functions for performing
+arithmetic on <code>&lt;gdb:value&gt;</code> objects. 
+The arithmetic is performed as if it were done by the target,
+and therefore has target semantics which are not necessarily
+those of Scheme.  For example operations work with a fixed precision,
+not the arbitrary precision of Scheme.
+
+   <p>Wherever a function takes an integer or pointer as an operand,
+<span class="sc">gdb</span> will convert appropriate Scheme values to perform
+the operation.
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value-add</b><var> a b<a name="index-value_002dadd-2410"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value-sub</b><var> a b<a name="index-value_002dsub-2411"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value-mul</b><var> a b<a name="index-value_002dmul-2412"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value-div</b><var> a b<a name="index-value_002ddiv-2413"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value-rem</b><var> a b<a name="index-value_002drem-2414"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value-mod</b><var> a b<a name="index-value_002dmod-2415"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value-pow</b><var> a b<a name="index-value_002dpow-2416"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value-not</b><var> a<a name="index-value_002dnot-2417"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value-neg</b><var> a<a name="index-value_002dneg-2418"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value-pos</b><var> a<a name="index-value_002dpos-2419"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value-abs</b><var> a<a name="index-value_002dabs-2420"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value-lsh</b><var> a b<a name="index-value_002dlsh-2421"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value-rsh</b><var> a b<a name="index-value_002drsh-2422"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value-min</b><var> a b<a name="index-value_002dmin-2423"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value-max</b><var> a b<a name="index-value_002dmax-2424"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value-lognot</b><var> a<a name="index-value_002dlognot-2425"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value-logand</b><var> a b<a name="index-value_002dlogand-2426"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value-logior</b><var> a b<a name="index-value_002dlogior-2427"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value-logxor</b><var> a b<a name="index-value_002dlogxor-2428"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value=?</b><var> a b<a name="index-value_003d_003f-2429"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value&lt;?</b><var> a b<a name="index-value_003c_003f-2430"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value&lt;=?</b><var> a b<a name="index-value_003c_003d_003f-2431"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value&gt;?</b><var> a b<a name="index-value_003e_003f-2432"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>value&gt;=?</b><var> a b<a name="index-value_003e_003d_003f-2433"></a></var><br>
+        </div>
+
+   <p>Scheme does not provide a <code>not-equal</code> function,
+and thus Guile support in <span class="sc">gdb</span> does not either.
+
+   </body></html>
+

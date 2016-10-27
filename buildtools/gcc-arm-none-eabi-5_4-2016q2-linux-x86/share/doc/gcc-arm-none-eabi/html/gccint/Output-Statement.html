@@ -1,0 +1,156 @@
+<html lang="en">
+<head>
+<title>Output Statement - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Machine-Desc.html#Machine-Desc" title="Machine Desc">
+<link rel="prev" href="Output-Template.html#Output-Template" title="Output Template">
+<link rel="next" href="Predicates.html#Predicates" title="Predicates">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Output-Statement"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Predicates.html#Predicates">Predicates</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Output-Template.html#Output-Template">Output Template</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Machine-Desc.html#Machine-Desc">Machine Desc</a>
+<hr>
+</div>
+
+<h3 class="section">16.6 C Statements for Assembler Output</h3>
+
+<p><a name="index-output-statements-3270"></a><a name="index-C-statements-for-assembler-output-3271"></a><a name="index-generating-assembler-output-3272"></a>
+Often a single fixed template string cannot produce correct and efficient
+assembler code for all the cases that are recognized by a single
+instruction pattern.  For example, the opcodes may depend on the kinds of
+operands; or some unfortunate combinations of operands may require extra
+machine instructions.
+
+ <p>If the output control string starts with a &lsquo;<samp><span class="samp">@</span></samp>&rsquo;, then it is actually
+a series of templates, each on a separate line.  (Blank lines and
+leading spaces and tabs are ignored.)  The templates correspond to the
+pattern's constraint alternatives (see <a href="Multi_002dAlternative.html#Multi_002dAlternative">Multi-Alternative</a>).  For example,
+if a target machine has a two-address add instruction &lsquo;<samp><span class="samp">addr</span></samp>&rsquo; to add
+into a register and another &lsquo;<samp><span class="samp">addm</span></samp>&rsquo; to add a register to memory, you
+might write this pattern:
+
+<pre class="smallexample">     (define_insn "addsi3"
+       [(set (match_operand:SI 0 "general_operand" "=r,m")
+             (plus:SI (match_operand:SI 1 "general_operand" "0,0")
+                      (match_operand:SI 2 "general_operand" "g,r")))]
+       ""
+       "@
+        addr %2,%0
+        addm %2,%0")
+</pre>
+ <p><a name="index-g_t_0040code_007b_002a_007d-in-template-3273"></a><a name="index-asterisk-in-template-3274"></a>If the output control string starts with a &lsquo;<samp><span class="samp">*</span></samp>&rsquo;, then it is not an
+output template but rather a piece of C program that should compute a
+template.  It should execute a <code>return</code> statement to return the
+template-string you want.  Most such templates use C string literals, which
+require doublequote characters to delimit them.  To include these
+doublequote characters in the string, prefix each one with &lsquo;<samp><span class="samp">\</span></samp>&rsquo;.
+
+ <p>If the output control string is written as a brace block instead of a
+double-quoted string, it is automatically assumed to be C code.  In that
+case, it is not necessary to put in a leading asterisk, or to escape the
+doublequotes surrounding C string literals.
+
+ <p>The operands may be found in the array <code>operands</code>, whose C data type
+is <code>rtx []</code>.
+
+ <p>It is very common to select different ways of generating assembler code
+based on whether an immediate operand is within a certain range.  Be
+careful when doing this, because the result of <code>INTVAL</code> is an
+integer on the host machine.  If the host machine has more bits in an
+<code>int</code> than the target machine has in the mode in which the constant
+will be used, then some of the bits you get from <code>INTVAL</code> will be
+superfluous.  For proper results, you must carefully disregard the
+values of those bits.
+
+ <p><a name="index-output_005fasm_005finsn-3275"></a>It is possible to output an assembler instruction and then go on to output
+or compute more of them, using the subroutine <code>output_asm_insn</code>.  This
+receives two arguments: a template-string and a vector of operands.  The
+vector may be <code>operands</code>, or it may be another array of <code>rtx</code>
+that you declare locally and initialize yourself.
+
+ <p><a name="index-which_005falternative-3276"></a>When an insn pattern has multiple alternatives in its constraints, often
+the appearance of the assembler code is determined mostly by which alternative
+was matched.  When this is so, the C code can test the variable
+<code>which_alternative</code>, which is the ordinal number of the alternative
+that was actually satisfied (0 for the first, 1 for the second alternative,
+etc.).
+
+ <p>For example, suppose there are two opcodes for storing zero, &lsquo;<samp><span class="samp">clrreg</span></samp>&rsquo;
+for registers and &lsquo;<samp><span class="samp">clrmem</span></samp>&rsquo; for memory locations.  Here is how
+a pattern could use <code>which_alternative</code> to choose between them:
+
+<pre class="smallexample">     (define_insn ""
+       [(set (match_operand:SI 0 "general_operand" "=r,m")
+             (const_int 0))]
+       ""
+       {
+       return (which_alternative == 0
+               ? "clrreg %0" : "clrmem %0");
+       })
+</pre>
+ <p>The example above, where the assembler code to generate was
+<em>solely</em> determined by the alternative, could also have been specified
+as follows, having the output control string start with a &lsquo;<samp><span class="samp">@</span></samp>&rsquo;:
+
+<pre class="smallexample">     (define_insn ""
+       [(set (match_operand:SI 0 "general_operand" "=r,m")
+             (const_int 0))]
+       ""
+       "@
+        clrreg %0
+        clrmem %0")
+</pre>
+ <p>If you just need a little bit of C code in one (or a few) alternatives,
+you can use &lsquo;<samp><span class="samp">*</span></samp>&rsquo; inside of a &lsquo;<samp><span class="samp">@</span></samp>&rsquo; multi-alternative template:
+
+<pre class="smallexample">     (define_insn ""
+       [(set (match_operand:SI 0 "general_operand" "=r,&lt;,m")
+             (const_int 0))]
+       ""
+       "@
+        clrreg %0
+        * return stack_mem_p (operands[0]) ? \"push 0\" : \"clrmem %0\";
+        clrmem %0")
+</pre>
+ </body></html>
+

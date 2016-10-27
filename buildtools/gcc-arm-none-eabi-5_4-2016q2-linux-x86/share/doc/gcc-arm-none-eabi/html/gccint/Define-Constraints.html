@@ -1,0 +1,204 @@
+<html lang="en">
+<head>
+<title>Define Constraints - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Constraints.html#Constraints" title="Constraints">
+<link rel="prev" href="Disable-Insn-Alternatives.html#Disable-Insn-Alternatives" title="Disable Insn Alternatives">
+<link rel="next" href="C-Constraint-Interface.html#C-Constraint-Interface" title="C Constraint Interface">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Define-Constraints"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="C-Constraint-Interface.html#C-Constraint-Interface">C Constraint Interface</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Disable-Insn-Alternatives.html#Disable-Insn-Alternatives">Disable Insn Alternatives</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Constraints.html#Constraints">Constraints</a>
+<hr>
+</div>
+
+<h4 class="subsection">16.8.7 Defining Machine-Specific Constraints</h4>
+
+<p><a name="index-defining-constraints-3365"></a><a name="index-constraints_002c-defining-3366"></a>
+Machine-specific constraints fall into two categories: register and
+non-register constraints.  Within the latter category, constraints
+which allow subsets of all possible memory or address operands should
+be specially marked, to give <code>reload</code> more information.
+
+ <p>Machine-specific constraints can be given names of arbitrary length,
+but they must be entirely composed of letters, digits, underscores
+(&lsquo;<samp><span class="samp">_</span></samp>&rsquo;), and angle brackets (&lsquo;<samp><span class="samp">&lt; &gt;</span></samp>&rsquo;).  Like C identifiers, they
+must begin with a letter or underscore.
+
+ <p>In order to avoid ambiguity in operand constraint strings, no
+constraint can have a name that begins with any other constraint's
+name.  For example, if <code>x</code> is defined as a constraint name,
+<code>xy</code> may not be, and vice versa.  As a consequence of this rule,
+no constraint may begin with one of the generic constraint letters:
+&lsquo;<samp><span class="samp">E F V X g i m n o p r s</span></samp>&rsquo;.
+
+ <p>Register constraints correspond directly to register classes. 
+See <a href="Register-Classes.html#Register-Classes">Register Classes</a>.  There is thus not much flexibility in their
+definitions.
+
+<div class="defun">
+&mdash; MD Expression: <b>define_register_constraint</b><var> name regclass docstring<a name="index-define_005fregister_005fconstraint-3367"></a></var><br>
+<blockquote><p>All three arguments are string constants. 
+<var>name</var> is the name of the constraint, as it will appear in
+<code>match_operand</code> expressions.  If <var>name</var> is a multi-letter
+constraint its length shall be the same for all constraints starting
+with the same letter.  <var>regclass</var> can be either the
+name of the corresponding register class (see <a href="Register-Classes.html#Register-Classes">Register Classes</a>),
+or a C expression which evaluates to the appropriate register class. 
+If it is an expression, it must have no side effects, and it cannot
+look at the operand.  The usual use of expressions is to map some
+register constraints to <code>NO_REGS</code> when the register class
+is not available on a given subarchitecture.
+
+      <p><var>docstring</var> is a sentence documenting the meaning of the
+constraint.  Docstrings are explained further below. 
+</p></blockquote></div>
+
+ <p>Non-register constraints are more like predicates: the constraint
+definition gives a Boolean expression which indicates whether the
+constraint matches.
+
+<div class="defun">
+&mdash; MD Expression: <b>define_constraint</b><var> name docstring exp<a name="index-define_005fconstraint-3368"></a></var><br>
+<blockquote><p>The <var>name</var> and <var>docstring</var> arguments are the same as for
+<code>define_register_constraint</code>, but note that the docstring comes
+immediately after the name for these expressions.  <var>exp</var> is an RTL
+expression, obeying the same rules as the RTL expressions in predicate
+definitions.  See <a href="Defining-Predicates.html#Defining-Predicates">Defining Predicates</a>, for details.  If it
+evaluates true, the constraint matches; if it evaluates false, it
+doesn't. Constraint expressions should indicate which RTL codes they
+might match, just like predicate expressions.
+
+      <p><code>match_test</code> C expressions have access to the
+following variables:
+
+          <dl>
+<dt><var>op</var><dd>The RTL object defining the operand. 
+<br><dt><var>mode</var><dd>The machine mode of <var>op</var>. 
+<br><dt><var>ival</var><dd>&lsquo;<samp><span class="samp">INTVAL (</span><var>op</var><span class="samp">)</span></samp>&rsquo;, if <var>op</var> is a <code>const_int</code>. 
+<br><dt><var>hval</var><dd>&lsquo;<samp><span class="samp">CONST_DOUBLE_HIGH (</span><var>op</var><span class="samp">)</span></samp>&rsquo;, if <var>op</var> is an integer
+<code>const_double</code>. 
+<br><dt><var>lval</var><dd>&lsquo;<samp><span class="samp">CONST_DOUBLE_LOW (</span><var>op</var><span class="samp">)</span></samp>&rsquo;, if <var>op</var> is an integer
+<code>const_double</code>. 
+<br><dt><var>rval</var><dd>&lsquo;<samp><span class="samp">CONST_DOUBLE_REAL_VALUE (</span><var>op</var><span class="samp">)</span></samp>&rsquo;, if <var>op</var> is a floating-point
+<code>const_double</code>. 
+</dl>
+
+      <p>The <var>*val</var> variables should only be used once another piece of the
+expression has verified that <var>op</var> is the appropriate kind of RTL
+object. 
+</p></blockquote></div>
+
+ <p>Most non-register constraints should be defined with
+<code>define_constraint</code>.  The remaining two definition expressions
+are only appropriate for constraints that should be handled specially
+by <code>reload</code> if they fail to match.
+
+<div class="defun">
+&mdash; MD Expression: <b>define_memory_constraint</b><var> name docstring exp<a name="index-define_005fmemory_005fconstraint-3369"></a></var><br>
+<blockquote><p>Use this expression for constraints that match a subset of all memory
+operands: that is, <code>reload</code> can make them match by converting the
+operand to the form &lsquo;<samp><span class="samp">(mem&nbsp;(reg&nbsp;</span><var>X</var><span class="samp">))<!-- /@w --></span></samp>&rsquo;, where <var>X</var> is a
+base register (from the register class specified by
+<code>BASE_REG_CLASS</code>, see <a href="Register-Classes.html#Register-Classes">Register Classes</a>).
+
+      <p>For example, on the S/390, some instructions do not accept arbitrary
+memory references, but only those that do not make use of an index
+register.  The constraint letter &lsquo;<samp><span class="samp">Q</span></samp>&rsquo; is defined to represent a
+memory address of this type.  If &lsquo;<samp><span class="samp">Q</span></samp>&rsquo; is defined with
+<code>define_memory_constraint</code>, a &lsquo;<samp><span class="samp">Q</span></samp>&rsquo; constraint can handle any
+memory operand, because <code>reload</code> knows it can simply copy the
+memory address into a base register if required.  This is analogous to
+the way an &lsquo;<samp><span class="samp">o</span></samp>&rsquo; constraint can handle any memory operand.
+
+      <p>The syntax and semantics are otherwise identical to
+<code>define_constraint</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; MD Expression: <b>define_address_constraint</b><var> name docstring exp<a name="index-define_005faddress_005fconstraint-3370"></a></var><br>
+<blockquote><p>Use this expression for constraints that match a subset of all address
+operands: that is, <code>reload</code> can make the constraint match by
+converting the operand to the form &lsquo;<samp><span class="samp">(reg&nbsp;</span><var>X</var><span class="samp">)<!-- /@w --></span></samp>&rsquo;, again
+with <var>X</var> a base register.
+
+      <p>Constraints defined with <code>define_address_constraint</code> can only be
+used with the <code>address_operand</code> predicate, or machine-specific
+predicates that work the same way.  They are treated analogously to
+the generic &lsquo;<samp><span class="samp">p</span></samp>&rsquo; constraint.
+
+      <p>The syntax and semantics are otherwise identical to
+<code>define_constraint</code>. 
+</p></blockquote></div>
+
+ <p>For historical reasons, names beginning with the letters &lsquo;<samp><span class="samp">G H</span></samp>&rsquo;
+are reserved for constraints that match only <code>const_double</code>s, and
+names beginning with the letters &lsquo;<samp><span class="samp">I J K L M N O P</span></samp>&rsquo; are reserved
+for constraints that match only <code>const_int</code>s.  This may change in
+the future.  For the time being, constraints with these names must be
+written in a stylized form, so that <code>genpreds</code> can tell you did
+it correctly:
+
+<pre class="smallexample">     (define_constraint "[<var>GHIJKLMNOP</var>]..."
+       "<var>doc</var>..."
+       (and (match_code "const_int")  ; <code>const_double</code><span class="roman"> for G/H</span>
+            <var>condition</var>...))            ; <span class="roman">usually a </span><code>match_test</code>
+</pre>
+ <!-- the semicolons line up in the formatted manual -->
+ <p>It is fine to use names beginning with other letters for constraints
+that match <code>const_double</code>s or <code>const_int</code>s.
+
+ <p>Each docstring in a constraint definition should be one or more complete
+sentences, marked up in Texinfo format.  <em>They are currently unused.</em>
+In the future they will be copied into the GCC manual, in <a href="Machine-Constraints.html#Machine-Constraints">Machine Constraints</a>, replacing the hand-maintained tables currently found in
+that section.  Also, in the future the compiler may use this to give
+more helpful diagnostics when poor choice of <code>asm</code> constraints
+causes a reload failure.
+
+ <p>If you put the pseudo-Texinfo directive &lsquo;<samp><span class="samp">@internal</span></samp>&rsquo; at the
+beginning of a docstring, then (in the future) it will appear only in
+the internals manual's version of the machine-specific constraint tables. 
+Use this for constraints that should not appear in <code>asm</code> statements.
+
+ </body></html>
+

@@ -1,0 +1,123 @@
+<html lang="en">
+<head>
+<title>Delay Slots - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Insn-Attributes.html#Insn-Attributes" title="Insn Attributes">
+<link rel="prev" href="Mnemonic-Attribute.html#Mnemonic-Attribute" title="Mnemonic Attribute">
+<link rel="next" href="Processor-pipeline-description.html#Processor-pipeline-description" title="Processor pipeline description">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Delay-Slots"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Processor-pipeline-description.html#Processor-pipeline-description">Processor pipeline description</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Mnemonic-Attribute.html#Mnemonic-Attribute">Mnemonic Attribute</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Insn-Attributes.html#Insn-Attributes">Insn Attributes</a>
+<hr>
+</div>
+
+<h4 class="subsection">16.19.8 Delay Slot Scheduling</h4>
+
+<p><a name="index-delay-slots_002c-defining-3778"></a>
+The insn attribute mechanism can be used to specify the requirements for
+delay slots, if any, on a target machine.  An instruction is said to
+require a <dfn>delay slot</dfn> if some instructions that are physically
+after the instruction are executed as if they were located before it. 
+Classic examples are branch and call instructions, which often execute
+the following instruction before the branch or call is performed.
+
+ <p>On some machines, conditional branch instructions can optionally
+<dfn>annul</dfn> instructions in the delay slot.  This means that the
+instruction will not be executed for certain branch outcomes.  Both
+instructions that annul if the branch is true and instructions that
+annul if the branch is false are supported.
+
+ <p>Delay slot scheduling differs from instruction scheduling in that
+determining whether an instruction needs a delay slot is dependent only
+on the type of instruction being generated, not on data flow between the
+instructions.  See the next section for a discussion of data-dependent
+instruction scheduling.
+
+ <p><a name="index-define_005fdelay-3779"></a>The requirement of an insn needing one or more delay slots is indicated
+via the <code>define_delay</code> expression.  It has the following form:
+
+<pre class="smallexample">     (define_delay <var>test</var>
+                   [<var>delay-1</var> <var>annul-true-1</var> <var>annul-false-1</var>
+                    <var>delay-2</var> <var>annul-true-2</var> <var>annul-false-2</var>
+                    ...])
+</pre>
+ <p><var>test</var> is an attribute test that indicates whether this
+<code>define_delay</code> applies to a particular insn.  If so, the number of
+required delay slots is determined by the length of the vector specified
+as the second argument.  An insn placed in delay slot <var>n</var> must
+satisfy attribute test <var>delay-n</var>.  <var>annul-true-n</var> is an
+attribute test that specifies which insns may be annulled if the branch
+is true.  Similarly, <var>annul-false-n</var> specifies which insns in the
+delay slot may be annulled if the branch is false.  If annulling is not
+supported for that delay slot, <code>(nil)</code> should be coded.
+
+ <p>For example, in the common case where branch and call insns require
+a single delay slot, which may contain any insn other than a branch or
+call, the following would be placed in the <samp><span class="file">md</span></samp> file:
+
+<pre class="smallexample">     (define_delay (eq_attr "type" "branch,call")
+                   [(eq_attr "type" "!branch,call") (nil) (nil)])
+</pre>
+ <p>Multiple <code>define_delay</code> expressions may be specified.  In this
+case, each such expression specifies different delay slot requirements
+and there must be no insn for which tests in two <code>define_delay</code>
+expressions are both true.
+
+ <p>For example, if we have a machine that requires one delay slot for branches
+but two for calls,  no delay slot can contain a branch or call insn,
+and any valid insn in the delay slot for the branch can be annulled if the
+branch is true, we might represent this as follows:
+
+<pre class="smallexample">     (define_delay (eq_attr "type" "branch")
+        [(eq_attr "type" "!branch,call")
+         (eq_attr "type" "!branch,call")
+         (nil)])
+     
+     (define_delay (eq_attr "type" "call")
+                   [(eq_attr "type" "!branch,call") (nil) (nil)
+                    (eq_attr "type" "!branch,call") (nil) (nil)])
+</pre>
+ <!-- the above is *still* too long.  -mew 4feb93 -->
+ </body></html>
+

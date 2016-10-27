@@ -1,0 +1,93 @@
+<html lang="en">
+<head>
+<title>Hash Nodes - The GNU C Preprocessor Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="The GNU C Preprocessor Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Lexer.html#Lexer" title="Lexer">
+<link rel="next" href="Macro-Expansion.html#Macro-Expansion" title="Macro Expansion">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Hash-Nodes"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Macro-Expansion.html#Macro-Expansion">Macro Expansion</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Lexer.html#Lexer">Lexer</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="unnumbered">Hash Nodes</h2>
+
+<p><a name="index-hash-table-7"></a><a name="index-identifiers-8"></a><a name="index-macros-9"></a><a name="index-assertions-10"></a><a name="index-named-operators-11"></a>
+When cpplib encounters an &ldquo;identifier&rdquo;, it generates a hash code for
+it and stores it in the hash table.  By &ldquo;identifier&rdquo; we mean tokens
+with type <code>CPP_NAME</code>; this includes identifiers in the usual C
+sense, as well as keywords, directive names, macro names and so on.  For
+example, all of <code>pragma</code>, <code>int</code>, <code>foo</code> and
+<code>__GNUC__</code> are identifiers and hashed when lexed.
+
+   <p>Each node in the hash table contain various information about the
+identifier it represents.  For example, its length and type.  At any one
+time, each identifier falls into exactly one of three categories:
+
+     <ul>
+<li>Macros
+
+     <p>These have been declared to be macros, either on the command line or
+with <code>#define</code>.  A few, such as <code>__TIME__</code> are built-ins
+entered in the hash table during initialization.  The hash node for a
+normal macro points to a structure with more information about the
+macro, such as whether it is function-like, how many arguments it takes,
+and its expansion.  Built-in macros are flagged as special, and instead
+contain an enum indicating which of the various built-in macros it is.
+
+     <li>Assertions
+
+     <p>Assertions are in a separate namespace to macros.  To enforce this, cpp
+actually prepends a <code>#</code> character before hashing and entering it in
+the hash table.  An assertion's node points to a chain of answers to
+that assertion.
+
+     <li>Void
+
+     <p>Everything else falls into this category&mdash;an identifier that is not
+currently a macro, or a macro that has since been undefined with
+<code>#undef</code>.
+
+     <p>When preprocessing C++, this category also includes the named operators,
+such as <code>xor</code>.  In expressions these behave like the operators they
+represent, but in contexts where the spelling of a token matters they
+are spelt differently.  This spelling distinction is relevant when they
+are operands of the stringizing and pasting macro operators <code>#</code> and
+<code>##</code>.  Named operator hash nodes are flagged, both to catch the
+spelling distinction and to prevent them from being defined as macros. 
+</ul>
+
+   <p>The same identifiers share the same hash node.  Since each identifier
+token, after lexing, contains a pointer to its hash node, this is used
+to provide rapid lookup of various information.  For example, when
+parsing a <code>#define</code> statement, CPP flags each argument's identifier
+hash node with the index of that argument.  This makes duplicated
+argument checking an O(1) operation for each argument.  Similarly, for
+each identifier in the macro's expansion, lookup to see if it is an
+argument, and which argument it is, is also an O(1) operation.  Further,
+each directive name, such as <code>endif</code>, has an associated directive
+enum stored in its hash node, so that directive lookup is also O(1).
+
+   </body></html>
+

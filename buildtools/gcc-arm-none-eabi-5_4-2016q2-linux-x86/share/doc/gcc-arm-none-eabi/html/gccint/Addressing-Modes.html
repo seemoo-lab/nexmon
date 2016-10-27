@@ -1,0 +1,511 @@
+<html lang="en">
+<head>
+<title>Addressing Modes - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Macros.html#Target-Macros" title="Target Macros">
+<link rel="prev" href="Library-Calls.html#Library-Calls" title="Library Calls">
+<link rel="next" href="Anchored-Addresses.html#Anchored-Addresses" title="Anchored Addresses">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Addressing-Modes"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Anchored-Addresses.html#Anchored-Addresses">Anchored Addresses</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Library-Calls.html#Library-Calls">Library Calls</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Macros.html#Target-Macros">Target Macros</a>
+<hr>
+</div>
+
+<h3 class="section">17.13 Addressing Modes</h3>
+
+<p><a name="index-addressing-modes-4370"></a>
+<!-- prevent bad page break with this line -->
+This is about addressing modes.
+
+<div class="defun">
+&mdash; Macro: <b>HAVE_PRE_INCREMENT</b><var><a name="index-HAVE_005fPRE_005fINCREMENT-4371"></a></var><br>
+&mdash; Macro: <b>HAVE_PRE_DECREMENT</b><var><a name="index-HAVE_005fPRE_005fDECREMENT-4372"></a></var><br>
+&mdash; Macro: <b>HAVE_POST_INCREMENT</b><var><a name="index-HAVE_005fPOST_005fINCREMENT-4373"></a></var><br>
+&mdash; Macro: <b>HAVE_POST_DECREMENT</b><var><a name="index-HAVE_005fPOST_005fDECREMENT-4374"></a></var><br>
+<blockquote><p>A C expression that is nonzero if the machine supports pre-increment,
+pre-decrement, post-increment, or post-decrement addressing respectively. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>HAVE_PRE_MODIFY_DISP</b><var><a name="index-HAVE_005fPRE_005fMODIFY_005fDISP-4375"></a></var><br>
+&mdash; Macro: <b>HAVE_POST_MODIFY_DISP</b><var><a name="index-HAVE_005fPOST_005fMODIFY_005fDISP-4376"></a></var><br>
+<blockquote><p>A C expression that is nonzero if the machine supports pre- or
+post-address side-effect generation involving constants other than
+the size of the memory operand. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>HAVE_PRE_MODIFY_REG</b><var><a name="index-HAVE_005fPRE_005fMODIFY_005fREG-4377"></a></var><br>
+&mdash; Macro: <b>HAVE_POST_MODIFY_REG</b><var><a name="index-HAVE_005fPOST_005fMODIFY_005fREG-4378"></a></var><br>
+<blockquote><p>A C expression that is nonzero if the machine supports pre- or
+post-address side-effect generation involving a register displacement. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>CONSTANT_ADDRESS_P</b> (<var>x</var>)<var><a name="index-CONSTANT_005fADDRESS_005fP-4379"></a></var><br>
+<blockquote><p>A C expression that is 1 if the RTX <var>x</var> is a constant which
+is a valid address.  On most machines the default definition of
+<code>(CONSTANT_P (</code><var>x</var><code>) &amp;&amp; GET_CODE (</code><var>x</var><code>) != CONST_DOUBLE)</code>
+is acceptable, but a few machines are more restrictive as to which
+constant addresses are supported. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>CONSTANT_P</b> (<var>x</var>)<var><a name="index-CONSTANT_005fP-4380"></a></var><br>
+<blockquote><p><code>CONSTANT_P</code>, which is defined by target-independent code,
+accepts integer-values expressions whose values are not explicitly
+known, such as <code>symbol_ref</code>, <code>label_ref</code>, and <code>high</code>
+expressions and <code>const</code> arithmetic expressions, in addition to
+<code>const_int</code> and <code>const_double</code> expressions. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>MAX_REGS_PER_ADDRESS</b><var><a name="index-MAX_005fREGS_005fPER_005fADDRESS-4381"></a></var><br>
+<blockquote><p>A number, the maximum number of registers that can appear in a valid
+memory address.  Note that it is up to you to specify a value equal to
+the maximum number that <code>TARGET_LEGITIMATE_ADDRESS_P</code> would ever
+accept. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_LEGITIMATE_ADDRESS_P</b> (<var>machine_mode mode, rtx x, bool strict</var>)<var><a name="index-TARGET_005fLEGITIMATE_005fADDRESS_005fP-4382"></a></var><br>
+<blockquote><p>A function that returns whether <var>x</var> (an RTX) is a legitimate memory
+address on the target machine for a memory operand of mode <var>mode</var>.
+
+      <p>Legitimate addresses are defined in two variants: a strict variant and a
+non-strict one.  The <var>strict</var> parameter chooses which variant is
+desired by the caller.
+
+      <p>The strict variant is used in the reload pass.  It must be defined so
+that any pseudo-register that has not been allocated a hard register is
+considered a memory reference.  This is because in contexts where some
+kind of register is required, a pseudo-register with no hard register
+must be rejected.  For non-hard registers, the strict variant should look
+up the <code>reg_renumber</code> array; it should then proceed using the hard
+register number in the array, or treat the pseudo as a memory reference
+if the array holds <code>-1</code>.
+
+      <p>The non-strict variant is used in other passes.  It must be defined to
+accept all pseudo-registers in every context where some kind of
+register is required.
+
+      <p>Normally, constant addresses which are the sum of a <code>symbol_ref</code>
+and an integer are stored inside a <code>const</code> RTX to mark them as
+constant.  Therefore, there is no need to recognize such sums
+specifically as legitimate addresses.  Normally you would simply
+recognize any <code>const</code> as legitimate.
+
+      <p>Usually <code>PRINT_OPERAND_ADDRESS</code> is not prepared to handle constant
+sums that are not marked with  <code>const</code>.  It assumes that a naked
+<code>plus</code> indicates indexing.  If so, then you <em>must</em> reject such
+naked constant sums as illegitimate addresses, so that none of them will
+be given to <code>PRINT_OPERAND_ADDRESS</code>.
+
+      <p><a name="index-g_t_0040code_007bTARGET_005fENCODE_005fSECTION_005fINFO_007d-and-address-validation-4383"></a>On some machines, whether a symbolic address is legitimate depends on
+the section that the address refers to.  On these machines, define the
+target hook <code>TARGET_ENCODE_SECTION_INFO</code> to store the information
+into the <code>symbol_ref</code>, and then check for it here.  When you see a
+<code>const</code>, you will have to look inside it to find the
+<code>symbol_ref</code> in order to determine the section.  See <a href="Assembler-Format.html#Assembler-Format">Assembler Format</a>.
+
+      <p><a name="index-g_t_0040code_007bGO_005fIF_005fLEGITIMATE_005fADDRESS_007d-4384"></a>Some ports are still using a deprecated legacy substitute for
+this hook, the <code>GO_IF_LEGITIMATE_ADDRESS</code> macro.  This macro
+has this syntax:
+
+     <pre class="example">          #define GO_IF_LEGITIMATE_ADDRESS (<var>mode</var>, <var>x</var>, <var>label</var>)
+</pre>
+      <p class="noindent">and should <code>goto </code><var>label</var> if the address <var>x</var> is a valid
+address on the target machine for a memory operand of mode <var>mode</var>.
+
+      <p><a name="index-REG_005fOK_005fSTRICT-4385"></a>Compiler source files that want to use the strict variant of this
+macro define the macro <code>REG_OK_STRICT</code>.  You should use an
+<code>#ifdef REG_OK_STRICT</code> conditional to define the strict variant in
+that case and the non-strict variant otherwise.
+
+      <p>Using the hook is usually simpler because it limits the number of
+files that are recompiled when changes are made. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>TARGET_MEM_CONSTRAINT</b><var><a name="index-TARGET_005fMEM_005fCONSTRAINT-4386"></a></var><br>
+<blockquote><p>A single character to be used instead of the default <code>'m'</code>
+character for general memory addresses.  This defines the constraint
+letter which matches the memory addresses accepted by
+<code>TARGET_LEGITIMATE_ADDRESS_P</code>.  Define this macro if you want to
+support new address formats in your back end without changing the
+semantics of the <code>'m'</code> constraint.  This is necessary in order to
+preserve functionality of inline assembly constructs using the
+<code>'m'</code> constraint. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>FIND_BASE_TERM</b> (<var>x</var>)<var><a name="index-FIND_005fBASE_005fTERM-4387"></a></var><br>
+<blockquote><p>A C expression to determine the base term of address <var>x</var>,
+or to provide a simplified version of <var>x</var> from which <samp><span class="file">alias.c</span></samp>
+can easily find the base term.  This macro is used in only two places:
+<code>find_base_value</code> and <code>find_base_term</code> in <samp><span class="file">alias.c</span></samp>.
+
+      <p>It is always safe for this macro to not be defined.  It exists so
+that alias analysis can understand machine-dependent addresses.
+
+      <p>The typical use of this macro is to handle addresses containing
+a label_ref or symbol_ref within an UNSPEC. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: rtx <b>TARGET_LEGITIMIZE_ADDRESS</b> (<var>rtx x, rtx oldx, machine_mode mode</var>)<var><a name="index-TARGET_005fLEGITIMIZE_005fADDRESS-4388"></a></var><br>
+<blockquote><p>This hook is given an invalid memory address <var>x</var> for an
+operand of mode <var>mode</var> and should try to return a valid memory
+address.
+
+      <p><a name="index-break_005fout_005fmemory_005frefs-4389"></a><var>x</var> will always be the result of a call to <code>break_out_memory_refs</code>,
+and <var>oldx</var> will be the operand that was given to that function to produce
+<var>x</var>.
+
+      <p>The code of the hook should not alter the substructure of
+<var>x</var>.  If it transforms <var>x</var> into a more legitimate form, it
+should return the new <var>x</var>.
+
+      <p>It is not necessary for this hook to come up with a legitimate address,
+with the exception of native TLS addresses (see <a href="Emulated-TLS.html#Emulated-TLS">Emulated TLS</a>). 
+The compiler has standard ways of doing so in all cases.  In fact, if
+the target supports only emulated TLS, it
+is safe to omit this hook or make it return <var>x</var> if it cannot find
+a valid way to legitimize the address.  But often a machine-dependent
+strategy can generate better code. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>LEGITIMIZE_RELOAD_ADDRESS</b> (<var>x, mode, opnum, type, ind_levels, win</var>)<var><a name="index-LEGITIMIZE_005fRELOAD_005fADDRESS-4390"></a></var><br>
+<blockquote><p>A C compound statement that attempts to replace <var>x</var>, which is an address
+that needs reloading, with a valid memory address for an operand of mode
+<var>mode</var>.  <var>win</var> will be a C statement label elsewhere in the code. 
+It is not necessary to define this macro, but it might be useful for
+performance reasons.
+
+      <p>For example, on the i386, it is sometimes possible to use a single
+reload register instead of two by reloading a sum of two pseudo
+registers into a register.  On the other hand, for number of RISC
+processors offsets are limited so that often an intermediate address
+needs to be generated in order to address a stack slot.  By defining
+<code>LEGITIMIZE_RELOAD_ADDRESS</code> appropriately, the intermediate addresses
+generated for adjacent some stack slots can be made identical, and thus
+be shared.
+
+      <p><em>Note</em>: This macro should be used with caution.  It is necessary
+to know something of how reload works in order to effectively use this,
+and it is quite easy to produce macros that build in too much knowledge
+of reload internals.
+
+      <p><em>Note</em>: This macro must be able to reload an address created by a
+previous invocation of this macro.  If it fails to handle such addresses
+then the compiler may generate incorrect code or abort.
+
+      <p><a name="index-push_005freload-4391"></a>The macro definition should use <code>push_reload</code> to indicate parts that
+need reloading; <var>opnum</var>, <var>type</var> and <var>ind_levels</var> are usually
+suitable to be passed unaltered to <code>push_reload</code>.
+
+      <p>The code generated by this macro must not alter the substructure of
+<var>x</var>.  If it transforms <var>x</var> into a more legitimate form, it
+should assign <var>x</var> (which will always be a C variable) a new value. 
+This also applies to parts that you change indirectly by calling
+<code>push_reload</code>.
+
+      <p><a name="index-strict_005fmemory_005faddress_005fp-4392"></a>The macro definition may use <code>strict_memory_address_p</code> to test if
+the address has become legitimate.
+
+      <p><a name="index-copy_005frtx-4393"></a>If you want to change only a part of <var>x</var>, one standard way of doing
+this is to use <code>copy_rtx</code>.  Note, however, that it unshares only a
+single level of rtl.  Thus, if the part to be changed is not at the
+top level, you'll need to replace first the top level. 
+It is not necessary for this macro to come up with a legitimate
+address;  but often a machine-dependent strategy can generate better code. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_MODE_DEPENDENT_ADDRESS_P</b> (<var>const_rtx addr, addr_space_t addrspace</var>)<var><a name="index-TARGET_005fMODE_005fDEPENDENT_005fADDRESS_005fP-4394"></a></var><br>
+<blockquote><p>This hook returns <code>true</code> if memory address <var>addr</var> in address
+space <var>addrspace</var> can have
+different meanings depending on the machine mode of the memory
+reference it is used for or if the address is valid for some modes
+but not others.
+
+      <p>Autoincrement and autodecrement addresses typically have mode-dependent
+effects because the amount of the increment or decrement is the size
+of the operand being addressed.  Some machines have other mode-dependent
+addresses.  Many RISC machines have no mode-dependent addresses.
+
+      <p>You may assume that <var>addr</var> is a valid address for the machine.
+
+      <p>The default version of this hook returns <code>false</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_LEGITIMATE_CONSTANT_P</b> (<var>machine_mode mode, rtx x</var>)<var><a name="index-TARGET_005fLEGITIMATE_005fCONSTANT_005fP-4395"></a></var><br>
+<blockquote><p>This hook returns true if <var>x</var> is a legitimate constant for a
+<var>mode</var>-mode immediate operand on the target machine.  You can assume that
+<var>x</var> satisfies <code>CONSTANT_P</code>, so you need not check this.
+
+      <p>The default definition returns true. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: rtx <b>TARGET_DELEGITIMIZE_ADDRESS</b> (<var>rtx x</var>)<var><a name="index-TARGET_005fDELEGITIMIZE_005fADDRESS-4396"></a></var><br>
+<blockquote><p>This hook is used to undo the possibly obfuscating effects of the
+<code>LEGITIMIZE_ADDRESS</code> and <code>LEGITIMIZE_RELOAD_ADDRESS</code> target
+macros.  Some backend implementations of these macros wrap symbol
+references inside an <code>UNSPEC</code> rtx to represent PIC or similar
+addressing modes.  This target hook allows GCC's optimizers to understand
+the semantics of these opaque <code>UNSPEC</code>s by converting them back
+into their original form. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_CONST_NOT_OK_FOR_DEBUG_P</b> (<var>rtx x</var>)<var><a name="index-TARGET_005fCONST_005fNOT_005fOK_005fFOR_005fDEBUG_005fP-4397"></a></var><br>
+<blockquote><p>This hook should return true if <var>x</var> should not be emitted into
+debug sections. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_CANNOT_FORCE_CONST_MEM</b> (<var>machine_mode mode, rtx x</var>)<var><a name="index-TARGET_005fCANNOT_005fFORCE_005fCONST_005fMEM-4398"></a></var><br>
+<blockquote><p>This hook should return true if <var>x</var> is of a form that cannot (or
+should not) be spilled to the constant pool.  <var>mode</var> is the mode
+of <var>x</var>.
+
+      <p>The default version of this hook returns false.
+
+      <p>The primary reason to define this hook is to prevent reload from
+deciding that a non-legitimate constant would be better reloaded
+from the constant pool instead of spilling and reloading a register
+holding the constant.  This restriction is often true of addresses
+of TLS symbols for various targets. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_USE_BLOCKS_FOR_CONSTANT_P</b> (<var>machine_mode mode, const_rtx x</var>)<var><a name="index-TARGET_005fUSE_005fBLOCKS_005fFOR_005fCONSTANT_005fP-4399"></a></var><br>
+<blockquote><p>This hook should return true if pool entries for constant <var>x</var> can
+be placed in an <code>object_block</code> structure.  <var>mode</var> is the mode
+of <var>x</var>.
+
+      <p>The default version returns false for all constants. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_USE_BLOCKS_FOR_DECL_P</b> (<var>const_tree decl</var>)<var><a name="index-TARGET_005fUSE_005fBLOCKS_005fFOR_005fDECL_005fP-4400"></a></var><br>
+<blockquote><p>This hook should return true if pool entries for <var>decl</var> should
+be placed in an <code>object_block</code> structure.
+
+      <p>The default version returns true for all decls. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: tree <b>TARGET_BUILTIN_RECIPROCAL</b> (<var>unsigned fn, bool md_fn, bool sqrt</var>)<var><a name="index-TARGET_005fBUILTIN_005fRECIPROCAL-4401"></a></var><br>
+<blockquote><p>This hook should return the DECL of a function that implements reciprocal of
+the builtin function with builtin function code <var>fn</var>, or
+<code>NULL_TREE</code> if such a function is not available.  <var>md_fn</var> is true
+when <var>fn</var> is a code of a machine-dependent builtin function.  When
+<var>sqrt</var> is true, additional optimizations that apply only to the reciprocal
+of a square root function are performed, and only reciprocals of <code>sqrt</code>
+function are valid. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: tree <b>TARGET_VECTORIZE_BUILTIN_MASK_FOR_LOAD</b> (<var>void</var>)<var><a name="index-TARGET_005fVECTORIZE_005fBUILTIN_005fMASK_005fFOR_005fLOAD-4402"></a></var><br>
+<blockquote><p>This hook should return the DECL of a function <var>f</var> that given an
+address <var>addr</var> as an argument returns a mask <var>m</var> that can be
+used to extract from two vectors the relevant data that resides in
+<var>addr</var> in case <var>addr</var> is not properly aligned.
+
+      <p>The autovectorizer, when vectorizing a load operation from an address
+<var>addr</var> that may be unaligned, will generate two vector loads from
+the two aligned addresses around <var>addr</var>. It then generates a
+<code>REALIGN_LOAD</code> operation to extract the relevant data from the
+two loaded vectors. The first two arguments to <code>REALIGN_LOAD</code>,
+<var>v1</var> and <var>v2</var>, are the two vectors, each of size <var>VS</var>, and
+the third argument, <var>OFF</var>, defines how the data will be extracted
+from these two vectors: if <var>OFF</var> is 0, then the returned vector is
+<var>v2</var>; otherwise, the returned vector is composed from the last
+<var>VS</var>-<var>OFF</var> elements of <var>v1</var> concatenated to the first
+<var>OFF</var> elements of <var>v2</var>.
+
+      <p>If this hook is defined, the autovectorizer will generate a call
+to <var>f</var> (using the DECL tree that this hook returns) and will
+use the return value of <var>f</var> as the argument <var>OFF</var> to
+<code>REALIGN_LOAD</code>. Therefore, the mask <var>m</var> returned by <var>f</var>
+should comply with the semantics expected by <code>REALIGN_LOAD</code>
+described above. 
+If this hook is not defined, then <var>addr</var> will be used as
+the argument <var>OFF</var> to <code>REALIGN_LOAD</code>, in which case the low
+log2(<var>VS</var>) &minus; 1 bits of <var>addr</var> will be considered. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: int <b>TARGET_VECTORIZE_BUILTIN_VECTORIZATION_COST</b> (<var>enum vect_cost_for_stmt type_of_cost, tree vectype, int misalign</var>)<var><a name="index-TARGET_005fVECTORIZE_005fBUILTIN_005fVECTORIZATION_005fCOST-4403"></a></var><br>
+<blockquote><p>Returns cost of different scalar or vector statements for vectorization cost model. 
+For vector memory operations the cost may depend on type (<var>vectype</var>) and
+misalignment value (<var>misalign</var>). 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_VECTORIZE_VECTOR_ALIGNMENT_REACHABLE</b> (<var>const_tree type, bool is_packed</var>)<var><a name="index-TARGET_005fVECTORIZE_005fVECTOR_005fALIGNMENT_005fREACHABLE-4404"></a></var><br>
+<blockquote><p>Return true if vector alignment is reachable (by peeling N iterations) for the given type. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_VECTORIZE_VEC_PERM_CONST_OK</b> (<var>machine_mode, const unsigned char *sel</var>)<var><a name="index-TARGET_005fVECTORIZE_005fVEC_005fPERM_005fCONST_005fOK-4405"></a></var><br>
+<blockquote><p>Return true if a vector created for <code>vec_perm_const</code> is valid. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: tree <b>TARGET_VECTORIZE_BUILTIN_CONVERSION</b> (<var>unsigned code, tree dest_type, tree src_type</var>)<var><a name="index-TARGET_005fVECTORIZE_005fBUILTIN_005fCONVERSION-4406"></a></var><br>
+<blockquote><p>This hook should return the DECL of a function that implements conversion of the
+input vector of type <var>src_type</var> to type <var>dest_type</var>. 
+The value of <var>code</var> is one of the enumerators in <code>enum tree_code</code> and
+specifies how the conversion is to be applied
+(truncation, rounding, etc.).
+
+      <p>If this hook is defined, the autovectorizer will use the
+<code>TARGET_VECTORIZE_BUILTIN_CONVERSION</code> target hook when vectorizing
+conversion. Otherwise, it will return <code>NULL_TREE</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: tree <b>TARGET_VECTORIZE_BUILTIN_VECTORIZED_FUNCTION</b> (<var>tree fndecl, tree vec_type_out, tree vec_type_in</var>)<var><a name="index-TARGET_005fVECTORIZE_005fBUILTIN_005fVECTORIZED_005fFUNCTION-4407"></a></var><br>
+<blockquote><p>This hook should return the decl of a function that implements the
+vectorized variant of the builtin function with builtin function code
+<var>code</var> or <code>NULL_TREE</code> if such a function is not available. 
+The value of <var>fndecl</var> is the builtin function declaration.  The
+return type of the vectorized function shall be of vector type
+<var>vec_type_out</var> and the argument types should be <var>vec_type_in</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_VECTORIZE_SUPPORT_VECTOR_MISALIGNMENT</b> (<var>machine_mode mode, const_tree type, int misalignment, bool is_packed</var>)<var><a name="index-TARGET_005fVECTORIZE_005fSUPPORT_005fVECTOR_005fMISALIGNMENT-4408"></a></var><br>
+<blockquote><p>This hook should return true if the target supports misaligned vector
+store/load of a specific factor denoted in the <var>misalignment</var>
+parameter.  The vector store/load should be of machine mode <var>mode</var> and
+the elements in the vectors should be of type <var>type</var>.  <var>is_packed</var>
+parameter is true if the memory access is defined in a packed struct. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: machine_mode <b>TARGET_VECTORIZE_PREFERRED_SIMD_MODE</b> (<var>machine_mode mode</var>)<var><a name="index-TARGET_005fVECTORIZE_005fPREFERRED_005fSIMD_005fMODE-4409"></a></var><br>
+<blockquote><p>This hook should return the preferred mode for vectorizing scalar
+mode <var>mode</var>.  The default is
+equal to <code>word_mode</code>, because the vectorizer can do some
+transformations even in absence of specialized <acronym>SIMD</acronym> hardware. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: unsigned int <b>TARGET_VECTORIZE_AUTOVECTORIZE_VECTOR_SIZES</b> (<var>void</var>)<var><a name="index-TARGET_005fVECTORIZE_005fAUTOVECTORIZE_005fVECTOR_005fSIZES-4410"></a></var><br>
+<blockquote><p>This hook should return a mask of sizes that should be iterated over
+after trying to autovectorize using the vector size derived from the
+mode returned by <code>TARGET_VECTORIZE_PREFERRED_SIMD_MODE</code>. 
+The default is zero which means to not iterate over other vector sizes. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void * <b>TARGET_VECTORIZE_INIT_COST</b> (<var>struct loop *loop_info</var>)<var><a name="index-TARGET_005fVECTORIZE_005fINIT_005fCOST-4411"></a></var><br>
+<blockquote><p>This hook should initialize target-specific data structures in preparation for modeling the costs of vectorizing a loop or basic block.  The default allocates three unsigned integers for accumulating costs for the prologue, body, and epilogue of the loop or basic block.  If <var>loop_info</var> is non-NULL, it identifies the loop being vectorized; otherwise a single block is being vectorized. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: unsigned <b>TARGET_VECTORIZE_ADD_STMT_COST</b> (<var>void *data, int count, enum vect_cost_for_stmt kind, struct _stmt_vec_info *stmt_info, int misalign, enum vect_cost_model_location where</var>)<var><a name="index-TARGET_005fVECTORIZE_005fADD_005fSTMT_005fCOST-4412"></a></var><br>
+<blockquote><p>This hook should update the target-specific <var>data</var> in response to adding <var>count</var> copies of the given <var>kind</var> of statement to a loop or basic block.  The default adds the builtin vectorizer cost for the copies of the statement to the accumulator specified by <var>where</var>, (the prologue, body, or epilogue) and returns the amount added.  The return value should be viewed as a tentative cost that may later be revised. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_VECTORIZE_FINISH_COST</b> (<var>void *data, unsigned *prologue_cost, unsigned *body_cost, unsigned *epilogue_cost</var>)<var><a name="index-TARGET_005fVECTORIZE_005fFINISH_005fCOST-4413"></a></var><br>
+<blockquote><p>This hook should complete calculations of the cost of vectorizing a loop or basic block based on <var>data</var>, and return the prologue, body, and epilogue costs as unsigned integers.  The default returns the value of the three accumulators. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_VECTORIZE_DESTROY_COST_DATA</b> (<var>void *data</var>)<var><a name="index-TARGET_005fVECTORIZE_005fDESTROY_005fCOST_005fDATA-4414"></a></var><br>
+<blockquote><p>This hook should release <var>data</var> and any related data structures allocated by TARGET_VECTORIZE_INIT_COST.  The default releases the accumulator. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: tree <b>TARGET_VECTORIZE_BUILTIN_TM_LOAD</b> (<var>tree</var>)<var><a name="index-TARGET_005fVECTORIZE_005fBUILTIN_005fTM_005fLOAD-4415"></a></var><br>
+<blockquote><p>This hook should return the built-in decl needed to load a vector of the given type within a transaction. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: tree <b>TARGET_VECTORIZE_BUILTIN_TM_STORE</b> (<var>tree</var>)<var><a name="index-TARGET_005fVECTORIZE_005fBUILTIN_005fTM_005fSTORE-4416"></a></var><br>
+<blockquote><p>This hook should return the built-in decl needed to store a vector of the given type within a transaction. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: tree <b>TARGET_VECTORIZE_BUILTIN_GATHER</b> (<var>const_tree mem_vectype, const_tree index_type, int scale</var>)<var><a name="index-TARGET_005fVECTORIZE_005fBUILTIN_005fGATHER-4417"></a></var><br>
+<blockquote><p>Target builtin that implements vector gather operation.  <var>mem_vectype</var>
+is the vector type of the load and <var>index_type</var> is scalar type of
+the index, scaled by <var>scale</var>. 
+The default is <code>NULL_TREE</code> which means to not vectorize gather
+loads. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: int <b>TARGET_SIMD_CLONE_COMPUTE_VECSIZE_AND_SIMDLEN</b> (<var>struct cgraph_node *, struct cgraph_simd_clone *, tree, int</var>)<var><a name="index-TARGET_005fSIMD_005fCLONE_005fCOMPUTE_005fVECSIZE_005fAND_005fSIMDLEN-4418"></a></var><br>
+<blockquote><p>This hook should set <var>vecsize_mangle</var>, <var>vecsize_int</var>, <var>vecsize_float</var>
+fields in <var>simd_clone</var> structure pointed by <var>clone_info</var> argument and also
+<var>simdlen</var> field if it was previously 0. 
+The hook should return 0 if SIMD clones shouldn't be emitted,
+or number of <var>vecsize_mangle</var> variants that should be emitted. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_SIMD_CLONE_ADJUST</b> (<var>struct cgraph_node *</var>)<var><a name="index-TARGET_005fSIMD_005fCLONE_005fADJUST-4419"></a></var><br>
+<blockquote><p>This hook should add implicit <code>attribute(target("..."))</code> attribute
+to SIMD clone <var>node</var> if needed. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: int <b>TARGET_SIMD_CLONE_USABLE</b> (<var>struct cgraph_node *</var>)<var><a name="index-TARGET_005fSIMD_005fCLONE_005fUSABLE-4420"></a></var><br>
+<blockquote><p>This hook should return -1 if SIMD clone <var>node</var> shouldn't be used
+in vectorized loops in current function, or non-negative number if it is
+usable.  In that case, the smaller the number is, the more desirable it is
+to use it. 
+</p></blockquote></div>
+
+ </body></html>
+

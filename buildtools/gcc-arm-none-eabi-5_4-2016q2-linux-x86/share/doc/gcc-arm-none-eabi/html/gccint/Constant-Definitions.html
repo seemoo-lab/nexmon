@@ -1,0 +1,195 @@
+<html lang="en">
+<head>
+<title>Constant Definitions - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Machine-Desc.html#Machine-Desc" title="Machine Desc">
+<link rel="prev" href="Define-Subst.html#Define-Subst" title="Define Subst">
+<link rel="next" href="Iterators.html#Iterators" title="Iterators">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Constant-Definitions"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Iterators.html#Iterators">Iterators</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Define-Subst.html#Define-Subst">Define Subst</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Machine-Desc.html#Machine-Desc">Machine Desc</a>
+<hr>
+</div>
+
+<h3 class="section">16.22 Constant Definitions</h3>
+
+<p><a name="index-constant-definitions-3828"></a><a name="index-define_005fconstants-3829"></a>
+Using literal constants inside instruction patterns reduces legibility and
+can be a maintenance problem.
+
+ <p>To overcome this problem, you may use the <code>define_constants</code>
+expression.  It contains a vector of name-value pairs.  From that
+point on, wherever any of the names appears in the MD file, it is as
+if the corresponding value had been written instead.  You may use
+<code>define_constants</code> multiple times; each appearance adds more
+constants to the table.  It is an error to redefine a constant with
+a different value.
+
+ <p>To come back to the a29k load multiple example, instead of
+
+<pre class="smallexample">     (define_insn ""
+       [(match_parallel 0 "load_multiple_operation"
+          [(set (match_operand:SI 1 "gpc_reg_operand" "=r")
+                (match_operand:SI 2 "memory_operand" "m"))
+           (use (reg:SI 179))
+           (clobber (reg:SI 179))])]
+       ""
+       "loadm 0,0,%1,%2")
+</pre>
+ <p>You could write:
+
+<pre class="smallexample">     (define_constants [
+         (R_BP 177)
+         (R_FC 178)
+         (R_CR 179)
+         (R_Q  180)
+     ])
+     
+     (define_insn ""
+       [(match_parallel 0 "load_multiple_operation"
+          [(set (match_operand:SI 1 "gpc_reg_operand" "=r")
+                (match_operand:SI 2 "memory_operand" "m"))
+           (use (reg:SI R_CR))
+           (clobber (reg:SI R_CR))])]
+       ""
+       "loadm 0,0,%1,%2")
+</pre>
+ <p>The constants that are defined with a define_constant are also output
+in the insn-codes.h header file as #defines.
+
+ <p><a name="index-enumerations-3830"></a><a name="index-define_005fc_005fenum-3831"></a>You can also use the machine description file to define enumerations. 
+Like the constants defined by <code>define_constant</code>, these enumerations
+are visible to both the machine description file and the main C code.
+
+ <p>The syntax is as follows:
+
+<pre class="smallexample">     (define_c_enum "<var>name</var>" [
+       <var>value0</var>
+       <var>value1</var>
+       ...
+       <var>valuen</var>
+     ])
+</pre>
+ <p>This definition causes the equivalent of the following C code to appear
+in <samp><span class="file">insn-constants.h</span></samp>:
+
+<pre class="smallexample">     enum <var>name</var> {
+       <var>value0</var> = 0,
+       <var>value1</var> = 1,
+       ...
+       <var>valuen</var> = <var>n</var>
+     };
+     #define NUM_<var>cname</var>_VALUES (<var>n</var> + 1)
+</pre>
+ <p>where <var>cname</var> is the capitalized form of <var>name</var>. 
+It also makes each <var>valuei</var> available in the machine description
+file, just as if it had been declared with:
+
+<pre class="smallexample">     (define_constants [(<var>valuei</var> <var>i</var>)])
+</pre>
+ <p>Each <var>valuei</var> is usually an upper-case identifier and usually
+begins with <var>cname</var>.
+
+ <p>You can split the enumeration definition into as many statements as
+you like.  The above example is directly equivalent to:
+
+<pre class="smallexample">     (define_c_enum "<var>name</var>" [<var>value0</var>])
+     (define_c_enum "<var>name</var>" [<var>value1</var>])
+     ...
+     (define_c_enum "<var>name</var>" [<var>valuen</var>])
+</pre>
+ <p>Splitting the enumeration helps to improve the modularity of each
+individual <code>.md</code> file.  For example, if a port defines its
+synchronization instructions in a separate <samp><span class="file">sync.md</span></samp> file,
+it is convenient to define all synchronization-specific enumeration
+values in <samp><span class="file">sync.md</span></samp> rather than in the main <samp><span class="file">.md</span></samp> file.
+
+ <p>Some enumeration names have special significance to GCC:
+
+     <dl>
+<dt><code>unspecv</code><dd><a name="index-unspec_005fvolatile-3832"></a>If an enumeration called <code>unspecv</code> is defined, GCC will use it
+when printing out <code>unspec_volatile</code> expressions.  For example:
+
+     <pre class="smallexample">          (define_c_enum "unspecv" [
+            UNSPECV_BLOCKAGE
+          ])
+</pre>
+     <p>causes GCC to print &lsquo;<samp><span class="samp">(unspec_volatile ... 0)</span></samp>&rsquo; as:
+
+     <pre class="smallexample">          (unspec_volatile ... UNSPECV_BLOCKAGE)
+</pre>
+     <br><dt><code>unspec</code><dd><a name="index-unspec-3833"></a>If an enumeration called <code>unspec</code> is defined, GCC will use
+it when printing out <code>unspec</code> expressions.  GCC will also use
+it when printing out <code>unspec_volatile</code> expressions unless an
+<code>unspecv</code> enumeration is also defined.  You can therefore
+decide whether to keep separate enumerations for volatile and
+non-volatile expressions or whether to use the same enumeration
+for both. 
+</dl>
+
+ <p><a name="index-define_005fenum-3834"></a><a name="define_005fenum"></a>Another way of defining an enumeration is to use <code>define_enum</code>:
+
+<pre class="smallexample">     (define_enum "<var>name</var>" [
+       <var>value0</var>
+       <var>value1</var>
+       ...
+       <var>valuen</var>
+     ])
+</pre>
+ <p>This directive implies:
+
+<pre class="smallexample">     (define_c_enum "<var>name</var>" [
+       <var>cname</var>_<var>cvalue0</var>
+       <var>cname</var>_<var>cvalue1</var>
+       ...
+       <var>cname</var>_<var>cvaluen</var>
+     ])
+</pre>
+ <p><a name="index-define_005fenum_005fattr-3835"></a>where <var>cvaluei</var> is the capitalized form of <var>valuei</var>. 
+However, unlike <code>define_c_enum</code>, the enumerations defined
+by <code>define_enum</code> can be used in attribute specifications
+(see <a href="define_005fenum_005fattr.html#define_005fenum_005fattr">define_enum_attr</a>).
+
+ </body></html>
+

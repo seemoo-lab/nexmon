@@ -1,0 +1,86 @@
+<html lang="en">
+<head>
+<title>gdbinit man - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Man-Pages.html#Man-Pages" title="Man Pages">
+<link rel="prev" href="gcore-man.html#gcore-man" title="gcore man">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="gdbinit-man"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="gcore-man.html#gcore-man">gcore man</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Man-Pages.html#Man-Pages">Man Pages</a>
+<hr>
+</div>
+
+<h3 class="heading">gdbinit</h3>
+
+<!-- man title gdbinit GDB initialization scripts -->
+<pre class="format"><!-- man begin SYNOPSIS gdbinit -->
+/home/build/work/GCC-5-0-build/install-native/i686-linux-gnu/arm-none-eabi/lib/gdbinit
+
+~/.gdbinit
+
+./.gdbinit
+<!-- man end -->
+</pre>
+<!-- man begin DESCRIPTION gdbinit -->
+   <p>These files contain <span class="sc">gdb</span> commands to automatically execute during
+<span class="sc">gdb</span> startup.  The lines of contents are canned sequences of commands,
+described in
+<a href="Sequences.html#Sequences">Sequences</a>.
+
+   <p>Please read more in
+<a href="Startup.html#Startup">Startup</a>.
+
+     <dl>
+<dt><samp><span class="env">/home/build/work/GCC-5-0-build/install-native/i686-linux-gnu/arm-none-eabi/lib/gdbinit</span></samp><dd>System-wide initialization file.  It is executed unless user specified
+<span class="sc">gdb</span> option <code>-nx</code> or <code>-n</code>. 
+See more in
+<a href="System_002dwide-configuration.html#System_002dwide-configuration">System-wide configuration</a>.
+
+     <br><dt><samp><span class="env">~/.gdbinit</span></samp><dd>User initialization file.  It is executed unless user specified
+<span class="sc">gdb</span> options <code>-nx</code>, <code>-n</code> or <code>-nh</code>.
+
+     <br><dt><samp><span class="env">./.gdbinit</span></samp><dd>Initialization file for current directory.  It may need to be enabled with
+<span class="sc">gdb</span> security command <code>set auto-load local-gdbinit</code>. 
+See more in
+<a href="Init-File-in-the-Current-Directory.html#Init-File-in-the-Current-Directory">Init File in the Current Directory</a>. 
+</dl>
+   <!-- man end -->
+
+<!-- man begin SEEALSO gdbinit -->
+<!-- man end -->
+   </body></html>
+

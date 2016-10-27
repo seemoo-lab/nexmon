@@ -1,0 +1,175 @@
+<html lang="en">
+<head>
+<title>Auto-loading - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Controlling-GDB.html#Controlling-GDB" title="Controlling GDB">
+<link rel="prev" href="ABI.html#ABI" title="ABI">
+<link rel="next" href="Messages_002fWarnings.html#Messages_002fWarnings" title="Messages/Warnings">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Auto-loading"></a>
+<a name="Auto_002dloading"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Messages_002fWarnings.html#Messages_002fWarnings">Messages/Warnings</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="ABI.html#ABI">ABI</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Controlling-GDB.html#Controlling-GDB">Controlling GDB</a>
+<hr>
+</div>
+
+<h3 class="section">22.7 Automatically loading associated files</h3>
+
+<p><a name="index-auto_002dloading-1679"></a>
+<span class="sc">gdb</span> sometimes reads files with commands and settings automatically,
+without being explicitly told so by the user.  We call this feature
+<dfn>auto-loading</dfn>.  While auto-loading is useful for automatically adapting
+<span class="sc">gdb</span> to the needs of your project, it can sometimes produce unexpected
+results or introduce security risks (e.g., if the file comes from untrusted
+sources).
+
+<ul class="menu">
+<li><a accesskey="1" href="Init-File-in-the-Current-Directory.html#Init-File-in-the-Current-Directory">Init File in the Current Directory</a>:  &lsquo;<samp><span class="samp">set/show/info auto-load local-gdbinit</span></samp>&rsquo;
+<li><a accesskey="2" href="libthread_005fdb_002eso_002e1-file.html#libthread_005fdb_002eso_002e1-file">libthread_db.so.1 file</a>:              &lsquo;<samp><span class="samp">set/show/info auto-load libthread-db</span></samp>&rsquo;
+
+<li><a accesskey="3" href="Auto_002dloading-safe-path.html#Auto_002dloading-safe-path">Auto-loading safe path</a>:              &lsquo;<samp><span class="samp">set/show/info auto-load safe-path</span></samp>&rsquo;
+<li><a accesskey="4" href="Auto_002dloading-verbose-mode.html#Auto_002dloading-verbose-mode">Auto-loading verbose mode</a>:           &lsquo;<samp><span class="samp">set/show debug auto-load</span></samp>&rsquo;
+</ul>
+
+   <p>There are various kinds of files <span class="sc">gdb</span> can automatically load. 
+In addition to these files, <span class="sc">gdb</span> supports auto-loading code written
+in various extension languages.  See <a href="Auto_002dloading-extensions.html#Auto_002dloading-extensions">Auto-loading extensions</a>.
+
+   <p>Note that loading of these associated files (including the local <samp><span class="file">.gdbinit</span></samp>
+file) requires accordingly configured <code>auto-load safe-path</code>
+(see <a href="Auto_002dloading-safe-path.html#Auto_002dloading-safe-path">Auto-loading safe path</a>).
+
+   <p>For these reasons, <span class="sc">gdb</span> includes commands and options to let you
+control when to auto-load files and which files should be auto-loaded.
+
+     <dl>
+<a name="set-auto_002dload-off"></a><a name="index-set-auto_002dload-off-1680"></a><dt><code>set auto-load off</code><dd>Globally disable loading of all auto-loaded files. 
+You may want to use this command with the &lsquo;<samp><span class="samp">-iex</span></samp>&rsquo; option
+(see <a href="Option-_002dinit_002deval_002dcommand.html#Option-_002dinit_002deval_002dcommand">Option -init-eval-command</a>) such as:
+     <pre class="smallexample">          $ <kbd>gdb -iex "set auto-load off" untrusted-executable corefile</kbd>
+</pre>
+     <p>Be aware that system init file (see <a href="System_002dwide-configuration.html#System_002dwide-configuration">System-wide configuration</a>)
+and init files from your home directory (see <a href="Home-Directory-Init-File.html#Home-Directory-Init-File">Home Directory Init File</a>)
+still get read (as they come from generally trusted directories). 
+To prevent <span class="sc">gdb</span> from auto-loading even those init files, use the
+<samp><span class="option">-nx</span></samp> option (see <a href="Mode-Options.html#Mode-Options">Mode Options</a>), in addition to
+<code>set auto-load no</code>.
+
+     <p><a name="show-auto_002dload"></a><a name="index-show-auto_002dload-1681"></a><br><dt><code>show auto-load</code><dd>Show whether auto-loading of each specific &lsquo;<samp><span class="samp">auto-load</span></samp>&rsquo; file(s) is enabled
+or disabled.
+
+     <pre class="smallexample">          (gdb) show auto-load
+          gdb-scripts:  Auto-loading of canned sequences of commands scripts is on.
+          libthread-db:  Auto-loading of inferior specific libthread_db is on.
+          local-gdbinit:  Auto-loading of .gdbinit script from current directory
+                          is on.
+          python-scripts:  Auto-loading of Python scripts is on.
+          safe-path:  List of directories from which it is safe to auto-load files
+                      is $debugdir:$datadir/auto-load.
+          scripts-directory:  List of directories from which to load auto-loaded scripts
+                              is $debugdir:$datadir/auto-load.
+</pre>
+     <p><a name="info-auto_002dload"></a><a name="index-info-auto_002dload-1682"></a><br><dt><code>info auto-load</code><dd>Print whether each specific &lsquo;<samp><span class="samp">auto-load</span></samp>&rsquo; file(s) have been auto-loaded or
+not.
+
+     <pre class="smallexample">          (gdb) info auto-load
+          gdb-scripts:
+          Loaded  Script
+          Yes     /home/user/gdb/gdb-gdb.gdb
+          libthread-db:  No auto-loaded libthread-db.
+          local-gdbinit:  Local .gdbinit file "/home/user/gdb/.gdbinit" has been
+                          loaded.
+          python-scripts:
+          Loaded  Script
+          Yes     /home/user/gdb/gdb-gdb.py
+</pre>
+     </dl>
+
+   <p>These are <span class="sc">gdb</span> control commands for the auto-loading:
+
+   <p><table summary=""><tr align="left"><td valign="top" width="50%">See <a href="set-auto_002dload-off.html#set-auto_002dload-off">set auto-load off</a>. 
+</td><td valign="top" width="50%">Disable auto-loading globally. 
+<br></td></tr><tr align="left"><td valign="top" width="50%">See <a href="show-auto_002dload.html#show-auto_002dload">show auto-load</a>. 
+</td><td valign="top" width="50%">Show setting of all kinds of files. 
+<br></td></tr><tr align="left"><td valign="top" width="50%">See <a href="info-auto_002dload.html#info-auto_002dload">info auto-load</a>. 
+</td><td valign="top" width="50%">Show state of all kinds of files. 
+<br></td></tr><tr align="left"><td valign="top" width="50%">See <a href="set-auto_002dload-gdb_002dscripts.html#set-auto_002dload-gdb_002dscripts">set auto-load gdb-scripts</a>. 
+</td><td valign="top" width="50%">Control for <span class="sc">gdb</span> command scripts. 
+<br></td></tr><tr align="left"><td valign="top" width="50%">See <a href="show-auto_002dload-gdb_002dscripts.html#show-auto_002dload-gdb_002dscripts">show auto-load gdb-scripts</a>. 
+</td><td valign="top" width="50%">Show setting of <span class="sc">gdb</span> command scripts. 
+<br></td></tr><tr align="left"><td valign="top" width="50%">See <a href="info-auto_002dload-gdb_002dscripts.html#info-auto_002dload-gdb_002dscripts">info auto-load gdb-scripts</a>. 
+</td><td valign="top" width="50%">Show state of <span class="sc">gdb</span> command scripts. 
+<br></td></tr><tr align="left"><td valign="top" width="50%">See <a href="set-auto_002dload-python_002dscripts.html#set-auto_002dload-python_002dscripts">set auto-load python-scripts</a>. 
+</td><td valign="top" width="50%">Control for <span class="sc">gdb</span> Python scripts. 
+<br></td></tr><tr align="left"><td valign="top" width="50%">See <a href="show-auto_002dload-python_002dscripts.html#show-auto_002dload-python_002dscripts">show auto-load python-scripts</a>. 
+</td><td valign="top" width="50%">Show setting of <span class="sc">gdb</span> Python scripts. 
+<br></td></tr><tr align="left"><td valign="top" width="50%">See <a href="info-auto_002dload-python_002dscripts.html#info-auto_002dload-python_002dscripts">info auto-load python-scripts</a>. 
+</td><td valign="top" width="50%">Show state of <span class="sc">gdb</span> Python scripts. 
+<br></td></tr><tr align="left"><td valign="top" width="50%">See <a href="set-auto_002dload-guile_002dscripts.html#set-auto_002dload-guile_002dscripts">set auto-load guile-scripts</a>. 
+</td><td valign="top" width="50%">Control for <span class="sc">gdb</span> Guile scripts. 
+<br></td></tr><tr align="left"><td valign="top" width="50%">See <a href="show-auto_002dload-guile_002dscripts.html#show-auto_002dload-guile_002dscripts">show auto-load guile-scripts</a>. 
+</td><td valign="top" width="50%">Show setting of <span class="sc">gdb</span> Guile scripts. 
+<br></td></tr><tr align="left"><td valign="top" width="50%">See <a href="info-auto_002dload-guile_002dscripts.html#info-auto_002dload-guile_002dscripts">info auto-load guile-scripts</a>. 
+</td><td valign="top" width="50%">Show state of <span class="sc">gdb</span> Guile scripts. 
+<br></td></tr><tr align="left"><td valign="top" width="50%">See <a href="set-auto_002dload-scripts_002ddirectory.html#set-auto_002dload-scripts_002ddirectory">set auto-load scripts-directory</a>. 
+</td><td valign="top" width="50%">Control for <span class="sc">gdb</span> auto-loaded scripts location. 
+<br></td></tr><tr align="left"><td valign="top" width="50%">See <a href="show-auto_002dload-scripts_002ddirectory.html#show-auto_002dload-scripts_002ddirectory">show auto-load scripts-directory</a>. 
+</td><td valign="top" width="50%">Show <span class="sc">gdb</span> auto-loaded scripts location. 
+<br></td></tr><tr align="left"><td valign="top" width="50%">See <a href="add_002dauto_002dload_002dscripts_002ddirectory.html#add_002dauto_002dload_002dscripts_002ddirectory">add-auto-load-scripts-directory</a>. 
+</td><td valign="top" width="50%">Add directory for auto-loaded scripts location list. 
+<br></td></tr><tr align="left"><td valign="top" width="50%">See <a href="set-auto_002dload-local_002dgdbinit.html#set-auto_002dload-local_002dgdbinit">set auto-load local-gdbinit</a>. 
+</td><td valign="top" width="50%">Control for init file in the current directory. 
+<br></td></tr><tr align="left"><td valign="top" width="50%">See <a href="show-auto_002dload-local_002dgdbinit.html#show-auto_002dload-local_002dgdbinit">show auto-load local-gdbinit</a>. 
+</td><td valign="top" width="50%">Show setting of init file in the current directory. 
+<br></td></tr><tr align="left"><td valign="top" width="50%">See <a href="info-auto_002dload-local_002dgdbinit.html#info-auto_002dload-local_002dgdbinit">info auto-load local-gdbinit</a>. 
+</td><td valign="top" width="50%">Show state of init file in the current directory. 
+<br></td></tr><tr align="left"><td valign="top" width="50%">See <a href="set-auto_002dload-libthread_002ddb.html#set-auto_002dload-libthread_002ddb">set auto-load libthread-db</a>. 
+</td><td valign="top" width="50%">Control for thread debugging library. 
+<br></td></tr><tr align="left"><td valign="top" width="50%">See <a href="show-auto_002dload-libthread_002ddb.html#show-auto_002dload-libthread_002ddb">show auto-load libthread-db</a>. 
+</td><td valign="top" width="50%">Show setting of thread debugging library. 
+<br></td></tr><tr align="left"><td valign="top" width="50%">See <a href="info-auto_002dload-libthread_002ddb.html#info-auto_002dload-libthread_002ddb">info auto-load libthread-db</a>. 
+</td><td valign="top" width="50%">Show state of thread debugging library. 
+<br></td></tr><tr align="left"><td valign="top" width="50%">See <a href="set-auto_002dload-safe_002dpath.html#set-auto_002dload-safe_002dpath">set auto-load safe-path</a>. 
+</td><td valign="top" width="50%">Control directories trusted for automatic loading. 
+<br></td></tr><tr align="left"><td valign="top" width="50%">See <a href="show-auto_002dload-safe_002dpath.html#show-auto_002dload-safe_002dpath">show auto-load safe-path</a>. 
+</td><td valign="top" width="50%">Show directories trusted for automatic loading. 
+<br></td></tr><tr align="left"><td valign="top" width="50%">See <a href="add_002dauto_002dload_002dsafe_002dpath.html#add_002dauto_002dload_002dsafe_002dpath">add-auto-load-safe-path</a>. 
+</td><td valign="top" width="50%">Add directory trusted for automatic loading.
+   <br></td></tr></table>
+
+   </body></html>
+

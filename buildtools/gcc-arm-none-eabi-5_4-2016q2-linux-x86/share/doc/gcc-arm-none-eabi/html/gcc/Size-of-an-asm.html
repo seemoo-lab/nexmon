@@ -1,0 +1,75 @@
+<html lang="en">
+<head>
+<title>Size of an asm - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Using-Assembly-Language-with-C.html#Using-Assembly-Language-with-C" title="Using Assembly Language with C">
+<link rel="prev" href="Explicit-Reg-Vars.html#Explicit-Reg-Vars" title="Explicit Reg Vars">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Size-of-an-asm"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Explicit-Reg-Vars.html#Explicit-Reg-Vars">Explicit Reg Vars</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Using-Assembly-Language-with-C.html#Using-Assembly-Language-with-C">Using Assembly Language with C</a>
+<hr>
+</div>
+
+<h4 class="subsection">6.43.6 Size of an <code>asm</code></h4>
+
+<p>Some targets require that GCC track the size of each instruction used
+in order to generate correct code.  Because the final length of the
+code produced by an <code>asm</code> statement is only known by the
+assembler, GCC must make an estimate as to how big it will be.  It
+does this by counting the number of instructions in the pattern of the
+<code>asm</code> and multiplying that by the length of the longest
+instruction supported by that processor.  (When working out the number
+of instructions, it assumes that any occurrence of a newline or of
+whatever statement separator character is supported by the assembler &ndash;
+typically &lsquo;<samp><span class="samp">;</span></samp>&rsquo; &mdash; indicates the end of an instruction.)
+
+ <p>Normally, GCC's estimate is adequate to ensure that correct
+code is generated, but it is possible to confuse the compiler if you use
+pseudo instructions or assembler macros that expand into multiple real
+instructions, or if you use assembler directives that expand to more
+space in the object file than is needed for a single instruction. 
+If this happens then the assembler may produce a diagnostic saying that
+a label is unreachable.
+
+ </body></html>
+

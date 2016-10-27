@@ -1,0 +1,113 @@
+<html lang="en">
+<head>
+<title>GDB Scheme Data Types - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Guile-API.html#Guile-API" title="Guile API">
+<link rel="prev" href="Guile-Configuration.html#Guile-Configuration" title="Guile Configuration">
+<link rel="next" href="Guile-Exception-Handling.html#Guile-Exception-Handling" title="Guile Exception Handling">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="GDB-Scheme-Data-Types"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Guile-Exception-Handling.html#Guile-Exception-Handling">Guile Exception Handling</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Guile-Configuration.html#Guile-Configuration">Guile Configuration</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Guile-API.html#Guile-API">Guile API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.3.3.3 GDB Scheme Data Types</h5>
+
+<p><a name="index-gdb-objects-2369"></a>
+The values exposed by <span class="sc">gdb</span> to Guile are known as
+<span class="sc">gdb</span><dfn> objects</dfn>.  There are several kinds of <span class="sc">gdb</span>
+object, and each is disjoint from all other types known to Guile.
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>gdb-object-kind</b><var> object<a name="index-gdb_002dobject_002dkind-2370"></a></var><br>
+<blockquote><p>Return the kind of the <span class="sc">gdb</span> object, e.g., <code>&lt;gdb:breakpoint&gt;</code>,
+as a symbol. 
+</p></blockquote></div>
+
+   <p><span class="sc">gdb</span> defines the following object types:
+
+     <dl>
+<dt><code>&lt;gdb:arch&gt;</code><dd>See <a href="Architectures-In-Guile.html#Architectures-In-Guile">Architectures In Guile</a>.
+
+     <br><dt><code>&lt;gdb:block&gt;</code><dd>See <a href="Blocks-In-Guile.html#Blocks-In-Guile">Blocks In Guile</a>.
+
+     <br><dt><code>&lt;gdb:block-symbols-iterator&gt;</code><dd>See <a href="Blocks-In-Guile.html#Blocks-In-Guile">Blocks In Guile</a>.
+
+     <br><dt><code>&lt;gdb:breakpoint&gt;</code><dd>See <a href="Breakpoints-In-Guile.html#Breakpoints-In-Guile">Breakpoints In Guile</a>.
+
+     <br><dt><code>&lt;gdb:command&gt;</code><dd>See <a href="Commands-In-Guile.html#Commands-In-Guile">Commands In Guile</a>.
+
+     <br><dt><code>&lt;gdb:exception&gt;</code><dd>See <a href="Guile-Exception-Handling.html#Guile-Exception-Handling">Guile Exception Handling</a>.
+
+     <br><dt><code>&lt;gdb:frame&gt;</code><dd>See <a href="Frames-In-Guile.html#Frames-In-Guile">Frames In Guile</a>.
+
+     <br><dt><code>&lt;gdb:iterator&gt;</code><dd>See <a href="Iterators-In-Guile.html#Iterators-In-Guile">Iterators In Guile</a>.
+
+     <br><dt><code>&lt;gdb:lazy-string&gt;</code><dd>See <a href="Lazy-Strings-In-Guile.html#Lazy-Strings-In-Guile">Lazy Strings In Guile</a>.
+
+     <br><dt><code>&lt;gdb:objfile&gt;</code><dd>See <a href="Objfiles-In-Guile.html#Objfiles-In-Guile">Objfiles In Guile</a>.
+
+     <br><dt><code>&lt;gdb:parameter&gt;</code><dd>See <a href="Parameters-In-Guile.html#Parameters-In-Guile">Parameters In Guile</a>.
+
+     <br><dt><code>&lt;gdb:pretty-printer&gt;</code><dd>See <a href="Guile-Pretty-Printing-API.html#Guile-Pretty-Printing-API">Guile Pretty Printing API</a>.
+
+     <br><dt><code>&lt;gdb:pretty-printer-worker&gt;</code><dd>See <a href="Guile-Pretty-Printing-API.html#Guile-Pretty-Printing-API">Guile Pretty Printing API</a>.
+
+     <br><dt><code>&lt;gdb:progspace&gt;</code><dd>See <a href="Progspaces-In-Guile.html#Progspaces-In-Guile">Progspaces In Guile</a>.
+
+     <br><dt><code>&lt;gdb:symbol&gt;</code><dd>See <a href="Symbols-In-Guile.html#Symbols-In-Guile">Symbols In Guile</a>.
+
+     <br><dt><code>&lt;gdb:symtab&gt;</code><dd>See <a href="Symbol-Tables-In-Guile.html#Symbol-Tables-In-Guile">Symbol Tables In Guile</a>.
+
+     <br><dt><code>&lt;gdb:sal&gt;</code><dd>See <a href="Symbol-Tables-In-Guile.html#Symbol-Tables-In-Guile">Symbol Tables In Guile</a>.
+
+     <br><dt><code>&lt;gdb:type&gt;</code><dd>See <a href="Types-In-Guile.html#Types-In-Guile">Types In Guile</a>.
+
+     <br><dt><code>&lt;gdb:field&gt;</code><dd>See <a href="Types-In-Guile.html#Types-In-Guile">Types In Guile</a>.
+
+     <br><dt><code>&lt;gdb:value&gt;</code><dd>See <a href="Values-From-Inferior-In-Guile.html#Values-From-Inferior-In-Guile">Values From Inferior In Guile</a>. 
+</dl>
+
+   <p>The following <span class="sc">gdb</span> objects are managed internally so that the
+Scheme function <code>eq?</code> may be applied to them.
+
+     <dl>
+<dt><code>&lt;gdb:arch&gt;</code><br><dt><code>&lt;gdb:block&gt;</code><br><dt><code>&lt;gdb:breakpoint&gt;</code><br><dt><code>&lt;gdb:frame&gt;</code><br><dt><code>&lt;gdb:objfile&gt;</code><br><dt><code>&lt;gdb:progspace&gt;</code><br><dt><code>&lt;gdb:symbol&gt;</code><br><dt><code>&lt;gdb:symtab&gt;</code><br><dt><code>&lt;gdb:type&gt;</code><dd></dl>
+
+   </body></html>
+

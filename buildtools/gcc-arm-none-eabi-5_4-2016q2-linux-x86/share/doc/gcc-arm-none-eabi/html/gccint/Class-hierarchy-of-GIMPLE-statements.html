@@ -1,0 +1,196 @@
+<html lang="en">
+<head>
+<title>Class hierarchy of GIMPLE statements - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="GIMPLE.html#GIMPLE" title="GIMPLE">
+<link rel="prev" href="Tuple-representation.html#Tuple-representation" title="Tuple representation">
+<link rel="next" href="GIMPLE-instruction-set.html#GIMPLE-instruction-set" title="GIMPLE instruction set">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Class-hierarchy-of-GIMPLE-statements"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="GIMPLE-instruction-set.html#GIMPLE-instruction-set">GIMPLE instruction set</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Tuple-representation.html#Tuple-representation">Tuple representation</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="GIMPLE.html#GIMPLE">GIMPLE</a>
+<hr>
+</div>
+
+<h3 class="section">11.2 Class hierarchy of GIMPLE statements</h3>
+
+<p><a name="index-GIMPLE-class-hierarchy-2136"></a>
+The following diagram shows the C++ inheritance hierarchy of statement
+kinds, along with their relationships to <code>GSS_</code> values (layouts) and
+<code>GIMPLE_</code> values (codes):
+
+<pre class="smallexample">        gimple_statement_base
+          |    layout: GSS_BASE
+          |    used for 4 codes: GIMPLE_ERROR_MARK
+          |                      GIMPLE_NOP
+          |                      GIMPLE_OMP_SECTIONS_SWITCH
+          |                      GIMPLE_PREDICT
+          |
+          + gimple_statement_with_ops_base
+          |   |    (no GSS layout)
+          |   |
+          |   + gimple_statement_with_ops
+          |   |   |    layout: GSS_WITH_OPS
+          |   |   |
+          |   |   + gcond
+          |   |   |     code: GIMPLE_COND
+          |   |   |
+          |   |   + gdebug
+          |   |   |     code: GIMPLE_DEBUG
+          |   |   |
+          |   |   + ggoto
+          |   |   |     code: GIMPLE_GOTO
+          |   |   |
+          |   |   + glabel
+          |   |   |     code: GIMPLE_LABEL
+          |   |   |
+          |   |   + gswitch
+          |   |         code: GIMPLE_SWITCH
+          |   |
+          |   + gimple_statement_with_memory_ops_base
+          |       |    layout: GSS_WITH_MEM_OPS_BASE
+          |       |
+          |       + gimple_statement_with_memory_ops
+          |       |   |    layout: GSS_WITH_MEM_OPS
+          |       |   |
+          |       |   + gassign
+          |       |   |    code GIMPLE_ASSIGN
+          |       |   |
+          |       |   + greturn
+          |       |        code GIMPLE_RETURN
+          |       |
+          |       + gcall
+          |       |        layout: GSS_CALL, code: GIMPLE_CALL
+          |       |
+          |       + gasm
+          |       |        layout: GSS_ASM, code: GIMPLE_ASM
+          |       |
+          |       + gtransaction
+          |                layout: GSS_TRANSACTION, code: GIMPLE_TRANSACTION
+          |
+          + gimple_statement_omp
+          |   |    layout: GSS_OMP.  Used for code GIMPLE_OMP_SECTION
+          |   |
+          |   + gomp_critical
+          |   |        layout: GSS_OMP_CRITICAL, code: GIMPLE_OMP_CRITICAL
+          |   |
+          |   + gomp_for
+          |   |        layout: GSS_OMP_FOR, code: GIMPLE_OMP_FOR
+          |   |
+          |   + gomp_parallel_layout
+          |   |   |    layout: GSS_OMP_PARALLEL_LAYOUT
+          |   |   |
+          |   |   + gimple_statement_omp_taskreg
+          |   |   |   |
+          |   |   |   + gomp_parallel
+          |   |   |   |        code: GIMPLE_OMP_PARALLEL
+          |   |   |   |
+          |   |   |   + gomp_task
+          |   |   |            code: GIMPLE_OMP_TASK
+          |   |   |
+          |   |   + gimple_statement_omp_target
+          |   |            code: GIMPLE_OMP_TARGET
+          |   |
+          |   + gomp_sections
+          |   |        layout: GSS_OMP_SECTIONS, code: GIMPLE_OMP_SECTIONS
+          |   |
+          |   + gimple_statement_omp_single_layout
+          |       |    layout: GSS_OMP_SINGLE_LAYOUT
+          |       |
+          |       + gomp_single
+          |       |        code: GIMPLE_OMP_SINGLE
+          |       |
+          |       + gomp_teams
+          |                code: GIMPLE_OMP_TEAMS
+          |
+          + gbind
+          |        layout: GSS_BIND, code: GIMPLE_BIND
+          |
+          + gcatch
+          |        layout: GSS_CATCH, code: GIMPLE_CATCH
+          |
+          + geh_filter
+          |        layout: GSS_EH_FILTER, code: GIMPLE_EH_FILTER
+          |
+          + geh_else
+          |        layout: GSS_EH_ELSE, code: GIMPLE_EH_ELSE
+          |
+          + geh_mnt
+          |        layout: GSS_EH_MNT, code: GIMPLE_EH_MUST_NOT_THROW
+          |
+          + gphi
+          |        layout: GSS_PHI, code: GIMPLE_PHI
+          |
+          + gimple_statement_eh_ctrl
+          |   |    layout: GSS_EH_CTRL
+          |   |
+          |   + gresx
+          |   |        code: GIMPLE_RESX
+          |   |
+          |   + geh_dispatch
+          |            code: GIMPLE_EH_DISPATCH
+          |
+          + gtry
+          |        layout: GSS_TRY, code: GIMPLE_TRY
+          |
+          + gimple_statement_wce
+          |        layout: GSS_WCE, code: GIMPLE_WITH_CLEANUP_EXPR
+          |
+          + gomp_continue
+          |        layout: GSS_OMP_CONTINUE, code: GIMPLE_OMP_CONTINUE
+          |
+          + gomp_atomic_load
+          |        layout: GSS_OMP_ATOMIC_LOAD, code: GIMPLE_OMP_ATOMIC_LOAD
+          |
+          + gimple_statement_omp_atomic_store_layout
+              |    layout: GSS_OMP_ATOMIC_STORE_LAYOUT,
+              |    code: GIMPLE_OMP_ATOMIC_STORE
+              |
+              + gomp_atomic_store
+              |        code: GIMPLE_OMP_ATOMIC_STORE
+              |
+              + gomp_return
+                       code: GIMPLE_OMP_RETURN
+</pre>
+ </body></html>
+

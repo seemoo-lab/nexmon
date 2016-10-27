@@ -1,0 +1,89 @@
+<html lang="en">
+<head>
+<title>Dependent Patterns - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Machine-Desc.html#Machine-Desc" title="Machine Desc">
+<link rel="prev" href="Pattern-Ordering.html#Pattern-Ordering" title="Pattern Ordering">
+<link rel="next" href="Jump-Patterns.html#Jump-Patterns" title="Jump Patterns">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Dependent-Patterns"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Jump-Patterns.html#Jump-Patterns">Jump Patterns</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Pattern-Ordering.html#Pattern-Ordering">Pattern Ordering</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Machine-Desc.html#Machine-Desc">Machine Desc</a>
+<hr>
+</div>
+
+<h3 class="section">16.11 Interdependence of Patterns</h3>
+
+<p><a name="index-Dependent-Patterns-3673"></a><a name="index-Interdependence-of-Patterns-3674"></a>
+In some cases machines support instructions identical except for the
+machine mode of one or more operands.  For example, there may be
+&ldquo;sign-extend halfword&rdquo; and &ldquo;sign-extend byte&rdquo; instructions whose
+patterns are
+
+<pre class="smallexample">     (set (match_operand:SI 0 ...)
+          (extend:SI (match_operand:HI 1 ...)))
+     
+     (set (match_operand:SI 0 ...)
+          (extend:SI (match_operand:QI 1 ...)))
+</pre>
+ <p class="noindent">Constant integers do not specify a machine mode, so an instruction to
+extend a constant value could match either pattern.  The pattern it
+actually will match is the one that appears first in the file.  For correct
+results, this must be the one for the widest possible mode (<code>HImode</code>,
+here).  If the pattern matches the <code>QImode</code> instruction, the results
+will be incorrect if the constant value does not actually fit that mode.
+
+ <p>Such instructions to extend constants are rarely generated because they are
+optimized away, but they do occasionally happen in nonoptimized
+compilations.
+
+ <p>If a constraint in a pattern allows a constant, the reload pass may
+replace a register with a constant permitted by the constraint in some
+cases.  Similarly for memory references.  Because of this substitution,
+you should not provide separate patterns for increment and decrement
+instructions.  Instead, they should be generated from the same pattern
+that supports register-register add insns by examining the operands and
+generating the appropriate machine instruction.
+
+ </body></html>
+

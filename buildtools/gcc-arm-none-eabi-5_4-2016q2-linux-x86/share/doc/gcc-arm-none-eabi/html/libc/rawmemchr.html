@@ -1,0 +1,68 @@
+<html lang="en">
+<head>
+<title>rawmemchr - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Strings.html#Strings" title="Strings">
+<link rel="prev" href="memset.html#memset" title="memset">
+<link rel="next" href="rindex.html#rindex" title="rindex">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="rawmemchr"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="rindex.html#rindex">rindex</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="memset.html#memset">memset</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Strings.html#Strings">Strings</a>
+<hr>
+</div>
+
+<h3 class="section">5.14 <code>rawmemchr</code>&mdash;find character in memory</h3>
+
+<p><a name="index-rawmemchr-430"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;string.h&gt;
+     void *rawmemchr(const void *<var>src</var>, int <var>c</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+This function searches memory starting at <code>*</code><var>src</var> for the
+character <var>c</var>.  The search only ends with the first occurrence
+of <var>c</var>; in particular, <code>NUL</code> does not terminate the search. 
+No bounds checking is performed, so this function should only
+be used when it is certain that the character <var>c</var> will be found.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+A pointer to the first occurance of character <var>c</var>.
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+<code>rawmemchr</code> is a GNU extension.
+
+   <p><code>rawmemchr</code> requires no supporting OS subroutines.
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

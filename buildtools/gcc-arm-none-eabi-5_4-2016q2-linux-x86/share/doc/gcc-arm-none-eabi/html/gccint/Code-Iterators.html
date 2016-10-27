@@ -1,0 +1,126 @@
+<html lang="en">
+<head>
+<title>Code Iterators - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Iterators.html#Iterators" title="Iterators">
+<link rel="prev" href="Mode-Iterators.html#Mode-Iterators" title="Mode Iterators">
+<link rel="next" href="Int-Iterators.html#Int-Iterators" title="Int Iterators">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Code-Iterators"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Int-Iterators.html#Int-Iterators">Int Iterators</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Mode-Iterators.html#Mode-Iterators">Mode Iterators</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Iterators.html#Iterators">Iterators</a>
+<hr>
+</div>
+
+<h4 class="subsection">16.23.2 Code Iterators</h4>
+
+<p><a name="index-code-iterators-in-_0040file_007b_002emd_007d-files-3840"></a><a name="index-define_005fcode_005fiterator-3841"></a><a name="index-define_005fcode_005fattr-3842"></a>
+Code iterators operate in a similar way to mode iterators.  See <a href="Mode-Iterators.html#Mode-Iterators">Mode Iterators</a>.
+
+ <p>The construct:
+
+<pre class="smallexample">     (define_code_iterator <var>name</var> [(<var>code1</var> "<var>cond1</var>") ... (<var>coden</var> "<var>condn</var>")])
+</pre>
+ <p>defines a pseudo rtx code <var>name</var> that can be instantiated as
+<var>codei</var> if condition <var>condi</var> is true.  Each <var>codei</var>
+must have the same rtx format.  See <a href="RTL-Classes.html#RTL-Classes">RTL Classes</a>.
+
+ <p>As with mode iterators, each pattern that uses <var>name</var> will be
+expanded <var>n</var> times, once with all uses of <var>name</var> replaced by
+<var>code1</var>, once with all uses replaced by <var>code2</var>, and so on. 
+See <a href="Defining-Mode-Iterators.html#Defining-Mode-Iterators">Defining Mode Iterators</a>.
+
+ <p>It is possible to define attributes for codes as well as for modes. 
+There are two standard code attributes: <code>code</code>, the name of the
+code in lower case, and <code>CODE</code>, the name of the code in upper case. 
+Other attributes are defined using:
+
+<pre class="smallexample">     (define_code_attr <var>name</var> [(<var>code1</var> "<var>value1</var>") ... (<var>coden</var> "<var>valuen</var>")])
+</pre>
+ <p>Here's an example of code iterators in action, taken from the MIPS port:
+
+<pre class="smallexample">     (define_code_iterator any_cond [unordered ordered unlt unge uneq ltgt unle ungt
+                                     eq ne gt ge lt le gtu geu ltu leu])
+     
+     (define_expand "b&lt;code&gt;"
+       [(set (pc)
+             (if_then_else (any_cond:CC (cc0)
+                                        (const_int 0))
+                           (label_ref (match_operand 0 ""))
+                           (pc)))]
+       ""
+     {
+       gen_conditional_branch (operands, &lt;CODE&gt;);
+       DONE;
+     })
+</pre>
+ <p>This is equivalent to:
+
+<pre class="smallexample">     (define_expand "bunordered"
+       [(set (pc)
+             (if_then_else (unordered:CC (cc0)
+                                         (const_int 0))
+                           (label_ref (match_operand 0 ""))
+                           (pc)))]
+       ""
+     {
+       gen_conditional_branch (operands, UNORDERED);
+       DONE;
+     })
+     
+     (define_expand "bordered"
+       [(set (pc)
+             (if_then_else (ordered:CC (cc0)
+                                       (const_int 0))
+                           (label_ref (match_operand 0 ""))
+                           (pc)))]
+       ""
+     {
+       gen_conditional_branch (operands, ORDERED);
+       DONE;
+     })
+     
+     ...
+</pre>
+ </body></html>
+

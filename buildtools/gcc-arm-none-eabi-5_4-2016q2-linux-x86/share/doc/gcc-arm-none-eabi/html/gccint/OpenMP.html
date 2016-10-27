@@ -1,0 +1,217 @@
+<html lang="en">
+<head>
+<title>OpenMP - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Statements.html#Statements" title="Statements">
+<link rel="prev" href="Cleanups.html#Cleanups" title="Cleanups">
+<link rel="next" href="OpenACC.html#OpenACC" title="OpenACC">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="OpenMP"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="OpenACC.html#OpenACC">OpenACC</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Cleanups.html#Cleanups">Cleanups</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Statements.html#Statements">Statements</a>
+<hr>
+</div>
+
+<h4 class="subsection">10.7.7 OpenMP</h4>
+
+<p><a name="index-OMP_005fPARALLEL-1943"></a><a name="index-OMP_005fFOR-1944"></a><a name="index-OMP_005fSECTIONS-1945"></a><a name="index-OMP_005fSINGLE-1946"></a><a name="index-OMP_005fSECTION-1947"></a><a name="index-OMP_005fMASTER-1948"></a><a name="index-OMP_005fORDERED-1949"></a><a name="index-OMP_005fCRITICAL-1950"></a><a name="index-OMP_005fRETURN-1951"></a><a name="index-OMP_005fCONTINUE-1952"></a><a name="index-OMP_005fATOMIC-1953"></a><a name="index-OMP_005fCLAUSE-1954"></a>
+All the statements starting with <code>OMP_</code> represent directives and
+clauses used by the OpenMP API <a href="http://www.openmp.org/">http://www.openmp.org/</a><!-- /@w -->.
+
+     <dl>
+<dt><code>OMP_PARALLEL</code><dd>
+Represents <code>#pragma omp parallel [clause1 ... clauseN]</code>. It
+has four operands:
+
+     <p>Operand <code>OMP_PARALLEL_BODY</code> is valid while in GENERIC and
+High GIMPLE forms.  It contains the body of code to be executed
+by all the threads.  During GIMPLE lowering, this operand becomes
+<code>NULL</code> and the body is emitted linearly after
+<code>OMP_PARALLEL</code>.
+
+     <p>Operand <code>OMP_PARALLEL_CLAUSES</code> is the list of clauses
+associated with the directive.
+
+     <p>Operand <code>OMP_PARALLEL_FN</code> is created by
+<code>pass_lower_omp</code>, it contains the <code>FUNCTION_DECL</code>
+for the function that will contain the body of the parallel
+region.
+
+     <p>Operand <code>OMP_PARALLEL_DATA_ARG</code> is also created by
+<code>pass_lower_omp</code>. If there are shared variables to be
+communicated to the children threads, this operand will contain
+the <code>VAR_DECL</code> that contains all the shared values and
+variables.
+
+     <br><dt><code>OMP_FOR</code><dd>
+Represents <code>#pragma omp for [clause1 ... clauseN]</code>.  It has
+six operands:
+
+     <p>Operand <code>OMP_FOR_BODY</code> contains the loop body.
+
+     <p>Operand <code>OMP_FOR_CLAUSES</code> is the list of clauses
+associated with the directive.
+
+     <p>Operand <code>OMP_FOR_INIT</code> is the loop initialization code of
+the form <code>VAR = N1</code>.
+
+     <p>Operand <code>OMP_FOR_COND</code> is the loop conditional expression
+of the form <code>VAR {&lt;,&gt;,&lt;=,&gt;=} N2</code>.
+
+     <p>Operand <code>OMP_FOR_INCR</code> is the loop index increment of the
+form <code>VAR {+=,-=} INCR</code>.
+
+     <p>Operand <code>OMP_FOR_PRE_BODY</code> contains side-effect code from
+operands <code>OMP_FOR_INIT</code>, <code>OMP_FOR_COND</code> and
+<code>OMP_FOR_INC</code>.  These side-effects are part of the
+<code>OMP_FOR</code> block but must be evaluated before the start of
+loop body.
+
+     <p>The loop index variable <code>VAR</code> must be a signed integer variable,
+which is implicitly private to each thread.  Bounds
+<code>N1</code> and <code>N2</code> and the increment expression
+<code>INCR</code> are required to be loop invariant integer
+expressions that are evaluated without any synchronization. The
+evaluation order, frequency of evaluation and side-effects are
+unspecified by the standard.
+
+     <br><dt><code>OMP_SECTIONS</code><dd>
+Represents <code>#pragma omp sections [clause1 ... clauseN]</code>.
+
+     <p>Operand <code>OMP_SECTIONS_BODY</code> contains the sections body,
+which in turn contains a set of <code>OMP_SECTION</code> nodes for
+each of the concurrent sections delimited by <code>#pragma omp
+section</code>.
+
+     <p>Operand <code>OMP_SECTIONS_CLAUSES</code> is the list of clauses
+associated with the directive.
+
+     <br><dt><code>OMP_SECTION</code><dd>
+Section delimiter for <code>OMP_SECTIONS</code>.
+
+     <br><dt><code>OMP_SINGLE</code><dd>
+Represents <code>#pragma omp single</code>.
+
+     <p>Operand <code>OMP_SINGLE_BODY</code> contains the body of code to be
+executed by a single thread.
+
+     <p>Operand <code>OMP_SINGLE_CLAUSES</code> is the list of clauses
+associated with the directive.
+
+     <br><dt><code>OMP_MASTER</code><dd>
+Represents <code>#pragma omp master</code>.
+
+     <p>Operand <code>OMP_MASTER_BODY</code> contains the body of code to be
+executed by the master thread.
+
+     <br><dt><code>OMP_ORDERED</code><dd>
+Represents <code>#pragma omp ordered</code>.
+
+     <p>Operand <code>OMP_ORDERED_BODY</code> contains the body of code to be
+executed in the sequential order dictated by the loop index
+variable.
+
+     <br><dt><code>OMP_CRITICAL</code><dd>
+Represents <code>#pragma omp critical [name]</code>.
+
+     <p>Operand <code>OMP_CRITICAL_BODY</code> is the critical section.
+
+     <p>Operand <code>OMP_CRITICAL_NAME</code> is an optional identifier to
+label the critical section.
+
+     <br><dt><code>OMP_RETURN</code><dd>
+This does not represent any OpenMP directive, it is an artificial
+marker to indicate the end of the body of an OpenMP. It is used
+by the flow graph (<code>tree-cfg.c</code>) and OpenMP region
+building code (<code>omp-low.c</code>).
+
+     <br><dt><code>OMP_CONTINUE</code><dd>
+Similarly, this instruction does not represent an OpenMP
+directive, it is used by <code>OMP_FOR</code> (and similar codes) as well as
+<code>OMP_SECTIONS</code> to mark the place where the code needs to
+loop to the next iteration, or the next section, respectively.
+
+     <p>In some cases, <code>OMP_CONTINUE</code> is placed right before
+<code>OMP_RETURN</code>.  But if there are cleanups that need to
+occur right after the looping body, it will be emitted between
+<code>OMP_CONTINUE</code> and <code>OMP_RETURN</code>.
+
+     <br><dt><code>OMP_ATOMIC</code><dd>
+Represents <code>#pragma omp atomic</code>.
+
+     <p>Operand 0 is the address at which the atomic operation is to be
+performed.
+
+     <p>Operand 1 is the expression to evaluate.  The gimplifier tries
+three alternative code generation strategies.  Whenever possible,
+an atomic update built-in is used.  If that fails, a
+compare-and-swap loop is attempted.  If that also fails, a
+regular critical section around the expression is used.
+
+     <br><dt><code>OMP_CLAUSE</code><dd>
+Represents clauses associated with one of the <code>OMP_</code> directives. 
+Clauses are represented by separate subcodes defined in
+<samp><span class="file">tree.h</span></samp>.  Clauses codes can be one of:
+<code>OMP_CLAUSE_PRIVATE</code>, <code>OMP_CLAUSE_SHARED</code>,
+<code>OMP_CLAUSE_FIRSTPRIVATE</code>,
+<code>OMP_CLAUSE_LASTPRIVATE</code>, <code>OMP_CLAUSE_COPYIN</code>,
+<code>OMP_CLAUSE_COPYPRIVATE</code>, <code>OMP_CLAUSE_IF</code>,
+<code>OMP_CLAUSE_NUM_THREADS</code>, <code>OMP_CLAUSE_SCHEDULE</code>,
+<code>OMP_CLAUSE_NOWAIT</code>, <code>OMP_CLAUSE_ORDERED</code>,
+<code>OMP_CLAUSE_DEFAULT</code>, <code>OMP_CLAUSE_REDUCTION</code>,
+<code>OMP_CLAUSE_COLLAPSE</code>, <code>OMP_CLAUSE_UNTIED</code>,
+<code>OMP_CLAUSE_FINAL</code>, and <code>OMP_CLAUSE_MERGEABLE</code>.  Each code
+represents the corresponding OpenMP clause.
+
+     <p>Clauses associated with the same directive are chained together
+via <code>OMP_CLAUSE_CHAIN</code>. Those clauses that accept a list
+of variables are restricted to exactly one, accessed with
+<code>OMP_CLAUSE_VAR</code>.  Therefore, multiple variables under the
+same clause <code>C</code> need to be represented as multiple <code>C</code> clauses
+chained together.  This facilitates adding new clauses during
+compilation.
+
+ </dl>
+
+ </body></html>
+

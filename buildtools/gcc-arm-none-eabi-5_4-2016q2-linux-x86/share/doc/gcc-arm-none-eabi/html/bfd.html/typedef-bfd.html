@@ -1,0 +1,388 @@
+<html lang="en">
+<head>
+<title>typedef bfd - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="BFD-front-end.html#BFD-front-end" title="BFD front end">
+<link rel="prev" href="BFD-front-end.html#BFD-front-end" title="BFD front end">
+<link rel="next" href="Error-reporting.html#Error-reporting" title="Error reporting">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="typedef-bfd"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Error-reporting.html#Error-reporting">Error reporting</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="BFD-front-end.html#BFD-front-end">BFD front end</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="BFD-front-end.html#BFD-front-end">BFD front end</a>
+<hr>
+</div>
+
+<h3 class="section">2.1 <code>typedef bfd</code></h3>
+
+<p>A BFD has type <code>bfd</code>; objects of this type are the
+cornerstone of any application using BFD. Using BFD
+consists of making references though the BFD and to data in the BFD.
+
+   <p>Here is the structure that defines the type <code>bfd</code>.  It
+contains the major data about the file and pointers
+to the rest of the data.
+
+<pre class="example">     
+     enum bfd_direction
+       {
+         no_direction = 0,
+         read_direction = 1,
+         write_direction = 2,
+         both_direction = 3
+       };
+     
+     enum bfd_plugin_format
+       {
+         bfd_plugin_uknown = 0,
+         bfd_plugin_yes = 1,
+         bfd_plugin_no = 2
+       };
+     
+     struct bfd_build_id
+       {
+         bfd_size_type size;
+         bfd_byte data[1];
+       };
+     
+     struct bfd
+     {
+       /* The filename the application opened the BFD with.  */
+       const char *filename;
+     
+       /* A pointer to the target jump table.  */
+       const struct bfd_target *xvec;
+     
+       /* The IOSTREAM, and corresponding IO vector that provide access
+          to the file backing the BFD.  */
+       void *iostream;
+       const struct bfd_iovec *iovec;
+     
+       /* The caching routines use these to maintain a
+          least-recently-used list of BFDs.  */
+       struct bfd *lru_prev, *lru_next;
+     
+       /* When a file is closed by the caching routines, BFD retains
+          state information on the file here...  */
+       ufile_ptr where;
+     
+       /* File modified time, if mtime_set is TRUE.  */
+       long mtime;
+     
+       /* A unique identifier of the BFD  */
+       unsigned int id;
+     
+       /* The format which belongs to the BFD. (object, core, etc.)  */
+       ENUM_BITFIELD (bfd_format) format : 3;
+     
+       /* The direction with which the BFD was opened.  */
+       ENUM_BITFIELD (bfd_direction) direction : 2;
+     
+       /* Format_specific flags.  */
+       flagword flags : 18;
+     
+       /* Values that may appear in the flags field of a BFD.  These also
+          appear in the object_flags field of the bfd_target structure, where
+          they indicate the set of flags used by that backend (not all flags
+          are meaningful for all object file formats) (FIXME: at the moment,
+          the object_flags values have mostly just been copied from backend
+          to another, and are not necessarily correct).  */
+     
+     #define BFD_NO_FLAGS   0x00
+     
+       /* BFD contains relocation entries.  */
+     #define HAS_RELOC      0x01
+     
+       /* BFD is directly executable.  */
+     #define EXEC_P         0x02
+     
+       /* BFD has line number information (basically used for F_LNNO in a
+          COFF header).  */
+     #define HAS_LINENO     0x04
+     
+       /* BFD has debugging information.  */
+     #define HAS_DEBUG      0x08
+     
+       /* BFD has symbols.  */
+     #define HAS_SYMS       0x10
+     
+       /* BFD has local symbols (basically used for F_LSYMS in a COFF
+          header).  */
+     #define HAS_LOCALS     0x20
+     
+       /* BFD is a dynamic object.  */
+     #define DYNAMIC        0x40
+     
+       /* Text section is write protected (if D_PAGED is not set, this is
+          like an a.out NMAGIC file) (the linker sets this by default, but
+          clears it for -r or -N).  */
+     #define WP_TEXT        0x80
+     
+       /* BFD is dynamically paged (this is like an a.out ZMAGIC file) (the
+          linker sets this by default, but clears it for -r or -n or -N).  */
+     #define D_PAGED        0x100
+     
+       /* BFD is relaxable (this means that bfd_relax_section may be able to
+          do something) (sometimes bfd_relax_section can do something even if
+          this is not set).  */
+     #define BFD_IS_RELAXABLE 0x200
+     
+       /* This may be set before writing out a BFD to request using a
+          traditional format.  For example, this is used to request that when
+          writing out an a.out object the symbols not be hashed to eliminate
+          duplicates.  */
+     #define BFD_TRADITIONAL_FORMAT 0x400
+     
+       /* This flag indicates that the BFD contents are actually cached
+          in memory.  If this is set, iostream points to a bfd_in_memory
+          struct.  */
+     #define BFD_IN_MEMORY 0x800
+     
+       /* This BFD has been created by the linker and doesn't correspond
+          to any input file.  */
+     #define BFD_LINKER_CREATED 0x1000
+     
+       /* This may be set before writing out a BFD to request that it
+          be written using values for UIDs, GIDs, timestamps, etc. that
+          will be consistent from run to run.  */
+     #define BFD_DETERMINISTIC_OUTPUT 0x2000
+     
+       /* Compress sections in this BFD.  */
+     #define BFD_COMPRESS 0x4000
+     
+       /* Decompress sections in this BFD.  */
+     #define BFD_DECOMPRESS 0x8000
+     
+       /* BFD is a dummy, for plugins.  */
+     #define BFD_PLUGIN 0x10000
+     
+       /* Compress sections in this BFD with SHF_COMPRESSED from gABI.  */
+     #define BFD_COMPRESS_GABI 0x20000
+     
+       /* Flags bits to be saved in bfd_preserve_save.  */
+     #define BFD_FLAGS_SAVED \
+       (BFD_IN_MEMORY | BFD_COMPRESS | BFD_DECOMPRESS | BFD_PLUGIN \
+        | BFD_COMPRESS_GABI)
+     
+       /* Flags bits which are for BFD use only.  */
+     #define BFD_FLAGS_FOR_BFD_USE_MASK \
+       (BFD_IN_MEMORY | BFD_COMPRESS | BFD_DECOMPRESS | BFD_LINKER_CREATED \
+        | BFD_PLUGIN | BFD_TRADITIONAL_FORMAT | BFD_DETERMINISTIC_OUTPUT \
+        | BFD_COMPRESS_GABI)
+     
+       /* Is the file descriptor being cached?  That is, can it be closed as
+          needed, and re-opened when accessed later?  */
+       unsigned int cacheable : 1;
+     
+       /* Marks whether there was a default target specified when the
+          BFD was opened. This is used to select which matching algorithm
+          to use to choose the back end.  */
+       unsigned int target_defaulted : 1;
+     
+       /* ... and here: (``once'' means at least once).  */
+       unsigned int opened_once : 1;
+     
+       /* Set if we have a locally maintained mtime value, rather than
+          getting it from the file each time.  */
+       unsigned int mtime_set : 1;
+     
+       /* Flag set if symbols from this BFD should not be exported.  */
+       unsigned int no_export : 1;
+     
+       /* Remember when output has begun, to stop strange things
+          from happening.  */
+       unsigned int output_has_begun : 1;
+     
+       /* Have archive map.  */
+       unsigned int has_armap : 1;
+     
+       /* Set if this is a thin archive.  */
+       unsigned int is_thin_archive : 1;
+     
+       /* Set if only required symbols should be added in the link hash table for
+          this object.  Used by VMS linkers.  */
+       unsigned int selective_search : 1;
+     
+       /* Set if this is the linker output BFD.  */
+       unsigned int is_linker_output : 1;
+     
+       /* Set if this is the linker input BFD.  */
+       unsigned int is_linker_input : 1;
+     
+       /* If this is an input for a compiler plug-in library.  */
+       ENUM_BITFIELD (bfd_plugin_format) plugin_format : 2;
+     
+       /* Set if this is a plugin output file.  */
+       unsigned int lto_output : 1;
+     
+       /* Set to dummy BFD created when claimed by a compiler plug-in
+          library.  */
+       bfd *plugin_dummy_bfd;
+     
+       /* Currently my_archive is tested before adding origin to
+          anything. I believe that this can become always an add of
+          origin, with origin set to 0 for non archive files.  */
+       ufile_ptr origin;
+     
+       /* The origin in the archive of the proxy entry.  This will
+          normally be the same as origin, except for thin archives,
+          when it will contain the current offset of the proxy in the
+          thin archive rather than the offset of the bfd in its actual
+          container.  */
+       ufile_ptr proxy_origin;
+     
+       /* A hash table for section names.  */
+       struct bfd_hash_table section_htab;
+     
+       /* Pointer to linked list of sections.  */
+       struct bfd_section *sections;
+     
+       /* The last section on the section list.  */
+       struct bfd_section *section_last;
+     
+       /* The number of sections.  */
+       unsigned int section_count;
+     
+       /* A field used by _bfd_generic_link_add_archive_symbols.  This will
+          be used only for archive elements.  */
+       int archive_pass;
+     
+       /* Stuff only useful for object files:
+          The start address.  */
+       bfd_vma start_address;
+     
+       /* Symbol table for output BFD (with symcount entries).
+          Also used by the linker to cache input BFD symbols.  */
+       struct bfd_symbol  **outsymbols;
+     
+       /* Used for input and output.  */
+       unsigned int symcount;
+     
+       /* Used for slurped dynamic symbol tables.  */
+       unsigned int dynsymcount;
+     
+       /* Pointer to structure which contains architecture information.  */
+       const struct bfd_arch_info *arch_info;
+     
+       /* Stuff only useful for archives.  */
+       void *arelt_data;
+       struct bfd *my_archive;      /* The containing archive BFD.  */
+       struct bfd *archive_next;    /* The next BFD in the archive.  */
+       struct bfd *archive_head;    /* The first BFD in the archive.  */
+       struct bfd *nested_archives; /* List of nested archive in a flattened
+                                       thin archive.  */
+     
+       union {
+         /* For input BFDs, a chain of BFDs involved in a link.  */
+         struct bfd *next;
+         /* For output BFD, the linker hash table.  */
+         struct bfd_link_hash_table *hash;
+       } link;
+     
+       /* Used by the back end to hold private data.  */
+       union
+         {
+           struct aout_data_struct *aout_data;
+           struct artdata *aout_ar_data;
+           struct _oasys_data *oasys_obj_data;
+           struct _oasys_ar_data *oasys_ar_data;
+           struct coff_tdata *coff_obj_data;
+           struct pe_tdata *pe_obj_data;
+           struct xcoff_tdata *xcoff_obj_data;
+           struct ecoff_tdata *ecoff_obj_data;
+           struct ieee_data_struct *ieee_data;
+           struct ieee_ar_data_struct *ieee_ar_data;
+           struct srec_data_struct *srec_data;
+           struct verilog_data_struct *verilog_data;
+           struct ihex_data_struct *ihex_data;
+           struct tekhex_data_struct *tekhex_data;
+           struct elf_obj_tdata *elf_obj_data;
+           struct nlm_obj_tdata *nlm_obj_data;
+           struct bout_data_struct *bout_data;
+           struct mmo_data_struct *mmo_data;
+           struct sun_core_struct *sun_core_data;
+           struct sco5_core_struct *sco5_core_data;
+           struct trad_core_struct *trad_core_data;
+           struct som_data_struct *som_data;
+           struct hpux_core_struct *hpux_core_data;
+           struct hppabsd_core_struct *hppabsd_core_data;
+           struct sgi_core_struct *sgi_core_data;
+           struct lynx_core_struct *lynx_core_data;
+           struct osf_core_struct *osf_core_data;
+           struct cisco_core_struct *cisco_core_data;
+           struct versados_data_struct *versados_data;
+           struct netbsd_core_struct *netbsd_core_data;
+           struct mach_o_data_struct *mach_o_data;
+           struct mach_o_fat_data_struct *mach_o_fat_data;
+           struct plugin_data_struct *plugin_data;
+           struct bfd_pef_data_struct *pef_data;
+           struct bfd_pef_xlib_data_struct *pef_xlib_data;
+           struct bfd_sym_data_struct *sym_data;
+           void *any;
+         }
+       tdata;
+     
+       /* Used by the application to hold private data.  */
+       void *usrdata;
+     
+       /* Where all the allocated stuff under this BFD goes.  This is a
+          struct objalloc *, but we use void * to avoid requiring the inclusion
+          of objalloc.h.  */
+       void *memory;
+     
+       /* For input BFDs, the build ID, if the object has one. */
+       const struct bfd_build_id *build_id;
+     };
+     
+     /* See note beside bfd_set_section_userdata.  */
+     static inline bfd_boolean
+     bfd_set_cacheable (bfd * abfd, bfd_boolean val)
+     {
+       abfd-&gt;cacheable = val;
+       return TRUE;
+     }
+     
+</pre>
+   </body></html>
+

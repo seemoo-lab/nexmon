@@ -1,0 +1,106 @@
+<html lang="en">
+<head>
+<title>Statics - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Variables.html#Variables" title="Variables">
+<link rel="prev" href="Common-Blocks.html#Common-Blocks" title="Common Blocks">
+<link rel="next" href="Based-Variables.html#Based-Variables" title="Based Variables">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Statics"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Based-Variables.html#Based-Variables">Based Variables</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Common-Blocks.html#Common-Blocks">Common Blocks</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Variables.html#Variables">Variables</a>
+<hr>
+</div>
+
+<h3 class="section">4.5 Static Variables</h3>
+
+<p>Initialized static variables are represented by the &lsquo;<samp><span class="samp">S</span></samp>&rsquo; and
+&lsquo;<samp><span class="samp">V</span></samp>&rsquo; symbol descriptors.  &lsquo;<samp><span class="samp">S</span></samp>&rsquo; means file scope static, and
+&lsquo;<samp><span class="samp">V</span></samp>&rsquo; means procedure scope static.  One exception: in XCOFF, IBM's
+xlc compiler always uses &lsquo;<samp><span class="samp">V</span></samp>&rsquo;, and whether it is file scope or not
+is distinguished by whether the stab is located within a function.
+
+<!-- This is probably not worth mentioning; it is only true on the sparc -->
+<!-- for `double' variables which although declared const are actually in -->
+<!-- the data segment (the text segment can't guarantee 8 byte alignment). -->
+<!-- (although GCC -->
+<!-- 2.4.5 has a bug in that it uses @code{N_FUN}, so neither dbx nor GDB can -->
+<!-- find the variables) -->
+   <p><a name="index-N_005fSTSYM-37"></a><a name="index-N_005fLCSYM-38"></a><a name="index-N_005fFUN_002c-for-variables-39"></a><a name="index-N_005fROSYM-40"></a>In a.out files, <code>N_STSYM</code> means the data section, <code>N_FUN</code>
+means the text section, and <code>N_LCSYM</code> means the bss section.  For
+those systems with a read-only data section separate from the text
+section (Solaris), <code>N_ROSYM</code> means the read-only data section.
+
+   <p>For example, the source lines:
+
+<pre class="example">     static const int var_const = 5;
+     static int var_init = 2;
+     static int var_noinit;
+</pre>
+   <p class="noindent">yield the following stabs:
+
+<pre class="example">     .stabs "var_const:S1",36,0,0,_var_const      # <span class="roman">36 is N_FUN</span>
+     ...
+     .stabs "var_init:S1",38,0,0,_var_init        # <span class="roman">38 is N_STSYM</span>
+     ...
+     .stabs "var_noinit:S1",40,0,0,_var_noinit    # <span class="roman">40 is N_LCSYM</span>
+</pre>
+   <p><a name="index-C_005fSTSYM-41"></a><a name="index-C_005fBSTAT-42"></a><a name="index-C_005fESTAT-43"></a>In XCOFF files, the stab type need not indicate the section;
+<code>C_STSYM</code> can be used for all statics.  Also, each static variable
+is enclosed in a static block.  A <code>C_BSTAT</code> (emitted with a
+&lsquo;<samp><span class="samp">.bs</span></samp>&rsquo; assembler directive) symbol begins the static block; its
+value is the symbol number of the csect symbol whose value is the
+address of the static block, its section is the section of the variables
+in that static block, and its name is &lsquo;<samp><span class="samp">.bs</span></samp>&rsquo;.  A <code>C_ESTAT</code>
+(emitted with a &lsquo;<samp><span class="samp">.es</span></samp>&rsquo; assembler directive) symbol ends the static
+block; its name is &lsquo;<samp><span class="samp">.es</span></samp>&rsquo; and its value and section are ignored.
+
+   <p>In ECOFF files, the storage class is used to specify the section, so the
+stab type need not indicate the section.
+
+   <p>In ELF files, for the SunPRO compiler version 2.0.1, symbol descriptor
+&lsquo;<samp><span class="samp">S</span></samp>&rsquo; means that the address is absolute (the linker relocates it)
+and symbol descriptor &lsquo;<samp><span class="samp">V</span></samp>&rsquo; means that the address is relative to the
+start of the relevant section for that compilation unit.  SunPRO has
+plans to have the linker stop relocating stabs; I suspect that their the
+debugger gets the address from the corresponding ELF (not stab) symbol. 
+I'm not sure how to find which symbol of that name is the right one. 
+The clean way to do all this would be to have the value of a symbol
+descriptor &lsquo;<samp><span class="samp">S</span></samp>&rsquo; symbol be an offset relative to the start of the
+file, just like everything else, but that introduces obvious
+compatibility problems.  For more information on linker stab relocation,
+See <a href="ELF-Linker-Relocation.html#ELF-Linker-Relocation">ELF Linker Relocation</a>.
+
+   </body></html>
+

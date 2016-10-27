@@ -1,0 +1,115 @@
+<html lang="en">
+<head>
+<title>Disassembly In Guile - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Guile-API.html#Guile-API" title="Guile API">
+<link rel="prev" href="Architectures-In-Guile.html#Architectures-In-Guile" title="Architectures In Guile">
+<link rel="next" href="I_002fO-Ports-in-Guile.html#I_002fO-Ports-in-Guile" title="I/O Ports in Guile">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Disassembly-In-Guile"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="I_002fO-Ports-in-Guile.html#I_002fO-Ports-in-Guile">I/O Ports in Guile</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Architectures-In-Guile.html#Architectures-In-Guile">Architectures In Guile</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Guile-API.html#Guile-API">Guile API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.3.3.22 Disassembly In Guile</h5>
+
+<p>The disassembler can be invoked from Scheme code. 
+Furthermore, the disassembler can take a Guile port as input,
+allowing one to disassemble from any source, and not just target memory.
+
+<!-- TODO: line length -->
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-disassemble</b><var> arch start-pc </var><span class="roman">[</span><var>#:port port</var><span class="roman">]</span> <span class="roman">[</span><var>#:offset offset</var><span class="roman">]</span> <span class="roman">[</span><var>#:size size</var><span class="roman">]</span> <span class="roman">[</span><var>#:count count</var><span class="roman">]</span><var><a name="index-arch_002ddisassemble-2741"></a></var><br>
+<blockquote><p>Return a list of disassembled instructions starting from the memory
+address <var>start-pc</var>.
+
+        <p>The optional argument <var>port</var> specifies the input port to read bytes from. 
+If <var>port</var> is <code>#f</code> then bytes are read from target memory.
+
+        <p>The optional argument <var>offset</var> specifies the address offset of the
+first byte in <var>port</var>.  This is useful, for example, when <var>port</var>
+specifies a &lsquo;<samp><span class="samp">bytevector</span></samp>&rsquo; and you want the bytevector to be disassembled
+as if it came from that address.  The <var>start-pc</var> passed to the reader
+for <var>port</var> is offset by the same amount.
+
+        <p>Example:
+     <pre class="smallexample">          (gdb) guile (use-modules (rnrs io ports))
+          (gdb) guile (define pc (value-&gt;integer (parse-and-eval "$pc")))
+          (gdb) guile (define mem (open-memory #:start pc))
+          (gdb) guile (define bv (get-bytevector-n mem 10))
+          (gdb) guile (define bv-port (open-bytevector-input-port bv))
+          (gdb) guile (define arch (current-arch))
+          (gdb) guile (arch-disassemble arch pc #:port bv-port #:offset pc)
+          (((address . 4195516) (asm . "mov    $0x4005c8,%edi") (length . 5)))
+</pre>
+        <p>The optional arguments <var>size</var> and
+<var>count</var> determine the number of instructions in the returned list. 
+If either <var>size</var> or <var>count</var> is specified as zero, then
+no instructions are disassembled and an empty list is returned. 
+If both the optional arguments <var>size</var> and <var>count</var> are
+specified, then a list of at most <var>count</var> disassembled instructions
+whose start address falls in the closed memory address interval from
+<var>start-pc</var> to (<var>start-pc</var> + <var>size</var> - 1) are returned. 
+If <var>size</var> is not specified, but <var>count</var> is specified,
+then <var>count</var> number of instructions starting from the address
+<var>start-pc</var> are returned.  If <var>count</var> is not specified but
+<var>size</var> is specified, then all instructions whose start address
+falls in the closed memory address interval from <var>start-pc</var> to
+(<var>start-pc</var> + <var>size</var> - 1) are returned. 
+If neither <var>size</var> nor <var>count</var> are specified, then a single
+instruction at <var>start-pc</var> is returned.
+
+        <p>Each element of the returned list is an alist (associative list)
+with the following keys:
+
+          <dl>
+<dt><code>address</code><dd>The value corresponding to this key is a Guile integer of
+the memory address of the instruction.
+
+          <br><dt><code>asm</code><dd>The value corresponding to this key is a string value which represents
+the instruction with assembly language mnemonics.  The assembly
+language flavor used is the same as that specified by the current CLI
+variable <code>disassembly-flavor</code>.  See <a href="Machine-Code.html#Machine-Code">Machine Code</a>.
+
+          <br><dt><code>length</code><dd>The value corresponding to this key is the length of the instruction in bytes.
+
+        </dl>
+        </p></blockquote></div>
+
+   </body></html>
+

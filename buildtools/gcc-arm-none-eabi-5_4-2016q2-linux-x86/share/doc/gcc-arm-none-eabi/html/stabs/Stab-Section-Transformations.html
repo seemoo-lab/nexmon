@@ -1,0 +1,79 @@
+<html lang="en">
+<head>
+<title>Stab Section Transformations - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Transformations-On-Symbol-Tables.html#Transformations-On-Symbol-Tables" title="Transformations On Symbol Tables">
+<link rel="prev" href="Transformations-On-Global-Variables.html#Transformations-On-Global-Variables" title="Transformations On Global Variables">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Stab-Section-Transformations"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Transformations-On-Global-Variables.html#Transformations-On-Global-Variables">Transformations On Global Variables</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Transformations-On-Symbol-Tables.html#Transformations-On-Symbol-Tables">Transformations On Symbol Tables</a>
+<hr>
+</div>
+
+<h4 class="subsection">7.2.3 Transformations of Stabs in separate sections</h4>
+
+<p>For object file formats using stabs in separate sections (see <a href="Stab-Sections.html#Stab-Sections">Stab Sections</a>), use <code>objdump --stabs</code> instead of <code>nm</code> to show the
+stabs in an object or executable file.  <code>objdump</code> is a GNU utility;
+Sun does not provide any equivalent.
+
+   <p>The following example is for a stab whose value is an address is
+relative to the compilation unit (see <a href="ELF-Linker-Relocation.html#ELF-Linker-Relocation">ELF Linker Relocation</a>).  For
+example, if the source line
+
+<pre class="example">     static int ld = 5;
+</pre>
+   <p>appears within a function, then the assembly language output from the
+compiler contains:
+
+<pre class="example">     .Ddata.data:
+     ...
+             .stabs "ld:V(0,3)",0x26,0,4,.L18-Ddata.data    # <span class="roman">0x26 is N_STSYM</span>
+     ...
+     .L18:
+             .align 4
+             .word 0x5
+</pre>
+   <p>Because the value is formed by subtracting one symbol from another, the
+value is absolute, not relocatable, and so the object file contains
+
+<pre class="example">     Symnum n_type n_othr n_desc n_value  n_strx String
+     31     STSYM  0      4      00000004 680    ld:V(0,3)
+</pre>
+   <p>without any relocations, and the executable file also contains
+
+<pre class="example">     Symnum n_type n_othr n_desc n_value  n_strx String
+     31     STSYM  0      4      00000004 680    ld:V(0,3)
+</pre>
+   </body></html>
+

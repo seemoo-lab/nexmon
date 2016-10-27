@@ -1,0 +1,68 @@
+<html lang="en">
+<head>
+<title>clog10 - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Complex.html#Complex" title="Complex">
+<link rel="prev" href="clog.html#clog" title="clog">
+<link rel="next" href="conj.html#conj" title="conj">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="clog10"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="conj.html#conj">conj</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="clog.html#clog">clog</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Complex.html#Complex">Complex</a>
+<hr>
+</div>
+
+<h3 class="section">2.14 <code>clog10</code>, <code>clog10f</code>&mdash;complex base-10 logarithm</h3>
+
+<p><a name="index-clog10-186"></a><a name="index-clog10f-187"></a><strong>Synopsis</strong>
+<pre class="example">     #define _GNU_SOURCE
+     #include &lt;complex.h&gt;
+     double complex clog10(double complex <var>z</var>);
+     float complex clog10f(float complex <var>z</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+These functions compute the complex base-10 logarithm of <var>z</var>. 
+<code>clog10</code> is equivalent to <code>clog</code>(<var>z</var>)/<code>log</code>(10).
+
+   <p><code>clog10f</code> is identical to <code>clog10</code>, except that it performs
+its calculations on <code>floats complex</code>.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+The clog10 functions return the complex base-10 logarithm value.
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+<code>clog10</code> and <code>clog10f</code> are GNU extensions.
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

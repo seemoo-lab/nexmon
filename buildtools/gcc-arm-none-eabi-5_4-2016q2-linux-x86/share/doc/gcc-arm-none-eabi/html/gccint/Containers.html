@@ -1,0 +1,79 @@
+<html lang="en">
+<head>
+<title>Containers - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Tree-overview.html#Tree-overview" title="Tree overview">
+<link rel="prev" href="Identifiers.html#Identifiers" title="Identifiers">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Containers"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Identifiers.html#Identifiers">Identifiers</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Tree-overview.html#Tree-overview">Tree overview</a>
+<hr>
+</div>
+
+<h4 class="subsection">10.2.3 Containers</h4>
+
+<p><a name="index-container-1733"></a><a name="index-list-1734"></a><a name="index-vector-1735"></a><a name="index-TREE_005fLIST-1736"></a><a name="index-TREE_005fVEC-1737"></a><a name="index-TREE_005fPURPOSE-1738"></a><a name="index-TREE_005fVALUE-1739"></a><a name="index-TREE_005fVEC_005fLENGTH-1740"></a><a name="index-TREE_005fVEC_005fELT-1741"></a>
+Two common container data structures can be represented directly with
+tree nodes.  A <code>TREE_LIST</code> is a singly linked list containing two
+trees per node.  These are the <code>TREE_PURPOSE</code> and <code>TREE_VALUE</code>
+of each node.  (Often, the <code>TREE_PURPOSE</code> contains some kind of
+tag, or additional information, while the <code>TREE_VALUE</code> contains the
+majority of the payload.  In other cases, the <code>TREE_PURPOSE</code> is
+simply <code>NULL_TREE</code>, while in still others both the
+<code>TREE_PURPOSE</code> and <code>TREE_VALUE</code> are of equal stature.)  Given
+one <code>TREE_LIST</code> node, the next node is found by following the
+<code>TREE_CHAIN</code>.  If the <code>TREE_CHAIN</code> is <code>NULL_TREE</code>, then
+you have reached the end of the list.
+
+ <p>A <code>TREE_VEC</code> is a simple vector.  The <code>TREE_VEC_LENGTH</code> is an
+integer (not a tree) giving the number of nodes in the vector.  The
+nodes themselves are accessed using the <code>TREE_VEC_ELT</code> macro, which
+takes two arguments.  The first is the <code>TREE_VEC</code> in question; the
+second is an integer indicating which element in the vector is desired. 
+The elements are indexed from zero.
+
+<!--  -->
+<!-- Types -->
+<!--  -->
+ </body></html>
+

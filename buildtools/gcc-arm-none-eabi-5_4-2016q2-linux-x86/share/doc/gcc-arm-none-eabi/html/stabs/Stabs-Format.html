@@ -1,0 +1,81 @@
+<html lang="en">
+<head>
+<title>Stabs Format - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Overview.html#Overview" title="Overview">
+<link rel="prev" href="Flow.html#Flow" title="Flow">
+<link rel="next" href="String-Field.html#String-Field" title="String Field">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Stabs-Format"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="String-Field.html#String-Field">String Field</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Flow.html#Flow">Flow</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Overview.html#Overview">Overview</a>
+<hr>
+</div>
+
+<h3 class="section">1.2 Overview of Stab Format</h3>
+
+<p>There are three overall formats for stab assembler directives,
+differentiated by the first word of the stab.  The name of the directive
+describes which combination of four possible data fields follows.  It is
+either <code>.stabs</code> (string), <code>.stabn</code> (number), or <code>.stabd</code>
+(dot).  IBM's XCOFF assembler uses <code>.stabx</code> (and some other
+directives such as <code>.file</code> and <code>.bi</code>) instead of
+<code>.stabs</code>, <code>.stabn</code> or <code>.stabd</code>.
+
+   <p>The overall format of each class of stab is:
+
+<pre class="example">     .stabs "<var>string</var>",<var>type</var>,<var>other</var>,<var>desc</var>,<var>value</var>
+     .stabn <var>type</var>,<var>other</var>,<var>desc</var>,<var>value</var>
+     .stabd <var>type</var>,<var>other</var>,<var>desc</var>
+     .stabx "<var>string</var>",<var>value</var>,<var>type</var>,<var>sdb-type</var>
+</pre>
+   <!-- what is the correct term for "current file location"?  My AIX -->
+<!-- assembler manual calls it "the value of the current location counter". -->
+   <p>For <code>.stabn</code> and <code>.stabd</code>, there is no <var>string</var> (the
+<code>n_strx</code> field is zero; see <a href="Symbol-Tables.html#Symbol-Tables">Symbol Tables</a>).  For
+<code>.stabd</code>, the <var>value</var> field is implicit and has the value of
+the current file location.  For <code>.stabx</code>, the <var>sdb-type</var> field
+is unused for stabs and can always be set to zero.  The <var>other</var>
+field is almost always unused and can be set to zero.
+
+   <p>The number in the <var>type</var> field gives some basic information about
+which type of stab this is (or whether it <em>is</em> a stab, as opposed
+to an ordinary symbol).  Each valid type number defines a different stab
+type; further, the stab type defines the exact interpretation of, and
+possible values for, any remaining <var>string</var>, <var>desc</var>, or
+<var>value</var> fields present in the stab.  See <a href="Stab-Types.html#Stab-Types">Stab Types</a>, for a list
+in numeric order of the valid <var>type</var> field values for stab directives.
+
+   </body></html>
+

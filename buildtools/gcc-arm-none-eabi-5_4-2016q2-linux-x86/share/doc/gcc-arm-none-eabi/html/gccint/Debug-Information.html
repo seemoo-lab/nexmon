@@ -1,0 +1,84 @@
+<html lang="en">
+<head>
+<title>Debug Information - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="RTL.html#RTL" title="RTL">
+<link rel="prev" href="Assembler.html#Assembler" title="Assembler">
+<link rel="next" href="Insns.html#Insns" title="Insns">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Debug-Information"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Insns.html#Insns">Insns</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Assembler.html#Assembler">Assembler</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="RTL.html#RTL">RTL</a>
+<hr>
+</div>
+
+<h3 class="section">13.18 Variable Location Debug Information in RTL</h3>
+
+<p><a name="index-Variable-Location-Debug-Information-in-RTL-3064"></a>
+Variable tracking relies on <code>MEM_EXPR</code> and <code>REG_EXPR</code>
+annotations to determine what user variables memory and register
+references refer to.
+
+ <p>Variable tracking at assignments uses these notes only when they refer
+to variables that live at fixed locations (e.g., addressable
+variables, global non-automatic variables).  For variables whose
+location may vary, it relies on the following types of notes.
+
+     
+<a name="index-var_005flocation-3065"></a>
+<dl><dt><code>(var_location:</code><var>mode</var> <var>var</var> <var>exp</var> <var>stat</var><code>)</code><dd>Binds variable <code>var</code>, a tree, to value <var>exp</var>, an RTL
+expression.  It appears only in <code>NOTE_INSN_VAR_LOCATION</code> and
+<code>DEBUG_INSN</code>s, with slightly different meanings.  <var>mode</var>, if
+present, represents the mode of <var>exp</var>, which is useful if it is a
+modeless expression.  <var>stat</var> is only meaningful in notes,
+indicating whether the variable is known to be initialized or
+uninitialized.
+
+     <p><a name="index-debug_005fexpr-3066"></a><br><dt><code>(debug_expr:</code><var>mode</var> <var>decl</var><code>)</code><dd>Stands for the value bound to the <code>DEBUG_EXPR_DECL</code> <var>decl</var>,
+that points back to it, within value expressions in
+<code>VAR_LOCATION</code> nodes.
+
+ </dl>
+
+ </body></html>
+

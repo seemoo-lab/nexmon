@@ -1,0 +1,136 @@
+<html lang="en">
+<head>
+<title>Output Template - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Machine-Desc.html#Machine-Desc" title="Machine Desc">
+<link rel="prev" href="RTL-Template.html#RTL-Template" title="RTL Template">
+<link rel="next" href="Output-Statement.html#Output-Statement" title="Output Statement">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Output-Template"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Output-Statement.html#Output-Statement">Output Statement</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="RTL-Template.html#RTL-Template">RTL Template</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Machine-Desc.html#Machine-Desc">Machine Desc</a>
+<hr>
+</div>
+
+<h3 class="section">16.5 Output Templates and Operand Substitution</h3>
+
+<p><a name="index-output-templates-3262"></a><a name="index-operand-substitution-3263"></a>
+<a name="index-g_t_0040samp_007b_0025_007d-in-template-3264"></a><a name="index-percent-sign-3265"></a>The <dfn>output template</dfn> is a string which specifies how to output the
+assembler code for an instruction pattern.  Most of the template is a
+fixed string which is output literally.  The character &lsquo;<samp><span class="samp">%</span></samp>&rsquo; is used
+to specify where to substitute an operand; it can also be used to
+identify places where different variants of the assembler require
+different syntax.
+
+ <p>In the simplest case, a &lsquo;<samp><span class="samp">%</span></samp>&rsquo; followed by a digit <var>n</var> says to output
+operand <var>n</var> at that point in the string.
+
+ <p>&lsquo;<samp><span class="samp">%</span></samp>&rsquo; followed by a letter and a digit says to output an operand in an
+alternate fashion.  Four letters have standard, built-in meanings described
+below.  The machine description macro <code>PRINT_OPERAND</code> can define
+additional letters with nonstandard meanings.
+
+ <p>&lsquo;<samp><span class="samp">%c</span><var>digit</var></samp>&rsquo; can be used to substitute an operand that is a
+constant value without the syntax that normally indicates an immediate
+operand.
+
+ <p>&lsquo;<samp><span class="samp">%n</span><var>digit</var></samp>&rsquo; is like &lsquo;<samp><span class="samp">%c</span><var>digit</var></samp>&rsquo; except that the value of
+the constant is negated before printing.
+
+ <p>&lsquo;<samp><span class="samp">%a</span><var>digit</var></samp>&rsquo; can be used to substitute an operand as if it were a
+memory reference, with the actual operand treated as the address.  This may
+be useful when outputting a &ldquo;load address&rdquo; instruction, because often the
+assembler syntax for such an instruction requires you to write the operand
+as if it were a memory reference.
+
+ <p>&lsquo;<samp><span class="samp">%l</span><var>digit</var></samp>&rsquo; is used to substitute a <code>label_ref</code> into a jump
+instruction.
+
+ <p>&lsquo;<samp><span class="samp">%=</span></samp>&rsquo; outputs a number which is unique to each instruction in the
+entire compilation.  This is useful for making local labels to be
+referred to more than once in a single template that generates multiple
+assembler instructions.
+
+ <p>&lsquo;<samp><span class="samp">%</span></samp>&rsquo; followed by a punctuation character specifies a substitution that
+does not use an operand.  Only one case is standard: &lsquo;<samp><span class="samp">%%</span></samp>&rsquo; outputs a
+&lsquo;<samp><span class="samp">%</span></samp>&rsquo; into the assembler code.  Other nonstandard cases can be
+defined in the <code>PRINT_OPERAND</code> macro.  You must also define
+which punctuation characters are valid with the
+<code>PRINT_OPERAND_PUNCT_VALID_P</code> macro.
+
+ <p><a name="index-g_t_005c-3266"></a><a name="index-backslash-3267"></a>The template may generate multiple assembler instructions.  Write the text
+for the instructions, with &lsquo;<samp><span class="samp">\;</span></samp>&rsquo; between them.
+
+ <p><a name="index-matching-operands-3268"></a>When the RTL contains two operands which are required by constraint to match
+each other, the output template must refer only to the lower-numbered operand. 
+Matching operands are not always identical, and the rest of the compiler
+arranges to put the proper RTL expression for printing into the lower-numbered
+operand.
+
+ <p>One use of nonstandard letters or punctuation following &lsquo;<samp><span class="samp">%</span></samp>&rsquo; is to
+distinguish between different assembler languages for the same machine; for
+example, Motorola syntax versus MIT syntax for the 68000.  Motorola syntax
+requires periods in most opcode names, while MIT syntax does not.  For
+example, the opcode &lsquo;<samp><span class="samp">movel</span></samp>&rsquo; in MIT syntax is &lsquo;<samp><span class="samp">move.l</span></samp>&rsquo; in Motorola
+syntax.  The same file of patterns is used for both kinds of output syntax,
+but the character sequence &lsquo;<samp><span class="samp">%.</span></samp>&rsquo; is used in each place where Motorola
+syntax wants a period.  The <code>PRINT_OPERAND</code> macro for Motorola syntax
+defines the sequence to output a period; the macro for MIT syntax defines
+it to do nothing.
+
+ <p><a name="index-g_t_0040code_007b_0023_007d-in-template-3269"></a>As a special case, a template consisting of the single character <code>#</code>
+instructs the compiler to first split the insn, and then output the
+resulting instructions separately.  This helps eliminate redundancy in the
+output templates.   If you have a <code>define_insn</code> that needs to emit
+multiple assembler instructions, and there is a matching <code>define_split</code>
+already defined, then you can simply use <code>#</code> as the output template
+instead of writing an output template that emits the multiple assembler
+instructions.
+
+ <p>If the macro <code>ASSEMBLER_DIALECT</code> is defined, you can use construct
+of the form &lsquo;<samp><span class="samp">{option0|option1|option2}</span></samp>&rsquo; in the templates.  These
+describe multiple variants of assembler language syntax. 
+See <a href="Instruction-Output.html#Instruction-Output">Instruction Output</a>.
+
+ </body></html>
+

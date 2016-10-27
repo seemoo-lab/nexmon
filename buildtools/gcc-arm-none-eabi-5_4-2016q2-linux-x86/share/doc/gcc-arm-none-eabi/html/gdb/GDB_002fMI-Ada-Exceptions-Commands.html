@@ -1,0 +1,96 @@
+<html lang="en">
+<head>
+<title>GDB/MI Ada Exceptions Commands - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="GDB_002fMI.html#GDB_002fMI" title="GDB/MI">
+<link rel="prev" href="GDB_002fMI-File-Transfer-Commands.html#GDB_002fMI-File-Transfer-Commands" title="GDB/MI File Transfer Commands">
+<link rel="next" href="GDB_002fMI-Support-Commands.html#GDB_002fMI-Support-Commands" title="GDB/MI Support Commands">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="GDB%2fMI-Ada-Exceptions-Commands"></a>
+<a name="GDB_002fMI-Ada-Exceptions-Commands"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="GDB_002fMI-Support-Commands.html#GDB_002fMI-Support-Commands">GDB/MI Support Commands</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="GDB_002fMI-File-Transfer-Commands.html#GDB_002fMI-File-Transfer-Commands">GDB/MI File Transfer Commands</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="GDB_002fMI.html#GDB_002fMI">GDB/MI</a>
+<hr>
+</div>
+
+<h3 class="section">27.22 Ada Exceptions <span class="sc">gdb/mi</span> Commands</h3>
+
+<h4 class="subheading">The <code>-info-ada-exceptions</code> Command</h4>
+
+<p><a name="index-g_t_002dinfo_002dada_002dexceptions-2969"></a>
+
+<h5 class="subsubheading">Synopsis</h5>
+
+<pre class="smallexample">      -info-ada-exceptions [ <var>regexp</var>]
+</pre>
+   <p>List all Ada exceptions defined within the program being debugged. 
+With a regular expression <var>regexp</var>, only those exceptions whose
+names match <var>regexp</var> are listed.
+
+<h5 class="subsubheading"><span class="sc">gdb</span> Command</h5>
+
+<p>The corresponding <span class="sc">gdb</span> command is &lsquo;<samp><span class="samp">info exceptions</span></samp>&rsquo;.
+
+<h5 class="subsubheading">Result</h5>
+
+<p>The result is a table of Ada exceptions.  The following columns are
+defined for each exception:
+
+     <dl>
+<dt>&lsquo;<samp><span class="samp">name</span></samp>&rsquo;<dd>The name of the exception.
+
+     <br><dt>&lsquo;<samp><span class="samp">address</span></samp>&rsquo;<dd>The address of the exception.
+
+   </dl>
+
+<h5 class="subsubheading">Example</h5>
+
+<pre class="smallexample">     -info-ada-exceptions aint
+     ^done,ada-exceptions={nr_rows="2",nr_cols="2",
+     hdr=[{width="1",alignment="-1",col_name="name",colhdr="Name"},
+     {width="1",alignment="-1",col_name="address",colhdr="Address"}],
+     body=[{name="constraint_error",address="0x0000000000613da0"},
+     {name="const.aint_global_e",address="0x0000000000613b00"}]}
+</pre>
+<h4 class="subheading">Catching Ada Exceptions</h4>
+
+<p>The commands describing how to ask <span class="sc">gdb</span> to stop when a program
+raises an exception are described at <a href="Ada-Exception-GDB_002fMI-Catchpoint-Commands.html#Ada-Exception-GDB_002fMI-Catchpoint-Commands">Ada Exception GDB/MI Catchpoint Commands</a>.
+
+<!-- %%%%%%%%%%%%%%%%%%%%%%%%%%%% SECTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+   </body></html>
+

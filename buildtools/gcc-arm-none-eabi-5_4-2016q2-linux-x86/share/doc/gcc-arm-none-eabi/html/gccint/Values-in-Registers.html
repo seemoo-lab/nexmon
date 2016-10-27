@@ -1,0 +1,224 @@
+<html lang="en">
+<head>
+<title>Values in Registers - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Registers.html#Registers" title="Registers">
+<link rel="prev" href="Allocation-Order.html#Allocation-Order" title="Allocation Order">
+<link rel="next" href="Leaf-Functions.html#Leaf-Functions" title="Leaf Functions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Values-in-Registers"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Leaf-Functions.html#Leaf-Functions">Leaf Functions</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Allocation-Order.html#Allocation-Order">Allocation Order</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Registers.html#Registers">Registers</a>
+<hr>
+</div>
+
+<h4 class="subsection">17.7.3 How Values Fit in Registers</h4>
+
+<p>This section discusses the macros that describe which kinds of values
+(specifically, which machine modes) each register can hold, and how many
+consecutive registers are needed for a given mode.
+
+<div class="defun">
+&mdash; Macro: <b>HARD_REGNO_NREGS</b> (<var>regno, mode</var>)<var><a name="index-HARD_005fREGNO_005fNREGS-4078"></a></var><br>
+<blockquote><p>A C expression for the number of consecutive hard registers, starting
+at register number <var>regno</var>, required to hold a value of mode
+<var>mode</var>.  This macro must never return zero, even if a register
+cannot hold the requested mode - indicate that with HARD_REGNO_MODE_OK
+and/or CANNOT_CHANGE_MODE_CLASS instead.
+
+      <p>On a machine where all registers are exactly one word, a suitable
+definition of this macro is
+
+     <pre class="smallexample">          #define HARD_REGNO_NREGS(REGNO, MODE)            \
+             ((GET_MODE_SIZE (MODE) + UNITS_PER_WORD - 1)  \
+              / UNITS_PER_WORD)
+</pre>
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>HARD_REGNO_NREGS_HAS_PADDING</b> (<var>regno, mode</var>)<var><a name="index-HARD_005fREGNO_005fNREGS_005fHAS_005fPADDING-4079"></a></var><br>
+<blockquote><p>A C expression that is nonzero if a value of mode <var>mode</var>, stored
+in memory, ends with padding that causes it to take up more space than
+in registers starting at register number <var>regno</var> (as determined by
+multiplying GCC's notion of the size of the register when containing
+this mode by the number of registers returned by
+<code>HARD_REGNO_NREGS</code>).  By default this is zero.
+
+      <p>For example, if a floating-point value is stored in three 32-bit
+registers but takes up 128 bits in memory, then this would be
+nonzero.
+
+      <p>This macros only needs to be defined if there are cases where
+<code>subreg_get_info</code>
+would otherwise wrongly determine that a <code>subreg</code> can be
+represented by an offset to the register number, when in fact such a
+<code>subreg</code> would contain some of the padding not stored in
+registers and so not be representable. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>HARD_REGNO_NREGS_WITH_PADDING</b> (<var>regno, mode</var>)<var><a name="index-HARD_005fREGNO_005fNREGS_005fWITH_005fPADDING-4080"></a></var><br>
+<blockquote><p>For values of <var>regno</var> and <var>mode</var> for which
+<code>HARD_REGNO_NREGS_HAS_PADDING</code> returns nonzero, a C expression
+returning the greater number of registers required to hold the value
+including any padding.  In the example above, the value would be four. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>REGMODE_NATURAL_SIZE</b> (<var>mode</var>)<var><a name="index-REGMODE_005fNATURAL_005fSIZE-4081"></a></var><br>
+<blockquote><p>Define this macro if the natural size of registers that hold values
+of mode <var>mode</var> is not the word size.  It is a C expression that
+should give the natural size in bytes for the specified mode.  It is
+used by the register allocator to try to optimize its results.  This
+happens for example on SPARC 64-bit where the natural size of
+floating-point registers is still 32-bit. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>HARD_REGNO_MODE_OK</b> (<var>regno, mode</var>)<var><a name="index-HARD_005fREGNO_005fMODE_005fOK-4082"></a></var><br>
+<blockquote><p>A C expression that is nonzero if it is permissible to store a value
+of mode <var>mode</var> in hard register number <var>regno</var> (or in several
+registers starting with that one).  For a machine where all registers
+are equivalent, a suitable definition is
+
+     <pre class="smallexample">          #define HARD_REGNO_MODE_OK(REGNO, MODE) 1
+</pre>
+      <p>You need not include code to check for the numbers of fixed registers,
+because the allocation mechanism considers them to be always occupied.
+
+      <p><a name="index-register-pairs-4083"></a>On some machines, double-precision values must be kept in even/odd
+register pairs.  You can implement that by defining this macro to reject
+odd register numbers for such modes.
+
+      <p>The minimum requirement for a mode to be OK in a register is that the
+&lsquo;<samp><span class="samp">mov</span><var>mode</var></samp>&rsquo; instruction pattern support moves between the
+register and other hard register in the same class and that moving a
+value into the register and back out not alter it.
+
+      <p>Since the same instruction used to move <code>word_mode</code> will work for
+all narrower integer modes, it is not necessary on any machine for
+<code>HARD_REGNO_MODE_OK</code> to distinguish between these modes, provided
+you define patterns &lsquo;<samp><span class="samp">movhi</span></samp>&rsquo;, etc., to take advantage of this.  This
+is useful because of the interaction between <code>HARD_REGNO_MODE_OK</code>
+and <code>MODES_TIEABLE_P</code>; it is very desirable for all integer modes
+to be tieable.
+
+      <p>Many machines have special registers for floating point arithmetic. 
+Often people assume that floating point machine modes are allowed only
+in floating point registers.  This is not true.  Any registers that
+can hold integers can safely <em>hold</em> a floating point machine
+mode, whether or not floating arithmetic can be done on it in those
+registers.  Integer move instructions can be used to move the values.
+
+      <p>On some machines, though, the converse is true: fixed-point machine
+modes may not go in floating registers.  This is true if the floating
+registers normalize any value stored in them, because storing a
+non-floating value there would garble it.  In this case,
+<code>HARD_REGNO_MODE_OK</code> should reject fixed-point machine modes in
+floating registers.  But if the floating registers do not automatically
+normalize, if you can store any bit pattern in one and retrieve it
+unchanged without a trap, then any machine mode may go in a floating
+register, so you can define this macro to say so.
+
+      <p>The primary significance of special floating registers is rather that
+they are the registers acceptable in floating point arithmetic
+instructions.  However, this is of no concern to
+<code>HARD_REGNO_MODE_OK</code>.  You handle it by writing the proper
+constraints for those instructions.
+
+      <p>On some machines, the floating registers are especially slow to access,
+so that it is better to store a value in a stack frame than in such a
+register if floating point arithmetic is not being done.  As long as the
+floating registers are not in class <code>GENERAL_REGS</code>, they will not
+be used unless some pattern's constraint asks for one. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>HARD_REGNO_RENAME_OK</b> (<var>from, to</var>)<var><a name="index-HARD_005fREGNO_005fRENAME_005fOK-4084"></a></var><br>
+<blockquote><p>A C expression that is nonzero if it is OK to rename a hard register
+<var>from</var> to another hard register <var>to</var>.
+
+      <p>One common use of this macro is to prevent renaming of a register to
+another register that is not saved by a prologue in an interrupt
+handler.
+
+      <p>The default is always nonzero. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>MODES_TIEABLE_P</b> (<var>mode1, mode2</var>)<var><a name="index-MODES_005fTIEABLE_005fP-4085"></a></var><br>
+<blockquote><p>A C expression that is nonzero if a value of mode
+<var>mode1</var> is accessible in mode <var>mode2</var> without copying.
+
+      <p>If <code>HARD_REGNO_MODE_OK (</code><var>r</var><code>, </code><var>mode1</var><code>)</code> and
+<code>HARD_REGNO_MODE_OK (</code><var>r</var><code>, </code><var>mode2</var><code>)</code> are always the same for
+any <var>r</var>, then <code>MODES_TIEABLE_P (</code><var>mode1</var><code>, </code><var>mode2</var><code>)</code>
+should be nonzero.  If they differ for any <var>r</var>, you should define
+this macro to return zero unless some other mechanism ensures the
+accessibility of the value in a narrower mode.
+
+      <p>You should define this macro to return nonzero in as many cases as
+possible since doing so will allow GCC to perform better register
+allocation. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_HARD_REGNO_SCRATCH_OK</b> (<var>unsigned int regno</var>)<var><a name="index-TARGET_005fHARD_005fREGNO_005fSCRATCH_005fOK-4086"></a></var><br>
+<blockquote><p>This target hook should return <code>true</code> if it is OK to use a hard register
+<var>regno</var> as scratch reg in peephole2.
+
+      <p>One common use of this macro is to prevent using of a register that
+is not saved by a prologue in an interrupt handler.
+
+      <p>The default version of this hook always returns <code>true</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>AVOID_CCMODE_COPIES</b><var><a name="index-AVOID_005fCCMODE_005fCOPIES-4087"></a></var><br>
+<blockquote><p>Define this macro if the compiler should avoid copies to/from <code>CCmode</code>
+registers.  You should only define this macro if support for copying to/from
+<code>CCmode</code> is incomplete. 
+</p></blockquote></div>
+
+ </body></html>
+

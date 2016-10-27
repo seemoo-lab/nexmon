@@ -1,0 +1,136 @@
+<html lang="en">
+<head>
+<title>Simple Classes - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Cplusplus.html#Cplusplus" title="Cplusplus">
+<link rel="prev" href="Basic-Cplusplus-Types.html#Basic-Cplusplus-Types" title="Basic Cplusplus Types">
+<link rel="next" href="Class-Instance.html#Class-Instance" title="Class Instance">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Simple-Classes"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Class-Instance.html#Class-Instance">Class Instance</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Basic-Cplusplus-Types.html#Basic-Cplusplus-Types">Basic Cplusplus Types</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Cplusplus.html#Cplusplus">Cplusplus</a>
+<hr>
+</div>
+
+<h3 class="section">8.4 Simple Class Definition</h3>
+
+<p>The stabs describing C<tt>++</tt> language features are an extension of the
+stabs describing C.  Stabs representing C<tt>++</tt> class types elaborate
+extensively on the stab format used to describe structure types in C. 
+Stabs representing class type variables look just like stabs
+representing C language variables.
+
+   <p>Consider the following very simple class definition.
+
+<pre class="example">     class baseA {
+     public:
+             int Adat;
+             int Ameth(int in, char other);
+     };
+</pre>
+   <p>The class <code>baseA</code> is represented by two stabs.  The first stab describes
+the class as a structure type.  The second stab describes a structure
+tag of the class type.  Both stabs are of stab type <code>N_LSYM</code>.  Since the
+stab is not located between an <code>N_FUN</code> and an <code>N_LBRAC</code> stab this indicates
+that the class is defined at file scope.  If it were, then the <code>N_LSYM</code>
+would signify a local variable.
+
+   <p>A stab describing a C<tt>++</tt> class type is similar in format to a stab
+describing a C struct, with each class member shown as a field in the
+structure.  The part of the struct format describing fields is
+expanded to include extra information relevant to C<tt>++</tt> class members. 
+In addition, if the class has multiple base classes or virtual
+functions the struct format outside of the field parts is also
+augmented.
+
+   <p>In this simple example the field part of the C<tt>++</tt> class stab
+representing member data looks just like the field part of a C struct
+stab.  The section on protections describes how its format is
+sometimes extended for member data.
+
+   <p>The field part of a C<tt>++</tt> class stab representing a member function
+differs substantially from the field part of a C struct stab.  It
+still begins with &lsquo;<samp><span class="samp">name:</span></samp>&rsquo; but then goes on to define a new type number
+for the member function, describe its return type, its argument types,
+its protection level, any qualifiers applied to the method definition,
+and whether the method is virtual or not.  If the method is virtual
+then the method description goes on to give the vtable index of the
+method, and the type number of the first base class defining the
+method.
+
+   <p>When the field name is a method name it is followed by two colons rather
+than one.  This is followed by a new type definition for the method. 
+This is a number followed by an equal sign and the type of the method. 
+Normally this will be a type declared using the &lsquo;<samp><span class="samp">#</span></samp>&rsquo; type
+descriptor; see <a href="Method-Type-Descriptor.html#Method-Type-Descriptor">Method Type Descriptor</a>; static member functions
+are declared using the &lsquo;<samp><span class="samp">f</span></samp>&rsquo; type descriptor instead; see
+<a href="Function-Types.html#Function-Types">Function Types</a>.
+
+   <p>The format of an overloaded operator method name differs from that of
+other methods.  It is &lsquo;<samp><span class="samp">op$::</span><var>operator-name</var><span class="samp">.</span></samp>&rsquo; where
+<var>operator-name</var> is the operator name such as &lsquo;<samp><span class="samp">+</span></samp>&rsquo; or &lsquo;<samp><span class="samp">+=</span></samp>&rsquo;. 
+The name ends with a period, and any characters except the period can
+occur in the <var>operator-name</var> string.
+
+   <p>The next part of the method description represents the arguments to the
+method, preceded by a colon and ending with a semi-colon.  The types of
+the arguments are expressed in the same way argument types are expressed
+in C<tt>++</tt> name mangling.  In this example an <code>int</code> and a <code>char</code>
+map to &lsquo;<samp><span class="samp">ic</span></samp>&rsquo;.
+
+   <p>This is followed by a number, a letter, and an asterisk or period,
+followed by another semicolon.  The number indicates the protections
+that apply to the member function.  Here the 2 means public.  The
+letter encodes any qualifier applied to the method definition.  In
+this case, &lsquo;<samp><span class="samp">A</span></samp>&rsquo; means that it is a normal function definition.  The dot
+shows that the method is not virtual.  The sections that follow
+elaborate further on these fields and describe the additional
+information present for virtual methods.
+
+<pre class="display">     .stabs "class_name:sym_desc(type)type_def(20)=type_desc(struct)struct_bytes(4)
+             field_name(Adat):type(int),bit_offset(0),field_bits(32);
+     
+             method_name(Ameth)::type_def(21)=type_desc(method)return_type(int);
+             :arg_types(int char);
+             protection(public)qualifier(normal)virtual(no);;"
+             N_LSYM,NIL,NIL,NIL
+</pre>
+   <pre class="smallexample">     .stabs "baseA:t20=s4Adat:1,0,32;Ameth::21=##1;:ic;2A.;;",128,0,0,0
+     
+     .stabs "class_name:sym_desc(struct tag)",N_LSYM,NIL,NIL,NIL
+     
+     .stabs "baseA:T20",128,0,0,0
+</pre>
+   </body></html>
+

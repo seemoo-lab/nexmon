@@ -1,0 +1,88 @@
+<html lang="en">
+<head>
+<title>Guile API - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Guile.html#Guile" title="Guile">
+<link rel="prev" href="Guile-Commands.html#Guile-Commands" title="Guile Commands">
+<link rel="next" href="Guile-Auto_002dloading.html#Guile-Auto_002dloading" title="Guile Auto-loading">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Guile-API"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Guile-Auto_002dloading.html#Guile-Auto_002dloading">Guile Auto-loading</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Guile-Commands.html#Guile-Commands">Guile Commands</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Guile.html#Guile">Guile</a>
+<hr>
+</div>
+
+<h4 class="subsection">23.3.3 Guile API</h4>
+
+<p><a name="index-guile-api-2354"></a><a name="index-programming-in-guile-2355"></a>
+You can get quick online help for <span class="sc">gdb</span>'s Guile API by issuing
+the command <kbd>help&nbsp;guile</kbd><!-- /@w -->, or by issuing the command <kbd>,help</kbd>
+from an interactive Guile session.  Furthermore, most Guile procedures
+provided by <span class="sc">gdb</span> have doc strings which can be obtained with
+<kbd>,describe </kbd><var>procedure-name</var> or <kbd>,d </kbd><var>procedure-name</var>
+from the Guile interactive prompt.
+
+<ul class="menu">
+<li><a accesskey="1" href="Basic-Guile.html#Basic-Guile">Basic Guile</a>:               Basic Guile Functions
+<li><a accesskey="2" href="Guile-Configuration.html#Guile-Configuration">Guile Configuration</a>:       Guile configuration variables
+<li><a accesskey="3" href="GDB-Scheme-Data-Types.html#GDB-Scheme-Data-Types">GDB Scheme Data Types</a>:     Scheme representations of GDB objects
+<li><a accesskey="4" href="Guile-Exception-Handling.html#Guile-Exception-Handling">Guile Exception Handling</a>:  How Guile exceptions are translated
+<li><a accesskey="5" href="Values-From-Inferior-In-Guile.html#Values-From-Inferior-In-Guile">Values From Inferior In Guile</a>:  Guile representation of values
+<li><a accesskey="6" href="Arithmetic-In-Guile.html#Arithmetic-In-Guile">Arithmetic In Guile</a>:       Arithmetic in Guile
+<li><a accesskey="7" href="Types-In-Guile.html#Types-In-Guile">Types In Guile</a>:            Guile representation of types
+<li><a accesskey="8" href="Guile-Pretty-Printing-API.html#Guile-Pretty-Printing-API">Guile Pretty Printing API</a>:  Pretty-printing values with Guile
+<li><a accesskey="9" href="Selecting-Guile-Pretty_002dPrinters.html#Selecting-Guile-Pretty_002dPrinters">Selecting Guile Pretty-Printers</a>:  How GDB chooses a pretty-printer
+<li><a href="Writing-a-Guile-Pretty_002dPrinter.html#Writing-a-Guile-Pretty_002dPrinter">Writing a Guile Pretty-Printer</a>:  Writing a pretty-printer
+<li><a href="Commands-In-Guile.html#Commands-In-Guile">Commands In Guile</a>:         Implementing new commands in Guile
+<li><a href="Parameters-In-Guile.html#Parameters-In-Guile">Parameters In Guile</a>:       Adding new <span class="sc">gdb</span> parameters
+<li><a href="Progspaces-In-Guile.html#Progspaces-In-Guile">Progspaces In Guile</a>:       Program spaces
+<li><a href="Objfiles-In-Guile.html#Objfiles-In-Guile">Objfiles In Guile</a>:         Object files in Guile
+<li><a href="Frames-In-Guile.html#Frames-In-Guile">Frames In Guile</a>:           Accessing inferior stack frames from Guile
+<li><a href="Blocks-In-Guile.html#Blocks-In-Guile">Blocks In Guile</a>:           Accessing blocks from Guile
+<li><a href="Symbols-In-Guile.html#Symbols-In-Guile">Symbols In Guile</a>:          Guile representation of symbols
+<li><a href="Symbol-Tables-In-Guile.html#Symbol-Tables-In-Guile">Symbol Tables In Guile</a>:    Guile representation of symbol tables
+<li><a href="Breakpoints-In-Guile.html#Breakpoints-In-Guile">Breakpoints In Guile</a>:      Manipulating breakpoints using Guile
+<li><a href="Lazy-Strings-In-Guile.html#Lazy-Strings-In-Guile">Lazy Strings In Guile</a>:     Guile representation of lazy strings
+<li><a href="Architectures-In-Guile.html#Architectures-In-Guile">Architectures In Guile</a>:    Guile representation of architectures
+<li><a href="Disassembly-In-Guile.html#Disassembly-In-Guile">Disassembly In Guile</a>:      Disassembling instructions from Guile
+<li><a href="I_002fO-Ports-in-Guile.html#I_002fO-Ports-in-Guile">I/O Ports in Guile</a>:        GDB I/O ports
+<li><a href="Memory-Ports-in-Guile.html#Memory-Ports-in-Guile">Memory Ports in Guile</a>:     Accessing memory through ports and bytevectors
+<li><a href="Iterators-In-Guile.html#Iterators-In-Guile">Iterators In Guile</a>:        Basic iterator support
+</ul>
+
+   </body></html>
+

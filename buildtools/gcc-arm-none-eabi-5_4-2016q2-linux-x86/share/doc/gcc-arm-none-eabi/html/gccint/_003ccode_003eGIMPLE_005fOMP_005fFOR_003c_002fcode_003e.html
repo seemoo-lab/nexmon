@@ -1,0 +1,169 @@
+<html lang="en">
+<head>
+<title>@code{GIMPLE_OMP_FOR} - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Tuple-specific-accessors.html#Tuple-specific-accessors" title="Tuple specific accessors">
+<link rel="prev" href="_0040code_007bGIMPLE_005fOMP_005fCRITICAL_007d.html#g_t_0040code_007bGIMPLE_005fOMP_005fCRITICAL_007d" title="@code{GIMPLE_OMP_CRITICAL}">
+<link rel="next" href="_0040code_007bGIMPLE_005fOMP_005fMASTER_007d.html#g_t_0040code_007bGIMPLE_005fOMP_005fMASTER_007d" title="@code{GIMPLE_OMP_MASTER}">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="%3ccode%3eGIMPLE_OMP_FOR%3c%2fcode%3e"></a>
+<a name="g_t_003ccode_003eGIMPLE_005fOMP_005fFOR_003c_002fcode_003e"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="_003ccode_003eGIMPLE_005fOMP_005fMASTER_003c_002fcode_003e.html#g_t_003ccode_003eGIMPLE_005fOMP_005fMASTER_003c_002fcode_003e">&lt;code&gt;GIMPLE_OMP_MASTER&lt;/code&gt;</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="_003ccode_003eGIMPLE_005fOMP_005fCRITICAL_003c_002fcode_003e.html#g_t_003ccode_003eGIMPLE_005fOMP_005fCRITICAL_003c_002fcode_003e">&lt;code&gt;GIMPLE_OMP_CRITICAL&lt;/code&gt;</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Tuple-specific-accessors.html#Tuple-specific-accessors">Tuple specific accessors</a>
+<hr>
+</div>
+
+<h4 class="subsection">11.8.16 <code>GIMPLE_OMP_FOR</code></h4>
+
+<p><a name="index-g_t_0040code_007bGIMPLE_005fOMP_005fFOR_007d-2346"></a>
+
+<div class="defun">
+&mdash; GIMPLE function: gomp_for <b>*gimple_build_omp_for</b> (<var>gimple_seq body, tree clauses, tree index, tree initial, tree final, tree incr, gimple_seq pre_body, enum tree_code omp_for_cond</var>)<var><a name="index-g_t_002agimple_005fbuild_005fomp_005ffor-2347"></a></var><br>
+<blockquote><p>Build a <code>GIMPLE_OMP_FOR</code> statement. <code>BODY</code> is sequence of statements
+inside the for loop.  <code>CLAUSES</code>, are any of the loop
+construct's clauses.  <code>PRE_BODY</code> is the
+sequence of statements that are loop invariant.  <code>INDEX</code> is the
+index variable.  <code>INITIAL</code> is the initial value of <code>INDEX</code>.  <code>FINAL</code> is
+final value of <code>INDEX</code>.  OMP_FOR_COND is the predicate used to
+compare <code>INDEX</code> and <code>FINAL</code>.  <code>INCR</code> is the increment expression. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree <b>gimple_omp_for_clauses</b> (<var>gimple g</var>)<var><a name="index-gimple_005fomp_005ffor_005fclauses-2348"></a></var><br>
+<blockquote><p>Return the clauses associated with <code>OMP_FOR</code> <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree * <b>gimple_omp_for_clauses_ptr</b> (<var>gimple g</var>)<var><a name="index-gimple_005fomp_005ffor_005fclauses_005fptr-2349"></a></var><br>
+<blockquote><p>Return a pointer to the <code>OMP_FOR</code> <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_omp_for_set_clauses</b> (<var>gimple g, tree clauses</var>)<var><a name="index-gimple_005fomp_005ffor_005fset_005fclauses-2350"></a></var><br>
+<blockquote><p>Set <code>CLAUSES</code> to be the list of clauses associated with <code>OMP_FOR</code> <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree <b>gimple_omp_for_index</b> (<var>gimple g</var>)<var><a name="index-gimple_005fomp_005ffor_005findex-2351"></a></var><br>
+<blockquote><p>Return the index variable for <code>OMP_FOR</code> <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree * <b>gimple_omp_for_index_ptr</b> (<var>gimple g</var>)<var><a name="index-gimple_005fomp_005ffor_005findex_005fptr-2352"></a></var><br>
+<blockquote><p>Return a pointer to the index variable for <code>OMP_FOR</code> <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_omp_for_set_index</b> (<var>gimple g, tree index</var>)<var><a name="index-gimple_005fomp_005ffor_005fset_005findex-2353"></a></var><br>
+<blockquote><p>Set <code>INDEX</code> to be the index variable for <code>OMP_FOR</code> <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree <b>gimple_omp_for_initial</b> (<var>gimple g</var>)<var><a name="index-gimple_005fomp_005ffor_005finitial-2354"></a></var><br>
+<blockquote><p>Return the initial value for <code>OMP_FOR</code> <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree * <b>gimple_omp_for_initial_ptr</b> (<var>gimple g</var>)<var><a name="index-gimple_005fomp_005ffor_005finitial_005fptr-2355"></a></var><br>
+<blockquote><p>Return a pointer to the initial value for <code>OMP_FOR</code> <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_omp_for_set_initial</b> (<var>gimple g, tree initial</var>)<var><a name="index-gimple_005fomp_005ffor_005fset_005finitial-2356"></a></var><br>
+<blockquote><p>Set <code>INITIAL</code> to be the initial value for <code>OMP_FOR</code> <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree <b>gimple_omp_for_final</b> (<var>gimple g</var>)<var><a name="index-gimple_005fomp_005ffor_005ffinal-2357"></a></var><br>
+<blockquote><p>Return the final value for <code>OMP_FOR</code> <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree * <b>gimple_omp_for_final_ptr</b> (<var>gimple g</var>)<var><a name="index-gimple_005fomp_005ffor_005ffinal_005fptr-2358"></a></var><br>
+<blockquote><p>turn a pointer to the final value for <code>OMP_FOR</code> <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_omp_for_set_final</b> (<var>gimple g, tree final</var>)<var><a name="index-gimple_005fomp_005ffor_005fset_005ffinal-2359"></a></var><br>
+<blockquote><p>Set <code>FINAL</code> to be the final value for <code>OMP_FOR</code> <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree <b>gimple_omp_for_incr</b> (<var>gimple g</var>)<var><a name="index-gimple_005fomp_005ffor_005fincr-2360"></a></var><br>
+<blockquote><p>Return the increment value for <code>OMP_FOR</code> <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree * <b>gimple_omp_for_incr_ptr</b> (<var>gimple g</var>)<var><a name="index-gimple_005fomp_005ffor_005fincr_005fptr-2361"></a></var><br>
+<blockquote><p>Return a pointer to the increment value for <code>OMP_FOR</code> <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_omp_for_set_incr</b> (<var>gimple g, tree incr</var>)<var><a name="index-gimple_005fomp_005ffor_005fset_005fincr-2362"></a></var><br>
+<blockquote><p>Set <code>INCR</code> to be the increment value for <code>OMP_FOR</code> <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: gimple_seq <b>gimple_omp_for_pre_body</b> (<var>gimple g</var>)<var><a name="index-gimple_005fomp_005ffor_005fpre_005fbody-2363"></a></var><br>
+<blockquote><p>Return the sequence of statements to execute before the <code>OMP_FOR</code>
+statement <code>G</code> starts. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_omp_for_set_pre_body</b> (<var>gimple g, gimple_seq pre_body</var>)<var><a name="index-gimple_005fomp_005ffor_005fset_005fpre_005fbody-2364"></a></var><br>
+<blockquote><p>Set <code>PRE_BODY</code> to be the sequence of statements to execute before
+the <code>OMP_FOR</code> statement <code>G</code> starts. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_omp_for_set_cond</b> (<var>gimple g, enum tree_code cond</var>)<var><a name="index-gimple_005fomp_005ffor_005fset_005fcond-2365"></a></var><br>
+<blockquote><p>Set <code>COND</code> to be the condition code for <code>OMP_FOR</code> <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: enum tree_code <b>gimple_omp_for_cond</b> (<var>gimple g</var>)<var><a name="index-gimple_005fomp_005ffor_005fcond-2366"></a></var><br>
+<blockquote><p>Return the condition code associated with <code>OMP_FOR</code> <code>G</code>. 
+</p></blockquote></div>
+
+ </body></html>
+

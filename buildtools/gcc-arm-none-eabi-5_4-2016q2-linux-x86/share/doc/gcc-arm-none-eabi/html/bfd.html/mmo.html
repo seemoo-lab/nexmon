@@ -1,0 +1,81 @@
+<html lang="en">
+<head>
+<title>mmo - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="BFD-back-ends.html#BFD-back-ends" title="BFD back ends">
+<link rel="prev" href="elf.html#elf" title="elf">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="mmo"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="elf.html#elf">elf</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="BFD-back-ends.html#BFD-back-ends">BFD back ends</a>
+<hr>
+</div>
+
+<h3 class="section">3.5 mmo backend</h3>
+
+<p>The mmo object format is used exclusively together with Professor
+Donald E. Knuth's educational 64-bit processor MMIX.  The simulator
+<samp><span class="command">mmix</span></samp> which is available at
+<a href="http://mmix.cs.hm.edu/src/index.html">http://mmix.cs.hm.edu/src/index.html</a>
+understands this format.  That package also includes a combined
+assembler and linker called <samp><span class="command">mmixal</span></samp>.  The mmo format has
+no advantages feature-wise compared to e.g. ELF.  It is a simple
+non-relocatable object format with no support for archives or
+debugging information, except for symbol value information and
+line numbers (which is not yet implemented in BFD).  See
+<a href="http://mmix.cs.hm.edu/">http://mmix.cs.hm.edu/</a> for more
+information about MMIX.  The ELF format is used for intermediate
+object files in the BFD implementation.
+
+<!-- We want to xref the symbol table node.  A feature in "chew" -->
+<!-- requires that "commands" do not contain spaces in the -->
+<!-- arguments.  Hence the hyphen in "Symbol-table". -->
+<ul class="menu">
+<li><a accesskey="1" href="File-layout.html#File-layout">File layout</a>
+<li><a accesskey="2" href="Symbol_002dtable.html#Symbol_002dtable">Symbol-table</a>
+<li><a accesskey="3" href="mmo-section-mapping.html#mmo-section-mapping">mmo section mapping</a>
+</ul>
+
+   </body></html>
+

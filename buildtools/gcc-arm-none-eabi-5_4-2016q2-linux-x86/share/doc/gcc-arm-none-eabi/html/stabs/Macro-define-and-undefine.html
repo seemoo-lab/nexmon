@@ -1,0 +1,101 @@
+<html lang="en">
+<head>
+<title>Macro define and undefine - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Types.html#Types" title="Types">
+<link rel="next" href="Symbol-Tables.html#Symbol-Tables" title="Symbol Tables">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Macro-define-and-undefine"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Symbol-Tables.html#Symbol-Tables">Symbol Tables</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Types.html#Types">Types</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">6 Representation of #define and #undef</h2>
+
+<p>This section describes the stabs support for macro define and undefine
+information, supported on some systems.  (e.g., with <samp><span class="option">-g3</span></samp>
+<samp><span class="option">-gstabs</span></samp> when using GCC).
+
+   <p>A <code>#define </code><var>macro-name</var> <var>macro-body</var> is represented with
+an <code>N_MAC_DEFINE</code> stab with a string field of
+<var>macro-name</var> <var>macro-body</var>. 
+<a name="index-N_005fMAC_005fDEFINE-51"></a>
+An <code>#undef </code><var>macro-name</var> is represented with an
+<code>N_MAC_UNDEF</code> stabs with a string field of simply
+<var>macro-name</var>. 
+<a name="index-N_005fMAC_005fUNDEF-52"></a>
+For both <code>N_MAC_DEFINE</code> and <code>N_MAC_UNDEF</code>, the desc field is
+the line number within the file where the corresponding <code>#define</code>
+or <code>#undef</code> occurred.
+
+   <p>For example, the following C code:
+
+<pre class="example">         #define NONE	42
+         #define TWO(a, b)	(a + (a) + 2 * b)
+         #define ONE(c)	(c + 19)
+     
+         main(int argc, char *argv[])
+         {
+           func(NONE, TWO(10, 11));
+           func(NONE, ONE(23));
+     
+         #undef ONE
+         #define ONE(c)	(c + 23)
+     
+           func(NONE, ONE(-23));
+     
+           return (0);
+         }
+     
+         int global;
+     
+         func(int arg1, int arg2)
+         {
+           global = arg1 + arg2;
+         }
+</pre>
+   <p class="noindent">produces the following stabs (as well as many others):
+
+<pre class="example">         .stabs	"NONE 42",54,0,1,0
+         .stabs	"TWO(a,b) (a + (a) + 2 * b)",54,0,2,0
+         .stabs	"ONE(c) (c + 19)",54,0,3,0
+         .stabs	"ONE",58,0,10,0
+         .stabs	"ONE(c) (c + 23)",54,0,11,0
+</pre>
+   <p class="noindent">NOTE: In the above example, <code>54</code> is <code>N_MAC_DEFINE</code> and
+<code>58</code> is <code>N_MAC_UNDEF</code>.
+
+   </body></html>
+

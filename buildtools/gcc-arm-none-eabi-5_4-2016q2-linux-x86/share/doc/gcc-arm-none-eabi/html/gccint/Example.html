@@ -1,0 +1,98 @@
+<html lang="en">
+<head>
+<title>Example - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Machine-Desc.html#Machine-Desc" title="Machine Desc">
+<link rel="prev" href="Patterns.html#Patterns" title="Patterns">
+<link rel="next" href="RTL-Template.html#RTL-Template" title="RTL Template">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Example"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="RTL-Template.html#RTL-Template">RTL Template</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Patterns.html#Patterns">Patterns</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Machine-Desc.html#Machine-Desc">Machine Desc</a>
+<hr>
+</div>
+
+<h3 class="section">16.3 Example of <code>define_insn</code></h3>
+
+<p><a name="index-g_t_0040code_007bdefine_005finsn_007d-example-3249"></a>
+Here is an example of an instruction pattern, taken from the machine
+description for the 68000/68020.
+
+<pre class="smallexample">     (define_insn "tstsi"
+       [(set (cc0)
+             (match_operand:SI 0 "general_operand" "rm"))]
+       ""
+       "*
+     {
+       if (TARGET_68020 || ! ADDRESS_REG_P (operands[0]))
+         return \"tstl %0\";
+       return \"cmpl #0,%0\";
+     }")
+</pre>
+ <p class="noindent">This can also be written using braced strings:
+
+<pre class="smallexample">     (define_insn "tstsi"
+       [(set (cc0)
+             (match_operand:SI 0 "general_operand" "rm"))]
+       ""
+     {
+       if (TARGET_68020 || ! ADDRESS_REG_P (operands[0]))
+         return "tstl %0";
+       return "cmpl #0,%0";
+     })
+</pre>
+ <p>This describes an instruction which sets the condition codes based on the
+value of a general operand.  It has no condition, so any insn with an RTL
+description of the form shown may be matched to this pattern.  The name
+&lsquo;<samp><span class="samp">tstsi</span></samp>&rsquo; means &ldquo;test a <code>SImode</code> value&rdquo; and tells the RTL
+generation pass that, when it is necessary to test such a value, an insn
+to do so can be constructed using this pattern.
+
+ <p>The output control string is a piece of C code which chooses which
+output template to return based on the kind of operand and the specific
+type of CPU for which code is being generated.
+
+ <p>&lsquo;<samp><span class="samp">"rm"</span></samp>&rsquo; is an operand constraint.  Its meaning is explained below.
+
+ </body></html>
+

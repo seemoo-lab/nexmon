@@ -1,0 +1,238 @@
+<html lang="en">
+<head>
+<title>Data Output - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Assembler-Format.html#Assembler-Format" title="Assembler Format">
+<link rel="prev" href="File-Framework.html#File-Framework" title="File Framework">
+<link rel="next" href="Uninitialized-Data.html#Uninitialized-Data" title="Uninitialized Data">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Data-Output"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Uninitialized-Data.html#Uninitialized-Data">Uninitialized Data</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="File-Framework.html#File-Framework">File Framework</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Assembler-Format.html#Assembler-Format">Assembler Format</a>
+<hr>
+</div>
+
+<h4 class="subsection">17.20.2 Output of Data</h4>
+
+<div class="defun">
+&mdash; Target Hook: const char * <b>TARGET_ASM_BYTE_OP</b><var><a name="index-TARGET_005fASM_005fBYTE_005fOP-4581"></a></var><br>
+&mdash; Target Hook: const char * <b>TARGET_ASM_ALIGNED_HI_OP</b><var><a name="index-TARGET_005fASM_005fALIGNED_005fHI_005fOP-4582"></a></var><br>
+&mdash; Target Hook: const char * <b>TARGET_ASM_ALIGNED_SI_OP</b><var><a name="index-TARGET_005fASM_005fALIGNED_005fSI_005fOP-4583"></a></var><br>
+&mdash; Target Hook: const char * <b>TARGET_ASM_ALIGNED_DI_OP</b><var><a name="index-TARGET_005fASM_005fALIGNED_005fDI_005fOP-4584"></a></var><br>
+&mdash; Target Hook: const char * <b>TARGET_ASM_ALIGNED_TI_OP</b><var><a name="index-TARGET_005fASM_005fALIGNED_005fTI_005fOP-4585"></a></var><br>
+&mdash; Target Hook: const char * <b>TARGET_ASM_UNALIGNED_HI_OP</b><var><a name="index-TARGET_005fASM_005fUNALIGNED_005fHI_005fOP-4586"></a></var><br>
+&mdash; Target Hook: const char * <b>TARGET_ASM_UNALIGNED_SI_OP</b><var><a name="index-TARGET_005fASM_005fUNALIGNED_005fSI_005fOP-4587"></a></var><br>
+&mdash; Target Hook: const char * <b>TARGET_ASM_UNALIGNED_DI_OP</b><var><a name="index-TARGET_005fASM_005fUNALIGNED_005fDI_005fOP-4588"></a></var><br>
+&mdash; Target Hook: const char * <b>TARGET_ASM_UNALIGNED_TI_OP</b><var><a name="index-TARGET_005fASM_005fUNALIGNED_005fTI_005fOP-4589"></a></var><br>
+<blockquote><p>These hooks specify assembly directives for creating certain kinds
+of integer object.  The <code>TARGET_ASM_BYTE_OP</code> directive creates a
+byte-sized object, the <code>TARGET_ASM_ALIGNED_HI_OP</code> one creates an
+aligned two-byte object, and so on.  Any of the hooks may be
+<code>NULL</code>, indicating that no suitable directive is available.
+
+      <p>The compiler will print these strings at the start of a new line,
+followed immediately by the object's initial value.  In most cases,
+the string should contain a tab, a pseudo-op, and then another tab. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_ASM_INTEGER</b> (<var>rtx x, unsigned int size, int aligned_p</var>)<var><a name="index-TARGET_005fASM_005fINTEGER-4590"></a></var><br>
+<blockquote><p>The <code>assemble_integer</code> function uses this hook to output an
+integer object.  <var>x</var> is the object's value, <var>size</var> is its size
+in bytes and <var>aligned_p</var> indicates whether it is aligned.  The
+function should return <code>true</code> if it was able to output the
+object.  If it returns false, <code>assemble_integer</code> will try to
+split the object into smaller parts.
+
+      <p>The default implementation of this hook will use the
+<code>TARGET_ASM_BYTE_OP</code> family of strings, returning <code>false</code>
+when the relevant string is <code>NULL</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_ASM_DECL_END</b> (<var>void</var>)<var><a name="index-TARGET_005fASM_005fDECL_005fEND-4591"></a></var><br>
+<blockquote><p>Define this hook if the target assembler requires a special marker to
+terminate an initialized variable declaration. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_ASM_OUTPUT_ADDR_CONST_EXTRA</b> (<var>FILE *file, rtx x</var>)<var><a name="index-TARGET_005fASM_005fOUTPUT_005fADDR_005fCONST_005fEXTRA-4592"></a></var><br>
+<blockquote><p>A target hook to recognize <var>rtx</var> patterns that <code>output_addr_const</code>
+can't deal with, and output assembly code to <var>file</var> corresponding to
+the pattern <var>x</var>.  This may be used to allow machine-dependent
+<code>UNSPEC</code>s to appear within constants.
+
+      <p>If target hook fails to recognize a pattern, it must return <code>false</code>,
+so that a standard error message is printed.  If it prints an error message
+itself, by calling, for example, <code>output_operand_lossage</code>, it may just
+return <code>true</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_OUTPUT_ASCII</b> (<var>stream, ptr, len</var>)<var><a name="index-ASM_005fOUTPUT_005fASCII-4593"></a></var><br>
+<blockquote><p>A C statement to output to the stdio stream <var>stream</var> an assembler
+instruction to assemble a string constant containing the <var>len</var>
+bytes at <var>ptr</var>.  <var>ptr</var> will be a C expression of type
+<code>char *</code> and <var>len</var> a C expression of type <code>int</code>.
+
+      <p>If the assembler has a <code>.ascii</code> pseudo-op as found in the
+Berkeley Unix assembler, do not define the macro
+<code>ASM_OUTPUT_ASCII</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_OUTPUT_FDESC</b> (<var>stream, decl, n</var>)<var><a name="index-ASM_005fOUTPUT_005fFDESC-4594"></a></var><br>
+<blockquote><p>A C statement to output word <var>n</var> of a function descriptor for
+<var>decl</var>.  This must be defined if <code>TARGET_VTABLE_USES_DESCRIPTORS</code>
+is defined, and is otherwise unused. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>CONSTANT_POOL_BEFORE_FUNCTION</b><var><a name="index-CONSTANT_005fPOOL_005fBEFORE_005fFUNCTION-4595"></a></var><br>
+<blockquote><p>You may define this macro as a C expression.  You should define the
+expression to have a nonzero value if GCC should output the constant
+pool for a function before the code for the function, or a zero value if
+GCC should output the constant pool after the function.  If you do
+not define this macro, the usual case, GCC will output the constant
+pool before the function. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_OUTPUT_POOL_PROLOGUE</b> (<var>file, funname, fundecl, size</var>)<var><a name="index-ASM_005fOUTPUT_005fPOOL_005fPROLOGUE-4596"></a></var><br>
+<blockquote><p>A C statement to output assembler commands to define the start of the
+constant pool for a function.  <var>funname</var> is a string giving
+the name of the function.  Should the return type of the function
+be required, it can be obtained via <var>fundecl</var>.  <var>size</var>
+is the size, in bytes, of the constant pool that will be written
+immediately after this call.
+
+      <p>If no constant-pool prefix is required, the usual case, this macro need
+not be defined. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_OUTPUT_SPECIAL_POOL_ENTRY</b> (<var>file, x, mode, align, labelno, jumpto</var>)<var><a name="index-ASM_005fOUTPUT_005fSPECIAL_005fPOOL_005fENTRY-4597"></a></var><br>
+<blockquote><p>A C statement (with or without semicolon) to output a constant in the
+constant pool, if it needs special treatment.  (This macro need not do
+anything for RTL expressions that can be output normally.)
+
+      <p>The argument <var>file</var> is the standard I/O stream to output the
+assembler code on.  <var>x</var> is the RTL expression for the constant to
+output, and <var>mode</var> is the machine mode (in case <var>x</var> is a
+&lsquo;<samp><span class="samp">const_int</span></samp>&rsquo;).  <var>align</var> is the required alignment for the value
+<var>x</var>; you should output an assembler directive to force this much
+alignment.
+
+      <p>The argument <var>labelno</var> is a number to use in an internal label for
+the address of this pool entry.  The definition of this macro is
+responsible for outputting the label definition at the proper place. 
+Here is how to do this:
+
+     <pre class="smallexample">          <code>(*targetm.asm_out.internal_label)</code> (<var>file</var>, "LC", <var>labelno</var>);
+</pre>
+      <p>When you output a pool entry specially, you should end with a
+<code>goto</code> to the label <var>jumpto</var>.  This will prevent the same pool
+entry from being output a second time in the usual manner.
+
+      <p>You need not define this macro if it would do nothing. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_OUTPUT_POOL_EPILOGUE</b> (<var>file funname fundecl size</var>)<var><a name="index-ASM_005fOUTPUT_005fPOOL_005fEPILOGUE-4598"></a></var><br>
+<blockquote><p>A C statement to output assembler commands to at the end of the constant
+pool for a function.  <var>funname</var> is a string giving the name of the
+function.  Should the return type of the function be required, you can
+obtain it via <var>fundecl</var>.  <var>size</var> is the size, in bytes, of the
+constant pool that GCC wrote immediately before this call.
+
+      <p>If no constant-pool epilogue is required, the usual case, you need not
+define this macro. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>IS_ASM_LOGICAL_LINE_SEPARATOR</b> (<var>C, STR</var>)<var><a name="index-IS_005fASM_005fLOGICAL_005fLINE_005fSEPARATOR-4599"></a></var><br>
+<blockquote><p>Define this macro as a C expression which is nonzero if <var>C</var> is
+used as a logical line separator by the assembler.  <var>STR</var> points
+to the position in the string where <var>C</var> was found; this can be used if
+a line separator uses multiple characters.
+
+      <p>If you do not define this macro, the default is that only
+the character &lsquo;<samp><span class="samp">;</span></samp>&rsquo; is treated as a logical line separator. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: const char * <b>TARGET_ASM_OPEN_PAREN</b><var><a name="index-TARGET_005fASM_005fOPEN_005fPAREN-4600"></a></var><br>
+&mdash; Target Hook: const char * <b>TARGET_ASM_CLOSE_PAREN</b><var><a name="index-TARGET_005fASM_005fCLOSE_005fPAREN-4601"></a></var><br>
+<blockquote><p>These target hooks are C string constants, describing the syntax in the
+assembler for grouping arithmetic expressions.  If not overridden, they
+default to normal parentheses, which is correct for most assemblers. 
+</p></blockquote></div>
+
+ <p>These macros are provided by <samp><span class="file">real.h</span></samp> for writing the definitions
+of <code>ASM_OUTPUT_DOUBLE</code> and the like:
+
+<div class="defun">
+&mdash; Macro: <b>REAL_VALUE_TO_TARGET_SINGLE</b> (<var>x, l</var>)<var><a name="index-REAL_005fVALUE_005fTO_005fTARGET_005fSINGLE-4602"></a></var><br>
+&mdash; Macro: <b>REAL_VALUE_TO_TARGET_DOUBLE</b> (<var>x, l</var>)<var><a name="index-REAL_005fVALUE_005fTO_005fTARGET_005fDOUBLE-4603"></a></var><br>
+&mdash; Macro: <b>REAL_VALUE_TO_TARGET_LONG_DOUBLE</b> (<var>x, l</var>)<var><a name="index-REAL_005fVALUE_005fTO_005fTARGET_005fLONG_005fDOUBLE-4604"></a></var><br>
+&mdash; Macro: <b>REAL_VALUE_TO_TARGET_DECIMAL32</b> (<var>x, l</var>)<var><a name="index-REAL_005fVALUE_005fTO_005fTARGET_005fDECIMAL32-4605"></a></var><br>
+&mdash; Macro: <b>REAL_VALUE_TO_TARGET_DECIMAL64</b> (<var>x, l</var>)<var><a name="index-REAL_005fVALUE_005fTO_005fTARGET_005fDECIMAL64-4606"></a></var><br>
+&mdash; Macro: <b>REAL_VALUE_TO_TARGET_DECIMAL128</b> (<var>x, l</var>)<var><a name="index-REAL_005fVALUE_005fTO_005fTARGET_005fDECIMAL128-4607"></a></var><br>
+<blockquote><p>These translate <var>x</var>, of type <code>REAL_VALUE_TYPE</code>, to the
+target's floating point representation, and store its bit pattern in
+the variable <var>l</var>.  For <code>REAL_VALUE_TO_TARGET_SINGLE</code> and
+<code>REAL_VALUE_TO_TARGET_DECIMAL32</code>, this variable should be a
+simple <code>long int</code>.  For the others, it should be an array of
+<code>long int</code>.  The number of elements in this array is determined
+by the size of the desired target floating point data type: 32 bits of
+it go in each <code>long int</code> array element.  Each array element holds
+32 bits of the result, even if <code>long int</code> is wider than 32 bits
+on the host machine.
+
+      <p>The array element values are designed so that you can print them out
+using <code>fprintf</code> in the order they should appear in the target
+machine's memory. 
+</p></blockquote></div>
+
+ </body></html>
+

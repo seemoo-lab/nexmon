@@ -1,0 +1,180 @@
+<html lang="en">
+<head>
+<title>Final Actions - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Test-Directives.html#Test-Directives" title="Test Directives">
+<link rel="prev" href="Require-Support.html#Require-Support" title="Require Support">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Final-Actions"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Require-Support.html#Require-Support">Require Support</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Test-Directives.html#Test-Directives">Test Directives</a>
+<hr>
+</div>
+
+<h4 class="subsection">7.2.6 Commands for use in <code>dg-final</code></h4>
+
+<p>The GCC testsuite defines the following directives to be used within
+<code>dg-final</code>.
+
+<h5 class="subsubsection">7.2.6.1 Scan a particular file</h5>
+
+     <dl>
+<dt><code>scan-file </code><var>filename</var> <var>regexp</var><code> [{ target/xfail </code><var>selector</var><code> }]</code><dd>Passes if <var>regexp</var> matches text in <var>filename</var>. 
+<br><dt><code>scan-file-not </code><var>filename</var> <var>regexp</var><code> [{ target/xfail </code><var>selector</var><code> }]</code><dd>Passes if <var>regexp</var> does not match text in <var>filename</var>. 
+<br><dt><code>scan-module </code><var>module</var> <var>regexp</var><code> [{ target/xfail </code><var>selector</var><code> }]</code><dd>Passes if <var>regexp</var> matches in Fortran module <var>module</var>. 
+</dl>
+
+<h5 class="subsubsection">7.2.6.2 Scan the assembly output</h5>
+
+     <dl>
+<dt><code>scan-assembler </code><var>regex</var><code> [{ target/xfail </code><var>selector</var><code> }]</code><dd>Passes if <var>regex</var> matches text in the test's assembler output.
+
+     <br><dt><code>scan-assembler-not </code><var>regex</var><code> [{ target/xfail </code><var>selector</var><code> }]</code><dd>Passes if <var>regex</var> does not match text in the test's assembler output.
+
+     <br><dt><code>scan-assembler-times </code><var>regex</var> <var>num</var><code> [{ target/xfail </code><var>selector</var><code> }]</code><dd>Passes if <var>regex</var> is matched exactly <var>num</var> times in the test's
+assembler output.
+
+     <br><dt><code>scan-assembler-dem </code><var>regex</var><code> [{ target/xfail </code><var>selector</var><code> }]</code><dd>Passes if <var>regex</var> matches text in the test's demangled assembler output.
+
+     <br><dt><code>scan-assembler-dem-not </code><var>regex</var><code> [{ target/xfail </code><var>selector</var><code> }]</code><dd>Passes if <var>regex</var> does not match text in the test's demangled assembler
+output.
+
+     <br><dt><code>scan-hidden </code><var>symbol</var><code> [{ target/xfail </code><var>selector</var><code> }]</code><dd>Passes if <var>symbol</var> is defined as a hidden symbol in the test's
+assembly output.
+
+     <br><dt><code>scan-not-hidden </code><var>symbol</var><code> [{ target/xfail </code><var>selector</var><code> }]</code><dd>Passes if <var>symbol</var> is not defined as a hidden symbol in the test's
+assembly output. 
+</dl>
+
+<h5 class="subsubsection">7.2.6.3 Scan optimization dump files</h5>
+
+<p>These commands are available for <var>kind</var> of <code>tree</code>, <code>rtl</code>,
+and <code>ipa</code>.
+
+     <dl>
+<dt><code>scan-</code><var>kind</var><code>-dump </code><var>regex</var> <var>suffix</var><code> [{ target/xfail </code><var>selector</var><code> }]</code><dd>Passes if <var>regex</var> matches text in the dump file with suffix <var>suffix</var>.
+
+     <br><dt><code>scan-</code><var>kind</var><code>-dump-not </code><var>regex</var> <var>suffix</var><code> [{ target/xfail </code><var>selector</var><code> }]</code><dd>Passes if <var>regex</var> does not match text in the dump file with suffix
+<var>suffix</var>.
+
+     <br><dt><code>scan-</code><var>kind</var><code>-dump-times </code><var>regex</var> <var>num</var> <var>suffix</var><code> [{ target/xfail </code><var>selector</var><code> }]</code><dd>Passes if <var>regex</var> is found exactly <var>num</var> times in the dump file
+with suffix <var>suffix</var>.
+
+     <br><dt><code>scan-</code><var>kind</var><code>-dump-dem </code><var>regex</var> <var>suffix</var><code> [{ target/xfail </code><var>selector</var><code> }]</code><dd>Passes if <var>regex</var> matches demangled text in the dump file with
+suffix <var>suffix</var>.
+
+     <br><dt><code>scan-</code><var>kind</var><code>-dump-dem-not </code><var>regex</var> <var>suffix</var><code> [{ target/xfail </code><var>selector</var><code> }]</code><dd>Passes if <var>regex</var> does not match demangled text in the dump file with
+suffix <var>suffix</var>. 
+</dl>
+
+<h5 class="subsubsection">7.2.6.4 Verify that an output files exists or not</h5>
+
+     <dl>
+<dt><code>output-exists [{ target/xfail </code><var>selector</var><code> }]</code><dd>Passes if compiler output file exists.
+
+     <br><dt><code>output-exists-not [{ target/xfail </code><var>selector</var><code> }]</code><dd>Passes if compiler output file does not exist. 
+</dl>
+
+<h5 class="subsubsection">7.2.6.5 Check for LTO tests</h5>
+
+     <dl>
+<dt><code>scan-symbol </code><var>regexp</var><code> [{ target/xfail </code><var>selector</var><code> }]</code><dd>Passes if the pattern is present in the final executable. 
+</dl>
+
+<h5 class="subsubsection">7.2.6.6 Checks for <samp><span class="command">gcov</span></samp> tests</h5>
+
+     <dl>
+<dt><code>run-gcov </code><var>sourcefile</var><dd>Check line counts in <samp><span class="command">gcov</span></samp> tests.
+
+     <br><dt><code>run-gcov [branches] [calls] { </code><var>opts</var> <var>sourcefile</var><code> }</code><dd>Check branch and/or call counts, in addition to line counts, in
+<samp><span class="command">gcov</span></samp> tests. 
+</dl>
+
+<h5 class="subsubsection">7.2.6.7 Clean up generated test files</h5>
+
+     <dl>
+<dt><code>cleanup-coverage-files</code><dd>Removes coverage data files generated for this test.
+
+     <br><dt><code>cleanup-ipa-dump </code><var>suffix</var><dd>Removes IPA dump files generated for this test.
+
+     <br><dt><code>cleanup-modules "</code><var>list-of-extra-modules</var><code>"</code><dd>Removes Fortran module files generated for this test, excluding the
+module names listed in keep-modules. 
+Cleaning up module files is usually done automatically by the testsuite
+by looking at the source files and removing the modules after the test
+has been executed.
+     <pre class="smallexample">          module MoD1
+          end module MoD1
+          module Mod2
+          end module Mod2
+          module moD3
+          end module moD3
+          module mod4
+          end module mod4
+          ! { dg-final { cleanup-modules "mod1 mod2" } } ! redundant
+          ! { dg-final { keep-modules "mod3 mod4" } }
+</pre>
+     <br><dt><code>keep-modules "</code><var>list-of-modules-not-to-delete</var><code>"</code><dd>Whitespace separated list of module names that should not be deleted by
+cleanup-modules. 
+If the list of modules is empty, all modules defined in this file are kept.
+     <pre class="smallexample">          module maybe_unneeded
+          end module maybe_unneeded
+          module keep1
+          end module keep1
+          module keep2
+          end module keep2
+          ! { dg-final { keep-modules "keep1 keep2" } } ! just keep these two
+          ! { dg-final { keep-modules "" } } ! keep all
+</pre>
+     <br><dt><code>cleanup-profile-file</code><dd>Removes profiling files generated for this test.
+
+     <br><dt><code>cleanup-repo-files</code><dd>Removes files generated for this test for <samp><span class="option">-frepo</span></samp>.
+
+     <br><dt><code>cleanup-rtl-dump </code><var>suffix</var><dd>Removes RTL dump files generated for this test.
+
+     <br><dt><code>cleanup-saved-temps</code><dd>Removes files for the current test which were kept for <samp><span class="option">-save-temps</span></samp>.
+
+     <br><dt><code>cleanup-tree-dump </code><var>suffix</var><dd>Removes tree dump files matching <var>suffix</var> which were generated for
+this test. 
+</dl>
+
+ </body></html>
+

@@ -1,0 +1,199 @@
+<html lang="en">
+<head>
+<title>MODE_CC Condition Codes - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Condition-Code.html#Condition-Code" title="Condition Code">
+<link rel="prev" href="CC0-Condition-Codes.html#CC0-Condition-Codes" title="CC0 Condition Codes">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="MODE_CC-Condition-Codes"></a>
+<a name="MODE_005fCC-Condition-Codes"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="CC0-Condition-Codes.html#CC0-Condition-Codes">CC0 Condition Codes</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Condition-Code.html#Condition-Code">Condition Code</a>
+<hr>
+</div>
+
+<h4 class="subsection">17.15.2 Representation of condition codes using registers</h4>
+
+<p><a name="index-CCmode-4433"></a><a name="index-MODE_005fCC-4434"></a>
+
+<div class="defun">
+&mdash; Macro: <b>SELECT_CC_MODE</b> (<var>op, x, y</var>)<var><a name="index-SELECT_005fCC_005fMODE-4435"></a></var><br>
+<blockquote><p>On many machines, the condition code may be produced by other instructions
+than compares, for example the branch can use directly the condition
+code set by a subtract instruction.  However, on some machines
+when the condition code is set this way some bits (such as the overflow
+bit) are not set in the same way as a test instruction, so that a different
+branch instruction must be used for some conditional branches.  When
+this happens, use the machine mode of the condition code register to
+record different formats of the condition code register.  Modes can
+also be used to record which compare instruction (e.g. a signed or an
+unsigned comparison) produced the condition codes.
+
+      <p>If other modes than <code>CCmode</code> are required, add them to
+<samp><var>machine</var><span class="file">-modes.def</span></samp> and define <code>SELECT_CC_MODE</code> to choose
+a mode given an operand of a compare.  This is needed because the modes
+have to be chosen not only during RTL generation but also, for example,
+by instruction combination.  The result of <code>SELECT_CC_MODE</code> should
+be consistent with the mode used in the patterns; for example to support
+the case of the add on the SPARC discussed above, we have the pattern
+
+     <pre class="smallexample">          (define_insn ""
+            [(set (reg:CC_NOOV 0)
+                  (compare:CC_NOOV
+                    (plus:SI (match_operand:SI 0 "register_operand" "%r")
+                             (match_operand:SI 1 "arith_operand" "rI"))
+                    (const_int 0)))]
+            ""
+            "...")
+</pre>
+      <p class="noindent">together with a <code>SELECT_CC_MODE</code> that returns <code>CC_NOOVmode</code>
+for comparisons whose argument is a <code>plus</code>:
+
+     <pre class="smallexample">          #define SELECT_CC_MODE(OP,X,Y) \
+            (GET_MODE_CLASS (GET_MODE (X)) == MODE_FLOAT           \
+             ? ((OP == LT || OP == LE || OP == GT || OP == GE)     \
+                ? CCFPEmode : CCFPmode)                            \
+             : ((GET_CODE (X) == PLUS || GET_CODE (X) == MINUS     \
+                 || GET_CODE (X) == NEG || GET_CODE (x) == ASHIFT) \
+                ? CC_NOOVmode : CCmode))
+</pre>
+      <p>Another reason to use modes is to retain information on which operands
+were used by the comparison; see <code>REVERSIBLE_CC_MODE</code> later in
+this section.
+
+      <p>You should define this macro if and only if you define extra CC modes
+in <samp><var>machine</var><span class="file">-modes.def</span></samp>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_CANONICALIZE_COMPARISON</b> (<var>int *code, rtx *op0, rtx *op1, bool op0_preserve_value</var>)<var><a name="index-TARGET_005fCANONICALIZE_005fCOMPARISON-4436"></a></var><br>
+<blockquote><p>On some machines not all possible comparisons are defined, but you can
+convert an invalid comparison into a valid one.  For example, the Alpha
+does not have a <code>GT</code> comparison, but you can use an <code>LT</code>
+comparison instead and swap the order of the operands.
+
+      <p>On such machines, implement this hook to do any required conversions. 
+<var>code</var> is the initial comparison code and <var>op0</var> and <var>op1</var>
+are the left and right operands of the comparison, respectively.  If
+<var>op0_preserve_value</var> is <code>true</code> the implementation is not
+allowed to change the value of <var>op0</var> since the value might be used
+in RTXs which aren't comparisons.  E.g. the implementation is not
+allowed to swap operands in that case.
+
+      <p>GCC will not assume that the comparison resulting from this macro is
+valid but will see if the resulting insn matches a pattern in the
+<samp><span class="file">md</span></samp> file.
+
+      <p>You need not to implement this hook if it would never change the
+comparison code or operands. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>REVERSIBLE_CC_MODE</b> (<var>mode</var>)<var><a name="index-REVERSIBLE_005fCC_005fMODE-4437"></a></var><br>
+<blockquote><p>A C expression whose value is one if it is always safe to reverse a
+comparison whose mode is <var>mode</var>.  If <code>SELECT_CC_MODE</code>
+can ever return <var>mode</var> for a floating-point inequality comparison,
+then <code>REVERSIBLE_CC_MODE (</code><var>mode</var><code>)</code> must be zero.
+
+      <p>You need not define this macro if it would always returns zero or if the
+floating-point format is anything other than <code>IEEE_FLOAT_FORMAT</code>. 
+For example, here is the definition used on the SPARC, where floating-point
+inequality comparisons are given either <code>CCFPEmode</code> or <code>CCFPmode</code>:
+
+     <pre class="smallexample">          #define REVERSIBLE_CC_MODE(MODE) \
+             ((MODE) != CCFPEmode &amp;&amp; (MODE) != CCFPmode)
+</pre>
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>REVERSE_CONDITION</b> (<var>code, mode</var>)<var><a name="index-REVERSE_005fCONDITION-4438"></a></var><br>
+<blockquote><p>A C expression whose value is reversed condition code of the <var>code</var> for
+comparison done in CC_MODE <var>mode</var>.  The macro is used only in case
+<code>REVERSIBLE_CC_MODE (</code><var>mode</var><code>)</code> is nonzero.  Define this macro in case
+machine has some non-standard way how to reverse certain conditionals.  For
+instance in case all floating point conditions are non-trapping, compiler may
+freely convert unordered compares to ordered ones.  Then definition may look
+like:
+
+     <pre class="smallexample">          #define REVERSE_CONDITION(CODE, MODE) \
+             ((MODE) != CCFPmode ? reverse_condition (CODE) \
+              : reverse_condition_maybe_unordered (CODE))
+</pre>
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_FIXED_CONDITION_CODE_REGS</b> (<var>unsigned int *p1, unsigned int *p2</var>)<var><a name="index-TARGET_005fFIXED_005fCONDITION_005fCODE_005fREGS-4439"></a></var><br>
+<blockquote><p>On targets which do not use <code>(cc0)</code>, and which use a hard
+register rather than a pseudo-register to hold condition codes, the
+regular CSE passes are often not able to identify cases in which the
+hard register is set to a common value.  Use this hook to enable a
+small pass which optimizes such cases.  This hook should return true
+to enable this pass, and it should set the integers to which its
+arguments point to the hard register numbers used for condition codes. 
+When there is only one such register, as is true on most systems, the
+integer pointed to by <var>p2</var> should be set to
+<code>INVALID_REGNUM</code>.
+
+      <p>The default version of this hook returns false. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: machine_mode <b>TARGET_CC_MODES_COMPATIBLE</b> (<var>machine_mode m1, machine_mode m2</var>)<var><a name="index-TARGET_005fCC_005fMODES_005fCOMPATIBLE-4440"></a></var><br>
+<blockquote><p>On targets which use multiple condition code modes in class
+<code>MODE_CC</code>, it is sometimes the case that a comparison can be
+validly done in more than one mode.  On such a system, define this
+target hook to take two mode arguments and to return a mode in which
+both comparisons may be validly done.  If there is no such mode,
+return <code>VOIDmode</code>.
+
+      <p>The default version of this hook checks whether the modes are the
+same.  If they are, it returns that mode.  If they are different, it
+returns <code>VOIDmode</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: unsigned int <b>TARGET_FLAGS_REGNUM</b><var><a name="index-TARGET_005fFLAGS_005fREGNUM-4441"></a></var><br>
+<blockquote><p>If the target has a dedicated flags register, and it needs to use the post-reload comparison elimination pass, then this value should be set appropriately. 
+</p></blockquote></div>
+
+ </body></html>
+

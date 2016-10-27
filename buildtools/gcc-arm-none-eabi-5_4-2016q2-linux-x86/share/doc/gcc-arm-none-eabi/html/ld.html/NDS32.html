@@ -1,0 +1,76 @@
+<html lang="en">
+<head>
+<title>NDS32 - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Machine-Dependent.html#Machine-Dependent" title="Machine Dependent">
+<link rel="prev" href="MSP430.html#MSP430" title="MSP430">
+<link rel="next" href="Nios-II.html#Nios-II" title="Nios II">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the GNU linker LD
+(GNU Binutils)
+version 2.26.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled ``GNU Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="NDS32"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Nios-II.html#Nios-II">Nios II</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="MSP430.html#MSP430">MSP430</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Machine-Dependent.html#Machine-Dependent">Machine Dependent</a>
+<hr>
+</div>
+
+<h3 class="section">4.10 <code>ld</code> and NDS32</h3>
+
+<p><a name="index-relaxing-on-NDS32-665"></a>For NDS32, there are some options to select relaxation behavior.  The linker
+relaxes objects according to these options.
+
+     <dl>
+<dt><code>&lsquo;</code><samp><span class="samp">--m[no-]fp-as-gp</span></samp><code>&rsquo;</code><dd>Disable/enable fp-as-gp relaxation.
+
+     <br><dt><code>&lsquo;</code><samp><span class="samp">--mexport-symbols=FILE</span></samp><code>&rsquo;</code><dd>Exporting symbols and their address into FILE as linker script.
+
+     <br><dt><code>&lsquo;</code><samp><span class="samp">--m[no-]ex9</span></samp><code>&rsquo;</code><dd>Disable/enable link-time EX9 relaxation.
+
+     <br><dt><code>&lsquo;</code><samp><span class="samp">--mexport-ex9=FILE</span></samp><code>&rsquo;</code><dd>Export the EX9 table after linking.
+
+     <br><dt><code>&lsquo;</code><samp><span class="samp">--mimport-ex9=FILE</span></samp><code>&rsquo;</code><dd>Import the Ex9 table for EX9 relaxation.
+
+     <br><dt><code>&lsquo;</code><samp><span class="samp">--mupdate-ex9</span></samp><code>&rsquo;</code><dd>Update the existing EX9 table.
+
+     <br><dt><code>&lsquo;</code><samp><span class="samp">--mex9-limit=NUM</span></samp><code>&rsquo;</code><dd>Maximum number of entries in the ex9 table.
+
+     <br><dt><code>&lsquo;</code><samp><span class="samp">--mex9-loop-aware</span></samp><code>&rsquo;</code><dd>Avoid generating the EX9 instruction inside the loop.
+
+     <br><dt><code>&lsquo;</code><samp><span class="samp">--m[no-]ifc</span></samp><code>&rsquo;</code><dd>Disable/enable the link-time IFC optimization.
+
+     <br><dt><code>&lsquo;</code><samp><span class="samp">--mifc-loop-aware</span></samp><code>&rsquo;</code><dd>Avoid generating the IFC instruction inside the loop. 
+</dl>
+
+   </body></html>
+

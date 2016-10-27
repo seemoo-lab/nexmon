@@ -1,0 +1,93 @@
+<html lang="en">
+<head>
+<title>Branch Trace Configuration Format - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Remote-Protocol.html#Remote-Protocol" title="Remote Protocol">
+<link rel="prev" href="Branch-Trace-Format.html#Branch-Trace-Format" title="Branch Trace Format">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Branch-Trace-Configuration-Format"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Branch-Trace-Format.html#Branch-Trace-Format">Branch Trace Format</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Remote-Protocol.html#Remote-Protocol">Remote Protocol</a>
+<hr>
+</div>
+
+<h3 class="section">E.20 Branch Trace Configuration Format</h3>
+
+<p><a name="index-branch-trace-configuration-format-3494"></a>
+For each inferior thread, <span class="sc">gdb</span> can obtain the branch trace
+configuration using the &lsquo;<samp><span class="samp">qXfer:btrace-conf:read</span></samp>&rsquo;
+(see <a href="qXfer-btrace_002dconf-read.html#qXfer-btrace_002dconf-read">qXfer btrace-conf read</a>) packet.
+
+   <p>The configuration describes the branch trace format and configuration
+settings for that format.  The following information is described:
+
+     <dl>
+<dt><code>bts</code><dd>This thread uses the <dfn>Branch Trace Store</dfn> (<acronym>BTS</acronym>) format.
+          <dl>
+<dt><code>size</code><dd>The size of the <acronym>BTS</acronym> ring buffer in bytes. 
+</dl>
+     <br><dt><code>pt</code><dd>This thread uses the <dfn>Intel(R) Processor Trace</dfn> (<acronym>Intel(R)
+PT</acronym>) format.
+          <dl>
+<dt><code>size</code><dd>The size of the <acronym>Intel(R) PT</acronym> ring buffer in bytes. 
+</dl>
+     </dl>
+
+   <p><span class="sc">gdb</span> must be linked with the Expat library to support XML
+branch trace configuration discovery.  See <a href="Expat.html#Expat">Expat</a>.
+
+   <p>The formal DTD for the branch trace configuration format is given below:
+
+<pre class="smallexample">     &lt;!ELEMENT btrace-conf	(bts?, pt?)&gt;
+     &lt;!ATTLIST btrace-conf	version	CDATA	#FIXED "1.0"&gt;
+     
+     &lt;!ELEMENT bts	EMPTY&gt;
+     &lt;!ATTLIST bts	size	CDATA	#IMPLIED&gt;
+     
+     &lt;!ELEMENT pt	EMPTY&gt;
+     &lt;!ATTLIST pt	size	CDATA	#IMPLIED&gt;
+</pre>
+   <!-- \input texinfo -->
+<!-- %**start of header -->
+<!-- @setfilename agentexpr.info -->
+<!-- @settitle GDB Agent Expressions -->
+<!-- @setchapternewpage off -->
+<!-- %**end of header -->
+<!-- This file is part of the GDB manual. -->
+<!-- Copyright (C) 2003-2015 Free Software Foundation, Inc. -->
+<!-- See the file gdb.texinfo for copying conditions. -->
+   </body></html>
+

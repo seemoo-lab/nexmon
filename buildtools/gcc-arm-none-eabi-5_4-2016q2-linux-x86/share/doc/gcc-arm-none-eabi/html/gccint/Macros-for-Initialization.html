@@ -1,0 +1,224 @@
+<html lang="en">
+<head>
+<title>Macros for Initialization - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Assembler-Format.html#Assembler-Format" title="Assembler Format">
+<link rel="prev" href="Initialization.html#Initialization" title="Initialization">
+<link rel="next" href="Instruction-Output.html#Instruction-Output" title="Instruction Output">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Macros-for-Initialization"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Instruction-Output.html#Instruction-Output">Instruction Output</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Initialization.html#Initialization">Initialization</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Assembler-Format.html#Assembler-Format">Assembler Format</a>
+<hr>
+</div>
+
+<h4 class="subsection">17.20.6 Macros Controlling Initialization Routines</h4>
+
+<p>Here are the macros that control how the compiler handles initialization
+and termination functions:
+
+<div class="defun">
+&mdash; Macro: <b>INIT_SECTION_ASM_OP</b><var><a name="index-INIT_005fSECTION_005fASM_005fOP-4670"></a></var><br>
+<blockquote><p>If defined, a C string constant, including spacing, for the assembler
+operation to identify the following data as initialization code.  If not
+defined, GCC will assume such a section does not exist.  When you are
+using special sections for initialization and termination functions, this
+macro also controls how <samp><span class="file">crtstuff.c</span></samp> and <samp><span class="file">libgcc2.c</span></samp> arrange to
+run the initialization functions. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>HAS_INIT_SECTION</b><var><a name="index-HAS_005fINIT_005fSECTION-4671"></a></var><br>
+<blockquote><p>If defined, <code>main</code> will not call <code>__main</code> as described above. 
+This macro should be defined for systems that control start-up code
+on a symbol-by-symbol basis, such as OSF/1, and should not
+be defined explicitly for systems that support <code>INIT_SECTION_ASM_OP</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>LD_INIT_SWITCH</b><var><a name="index-LD_005fINIT_005fSWITCH-4672"></a></var><br>
+<blockquote><p>If defined, a C string constant for a switch that tells the linker that
+the following symbol is an initialization routine. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>LD_FINI_SWITCH</b><var><a name="index-LD_005fFINI_005fSWITCH-4673"></a></var><br>
+<blockquote><p>If defined, a C string constant for a switch that tells the linker that
+the following symbol is a finalization routine. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>COLLECT_SHARED_INIT_FUNC</b> (<var>stream, func</var>)<var><a name="index-COLLECT_005fSHARED_005fINIT_005fFUNC-4674"></a></var><br>
+<blockquote><p>If defined, a C statement that will write a function that can be
+automatically called when a shared library is loaded.  The function
+should call <var>func</var>, which takes no arguments.  If not defined, and
+the object format requires an explicit initialization function, then a
+function called <code>_GLOBAL__DI</code> will be generated.
+
+      <p>This function and the following one are used by collect2 when linking a
+shared library that needs constructors or destructors, or has DWARF2
+exception tables embedded in the code. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>COLLECT_SHARED_FINI_FUNC</b> (<var>stream, func</var>)<var><a name="index-COLLECT_005fSHARED_005fFINI_005fFUNC-4675"></a></var><br>
+<blockquote><p>If defined, a C statement that will write a function that can be
+automatically called when a shared library is unloaded.  The function
+should call <var>func</var>, which takes no arguments.  If not defined, and
+the object format requires an explicit finalization function, then a
+function called <code>_GLOBAL__DD</code> will be generated. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>INVOKE__main</b><var><a name="index-INVOKE_005f_005fmain-4676"></a></var><br>
+<blockquote><p>If defined, <code>main</code> will call <code>__main</code> despite the presence of
+<code>INIT_SECTION_ASM_OP</code>.  This macro should be defined for systems
+where the init section is not actually run automatically, but is still
+useful for collecting the lists of constructors and destructors. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>SUPPORTS_INIT_PRIORITY</b><var><a name="index-SUPPORTS_005fINIT_005fPRIORITY-4677"></a></var><br>
+<blockquote><p>If nonzero, the C++ <code>init_priority</code> attribute is supported and the
+compiler should emit instructions to control the order of initialization
+of objects.  If zero, the compiler will issue an error message upon
+encountering an <code>init_priority</code> attribute. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_HAVE_CTORS_DTORS</b><var><a name="index-TARGET_005fHAVE_005fCTORS_005fDTORS-4678"></a></var><br>
+<blockquote><p>This value is true if the target supports some &ldquo;native&rdquo; method of
+collecting constructors and destructors to be run at startup and exit. 
+It is false if we must use <samp><span class="command">collect2</span></samp>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_ASM_CONSTRUCTOR</b> (<var>rtx symbol, int priority</var>)<var><a name="index-TARGET_005fASM_005fCONSTRUCTOR-4679"></a></var><br>
+<blockquote><p>If defined, a function that outputs assembler code to arrange to call
+the function referenced by <var>symbol</var> at initialization time.
+
+      <p>Assume that <var>symbol</var> is a <code>SYMBOL_REF</code> for a function taking
+no arguments and with no return value.  If the target supports initialization
+priorities, <var>priority</var> is a value between 0 and <code>MAX_INIT_PRIORITY</code>;
+otherwise it must be <code>DEFAULT_INIT_PRIORITY</code>.
+
+      <p>If this macro is not defined by the target, a suitable default will
+be chosen if (1) the target supports arbitrary section names, (2) the
+target defines <code>CTORS_SECTION_ASM_OP</code>, or (3) <code>USE_COLLECT2</code>
+is not defined. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_ASM_DESTRUCTOR</b> (<var>rtx symbol, int priority</var>)<var><a name="index-TARGET_005fASM_005fDESTRUCTOR-4680"></a></var><br>
+<blockquote><p>This is like <code>TARGET_ASM_CONSTRUCTOR</code> but used for termination
+functions rather than initialization functions. 
+</p></blockquote></div>
+
+ <p>If <code>TARGET_HAVE_CTORS_DTORS</code> is true, the initialization routine
+generated for the generated object file will have static linkage.
+
+ <p>If your system uses <samp><span class="command">collect2</span></samp> as the means of processing
+constructors, then that program normally uses <samp><span class="command">nm</span></samp> to scan
+an object file for constructor functions to be called.
+
+ <p>On certain kinds of systems, you can define this macro to make
+<samp><span class="command">collect2</span></samp> work faster (and, in some cases, make it work at all):
+
+<div class="defun">
+&mdash; Macro: <b>OBJECT_FORMAT_COFF</b><var><a name="index-OBJECT_005fFORMAT_005fCOFF-4681"></a></var><br>
+<blockquote><p>Define this macro if the system uses COFF (Common Object File Format)
+object files, so that <samp><span class="command">collect2</span></samp> can assume this format and scan
+object files directly for dynamic constructor/destructor functions.
+
+      <p>This macro is effective only in a native compiler; <samp><span class="command">collect2</span></samp> as
+part of a cross compiler always uses <samp><span class="command">nm</span></samp> for the target machine. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>REAL_NM_FILE_NAME</b><var><a name="index-REAL_005fNM_005fFILE_005fNAME-4682"></a></var><br>
+<blockquote><p>Define this macro as a C string constant containing the file name to use
+to execute <samp><span class="command">nm</span></samp>.  The default is to search the path normally for
+<samp><span class="command">nm</span></samp>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>NM_FLAGS</b><var><a name="index-NM_005fFLAGS-4683"></a></var><br>
+<blockquote><p><samp><span class="command">collect2</span></samp> calls <samp><span class="command">nm</span></samp> to scan object files for static
+constructors and destructors and LTO info.  By default, <samp><span class="option">-n</span></samp> is
+passed.  Define <code>NM_FLAGS</code> to a C string constant if other options
+are needed to get the same output format as GNU <samp><span class="command">nm -n</span></samp>
+produces. 
+</p></blockquote></div>
+
+ <p>If your system supports shared libraries and has a program to list the
+dynamic dependencies of a given library or executable, you can define
+these macros to enable support for running initialization and
+termination functions in shared libraries:
+
+<div class="defun">
+&mdash; Macro: <b>LDD_SUFFIX</b><var><a name="index-LDD_005fSUFFIX-4684"></a></var><br>
+<blockquote><p>Define this macro to a C string constant containing the name of the program
+which lists dynamic dependencies, like <samp><span class="command">ldd</span></samp> under SunOS 4. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>PARSE_LDD_OUTPUT</b> (<var>ptr</var>)<var><a name="index-PARSE_005fLDD_005fOUTPUT-4685"></a></var><br>
+<blockquote><p>Define this macro to be C code that extracts filenames from the output
+of the program denoted by <code>LDD_SUFFIX</code>.  <var>ptr</var> is a variable
+of type <code>char *</code> that points to the beginning of a line of output
+from <code>LDD_SUFFIX</code>.  If the line lists a dynamic dependency, the
+code must advance <var>ptr</var> to the beginning of the filename on that
+line.  Otherwise, it must set <var>ptr</var> to <code>NULL</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>SHLIB_SUFFIX</b><var><a name="index-SHLIB_005fSUFFIX-4686"></a></var><br>
+<blockquote><p>Define this macro to a C string constant containing the default shared
+library extension of the target (e.g., &lsquo;<samp><span class="samp">".so"</span></samp>&rsquo;).  <samp><span class="command">collect2</span></samp>
+strips version information after this suffix when generating global
+constructor and destructor names.  This define is only needed on targets
+that use <samp><span class="command">collect2</span></samp> to process constructors and destructors. 
+</p></blockquote></div>
+
+ </body></html>
+

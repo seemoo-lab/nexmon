@@ -1,0 +1,165 @@
+<html lang="en">
+<head>
+<title>Defining Attributes - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Insn-Attributes.html#Insn-Attributes" title="Insn Attributes">
+<link rel="next" href="Expressions.html#Expressions" title="Expressions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Defining-Attributes"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Expressions.html#Expressions">Expressions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Insn-Attributes.html#Insn-Attributes">Insn Attributes</a>
+<hr>
+</div>
+
+<h4 class="subsection">16.19.1 Defining Attributes and their Values</h4>
+
+<p><a name="index-defining-attributes-and-their-values-3721"></a><a name="index-attributes_002c-defining-3722"></a>
+<a name="index-define_005fattr-3723"></a>The <code>define_attr</code> expression is used to define each attribute required
+by the target machine.  It looks like:
+
+<pre class="smallexample">     (define_attr <var>name</var> <var>list-of-values</var> <var>default</var>)
+</pre>
+ <p><var>name</var> is a string specifying the name of the attribute being
+defined.  Some attributes are used in a special way by the rest of the
+compiler. The <code>enabled</code> attribute can be used to conditionally
+enable or disable insn alternatives (see <a href="Disable-Insn-Alternatives.html#Disable-Insn-Alternatives">Disable Insn Alternatives</a>). The <code>predicable</code> attribute, together with a
+suitable <code>define_cond_exec</code> (see <a href="Conditional-Execution.html#Conditional-Execution">Conditional Execution</a>), can
+be used to automatically generate conditional variants of instruction
+patterns. The <code>mnemonic</code> attribute can be used to check for the
+instruction mnemonic (see <a href="Mnemonic-Attribute.html#Mnemonic-Attribute">Mnemonic Attribute</a>).  The compiler
+internally uses the names <code>ce_enabled</code> and <code>nonce_enabled</code>,
+so they should not be used elsewhere as alternative names.
+
+ <p><var>list-of-values</var> is either a string that specifies a comma-separated
+list of values that can be assigned to the attribute, or a null string to
+indicate that the attribute takes numeric values.
+
+ <p><var>default</var> is an attribute expression that gives the value of this
+attribute for insns that match patterns whose definition does not include
+an explicit value for this attribute.  See <a href="Attr-Example.html#Attr-Example">Attr Example</a>, for more
+information on the handling of defaults.  See <a href="Constant-Attributes.html#Constant-Attributes">Constant Attributes</a>,
+for information on attributes that do not depend on any particular insn.
+
+ <p><a name="index-insn_002dattr_002eh-3724"></a>For each defined attribute, a number of definitions are written to the
+<samp><span class="file">insn-attr.h</span></samp> file.  For cases where an explicit set of values is
+specified for an attribute, the following are defined:
+
+     <ul>
+<li>A &lsquo;<samp><span class="samp">#define</span></samp>&rsquo; is written for the symbol &lsquo;<samp><span class="samp">HAVE_ATTR_</span><var>name</var></samp>&rsquo;.
+
+     <li>An enumerated class is defined for &lsquo;<samp><span class="samp">attr_</span><var>name</var></samp>&rsquo; with
+elements of the form &lsquo;<samp><var>upper-name</var><span class="samp">_</span><var>upper-value</var></samp>&rsquo; where
+the attribute name and value are first converted to uppercase.
+
+     <li>A function &lsquo;<samp><span class="samp">get_attr_</span><var>name</var></samp>&rsquo; is defined that is passed an insn and
+returns the attribute value for that insn. 
+</ul>
+
+ <p>For example, if the following is present in the <samp><span class="file">md</span></samp> file:
+
+<pre class="smallexample">     (define_attr "type" "branch,fp,load,store,arith" ...)
+</pre>
+ <p class="noindent">the following lines will be written to the file <samp><span class="file">insn-attr.h</span></samp>.
+
+<pre class="smallexample">     #define HAVE_ATTR_type 1
+     enum attr_type {TYPE_BRANCH, TYPE_FP, TYPE_LOAD,
+                      TYPE_STORE, TYPE_ARITH};
+     extern enum attr_type get_attr_type ();
+</pre>
+ <p>If the attribute takes numeric values, no <code>enum</code> type will be
+defined and the function to obtain the attribute's value will return
+<code>int</code>.
+
+ <p>There are attributes which are tied to a specific meaning.  These
+attributes are not free to use for other purposes:
+
+     <dl>
+<dt><code>length</code><dd>The <code>length</code> attribute is used to calculate the length of emitted
+code chunks.  This is especially important when verifying branch
+distances. See <a href="Insn-Lengths.html#Insn-Lengths">Insn Lengths</a>.
+
+     <br><dt><code>enabled</code><dd>The <code>enabled</code> attribute can be defined to prevent certain
+alternatives of an insn definition from being used during code
+generation. See <a href="Disable-Insn-Alternatives.html#Disable-Insn-Alternatives">Disable Insn Alternatives</a>.
+
+     <br><dt><code>mnemonic</code><dd>The <code>mnemonic</code> attribute can be defined to implement instruction
+specific checks in e.g. the pipeline description. 
+See <a href="Mnemonic-Attribute.html#Mnemonic-Attribute">Mnemonic Attribute</a>. 
+</dl>
+
+ <p>For each of these special attributes, the corresponding
+&lsquo;<samp><span class="samp">HAVE_ATTR_</span><var>name</var></samp>&rsquo; &lsquo;<samp><span class="samp">#define</span></samp>&rsquo; is also written when the
+attribute is not defined; in that case, it is defined as &lsquo;<samp><span class="samp">0</span></samp>&rsquo;.
+
+ <p><a name="index-define_005fenum_005fattr-3725"></a><a name="define_005fenum_005fattr"></a>Another way of defining an attribute is to use:
+
+<pre class="smallexample">     (define_enum_attr "<var>attr</var>" "<var>enum</var>" <var>default</var>)
+</pre>
+ <p>This works in just the same way as <code>define_attr</code>, except that
+the list of values is taken from a separate enumeration called
+<var>enum</var> (see <a href="define_005fenum.html#define_005fenum">define_enum</a>).  This form allows you to use
+the same list of values for several attributes without having to
+repeat the list each time.  For example:
+
+<pre class="smallexample">     (define_enum "processor" [
+       model_a
+       model_b
+       ...
+     ])
+     (define_enum_attr "arch" "processor"
+       (const (symbol_ref "target_arch")))
+     (define_enum_attr "tune" "processor"
+       (const (symbol_ref "target_tune")))
+</pre>
+ <p>defines the same attributes as:
+
+<pre class="smallexample">     (define_attr "arch" "model_a,model_b,..."
+       (const (symbol_ref "target_arch")))
+     (define_attr "tune" "model_a,model_b,..."
+       (const (symbol_ref "target_tune")))
+</pre>
+ <p>but without duplicating the processor list.  The second example defines two
+separate C enums (<code>attr_arch</code> and <code>attr_tune</code>) whereas the first
+defines a single C enum (<code>processor</code>).
+
+ </body></html>
+

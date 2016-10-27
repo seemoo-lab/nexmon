@@ -1,0 +1,86 @@
+<html lang="en">
+<head>
+<title>stdio_ext - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stdio.html#Stdio" title="Stdio">
+<link rel="prev" href="sscanf.html#sscanf" title="sscanf">
+<link rel="next" href="swprintf.html#swprintf" title="swprintf">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="stdio_ext"></a>
+<a name="stdio_005fext"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="swprintf.html#swprintf">swprintf</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="sscanf.html#sscanf">sscanf</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stdio.html#Stdio">Stdio</a>
+<hr>
+</div>
+
+<h3 class="section">4.63 <code>stdio_ext</code>,<code>__fbufsize</code>,<code>__fpending</code>,<code>__flbf</code>,<code>__freadable</code>,<code>__fwritable</code>,<code>__freading</code>,<code>__fwriting</code>&mdash;access internals of FILE structure</h3>
+
+<p><a name="index-g_t_005f_005ffbufsize-344"></a><a name="index-g_t_005f_005ffpending-345"></a><a name="index-g_t_005f_005fflbf-346"></a><a name="index-g_t_005f_005ffreadable-347"></a><a name="index-g_t_005f_005ffwritable-348"></a><a name="index-g_t_005f_005ffreading-349"></a><a name="index-g_t_005f_005ffwriting-350"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;stdio.h&gt;
+     #include &lt;stdio_ext.h&gt;
+     size_t __fbufsize(FILE *<var>fp</var>);
+     size_t __fpending(FILE *<var>fp</var>);
+     int __flbf(FILE *<var>fp</var>);
+     int __freadable(FILE *<var>fp</var>);
+     int __fwritable(FILE *<var>fp</var>);
+     int __freading(FILE *<var>fp</var>);
+     int __fwriting(FILE *<var>fp</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+These functions provides access to the internals of the FILE structure <var>fp</var>.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+<code>__fbufsize</code> returns the number of bytes in the buffer of stream <var>fp</var>.
+
+   <p><code>__fpending</code> returns the number of bytes in the output buffer of stream <var>fp</var>.
+
+   <p><code>__flbf</code> returns nonzero if stream <var>fp</var> is line-buffered, and <code>0</code> if not.
+
+   <p><code>__freadable</code> returns nonzero if stream <var>fp</var> may be read, and <code>0</code> if not.
+
+   <p><code>__fwritable</code> returns nonzero if stream <var>fp</var> may be written, and <code>0</code> if not.
+
+   <p><code>__freading</code> returns nonzero if stream <var>fp</var> if the last operation on
+it was a read, or if it read-only, and <code>0</code> if not.
+
+   <p><code>__fwriting</code> returns nonzero if stream <var>fp</var> if the last operation on
+it was a write, or if it write-only, and <code>0</code> if not.
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+These functions originate from Solaris and are also provided by GNU libc.
+
+   <p>No supporting OS subroutines are required.
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

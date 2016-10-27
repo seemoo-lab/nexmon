@@ -1,0 +1,97 @@
+<html lang="en">
+<head>
+<title>Trace Files - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Tracepoints.html#Tracepoints" title="Tracepoints">
+<link rel="prev" href="Tracepoint-Variables.html#Tracepoint-Variables" title="Tracepoint Variables">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Trace-Files"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Tracepoint-Variables.html#Tracepoint-Variables">Tracepoint Variables</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Tracepoints.html#Tracepoints">Tracepoints</a>
+<hr>
+</div>
+
+<h3 class="section">13.4 Using Trace Files</h3>
+
+<p><a name="index-trace-files-894"></a>
+In some situations, the target running a trace experiment may no
+longer be available; perhaps it crashed, or the hardware was needed
+for a different activity.  To handle these cases, you can arrange to
+dump the trace data into a file, and later use that file as a source
+of trace data, via the <code>target tfile</code> command.
+
+     
+<a name="index-tsave-895"></a>
+<dl><dt><code>tsave [ -r ] </code><var>filename</var><dt><code>tsave [-ctf] </code><var>dirname</var><dd>Save the trace data to <var>filename</var>.  By default, this command
+assumes that <var>filename</var> refers to the host filesystem, so if
+necessary <span class="sc">gdb</span> will copy raw trace data up from the target and
+then save it.  If the target supports it, you can also supply the
+optional argument <code>-r</code> (&ldquo;remote&rdquo;) to direct the target to save
+the data directly into <var>filename</var> in its own filesystem, which may be
+more efficient if the trace buffer is very large.  (Note, however, that
+<code>target tfile</code> can only read from files accessible to the host.) 
+By default, this command will save trace frame in tfile format. 
+You can supply the optional argument <code>-ctf</code> to save date in CTF
+format.  The <dfn>Common Trace Format</dfn> (CTF) is proposed as a trace format
+that can be shared by multiple debugging and tracing tools.  Please go to
+&lt;<code>http://www.efficios.com/ctf</code>&gt; to get more information.
+
+     <p><a name="index-target-tfile-896"></a><a name="index-tfile-897"></a><a name="index-target-ctf-898"></a><a name="index-ctf-899"></a><br><dt><code>target tfile </code><var>filename</var><dt><code>target ctf </code><var>dirname</var><dd>Use the file named <var>filename</var> or directory named <var>dirname</var> as
+a source of trace data.  Commands that examine data work as they do with
+a live target, but it is not possible to run any new trace experiments. 
+<code>tstatus</code> will report the state of the trace run at the moment
+the data was saved, as well as the current trace frame you are examining. 
+Both <var>filename</var> and <var>dirname</var> must be on a filesystem accessible to
+the host.
+
+     <pre class="smallexample">          (gdb) target ctf ctf.ctf
+          (gdb) tfind
+          Found trace frame 0, tracepoint 2
+          39            ++a;  /* set tracepoint 1 here */
+          (gdb) tdump
+          Data collected at tracepoint 2, trace frame 0:
+          i = 0
+          a = 0
+          b = 1 '\001'
+          c = {"123", "456", "789", "123", "456", "789"}
+          d = {{{a = 1, b = 2}, {a = 3, b = 4}}, {{a = 5, b = 6}, {a = 7, b = 8}}}
+          (gdb) p b
+          $1 = 1
+</pre>
+     </dl>
+
+   </body></html>
+

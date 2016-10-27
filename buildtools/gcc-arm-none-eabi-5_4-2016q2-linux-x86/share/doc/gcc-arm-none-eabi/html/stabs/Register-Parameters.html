@@ -1,0 +1,90 @@
+<html lang="en">
+<head>
+<title>Register Parameters - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Parameters.html#Parameters" title="Parameters">
+<link rel="next" href="Local-Variable-Parameters.html#Local-Variable-Parameters" title="Local Variable Parameters">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Register-Parameters"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Local-Variable-Parameters.html#Local-Variable-Parameters">Local Variable Parameters</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Parameters.html#Parameters">Parameters</a>
+<hr>
+</div>
+
+<h4 class="subsection">4.7.1 Passing Parameters in Registers</h4>
+
+<p>If the parameter is passed in a register, then traditionally there are
+two symbols for each argument:
+
+<pre class="example">     .stabs "arg:p1" . . .       ; N_PSYM
+     .stabs "arg:r1" . . .       ; N_RSYM
+</pre>
+   <p>Debuggers use the second one to find the value, and the first one to
+know that it is an argument.
+
+   <p><a name="index-C_005fRPSYM-46"></a><a name="index-N_005fRSYM_002c-for-parameters-47"></a>Because that approach is kind of ugly, some compilers use symbol
+descriptor &lsquo;<samp><span class="samp">P</span></samp>&rsquo; or &lsquo;<samp><span class="samp">R</span></samp>&rsquo; to indicate an argument which is in a
+register.  Symbol type <code>C_RPSYM</code> is used in XCOFF and <code>N_RSYM</code>
+is used otherwise.  The symbol's value is the register number.  &lsquo;<samp><span class="samp">P</span></samp>&rsquo;
+and &lsquo;<samp><span class="samp">R</span></samp>&rsquo; mean the same thing; the difference is that &lsquo;<samp><span class="samp">P</span></samp>&rsquo; is a
+GNU invention and &lsquo;<samp><span class="samp">R</span></samp>&rsquo; is an IBM (XCOFF) invention.  As of version
+4.9, GDB should handle either one.
+
+   <p>There is at least one case where GCC uses a &lsquo;<samp><span class="samp">p</span></samp>&rsquo; and &lsquo;<samp><span class="samp">r</span></samp>&rsquo; pair
+rather than &lsquo;<samp><span class="samp">P</span></samp>&rsquo;; this is where the argument is passed in the
+argument list and then loaded into a register.
+
+   <p>According to the AIX documentation, symbol descriptor &lsquo;<samp><span class="samp">D</span></samp>&rsquo; is for a
+parameter passed in a floating point register.  This seems
+unnecessary&mdash;why not just use &lsquo;<samp><span class="samp">R</span></samp>&rsquo; with a register number which
+indicates that it's a floating point register?  I haven't verified
+whether the system actually does what the documentation indicates.
+
+<!-- FIXME: On the hppa this is for any type > 8 bytes, I think, and not -->
+<!-- for small structures (investigate). -->
+   <p>On the sparc and hppa, for a &lsquo;<samp><span class="samp">P</span></samp>&rsquo; symbol whose type is a structure
+or union, the register contains the address of the structure.  On the
+sparc, this is also true of a &lsquo;<samp><span class="samp">p</span></samp>&rsquo; and &lsquo;<samp><span class="samp">r</span></samp>&rsquo; pair (using Sun
+<code>cc</code>) or a &lsquo;<samp><span class="samp">p</span></samp>&rsquo; symbol.  However, if a (small) structure is
+really in a register, &lsquo;<samp><span class="samp">r</span></samp>&rsquo; is used.  And, to top it all off, on the
+hppa it might be a structure which was passed on the stack and loaded
+into a register and for which there is a &lsquo;<samp><span class="samp">p</span></samp>&rsquo; and &lsquo;<samp><span class="samp">r</span></samp>&rsquo; pair!  I
+believe that symbol descriptor &lsquo;<samp><span class="samp">i</span></samp>&rsquo; is supposed to deal with this
+case (it is said to mean "value parameter by reference, indirect
+access"; I don't know the source for this information), but I don't know
+details or what compilers or debuggers use it, if any (not GDB or GCC). 
+It is not clear to me whether this case needs to be dealt with
+differently than parameters passed by reference (see <a href="Reference-Parameters.html#Reference-Parameters">Reference Parameters</a>).
+
+   </body></html>
+

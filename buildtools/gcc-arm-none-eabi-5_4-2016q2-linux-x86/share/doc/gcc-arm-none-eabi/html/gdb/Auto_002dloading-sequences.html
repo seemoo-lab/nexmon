@@ -1,0 +1,84 @@
+<html lang="en">
+<head>
+<title>Auto-loading sequences - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Sequences.html#Sequences" title="Sequences">
+<link rel="prev" href="Output.html#Output" title="Output">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Auto-loading-sequences"></a>
+<a name="Auto_002dloading-sequences"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Output.html#Output">Output</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Sequences.html#Sequences">Sequences</a>
+<hr>
+</div>
+
+<h4 class="subsection">23.1.5 Controlling auto-loading native <span class="sc">gdb</span> scripts</h4>
+
+<p><a name="index-native-script-auto_002dloading-1797"></a>
+When a new object file is read (for example, due to the <code>file</code>
+command, or because the inferior has loaded a shared library),
+<span class="sc">gdb</span> will look for the command file <samp><var>objfile</var><span class="file">-gdb.gdb</span></samp>. 
+See <a href="Auto_002dloading-extensions.html#Auto_002dloading-extensions">Auto-loading extensions</a>.
+
+   <p>Auto-loading can be enabled or disabled,
+and the list of auto-loaded scripts can be printed.
+
+     <dl>
+<a name="set-auto_002dload-gdb_002dscripts"></a><a name="index-set-auto_002dload-gdb_002dscripts-1798"></a><dt><code>set auto-load gdb-scripts [on|off]</code><dd>Enable or disable the auto-loading of canned sequences of commands scripts.
+
+     <p><a name="show-auto_002dload-gdb_002dscripts"></a><a name="index-show-auto_002dload-gdb_002dscripts-1799"></a><br><dt><code>show auto-load gdb-scripts</code><dd>Show whether auto-loading of canned sequences of commands scripts is enabled or
+disabled.
+
+     <p><a name="info-auto_002dload-gdb_002dscripts"></a><a name="index-info-auto_002dload-gdb_002dscripts-1800"></a><a name="index-print-list-of-auto_002dloaded-canned-sequences-of-commands-scripts-1801"></a><br><dt><code>info auto-load gdb-scripts [</code><var>regexp</var><code>]</code><dd>Print the list of all canned sequences of commands scripts that <span class="sc">gdb</span>
+auto-loaded. 
+</dl>
+
+   <p>If <var>regexp</var> is supplied only canned sequences of commands scripts with
+matching names are printed.
+
+<!-- Python docs live in a separate file. -->
+<!-- Copyright (C) 2008-2015 Free Software Foundation, Inc. -->
+<!-- Permission is granted to copy, distribute and/or modify this document -->
+<!-- under the terms of the GNU Free Documentation License, Version 1.3 or -->
+<!-- any later version published by the Free Software Foundation; with the -->
+<!-- Invariant Sections being ``Free Software'' and ``Free Software Needs -->
+<!-- Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,'' -->
+<!-- and with the Back-Cover Texts as in (a) below. -->
+<!-- (a) The FSF's Back-Cover Text is: ``You are free to copy and modify -->
+<!-- this GNU Manual.  Buying copies from GNU Press supports the FSF in -->
+<!-- developing GNU and promoting software freedom.'' -->
+   </body></html>
+

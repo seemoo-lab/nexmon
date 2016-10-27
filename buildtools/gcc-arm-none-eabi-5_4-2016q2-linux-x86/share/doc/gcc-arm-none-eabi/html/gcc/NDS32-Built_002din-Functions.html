@@ -1,0 +1,102 @@
+<html lang="en">
+<head>
+<title>NDS32 Built-in Functions - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Builtins.html#Target-Builtins" title="Target Builtins">
+<link rel="prev" href="MSP430-Built_002din-Functions.html#MSP430-Built_002din-Functions" title="MSP430 Built-in Functions">
+<link rel="next" href="picoChip-Built_002din-Functions.html#picoChip-Built_002din-Functions" title="picoChip Built-in Functions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="NDS32-Built-in-Functions"></a>
+<a name="NDS32-Built_002din-Functions"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="picoChip-Built_002din-Functions.html#picoChip-Built_002din-Functions">picoChip Built-in Functions</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="MSP430-Built_002din-Functions.html#MSP430-Built_002din-Functions">MSP430 Built-in Functions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Builtins.html#Target-Builtins">Target Builtins</a>
+<hr>
+</div>
+
+<h4 class="subsection">6.58.17 NDS32 Built-in Functions</h4>
+
+<p>These built-in functions are available for the NDS32 target:
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_nds32_isync</b> (<var>int *addr</var>)<var><a name="index-g_t_005f_005fbuiltin_005fnds32_005fisync-4098"></a></var><br>
+<blockquote><p>Insert an ISYNC instruction into the instruction stream where
+<var>addr</var> is an instruction address for serialization. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_nds32_isb</b> (<var>void</var>)<var><a name="index-g_t_005f_005fbuiltin_005fnds32_005fisb-4099"></a></var><br>
+<blockquote><p>Insert an ISB instruction into the instruction stream. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: int <b>__builtin_nds32_mfsr</b> (<var>int sr</var>)<var><a name="index-g_t_005f_005fbuiltin_005fnds32_005fmfsr-4100"></a></var><br>
+<blockquote><p>Return the content of a system register which is mapped by <var>sr</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: int <b>__builtin_nds32_mfusr</b> (<var>int usr</var>)<var><a name="index-g_t_005f_005fbuiltin_005fnds32_005fmfusr-4101"></a></var><br>
+<blockquote><p>Return the content of a user space register which is mapped by <var>usr</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_nds32_mtsr</b> (<var>int value, int sr</var>)<var><a name="index-g_t_005f_005fbuiltin_005fnds32_005fmtsr-4102"></a></var><br>
+<blockquote><p>Move the <var>value</var> to a system register which is mapped by <var>sr</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_nds32_mtusr</b> (<var>int value, int usr</var>)<var><a name="index-g_t_005f_005fbuiltin_005fnds32_005fmtusr-4103"></a></var><br>
+<blockquote><p>Move the <var>value</var> to a user space register which is mapped by <var>usr</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_nds32_setgie_en</b> (<var>void</var>)<var><a name="index-g_t_005f_005fbuiltin_005fnds32_005fsetgie_005fen-4104"></a></var><br>
+<blockquote><p>Enable global interrupt. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_nds32_setgie_dis</b> (<var>void</var>)<var><a name="index-g_t_005f_005fbuiltin_005fnds32_005fsetgie_005fdis-4105"></a></var><br>
+<blockquote><p>Disable global interrupt. 
+</p></blockquote></div>
+
+ </body></html>
+

@@ -1,0 +1,143 @@
+<html lang="en">
+<head>
+<title>mmo section mapping - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="mmo.html#mmo" title="mmo">
+<link rel="prev" href="Symbol_002dtable.html#Symbol_002dtable" title="Symbol-table">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="mmo-section-mapping"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Symbol_002dtable.html#Symbol_002dtable">Symbol-table</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="mmo.html#mmo">mmo</a>
+<hr>
+</div>
+
+<h4 class="subsection">3.5.3 mmo section mapping</h4>
+
+<p>The implementation in BFD uses special data type 80 (decimal) to
+encapsulate and describe named sections, containing e.g. debug
+information.  If needed, any datum in the encapsulation will be
+quoted using lop_quote.  First comes a 32-bit word holding the
+number of 32-bit words containing the zero-terminated zero-padded
+segment name.  After the name there's a 32-bit word holding flags
+describing the section type.  Then comes a 64-bit big-endian word
+with the section length (in bytes), then another with the section
+start address.  Depending on the type of section, the contents
+might follow, zero-padded to 32-bit boundary.  For a loadable
+section (such as data or code), the contents might follow at some
+later point, not necessarily immediately, as a lop_loc with the
+same start address as in the section description, followed by the
+contents.  This in effect forms a descriptor that must be emitted
+before the actual contents.  Sections described this way must not
+overlap.
+
+   <p>For areas that don't have such descriptors, synthetic sections are
+formed by BFD.  Consecutive contents in the two memory areas
+&lsquo;<samp><span class="samp">0x0000...00</span></samp>&rsquo; to &lsquo;<samp><span class="samp">0x01ff...ff</span></samp>&rsquo; and
+&lsquo;<samp><span class="samp">0x2000...00</span></samp>&rsquo; to &lsquo;<samp><span class="samp">0x20ff...ff</span></samp>&rsquo; are entered in
+sections named <code>.text</code> and <code>.data</code> respectively.  If an area
+is not otherwise described, but would together with a neighboring
+lower area be less than &lsquo;<samp><span class="samp">0x40000000</span></samp>&rsquo; bytes long, it is joined
+with the lower area and the gap is zero-filled.  For other cases,
+a new section is formed, named <code>.MMIX.sec.</code><var>n</var>.  Here,
+<var>n</var> is a number, a running count through the mmo file,
+starting at 0.
+
+   <p>A loadable section specified as:
+
+<pre class="example">      .section secname,"ax"
+      TETRA 1,2,3,4,-1,-2009
+      BYTE 80
+</pre>
+   <p>and linked to address &lsquo;<samp><span class="samp">0x4</span></samp>&rsquo;, is represented by the sequence:
+
+<pre class="example">      0x98080050 - lop_spec 80
+      0x00000002 - two 32-bit words for the section name
+      0x7365636e - "secn"
+      0x616d6500 - "ame\0"
+      0x00000033 - flags CODE, READONLY, LOAD, ALLOC
+      0x00000000 - high 32 bits of section length
+      0x0000001c - section length is 28 bytes; 6 * 4 + 1 + alignment to 32 bits
+      0x00000000 - high 32 bits of section address
+      0x00000004 - section address is 4
+      0x98010002 - 64 bits with address of following data
+      0x00000000 - high 32 bits of address
+      0x00000004 - low 32 bits: data starts at address 4
+      0x00000001 - 1
+      0x00000002 - 2
+      0x00000003 - 3
+      0x00000004 - 4
+      0xffffffff - -1
+      0xfffff827 - -2009
+      0x50000000 - 80 as a byte, padded with zeros.
+</pre>
+   <p>Note that the lop_spec wrapping does not include the section
+contents.  Compare this to a non-loaded section specified as:
+
+<pre class="example">      .section thirdsec
+      TETRA 200001,100002
+      BYTE 38,40
+</pre>
+   <p>This, when linked to address &lsquo;<samp><span class="samp">0x200000000000001c</span></samp>&rsquo;, is
+represented by:
+
+<pre class="example">      0x98080050 - lop_spec 80
+      0x00000002 - two 32-bit words for the section name
+      0x7365636e - "thir"
+      0x616d6500 - "dsec"
+      0x00000010 - flag READONLY
+      0x00000000 - high 32 bits of section length
+      0x0000000c - section length is 12 bytes; 2 * 4 + 2 + alignment to 32 bits
+      0x20000000 - high 32 bits of address
+      0x0000001c - low 32 bits of address 0x200000000000001c
+      0x00030d41 - 200001
+      0x000186a2 - 100002
+      0x26280000 - 38, 40 as bytes, padded with zeros
+</pre>
+   <p>For the latter example, the section contents must not be
+loaded in memory, and is therefore specified as part of the
+special data.  The address is usually unimportant but might
+provide information for e.g. the DWARF 2 debugging format.
+
+   </body></html>
+

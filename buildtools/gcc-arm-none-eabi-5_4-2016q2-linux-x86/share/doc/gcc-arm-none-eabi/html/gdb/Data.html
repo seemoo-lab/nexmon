@@ -1,0 +1,225 @@
+<html lang="en">
+<head>
+<title>Data - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Source.html#Source" title="Source">
+<link rel="next" href="Optimized-Code.html#Optimized-Code" title="Optimized Code">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Data"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Optimized-Code.html#Optimized-Code">Optimized Code</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Source.html#Source">Source</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">10 Examining Data</h2>
+
+<p><a name="index-printing-data-572"></a><a name="index-examining-data-573"></a><a name="index-print-574"></a><a name="index-inspect-575"></a>The usual way to examine data in your program is with the <code>print</code>
+command (abbreviated <code>p</code>), or its synonym <code>inspect</code>.  It
+evaluates and prints the value of an expression of the language your
+program is written in (see <a href="Languages.html#Languages">Using <span class="sc">gdb</span> with Different Languages</a>).  It may also print the expression using a
+Python-based pretty-printer (see <a href="Pretty-Printing.html#Pretty-Printing">Pretty Printing</a>).
+
+     <dl>
+<dt><code>print </code><var>expr</var><dt><code>print /</code><var>f</var> <var>expr</var><dd><var>expr</var> is an expression (in the source language).  By default the
+value of <var>expr</var> is printed in a format appropriate to its data type;
+you can choose a different format by specifying &lsquo;<samp><span class="samp">/</span><var>f</var></samp>&rsquo;, where
+<var>f</var> is a letter specifying the format; see <a href="Output-Formats.html#Output-Formats">Output Formats</a>.
+
+     <br><dt><code>print</code><dt><code>print /</code><var>f</var><dd><a name="index-reprint-the-last-value-576"></a>If you omit <var>expr</var>, <span class="sc">gdb</span> displays the last value again (from the
+<dfn>value history</dfn>; see <a href="Value-History.html#Value-History">Value History</a>).  This allows you to
+conveniently inspect the same value in an alternative format. 
+</dl>
+
+   <p>A more low-level way of examining data is with the <code>x</code> command. 
+It examines data in memory at a specified address and prints it in a
+specified format.  See <a href="Memory.html#Memory">Examining Memory</a>.
+
+   <p>If you are interested in information about types, or about how the
+fields of a struct or a class are declared, use the <code>ptype </code><var>exp</var>
+command rather than <code>print</code>.  See <a href="Symbols.html#Symbols">Examining the Symbol Table</a>.
+
+   <p><a name="index-exploring-hierarchical-data-structures-577"></a><a name="index-explore-578"></a>Another way of examining values of expressions and type information is
+through the Python extension command <code>explore</code> (available only if
+the <span class="sc">gdb</span> build is configured with <code>--with-python</code>).  It
+offers an interactive way to start at the highest level (or, the most
+abstract level) of the data type of an expression (or, the data type
+itself) and explore all the way down to leaf scalar values/fields
+embedded in the higher level data types.
+
+     <dl>
+<dt><code>explore </code><var>arg</var><dd><var>arg</var> is either an expression (in the source language), or a type
+visible in the current context of the program being debugged. 
+</dl>
+
+   <p>The working of the <code>explore</code> command can be illustrated with an
+example.  If a data type <code>struct ComplexStruct</code> is defined in your
+C program as
+
+<pre class="smallexample">     struct SimpleStruct
+     {
+       int i;
+       double d;
+     };
+     
+     struct ComplexStruct
+     {
+       struct SimpleStruct *ss_p;
+       int arr[10];
+     };
+</pre>
+   <p class="noindent">followed by variable declarations as
+
+<pre class="smallexample">     struct SimpleStruct ss = { 10, 1.11 };
+     struct ComplexStruct cs = { &amp;ss, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 } };
+</pre>
+   <p class="noindent">then, the value of the variable <code>cs</code> can be explored using the
+<code>explore</code> command as follows.
+
+<pre class="smallexample">     (gdb) explore cs
+     The value of `cs' is a struct/class of type `struct ComplexStruct' with
+     the following fields:
+     
+       ss_p = &lt;Enter 0 to explore this field of type `struct SimpleStruct *'&gt;
+        arr = &lt;Enter 1 to explore this field of type `int [10]'&gt;
+     
+     Enter the field number of choice:
+</pre>
+   <p class="noindent">Since the fields of <code>cs</code> are not scalar values, you are being
+prompted to chose the field you want to explore.  Let's say you choose
+the field <code>ss_p</code> by entering <code>0</code>.  Then, since this field is a
+pointer, you will be asked if it is pointing to a single value.  From
+the declaration of <code>cs</code> above, it is indeed pointing to a single
+value, hence you enter <code>y</code>.  If you enter <code>n</code>, then you will
+be asked if it were pointing to an array of values, in which case this
+field will be explored as if it were an array.
+
+<pre class="smallexample">     `cs.ss_p' is a pointer to a value of type `struct SimpleStruct'
+     Continue exploring it as a pointer to a single value [y/n]: y
+     The value of `*(cs.ss_p)' is a struct/class of type `struct
+     SimpleStruct' with the following fields:
+     
+       i = 10 .. (Value of type `int')
+       d = 1.1100000000000001 .. (Value of type `double')
+     
+     Press enter to return to parent value:
+</pre>
+   <p class="noindent">If the field <code>arr</code> of <code>cs</code> was chosen for exploration by
+entering <code>1</code> earlier, then since it is as array, you will be
+prompted to enter the index of the element in the array that you want
+to explore.
+
+<pre class="smallexample">     `cs.arr' is an array of `int'.
+     Enter the index of the element you want to explore in `cs.arr': 5
+     
+     `(cs.arr)[5]' is a scalar value of type `int'.
+     
+     (cs.arr)[5] = 4
+     
+     Press enter to return to parent value:
+</pre>
+   <p>In general, at any stage of exploration, you can go deeper towards the
+leaf values by responding to the prompts appropriately, or hit the
+return key to return to the enclosing data structure (the <i>higher</i>
+level data structure).
+
+   <p>Similar to exploring values, you can use the <code>explore</code> command to
+explore types.  Instead of specifying a value (which is typically a
+variable name or an expression valid in the current context of the
+program being debugged), you specify a type name.  If you consider the
+same example as above, your can explore the type
+<code>struct ComplexStruct</code> by passing the argument
+<code>struct ComplexStruct</code> to the <code>explore</code> command.
+
+<pre class="smallexample">     (gdb) explore struct ComplexStruct
+</pre>
+   <p class="noindent">By responding to the prompts appropriately in the subsequent interactive
+session, you can explore the type <code>struct ComplexStruct</code> in a
+manner similar to how the value <code>cs</code> was explored in the above
+example.
+
+   <p>The <code>explore</code> command also has two sub-commands,
+<code>explore value</code> and <code>explore type</code>. The former sub-command is
+a way to explicitly specify that value exploration of the argument is
+being invoked, while the latter is a way to explicitly specify that type
+exploration of the argument is being invoked.
+
+     <dl>
+<dt><code>explore value </code><var>expr</var><dd><a name="index-explore-value-579"></a>This sub-command of <code>explore</code> explores the value of the
+expression <var>expr</var> (if <var>expr</var> is an expression valid in the
+current context of the program being debugged).  The behavior of this
+command is identical to that of the behavior of the <code>explore</code>
+command being passed the argument <var>expr</var>.
+
+     <br><dt><code>explore type </code><var>arg</var><dd><a name="index-explore-type-580"></a>This sub-command of <code>explore</code> explores the type of <var>arg</var> (if
+<var>arg</var> is a type visible in the current context of program being
+debugged), or the type of the value/expression <var>arg</var> (if <var>arg</var>
+is an expression valid in the current context of the program being
+debugged).  If <var>arg</var> is a type, then the behavior of this command is
+identical to that of the <code>explore</code> command being passed the
+argument <var>arg</var>.  If <var>arg</var> is an expression, then the behavior of
+this command will be identical to that of the <code>explore</code> command
+being passed the type of <var>arg</var> as the argument. 
+</dl>
+
+<ul class="menu">
+<li><a accesskey="1" href="Expressions.html#Expressions">Expressions</a>:                  Expressions
+<li><a accesskey="2" href="Ambiguous-Expressions.html#Ambiguous-Expressions">Ambiguous Expressions</a>:        Ambiguous Expressions
+<li><a accesskey="3" href="Variables.html#Variables">Variables</a>:                    Program variables
+<li><a accesskey="4" href="Arrays.html#Arrays">Arrays</a>:                       Artificial arrays
+<li><a accesskey="5" href="Output-Formats.html#Output-Formats">Output Formats</a>:               Output formats
+<li><a accesskey="6" href="Memory.html#Memory">Memory</a>:                       Examining memory
+<li><a accesskey="7" href="Auto-Display.html#Auto-Display">Auto Display</a>:                 Automatic display
+<li><a accesskey="8" href="Print-Settings.html#Print-Settings">Print Settings</a>:               Print settings
+<li><a accesskey="9" href="Pretty-Printing.html#Pretty-Printing">Pretty Printing</a>:              Python pretty printing
+<li><a href="Value-History.html#Value-History">Value History</a>:                Value history
+<li><a href="Convenience-Vars.html#Convenience-Vars">Convenience Vars</a>:             Convenience variables
+<li><a href="Convenience-Funs.html#Convenience-Funs">Convenience Funs</a>:             Convenience functions
+<li><a href="Registers.html#Registers">Registers</a>:                    Registers
+<li><a href="Floating-Point-Hardware.html#Floating-Point-Hardware">Floating Point Hardware</a>:      Floating point hardware
+<li><a href="Vector-Unit.html#Vector-Unit">Vector Unit</a>:                  Vector Unit
+<li><a href="OS-Information.html#OS-Information">OS Information</a>:               Auxiliary data provided by operating system
+<li><a href="Memory-Region-Attributes.html#Memory-Region-Attributes">Memory Region Attributes</a>:     Memory region attributes
+<li><a href="Dump_002fRestore-Files.html#Dump_002fRestore-Files">Dump/Restore Files</a>:           Copy between memory and a file
+<li><a href="Core-File-Generation.html#Core-File-Generation">Core File Generation</a>:         Cause a program dump its core
+<li><a href="Character-Sets.html#Character-Sets">Character Sets</a>:               Debugging programs that use a different
+                                character set than GDB does
+<li><a href="Caching-Target-Data.html#Caching-Target-Data">Caching Target Data</a>:          Data caching for targets
+<li><a href="Searching-Memory.html#Searching-Memory">Searching Memory</a>:             Searching memory for a sequence of bytes
+</ul>
+
+   </body></html>
+

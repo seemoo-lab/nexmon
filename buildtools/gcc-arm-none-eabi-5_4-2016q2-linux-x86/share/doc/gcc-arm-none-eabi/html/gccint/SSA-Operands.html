@@ -1,0 +1,414 @@
+<html lang="en">
+<head>
+<title>SSA Operands - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Tree-SSA.html#Tree-SSA" title="Tree SSA">
+<link rel="prev" href="Annotations.html#Annotations" title="Annotations">
+<link rel="next" href="SSA.html#SSA" title="SSA">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="SSA-Operands"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="SSA.html#SSA">SSA</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Annotations.html#Annotations">Annotations</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Tree-SSA.html#Tree-SSA">Tree SSA</a>
+<hr>
+</div>
+
+<h3 class="section">12.2 SSA Operands</h3>
+
+<p><a name="index-operands-2508"></a><a name="index-virtual-operands-2509"></a><a name="index-real-operands-2510"></a><a name="index-update_005fstmt-2511"></a>
+Almost every GIMPLE statement will contain a reference to a variable
+or memory location.  Since statements come in different shapes and
+sizes, their operands are going to be located at various spots inside
+the statement's tree.  To facilitate access to the statement's
+operands, they are organized into lists associated inside each
+statement's annotation.  Each element in an operand list is a pointer
+to a <code>VAR_DECL</code>, <code>PARM_DECL</code> or <code>SSA_NAME</code> tree node. 
+This provides a very convenient way of examining and replacing
+operands.
+
+ <p>Data flow analysis and optimization is done on all tree nodes
+representing variables.  Any node for which <code>SSA_VAR_P</code> returns
+nonzero is considered when scanning statement operands.  However, not
+all <code>SSA_VAR_P</code> variables are processed in the same way.  For the
+purposes of optimization, we need to distinguish between references to
+local scalar variables and references to globals, statics, structures,
+arrays, aliased variables, etc.  The reason is simple, the compiler
+can gather complete data flow information for a local scalar.  On the
+other hand, a global variable may be modified by a function call, it
+may not be possible to keep track of all the elements of an array or
+the fields of a structure, etc.
+
+ <p>The operand scanner gathers two kinds of operands: <dfn>real</dfn> and
+<dfn>virtual</dfn>.  An operand for which <code>is_gimple_reg</code> returns true
+is considered real, otherwise it is a virtual operand.  We also
+distinguish between uses and definitions.  An operand is used if its
+value is loaded by the statement (e.g., the operand at the RHS of an
+assignment).  If the statement assigns a new value to the operand, the
+operand is considered a definition (e.g., the operand at the LHS of
+an assignment).
+
+ <p>Virtual and real operands also have very different data flow
+properties.  Real operands are unambiguous references to the
+full object that they represent.  For instance, given
+
+<pre class="smallexample">     {
+       int a, b;
+       a = b
+     }
+</pre>
+ <p>Since <code>a</code> and <code>b</code> are non-aliased locals, the statement
+<code>a = b</code> will have one real definition and one real use because
+variable <code>a</code> is completely modified with the contents of
+variable <code>b</code>.  Real definition are also known as <dfn>killing
+definitions</dfn>.  Similarly, the use of <code>b</code> reads all its bits.
+
+ <p>In contrast, virtual operands are used with variables that can have
+a partial or ambiguous reference.  This includes structures, arrays,
+globals, and aliased variables.  In these cases, we have two types of
+definitions.  For globals, structures, and arrays, we can determine from
+a statement whether a variable of these types has a killing definition. 
+If the variable does, then the statement is marked as having a
+<dfn>must definition</dfn> of that variable.  However, if a statement is only
+defining a part of the variable (i.e. a field in a structure), or if we
+know that a statement might define the variable but we cannot say for sure,
+then we mark that statement as having a <dfn>may definition</dfn>.  For
+instance, given
+
+<pre class="smallexample">     {
+       int a, b, *p;
+     
+       if (...)
+         p = &amp;a;
+       else
+         p = &amp;b;
+       *p = 5;
+       return *p;
+     }
+</pre>
+ <p>The assignment <code>*p = 5</code> may be a definition of <code>a</code> or
+<code>b</code>.  If we cannot determine statically where <code>p</code> is
+pointing to at the time of the store operation, we create virtual
+definitions to mark that statement as a potential definition site for
+<code>a</code> and <code>b</code>.  Memory loads are similarly marked with virtual
+use operands.  Virtual operands are shown in tree dumps right before
+the statement that contains them.  To request a tree dump with virtual
+operands, use the <samp><span class="option">-vops</span></samp> option to <samp><span class="option">-fdump-tree</span></samp>:
+
+<pre class="smallexample">     {
+       int a, b, *p;
+     
+       if (...)
+         p = &amp;a;
+       else
+         p = &amp;b;
+       # a = VDEF &lt;a&gt;
+       # b = VDEF &lt;b&gt;
+       *p = 5;
+     
+       # VUSE &lt;a&gt;
+       # VUSE &lt;b&gt;
+       return *p;
+     }
+</pre>
+ <p>Notice that <code>VDEF</code> operands have two copies of the referenced
+variable.  This indicates that this is not a killing definition of
+that variable.  In this case we refer to it as a <dfn>may definition</dfn>
+or <dfn>aliased store</dfn>.  The presence of the second copy of the
+variable in the <code>VDEF</code> operand will become important when the
+function is converted into SSA form.  This will be used to link all
+the non-killing definitions to prevent optimizations from making
+incorrect assumptions about them.
+
+ <p>Operands are updated as soon as the statement is finished via a call
+to <code>update_stmt</code>.  If statement elements are changed via
+<code>SET_USE</code> or <code>SET_DEF</code>, then no further action is required
+(i.e., those macros take care of updating the statement).  If changes
+are made by manipulating the statement's tree directly, then a call
+must be made to <code>update_stmt</code> when complete.  Calling one of the
+<code>bsi_insert</code> routines or <code>bsi_replace</code> performs an implicit
+call to <code>update_stmt</code>.
+
+<h4 class="subsection">12.2.1 Operand Iterators And Access Routines</h4>
+
+<p><a name="index-Operand-Iterators-2512"></a><a name="index-Operand-Access-Routines-2513"></a>
+Operands are collected by <samp><span class="file">tree-ssa-operands.c</span></samp>.  They are stored
+inside each statement's annotation and can be accessed through either the
+operand iterators or an access routine.
+
+ <p>The following access routines are available for examining operands:
+
+     <ol type=1 start=1>
+<li><code>SINGLE_SSA_{USE,DEF,TREE}_OPERAND</code>: These accessors will return
+NULL unless there is exactly one operand matching the specified flags.  If
+there is exactly one operand, the operand is returned as either a <code>tree</code>,
+<code>def_operand_p</code>, or <code>use_operand_p</code>.
+
+     <pre class="smallexample">          tree t = SINGLE_SSA_TREE_OPERAND (stmt, flags);
+          use_operand_p u = SINGLE_SSA_USE_OPERAND (stmt, SSA_ALL_VIRTUAL_USES);
+          def_operand_p d = SINGLE_SSA_DEF_OPERAND (stmt, SSA_OP_ALL_DEFS);
+</pre>
+     <li><code>ZERO_SSA_OPERANDS</code>: This macro returns true if there are no
+operands matching the specified flags.
+
+     <pre class="smallexample">          if (ZERO_SSA_OPERANDS (stmt, SSA_OP_ALL_VIRTUALS))
+            return;
+</pre>
+     <li><code>NUM_SSA_OPERANDS</code>: This macro Returns the number of operands
+matching 'flags'.  This actually executes a loop to perform the count, so
+only use this if it is really needed.
+
+     <pre class="smallexample">          int count = NUM_SSA_OPERANDS (stmt, flags)
+</pre>
+     </ol>
+
+ <p>If you wish to iterate over some or all operands, use the
+<code>FOR_EACH_SSA_{USE,DEF,TREE}_OPERAND</code> iterator.  For example, to print
+all the operands for a statement:
+
+<pre class="smallexample">     void
+     print_ops (tree stmt)
+     {
+       ssa_op_iter;
+       tree var;
+     
+       FOR_EACH_SSA_TREE_OPERAND (var, stmt, iter, SSA_OP_ALL_OPERANDS)
+         print_generic_expr (stderr, var, TDF_SLIM);
+     }
+</pre>
+ <p>How to choose the appropriate iterator:
+
+     <ol type=1 start=1>
+<li>Determine whether you are need to see the operand pointers, or just the
+trees, and choose the appropriate macro:
+
+     <pre class="smallexample">          Need            Macro:
+          ----            -------
+          use_operand_p   FOR_EACH_SSA_USE_OPERAND
+          def_operand_p   FOR_EACH_SSA_DEF_OPERAND
+          tree            FOR_EACH_SSA_TREE_OPERAND
+</pre>
+     <li>You need to declare a variable of the type you are interested
+in, and an ssa_op_iter structure which serves as the loop controlling
+variable.
+
+     <li>Determine which operands you wish to use, and specify the flags of
+those you are interested in.  They are documented in
+<samp><span class="file">tree-ssa-operands.h</span></samp>:
+
+     <pre class="smallexample">          #define SSA_OP_USE              0x01    /* <span class="roman">Real USE operands.</span>  */
+          #define SSA_OP_DEF              0x02    /* <span class="roman">Real DEF operands.</span>  */
+          #define SSA_OP_VUSE             0x04    /* <span class="roman">VUSE operands.</span>  */
+          #define SSA_OP_VDEF             0x08    /* <span class="roman">VDEF operands.</span>  */
+          
+          /* <span class="roman">These are commonly grouped operand flags.</span>  */
+          #define SSA_OP_VIRTUAL_USES	(SSA_OP_VUSE)
+          #define SSA_OP_VIRTUAL_DEFS	(SSA_OP_VDEF)
+          #define SSA_OP_ALL_VIRTUALS     (SSA_OP_VIRTUAL_USES | SSA_OP_VIRTUAL_DEFS)
+          #define SSA_OP_ALL_USES		(SSA_OP_VIRTUAL_USES | SSA_OP_USE)
+          #define SSA_OP_ALL_DEFS		(SSA_OP_VIRTUAL_DEFS | SSA_OP_DEF)
+          #define SSA_OP_ALL_OPERANDS	(SSA_OP_ALL_USES | SSA_OP_ALL_DEFS)
+</pre>
+     </ol>
+
+ <p>So if you want to look at the use pointers for all the <code>USE</code> and
+<code>VUSE</code> operands, you would do something like:
+
+<pre class="smallexample">       use_operand_p use_p;
+       ssa_op_iter iter;
+     
+       FOR_EACH_SSA_USE_OPERAND (use_p, stmt, iter, (SSA_OP_USE | SSA_OP_VUSE))
+         {
+           process_use_ptr (use_p);
+         }
+</pre>
+ <p>The <code>TREE</code> macro is basically the same as the <code>USE</code> and
+<code>DEF</code> macros, only with the use or def dereferenced via
+<code>USE_FROM_PTR (use_p)</code> and <code>DEF_FROM_PTR (def_p)</code>.  Since we
+aren't using operand pointers, use and defs flags can be mixed.
+
+<pre class="smallexample">       tree var;
+       ssa_op_iter iter;
+     
+       FOR_EACH_SSA_TREE_OPERAND (var, stmt, iter, SSA_OP_VUSE)
+         {
+            print_generic_expr (stderr, var, TDF_SLIM);
+         }
+</pre>
+ <p><code>VDEF</code>s are broken into two flags, one for the
+<code>DEF</code> portion (<code>SSA_OP_VDEF</code>) and one for the USE portion
+(<code>SSA_OP_VUSE</code>).
+
+ <p>There are many examples in the code, in addition to the documentation
+in <samp><span class="file">tree-ssa-operands.h</span></samp> and <samp><span class="file">ssa-iterators.h</span></samp>.
+
+ <p>There are also a couple of variants on the stmt iterators regarding PHI
+nodes.
+
+ <p><code>FOR_EACH_PHI_ARG</code> Works exactly like
+<code>FOR_EACH_SSA_USE_OPERAND</code>, except it works over <code>PHI</code> arguments
+instead of statement operands.
+
+<pre class="smallexample">     /* Look at every virtual PHI use.  */
+     FOR_EACH_PHI_ARG (use_p, phi_stmt, iter, SSA_OP_VIRTUAL_USES)
+     {
+        my_code;
+     }
+     
+     /* Look at every real PHI use.  */
+     FOR_EACH_PHI_ARG (use_p, phi_stmt, iter, SSA_OP_USES)
+       my_code;
+     
+     /* Look at every PHI use.  */
+     FOR_EACH_PHI_ARG (use_p, phi_stmt, iter, SSA_OP_ALL_USES)
+       my_code;
+</pre>
+ <p><code>FOR_EACH_PHI_OR_STMT_{USE,DEF}</code> works exactly like
+<code>FOR_EACH_SSA_{USE,DEF}_OPERAND</code>, except it will function on
+either a statement or a <code>PHI</code> node.  These should be used when it is
+appropriate but they are not quite as efficient as the individual
+<code>FOR_EACH_PHI</code> and <code>FOR_EACH_SSA</code> routines.
+
+<pre class="smallexample">     FOR_EACH_PHI_OR_STMT_USE (use_operand_p, stmt, iter, flags)
+       {
+          my_code;
+       }
+     
+     FOR_EACH_PHI_OR_STMT_DEF (def_operand_p, phi, iter, flags)
+       {
+          my_code;
+       }
+</pre>
+ <h4 class="subsection">12.2.2 Immediate Uses</h4>
+
+<p><a name="index-Immediate-Uses-2514"></a>
+Immediate use information is now always available.  Using the immediate use
+iterators, you may examine every use of any <code>SSA_NAME</code>. For instance,
+to change each use of <code>ssa_var</code> to <code>ssa_var2</code> and call fold_stmt on
+each stmt after that is done:
+
+<pre class="smallexample">       use_operand_p imm_use_p;
+       imm_use_iterator iterator;
+       tree ssa_var, stmt;
+     
+     
+       FOR_EACH_IMM_USE_STMT (stmt, iterator, ssa_var)
+         {
+           FOR_EACH_IMM_USE_ON_STMT (imm_use_p, iterator)
+             SET_USE (imm_use_p, ssa_var_2);
+           fold_stmt (stmt);
+         }
+</pre>
+ <p>There are 2 iterators which can be used. <code>FOR_EACH_IMM_USE_FAST</code> is
+used when the immediate uses are not changed, i.e., you are looking at the
+uses, but not setting them.
+
+ <p>If they do get changed, then care must be taken that things are not changed
+under the iterators, so use the <code>FOR_EACH_IMM_USE_STMT</code> and
+<code>FOR_EACH_IMM_USE_ON_STMT</code> iterators.  They attempt to preserve the
+sanity of the use list by moving all the uses for a statement into
+a controlled position, and then iterating over those uses.  Then the
+optimization can manipulate the stmt when all the uses have been
+processed.  This is a little slower than the FAST version since it adds a
+placeholder element and must sort through the list a bit for each statement. 
+This placeholder element must be also be removed if the loop is
+terminated early.  The macro <code>BREAK_FROM_IMM_USE_SAFE</code> is provided
+to do this :
+
+<pre class="smallexample">       FOR_EACH_IMM_USE_STMT (stmt, iterator, ssa_var)
+         {
+           if (stmt == last_stmt)
+             BREAK_FROM_SAFE_IMM_USE (iter);
+     
+           FOR_EACH_IMM_USE_ON_STMT (imm_use_p, iterator)
+             SET_USE (imm_use_p, ssa_var_2);
+           fold_stmt (stmt);
+         }
+</pre>
+ <p>There are checks in <code>verify_ssa</code> which verify that the immediate use list
+is up to date, as well as checking that an optimization didn't break from the
+loop without using this macro.  It is safe to simply 'break'; from a
+<code>FOR_EACH_IMM_USE_FAST</code> traverse.
+
+ <p>Some useful functions and macros:
+     <ol type=1 start=1>
+<li><code>has_zero_uses (ssa_var)</code> : Returns true if there are no uses of
+<code>ssa_var</code>. 
+<li><code>has_single_use (ssa_var)</code> : Returns true if there is only a
+single use of <code>ssa_var</code>. 
+<li><code>single_imm_use (ssa_var, use_operand_p *ptr, tree *stmt)</code> :
+Returns true if there is only a single use of <code>ssa_var</code>, and also returns
+the use pointer and statement it occurs in, in the second and third parameters. 
+<li><code>num_imm_uses (ssa_var)</code> : Returns the number of immediate uses of
+<code>ssa_var</code>. It is better not to use this if possible since it simply
+utilizes a loop to count the uses. 
+<li><code>PHI_ARG_INDEX_FROM_USE (use_p)</code> : Given a use within a <code>PHI</code>
+node, return the index number for the use.  An assert is triggered if the use
+isn't located in a <code>PHI</code> node. 
+<li><code>USE_STMT (use_p)</code> : Return the statement a use occurs in.
+      </ol>
+
+ <p>Note that uses are not put into an immediate use list until their statement is
+actually inserted into the instruction stream via a <code>bsi_*</code> routine.
+
+ <p>It is also still possible to utilize lazy updating of statements, but this
+should be used only when absolutely required.  Both alias analysis and the
+dominator optimizations currently do this.
+
+ <p>When lazy updating is being used, the immediate use information is out of date
+and cannot be used reliably.  Lazy updating is achieved by simply marking
+statements modified via calls to <code>mark_stmt_modified</code> instead of
+<code>update_stmt</code>.  When lazy updating is no longer required, all the
+modified statements must have <code>update_stmt</code> called in order to bring them
+up to date.  This must be done before the optimization is finished, or
+<code>verify_ssa</code> will trigger an abort.
+
+ <p>This is done with a simple loop over the instruction stream:
+<pre class="smallexample">       block_stmt_iterator bsi;
+       basic_block bb;
+       FOR_EACH_BB (bb)
+         {
+           for (bsi = bsi_start (bb); !bsi_end_p (bsi); bsi_next (&amp;bsi))
+             update_stmt_if_modified (bsi_stmt (bsi));
+         }
+</pre>
+ </body></html>
+

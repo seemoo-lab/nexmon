@@ -1,0 +1,115 @@
+<html lang="en">
+<head>
+<title>Files - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Type-Information.html#Type-Information" title="Type Information">
+<link rel="prev" href="GGC-Roots.html#GGC-Roots" title="GGC Roots">
+<link rel="next" href="Invoking-the-garbage-collector.html#Invoking-the-garbage-collector" title="Invoking the garbage collector">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Files"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Invoking-the-garbage-collector.html#Invoking-the-garbage-collector">Invoking the garbage collector</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="GGC-Roots.html#GGC-Roots">GGC Roots</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Type-Information.html#Type-Information">Type Information</a>
+<hr>
+</div>
+
+<h3 class="section">22.5 Source Files Containing Type Information</h3>
+
+<p><a name="index-generated-files-5097"></a><a name="index-files_002c-generated-5098"></a>
+Whenever you add <code>GTY</code> markers to a source file that previously
+had none, or create a new source file containing <code>GTY</code> markers,
+there are three things you need to do:
+
+     <ol type=1 start=1>
+<li>You need to add the file to the list of source files the type
+machinery scans.  There are four cases:
+
+          <ol type=a start=1>
+<li>For a back-end file, this is usually done
+automatically; if not, you should add it to <code>target_gtfiles</code> in
+the appropriate port's entries in <samp><span class="file">config.gcc</span></samp>.
+
+          <li>For files shared by all front ends, add the filename to the
+<code>GTFILES</code> variable in <samp><span class="file">Makefile.in</span></samp>.
+
+          <li>For files that are part of one front end, add the filename to the
+<code>gtfiles</code> variable defined in the appropriate
+<samp><span class="file">config-lang.in</span></samp>. 
+Headers should appear before non-headers in this list.
+
+          <li>For files that are part of some but not all front ends, add the
+filename to the <code>gtfiles</code> variable of <em>all</em> the front ends
+that use it.
+          </ol>
+
+     <li>If the file was a header file, you'll need to check that it's included
+in the right place to be visible to the generated files.  For a back-end
+header file, this should be done automatically.  For a front-end header
+file, it needs to be included by the same file that includes
+<samp><span class="file">gtype-</span><var>lang</var><span class="file">.h</span></samp>.  For other header files, it needs to be
+included in <samp><span class="file">gtype-desc.c</span></samp>, which is a generated file, so add it to
+<code>ifiles</code> in <code>open_base_file</code> in <samp><span class="file">gengtype.c</span></samp>.
+
+     <p>For source files that aren't header files, the machinery will generate a
+header file that should be included in the source file you just changed. 
+The file will be called <samp><span class="file">gt-</span><var>path</var><span class="file">.h</span></samp> where <var>path</var> is the
+pathname relative to the <samp><span class="file">gcc</span></samp> directory with slashes replaced by
+<tt>-</tt>, so for example the header file to be included in
+<samp><span class="file">cp/parser.c</span></samp> is called <samp><span class="file">gt-cp-parser.c</span></samp>.  The
+generated header file should be included after everything else in the
+source file.  Don't forget to mention this file as a dependency in the
+<samp><span class="file">Makefile</span></samp>!
+
+      </ol>
+
+ <p>For language frontends, there is another file that needs to be included
+somewhere.  It will be called <samp><span class="file">gtype-</span><var>lang</var><span class="file">.h</span></samp>, where
+<var>lang</var> is the name of the subdirectory the language is contained in.
+
+ <p>Plugins can add additional root tables.  Run the <code>gengtype</code>
+utility in plugin mode as <code>gengtype -P pluginout.h </code><var>source-dir</var>
+<var>file-list</var> <var>plugin*.c</var> with your plugin files
+<var>plugin*.c</var> using <code>GTY</code> to generate the <var>pluginout.h</var> file. 
+The GCC build tree is needed to be present in that mode.
+
+ </body></html>
+

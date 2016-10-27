@@ -1,0 +1,68 @@
+<html lang="en">
+<head>
+<title>csqrt - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Complex.html#Complex" title="Complex">
+<link rel="prev" href="csinh.html#csinh" title="csinh">
+<link rel="next" href="ctan.html#ctan" title="ctan">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="csqrt"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="ctan.html#ctan">ctan</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="csinh.html#csinh">csinh</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Complex.html#Complex">Complex</a>
+<hr>
+</div>
+
+<h3 class="section">2.21 <code>csqrt</code>, <code>csqrtf</code>&mdash;complex square root</h3>
+
+<p><a name="index-csqrt-201"></a><a name="index-csqrtf-202"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;complex.h&gt;
+     double complex csqrt(double complex <var>z</var>);
+     float complex csqrtf(float complex <var>z</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+These functions compute the complex square root of <var>z</var>, with
+a branch cut along the negative real axis.
+
+   <p><code>csqrtf</code> is identical to <code>csqrt</code>, except that it performs
+its calculations on <code>floats complex</code>.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+The csqrt functions return the complex square root value, in
+the range of the right halfplane (including the imaginary axis).
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+<code>csqrt</code> and <code>csqrtf</code> are ISO C99
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

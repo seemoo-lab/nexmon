@@ -1,0 +1,91 @@
+<html lang="en">
+<head>
+<title>Temporaries - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="GIMPLE.html#GIMPLE" title="GIMPLE">
+<link rel="prev" href="GIMPLE-Exception-Handling.html#GIMPLE-Exception-Handling" title="GIMPLE Exception Handling">
+<link rel="next" href="Operands.html#Operands" title="Operands">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Temporaries"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Operands.html#Operands">Operands</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="GIMPLE-Exception-Handling.html#GIMPLE-Exception-Handling">GIMPLE Exception Handling</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="GIMPLE.html#GIMPLE">GIMPLE</a>
+<hr>
+</div>
+
+<h3 class="section">11.5 Temporaries</h3>
+
+<p><a name="index-Temporaries-2139"></a>
+When gimplification encounters a subexpression that is too
+complex, it creates a new temporary variable to hold the value of
+the subexpression, and adds a new statement to initialize it
+before the current statement. These special temporaries are known
+as &lsquo;<samp><span class="samp">expression temporaries</span></samp>&rsquo;, and are allocated using
+<code>get_formal_tmp_var</code>.  The compiler tries to always evaluate
+identical expressions into the same temporary, to simplify
+elimination of redundant calculations.
+
+ <p>We can only use expression temporaries when we know that it will
+not be reevaluated before its value is used, and that it will not
+be otherwise modified<a rel="footnote" href="#fn-1" name="fnd-1"><sup>1</sup></a>. Other temporaries can be allocated
+using <code>get_initialized_tmp_var</code> or <code>create_tmp_var</code>.
+
+ <p>Currently, an expression like <code>a = b + 5</code> is not reduced any
+further.  We tried converting it to something like
+<pre class="smallexample">     T1 = b + 5;
+     a = T1;
+</pre>
+ <p>but this bloated the representation for minimal benefit.  However, a
+variable which must live in memory cannot appear in an expression; its
+value is explicitly loaded into a temporary first.  Similarly, storing
+the value of an expression to a memory variable goes through a
+temporary.
+
+ <div class="footnote">
+<hr>
+<h4>Footnotes</h4><p class="footnote"><small>[<a name="fn-1" href="#fnd-1">1</a>]</small> These restrictions are derived
+from those in Morgan 4.8.</p>
+
+ <hr></div>
+
+ </body></html>
+

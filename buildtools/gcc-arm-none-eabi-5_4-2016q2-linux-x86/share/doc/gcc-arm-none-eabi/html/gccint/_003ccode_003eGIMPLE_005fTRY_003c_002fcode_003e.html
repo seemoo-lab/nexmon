@@ -1,0 +1,111 @@
+<html lang="en">
+<head>
+<title>@code{GIMPLE_TRY} - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Tuple-specific-accessors.html#Tuple-specific-accessors" title="Tuple specific accessors">
+<link rel="prev" href="_0040code_007bGIMPLE_005fSWITCH_007d.html#g_t_0040code_007bGIMPLE_005fSWITCH_007d" title="@code{GIMPLE_SWITCH}">
+<link rel="next" href="_0040code_007bGIMPLE_005fWITH_005fCLEANUP_005fEXPR_007d.html#g_t_0040code_007bGIMPLE_005fWITH_005fCLEANUP_005fEXPR_007d" title="@code{GIMPLE_WITH_CLEANUP_EXPR}">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="%3ccode%3eGIMPLE_TRY%3c%2fcode%3e"></a>
+<a name="g_t_003ccode_003eGIMPLE_005fTRY_003c_002fcode_003e"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="_003ccode_003eGIMPLE_005fWITH_005fCLEANUP_005fEXPR_003c_002fcode_003e.html#g_t_003ccode_003eGIMPLE_005fWITH_005fCLEANUP_005fEXPR_003c_002fcode_003e">&lt;code&gt;GIMPLE_WITH_CLEANUP_EXPR&lt;/code&gt;</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="_003ccode_003eGIMPLE_005fSWITCH_003c_002fcode_003e.html#g_t_003ccode_003eGIMPLE_005fSWITCH_003c_002fcode_003e">&lt;code&gt;GIMPLE_SWITCH&lt;/code&gt;</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Tuple-specific-accessors.html#Tuple-specific-accessors">Tuple specific accessors</a>
+<hr>
+</div>
+
+<h4 class="subsection">11.8.28 <code>GIMPLE_TRY</code></h4>
+
+<p><a name="index-g_t_0040code_007bGIMPLE_005fTRY_007d-2434"></a>
+
+<div class="defun">
+&mdash; GIMPLE function: gtry <b>*gimple_build_try</b> (<var>gimple_seq eval, gimple_seq cleanup, unsigned int kind</var>)<var><a name="index-g_t_002agimple_005fbuild_005ftry-2435"></a></var><br>
+<blockquote><p>Build a <code>GIMPLE_TRY</code> statement.  <code>EVAL</code> is a sequence with the
+expression to evaluate.  <code>CLEANUP</code> is a sequence of statements to
+run at clean-up time.  <code>KIND</code> is the enumeration value
+<code>GIMPLE_TRY_CATCH</code> if this statement denotes a try/catch construct
+or <code>GIMPLE_TRY_FINALLY</code> if this statement denotes a try/finally
+construct. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: enum gimple_try_flags <b>gimple_try_kind</b> (<var>gimple g</var>)<var><a name="index-gimple_005ftry_005fkind-2436"></a></var><br>
+<blockquote><p>Return the kind of try block represented by <code>GIMPLE_TRY</code> <code>G</code>. This is
+either <code>GIMPLE_TRY_CATCH</code> or <code>GIMPLE_TRY_FINALLY</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>gimple_try_catch_is_cleanup</b> (<var>gimple g</var>)<var><a name="index-gimple_005ftry_005fcatch_005fis_005fcleanup-2437"></a></var><br>
+<blockquote><p>Return the <code>GIMPLE_TRY_CATCH_IS_CLEANUP</code> flag. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: gimple_seq <b>gimple_try_eval</b> (<var>gimple g</var>)<var><a name="index-gimple_005ftry_005feval-2438"></a></var><br>
+<blockquote><p>Return the sequence of statements used as the body for <code>GIMPLE_TRY</code>
+<code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: gimple_seq <b>gimple_try_cleanup</b> (<var>gimple g</var>)<var><a name="index-gimple_005ftry_005fcleanup-2439"></a></var><br>
+<blockquote><p>Return the sequence of statements used as the cleanup body for
+<code>GIMPLE_TRY</code> <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_try_set_catch_is_cleanup</b> (<var>gimple g, bool catch_is_cleanup</var>)<var><a name="index-gimple_005ftry_005fset_005fcatch_005fis_005fcleanup-2440"></a></var><br>
+<blockquote><p>Set the <code>GIMPLE_TRY_CATCH_IS_CLEANUP</code> flag. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_try_set_eval</b> (<var>gtry *g, gimple_seq eval</var>)<var><a name="index-gimple_005ftry_005fset_005feval-2441"></a></var><br>
+<blockquote><p>Set <code>EVAL</code> to be the sequence of statements to use as the body for
+<code>GIMPLE_TRY</code> <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_try_set_cleanup</b> (<var>gtry *g, gimple_seq cleanup</var>)<var><a name="index-gimple_005ftry_005fset_005fcleanup-2442"></a></var><br>
+<blockquote><p>Set <code>CLEANUP</code> to be the sequence of statements to use as the
+cleanup body for <code>GIMPLE_TRY</code> <code>G</code>. 
+</p></blockquote></div>
+
+ </body></html>
+

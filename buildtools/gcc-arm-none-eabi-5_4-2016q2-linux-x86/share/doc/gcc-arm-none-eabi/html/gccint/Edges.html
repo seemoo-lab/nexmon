@@ -1,0 +1,240 @@
+<html lang="en">
+<head>
+<title>Edges - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Control-Flow.html#Control-Flow" title="Control Flow">
+<link rel="prev" href="Basic-Blocks.html#Basic-Blocks" title="Basic Blocks">
+<link rel="next" href="Profile-information.html#Profile-information" title="Profile information">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Edges"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Profile-information.html#Profile-information">Profile information</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Basic-Blocks.html#Basic-Blocks">Basic Blocks</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Control-Flow.html#Control-Flow">Control Flow</a>
+<hr>
+</div>
+
+<h3 class="section">14.2 Edges</h3>
+
+<p><a name="index-edge-in-the-flow-graph-3167"></a><a name="index-edge-3168"></a>Edges represent possible control flow transfers from the end of some
+basic block A to the head of another basic block B.  We say that A is
+a predecessor of B, and B is a successor of A.  Edges are represented
+in GCC with the <code>edge</code> data type.  Each <code>edge</code> acts as a
+link between two basic blocks: The <code>src</code> member of an edge
+points to the predecessor basic block of the <code>dest</code> basic block. 
+The members <code>preds</code> and <code>succs</code> of the <code>basic_block</code> data
+type point to type-safe vectors of edges to the predecessors and
+successors of the block.
+
+ <p><a name="index-edge-iterators-3169"></a>When walking the edges in an edge vector, <dfn>edge iterators</dfn> should
+be used.  Edge iterators are constructed using the
+<code>edge_iterator</code> data structure and several methods are available
+to operate on them:
+
+     <dl>
+<dt><code>ei_start</code><a name="index-ei_005fstart-3170"></a><dd>This function initializes an <code>edge_iterator</code> that points to the
+first edge in a vector of edges.
+
+     <br><dt><code>ei_last</code><a name="index-ei_005flast-3171"></a><dd>This function initializes an <code>edge_iterator</code> that points to the
+last edge in a vector of edges.
+
+     <br><dt><code>ei_end_p</code><a name="index-ei_005fend_005fp-3172"></a><dd>This predicate is <code>true</code> if an <code>edge_iterator</code> represents
+the last edge in an edge vector.
+
+     <br><dt><code>ei_one_before_end_p</code><a name="index-ei_005fone_005fbefore_005fend_005fp-3173"></a><dd>This predicate is <code>true</code> if an <code>edge_iterator</code> represents
+the second last edge in an edge vector.
+
+     <br><dt><code>ei_next</code><a name="index-ei_005fnext-3174"></a><dd>This function takes a pointer to an <code>edge_iterator</code> and makes it
+point to the next edge in the sequence.
+
+     <br><dt><code>ei_prev</code><a name="index-ei_005fprev-3175"></a><dd>This function takes a pointer to an <code>edge_iterator</code> and makes it
+point to the previous edge in the sequence.
+
+     <br><dt><code>ei_edge</code><a name="index-ei_005fedge-3176"></a><dd>This function returns the <code>edge</code> currently pointed to by an
+<code>edge_iterator</code>.
+
+     <br><dt><code>ei_safe_safe</code><a name="index-ei_005fsafe_005fsafe-3177"></a><dd>This function returns the <code>edge</code> currently pointed to by an
+<code>edge_iterator</code>, but returns <code>NULL</code> if the iterator is
+pointing at the end of the sequence.  This function has been provided
+for existing code makes the assumption that a <code>NULL</code> edge
+indicates the end of the sequence.
+
+ </dl>
+
+ <p>The convenience macro <code>FOR_EACH_EDGE</code> can be used to visit all of
+the edges in a sequence of predecessor or successor edges.  It must
+not be used when an element might be removed during the traversal,
+otherwise elements will be missed.  Here is an example of how to use
+the macro:
+
+<pre class="smallexample">     edge e;
+     edge_iterator ei;
+     
+     FOR_EACH_EDGE (e, ei, bb-&gt;succs)
+       {
+          if (e-&gt;flags &amp; EDGE_FALLTHRU)
+            break;
+       }
+</pre>
+ <p><a name="index-fall_002dthru-3178"></a>There are various reasons why control flow may transfer from one block
+to another.  One possibility is that some instruction, for example a
+<code>CODE_LABEL</code>, in a linearized instruction stream just always
+starts a new basic block.  In this case a <dfn>fall-thru</dfn> edge links
+the basic block to the first following basic block.  But there are
+several other reasons why edges may be created.  The <code>flags</code>
+field of the <code>edge</code> data type is used to store information
+about the type of edge we are dealing with.  Each edge is of one of
+the following types:
+
+     <dl>
+<dt><em>jump</em><dd>No type flags are set for edges corresponding to jump instructions. 
+These edges are used for unconditional or conditional jumps and in
+RTL also for table jumps.  They are the easiest to manipulate as they
+may be freely redirected when the flow graph is not in SSA form.
+
+     <br><dt><em>fall-thru</em><dd><a name="index-EDGE_005fFALLTHRU_002c-force_005fnonfallthru-3179"></a>Fall-thru edges are present in case where the basic block may continue
+execution to the following one without branching.  These edges have
+the <code>EDGE_FALLTHRU</code> flag set.  Unlike other types of edges, these
+edges must come into the basic block immediately following in the
+instruction stream.  The function <code>force_nonfallthru</code> is
+available to insert an unconditional jump in the case that redirection
+is needed.  Note that this may require creation of a new basic block.
+
+     <br><dt><em>exception handling</em><dd><a name="index-exception-handling-3180"></a><a name="index-EDGE_005fABNORMAL_002c-EDGE_005fEH-3181"></a>Exception handling edges represent possible control transfers from a
+trapping instruction to an exception handler.  The definition of
+&ldquo;trapping&rdquo; varies.  In C++, only function calls can throw, but for
+Java and Ada, exceptions like division by zero or segmentation fault are
+defined and thus each instruction possibly throwing this kind of
+exception needs to be handled as control flow instruction.  Exception
+edges have the <code>EDGE_ABNORMAL</code> and <code>EDGE_EH</code> flags set.
+
+     <p><a name="index-purge_005fdead_005fedges-3182"></a>When updating the instruction stream it is easy to change possibly
+trapping instruction to non-trapping, by simply removing the exception
+edge.  The opposite conversion is difficult, but should not happen
+anyway.  The edges can be eliminated via <code>purge_dead_edges</code> call.
+
+     <p><a name="index-REG_005fEH_005fREGION_002c-EDGE_005fABNORMAL_005fCALL-3183"></a>In the RTL representation, the destination of an exception edge is
+specified by <code>REG_EH_REGION</code> note attached to the insn. 
+In case of a trapping call the <code>EDGE_ABNORMAL_CALL</code> flag is set
+too.  In the <code>GIMPLE</code> representation, this extra flag is not set.
+
+     <p><a name="index-may_005ftrap_005fp_002c-tree_005fcould_005ftrap_005fp-3184"></a>In the RTL representation, the predicate <code>may_trap_p</code> may be used
+to check whether instruction still may trap or not.  For the tree
+representation, the <code>tree_could_trap_p</code> predicate is available,
+but this predicate only checks for possible memory traps, as in
+dereferencing an invalid pointer location.
+
+     <br><dt><em>sibling calls</em><dd><a name="index-sibling-call-3185"></a><a name="index-EDGE_005fABNORMAL_002c-EDGE_005fSIBCALL-3186"></a>Sibling calls or tail calls terminate the function in a non-standard
+way and thus an edge to the exit must be present. 
+<code>EDGE_SIBCALL</code> and <code>EDGE_ABNORMAL</code> are set in such case. 
+These edges only exist in the RTL representation.
+
+     <br><dt><em>computed jumps</em><dd><a name="index-computed-jump-3187"></a><a name="index-EDGE_005fABNORMAL-3188"></a>Computed jumps contain edges to all labels in the function referenced
+from the code.  All those edges have <code>EDGE_ABNORMAL</code> flag set. 
+The edges used to represent computed jumps often cause compile time
+performance problems, since functions consisting of many taken labels
+and many computed jumps may have <em>very</em> dense flow graphs, so
+these edges need to be handled with special care.  During the earlier
+stages of the compilation process, GCC tries to avoid such dense flow
+graphs by factoring computed jumps.  For example, given the following
+series of jumps,
+
+     <pre class="smallexample">            goto *x;
+            [ ... ]
+          
+            goto *x;
+            [ ... ]
+          
+            goto *x;
+            [ ... ]
+</pre>
+     <p class="noindent">factoring the computed jumps results in the following code sequence
+which has a much simpler flow graph:
+
+     <pre class="smallexample">            goto y;
+            [ ... ]
+          
+            goto y;
+            [ ... ]
+          
+            goto y;
+            [ ... ]
+          
+          y:
+            goto *x;
+</pre>
+     <p><a name="index-pass_005fduplicate_005fcomputed_005fgotos-3189"></a>However, the classic problem with this transformation is that it has a
+runtime cost in there resulting code: An extra jump.  Therefore, the
+computed jumps are un-factored in the later passes of the compiler
+(in the pass called <code>pass_duplicate_computed_gotos</code>). 
+Be aware of that when you work on passes in that area.  There have
+been numerous examples already where the compile time for code with
+unfactored computed jumps caused some serious headaches.
+
+     <br><dt><em>nonlocal goto handlers</em><dd><a name="index-nonlocal-goto-handler-3190"></a><a name="index-EDGE_005fABNORMAL_002c-EDGE_005fABNORMAL_005fCALL-3191"></a>GCC allows nested functions to return into caller using a <code>goto</code>
+to a label passed to as an argument to the callee.  The labels passed
+to nested functions contain special code to cleanup after function
+call.  Such sections of code are referred to as &ldquo;nonlocal goto
+receivers&rdquo;.  If a function contains such nonlocal goto receivers, an
+edge from the call to the label is created with the
+<code>EDGE_ABNORMAL</code> and <code>EDGE_ABNORMAL_CALL</code> flags set.
+
+     <br><dt><em>function entry points</em><dd><a name="index-function-entry-point_002c-alternate-function-entry-point-3192"></a><a name="index-LABEL_005fALTERNATE_005fNAME-3193"></a>By definition, execution of function starts at basic block 0, so there
+is always an edge from the <code>ENTRY_BLOCK_PTR</code> to basic block 0. 
+There is no <code>GIMPLE</code> representation for alternate entry points at
+this moment.  In RTL, alternate entry points are specified by
+<code>CODE_LABEL</code> with <code>LABEL_ALTERNATE_NAME</code> defined.  This
+feature is currently used for multiple entry point prologues and is
+limited to post-reload passes only.  This can be used by back-ends to
+emit alternate prologues for functions called from different contexts. 
+In future full support for multiple entry functions defined by Fortran
+90 needs to be implemented.
+
+     <br><dt><em>function exits</em><dd>In the pre-reload representation a function terminates after the last
+instruction in the insn chain and no explicit return instructions are
+used.  This corresponds to the fall-thru edge into exit block.  After
+reload, optimal RTL epilogues are used that use explicit (conditional)
+return instructions that are represented by edges with no flags set.
+
+ </dl>
+
+ </body></html>
+

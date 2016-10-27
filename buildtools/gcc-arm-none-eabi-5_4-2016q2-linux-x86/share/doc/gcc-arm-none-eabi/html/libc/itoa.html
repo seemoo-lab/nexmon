@@ -1,0 +1,70 @@
+<html lang="en">
+<head>
+<title>itoa - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stdlib.html#Stdlib" title="Stdlib">
+<link rel="prev" href="getenv.html#getenv" title="getenv">
+<link rel="next" href="labs.html#labs" title="labs">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="itoa"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="labs.html#labs">labs</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="getenv.html#getenv">getenv</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stdlib.html#Stdlib">Stdlib</a>
+<hr>
+</div>
+
+<h3 class="section">2.19 <code>itoa</code>&mdash;integer to string</h3>
+
+<p><a name="index-itoa-33"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;stdlib.h&gt;
+     char *itoa(int <var>value</var>, char *<var>str</var>, int <var>base</var>);
+     char *__itoa(int <var>value</var>, char *<var>str</var>, int <var>base</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+<code>itoa</code> converts the integer <var>value</var> to a null-terminated string
+using the specified base, which must be between 2 and 36, inclusive. 
+If <var>base</var> is 10, <var>value</var> is treated as signed and the string will be
+prefixed with '-' if negative. For all other bases, <var>value</var> is treated as
+unsigned. <var>str</var> should be an array long enough to contain the converted
+value, which in the worst case is sizeof(int)*8+1 bytes.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+A pointer to the string, <var>str</var>, or NULL if <var>base</var> is invalid.
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+<code>itoa</code> is non-ANSI.
+
+   <p>No supporting OS subroutine calls are required.
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

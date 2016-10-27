@@ -1,0 +1,84 @@
+<html lang="en">
+<head>
+<title>Creating and Freeing a Hash Table - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Hash-Tables.html#Hash-Tables" title="Hash Tables">
+<link rel="prev" href="Hash-Tables.html#Hash-Tables" title="Hash Tables">
+<link rel="next" href="Looking-Up-or-Entering-a-String.html#Looking-Up-or-Entering-a-String" title="Looking Up or Entering a String">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Creating-and-Freeing-a-Hash-Table"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Looking-Up-or-Entering-a-String.html#Looking-Up-or-Entering-a-String">Looking Up or Entering a String</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Hash-Tables.html#Hash-Tables">Hash Tables</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Hash-Tables.html#Hash-Tables">Hash Tables</a>
+<hr>
+</div>
+
+<h4 class="subsection">2.18.1 Creating and freeing a hash table</h4>
+
+<p><a name="index-bfd_005fhash_005ftable_005finit-2258"></a><a name="index-bfd_005fhash_005ftable_005finit_005fn-2259"></a>To create a hash table, create an instance of a <code>struct
+bfd_hash_table</code> (defined in <code>bfd.h</code>) and call
+<code>bfd_hash_table_init</code> (if you know approximately how many
+entries you will need, the function <code>bfd_hash_table_init_n</code>,
+which takes a <var>size</var> argument, may be used). 
+<code>bfd_hash_table_init</code> returns <code>FALSE</code> if some sort of
+error occurs.
+
+   <p><a name="index-bfd_005fhash_005fnewfunc-2260"></a>The function <code>bfd_hash_table_init</code> take as an argument a
+function to use to create new entries.  For a basic hash
+table, use the function <code>bfd_hash_newfunc</code>.  See <a href="Deriving-a-New-Hash-Table-Type.html#Deriving-a-New-Hash-Table-Type">Deriving a New Hash Table Type</a>, for why you would want to use a
+different value for this argument.
+
+   <p><a name="index-bfd_005fhash_005fallocate-2261"></a><code>bfd_hash_table_init</code> will create an objalloc which will be
+used to allocate new entries.  You may allocate memory on this
+objalloc using <code>bfd_hash_allocate</code>.
+
+   <p><a name="index-bfd_005fhash_005ftable_005ffree-2262"></a>Use <code>bfd_hash_table_free</code> to free up all the memory that has
+been allocated for a hash table.  This will not free up the
+<code>struct bfd_hash_table</code> itself, which you must provide.
+
+   <p><a name="index-bfd_005fhash_005fset_005fdefault_005fsize-2263"></a>Use <code>bfd_hash_set_default_size</code> to set the default size of
+hash table to use.
+
+   </body></html>
+

@@ -1,0 +1,142 @@
+<html lang="en">
+<head>
+<title>x86 transactional memory intrinsics - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Builtins.html#Target-Builtins" title="Target Builtins">
+<link rel="prev" href="x86-Built_002din-Functions.html#x86-Built_002din-Functions" title="x86 Built-in Functions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="x86-transactional-memory-intrinsics"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="x86-Built_002din-Functions.html#x86-Built_002din-Functions">x86 Built-in Functions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Builtins.html#Target-Builtins">Target Builtins</a>
+<hr>
+</div>
+
+<h4 class="subsection">6.58.31 x86 Transactional Memory Intrinsics</h4>
+
+<p>These hardware transactional memory intrinsics for x86 allow you to use
+memory transactions with RTM (Restricted Transactional Memory). 
+This support is enabled with the <samp><span class="option">-mrtm</span></samp> option. 
+For using HLE (Hardware Lock Elision) see
+<a href="x86-specific-memory-model-extensions-for-transactional-memory.html#x86-specific-memory-model-extensions-for-transactional-memory">x86 specific memory model extensions for transactional memory</a> instead.
+
+ <p>A memory transaction commits all changes to memory in an atomic way,
+as visible to other threads. If the transaction fails it is rolled back
+and all side effects discarded.
+
+ <p>Generally there is no guarantee that a memory transaction ever succeeds
+and suitable fallback code always needs to be supplied.
+
+<div class="defun">
+&mdash; RTM Function: unsigned <b>_xbegin</b> ()<var><a name="index-g_t_005fxbegin-4148"></a></var><br>
+<blockquote><p>Start a RTM (Restricted Transactional Memory) transaction. 
+Returns <code>_XBEGIN_STARTED</code> when the transaction
+started successfully (note this is not 0, so the constant has to be
+explicitly tested).
+
+      <p>If the transaction aborts, all side-effects
+are undone and an abort code encoded as a bit mask is returned. 
+The following macros are defined:
+
+          <dl>
+<dt><code>_XABORT_EXPLICIT</code><dd>Transaction was explicitly aborted with <code>_xabort</code>.  The parameter passed
+to <code>_xabort</code> is available with <code>_XABORT_CODE(status)</code>. 
+<br><dt><code>_XABORT_RETRY</code><dd>Transaction retry is possible. 
+<br><dt><code>_XABORT_CONFLICT</code><dd>Transaction abort due to a memory conflict with another thread. 
+<br><dt><code>_XABORT_CAPACITY</code><dd>Transaction abort due to the transaction using too much memory. 
+<br><dt><code>_XABORT_DEBUG</code><dd>Transaction abort due to a debug trap. 
+<br><dt><code>_XABORT_NESTED</code><dd>Transaction abort in an inner nested transaction. 
+</dl>
+
+      <p>There is no guarantee
+any transaction ever succeeds, so there always needs to be a valid
+fallback path. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; RTM Function: void <b>_xend</b> ()<var><a name="index-g_t_005fxend-4149"></a></var><br>
+<blockquote><p>Commit the current transaction. When no transaction is active this faults. 
+All memory side-effects of the transaction become visible
+to other threads in an atomic manner. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; RTM Function: int <b>_xtest</b> ()<var><a name="index-g_t_005fxtest-4150"></a></var><br>
+<blockquote><p>Return a nonzero value if a transaction is currently active, otherwise 0. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; RTM Function: void <b>_xabort</b> (<var>status</var>)<var><a name="index-g_t_005fxabort-4151"></a></var><br>
+<blockquote><p>Abort the current transaction. When no transaction is active this is a no-op. 
+The <var>status</var> is an 8-bit constant; its value is encoded in the return
+value from <code>_xbegin</code>. 
+</p></blockquote></div>
+
+ <p>Here is an example showing handling for <code>_XABORT_RETRY</code>
+and a fallback path for other failures:
+
+<pre class="smallexample">     #include &lt;immintrin.h&gt;
+     
+     int n_tries, max_tries;
+     unsigned status = _XABORT_EXPLICIT;
+     ...
+     
+     for (n_tries = 0; n_tries &lt; max_tries; n_tries++)
+       {
+         status = _xbegin ();
+         if (status == _XBEGIN_STARTED || !(status &amp; _XABORT_RETRY))
+           break;
+       }
+     if (status == _XBEGIN_STARTED)
+       {
+         ... transaction code...
+         _xend ();
+       }
+     else
+       {
+         ... non-transactional fallback path...
+       }
+</pre>
+ <p class="noindent">Note that, in most cases, the transactional and non-transactional code
+must synchronize together to ensure consistency.
+
+ </body></html>
+

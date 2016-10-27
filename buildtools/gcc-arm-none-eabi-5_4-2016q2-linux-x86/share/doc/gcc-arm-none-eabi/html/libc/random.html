@@ -1,0 +1,85 @@
+<html lang="en">
+<head>
+<title>random - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stdlib.html#Stdlib" title="Stdlib">
+<link rel="prev" href="rand.html#rand" title="rand">
+<link rel="next" href="rand48.html#rand48" title="rand48">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="random"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="rand48.html#rand48">rand48</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="rand.html#rand">rand</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stdlib.html#Stdlib">Stdlib</a>
+<hr>
+</div>
+
+<h3 class="section">2.34 <code>random</code>, <code>srandom</code>&mdash;pseudo-random numbers</h3>
+
+<p><a name="index-random-70"></a><a name="index-srandom-71"></a><strong>Synopsis</strong>
+<pre class="example">     #define _XOPEN_SOURCE 500
+     #include &lt;stdlib.h&gt;
+     long int random(void);
+     void srandom(unsigned int <var>seed</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+<code>random</code> returns a different integer each time it is called; each
+integer is chosen by an algorithm designed to be unpredictable, so
+that you can use <code>random</code> when you require a random number. 
+The algorithm depends on a static variable called the &ldquo;random seed&rdquo;;
+starting with a given value of the random seed always produces the
+same sequence of numbers in successive calls to <code>random</code>.
+
+   <p>You can set the random seed using <code>srandom</code>; it does nothing beyond
+storing its argument in the static variable used by <code>rand</code>.  You can
+exploit this to make the pseudo-random sequence less predictable, if
+you wish, by using some other unpredictable value (often the least
+significant parts of a time-varying value) as the random seed before
+beginning a sequence of calls to <code>rand</code>; or, if you wish to ensure
+(for example, while debugging) that successive runs of your program
+use the same &ldquo;random&rdquo; numbers, you can use <code>srandom</code> to set the same
+random seed at the outset.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+<code>random</code> returns the next pseudo-random integer in sequence; it is a
+number between <code>0</code> and <code>RAND_MAX</code> (inclusive).
+
+   <p><code>srandom</code> does not return a result.
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+<code>random</code> is required by XSI. This implementation uses the same
+algorithm as <code>rand</code>.
+
+   <p><code>random</code> requires no supporting OS subroutines.
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

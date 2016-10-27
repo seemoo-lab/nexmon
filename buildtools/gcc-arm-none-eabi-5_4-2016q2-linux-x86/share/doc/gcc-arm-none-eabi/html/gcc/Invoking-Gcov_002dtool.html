@@ -1,0 +1,122 @@
+<html lang="en">
+<head>
+<title>Invoking Gcov-tool - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Gcov_002dtool.html#Gcov_002dtool" title="Gcov-tool">
+<link rel="prev" href="Gcov_002dtool-Intro.html#Gcov_002dtool-Intro" title="Gcov-tool Intro">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Invoking-Gcov-tool"></a>
+<a name="Invoking-Gcov_002dtool"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Gcov_002dtool-Intro.html#Gcov_002dtool-Intro">Gcov-tool Intro</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Gcov_002dtool.html#Gcov_002dtool">Gcov-tool</a>
+<hr>
+</div>
+
+<h3 class="section">11.2 Invoking <samp><span class="command">gcov-tool</span></samp></h3>
+
+<pre class="smallexample">     gcov-tool <span class="roman">[</span><var>global-options</var><span class="roman">]</span> SUB_COMMAND <span class="roman">[</span><var>sub_command-options</var><span class="roman">]</span> <var>profile_dir</var>
+</pre>
+ <p><samp><span class="command">gcov-tool</span></samp> accepts the following options:
+
+<!-- man begin OPTIONS -->
+     <dl>
+<dt><code>-h</code><dt><code>--help</code><dd>Display help about using <samp><span class="command">gcov-tool</span></samp> (on the standard output), and
+exit without doing any further processing.
+
+     <br><dt><code>-v</code><dt><code>--version</code><dd>Display the <samp><span class="command">gcov-tool</span></samp> version number (on the standard output),
+and exit without doing any further processing.
+
+     <br><dt><code>merge</code><dd>Merge two profile directories.
+
+          <dl>
+<dt><code>-v</code><dt><code>--verbose</code><dd>Set the verbose mode.
+
+          <br><dt><code>-o </code><var>directory</var><dt><code>--output </code><var>directory</var><dd>Set the output profile directory. Default output directory name is
+<var>merged_profile</var>.
+
+          <br><dt><code>-w </code><var>w1</var><code>,</code><var>w2</var><dt><code>--weight </code><var>w1</var><code>,</code><var>w2</var><dd>Set the merge weights of the <var>directory1</var> and <var>directory2</var>,
+respectively. The default weights are 1 for both. 
+</dl>
+
+     <br><dt><code>rewrite</code><dd>Read the specified profile directory and rewrite to a new directory.
+
+          <dl>
+<dt><code>-v</code><dt><code>--verbose</code><dd>Set the verbose mode.
+
+          <br><dt><code>-o </code><var>directory</var><dt><code>--output </code><var>directory</var><dd>Set the output profile directory. Default output name is <var>rewrite_profile</var>.
+
+          <br><dt><code>-s </code><var>float_or_simple-frac_value</var><dt><code>--scale </code><var>float_or_simple-frac_value</var><dd>Scale the profile counters. The specified value can be in floating point value,
+or simple fraction value form, such 1, 2, 2/3, and 5/3.
+
+          <br><dt><code>-n </code><var>long_long_value</var><dt><code>--normalize &lt;long_long_value&gt;</code><dd>Normalize the profile. The specified value is the max counter value
+in the new profile. 
+</dl>
+
+     <br><dt><code>overlap</code><dd>Computer the overlap score between the two specified profile directories. 
+The overlap score is computed based on the arc profiles. It is defined as
+the sum of min (p1_counter[i] / p1_sum_all, p2_counter[i] / p2_sum_all),
+for all arc counter i, where p1_counter[i] and p2_counter[i] are two
+matched counters and p1_sum_all and p2_sum_all are the sum of counter
+values in profile 1 and profile 2, respectively.
+
+          <dl>
+<dt><code>-v</code><dt><code>--verbose</code><dd>Set the verbose mode.
+
+          <br><dt><code>-h</code><dt><code>--hotonly</code><dd>Only print info for hot objects/functions.
+
+          <br><dt><code>-f</code><dt><code>--function</code><dd>Print function level overlap score.
+
+          <br><dt><code>-F</code><dt><code>--fullname</code><dd>Print full gcda filename.
+
+          <br><dt><code>-o</code><dt><code>--object</code><dd>Print object level overlap score.
+
+          <br><dt><code>-t </code><var>float</var><dt><code>--hot_threshold &lt;float&gt;</code><dd>Set the threshold for hot counter value. 
+</dl>
+
+ </dl>
+
+<!-- man end -->
+<!-- Copyright (C) 1988-2015 Free Software Foundation, Inc. -->
+<!-- This is part of the GCC manual. -->
+<!-- For copying conditions, see the file gcc.texi. -->
+ </body></html>
+

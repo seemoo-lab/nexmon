@@ -1,0 +1,127 @@
+<html lang="en">
+<head>
+<title>Mode Switching - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Macros.html#Target-Macros" title="Target Macros">
+<link rel="prev" href="Floating-Point.html#Floating-Point" title="Floating Point">
+<link rel="next" href="Target-Attributes.html#Target-Attributes" title="Target Attributes">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Mode-Switching"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Target-Attributes.html#Target-Attributes">Target Attributes</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Floating-Point.html#Floating-Point">Floating Point</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Macros.html#Target-Macros">Target Macros</a>
+<hr>
+</div>
+
+<h3 class="section">17.23 Mode Switching Instructions</h3>
+
+<p><a name="index-mode-switching-4818"></a>The following macros control mode switching optimizations:
+
+<div class="defun">
+&mdash; Macro: <b>OPTIMIZE_MODE_SWITCHING</b> (<var>entity</var>)<var><a name="index-OPTIMIZE_005fMODE_005fSWITCHING-4819"></a></var><br>
+<blockquote><p>Define this macro if the port needs extra instructions inserted for mode
+switching in an optimizing compilation.
+
+      <p>For an example, the SH4 can perform both single and double precision
+floating point operations, but to perform a single precision operation,
+the FPSCR PR bit has to be cleared, while for a double precision
+operation, this bit has to be set.  Changing the PR bit requires a general
+purpose register as a scratch register, hence these FPSCR sets have to
+be inserted before reload, i.e. you can't put this into instruction emitting
+or <code>TARGET_MACHINE_DEPENDENT_REORG</code>.
+
+      <p>You can have multiple entities that are mode-switched, and select at run time
+which entities actually need it.  <code>OPTIMIZE_MODE_SWITCHING</code> should
+return nonzero for any <var>entity</var> that needs mode-switching. 
+If you define this macro, you also have to define
+<code>NUM_MODES_FOR_MODE_SWITCHING</code>, <code>TARGET_MODE_NEEDED</code>,
+<code>TARGET_MODE_PRIORITY</code> and <code>TARGET_MODE_EMIT</code>. 
+<code>TARGET_MODE_AFTER</code>, <code>TARGET_MODE_ENTRY</code>, and <code>TARGET_MODE_EXIT</code>
+are optional. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>NUM_MODES_FOR_MODE_SWITCHING</b><var><a name="index-NUM_005fMODES_005fFOR_005fMODE_005fSWITCHING-4820"></a></var><br>
+<blockquote><p>If you define <code>OPTIMIZE_MODE_SWITCHING</code>, you have to define this as
+initializer for an array of integers.  Each initializer element
+N refers to an entity that needs mode switching, and specifies the number
+of different modes that might need to be set for this entity. 
+The position of the initializer in the initializer&mdash;starting counting at
+zero&mdash;determines the integer that is used to refer to the mode-switched
+entity in question. 
+In macros that take mode arguments / yield a mode result, modes are
+represented as numbers 0 <small class="dots">...</small> N &minus; 1.  N is used to specify that no mode
+switch is needed / supplied. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_MODE_EMIT</b> (<var>int entity, int mode, int prev_mode, HARD_REG_SET regs_live</var>)<var><a name="index-TARGET_005fMODE_005fEMIT-4821"></a></var><br>
+<blockquote><p>Generate one or more insns to set <var>entity</var> to <var>mode</var>. <var>hard_reg_live</var> is the set of hard registers live at the point where the insn(s) are to be inserted. <var>prev_moxde</var> indicates the mode to switch from. Sets of a lower numbered entity will be emitted before sets of a higher numbered entity to a mode of the same or lower priority. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: int <b>TARGET_MODE_NEEDED</b> (<var>int entity, rtx_insn *insn</var>)<var><a name="index-TARGET_005fMODE_005fNEEDED-4822"></a></var><br>
+<blockquote><p><var>entity</var> is an integer specifying a mode-switched entity.  If <code>OPTIMIZE_MODE_SWITCHING</code> is defined, you must define this macro to return an integer value not larger than the corresponding element in <code>NUM_MODES_FOR_MODE_SWITCHING</code>, to denote the mode that <var>entity</var> must be switched into prior to the execution of <var>insn</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: int <b>TARGET_MODE_AFTER</b> (<var>int entity, int mode, rtx_insn *insn</var>)<var><a name="index-TARGET_005fMODE_005fAFTER-4823"></a></var><br>
+<blockquote><p><var>entity</var> is an integer specifying a mode-switched entity.  If this macro is defined, it is evaluated for every <var>insn</var> during mode switching.  It determines the mode that an insn results in (if different from the incoming mode). 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: int <b>TARGET_MODE_ENTRY</b> (<var>int entity</var>)<var><a name="index-TARGET_005fMODE_005fENTRY-4824"></a></var><br>
+<blockquote><p>If this macro is defined, it is evaluated for every <var>entity</var> that needs mode switching.  It should evaluate to an integer, which is a mode that <var>entity</var> is assumed to be switched to at function entry.  If <code>TARGET_MODE_ENTRY</code> is defined then <code>TARGET_MODE_EXIT</code> must be defined. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: int <b>TARGET_MODE_EXIT</b> (<var>int entity</var>)<var><a name="index-TARGET_005fMODE_005fEXIT-4825"></a></var><br>
+<blockquote><p>If this macro is defined, it is evaluated for every <var>entity</var> that needs mode switching.  It should evaluate to an integer, which is a mode that <var>entity</var> is assumed to be switched to at function exit.  If <code>TARGET_MODE_EXIT</code> is defined then <code>TARGET_MODE_ENTRY</code> must be defined. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: int <b>TARGET_MODE_PRIORITY</b> (<var>int entity, int n</var>)<var><a name="index-TARGET_005fMODE_005fPRIORITY-4826"></a></var><br>
+<blockquote><p>This macro specifies the order in which modes for <var>entity</var> are processed. 0 is the highest priority, <code>NUM_MODES_FOR_MODE_SWITCHING[</code><var>entity</var><code>] - 1</code> the lowest.  The value of the macro should be an integer designating a mode for <var>entity</var>.  For any fixed <var>entity</var>, <code>mode_priority</code> (<var>entity</var>, <var>n</var>) shall be a bijection in 0 <small class="dots">...</small> <code>num_modes_for_mode_switching[</code><var>entity</var><code>] - 1</code>. 
+</p></blockquote></div>
+
+ </body></html>
+

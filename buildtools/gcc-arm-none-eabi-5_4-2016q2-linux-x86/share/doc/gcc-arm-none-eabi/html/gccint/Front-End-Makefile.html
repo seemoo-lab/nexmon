@@ -1,0 +1,117 @@
+<html lang="en">
+<head>
+<title>Front End Makefile - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Front-End.html#Front-End" title="Front End">
+<link rel="prev" href="Front-End-Config.html#Front-End-Config" title="Front End Config">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Front-End-Makefile"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Front-End-Config.html#Front-End-Config">Front End Config</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Front-End.html#Front-End">Front End</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">6.3.8.3 The Front End <samp><span class="file">Make-lang.in</span></samp> File</h5>
+
+<p>Each language subdirectory contains a <samp><span class="file">Make-lang.in</span></samp> file.  It contains
+targets <var>lang</var><code>.</code><var>hook</var> (where <var>lang</var> is the
+setting of <code>language</code> in <samp><span class="file">config-lang.in</span></samp>) for the following
+values of <var>hook</var>, and any other Makefile rules required to
+build those targets (which may if necessary use other Makefiles
+specified in <code>outputs</code> in <samp><span class="file">config-lang.in</span></samp>, although this is
+deprecated).  It also adds any testsuite targets that can use the
+standard rule in <samp><span class="file">gcc/Makefile.in</span></samp> to the variable
+<code>lang_checks</code>.
+
+     <dl>
+<dt><code>all.cross</code><dt><code>start.encap</code><dt><code>rest.encap</code><dd>FIXME: exactly what goes in each of these targets? 
+<br><dt><code>tags</code><dd>Build an <samp><span class="command">etags</span></samp> <samp><span class="file">TAGS</span></samp> file in the language subdirectory
+in the source tree. 
+<br><dt><code>info</code><dd>Build info documentation for the front end, in the build directory. 
+This target is only called by &lsquo;<samp><span class="samp">make bootstrap</span></samp>&rsquo; if a suitable
+version of <samp><span class="command">makeinfo</span></samp> is available, so does not need to check
+for this, and should fail if an error occurs. 
+<br><dt><code>dvi</code><dd>Build DVI documentation for the front end, in the build directory. 
+This should be done using <code>$(TEXI2DVI)</code>, with appropriate
+<samp><span class="option">-I</span></samp> arguments pointing to directories of included files. 
+<br><dt><code>pdf</code><dd>Build PDF documentation for the front end, in the build directory. 
+This should be done using <code>$(TEXI2PDF)</code>, with appropriate
+<samp><span class="option">-I</span></samp> arguments pointing to directories of included files. 
+<br><dt><code>html</code><dd>Build HTML documentation for the front end, in the build directory. 
+<br><dt><code>man</code><dd>Build generated man pages for the front end from Texinfo manuals
+(see <a href="Man-Page-Generation.html#Man-Page-Generation">Man Page Generation</a>), in the build directory.  This target
+is only called if the necessary tools are available, but should ignore
+errors so as not to stop the build if errors occur; man pages are
+optional and the tools involved may be installed in a broken way. 
+<br><dt><code>install-common</code><dd>Install everything that is part of the front end, apart from the
+compiler executables listed in <code>compilers</code> in
+<samp><span class="file">config-lang.in</span></samp>. 
+<br><dt><code>install-info</code><dd>Install info documentation for the front end, if it is present in the
+source directory.  This target should have dependencies on info files
+that should be installed. 
+<br><dt><code>install-man</code><dd>Install man pages for the front end.  This target should ignore
+errors. 
+<br><dt><code>install-plugin</code><dd>Install headers needed for plugins. 
+<br><dt><code>srcextra</code><dd>Copies its dependencies into the source directory.  This generally should
+be used for generated files such as Bison output files which are not
+version-controlled, but should be included in any release tarballs.  This
+target will be executed during a bootstrap if
+&lsquo;<samp><span class="samp">--enable-generated-files-in-srcdir</span></samp>&rsquo; was specified as a
+<samp><span class="file">configure</span></samp> option. 
+<br><dt><code>srcinfo</code><dt><code>srcman</code><dd>Copies its dependencies into the source directory.  These targets will be
+executed during a bootstrap if &lsquo;<samp><span class="samp">--enable-generated-files-in-srcdir</span></samp>&rsquo;
+was specified as a <samp><span class="file">configure</span></samp> option. 
+<br><dt><code>uninstall</code><dd>Uninstall files installed by installing the compiler.  This is
+currently documented not to be supported, so the hook need not do
+anything. 
+<br><dt><code>mostlyclean</code><dt><code>clean</code><dt><code>distclean</code><dt><code>maintainer-clean</code><dd>The language parts of the standard GNU
+&lsquo;<samp><span class="samp">*clean</span></samp>&rsquo; targets.  See <a href="../standards/Standard-Targets.html#Standard-Targets">Standard Targets for Users</a>, for details of the standard
+targets.  For GCC, <code>maintainer-clean</code> should delete
+all generated files in the source directory that are not version-controlled,
+but should not delete anything that is. 
+</dl>
+
+ <p><samp><span class="file">Make-lang.in</span></samp> must also define a variable <var>lang</var><code>_OBJS</code>
+to a list of host object files that are used by that language.
+
+ </body></html>
+

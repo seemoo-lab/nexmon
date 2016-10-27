@@ -1,0 +1,103 @@
+<html lang="en">
+<head>
+<title>Assembly Code - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Overview.html#Overview" title="Overview">
+<link rel="prev" href="C-Example.html#C-Example" title="C Example">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Assembly-Code"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="C-Example.html#C-Example">C Example</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Overview.html#Overview">Overview</a>
+<hr>
+</div>
+
+<h3 class="section">1.5 The Simple Example at the Assembly Level</h3>
+
+<p>This simple &ldquo;hello world&rdquo; example demonstrates several of the stab
+types used to describe C language source files.
+
+<pre class="example">     1  gcc2_compiled.:
+     2  .stabs "/cygint/s1/users/jcm/play/",100,0,0,Ltext0
+     3  .stabs "hello.c",100,0,0,Ltext0
+     4  .text
+     5  Ltext0:
+     6  .stabs "int:t1=r1;-2147483648;2147483647;",128,0,0,0
+     7  .stabs "char:t2=r2;0;127;",128,0,0,0
+     8  .stabs "long int:t3=r1;-2147483648;2147483647;",128,0,0,0
+     9  .stabs "unsigned int:t4=r1;0;-1;",128,0,0,0
+     10 .stabs "long unsigned int:t5=r1;0;-1;",128,0,0,0
+     11 .stabs "short int:t6=r1;-32768;32767;",128,0,0,0
+     12 .stabs "long long int:t7=r1;0;-1;",128,0,0,0
+     13 .stabs "short unsigned int:t8=r1;0;65535;",128,0,0,0
+     14 .stabs "long long unsigned int:t9=r1;0;-1;",128,0,0,0
+     15 .stabs "signed char:t10=r1;-128;127;",128,0,0,0
+     16 .stabs "unsigned char:t11=r1;0;255;",128,0,0,0
+     17 .stabs "float:t12=r1;4;0;",128,0,0,0
+     18 .stabs "double:t13=r1;8;0;",128,0,0,0
+     19 .stabs "long double:t14=r1;8;0;",128,0,0,0
+     20 .stabs "void:t15=15",128,0,0,0
+     21      .align 4
+     22 LC0:
+     23      .ascii "Hello, world!\12\0"
+     24      .align 4
+     25      .global _main
+     26      .proc 1
+     27 _main:
+     28 .stabn 68,0,4,LM1
+     29 LM1:
+     30      !#PROLOGUE# 0
+     31      save %sp,-136,%sp
+     32      !#PROLOGUE# 1
+     33      call ___main,0
+     34      nop
+     35 .stabn 68,0,5,LM2
+     36 LM2:
+     37 LBB2:
+     38      sethi %hi(LC0),%o1
+     39      or %o1,%lo(LC0),%o0
+     40      call _printf,0
+     41      nop
+     42 .stabn 68,0,6,LM3
+     43 LM3:
+     44 LBE2:
+     45 .stabn 68,0,6,LM4
+     46 LM4:
+     47 L1:
+     48      ret
+     49      restore
+     50 .stabs "main:F1",36,0,0,_main
+     51 .stabn 192,0,0,LBB2
+     52 .stabn 224,0,0,LBE2
+</pre>
+   </body></html>
+

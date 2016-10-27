@@ -1,0 +1,69 @@
+<html lang="en">
+<head>
+<title>casin - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Complex.html#Complex" title="Complex">
+<link rel="prev" href="carg.html#carg" title="carg">
+<link rel="next" href="casinh.html#casinh" title="casinh">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="casin"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="casinh.html#casinh">casinh</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="carg.html#carg">carg</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Complex.html#Complex">Complex</a>
+<hr>
+</div>
+
+<h3 class="section">2.5 <code>casin</code>, <code>casinf</code>&mdash;complex arc sine</h3>
+
+<p><a name="index-casin-167"></a><a name="index-casinf-168"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;complex.h&gt;
+     double complex casin(double complex <var>z</var>);
+     float complex casinf(float complex <var>z</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+These functions compute the complex arc sine of <var>z</var>,
+with branch cuts outside the interval [-1, +1] along the real axis.
+
+   <p><code>casinf</code> is identical to <code>casin</code>, except that it performs
+its calculations on <code>floats complex</code>.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+These functions return the complex arc sine value, in the range
+of a strip mathematically  unbounded  along the imaginary axis
+and in the interval [-pi/2, +pi/2] along the real axis.
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+<code>casin</code> and <code>casinf</code> are ISO C99
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

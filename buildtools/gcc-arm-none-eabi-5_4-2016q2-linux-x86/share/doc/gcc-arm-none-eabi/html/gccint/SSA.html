@@ -1,0 +1,339 @@
+<html lang="en">
+<head>
+<title>SSA - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Tree-SSA.html#Tree-SSA" title="Tree SSA">
+<link rel="prev" href="SSA-Operands.html#SSA-Operands" title="SSA Operands">
+<link rel="next" href="Alias-analysis.html#Alias-analysis" title="Alias analysis">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="SSA"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Alias-analysis.html#Alias-analysis">Alias analysis</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="SSA-Operands.html#SSA-Operands">SSA Operands</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Tree-SSA.html#Tree-SSA">Tree SSA</a>
+<hr>
+</div>
+
+<h3 class="section">12.3 Static Single Assignment</h3>
+
+<p><a name="index-SSA-2515"></a><a name="index-static-single-assignment-2516"></a>
+Most of the tree optimizers rely on the data flow information provided
+by the Static Single Assignment (SSA) form.  We implement the SSA form
+as described in <cite>R. Cytron, J. Ferrante, B. Rosen, M. Wegman, and
+K. Zadeck.  Efficiently Computing Static Single Assignment Form and the
+Control Dependence Graph.  ACM Transactions on Programming Languages
+and Systems, 13(4):451-490, October 1991</cite>.
+
+ <p>The SSA form is based on the premise that program variables are
+assigned in exactly one location in the program.  Multiple assignments
+to the same variable create new versions of that variable.  Naturally,
+actual programs are seldom in SSA form initially because variables
+tend to be assigned multiple times.  The compiler modifies the program
+representation so that every time a variable is assigned in the code,
+a new version of the variable is created.  Different versions of the
+same variable are distinguished by subscripting the variable name with
+its version number.  Variables used in the right-hand side of
+expressions are renamed so that their version number matches that of
+the most recent assignment.
+
+ <p>We represent variable versions using <code>SSA_NAME</code> nodes.  The
+renaming process in <samp><span class="file">tree-ssa.c</span></samp> wraps every real and
+virtual operand with an <code>SSA_NAME</code> node which contains
+the version number and the statement that created the
+<code>SSA_NAME</code>.  Only definitions and virtual definitions may
+create new <code>SSA_NAME</code> nodes.
+
+ <p><a name="index-PHI-nodes-2517"></a>Sometimes, flow of control makes it impossible to determine the
+most recent version of a variable.  In these cases, the compiler
+inserts an artificial definition for that variable called
+<dfn>PHI function</dfn> or <dfn>PHI node</dfn>.  This new definition merges
+all the incoming versions of the variable to create a new name
+for it.  For instance,
+
+<pre class="smallexample">     if (...)
+       a_1 = 5;
+     else if (...)
+       a_2 = 2;
+     else
+       a_3 = 13;
+     
+     # a_4 = PHI &lt;a_1, a_2, a_3&gt;
+     return a_4;
+</pre>
+ <p>Since it is not possible to determine which of the three branches
+will be taken at runtime, we don't know which of <code>a_1</code>,
+<code>a_2</code> or <code>a_3</code> to use at the return statement.  So, the
+SSA renamer creates a new version <code>a_4</code> which is assigned
+the result of &ldquo;merging&rdquo; <code>a_1</code>, <code>a_2</code> and <code>a_3</code>. 
+Hence, PHI nodes mean &ldquo;one of these operands.  I don't know
+which&rdquo;.
+
+ <p>The following functions can be used to examine PHI nodes
+
+<div class="defun">
+&mdash; Function: <b>gimple_phi_result</b> (<var>phi</var>)<var><a name="index-gimple_005fphi_005fresult-2518"></a></var><br>
+<blockquote><p>Returns the <code>SSA_NAME</code> created by PHI node <var>phi</var> (i.e.,
+<var>phi</var>'s LHS). 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>gimple_phi_num_args</b> (<var>phi</var>)<var><a name="index-gimple_005fphi_005fnum_005fargs-2519"></a></var><br>
+<blockquote><p>Returns the number of arguments in <var>phi</var>.  This number is exactly
+the number of incoming edges to the basic block holding <var>phi</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>gimple_phi_arg</b> (<var>phi, i</var>)<var><a name="index-gimple_005fphi_005farg-2520"></a></var><br>
+<blockquote><p>Returns <var>i</var>th argument of <var>phi</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>gimple_phi_arg_edge</b> (<var>phi, i</var>)<var><a name="index-gimple_005fphi_005farg_005fedge-2521"></a></var><br>
+<blockquote><p>Returns the incoming edge for the <var>i</var>th argument of <var>phi</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>gimple_phi_arg_def</b> (<var>phi, i</var>)<var><a name="index-gimple_005fphi_005farg_005fdef-2522"></a></var><br>
+<blockquote><p>Returns the <code>SSA_NAME</code> for the <var>i</var>th argument of <var>phi</var>. 
+</p></blockquote></div>
+
+<h4 class="subsection">12.3.1 Preserving the SSA form</h4>
+
+<p><a name="index-update_005fssa-2523"></a><a name="index-preserving-SSA-form-2524"></a>Some optimization passes make changes to the function that
+invalidate the SSA property.  This can happen when a pass has
+added new symbols or changed the program so that variables that
+were previously aliased aren't anymore.  Whenever something like this
+happens, the affected symbols must be renamed into SSA form again. 
+Transformations that emit new code or replicate existing statements
+will also need to update the SSA form.
+
+ <p>Since GCC implements two different SSA forms for register and virtual
+variables, keeping the SSA form up to date depends on whether you are
+updating register or virtual names.  In both cases, the general idea
+behind incremental SSA updates is similar: when new SSA names are
+created, they typically are meant to replace other existing names in
+the program.
+
+ <p>For instance, given the following code:
+
+<pre class="smallexample">          1  L0:
+          2  x_1 = PHI (0, x_5)
+          3  if (x_1 &lt; 10)
+          4    if (x_1 &gt; 7)
+          5      y_2 = 0
+          6    else
+          7      y_3 = x_1 + x_7
+          8    endif
+          9    x_5 = x_1 + 1
+          10   goto L0;
+          11 endif
+</pre>
+ <p>Suppose that we insert new names <code>x_10</code> and <code>x_11</code> (lines
+<code>4</code> and <code>8</code>).
+
+<pre class="smallexample">          1  L0:
+          2  x_1 = PHI (0, x_5)
+          3  if (x_1 &lt; 10)
+          4    x_10 = ...
+          5    if (x_1 &gt; 7)
+          6      y_2 = 0
+          7    else
+          8      x_11 = ...
+          9      y_3 = x_1 + x_7
+          10   endif
+          11   x_5 = x_1 + 1
+          12   goto L0;
+          13 endif
+</pre>
+ <p>We want to replace all the uses of <code>x_1</code> with the new definitions
+of <code>x_10</code> and <code>x_11</code>.  Note that the only uses that should
+be replaced are those at lines <code>5</code>, <code>9</code> and <code>11</code>. 
+Also, the use of <code>x_7</code> at line <code>9</code> should <em>not</em> be
+replaced (this is why we cannot just mark symbol <code>x</code> for
+renaming).
+
+ <p>Additionally, we may need to insert a PHI node at line <code>11</code>
+because that is a merge point for <code>x_10</code> and <code>x_11</code>.  So the
+use of <code>x_1</code> at line <code>11</code> will be replaced with the new PHI
+node.  The insertion of PHI nodes is optional.  They are not strictly
+necessary to preserve the SSA form, and depending on what the caller
+inserted, they may not even be useful for the optimizers.
+
+ <p>Updating the SSA form is a two step process.  First, the pass has to
+identify which names need to be updated and/or which symbols need to
+be renamed into SSA form for the first time.  When new names are
+introduced to replace existing names in the program, the mapping
+between the old and the new names are registered by calling
+<code>register_new_name_mapping</code> (note that if your pass creates new
+code by duplicating basic blocks, the call to <code>tree_duplicate_bb</code>
+will set up the necessary mappings automatically).
+
+ <p>After the replacement mappings have been registered and new symbols
+marked for renaming, a call to <code>update_ssa</code> makes the registered
+changes.  This can be done with an explicit call or by creating
+<code>TODO</code> flags in the <code>tree_opt_pass</code> structure for your pass. 
+There are several <code>TODO</code> flags that control the behavior of
+<code>update_ssa</code>:
+
+     <ul>
+<li><code>TODO_update_ssa</code>.  Update the SSA form inserting PHI nodes
+for newly exposed symbols and virtual names marked for updating. 
+When updating real names, only insert PHI nodes for a real name
+<code>O_j</code> in blocks reached by all the new and old definitions for
+<code>O_j</code>.  If the iterated dominance frontier for <code>O_j</code>
+is not pruned, we may end up inserting PHI nodes in blocks that
+have one or more edges with no incoming definition for
+<code>O_j</code>.  This would lead to uninitialized warnings for
+<code>O_j</code>'s symbol.
+
+     <li><code>TODO_update_ssa_no_phi</code>.  Update the SSA form without
+inserting any new PHI nodes at all.  This is used by passes that
+have either inserted all the PHI nodes themselves or passes that
+need only to patch use-def and def-def chains for virtuals
+(e.g., DCE).
+
+     <li><code>TODO_update_ssa_full_phi</code>.  Insert PHI nodes everywhere
+they are needed.  No pruning of the IDF is done.  This is used
+by passes that need the PHI nodes for <code>O_j</code> even if it
+means that some arguments will come from the default definition
+of <code>O_j</code>'s symbol (e.g., <code>pass_linear_transform</code>).
+
+     <p>WARNING: If you need to use this flag, chances are that your
+pass may be doing something wrong.  Inserting PHI nodes for an
+old name where not all edges carry a new replacement may lead to
+silent codegen errors or spurious uninitialized warnings.
+
+     <li><code>TODO_update_ssa_only_virtuals</code>.  Passes that update the
+SSA form on their own may want to delegate the updating of
+virtual names to the generic updater.  Since FUD chains are
+easier to maintain, this simplifies the work they need to do. 
+NOTE: If this flag is used, any OLD-&gt;NEW mappings for real names
+are explicitly destroyed and only the symbols marked for
+renaming are processed. 
+</ul>
+
+<h4 class="subsection">12.3.2 Preserving the virtual SSA form</h4>
+
+<p><a name="index-preserving-virtual-SSA-form-2525"></a>
+The virtual SSA form is harder to preserve than the non-virtual SSA form
+mainly because the set of virtual operands for a statement may change at
+what some would consider unexpected times.  In general, statement
+modifications should be bracketed between calls to
+<code>push_stmt_changes</code> and <code>pop_stmt_changes</code>.  For example,
+
+<pre class="smallexample">         munge_stmt (tree stmt)
+         {
+            push_stmt_changes (&amp;stmt);
+            ... rewrite STMT ...
+            pop_stmt_changes (&amp;stmt);
+         }
+</pre>
+ <p>The call to <code>push_stmt_changes</code> saves the current state of the
+statement operands and the call to <code>pop_stmt_changes</code> compares
+the saved state with the current one and does the appropriate symbol
+marking for the SSA renamer.
+
+ <p>It is possible to modify several statements at a time, provided that
+<code>push_stmt_changes</code> and <code>pop_stmt_changes</code> are called in
+LIFO order, as when processing a stack of statements.
+
+ <p>Additionally, if the pass discovers that it did not need to make
+changes to the statement after calling <code>push_stmt_changes</code>, it
+can simply discard the topmost change buffer by calling
+<code>discard_stmt_changes</code>.  This will avoid the expensive operand
+re-scan operation and the buffer comparison that determines if symbols
+need to be marked for renaming.
+
+<h4 class="subsection">12.3.3 Examining <code>SSA_NAME</code> nodes</h4>
+
+<p><a name="index-examining-SSA_005fNAMEs-2526"></a>
+The following macros can be used to examine <code>SSA_NAME</code> nodes
+
+<div class="defun">
+&mdash; Macro: <b>SSA_NAME_DEF_STMT</b> (<var>var</var>)<var><a name="index-SSA_005fNAME_005fDEF_005fSTMT-2527"></a></var><br>
+<blockquote><p>Returns the statement <var>s</var> that creates the <code>SSA_NAME</code>
+<var>var</var>.  If <var>s</var> is an empty statement (i.e., <code>IS_EMPTY_STMT
+(</code><var>s</var><code>)</code> returns <code>true</code>), it means that the first reference to
+this variable is a USE or a VUSE. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>SSA_NAME_VERSION</b> (<var>var</var>)<var><a name="index-SSA_005fNAME_005fVERSION-2528"></a></var><br>
+<blockquote><p>Returns the version number of the <code>SSA_NAME</code> object <var>var</var>. 
+</p></blockquote></div>
+
+<h4 class="subsection">12.3.4 Walking the dominator tree</h4>
+
+<div class="defun">
+&mdash; Tree SSA function: void <b>walk_dominator_tree</b> (<var>walk_data, bb</var>)<var><a name="index-walk_005fdominator_005ftree-2529"></a></var><br>
+<blockquote>
+      <p>This function walks the dominator tree for the current CFG calling a
+set of callback functions defined in <var>struct dom_walk_data</var> in
+<samp><span class="file">domwalk.h</span></samp>.  The call back functions you need to define give you
+hooks to execute custom code at various points during traversal:
+
+          <ol type=1 start=1>
+<li>Once to initialize any local data needed while processing
+<var>bb</var> and its children.  This local data is pushed into an
+internal stack which is automatically pushed and popped as the
+walker traverses the dominator tree.
+
+          <li>Once before traversing all the statements in the <var>bb</var>.
+
+          <li>Once for every statement inside <var>bb</var>.
+
+          <li>Once after traversing all the statements and before recursing
+into <var>bb</var>'s dominator children.
+
+          <li>It then recurses into all the dominator children of <var>bb</var>.
+
+          <li>After recursing into all the dominator children of <var>bb</var> it
+can, optionally, traverse every statement in <var>bb</var> again
+(i.e., repeating steps 2 and 3).
+
+          <li>Once after walking the statements in <var>bb</var> and <var>bb</var>'s
+dominator children.  At this stage, the block local data stack
+is popped.
+           </ol>
+</p></blockquote></div>
+
+ </body></html>
+

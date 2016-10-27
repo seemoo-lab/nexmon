@@ -1,0 +1,158 @@
+<html lang="en">
+<head>
+<title>Static Probe Points - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Breakpoints.html#Breakpoints" title="Breakpoints">
+<link rel="prev" href="Save-Breakpoints.html#Save-Breakpoints" title="Save Breakpoints">
+<link rel="next" href="Error-in-Breakpoints.html#Error-in-Breakpoints" title="Error in Breakpoints">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Static-Probe-Points"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Error-in-Breakpoints.html#Error-in-Breakpoints">Error in Breakpoints</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Save-Breakpoints.html#Save-Breakpoints">Save Breakpoints</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Breakpoints.html#Breakpoints">Breakpoints</a>
+<hr>
+</div>
+
+<h4 class="subsection">5.1.10 Static Probe Points</h4>
+
+<p><a name="index-static-probe-point_002c-SystemTap-318"></a><a name="index-static-probe-point_002c-DTrace-319"></a><span class="sc">gdb</span> supports <dfn>SDT</dfn> probes in the code.  <acronym>SDT</acronym> stands
+for Statically Defined Tracing, and the probes are designed to have a tiny
+runtime code and data footprint, and no dynamic relocations.
+
+   <p>Currently, the following types of probes are supported on
+ELF-compatible systems:
+
+     <ul>
+<li><code>SystemTap</code> (<a href="http://sourceware.org/systemtap/">http://sourceware.org/systemtap/</a>)
+<acronym>SDT</acronym> probes<a rel="footnote" href="#fn-1" name="fnd-1"><sup>1</sup></a>.  <code>SystemTap</code> probes are usable
+from assembly, C and C<tt>++</tt> languages<a rel="footnote" href="#fn-2" name="fnd-2"><sup>2</sup></a>.
+
+     <li><code>DTrace</code> (<a href="http://oss.oracle.com/projects/DTrace">http://oss.oracle.com/projects/DTrace</a>)
+<acronym>USDT</acronym> probes.  <code>DTrace</code> probes are usable from C and
+C<tt>++</tt> languages. 
+</ul>
+
+   <p><a name="index-semaphores-on-static-probe-points-320"></a>Some <code>SystemTap</code> probes have an associated semaphore variable;
+for instance, this happens automatically if you defined your probe
+using a DTrace-style <samp><span class="file">.d</span></samp> file.  If your probe has a semaphore,
+<span class="sc">gdb</span> will automatically enable it when you specify a
+breakpoint using the &lsquo;<samp><span class="samp">-probe-stap</span></samp>&rsquo; notation.  But, if you put a
+breakpoint at a probe's location by some other method (e.g.,
+<code>break file:line</code>), then <span class="sc">gdb</span> will not automatically set
+the semaphore.  <code>DTrace</code> probes do not support semaphores.
+
+   <p>You can examine the available static static probes using <code>info
+probes</code>, with optional arguments:
+
+     
+<a name="index-info-probes-321"></a>
+<dl><dt><code>info probes </code><span class="roman">[</span><var>type</var><span class="roman">]</span> <span class="roman">[</span><var>provider</var> <span class="roman">[</span><var>name</var> <span class="roman">[</span><var>objfile</var><span class="roman">]</span><span class="roman">]</span><span class="roman">]</span><dd>If given, <var>type</var> is either <code>stap</code> for listing
+<code>SystemTap</code> probes or <code>dtrace</code> for listing <code>DTrace</code>
+probes.  If omitted all probes are listed regardless of their types.
+
+     <p>If given, <var>provider</var> is a regular expression used to match against provider
+names when selecting which probes to list.  If omitted, probes by all
+probes from all providers are listed.
+
+     <p>If given, <var>name</var> is a regular expression to match against probe names
+when selecting which probes to list.  If omitted, probe names are not
+considered when deciding whether to display them.
+
+     <p>If given, <var>objfile</var> is a regular expression used to select which
+object files (executable or shared libraries) to examine.  If not
+given, all object files are considered.
+
+     <br><dt><code>info probes all</code><dd>List the available static probes, from all types. 
+</dl>
+
+   <p><a name="index-enabling-and-disabling-probes-322"></a>Some probe points can be enabled and/or disabled.  The effect of
+enabling or disabling a probe depends on the type of probe being
+handled.  Some <code>DTrace</code> probes can be enabled or
+disabled, but <code>SystemTap</code> probes cannot be disabled.
+
+   <p>You can enable (or disable) one or more probes using the following
+commands, with optional arguments:
+
+     
+<a name="index-enable-probes-323"></a>
+<dl><dt><code>enable probes </code><span class="roman">[</span><var>provider</var> <span class="roman">[</span><var>name</var> <span class="roman">[</span><var>objfile</var><span class="roman">]</span><span class="roman">]</span><span class="roman">]</span><dd>If given, <var>provider</var> is a regular expression used to match against
+provider names when selecting which probes to enable.  If omitted,
+all probes from all providers are enabled.
+
+     <p>If given, <var>name</var> is a regular expression to match against probe
+names when selecting which probes to enable.  If omitted, probe names
+are not considered when deciding whether to enable them.
+
+     <p>If given, <var>objfile</var> is a regular expression used to select which
+object files (executable or shared libraries) to examine.  If not
+given, all object files are considered.
+
+     <p><a name="index-disable-probes-324"></a><br><dt><code>disable probes </code><span class="roman">[</span><var>provider</var> <span class="roman">[</span><var>name</var> <span class="roman">[</span><var>objfile</var><span class="roman">]</span><span class="roman">]</span><span class="roman">]</span><dd>See the <code>enable probes</code> command above for a description of the
+optional arguments accepted by this command. 
+</dl>
+
+   <p><a name="index-g_t_0024_005fprobe_005farg_0040r_007b_002c-convenience-variable_007d-325"></a>A probe may specify up to twelve arguments.  These are available at the
+point at which the probe is defined&mdash;that is, when the current PC is
+at the probe's location.  The arguments are available using the
+convenience variables (see <a href="Convenience-Vars.html#Convenience-Vars">Convenience Vars</a>)
+<code>$_probe_arg0</code><small class="dots">...</small><code>$_probe_arg11</code>.  In <code>SystemTap</code>
+probes each probe argument is an integer of the appropriate size;
+types are not preserved.  In <code>DTrace</code> probes types are preserved
+provided that they are recognized as such by <span class="sc">gdb</span>; otherwise
+the value of the probe argument will be a long integer.  The
+convenience variable <code>$_probe_argc</code> holds the number of arguments
+at the current probe point.
+
+   <p>These variables are always available, but attempts to access them at
+any location other than a probe point will cause <span class="sc">gdb</span> to give
+an error message.
+
+<!-- @ifclear BARETARGET -->
+   <div class="footnote">
+<hr>
+<h4>Footnotes</h4><p class="footnote"><small>[<a name="fn-1" href="#fnd-1">1</a>]</small> See
+<a href="http://sourceware.org/systemtap/wiki/AddingUserSpaceProbingToApps">http://sourceware.org/systemtap/wiki/AddingUserSpaceProbingToApps</a>
+for more information on how to add <code>SystemTap</code> <acronym>SDT</acronym>
+probes in your applications.</p>
+
+   <p class="footnote"><small>[<a name="fn-2" href="#fnd-2">2</a>]</small> See
+<a href="http://sourceware.org/systemtap/wiki/UserSpaceProbeImplementation">http://sourceware.org/systemtap/wiki/UserSpaceProbeImplementation</a>
+for a good reference on how the <acronym>SDT</acronym> probes are implemented.</p>
+
+   <hr></div>
+
+   </body></html>
+

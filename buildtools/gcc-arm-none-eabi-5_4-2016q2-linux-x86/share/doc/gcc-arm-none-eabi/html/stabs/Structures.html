@@ -1,0 +1,106 @@
+<html lang="en">
+<head>
+<title>Structures - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Types.html#Types" title="Types">
+<link rel="prev" href="Enumerations.html#Enumerations" title="Enumerations">
+<link rel="next" href="Typedefs.html#Typedefs" title="Typedefs">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Structures"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Typedefs.html#Typedefs">Typedefs</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Enumerations.html#Enumerations">Enumerations</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Types.html#Types">Types</a>
+<hr>
+</div>
+
+<h3 class="section">5.8 Structures</h3>
+
+<p>The encoding of structures in stabs can be shown with an example.
+
+   <p>The following source code declares a structure tag and defines an
+instance of the structure in global scope. Then a <code>typedef</code> equates the
+structure tag with a new type.  Separate stabs are generated for the
+structure tag, the structure <code>typedef</code>, and the structure instance.  The
+stabs for the tag and the <code>typedef</code> are emitted when the definitions are
+encountered.  Since the structure elements are not initialized, the
+stab and code for the structure variable itself is located at the end
+of the program in the bss section.
+
+<pre class="example">     struct s_tag {
+       int   s_int;
+       float s_float;
+       char  s_char_vec[8];
+       struct s_tag* s_next;
+     } g_an_s;
+     
+     typedef struct s_tag s_typedef;
+</pre>
+   <p>The structure tag has an <code>N_LSYM</code> stab type because, like the
+enumeration, the symbol has file scope.  Like the enumeration, the
+symbol descriptor is &lsquo;<samp><span class="samp">T</span></samp>&rsquo;, for enumeration, structure, or tag type. 
+The type descriptor &lsquo;<samp><span class="samp">s</span></samp>&rsquo; following the &lsquo;<samp><span class="samp">16=</span></samp>&rsquo; of the type
+definition narrows the symbol type to structure.
+
+   <p>Following the &lsquo;<samp><span class="samp">s</span></samp>&rsquo; type descriptor is the number of bytes the
+structure occupies, followed by a description of each structure element. 
+The structure element descriptions are of the form
+&lsquo;<samp><var>name</var><span class="samp">:</span><var>type</var><span class="samp">, </span><var>bit offset from the start of the
+struct</var><span class="samp">, </span><var>number of bits in the element</var></samp>&rsquo;.
+
+<!-- FIXME: phony line break.  Can probably be fixed by using an example -->
+<!-- with fewer fields. -->
+<pre class="example">     # <span class="roman">128 is N_LSYM</span>
+     .stabs "s_tag:T16=s20s_int:1,0,32;s_float:12,32,32;
+             s_char_vec:17=ar1;0;7;2,64,64;s_next:18=*16,128,32;;",128,0,0,0
+</pre>
+   <p>In this example, the first two structure elements are previously defined
+types.  For these, the type following the &lsquo;<samp><var>name</var><span class="samp">:</span></samp>&rsquo; part of the
+element description is a simple type reference.  The other two structure
+elements are new types.  In this case there is a type definition
+embedded after the &lsquo;<samp><var>name</var><span class="samp">:</span></samp>&rsquo;.  The type definition for the
+array element looks just like a type definition for a stand-alone array. 
+The <code>s_next</code> field is a pointer to the same kind of structure that
+the field is an element of.  So the definition of structure type 16
+contains a type definition for an element which is a pointer to type 16.
+
+   <p>If a field is a static member (this is a C<tt>++</tt> feature in which a single
+variable appears to be a field of every structure of a given type) it
+still starts out with the field name, a colon, and the type, but then
+instead of a comma, bit position, comma, and bit size, there is a colon
+followed by the name of the variable which each such field refers to.
+
+   <p>If the structure has methods (a C<tt>++</tt> feature), they follow the non-method
+fields; see <a href="Cplusplus.html#Cplusplus">Cplusplus</a>.
+
+   </body></html>
+

@@ -1,0 +1,205 @@
+<html lang="en">
+<head>
+<title>Macro Expansion - The GNU C Preprocessor Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="The GNU C Preprocessor Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Hash-Nodes.html#Hash-Nodes" title="Hash Nodes">
+<link rel="next" href="Token-Spacing.html#Token-Spacing" title="Token Spacing">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Macro-Expansion"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Token-Spacing.html#Token-Spacing">Token Spacing</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Hash-Nodes.html#Hash-Nodes">Hash Nodes</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="unnumbered">Macro Expansion Algorithm</h2>
+
+<p><a name="index-macro-expansion-12"></a>
+Macro expansion is a tricky operation, fraught with nasty corner cases
+and situations that render what you thought was a nifty way to
+optimize the preprocessor's expansion algorithm wrong in quite subtle
+ways.
+
+   <p>I strongly recommend you have a good grasp of how the C and C++
+standards require macros to be expanded before diving into this
+section, let alone the code!.  If you don't have a clear mental
+picture of how things like nested macro expansion, stringification and
+token pasting are supposed to work, damage to your sanity can quickly
+result.
+
+<h3 class="section">Internal representation of macros</h3>
+
+<p><a name="index-macro-representation-_0028internal_0029-13"></a>
+The preprocessor stores macro expansions in tokenized form.  This
+saves repeated lexing passes during expansion, at the cost of a small
+increase in memory consumption on average.  The tokens are stored
+contiguously in memory, so a pointer to the first one and a token
+count is all you need to get the replacement list of a macro.
+
+   <p>If the macro is a function-like macro the preprocessor also stores its
+parameters, in the form of an ordered list of pointers to the hash
+table entry of each parameter's identifier.  Further, in the macro's
+stored expansion each occurrence of a parameter is replaced with a
+special token of type <code>CPP_MACRO_ARG</code>.  Each such token holds the
+index of the parameter it represents in the parameter list, which
+allows rapid replacement of parameters with their arguments during
+expansion.  Despite this optimization it is still necessary to store
+the original parameters to the macro, both for dumping with e.g.,
+<samp><span class="option">-dD</span></samp>, and to warn about non-trivial macro redefinitions when
+the parameter names have changed.
+
+<h3 class="section">Macro expansion overview</h3>
+
+<p>The preprocessor maintains a <dfn>context stack</dfn>, implemented as a
+linked list of <code>cpp_context</code> structures, which together represent
+the macro expansion state at any one time.  The <code>struct
+cpp_reader</code> member variable <code>context</code> points to the current top
+of this stack.  The top normally holds the unexpanded replacement list
+of the innermost macro under expansion, except when cpplib is about to
+pre-expand an argument, in which case it holds that argument's
+unexpanded tokens.
+
+   <p>When there are no macros under expansion, cpplib is in <dfn>base
+context</dfn>.  All contexts other than the base context contain a
+contiguous list of tokens delimited by a starting and ending token. 
+When not in base context, cpplib obtains the next token from the list
+of the top context.  If there are no tokens left in the list, it pops
+that context off the stack, and subsequent ones if necessary, until an
+unexhausted context is found or it returns to base context.  In base
+context, cpplib reads tokens directly from the lexer.
+
+   <p>If it encounters an identifier that is both a macro and enabled for
+expansion, cpplib prepares to push a new context for that macro on the
+stack by calling the routine <code>enter_macro_context</code>.  When this
+routine returns, the new context will contain the unexpanded tokens of
+the replacement list of that macro.  In the case of function-like
+macros, <code>enter_macro_context</code> also replaces any parameters in the
+replacement list, stored as <code>CPP_MACRO_ARG</code> tokens, with the
+appropriate macro argument.  If the standard requires that the
+parameter be replaced with its expanded argument, the argument will
+have been fully macro expanded first.
+
+   <p><code>enter_macro_context</code> also handles special macros like
+<code>__LINE__</code>.  Although these macros expand to a single token which
+cannot contain any further macros, for reasons of token spacing
+(see <a href="Token-Spacing.html#Token-Spacing">Token Spacing</a>) and simplicity of implementation, cpplib
+handles these special macros by pushing a context containing just that
+one token.
+
+   <p>The final thing that <code>enter_macro_context</code> does before returning
+is to mark the macro disabled for expansion (except for special macros
+like <code>__TIME__</code>).  The macro is re-enabled when its context is
+later popped from the context stack, as described above.  This strict
+ordering ensures that a macro is disabled whilst its expansion is
+being scanned, but that it is <em>not</em> disabled whilst any arguments
+to it are being expanded.
+
+<h3 class="section">Scanning the replacement list for macros to expand</h3>
+
+<p>The C standard states that, after any parameters have been replaced
+with their possibly-expanded arguments, the replacement list is
+scanned for nested macros.  Further, any identifiers in the
+replacement list that are not expanded during this scan are never
+again eligible for expansion in the future, if the reason they were
+not expanded is that the macro in question was disabled.
+
+   <p>Clearly this latter condition can only apply to tokens resulting from
+argument pre-expansion.  Other tokens never have an opportunity to be
+re-tested for expansion.  It is possible for identifiers that are
+function-like macros to not expand initially but to expand during a
+later scan.  This occurs when the identifier is the last token of an
+argument (and therefore originally followed by a comma or a closing
+parenthesis in its macro's argument list), and when it replaces its
+parameter in the macro's replacement list, the subsequent token
+happens to be an opening parenthesis (itself possibly the first token
+of an argument).
+
+   <p>It is important to note that when cpplib reads the last token of a
+given context, that context still remains on the stack.  Only when
+looking for the <em>next</em> token do we pop it off the stack and drop
+to a lower context.  This makes backing up by one token easy, but more
+importantly ensures that the macro corresponding to the current
+context is still disabled when we are considering the last token of
+its replacement list for expansion (or indeed expanding it).  As an
+example, which illustrates many of the points above, consider
+
+<pre class="smallexample">     #define foo(x) bar x
+     foo(foo) (2)
+</pre>
+   <p class="noindent">which fully expands to &lsquo;<samp><span class="samp">bar foo (2)</span></samp>&rsquo;.  During pre-expansion
+of the argument, &lsquo;<samp><span class="samp">foo</span></samp>&rsquo; does not expand even though the macro is
+enabled, since it has no following parenthesis [pre-expansion of an
+argument only uses tokens from that argument; it cannot take tokens
+from whatever follows the macro invocation].  This still leaves the
+argument token &lsquo;<samp><span class="samp">foo</span></samp>&rsquo; eligible for future expansion.  Then, when
+re-scanning after argument replacement, the token &lsquo;<samp><span class="samp">foo</span></samp>&rsquo; is
+rejected for expansion, and marked ineligible for future expansion,
+since the macro is now disabled.  It is disabled because the
+replacement list &lsquo;<samp><span class="samp">bar foo</span></samp>&rsquo; of the macro is still on the context
+stack.
+
+   <p>If instead the algorithm looked for an opening parenthesis first and
+then tested whether the macro were disabled it would be subtly wrong. 
+In the example above, the replacement list of &lsquo;<samp><span class="samp">foo</span></samp>&rsquo; would be
+popped in the process of finding the parenthesis, re-enabling
+&lsquo;<samp><span class="samp">foo</span></samp>&rsquo; and expanding it a second time.
+
+<h3 class="section">Looking for a function-like macro's opening parenthesis</h3>
+
+<p>Function-like macros only expand when immediately followed by a
+parenthesis.  To do this cpplib needs to temporarily disable macros
+and read the next token.  Unfortunately, because of spacing issues
+(see <a href="Token-Spacing.html#Token-Spacing">Token Spacing</a>), there can be fake padding tokens in-between,
+and if the next real token is not a parenthesis cpplib needs to be
+able to back up that one token as well as retain the information in
+any intervening padding tokens.
+
+   <p>Backing up more than one token when macros are involved is not
+permitted by cpplib, because in general it might involve issues like
+restoring popped contexts onto the context stack, which are too hard. 
+Instead, searching for the parenthesis is handled by a special
+function, <code>funlike_invocation_p</code>, which remembers padding
+information as it reads tokens.  If the next real token is not an
+opening parenthesis, it backs up that one token, and then pushes an
+extra context just containing the padding information if necessary.
+
+<h3 class="section">Marking tokens ineligible for future expansion</h3>
+
+<p>As discussed above, cpplib needs a way of marking tokens as
+unexpandable.  Since the tokens cpplib handles are read-only once they
+have been lexed, it instead makes a copy of the token and adds the
+flag <code>NO_EXPAND</code> to the copy.
+
+   <p>For efficiency and to simplify memory management by avoiding having to
+remember to free these tokens, they are allocated as temporary tokens
+from the lexer's current token run (see <a href="Lexing-a-line.html#Lexing-a-line">Lexing a line</a>) using the
+function <code>_cpp_temp_token</code>.  The tokens are then re-used once the
+current line of tokens has been read in.
+
+   <p>This might sound unsafe.  However, tokens runs are not re-used at the
+end of a line if it happens to be in the middle of a macro argument
+list, and cpplib only wants to back-up more than one lexer token in
+situations where no macro expansion is involved, so the optimization
+is safe.
+
+   </body></html>
+

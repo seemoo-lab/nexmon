@@ -1,0 +1,126 @@
+<html lang="en">
+<head>
+<title>Aliases - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Extending-GDB.html#Extending-GDB" title="Extending GDB">
+<link rel="prev" href="Multiple-Extension-Languages.html#Multiple-Extension-Languages" title="Multiple Extension Languages">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Aliases"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Multiple-Extension-Languages.html#Multiple-Extension-Languages">Multiple Extension Languages</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Extending-GDB.html#Extending-GDB">Extending GDB</a>
+<hr>
+</div>
+
+<h3 class="section">23.6 Creating new spellings of existing commands</h3>
+
+<p><a name="index-aliases-for-commands-2788"></a>
+It is often useful to define alternate spellings of existing commands. 
+For example, if a new <span class="sc">gdb</span> command defined in Python has
+a long name to type, it is handy to have an abbreviated version of it
+that involves less typing.
+
+   <p><span class="sc">gdb</span> itself uses aliases.  For example &lsquo;<samp><span class="samp">s</span></samp>&rsquo; is an alias
+of the &lsquo;<samp><span class="samp">step</span></samp>&rsquo; command even though it is otherwise an ambiguous
+abbreviation of other commands like &lsquo;<samp><span class="samp">set</span></samp>&rsquo; and &lsquo;<samp><span class="samp">show</span></samp>&rsquo;.
+
+   <p>Aliases are also used to provide shortened or more common versions
+of multi-word commands.  For example, <span class="sc">gdb</span> provides the
+&lsquo;<samp><span class="samp">tty</span></samp>&rsquo; alias of the &lsquo;<samp><span class="samp">set inferior-tty</span></samp>&rsquo; command.
+
+   <p>You can define a new alias with the &lsquo;<samp><span class="samp">alias</span></samp>&rsquo; command.
+
+     
+<a name="index-alias-2789"></a>
+<dl><dt><code>alias [-a] [--] </code><var>ALIAS</var><code> = </code><var>COMMAND</var><dd>
+</dl>
+
+   <p><var>ALIAS</var> specifies the name of the new alias. 
+Each word of <var>ALIAS</var> must consist of letters, numbers, dashes and
+underscores.
+
+   <p><var>COMMAND</var> specifies the name of an existing command
+that is being aliased.
+
+   <p>The &lsquo;<samp><span class="samp">-a</span></samp>&rsquo; option specifies that the new alias is an abbreviation
+of the command.  Abbreviations are not shown in command
+lists displayed by the &lsquo;<samp><span class="samp">help</span></samp>&rsquo; command.
+
+   <p>The &lsquo;<samp><span class="samp">--</span></samp>&rsquo; option specifies the end of options,
+and is useful when <var>ALIAS</var> begins with a dash.
+
+   <p>Here is a simple example showing how to make an abbreviation
+of a command so that there is less to type. 
+Suppose you were tired of typing &lsquo;<samp><span class="samp">disas</span></samp>&rsquo;, the current
+shortest unambiguous abbreviation of the &lsquo;<samp><span class="samp">disassemble</span></samp>&rsquo; command
+and you wanted an even shorter version named &lsquo;<samp><span class="samp">di</span></samp>&rsquo;. 
+The following will accomplish this.
+
+<pre class="smallexample">     (gdb) alias -a di = disas
+</pre>
+   <p>Note that aliases are different from user-defined commands. 
+With a user-defined command, you also need to write documentation
+for it with the &lsquo;<samp><span class="samp">document</span></samp>&rsquo; command. 
+An alias automatically picks up the documentation of the existing command.
+
+   <p>Here is an example where we make &lsquo;<samp><span class="samp">elms</span></samp>&rsquo; an abbreviation of
+&lsquo;<samp><span class="samp">elements</span></samp>&rsquo; in the &lsquo;<samp><span class="samp">set print elements</span></samp>&rsquo; command. 
+This is to show that you can make an abbreviation of any part
+of a command.
+
+<pre class="smallexample">     (gdb) alias -a set print elms = set print elements
+     (gdb) alias -a show print elms = show print elements
+     (gdb) set p elms 20
+     (gdb) show p elms
+     Limit on string chars or array elements to print is 200.
+</pre>
+   <p>Note that if you are defining an alias of a &lsquo;<samp><span class="samp">set</span></samp>&rsquo; command,
+and you want to have an alias for the corresponding &lsquo;<samp><span class="samp">show</span></samp>&rsquo;
+command, then you need to define the latter separately.
+
+   <p>Unambiguously abbreviated commands are allowed in <var>COMMAND</var> and
+<var>ALIAS</var>, just as they are normally.
+
+<pre class="smallexample">     (gdb) alias -a set pr elms = set p ele
+</pre>
+   <p>Finally, here is an example showing the creation of a one word
+alias for a more complex command. 
+This creates alias &lsquo;<samp><span class="samp">spe</span></samp>&rsquo; of the command &lsquo;<samp><span class="samp">set print elements</span></samp>&rsquo;.
+
+<pre class="smallexample">     (gdb) alias spe = set print elements
+     (gdb) spe 20
+</pre>
+   </body></html>
+

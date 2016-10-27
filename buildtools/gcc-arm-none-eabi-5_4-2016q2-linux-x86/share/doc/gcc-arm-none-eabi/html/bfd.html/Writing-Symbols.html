@@ -1,0 +1,104 @@
+<html lang="en">
+<head>
+<title>Writing Symbols - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Symbols.html#Symbols" title="Symbols">
+<link rel="prev" href="Reading-Symbols.html#Reading-Symbols" title="Reading Symbols">
+<link rel="next" href="Mini-Symbols.html#Mini-Symbols" title="Mini Symbols">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Writing-Symbols"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Mini-Symbols.html#Mini-Symbols">Mini Symbols</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Reading-Symbols.html#Reading-Symbols">Reading Symbols</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Symbols.html#Symbols">Symbols</a>
+<hr>
+</div>
+
+<h4 class="subsection">2.7.2 Writing symbols</h4>
+
+<p>Writing of a symbol table is automatic when a BFD open for
+writing is closed. The application attaches a vector of
+pointers to pointers to symbols to the BFD being written, and
+fills in the symbol count. The close and cleanup code reads
+through the table provided and performs all the necessary
+operations. The BFD output code must always be provided with an
+&ldquo;owned&rdquo; symbol: one which has come from another BFD, or one
+which has been created using <code>bfd_make_empty_symbol</code>.  Here is an
+example showing the creation of a symbol table with only one element:
+
+<pre class="example">            #include "sysdep.h"
+            #include "bfd.h"
+            int main (void)
+            {
+              bfd *abfd;
+              asymbol *ptrs[2];
+              asymbol *new;
+     
+              abfd = bfd_openw ("foo","a.out-sunos-big");
+              bfd_set_format (abfd, bfd_object);
+              new = bfd_make_empty_symbol (abfd);
+              new-&gt;name = "dummy_symbol";
+              new-&gt;section = bfd_make_section_old_way (abfd, ".text");
+              new-&gt;flags = BSF_GLOBAL;
+              new-&gt;value = 0x12345;
+     
+              ptrs[0] = new;
+              ptrs[1] = 0;
+     
+              bfd_set_symtab (abfd, ptrs, 1);
+              bfd_close (abfd);
+              return 0;
+            }
+     
+            ./makesym
+            nm foo
+            00012345 A dummy_symbol
+</pre>
+   <p>Many formats cannot represent arbitrary symbol information; for
+instance, the <code>a.out</code> object format does not allow an
+arbitrary number of sections. A symbol pointing to a section
+which is not one  of <code>.text</code>, <code>.data</code> or <code>.bss</code> cannot
+be described.
+
+   </body></html>
+

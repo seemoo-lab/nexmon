@@ -1,0 +1,160 @@
+-*- Text -*-
+This is the file .../info/dir, which contains the topmost node of
+the Info hierarchy.  The first time you invoke Info you start off
+looking at that node, which is (dir)Top.
+
+File: dir	Node: Top	This is the top of the INFO tree
+  This (the Directory node) gives a menu of major topics.
+  Typing "q" exits, "?" lists all Info commands, "d" returns here,
+  "mCoreutils<Return>" visits Coreutils topic, etc.
+  Or click mouse button 2 on a menu item or cross reference to select
+  it.
+  --- PLEASE ADD DOCUMENTATION TO THIS TREE. (See INFO topic first.) ---
+
+In Ubuntu, Info `dir' entries are added with the command
+`install-info'.  Please refer to install-info(8) for usage details.
+
+* Menu: The list of major topics begins on the next line.
+
+Basics
+* Coreutils: (coreutils).		Core GNU (file, text, shell)
+					utilities.
+* Common options: (coreutils)Common options.
+					Common options.
+* File permissions: (coreutils)File permissions.
+					Access modes.
+* Date input formats: (coreutils)Date input formats.
+* Finding files: (find).		Operating on files matching certain
+					criteria.
+
+Miscellaneous:
+* Rluserman: (rluserman).		GNU Readline Library API
+
+Development
+* gettext: (gettext).			GNU gettext utilities.
+* autopoint: (gettext)autopoint Invocation.
+					Copy gettext infrastructure.
+* envsubst: (gettext)envsubst Invocation.
+					Expand environment variables.
+* gettextize: (gettext)gettextize Invocation.
+					Prepare a package for gettext.
+* Gperf: (gperf).			Perfect Hash Function Generator.
+* msgattrib: (gettext)msgattrib Invocation.
+					Select part of a PO file.
+* msgcat: (gettext)msgcat Invocation.	Combine several PO files.
+* msgcmp: (gettext)msgcmp Invocation.	Compare a PO file and template.
+* msgcomm: (gettext)msgcomm Invocation. Match two PO files.
+* msgconv: (gettext)msgconv Invocation. Convert PO file to encoding.
+* msgen: (gettext)msgen Invocation.	Create an English PO file.
+* msgexec: (gettext)msgexec Invocation. Process a PO file.
+* msgfilter: (gettext)msgfilter Invocation.
+					Pipe a PO file through a filter.
+* msgfmt: (gettext)msgfmt Invocation.	Make MO files out of PO files.
+* msggrep: (gettext)msggrep Invocation. Select part of a PO file.
+* msginit: (gettext)msginit Invocation. Create a fresh PO file.
+* msgmerge: (gettext)msgmerge Invocation.
+					Update a PO file from template.
+* msgunfmt: (gettext)msgunfmt Invocation.
+					Uncompile MO file into PO file.
+* msguniq: (gettext)msguniq Invocation. Unify duplicates for PO file.
+* ngettext: (gettext)ngettext Invocation.
+					Translate a message with plural.
+* xgettext: (gettext)xgettext Invocation.
+					Extract strings into a PO file.
+* ISO639: (gettext)Language Codes.	ISO 639 language codes.
+* ISO3166: (gettext)Country Codes.	ISO 3166 country codes.
+* Flex: (flex). 			A fast scanner generator
+* Ipc: (ipc).				System V interprocess communication
+					facilities
+* M4: (m4).				The GNU m4 macro preprocessor.
+
+Editors
+* nano: (nano). 			Small and friendly text editor.
+
+Utilities
+* Gzip: (gzip). 			The gzip command for compressing
+					files.
+
+Network Applications
+* Wget: (wget). 			The non-interactive network
+					downloader.
+
+GNU programming tools
+* AutoGen: (autogen).			The Automated Program Generator
+
+Software development
+* Cpplib: (cppinternals).		Cpplib internals.
+* gcc: (gcc).				The GNU Compiler Collection.
+* g++: (gcc).				The GNU C++ compiler.
+* gcov: (gcc) Gcov.			`gcov'--a test coverage program.
+* gcov-tool: (gcc) Gcov-tool.		`gcov-tool'--an offline gcda profile
+					processing program.
+* gccinstall: (gccinstall).		Installing the GNU Compiler
+					Collection.
+* gccint: (gccint).			Internals of the GNU Compiler
+					Collection.
+* gcov: (gcc) Gcov.			`gcov'--a test coverage program.
+* gcov-tool: (gcc) Gcov-tool.		`gcov-tool'--an offline gcda profile
+					processing program.
+* Automake: (automake-1.10).		Making GNU standards-compliant
+					Makefiles.
+* Cpp: (cpp).				The GNU C preprocessor.
+
+Programming
+* DejaGnu: (dejagnu).			The GNU testing framework.
+
+TeX
+* LaTeX2e: (latex).			LaTeXe help 1.6.
+* Web2c: (web2c).			TeX, Metafont, and companion programs.
+* bibtex: (web2c)bibtex invocation.	Maintaining bibliographies.
+* dmp: (web2c)dmp invocation.		Troff->MPX (MetaPost pictures).
+* dvicopy: (web2c)dvicopy invocation.	Virtual font expansion
+* dvitomp: (web2c)dvitomp invocation.	DVI to MPX (MetaPost pictures).
+* dvitype: (web2c)dvitype invocation.	DVI to human-readable text.
+* gftodvi: (web2c)gftodvi invocation.	Generic font proofsheets.
+* gftopk: (web2c)gftopk invocation.	Generic to packed fonts.
+* gftype: (web2c)gftype invocation.	GF to human-readable text.
+* makempx: (web2c)makempx invocation.	MetaPost label typesetting.
+* mf: (web2c)mf invocation.		Creating typeface families.
+* mft: (web2c)mft invocation.		Prettyprinting Metafont source.
+* mltex: (web2c)MLTeX.			Multi-lingual TeX.
+* mpost: (web2c)mpost invocation.	Creating technical diagrams.
+* mpto: (web2c)mpto invocation. 	MetaPost label extraction.
+* newer: (web2c)newer invocation.	Compare modification times.
+* patgen: (web2c)patgen invocation.	Creating hyphenation patterns.
+* pktogf: (web2c)pktogf invocation.	Packed to generic fonts.
+* pktype: (web2c)pktype invocation.	PK to human-readable text.
+* pltotf: (web2c)pltotf invocation.	Property list to TFM.
+* pooltype: (web2c)pooltype invocation. Display WEB pool files.
+* tangle: (web2c)tangle invocation.	WEB to Pascal.
+* tex: (web2c)tex invocation.		Typesetting.
+* tftopl: (web2c)tftopl invocation.	TFM -> property list.
+* vftovp: (web2c)vftovp invocation.	Virtual font -> virtual pl.
+* vptovf: (web2c)vptovf invocation.	Virtual pl -> virtual font.
+* weave: (web2c)weave invocation.	WEB to TeX.
+* Kpathsea: (kpathsea). 		File lookup along search paths.
+* kpsewhich: (kpathsea)Invoking kpsewhich.
+					TeX file searching.
+* mktexmf: (kpathsea)mktex scripts.	MF source generation.
+* mktexpk: (kpathsea)mktex scripts.	PK bitmap generation.
+* mktextex: (kpathsea)mktex scripts.	TeX source generation.
+* mktextfm: (kpathsea)mktex scripts.	TeX font metric generation.
+* mktexlsr: (kpathsea)Filename database.
+					Update ls-R.
+* DVI-to-Postscript: (dvips).		Translating TeX DVI files to
+					PostScript.
+* afm2tfm: (dvips)Invoking afm2tfm.	Making Type 1 fonts available to TeX.
+* dvips: (dvips)Invoking Dvips. 	DVI-to-PostScript translator.
+* TeX Directories: (tds).		A directory structure for TeX files.
+
+General Commands
+* Cpio: (cpio). 			A program to manage archives of files.
+* dc: (dc).				Arbitrary precision RPN "Desktop
+					Calculator".
+* Ed: (ed).				The GNU line editor.
+* Screen: (screen).			Full-screen window manager.
+* sed: (sed).				Stream EDitor.
+* Time: (time). 			A utility to time the execution of a
+					command
+* Mtools: (mtools).			Mtools: utilities to access DOS disks
+					in Unix.

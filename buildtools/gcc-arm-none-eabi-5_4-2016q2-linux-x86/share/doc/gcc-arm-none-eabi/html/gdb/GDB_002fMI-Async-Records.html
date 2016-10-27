@@ -1,0 +1,214 @@
+<html lang="en">
+<head>
+<title>GDB/MI Async Records - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="GDB_002fMI-Output-Records.html#GDB_002fMI-Output-Records" title="GDB/MI Output Records">
+<link rel="prev" href="GDB_002fMI-Stream-Records.html#GDB_002fMI-Stream-Records" title="GDB/MI Stream Records">
+<link rel="next" href="GDB_002fMI-Breakpoint-Information.html#GDB_002fMI-Breakpoint-Information" title="GDB/MI Breakpoint Information">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="GDB%2fMI-Async-Records"></a>
+<a name="GDB_002fMI-Async-Records"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="GDB_002fMI-Breakpoint-Information.html#GDB_002fMI-Breakpoint-Information">GDB/MI Breakpoint Information</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="GDB_002fMI-Stream-Records.html#GDB_002fMI-Stream-Records">GDB/MI Stream Records</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="GDB_002fMI-Output-Records.html#GDB_002fMI-Output-Records">GDB/MI Output Records</a>
+<hr>
+</div>
+
+<h4 class="subsection">27.5.3 <span class="sc">gdb/mi</span> Async Records</h4>
+
+<p><a name="index-async-records-in-_0040sc_007bgdb_002fmi_007d-2869"></a><a name="index-g_t_0040sc_007bgdb_002fmi_007d_002c-async-records-2870"></a><dfn>Async</dfn> records are used to notify the <span class="sc">gdb/mi</span> client of
+additional changes that have occurred.  Those changes can either be a
+consequence of <span class="sc">gdb/mi</span> commands (e.g., a breakpoint modified) or a result of
+target activity (e.g., target stopped).
+
+   <p>The following is the list of possible async records:
+
+     <dl>
+<dt><code>*running,thread-id="</code><var>thread</var><code>"</code><dd>The target is now running.  The <var>thread</var> field tells which
+specific thread is now running, and can be &lsquo;<samp><span class="samp">all</span></samp>&rsquo; if all threads
+are running.  The frontend should assume that no interaction with a
+running thread is possible after this notification is produced. 
+The frontend should not assume that this notification is output
+only once for any command.  <span class="sc">gdb</span> may emit this notification
+several times, either for different threads, because it cannot resume
+all threads together, or even for a single thread, if the thread must
+be stepped though some code before letting it run freely.
+
+     <br><dt><code>*stopped,reason="</code><var>reason</var><code>",thread-id="</code><var>id</var><code>",stopped-threads="</code><var>stopped</var><code>",core="</code><var>core</var><code>"</code><dd>The target has stopped.  The <var>reason</var> field can have one of the
+following values:
+
+          <dl>
+<dt><code>breakpoint-hit</code><dd>A breakpoint was reached. 
+<br><dt><code>watchpoint-trigger</code><dd>A watchpoint was triggered. 
+<br><dt><code>read-watchpoint-trigger</code><dd>A read watchpoint was triggered. 
+<br><dt><code>access-watchpoint-trigger</code><dd>An access watchpoint was triggered. 
+<br><dt><code>function-finished</code><dd>An -exec-finish or similar CLI command was accomplished. 
+<br><dt><code>location-reached</code><dd>An -exec-until or similar CLI command was accomplished. 
+<br><dt><code>watchpoint-scope</code><dd>A watchpoint has gone out of scope. 
+<br><dt><code>end-stepping-range</code><dd>An -exec-next, -exec-next-instruction, -exec-step, -exec-step-instruction or
+similar CLI command was accomplished. 
+<br><dt><code>exited-signalled</code><dd>The inferior exited because of a signal. 
+<br><dt><code>exited</code><dd>The inferior exited. 
+<br><dt><code>exited-normally</code><dd>The inferior exited normally. 
+<br><dt><code>signal-received</code><dd>A signal was received by the inferior. 
+<br><dt><code>solib-event</code><dd>The inferior has stopped due to a library being loaded or unloaded. 
+This can happen when <code>stop-on-solib-events</code> (see <a href="Files.html#Files">Files</a>) is
+set or when a <code>catch load</code> or <code>catch unload</code> catchpoint is
+in use (see <a href="Set-Catchpoints.html#Set-Catchpoints">Set Catchpoints</a>). 
+<br><dt><code>fork</code><dd>The inferior has forked.  This is reported when <code>catch fork</code>
+(see <a href="Set-Catchpoints.html#Set-Catchpoints">Set Catchpoints</a>) has been used. 
+<br><dt><code>vfork</code><dd>The inferior has vforked.  This is reported in when <code>catch vfork</code>
+(see <a href="Set-Catchpoints.html#Set-Catchpoints">Set Catchpoints</a>) has been used. 
+<br><dt><code>syscall-entry</code><dd>The inferior entered a system call.  This is reported when <code>catch
+syscall</code> (see <a href="Set-Catchpoints.html#Set-Catchpoints">Set Catchpoints</a>) has been used. 
+<br><dt><code>syscall-return</code><dd>The inferior returned from a system call.  This is reported when
+<code>catch syscall</code> (see <a href="Set-Catchpoints.html#Set-Catchpoints">Set Catchpoints</a>) has been used. 
+<br><dt><code>exec</code><dd>The inferior called <code>exec</code>.  This is reported when <code>catch exec</code>
+(see <a href="Set-Catchpoints.html#Set-Catchpoints">Set Catchpoints</a>) has been used. 
+</dl>
+
+     <p>The <var>id</var> field identifies the thread that directly caused the stop
+&ndash; for example by hitting a breakpoint.  Depending on whether all-stop
+mode is in effect (see <a href="All_002dStop-Mode.html#All_002dStop-Mode">All-Stop Mode</a>), <span class="sc">gdb</span> may either
+stop all threads, or only the thread that directly triggered the stop. 
+If all threads are stopped, the <var>stopped</var> field will have the
+value of <code>"all"</code>.  Otherwise, the value of the <var>stopped</var>
+field will be a list of thread identifiers.  Presently, this list will
+always include a single thread, but frontend should be prepared to see
+several threads in the list.  The <var>core</var> field reports the
+processor core on which the stop event has happened.  This field may be absent
+if such information is not available.
+
+     <br><dt><code>=thread-group-added,id="</code><var>id</var><code>"</code><dt><code>=thread-group-removed,id="</code><var>id</var><code>"</code><dd>A thread group was either added or removed.  The <var>id</var> field
+contains the <span class="sc">gdb</span> identifier of the thread group.  When a thread
+group is added, it generally might not be associated with a running
+process.  When a thread group is removed, its id becomes invalid and
+cannot be used in any way.
+
+     <br><dt><code>=thread-group-started,id="</code><var>id</var><code>",pid="</code><var>pid</var><code>"</code><dd>A thread group became associated with a running program,
+either because the program was just started or the thread group
+was attached to a program.  The <var>id</var> field contains the
+<span class="sc">gdb</span> identifier of the thread group.  The <var>pid</var> field
+contains process identifier, specific to the operating system.
+
+     <br><dt><code>=thread-group-exited,id="</code><var>id</var><code>"[,exit-code="</code><var>code</var><code>"]</code><dd>A thread group is no longer associated with a running program,
+either because the program has exited, or because it was detached
+from.  The <var>id</var> field contains the <span class="sc">gdb</span> identifier of the
+thread group.  The <var>code</var> field is the exit code of the inferior; it exists
+only when the inferior exited with some code.
+
+     <br><dt><code>=thread-created,id="</code><var>id</var><code>",group-id="</code><var>gid</var><code>"</code><dt><code>=thread-exited,id="</code><var>id</var><code>",group-id="</code><var>gid</var><code>"</code><dd>A thread either was created, or has exited.  The <var>id</var> field
+contains the <span class="sc">gdb</span> identifier of the thread.  The <var>gid</var>
+field identifies the thread group this thread belongs to.
+
+     <br><dt><code>=thread-selected,id="</code><var>id</var><code>"</code><dd>Informs that the selected thread was changed as result of the last
+command.  This notification is not emitted as result of <code>-thread-select</code>
+command but is emitted whenever an MI command that is not documented
+to change the selected thread actually changes it.  In particular,
+invoking, directly or indirectly (via user-defined command), the CLI
+<code>thread</code> command, will generate this notification.
+
+     <p>We suggest that in response to this notification, front ends
+highlight the selected thread and cause subsequent commands to apply to
+that thread.
+
+     <br><dt><code>=library-loaded,...</code><dd>Reports that a new library file was loaded by the program.  This
+notification has 4 fields&mdash;<var>id</var>, <var>target-name</var>,
+<var>host-name</var>, and <var>symbols-loaded</var>.  The <var>id</var> field is an
+opaque identifier of the library.  For remote debugging case,
+<var>target-name</var> and <var>host-name</var> fields give the name of the
+library file on the target, and on the host respectively.  For native
+debugging, both those fields have the same value.  The
+<var>symbols-loaded</var> field is emitted only for backward compatibility
+and should not be relied on to convey any useful information.  The
+<var>thread-group</var> field, if present, specifies the id of the thread
+group in whose context the library was loaded.  If the field is
+absent, it means the library was loaded in the context of all present
+thread groups.
+
+     <br><dt><code>=library-unloaded,...</code><dd>Reports that a library was unloaded by the program.  This notification
+has 3 fields&mdash;<var>id</var>, <var>target-name</var> and <var>host-name</var> with
+the same meaning as for the <code>=library-loaded</code> notification. 
+The <var>thread-group</var> field, if present, specifies the id of the
+thread group in whose context the library was unloaded.  If the field is
+absent, it means the library was unloaded in the context of all present
+thread groups.
+
+     <br><dt><code>=traceframe-changed,num=</code><var>tfnum</var><code>,tracepoint=</code><var>tpnum</var><dt><code>=traceframe-changed,end</code><dd>Reports that the trace frame was changed and its new number is
+<var>tfnum</var>.  The number of the tracepoint associated with this trace
+frame is <var>tpnum</var>.
+
+     <br><dt><code>=tsv-created,name=</code><var>name</var><code>,initial=</code><var>initial</var><dd>Reports that the new trace state variable <var>name</var> is created with
+initial value <var>initial</var>.
+
+     <br><dt><code>=tsv-deleted,name=</code><var>name</var><dt><code>=tsv-deleted</code><dd>Reports that the trace state variable <var>name</var> is deleted or all
+trace state variables are deleted.
+
+     <br><dt><code>=tsv-modified,name=</code><var>name</var><code>,initial=</code><var>initial</var><code>[,current=</code><var>current</var><code>]</code><dd>Reports that the trace state variable <var>name</var> is modified with
+the initial value <var>initial</var>. The current value <var>current</var> of
+trace state variable is optional and is reported if the current
+value of trace state variable is known.
+
+     <br><dt><code>=breakpoint-created,bkpt={...}</code><dt><code>=breakpoint-modified,bkpt={...}</code><dt><code>=breakpoint-deleted,id=</code><var>number</var><dd>Reports that a breakpoint was created, modified, or deleted,
+respectively.  Only user-visible breakpoints are reported to the MI
+user.
+
+     <p>The <var>bkpt</var> argument is of the same form as returned by the various
+breakpoint commands; See <a href="GDB_002fMI-Breakpoint-Commands.html#GDB_002fMI-Breakpoint-Commands">GDB/MI Breakpoint Commands</a>.  The
+<var>number</var> is the ordinal number of the breakpoint.
+
+     <p>Note that if a breakpoint is emitted in the result record of a
+command, then it will not also be emitted in an async record.
+
+     <br><dt><code>=record-started,thread-group="</code><var>id</var><code>"</code><dt><code>=record-stopped,thread-group="</code><var>id</var><code>"</code><dd>Execution log recording was either started or stopped on an
+inferior.  The <var>id</var> is the <span class="sc">gdb</span> identifier of the thread
+group corresponding to the affected inferior.
+
+     <br><dt><code>=cmd-param-changed,param=</code><var>param</var><code>,value=</code><var>value</var><dd>Reports that a parameter of the command <code>set </code><var>param</var> is
+changed to <var>value</var>.  In the multi-word <code>set</code> command,
+the <var>param</var> is the whole parameter list to <code>set</code> command. 
+For example, In command <code>set check type on</code>, <var>param</var>
+is <code>check type</code> and <var>value</var> is <code>on</code>.
+
+     <br><dt><code>=memory-changed,thread-group=</code><var>id</var><code>,addr=</code><var>addr</var><code>,len=</code><var>len</var><code>[,type="code"]</code><dd>Reports that bytes from <var>addr</var> to <var>data</var> + <var>len</var> were
+written in an inferior.  The <var>id</var> is the identifier of the
+thread group corresponding to the affected inferior.  The optional
+<code>type="code"</code> part is reported if the memory written to holds
+executable code. 
+</dl>
+
+   </body></html>
+

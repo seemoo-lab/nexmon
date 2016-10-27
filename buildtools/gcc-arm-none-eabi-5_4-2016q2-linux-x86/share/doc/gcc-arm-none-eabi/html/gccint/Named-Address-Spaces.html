@@ -1,0 +1,156 @@
+<html lang="en">
+<head>
+<title>Named Address Spaces - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Macros.html#Target-Macros" title="Target Macros">
+<link rel="prev" href="C_002b_002b-ABI.html#C_002b_002b-ABI" title="C++ ABI">
+<link rel="next" href="Misc.html#Misc" title="Misc">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Named-Address-Spaces"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Misc.html#Misc">Misc</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="C_002b_002b-ABI.html#C_002b_002b-ABI">C++ ABI</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Macros.html#Target-Macros">Target Macros</a>
+<hr>
+</div>
+
+<h3 class="section">17.29 Adding support for named address spaces</h3>
+
+<p><a name="index-named-address-spaces-4883"></a>
+The draft technical report of the ISO/IEC JTC1 S22 WG14 N1275
+standards committee, <cite>Programming Languages - C - Extensions to
+support embedded processors</cite>, specifies a syntax for embedded
+processors to specify alternate address spaces.  You can configure a
+GCC port to support section 5.1 of the draft report to add support for
+address spaces other than the default address space.  These address
+spaces are new keywords that are similar to the <code>volatile</code> and
+<code>const</code> type attributes.
+
+ <p>Pointers to named address spaces can have a different size than
+pointers to the generic address space.
+
+ <p>For example, the SPU port uses the <code>__ea</code> address space to refer
+to memory in the host processor, rather than memory local to the SPU
+processor.  Access to memory in the <code>__ea</code> address space involves
+issuing DMA operations to move data between the host processor and the
+local processor memory address space.  Pointers in the <code>__ea</code>
+address space are either 32 bits or 64 bits based on the
+<samp><span class="option">-mea32</span></samp> or <samp><span class="option">-mea64</span></samp> switches (native SPU pointers are
+always 32 bits).
+
+ <p>Internally, address spaces are represented as a small integer in the
+range 0 to 15 with address space 0 being reserved for the generic
+address space.
+
+ <p>To register a named address space qualifier keyword with the C front end,
+the target may call the <code>c_register_addr_space</code> routine.  For example,
+the SPU port uses the following to declare <code>__ea</code> as the keyword for
+named address space #1:
+<pre class="smallexample">     #define ADDR_SPACE_EA 1
+     c_register_addr_space ("__ea", ADDR_SPACE_EA);
+</pre>
+ <div class="defun">
+&mdash; Target Hook: machine_mode <b>TARGET_ADDR_SPACE_POINTER_MODE</b> (<var>addr_space_t address_space</var>)<var><a name="index-TARGET_005fADDR_005fSPACE_005fPOINTER_005fMODE-4884"></a></var><br>
+<blockquote><p>Define this to return the machine mode to use for pointers to
+<var>address_space</var> if the target supports named address spaces. 
+The default version of this hook returns <code>ptr_mode</code> for the
+generic address space only. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: machine_mode <b>TARGET_ADDR_SPACE_ADDRESS_MODE</b> (<var>addr_space_t address_space</var>)<var><a name="index-TARGET_005fADDR_005fSPACE_005fADDRESS_005fMODE-4885"></a></var><br>
+<blockquote><p>Define this to return the machine mode to use for addresses in
+<var>address_space</var> if the target supports named address spaces. 
+The default version of this hook returns <code>Pmode</code> for the
+generic address space only. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_ADDR_SPACE_VALID_POINTER_MODE</b> (<var>machine_mode mode, addr_space_t as</var>)<var><a name="index-TARGET_005fADDR_005fSPACE_005fVALID_005fPOINTER_005fMODE-4886"></a></var><br>
+<blockquote><p>Define this to return nonzero if the port can handle pointers
+with machine mode <var>mode</var> to address space <var>as</var>.  This target
+hook is the same as the <code>TARGET_VALID_POINTER_MODE</code> target hook,
+except that it includes explicit named address space support.  The default
+version of this hook returns true for the modes returned by either the
+<code>TARGET_ADDR_SPACE_POINTER_MODE</code> or <code>TARGET_ADDR_SPACE_ADDRESS_MODE</code>
+target hooks for the given address space. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_ADDR_SPACE_LEGITIMATE_ADDRESS_P</b> (<var>machine_mode mode, rtx exp, bool strict, addr_space_t as</var>)<var><a name="index-TARGET_005fADDR_005fSPACE_005fLEGITIMATE_005fADDRESS_005fP-4887"></a></var><br>
+<blockquote><p>Define this to return true if <var>exp</var> is a valid address for mode
+<var>mode</var> in the named address space <var>as</var>.  The <var>strict</var>
+parameter says whether strict addressing is in effect after reload has
+finished.  This target hook is the same as the
+<code>TARGET_LEGITIMATE_ADDRESS_P</code> target hook, except that it includes
+explicit named address space support. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: rtx <b>TARGET_ADDR_SPACE_LEGITIMIZE_ADDRESS</b> (<var>rtx x, rtx oldx, machine_mode mode, addr_space_t as</var>)<var><a name="index-TARGET_005fADDR_005fSPACE_005fLEGITIMIZE_005fADDRESS-4888"></a></var><br>
+<blockquote><p>Define this to modify an invalid address <var>x</var> to be a valid address
+with mode <var>mode</var> in the named address space <var>as</var>.  This target
+hook is the same as the <code>TARGET_LEGITIMIZE_ADDRESS</code> target hook,
+except that it includes explicit named address space support. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_ADDR_SPACE_SUBSET_P</b> (<var>addr_space_t subset, addr_space_t superset</var>)<var><a name="index-TARGET_005fADDR_005fSPACE_005fSUBSET_005fP-4889"></a></var><br>
+<blockquote><p>Define this to return whether the <var>subset</var> named address space is
+contained within the <var>superset</var> named address space.  Pointers to
+a named address space that is a subset of another named address space
+will be converted automatically without a cast if used together in
+arithmetic operations.  Pointers to a superset address space can be
+converted to pointers to a subset address space via explicit casts. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: rtx <b>TARGET_ADDR_SPACE_CONVERT</b> (<var>rtx op, tree from_type, tree to_type</var>)<var><a name="index-TARGET_005fADDR_005fSPACE_005fCONVERT-4890"></a></var><br>
+<blockquote><p>Define this to convert the pointer expression represented by the RTL
+<var>op</var> with type <var>from_type</var> that points to a named address
+space to a new pointer expression with type <var>to_type</var> that points
+to a different named address space.  When this hook it called, it is
+guaranteed that one of the two address spaces is a subset of the other,
+as determined by the <code>TARGET_ADDR_SPACE_SUBSET_P</code> target hook. 
+</p></blockquote></div>
+
+ </body></html>
+

@@ -1,0 +1,425 @@
+<html lang="en">
+<head>
+<title>Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="#Top">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License" and "Funding
+Free Software", the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled "GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="contents">
+<h2>Table of Contents</h2>
+<ul>
+<li><a name="toc_Overview" href="Overview.html#Overview">1 Introduction</a>
+<ul>
+<li><a href="History.html#History">1.1 History</a>
+<li><a href="How-It-Works.html#How-It-Works">1.2 How To Use BFD</a>
+<li><a href="What-BFD-Version-2-Can-Do.html#What-BFD-Version-2-Can-Do">1.3 What BFD Version 2 Can Do</a>
+<ul>
+<li><a href="BFD-information-loss.html#BFD-information-loss">1.3.1 Information Loss</a>
+<li><a href="Canonical-format.html#Canonical-format">1.3.2 The BFD canonical object-file format</a>
+</li></ul>
+</li></ul>
+<li><a name="toc_BFD-front-end" href="BFD-front-end.html#BFD-front-end">2 BFD Front End</a>
+<ul>
+<li><a href="typedef-bfd.html#typedef-bfd">2.1 <code>typedef bfd</code></a>
+<li><a href="Error-reporting.html#Error-reporting">2.2 Error reporting</a>
+<ul>
+<li><a href="Error-reporting.html#Error-reporting">2.2.1 Type <code>bfd_error_type</code></a>
+<ul>
+<li><a href="Error-reporting.html#Error-reporting">2.2.1.1 <code>bfd_get_error</code></a>
+<li><a href="Error-reporting.html#Error-reporting">2.2.1.2 <code>bfd_set_error</code></a>
+<li><a href="Error-reporting.html#Error-reporting">2.2.1.3 <code>bfd_errmsg</code></a>
+<li><a href="Error-reporting.html#Error-reporting">2.2.1.4 <code>bfd_perror</code></a>
+</li></ul>
+<li><a href="Error-reporting.html#Error-reporting">2.2.2 BFD error handler</a>
+<ul>
+<li><a href="Error-reporting.html#Error-reporting">2.2.2.1 <code>bfd_set_error_handler</code></a>
+<li><a href="Error-reporting.html#Error-reporting">2.2.2.2 <code>bfd_set_error_program_name</code></a>
+<li><a href="Error-reporting.html#Error-reporting">2.2.2.3 <code>bfd_get_error_handler</code></a>
+</li></ul>
+<li><a href="Error-reporting.html#Error-reporting">2.2.3 BFD assert handler</a>
+<ul>
+<li><a href="Error-reporting.html#Error-reporting">2.2.3.1 <code>bfd_set_assert_handler</code></a>
+<li><a href="Error-reporting.html#Error-reporting">2.2.3.2 <code>bfd_get_assert_handler</code></a>
+</li></ul>
+</li></ul>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3 Miscellaneous</a>
+<ul>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1 Miscellaneous functions</a>
+<ul>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.1 <code>bfd_get_reloc_upper_bound</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.2 <code>bfd_canonicalize_reloc</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.3 <code>bfd_set_reloc</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.4 <code>bfd_set_file_flags</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.5 <code>bfd_get_arch_size</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.6 <code>bfd_get_sign_extend_vma</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.7 <code>bfd_set_start_address</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.8 <code>bfd_get_gp_size</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.9 <code>bfd_set_gp_size</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.10 <code>bfd_scan_vma</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.11 <code>bfd_copy_private_header_data</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.12 <code>bfd_copy_private_bfd_data</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.13 <code>bfd_merge_private_bfd_data</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.14 <code>bfd_set_private_flags</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.15 <code>Other functions</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.16 <code>bfd_alt_mach_code</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.17 <code>bfd_emul_get_maxpagesize</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.18 <code>bfd_emul_set_maxpagesize</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.19 <code>bfd_emul_get_commonpagesize</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.20 <code>bfd_emul_set_commonpagesize</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.21 <code>bfd_demangle</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.22 <code>bfd_update_compression_header</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.23 <code>bfd_check_compression_header</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.24 <code>bfd_get_compression_header_size</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.25 <code>struct bfd_iovec</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.26 <code>bfd_get_mtime</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.27 <code>bfd_get_size</code></a>
+<li><a href="Miscellaneous.html#Miscellaneous">2.3.1.28 <code>bfd_mmap</code></a>
+</li></ul>
+</li></ul>
+<li><a href="Memory-Usage.html#Memory-Usage">2.4 Memory Usage</a>
+<li><a href="Initialization.html#Initialization">2.5 Initialization</a>
+<ul>
+<li><a href="Initialization.html#Initialization">2.5.1 Initialization functions</a>
+<ul>
+<li><a href="Initialization.html#Initialization">2.5.1.1 <code>bfd_init</code></a>
+</li></ul>
+</li></ul>
+<li><a href="Sections.html#Sections">2.6 Sections</a>
+<ul>
+<li><a href="Section-Input.html#Section-Input">2.6.1 Section input</a>
+<li><a href="Section-Output.html#Section-Output">2.6.2 Section output</a>
+<li><a href="Section-Output.html#Section-Output">2.6.3 Link orders</a>
+<li><a href="typedef-asection.html#typedef-asection">2.6.4 typedef asection</a>
+<li><a href="section-prototypes.html#section-prototypes">2.6.5 Section prototypes</a>
+<ul>
+<li><a href="section-prototypes.html#section-prototypes">2.6.5.1 <code>bfd_section_list_clear</code></a>
+<li><a href="section-prototypes.html#section-prototypes">2.6.5.2 <code>bfd_get_section_by_name</code></a>
+<li><a href="section-prototypes.html#section-prototypes">2.6.5.3 <code>bfd_get_next_section_by_name</code></a>
+<li><a href="section-prototypes.html#section-prototypes">2.6.5.4 <code>bfd_get_linker_section</code></a>
+<li><a href="section-prototypes.html#section-prototypes">2.6.5.5 <code>bfd_get_section_by_name_if</code></a>
+<li><a href="section-prototypes.html#section-prototypes">2.6.5.6 <code>bfd_get_unique_section_name</code></a>
+<li><a href="section-prototypes.html#section-prototypes">2.6.5.7 <code>bfd_make_section_old_way</code></a>
+<li><a href="section-prototypes.html#section-prototypes">2.6.5.8 <code>bfd_make_section_anyway_with_flags</code></a>
+<li><a href="section-prototypes.html#section-prototypes">2.6.5.9 <code>bfd_make_section_anyway</code></a>
+<li><a href="section-prototypes.html#section-prototypes">2.6.5.10 <code>bfd_make_section_with_flags</code></a>
+<li><a href="section-prototypes.html#section-prototypes">2.6.5.11 <code>bfd_make_section</code></a>
+<li><a href="section-prototypes.html#section-prototypes">2.6.5.12 <code>bfd_set_section_flags</code></a>
+<li><a href="section-prototypes.html#section-prototypes">2.6.5.13 <code>bfd_rename_section</code></a>
+<li><a href="section-prototypes.html#section-prototypes">2.6.5.14 <code>bfd_map_over_sections</code></a>
+<li><a href="section-prototypes.html#section-prototypes">2.6.5.15 <code>bfd_sections_find_if</code></a>
+<li><a href="section-prototypes.html#section-prototypes">2.6.5.16 <code>bfd_set_section_size</code></a>
+<li><a href="section-prototypes.html#section-prototypes">2.6.5.17 <code>bfd_set_section_contents</code></a>
+<li><a href="section-prototypes.html#section-prototypes">2.6.5.18 <code>bfd_get_section_contents</code></a>
+<li><a href="section-prototypes.html#section-prototypes">2.6.5.19 <code>bfd_malloc_and_get_section</code></a>
+<li><a href="section-prototypes.html#section-prototypes">2.6.5.20 <code>bfd_copy_private_section_data</code></a>
+<li><a href="section-prototypes.html#section-prototypes">2.6.5.21 <code>bfd_generic_is_group_section</code></a>
+<li><a href="section-prototypes.html#section-prototypes">2.6.5.22 <code>bfd_generic_discard_group</code></a>
+</li></ul>
+</li></ul>
+<li><a href="Symbols.html#Symbols">2.7 Symbols</a>
+<ul>
+<li><a href="Reading-Symbols.html#Reading-Symbols">2.7.1 Reading symbols</a>
+<li><a href="Writing-Symbols.html#Writing-Symbols">2.7.2 Writing symbols</a>
+<li><a href="Mini-Symbols.html#Mini-Symbols">2.7.3 Mini Symbols</a>
+<li><a href="typedef-asymbol.html#typedef-asymbol">2.7.4 typedef asymbol</a>
+<li><a href="symbol-handling-functions.html#symbol-handling-functions">2.7.5 Symbol handling functions</a>
+<ul>
+<li><a href="symbol-handling-functions.html#symbol-handling-functions">2.7.5.1 <code>bfd_get_symtab_upper_bound</code></a>
+<li><a href="symbol-handling-functions.html#symbol-handling-functions">2.7.5.2 <code>bfd_is_local_label</code></a>
+<li><a href="symbol-handling-functions.html#symbol-handling-functions">2.7.5.3 <code>bfd_is_local_label_name</code></a>
+<li><a href="symbol-handling-functions.html#symbol-handling-functions">2.7.5.4 <code>bfd_is_target_special_symbol</code></a>
+<li><a href="symbol-handling-functions.html#symbol-handling-functions">2.7.5.5 <code>bfd_canonicalize_symtab</code></a>
+<li><a href="symbol-handling-functions.html#symbol-handling-functions">2.7.5.6 <code>bfd_set_symtab</code></a>
+<li><a href="symbol-handling-functions.html#symbol-handling-functions">2.7.5.7 <code>bfd_print_symbol_vandf</code></a>
+<li><a href="symbol-handling-functions.html#symbol-handling-functions">2.7.5.8 <code>bfd_make_empty_symbol</code></a>
+<li><a href="symbol-handling-functions.html#symbol-handling-functions">2.7.5.9 <code>_bfd_generic_make_empty_symbol</code></a>
+<li><a href="symbol-handling-functions.html#symbol-handling-functions">2.7.5.10 <code>bfd_make_debug_symbol</code></a>
+<li><a href="symbol-handling-functions.html#symbol-handling-functions">2.7.5.11 <code>bfd_decode_symclass</code></a>
+<li><a href="symbol-handling-functions.html#symbol-handling-functions">2.7.5.12 <code>bfd_is_undefined_symclass</code></a>
+<li><a href="symbol-handling-functions.html#symbol-handling-functions">2.7.5.13 <code>bfd_symbol_info</code></a>
+<li><a href="symbol-handling-functions.html#symbol-handling-functions">2.7.5.14 <code>bfd_copy_private_symbol_data</code></a>
+</li></ul>
+</li></ul>
+<li><a href="Archives.html#Archives">2.8 Archives</a>
+<ul>
+<li><a href="Archives.html#Archives">2.8.1 Archive functions</a>
+<ul>
+<li><a href="Archives.html#Archives">2.8.1.1 <code>bfd_get_next_mapent</code></a>
+<li><a href="Archives.html#Archives">2.8.1.2 <code>bfd_set_archive_head</code></a>
+<li><a href="Archives.html#Archives">2.8.1.3 <code>bfd_openr_next_archived_file</code></a>
+</li></ul>
+</li></ul>
+<li><a href="Formats.html#Formats">2.9 File formats</a>
+<ul>
+<li><a href="Formats.html#Formats">2.9.1 File format functions</a>
+<ul>
+<li><a href="Formats.html#Formats">2.9.1.1 <code>bfd_check_format</code></a>
+<li><a href="Formats.html#Formats">2.9.1.2 <code>bfd_check_format_matches</code></a>
+<li><a href="Formats.html#Formats">2.9.1.3 <code>bfd_set_format</code></a>
+<li><a href="Formats.html#Formats">2.9.1.4 <code>bfd_format_string</code></a>
+</li></ul>
+</li></ul>
+<li><a href="Relocations.html#Relocations">2.10 Relocations</a>
+<ul>
+<li><a href="typedef-arelent.html#typedef-arelent">2.10.1 typedef arelent</a>
+<ul>
+<li><a href="typedef-arelent.html#typedef-arelent">2.10.1.1 <code>enum complain_overflow</code></a>
+<li><a href="typedef-arelent.html#typedef-arelent">2.10.1.2 <code>reloc_howto_type</code></a>
+<li><a href="typedef-arelent.html#typedef-arelent">2.10.1.3 <code>The HOWTO Macro</code></a>
+<li><a href="typedef-arelent.html#typedef-arelent">2.10.1.4 <code>bfd_get_reloc_size</code></a>
+<li><a href="typedef-arelent.html#typedef-arelent">2.10.1.5 <code>arelent_chain</code></a>
+<li><a href="typedef-arelent.html#typedef-arelent">2.10.1.6 <code>bfd_check_overflow</code></a>
+<li><a href="typedef-arelent.html#typedef-arelent">2.10.1.7 <code>bfd_perform_relocation</code></a>
+<li><a href="typedef-arelent.html#typedef-arelent">2.10.1.8 <code>bfd_install_relocation</code></a>
+</li></ul>
+<li><a href="howto-manager.html#howto-manager">2.10.2 The howto manager</a>
+<ul>
+<li><a href="howto-manager.html#howto-manager">2.10.2.1 <code>bfd_reloc_code_type</code></a>
+<li><a href="howto-manager.html#howto-manager">2.10.2.2 <code>bfd_reloc_type_lookup</code></a>
+<li><a href="howto-manager.html#howto-manager">2.10.2.3 <code>bfd_default_reloc_type_lookup</code></a>
+<li><a href="howto-manager.html#howto-manager">2.10.2.4 <code>bfd_get_reloc_code_name</code></a>
+<li><a href="howto-manager.html#howto-manager">2.10.2.5 <code>bfd_generic_relax_section</code></a>
+<li><a href="howto-manager.html#howto-manager">2.10.2.6 <code>bfd_generic_gc_sections</code></a>
+<li><a href="howto-manager.html#howto-manager">2.10.2.7 <code>bfd_generic_lookup_section_flags</code></a>
+<li><a href="howto-manager.html#howto-manager">2.10.2.8 <code>bfd_generic_merge_sections</code></a>
+<li><a href="howto-manager.html#howto-manager">2.10.2.9 <code>bfd_generic_get_relocated_section_contents</code></a>
+</li></ul>
+</li></ul>
+<li><a href="Core-Files.html#Core-Files">2.11 Core files</a>
+<ul>
+<li><a href="Core-Files.html#Core-Files">2.11.1 Core file functions</a>
+<ul>
+<li><a href="Core-Files.html#Core-Files">2.11.1.1 <code>bfd_core_file_failing_command</code></a>
+<li><a href="Core-Files.html#Core-Files">2.11.1.2 <code>bfd_core_file_failing_signal</code></a>
+<li><a href="Core-Files.html#Core-Files">2.11.1.3 <code>bfd_core_file_pid</code></a>
+<li><a href="Core-Files.html#Core-Files">2.11.1.4 <code>core_file_matches_executable_p</code></a>
+<li><a href="Core-Files.html#Core-Files">2.11.1.5 <code>generic_core_file_matches_executable_p</code></a>
+</li></ul>
+</li></ul>
+<li><a href="Targets.html#Targets">2.12 Targets</a>
+<ul>
+<li><a href="bfd_005ftarget.html#bfd_005ftarget">2.12.1 bfd_target</a>
+<ul>
+<li><a href="bfd_005ftarget.html#bfd_005ftarget">2.12.1.1 <code>bfd_set_default_target</code></a>
+<li><a href="bfd_005ftarget.html#bfd_005ftarget">2.12.1.2 <code>bfd_find_target</code></a>
+<li><a href="bfd_005ftarget.html#bfd_005ftarget">2.12.1.3 <code>bfd_get_target_info</code></a>
+<li><a href="bfd_005ftarget.html#bfd_005ftarget">2.12.1.4 <code>bfd_target_list</code></a>
+<li><a href="bfd_005ftarget.html#bfd_005ftarget">2.12.1.5 <code>bfd_seach_for_target</code></a>
+</li></ul>
+</li></ul>
+<li><a href="Architectures.html#Architectures">2.13 Architectures</a>
+<ul>
+<li><a href="Architectures.html#Architectures">2.13.1 bfd_architecture</a>
+<li><a href="Architectures.html#Architectures">2.13.2 bfd_arch_info</a>
+<ul>
+<li><a href="Architectures.html#Architectures">2.13.2.1 <code>bfd_printable_name</code></a>
+<li><a href="Architectures.html#Architectures">2.13.2.2 <code>bfd_scan_arch</code></a>
+<li><a href="Architectures.html#Architectures">2.13.2.3 <code>bfd_arch_list</code></a>
+<li><a href="Architectures.html#Architectures">2.13.2.4 <code>bfd_arch_get_compatible</code></a>
+<li><a href="Architectures.html#Architectures">2.13.2.5 <code>bfd_default_arch_struct</code></a>
+<li><a href="Architectures.html#Architectures">2.13.2.6 <code>bfd_set_arch_info</code></a>
+<li><a href="Architectures.html#Architectures">2.13.2.7 <code>bfd_default_set_arch_mach</code></a>
+<li><a href="Architectures.html#Architectures">2.13.2.8 <code>bfd_get_arch</code></a>
+<li><a href="Architectures.html#Architectures">2.13.2.9 <code>bfd_get_mach</code></a>
+<li><a href="Architectures.html#Architectures">2.13.2.10 <code>bfd_arch_bits_per_byte</code></a>
+<li><a href="Architectures.html#Architectures">2.13.2.11 <code>bfd_arch_bits_per_address</code></a>
+<li><a href="Architectures.html#Architectures">2.13.2.12 <code>bfd_default_compatible</code></a>
+<li><a href="Architectures.html#Architectures">2.13.2.13 <code>bfd_default_scan</code></a>
+<li><a href="Architectures.html#Architectures">2.13.2.14 <code>bfd_get_arch_info</code></a>
+<li><a href="Architectures.html#Architectures">2.13.2.15 <code>bfd_lookup_arch</code></a>
+<li><a href="Architectures.html#Architectures">2.13.2.16 <code>bfd_printable_arch_mach</code></a>
+<li><a href="Architectures.html#Architectures">2.13.2.17 <code>bfd_octets_per_byte</code></a>
+<li><a href="Architectures.html#Architectures">2.13.2.18 <code>bfd_arch_mach_octets_per_byte</code></a>
+<li><a href="Architectures.html#Architectures">2.13.2.19 <code>bfd_arch_default_fill</code></a>
+</li></ul>
+</li></ul>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14 Opening and closing BFDs</a>
+<ul>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1 Functions for opening and closing</a>
+<ul>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.1 <code>bfd_fopen</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.2 <code>bfd_openr</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.3 <code>bfd_fdopenr</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.4 <code>bfd_openstreamr</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.5 <code>bfd_openr_iovec</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.6 <code>bfd_openw</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.7 <code>bfd_close</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.8 <code>bfd_close_all_done</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.9 <code>bfd_create</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.10 <code>bfd_make_writable</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.11 <code>bfd_make_readable</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.12 <code>bfd_alloc</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.13 <code>bfd_alloc2</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.14 <code>bfd_zalloc</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.15 <code>bfd_zalloc2</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.16 <code>bfd_calc_gnu_debuglink_crc32</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.17 <code>bfd_get_debug_link_info</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.18 <code>bfd_get_alt_debug_link_info</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.19 <code>separate_debug_file_exists</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.20 <code>separate_alt_debug_file_exists</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.21 <code>find_separate_debug_file</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.22 <code>bfd_follow_gnu_debuglink</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.23 <code>bfd_follow_gnu_debugaltlink</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.24 <code>bfd_create_gnu_debuglink_section</code></a>
+<li><a href="Opening-and-Closing.html#Opening-and-Closing">2.14.1.25 <code>bfd_fill_in_gnu_debuglink_section</code></a>
+</li></ul>
+</li></ul>
+<li><a href="Internal.html#Internal">2.15 Implementation details</a>
+<ul>
+<li><a href="Internal.html#Internal">2.15.1 Internal functions</a>
+<ul>
+<li><a href="Internal.html#Internal">2.15.1.1 <code>bfd_write_bigendian_4byte_int</code></a>
+<li><a href="Internal.html#Internal">2.15.1.2 <code>bfd_put_size</code></a>
+<li><a href="Internal.html#Internal">2.15.1.3 <code>bfd_get_size</code></a>
+<li><a href="Internal.html#Internal">2.15.1.4 <code>bfd_h_put_size</code></a>
+<li><a href="Internal.html#Internal">2.15.1.5 <code>bfd_log2</code></a>
+</li></ul>
+</li></ul>
+<li><a href="File-Caching.html#File-Caching">2.16 File caching</a>
+<ul>
+<li><a href="File-Caching.html#File-Caching">2.16.1 Caching functions</a>
+<ul>
+<li><a href="File-Caching.html#File-Caching">2.16.1.1 <code>bfd_cache_init</code></a>
+<li><a href="File-Caching.html#File-Caching">2.16.1.2 <code>bfd_cache_close</code></a>
+<li><a href="File-Caching.html#File-Caching">2.16.1.3 <code>bfd_cache_close_all</code></a>
+<li><a href="File-Caching.html#File-Caching">2.16.1.4 <code>bfd_open_file</code></a>
+</li></ul>
+</li></ul>
+<li><a href="Linker-Functions.html#Linker-Functions">2.17 Linker Functions</a>
+<ul>
+<li><a href="Creating-a-Linker-Hash-Table.html#Creating-a-Linker-Hash-Table">2.17.1 Creating a linker hash table</a>
+<li><a href="Adding-Symbols-to-the-Hash-Table.html#Adding-Symbols-to-the-Hash-Table">2.17.2 Adding symbols to the hash table</a>
+<ul>
+<li><a href="Differing-file-formats.html#Differing-file-formats">2.17.2.1 Differing file formats</a>
+<li><a href="Adding-symbols-from-an-object-file.html#Adding-symbols-from-an-object-file">2.17.2.2 Adding symbols from an object file</a>
+<li><a href="Adding-symbols-from-an-archive.html#Adding-symbols-from-an-archive">2.17.2.3 Adding symbols from an archive</a>
+</li></ul>
+<li><a href="Performing-the-Final-Link.html#Performing-the-Final-Link">2.17.3 Performing the final link</a>
+<ul>
+<li><a href="Information-provided-by-the-linker.html#Information-provided-by-the-linker">2.17.3.1 Information provided by the linker</a>
+<li><a href="Relocating-the-section-contents.html#Relocating-the-section-contents">2.17.3.2 Relocating the section contents</a>
+<li><a href="Writing-the-symbol-table.html#Writing-the-symbol-table">2.17.3.3 Writing the symbol table</a>
+<li><a href="Writing-the-symbol-table.html#Writing-the-symbol-table">2.17.3.4 <code>bfd_link_split_section</code></a>
+<li><a href="Writing-the-symbol-table.html#Writing-the-symbol-table">2.17.3.5 <code>bfd_section_already_linked</code></a>
+<li><a href="Writing-the-symbol-table.html#Writing-the-symbol-table">2.17.3.6 <code>bfd_generic_define_common_symbol</code></a>
+<li><a href="Writing-the-symbol-table.html#Writing-the-symbol-table">2.17.3.7 <code>bfd_find_version_for_sym</code></a>
+<li><a href="Writing-the-symbol-table.html#Writing-the-symbol-table">2.17.3.8 <code>bfd_hide_sym_by_version</code></a>
+</li></ul>
+</li></ul>
+<li><a href="Hash-Tables.html#Hash-Tables">2.18 Hash Tables</a>
+<ul>
+<li><a href="Creating-and-Freeing-a-Hash-Table.html#Creating-and-Freeing-a-Hash-Table">2.18.1 Creating and freeing a hash table</a>
+<li><a href="Looking-Up-or-Entering-a-String.html#Looking-Up-or-Entering-a-String">2.18.2 Looking up or entering a string</a>
+<li><a href="Traversing-a-Hash-Table.html#Traversing-a-Hash-Table">2.18.3 Traversing a hash table</a>
+<li><a href="Deriving-a-New-Hash-Table-Type.html#Deriving-a-New-Hash-Table-Type">2.18.4 Deriving a new hash table type</a>
+<ul>
+<li><a href="Define-the-Derived-Structures.html#Define-the-Derived-Structures">2.18.4.1 Define the derived structures</a>
+<li><a href="Write-the-Derived-Creation-Routine.html#Write-the-Derived-Creation-Routine">2.18.4.2 Write the derived creation routine</a>
+<li><a href="Write-Other-Derived-Routines.html#Write-Other-Derived-Routines">2.18.4.3 Write other derived routines</a>
+</li></ul>
+</li></ul>
+</li></ul>
+<li><a name="toc_BFD-back-ends" href="BFD-back-ends.html#BFD-back-ends">3 BFD back ends</a>
+<ul>
+<li><a href="What-to-Put-Where.html#What-to-Put-Where">3.1 What to Put Where</a>
+<li><a href="aout.html#aout">3.2 a.out backends</a>
+<ul>
+<li><a href="aout.html#aout">3.2.1 Relocations</a>
+<li><a href="aout.html#aout">3.2.2 Internal entry points</a>
+<ul>
+<li><a href="aout.html#aout">3.2.2.1 <code>aout_</code><var>size</var><code>_swap_exec_header_in</code></a>
+<li><a href="aout.html#aout">3.2.2.2 <code>aout_</code><var>size</var><code>_swap_exec_header_out</code></a>
+<li><a href="aout.html#aout">3.2.2.3 <code>aout_</code><var>size</var><code>_some_aout_object_p</code></a>
+<li><a href="aout.html#aout">3.2.2.4 <code>aout_</code><var>size</var><code>_mkobject</code></a>
+<li><a href="aout.html#aout">3.2.2.5 <code>aout_</code><var>size</var><code>_machine_type</code></a>
+<li><a href="aout.html#aout">3.2.2.6 <code>aout_</code><var>size</var><code>_set_arch_mach</code></a>
+<li><a href="aout.html#aout">3.2.2.7 <code>aout_</code><var>size</var><code>_new_section_hook</code></a>
+</li></ul>
+</li></ul>
+<li><a href="coff.html#coff">3.3 coff backends</a>
+<ul>
+<li><a href="coff.html#coff">3.3.1 Porting to a new version of coff</a>
+<li><a href="coff.html#coff">3.3.2 How the coff backend works</a>
+<ul>
+<li><a href="coff.html#coff">3.3.2.1 File layout</a>
+<li><a href="coff.html#coff">3.3.2.2 Coff long section names</a>
+<li><a href="coff.html#coff">3.3.2.3 Bit twiddling</a>
+<li><a href="coff.html#coff">3.3.2.4 Symbol reading</a>
+<li><a href="coff.html#coff">3.3.2.5 Symbol writing</a>
+<li><a href="coff.html#coff">3.3.2.6 <code>coff_symbol_type</code></a>
+<li><a href="coff.html#coff">3.3.2.7 <code>bfd_coff_backend_data</code></a>
+<li><a href="coff.html#coff">3.3.2.8 Writing relocations</a>
+<li><a href="coff.html#coff">3.3.2.9 Reading linenumbers</a>
+<li><a href="coff.html#coff">3.3.2.10 Reading relocations</a>
+</li></ul>
+</li></ul>
+<li><a href="elf.html#elf">3.4 ELF backends</a>
+<li><a href="mmo.html#mmo">3.5 mmo backend</a>
+<ul>
+<li><a href="File-layout.html#File-layout">3.5.1 File layout</a>
+<li><a href="Symbol_002dtable.html#Symbol_002dtable">3.5.2 Symbol table format</a>
+<li><a href="mmo-section-mapping.html#mmo-section-mapping">3.5.3 mmo section mapping</a>
+</li></ul>
+</li></ul>
+<li><a name="toc_BFD-Index" href="BFD-Index.html#BFD-Index">BFD Index</a>
+</li></ul>
+</div>
+
+
+
+<div class="node">
+<p>
+<a name="Top"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Overview.html#Overview">Overview</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="../index.html#dir">(dir)</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="../index.html#dir">(dir)</a>
+<hr>
+</div>
+
+<ul class="menu">
+<li><a accesskey="1" href="Overview.html#Overview">Overview</a>: 			Overview of BFD
+<li><a accesskey="2" href="BFD-front-end.html#BFD-front-end">BFD front end</a>: 		BFD front end
+<li><a accesskey="3" href="BFD-back-ends.html#BFD-back-ends">BFD back ends</a>: 		BFD back ends
+<li><a accesskey="4" href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License">GNU Free Documentation License</a>:   GNU Free Documentation License
+<li><a accesskey="5" href="BFD-Index.html#BFD-Index">BFD Index</a>: 		BFD Index
+</ul>
+
+   </body></html>
+

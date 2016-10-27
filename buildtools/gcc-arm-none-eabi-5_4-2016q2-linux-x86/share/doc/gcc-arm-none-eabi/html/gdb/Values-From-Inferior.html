@@ -1,0 +1,384 @@
+<html lang="en">
+<head>
+<title>Values From Inferior - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Python-API.html#Python-API" title="Python API">
+<link rel="prev" href="Exception-Handling.html#Exception-Handling" title="Exception Handling">
+<link rel="next" href="Types-In-Python.html#Types-In-Python" title="Types In Python">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Values-From-Inferior"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Types-In-Python.html#Types-In-Python">Types In Python</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Exception-Handling.html#Exception-Handling">Exception Handling</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Python-API.html#Python-API">Python API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.2.2.3 Values From Inferior</h5>
+
+<p><a name="index-values-from-inferior_002c-with-Python-1866"></a><a name="index-python_002c-working-with-values-from-inferior-1867"></a>
+<a name="index-g_t_0040code_007bgdb_002eValue_007d-1868"></a><span class="sc">gdb</span> provides values it obtains from the inferior program in
+an object of type <code>gdb.Value</code>.  <span class="sc">gdb</span> uses this object
+for its internal bookkeeping of the inferior's values, and for
+fetching values when necessary.
+
+   <p>Inferior values that are simple scalars can be used directly in
+Python expressions that are valid for the value's data type.  Here's
+an example for an integer or floating-point value <code>some_val</code>:
+
+<pre class="smallexample">     bar = some_val + 2
+</pre>
+   <p class="noindent">As result of this, <code>bar</code> will also be a <code>gdb.Value</code> object
+whose values are of the same type as those of <code>some_val</code>.  Valid
+Python operations can also be performed on <code>gdb.Value</code> objects
+representing a <code>struct</code> or <code>class</code> object.  For such cases,
+the overloaded operator (if present), is used to perform the operation. 
+For example, if <code>val1</code> and <code>val2</code> are <code>gdb.Value</code> objects
+representing instances of a <code>class</code> which overloads the <code>+</code>
+operator, then one can use the <code>+</code> operator in their Python script
+as follows:
+
+<pre class="smallexample">     val3 = val1 + val2
+</pre>
+   <p class="noindent">The result of the operation <code>val3</code> is also a <code>gdb.Value</code>
+object corresponding to the value returned by the overloaded <code>+</code>
+operator.  In general, overloaded operators are invoked for the
+following operations: <code>+</code> (binary addition), <code>-</code> (binary
+subtraction), <code>*</code> (multiplication), <code>/</code>, <code>%</code>, <code>&lt;&lt;</code>,
+<code>&gt;&gt;</code>, <code>|</code>, <code>&amp;</code>, <code>^</code>.
+
+   <p>Inferior values that are structures or instances of some class can
+be accessed using the Python <dfn>dictionary syntax</dfn>.  For example, if
+<code>some_val</code> is a <code>gdb.Value</code> instance holding a structure, you
+can access its <code>foo</code> element with:
+
+<pre class="smallexample">     bar = some_val['foo']
+</pre>
+   <p><a name="index-getting-structure-elements-using-gdb_002eField-objects-as-subscripts-1869"></a>Again, <code>bar</code> will also be a <code>gdb.Value</code> object.  Structure
+elements can also be accessed by using <code>gdb.Field</code> objects as
+subscripts (see <a href="Types-In-Python.html#Types-In-Python">Types In Python</a>, for more information on
+<code>gdb.Field</code> objects).  For example, if <code>foo_field</code> is a
+<code>gdb.Field</code> object corresponding to element <code>foo</code> of the above
+structure, then <code>bar</code> can also be accessed as follows:
+
+<pre class="smallexample">     bar = some_val[foo_field]
+</pre>
+   <p>A <code>gdb.Value</code> that represents a function can be executed via
+inferior function call.  Any arguments provided to the call must match
+the function's prototype, and must be provided in the order specified
+by that prototype.
+
+   <p>For example, <code>some_val</code> is a <code>gdb.Value</code> instance
+representing a function that takes two integers as arguments.  To
+execute this function, call it like so:
+
+<pre class="smallexample">     result = some_val (10,20)
+</pre>
+   <p>Any values returned from a function call will be stored as a
+<code>gdb.Value</code>.
+
+   <p>The following attributes are provided:
+
+<div class="defun">
+&mdash; Variable: <b>Value.address</b><var><a name="index-Value_002eaddress-1870"></a></var><br>
+<blockquote><p>If this object is addressable, this read-only attribute holds a
+<code>gdb.Value</code> object representing the address.  Otherwise,
+this attribute holds <code>None</code>. 
+</p></blockquote></div>
+
+   <p><a name="index-optimized-out-value-in-Python-1871"></a>
+
+<div class="defun">
+&mdash; Variable: <b>Value.is_optimized_out</b><var><a name="index-Value_002eis_005foptimized_005fout-1872"></a></var><br>
+<blockquote><p>This read-only boolean attribute is true if the compiler optimized out
+this value, thus it is not available for fetching from the inferior. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: <b>Value.type</b><var><a name="index-Value_002etype-1873"></a></var><br>
+<blockquote><p>The type of this <code>gdb.Value</code>.  The value of this attribute is a
+<code>gdb.Type</code> object (see <a href="Types-In-Python.html#Types-In-Python">Types In Python</a>). 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: <b>Value.dynamic_type</b><var><a name="index-Value_002edynamic_005ftype-1874"></a></var><br>
+<blockquote><p>The dynamic type of this <code>gdb.Value</code>.  This uses C<tt>++</tt> run-time
+type information (<acronym>RTTI</acronym>) to determine the dynamic type of the
+value.  If this value is of class type, it will return the class in
+which the value is embedded, if any.  If this value is of pointer or
+reference to a class type, it will compute the dynamic type of the
+referenced object, and return a pointer or reference to that type,
+respectively.  In all other cases, it will return the value's static
+type.
+
+        <p>Note that this feature will only work when debugging a C<tt>++</tt> program
+that includes <acronym>RTTI</acronym> for the object in question.  Otherwise,
+it will just return the static type of the value as in <kbd>ptype foo</kbd>
+(see <a href="Symbols.html#Symbols">ptype</a>). 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: <b>Value.is_lazy</b><var><a name="index-Value_002eis_005flazy-1875"></a></var><br>
+<blockquote><p>The value of this read-only boolean attribute is <code>True</code> if this
+<code>gdb.Value</code> has not yet been fetched from the inferior. 
+<span class="sc">gdb</span> does not fetch values until necessary, for efficiency. 
+For example:
+
+     <pre class="smallexample">          myval = gdb.parse_and_eval ('somevar')
+</pre>
+        <p>The value of <code>somevar</code> is not fetched at this time.  It will be
+fetched when the value is needed, or when the <code>fetch_lazy</code>
+method is invoked. 
+</p></blockquote></div>
+
+   <p>The following methods are provided:
+
+<div class="defun">
+&mdash; Function: <b>Value.__init__</b> (<var>val</var>)<var><a name="index-Value_002e_005f_005finit_005f_005f-1876"></a></var><br>
+<blockquote><p>Many Python values can be converted directly to a <code>gdb.Value</code> via
+this object initializer.  Specifically:
+
+          <dl>
+<dt>Python boolean<dd>A Python boolean is converted to the boolean type from the current
+language.
+
+          <br><dt>Python integer<dd>A Python integer is converted to the C <code>long</code> type for the
+current architecture.
+
+          <br><dt>Python long<dd>A Python long is converted to the C <code>long long</code> type for the
+current architecture.
+
+          <br><dt>Python float<dd>A Python float is converted to the C <code>double</code> type for the
+current architecture.
+
+          <br><dt>Python string<dd>A Python string is converted to a target string in the current target
+language using the current target encoding. 
+If a character cannot be represented in the current target encoding,
+then an exception is thrown.
+
+          <br><dt><code>gdb.Value</code><dd>If <code>val</code> is a <code>gdb.Value</code>, then a copy of the value is made.
+
+          <br><dt><code>gdb.LazyString</code><dd>If <code>val</code> is a <code>gdb.LazyString</code> (see <a href="Lazy-Strings-In-Python.html#Lazy-Strings-In-Python">Lazy Strings In Python</a>), then the lazy string's <code>value</code> method is called, and
+its result is used. 
+</dl>
+        </p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Value.cast</b> (<var>type</var>)<var><a name="index-Value_002ecast-1877"></a></var><br>
+<blockquote><p>Return a new instance of <code>gdb.Value</code> that is the result of
+casting this instance to the type described by <var>type</var>, which must
+be a <code>gdb.Type</code> object.  If the cast cannot be performed for some
+reason, this method throws an exception. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Value.dereference</b> ()<var><a name="index-Value_002edereference-1878"></a></var><br>
+<blockquote><p>For pointer data types, this method returns a new <code>gdb.Value</code> object
+whose contents is the object pointed to by the pointer.  For example, if
+<code>foo</code> is a C pointer to an <code>int</code>, declared in your C program as
+
+     <pre class="smallexample">          int *foo;
+</pre>
+        <p class="noindent">then you can use the corresponding <code>gdb.Value</code> to access what
+<code>foo</code> points to like this:
+
+     <pre class="smallexample">          bar = foo.dereference ()
+</pre>
+        <p>The result <code>bar</code> will be a <code>gdb.Value</code> object holding the
+value pointed to by <code>foo</code>.
+
+        <p>A similar function <code>Value.referenced_value</code> exists which also
+returns <code>gdb.Value</code> objects corresonding to the values pointed to
+by pointer values (and additionally, values referenced by reference
+values).  However, the behavior of <code>Value.dereference</code>
+differs from <code>Value.referenced_value</code> by the fact that the
+behavior of <code>Value.dereference</code> is identical to applying the C
+unary operator <code>*</code> on a given value.  For example, consider a
+reference to a pointer <code>ptrref</code>, declared in your C<tt>++</tt> program
+as
+
+     <pre class="smallexample">          typedef int *intptr;
+          ...
+          int val = 10;
+          intptr ptr = &amp;val;
+          intptr &amp;ptrref = ptr;
+</pre>
+        <p>Though <code>ptrref</code> is a reference value, one can apply the method
+<code>Value.dereference</code> to the <code>gdb.Value</code> object corresponding
+to it and obtain a <code>gdb.Value</code> which is identical to that
+corresponding to <code>val</code>.  However, if you apply the method
+<code>Value.referenced_value</code>, the result would be a <code>gdb.Value</code>
+object identical to that corresponding to <code>ptr</code>.
+
+     <pre class="smallexample">          py_ptrref = gdb.parse_and_eval ("ptrref")
+          py_val = py_ptrref.dereference ()
+          py_ptr = py_ptrref.referenced_value ()
+</pre>
+        <p>The <code>gdb.Value</code> object <code>py_val</code> is identical to that
+corresponding to <code>val</code>, and <code>py_ptr</code> is identical to that
+corresponding to <code>ptr</code>.  In general, <code>Value.dereference</code> can
+be applied whenever the C unary operator <code>*</code> can be applied
+to the corresponding C value.  For those cases where applying both
+<code>Value.dereference</code> and <code>Value.referenced_value</code> is allowed,
+the results obtained need not be identical (as we have seen in the above
+example).  The results are however identical when applied on
+<code>gdb.Value</code> objects corresponding to pointers (<code>gdb.Value</code>
+objects with type code <code>TYPE_CODE_PTR</code>) in a C/C<tt>++</tt> program. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Value.referenced_value</b> ()<var><a name="index-Value_002ereferenced_005fvalue-1879"></a></var><br>
+<blockquote><p>For pointer or reference data types, this method returns a new
+<code>gdb.Value</code> object corresponding to the value referenced by the
+pointer/reference value.  For pointer data types,
+<code>Value.dereference</code> and <code>Value.referenced_value</code> produce
+identical results.  The difference between these methods is that
+<code>Value.dereference</code> cannot get the values referenced by reference
+values.  For example, consider a reference to an <code>int</code>, declared
+in your C<tt>++</tt> program as
+
+     <pre class="smallexample">          int val = 10;
+          int &amp;ref = val;
+</pre>
+        <p class="noindent">then applying <code>Value.dereference</code> to the <code>gdb.Value</code> object
+corresponding to <code>ref</code> will result in an error, while applying
+<code>Value.referenced_value</code> will result in a <code>gdb.Value</code> object
+identical to that corresponding to <code>val</code>.
+
+     <pre class="smallexample">          py_ref = gdb.parse_and_eval ("ref")
+          er_ref = py_ref.dereference ()       # Results in error
+          py_val = py_ref.referenced_value ()  # Returns the referenced value
+</pre>
+        <p>The <code>gdb.Value</code> object <code>py_val</code> is identical to that
+corresponding to <code>val</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Value.reference_value</b> ()<var><a name="index-Value_002ereference_005fvalue-1880"></a></var><br>
+<blockquote><p>Return a <code>gdb.Value</code> object which is a reference to the value
+encapsulated by this instance. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Value.const_value</b> ()<var><a name="index-Value_002econst_005fvalue-1881"></a></var><br>
+<blockquote><p>Return a <code>gdb.Value</code> object which is a <code>const</code> version of the
+value encapsulated by this instance. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Value.dynamic_cast</b> (<var>type</var>)<var><a name="index-Value_002edynamic_005fcast-1882"></a></var><br>
+<blockquote><p>Like <code>Value.cast</code>, but works as if the C<tt>++</tt> <code>dynamic_cast</code>
+operator were used.  Consult a C<tt>++</tt> reference for details. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Value.reinterpret_cast</b> (<var>type</var>)<var><a name="index-Value_002ereinterpret_005fcast-1883"></a></var><br>
+<blockquote><p>Like <code>Value.cast</code>, but works as if the C<tt>++</tt> <code>reinterpret_cast</code>
+operator were used.  Consult a C<tt>++</tt> reference for details. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Value.string</b> (<span class="roman">[</span><var>encoding</var><span class="roman">[</span><var>, errors</var><span class="roman">[</span><var>, length</var><span class="roman">]]]</span>)<var><a name="index-Value_002estring-1884"></a></var><br>
+<blockquote><p>If this <code>gdb.Value</code> represents a string, then this method
+converts the contents to a Python string.  Otherwise, this method will
+throw an exception.
+
+        <p>Values are interpreted as strings according to the rules of the
+current language.  If the optional length argument is given, the
+string will be converted to that length, and will include any embedded
+zeroes that the string may contain.  Otherwise, for languages
+where the string is zero-terminated, the entire string will be
+converted.
+
+        <p>For example, in C-like languages, a value is a string if it is a pointer
+to or an array of characters or ints of type <code>wchar_t</code>, <code>char16_t</code>,
+or <code>char32_t</code>.
+
+        <p>If the optional <var>encoding</var> argument is given, it must be a string
+naming the encoding of the string in the <code>gdb.Value</code>, such as
+<code>"ascii"</code>, <code>"iso-8859-6"</code> or <code>"utf-8"</code>.  It accepts
+the same encodings as the corresponding argument to Python's
+<code>string.decode</code> method, and the Python codec machinery will be used
+to convert the string.  If <var>encoding</var> is not given, or if
+<var>encoding</var> is the empty string, then either the <code>target-charset</code>
+(see <a href="Character-Sets.html#Character-Sets">Character Sets</a>) will be used, or a language-specific encoding
+will be used, if the current language is able to supply one.
+
+        <p>The optional <var>errors</var> argument is the same as the corresponding
+argument to Python's <code>string.decode</code> method.
+
+        <p>If the optional <var>length</var> argument is given, the string will be
+fetched and converted to the given length. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Value.lazy_string</b> (<span class="roman">[</span><var>encoding </var><span class="roman">[</span><var>, length</var><span class="roman">]]</span>)<var><a name="index-Value_002elazy_005fstring-1885"></a></var><br>
+<blockquote><p>If this <code>gdb.Value</code> represents a string, then this method
+converts the contents to a <code>gdb.LazyString</code> (see <a href="Lazy-Strings-In-Python.html#Lazy-Strings-In-Python">Lazy Strings In Python</a>).  Otherwise, this method will throw an exception.
+
+        <p>If the optional <var>encoding</var> argument is given, it must be a string
+naming the encoding of the <code>gdb.LazyString</code>.  Some examples are:
+&lsquo;<samp><span class="samp">ascii</span></samp>&rsquo;, &lsquo;<samp><span class="samp">iso-8859-6</span></samp>&rsquo; or &lsquo;<samp><span class="samp">utf-8</span></samp>&rsquo;.  If the
+<var>encoding</var> argument is an encoding that <span class="sc">gdb</span> does
+recognize, <span class="sc">gdb</span> will raise an error.
+
+        <p>When a lazy string is printed, the <span class="sc">gdb</span> encoding machinery is
+used to convert the string during printing.  If the optional
+<var>encoding</var> argument is not provided, or is an empty string,
+<span class="sc">gdb</span> will automatically select the encoding most suitable for
+the string type.  For further information on encoding in <span class="sc">gdb</span>
+please see <a href="Character-Sets.html#Character-Sets">Character Sets</a>.
+
+        <p>If the optional <var>length</var> argument is given, the string will be
+fetched and encoded to the length of characters specified.  If
+the <var>length</var> argument is not provided, the string will be fetched
+and encoded until a null of appropriate width is found. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Value.fetch_lazy</b> ()<var><a name="index-Value_002efetch_005flazy-1886"></a></var><br>
+<blockquote><p>If the <code>gdb.Value</code> object is currently a lazy value
+(<code>gdb.Value.is_lazy</code> is <code>True</code>), then the value is
+fetched from the inferior.  Any errors that occur in the process
+will produce a Python exception.
+
+        <p>If the <code>gdb.Value</code> object is not a lazy value, this method
+has no effect.
+
+        <p>This method does not return a value. 
+</p></blockquote></div>
+
+   </body></html>
+

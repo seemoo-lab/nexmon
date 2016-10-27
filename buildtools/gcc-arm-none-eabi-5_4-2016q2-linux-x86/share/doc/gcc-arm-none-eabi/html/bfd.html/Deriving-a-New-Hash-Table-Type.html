@@ -1,0 +1,82 @@
+<html lang="en">
+<head>
+<title>Deriving a New Hash Table Type - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Hash-Tables.html#Hash-Tables" title="Hash Tables">
+<link rel="prev" href="Traversing-a-Hash-Table.html#Traversing-a-Hash-Table" title="Traversing a Hash Table">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Deriving-a-New-Hash-Table-Type"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Traversing-a-Hash-Table.html#Traversing-a-Hash-Table">Traversing a Hash Table</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Hash-Tables.html#Hash-Tables">Hash Tables</a>
+<hr>
+</div>
+
+<h4 class="subsection">2.18.4 Deriving a new hash table type</h4>
+
+<p>Many uses of hash tables want to store additional information
+which each entry in the hash table.  Some also find it
+convenient to store additional information with the hash table
+itself.  This may be done using a derived hash table.
+
+   <p>Since C is not an object oriented language, creating a derived
+hash table requires sticking together some boilerplate
+routines with a few differences specific to the type of hash
+table you want to create.
+
+   <p>An example of a derived hash table is the linker hash table. 
+The structures for this are defined in <code>bfdlink.h</code>.  The
+functions are in <code>linker.c</code>.
+
+   <p>You may also derive a hash table from an already derived hash
+table.  For example, the a.out linker backend code uses a hash
+table derived from the linker hash table.
+
+<ul class="menu">
+<li><a accesskey="1" href="Define-the-Derived-Structures.html#Define-the-Derived-Structures">Define the Derived Structures</a>
+<li><a accesskey="2" href="Write-the-Derived-Creation-Routine.html#Write-the-Derived-Creation-Routine">Write the Derived Creation Routine</a>
+<li><a accesskey="3" href="Write-Other-Derived-Routines.html#Write-Other-Derived-Routines">Write Other Derived Routines</a>
+</ul>
+
+   </body></html>
+

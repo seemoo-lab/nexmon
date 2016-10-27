@@ -1,0 +1,99 @@
+<html lang="en">
+<head>
+<title>Torture Tests - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Testsuites.html#Testsuites" title="Testsuites">
+<link rel="prev" href="compat-Testing.html#compat-Testing" title="compat Testing">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Torture-Tests"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="compat-Testing.html#compat-Testing">compat Testing</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Testsuites.html#Testsuites">Testsuites</a>
+<hr>
+</div>
+
+<h3 class="section">7.10 Support for torture testing using multiple options</h3>
+
+<p>Throughout the compiler testsuite there are several directories whose
+tests are run multiple times, each with a different set of options. 
+These are known as torture tests. 
+<samp><span class="file">lib/torture-options.exp</span></samp> defines procedures to
+set up these lists:
+
+     <dl>
+<dt><code>torture-init</code><dd>Initialize use of torture lists. 
+<br><dt><code>set-torture-options</code><dd>Set lists of torture options to use for tests with and without loops. 
+Optionally combine a set of torture options with a set of other
+options, as is done with Objective-C runtime options. 
+<br><dt><code>torture-finish</code><dd>Finalize use of torture lists. 
+</dl>
+
+ <p>The <samp><span class="file">.exp</span></samp> file for a set of tests that use torture options must
+include calls to these three procedures if:
+
+     <ul>
+<li>It calls <code>gcc-dg-runtest</code> and overrides <var>DG_TORTURE_OPTIONS</var>.
+
+     <li>It calls <var>${tool}</var><code>-torture</code> or
+<var>${tool}</var><code>-torture-execute</code>, where <var>tool</var> is <code>c</code>,
+<code>fortran</code>, or <code>objc</code>.
+
+     <li>It calls <code>dg-pch</code>. 
+</ul>
+
+ <p>It is not necessary for a <samp><span class="file">.exp</span></samp> file that calls <code>gcc-dg-runtest</code>
+to call the torture procedures if the tests should use the list in
+<var>DG_TORTURE_OPTIONS</var> defined in <samp><span class="file">gcc-dg.exp</span></samp>.
+
+ <p>Most uses of torture options can override the default lists by defining
+<var>TORTURE_OPTIONS</var> or add to the default list by defining
+<var>ADDITIONAL_TORTURE_OPTIONS</var>.  Define these in a <samp><span class="file">.dejagnurc</span></samp>
+file or add them to the <samp><span class="file">site.exp</span></samp> file; for example
+
+<pre class="smallexample">     set ADDITIONAL_TORTURE_OPTIONS  [list \
+       { -O2 -ftree-loop-linear } \
+       { -O2 -fpeel-loops } ]
+</pre>
+ <!-- Copyright (C) 2003-2015 Free Software Foundation, Inc. -->
+<!-- This is part of the GCC manual. -->
+<!-- For copying conditions, see the file gcc.texi. -->
+ </body></html>
+

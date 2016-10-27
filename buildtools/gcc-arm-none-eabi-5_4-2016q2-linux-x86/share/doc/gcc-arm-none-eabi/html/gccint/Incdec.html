@@ -1,0 +1,130 @@
+<html lang="en">
+<head>
+<title>Incdec - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="RTL.html#RTL" title="RTL">
+<link rel="prev" href="Side-Effects.html#Side-Effects" title="Side Effects">
+<link rel="next" href="Assembler.html#Assembler" title="Assembler">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Incdec"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Assembler.html#Assembler">Assembler</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Side-Effects.html#Side-Effects">Side Effects</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="RTL.html#RTL">RTL</a>
+<hr>
+</div>
+
+<h3 class="section">13.16 Embedded Side-Effects on Addresses</h3>
+
+<p><a name="index-RTL-preincrement-3052"></a><a name="index-RTL-postincrement-3053"></a><a name="index-RTL-predecrement-3054"></a><a name="index-RTL-postdecrement-3055"></a>
+Six special side-effect expression codes appear as memory addresses.
+
+     
+<a name="index-pre_005fdec-3056"></a>
+<dl><dt><code>(pre_dec:</code><var>m</var> <var>x</var><code>)</code><dd>Represents the side effect of decrementing <var>x</var> by a standard
+amount and represents also the value that <var>x</var> has after being
+decremented.  <var>x</var> must be a <code>reg</code> or <code>mem</code>, but most
+machines allow only a <code>reg</code>.  <var>m</var> must be the machine mode
+for pointers on the machine in use.  The amount <var>x</var> is decremented
+by is the length in bytes of the machine mode of the containing memory
+reference of which this expression serves as the address.  Here is an
+example of its use:
+
+     <pre class="smallexample">          (mem:DF (pre_dec:SI (reg:SI 39)))
+</pre>
+     <p class="noindent">This says to decrement pseudo register 39 by the length of a <code>DFmode</code>
+value and use the result to address a <code>DFmode</code> value.
+
+     <p><a name="index-pre_005finc-3057"></a><br><dt><code>(pre_inc:</code><var>m</var> <var>x</var><code>)</code><dd>Similar, but specifies incrementing <var>x</var> instead of decrementing it.
+
+     <p><a name="index-post_005fdec-3058"></a><br><dt><code>(post_dec:</code><var>m</var> <var>x</var><code>)</code><dd>Represents the same side effect as <code>pre_dec</code> but a different
+value.  The value represented here is the value <var>x</var> has <i>before</i>
+being decremented.
+
+     <p><a name="index-post_005finc-3059"></a><br><dt><code>(post_inc:</code><var>m</var> <var>x</var><code>)</code><dd>Similar, but specifies incrementing <var>x</var> instead of decrementing it.
+
+     <p><a name="index-post_005fmodify-3060"></a><br><dt><code>(post_modify:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dd>
+Represents the side effect of setting <var>x</var> to <var>y</var> and
+represents <var>x</var> before <var>x</var> is modified.  <var>x</var> must be a
+<code>reg</code> or <code>mem</code>, but most machines allow only a <code>reg</code>. 
+<var>m</var> must be the machine mode for pointers on the machine in use.
+
+     <p>The expression <var>y</var> must be one of three forms:
+<code>(plus:</code><var>m</var> <var>x</var> <var>z</var><code>)</code>,
+<code>(minus:</code><var>m</var> <var>x</var> <var>z</var><code>)</code>, or
+<code>(plus:</code><var>m</var> <var>x</var> <var>i</var><code>)</code>,
+where <var>z</var> is an index register and <var>i</var> is a constant.
+
+     <p>Here is an example of its use:
+
+     <pre class="smallexample">          (mem:SF (post_modify:SI (reg:SI 42) (plus (reg:SI 42)
+                                                    (reg:SI 48))))
+</pre>
+     <p>This says to modify pseudo register 42 by adding the contents of pseudo
+register 48 to it, after the use of what ever 42 points to.
+
+     <p><a name="index-pre_005fmodify-3061"></a><br><dt><code>(pre_modify:</code><var>m</var> <var>x</var> <var>expr</var><code>)</code><dd>Similar except side effects happen before the use. 
+</dl>
+
+ <p>These embedded side effect expressions must be used with care.  Instruction
+patterns may not use them.  Until the &lsquo;<samp><span class="samp">flow</span></samp>&rsquo; pass of the compiler,
+they may occur only to represent pushes onto the stack.  The &lsquo;<samp><span class="samp">flow</span></samp>&rsquo;
+pass finds cases where registers are incremented or decremented in one
+instruction and used as an address shortly before or after; these cases are
+then transformed to use pre- or post-increment or -decrement.
+
+ <p>If a register used as the operand of these expressions is used in
+another address in an insn, the original value of the register is used. 
+Uses of the register outside of an address are not permitted within the
+same insn as a use in an embedded side effect expression because such
+insns behave differently on different machines and hence must be treated
+as ambiguous and disallowed.
+
+ <p>An instruction that can be represented with an embedded side effect
+could also be represented using <code>parallel</code> containing an additional
+<code>set</code> to describe how the address register is altered.  This is not
+done because machines that allow these operations at all typically
+allow them wherever a memory address is called for.  Describing them as
+additional parallel stores would require doubling the number of entries
+in the machine description.
+
+ </body></html>
+

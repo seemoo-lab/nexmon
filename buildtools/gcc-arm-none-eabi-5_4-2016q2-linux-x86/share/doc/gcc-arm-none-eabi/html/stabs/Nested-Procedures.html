@@ -1,0 +1,80 @@
+<html lang="en">
+<head>
+<title>Nested Procedures - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Program-Structure.html#Program-Structure" title="Program Structure">
+<link rel="prev" href="Procedures.html#Procedures" title="Procedures">
+<link rel="next" href="Block-Structure.html#Block-Structure" title="Block Structure">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Nested-Procedures"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Block-Structure.html#Block-Structure">Block Structure</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Procedures.html#Procedures">Procedures</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Program-Structure.html#Program-Structure">Program Structure</a>
+<hr>
+</div>
+
+<h3 class="section">2.6 Nested Procedures</h3>
+
+<p>For any of the symbol descriptors representing procedures, after the
+symbol descriptor and the type information is optionally a scope
+specifier.  This consists of a comma, the name of the procedure, another
+comma, and the name of the enclosing procedure.  The first name is local
+to the scope specified, and seems to be redundant with the name of the
+symbol (before the &lsquo;<samp><span class="samp">:</span></samp>&rsquo;).  This feature is used by GCC, and
+presumably Pascal, Modula-2, etc., compilers, for nested functions.
+
+   <p>If procedures are nested more than one level deep, only the immediately
+containing scope is specified.  For example, this code:
+
+<pre class="example">     int
+     foo (int x)
+     {
+       int bar (int y)
+         {
+           int baz (int z)
+             {
+               return x + y + z;
+             }
+           return baz (x + 2 * y);
+         }
+       return x + bar (3 * x);
+     }
+</pre>
+   <p class="noindent">produces the stabs:
+
+<pre class="example">     .stabs "baz:f1,baz,bar",36,0,0,_baz.15         # <span class="roman">36 is N_FUN</span>
+     .stabs "bar:f1,bar,foo",36,0,0,_bar.12
+     .stabs "foo:F1",36,0,0,_foo
+</pre>
+   </body></html>
+

@@ -1,0 +1,153 @@
+<html lang="en">
+<head>
+<title>Stab Symbol Types - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stab-Types.html#Stab-Types" title="Stab Types">
+<link rel="prev" href="Non_002dStab-Symbol-Types.html#Non_002dStab-Symbol-Types" title="Non-Stab Symbol Types">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Stab-Symbol-Types"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Non_002dStab-Symbol-Types.html#Non_002dStab-Symbol-Types">Non-Stab Symbol Types</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stab-Types.html#Stab-Types">Stab Types</a>
+<hr>
+</div>
+
+<h3 class="appendixsec">A.2 Stab Symbol Types</h3>
+
+<p>The following symbol types indicate that this is a stab.  This is the
+full list of stab numbers, including stab types that are used in
+languages other than C.
+
+     <dl>
+<dt><code>0x20     N_GSYM</code><dd>Global symbol; see <a href="Global-Variables.html#Global-Variables">Global Variables</a>.
+
+     <br><dt><code>0x22     N_FNAME</code><dd>Function name (for BSD Fortran); see <a href="Procedures.html#Procedures">Procedures</a>.
+
+     <br><dt><code>0x24     N_FUN</code><dd>Function name (see <a href="Procedures.html#Procedures">Procedures</a>) or text segment variable
+(see <a href="Statics.html#Statics">Statics</a>).
+
+     <br><dt><code>0x26 N_STSYM</code><dd>Data segment file-scope variable; see <a href="Statics.html#Statics">Statics</a>.
+
+     <br><dt><code>0x28 N_LCSYM</code><dd>BSS segment file-scope variable; see <a href="Statics.html#Statics">Statics</a>.
+
+     <br><dt><code>0x2a N_MAIN</code><dd>Name of main routine; see <a href="Main-Program.html#Main-Program">Main Program</a>.
+
+     <br><dt><code>0x2c N_ROSYM</code><dd>Variable in <code>.rodata</code> section; see <a href="Statics.html#Statics">Statics</a>.
+
+     <br><dt><code>0x30     N_PC</code><dd>Global symbol (for Pascal); see <a href="N_005fPC.html#N_005fPC">N_PC</a>.
+
+     <br><dt><code>0x32     N_NSYMS</code><dd>Number of symbols (according to Ultrix V4.0); see <a href="N_005fNSYMS.html#N_005fNSYMS">N_NSYMS</a>.
+
+     <br><dt><code>0x34     N_NOMAP</code><dd>No DST map; see <a href="N_005fNOMAP.html#N_005fNOMAP">N_NOMAP</a>.
+
+     <br><dt><code>0x36     N_MAC_DEFINE</code><dd>Name and body of a <code>#define</code>d macro; see <a href="Macro-define-and-undefine.html#Macro-define-and-undefine">Macro define and undefine</a>.
+
+     <!-- FIXME: describe this solaris feature in the body of the text (see -->
+     <!-- comments in include/aout/stab.def). -->
+     <br><dt><code>0x38 N_OBJ</code><dd>Object file (Solaris2).
+
+     <br><dt><code>0x3a     N_MAC_UNDEF</code><dd>Name of an <code>#undef</code>ed macro; see <a href="Macro-define-and-undefine.html#Macro-define-and-undefine">Macro define and undefine</a>.
+
+     <!-- See include/aout/stab.def for (a little) more info. -->
+     <br><dt><code>0x3c N_OPT</code><dd>Debugger options (Solaris2).
+
+     <br><dt><code>0x40     N_RSYM</code><dd>Register variable; see <a href="Register-Variables.html#Register-Variables">Register Variables</a>.
+
+     <br><dt><code>0x42     N_M2C</code><dd>Modula-2 compilation unit; see <a href="N_005fM2C.html#N_005fM2C">N_M2C</a>.
+
+     <br><dt><code>0x44     N_SLINE</code><dd>Line number in text segment; see <a href="Line-Numbers.html#Line-Numbers">Line Numbers</a>.
+
+     <br><dt><code>0x46     N_DSLINE</code><dd>Line number in data segment; see <a href="Line-Numbers.html#Line-Numbers">Line Numbers</a>.
+
+     <br><dt><code>0x48     N_BSLINE</code><dd>Line number in bss segment; see <a href="Line-Numbers.html#Line-Numbers">Line Numbers</a>.
+
+     <br><dt><code>0x48     N_BROWS</code><dd>Sun source code browser, path to <samp><span class="file">.cb</span></samp> file; see <a href="N_005fBROWS.html#N_005fBROWS">N_BROWS</a>.
+
+     <br><dt><code>0x4a     N_DEFD</code><dd>GNU Modula2 definition module dependency; see <a href="N_005fDEFD.html#N_005fDEFD">N_DEFD</a>.
+
+     <br><dt><code>0x4c N_FLINE</code><dd>Function start/body/end line numbers (Solaris2).
+
+     <br><dt><code>0x50     N_EHDECL</code><dd>GNU C<tt>++</tt> exception variable; see <a href="N_005fEHDECL.html#N_005fEHDECL">N_EHDECL</a>.
+
+     <br><dt><code>0x50     N_MOD2</code><dd>Modula2 info "for imc" (according to Ultrix V4.0); see <a href="N_005fMOD2.html#N_005fMOD2">N_MOD2</a>.
+
+     <br><dt><code>0x54     N_CATCH</code><dd>GNU C<tt>++</tt> <code>catch</code> clause; see <a href="N_005fCATCH.html#N_005fCATCH">N_CATCH</a>.
+
+     <br><dt><code>0x60     N_SSYM</code><dd>Structure of union element; see <a href="N_005fSSYM.html#N_005fSSYM">N_SSYM</a>.
+
+     <br><dt><code>0x62 N_ENDM</code><dd>Last stab for module (Solaris2).
+
+     <br><dt><code>0x64     N_SO</code><dd>Path and name of source file; see <a href="Source-Files.html#Source-Files">Source Files</a>.
+
+     <br><dt><code>0x80 N_LSYM</code><dd>Stack variable (see <a href="Stack-Variables.html#Stack-Variables">Stack Variables</a>) or type (see <a href="Typedefs.html#Typedefs">Typedefs</a>).
+
+     <br><dt><code>0x82     N_BINCL</code><dd>Beginning of an include file (Sun only); see <a href="Include-Files.html#Include-Files">Include Files</a>.
+
+     <br><dt><code>0x84     N_SOL</code><dd>Name of include file; see <a href="Include-Files.html#Include-Files">Include Files</a>.
+
+     <br><dt><code>0xa0     N_PSYM</code><dd>Parameter variable; see <a href="Parameters.html#Parameters">Parameters</a>.
+
+     <br><dt><code>0xa2     N_EINCL</code><dd>End of an include file; see <a href="Include-Files.html#Include-Files">Include Files</a>.
+
+     <br><dt><code>0xa4     N_ENTRY</code><dd>Alternate entry point; see <a href="Alternate-Entry-Points.html#Alternate-Entry-Points">Alternate Entry Points</a>.
+
+     <br><dt><code>0xc0     N_LBRAC</code><dd>Beginning of a lexical block; see <a href="Block-Structure.html#Block-Structure">Block Structure</a>.
+
+     <br><dt><code>0xc2     N_EXCL</code><dd>Place holder for a deleted include file; see <a href="Include-Files.html#Include-Files">Include Files</a>.
+
+     <br><dt><code>0xc4     N_SCOPE</code><dd>Modula2 scope information (Sun linker); see <a href="N_005fSCOPE.html#N_005fSCOPE">N_SCOPE</a>.
+
+     <br><dt><code>0xe0     N_RBRAC</code><dd>End of a lexical block; see <a href="Block-Structure.html#Block-Structure">Block Structure</a>.
+
+     <br><dt><code>0xe2     N_BCOMM</code><dd>Begin named common block; see <a href="Common-Blocks.html#Common-Blocks">Common Blocks</a>.
+
+     <br><dt><code>0xe4     N_ECOMM</code><dd>End named common block; see <a href="Common-Blocks.html#Common-Blocks">Common Blocks</a>.
+
+     <br><dt><code>0xe8     N_ECOML</code><dd>Member of a common block; see <a href="Common-Blocks.html#Common-Blocks">Common Blocks</a>.
+
+     <!-- FIXME: How does this really work?  Move it to main body of document. -->
+     <br><dt><code>0xea N_WITH</code><dd>Pascal <code>with</code> statement: type,,0,0,offset (Solaris2).
+
+     <br><dt><code>0xf0     N_NBTEXT</code><dd>Gould non-base registers; see <a href="Gould.html#Gould">Gould</a>.
+
+     <br><dt><code>0xf2     N_NBDATA</code><dd>Gould non-base registers; see <a href="Gould.html#Gould">Gould</a>.
+
+     <br><dt><code>0xf4     N_NBBSS</code><dd>Gould non-base registers; see <a href="Gould.html#Gould">Gould</a>.
+
+     <br><dt><code>0xf6     N_NBSTS</code><dd>Gould non-base registers; see <a href="Gould.html#Gould">Gould</a>.
+
+     <br><dt><code>0xf8     N_NBLCS</code><dd>Gould non-base registers; see <a href="Gould.html#Gould">Gould</a>. 
+</dl>
+
+<!-- Restore the default table indent -->
+   </body></html>
+

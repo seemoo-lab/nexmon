@@ -1,0 +1,73 @@
+<html lang="en">
+<head>
+<title>Jumps - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Statements.html#Statements" title="Statements">
+<link rel="prev" href="Empty-Statements.html#Empty-Statements" title="Empty Statements">
+<link rel="next" href="Cleanups.html#Cleanups" title="Cleanups">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Jumps"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Cleanups.html#Cleanups">Cleanups</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Empty-Statements.html#Empty-Statements">Empty Statements</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Statements.html#Statements">Statements</a>
+<hr>
+</div>
+
+<h4 class="subsection">10.7.5 Jumps</h4>
+
+<p><a name="index-Jumps-1941"></a>
+Other jumps are expressed by either <code>GOTO_EXPR</code> or
+<code>RETURN_EXPR</code>.
+
+ <p>The operand of a <code>GOTO_EXPR</code> must be either a label or a
+variable containing the address to jump to.
+
+ <p>The operand of a <code>RETURN_EXPR</code> is either <code>NULL_TREE</code>,
+<code>RESULT_DECL</code>, or a <code>MODIFY_EXPR</code> which sets the return
+value.  It would be nice to move the <code>MODIFY_EXPR</code> into a
+separate statement, but the special return semantics in
+<code>expand_return</code> make that difficult.  It may still happen in
+the future, perhaps by moving most of that logic into
+<code>expand_assignment</code>.
+
+ </body></html>
+

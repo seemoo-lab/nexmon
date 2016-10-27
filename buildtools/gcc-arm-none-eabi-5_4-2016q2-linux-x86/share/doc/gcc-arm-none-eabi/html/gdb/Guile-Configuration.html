@@ -1,0 +1,85 @@
+<html lang="en">
+<head>
+<title>Guile Configuration - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Guile-API.html#Guile-API" title="Guile API">
+<link rel="prev" href="Basic-Guile.html#Basic-Guile" title="Basic Guile">
+<link rel="next" href="GDB-Scheme-Data-Types.html#GDB-Scheme-Data-Types" title="GDB Scheme Data Types">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Guile-Configuration"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="GDB-Scheme-Data-Types.html#GDB-Scheme-Data-Types">GDB Scheme Data Types</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Basic-Guile.html#Basic-Guile">Basic Guile</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Guile-API.html#Guile-API">Guile API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.3.3.2 Guile Configuration</h5>
+
+<p><a name="index-guile-configuration-2363"></a>
+<span class="sc">gdb</span> provides these Scheme functions to access various configuration
+parameters.
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>data-directory</b><var><a name="index-data_002ddirectory-2364"></a></var><br>
+<blockquote><p>Return a string containing <span class="sc">gdb</span>'s data directory. 
+This directory contains <span class="sc">gdb</span>'s ancillary files. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>guile-data-directory</b><var><a name="index-guile_002ddata_002ddirectory-2365"></a></var><br>
+<blockquote><p>Return a string containing <span class="sc">gdb</span>'s Guile data directory. 
+This directory contains the Guile modules provided by <span class="sc">gdb</span>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>gdb-version</b><var><a name="index-gdb_002dversion-2366"></a></var><br>
+<blockquote><p>Return a string containing the <span class="sc">gdb</span> version. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>host-config</b><var><a name="index-host_002dconfig-2367"></a></var><br>
+<blockquote><p>Return a string containing the host configuration. 
+This is the string passed to <code>--host</code> when <span class="sc">gdb</span> was configured. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>target-config</b><var><a name="index-target_002dconfig-2368"></a></var><br>
+<blockquote><p>Return a string containing the target configuration. 
+This is the string passed to <code>--target</code> when <span class="sc">gdb</span> was configured. 
+</p></blockquote></div>
+
+   </body></html>
+

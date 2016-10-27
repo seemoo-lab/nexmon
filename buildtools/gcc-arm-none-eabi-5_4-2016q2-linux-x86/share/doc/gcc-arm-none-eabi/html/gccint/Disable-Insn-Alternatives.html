@@ -1,0 +1,147 @@
+<html lang="en">
+<head>
+<title>Disable Insn Alternatives - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Constraints.html#Constraints" title="Constraints">
+<link rel="prev" href="Machine-Constraints.html#Machine-Constraints" title="Machine Constraints">
+<link rel="next" href="Define-Constraints.html#Define-Constraints" title="Define Constraints">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Disable-Insn-Alternatives"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Define-Constraints.html#Define-Constraints">Define Constraints</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Machine-Constraints.html#Machine-Constraints">Machine Constraints</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Constraints.html#Constraints">Constraints</a>
+<hr>
+</div>
+
+<h4 class="subsection">16.8.6 Disable insn alternatives using the <code>enabled</code> attribute</h4>
+
+<p><a name="index-enabled-3364"></a>
+There are three insn attributes that may be used to selectively disable
+instruction alternatives:
+
+     <dl>
+<dt><code>enabled</code><dd>Says whether an alternative is available on the current subtarget.
+
+     <br><dt><code>preferred_for_size</code><dd>Says whether an enabled alternative should be used in code that is
+optimized for size.
+
+     <br><dt><code>preferred_for_speed</code><dd>Says whether an enabled alternative should be used in code that is
+optimized for speed. 
+</dl>
+
+ <p>All these attributes should use <code>(const_int 1)</code> to allow an alternative
+or <code>(const_int 0)</code> to disallow it.  The attributes must be a static
+property of the subtarget; they cannot for example depend on the
+current operands, on the current optimization level, on the location
+of the insn within the body of a loop, on whether register allocation
+has finished, or on the current compiler pass.
+
+ <p>The <code>enabled</code> attribute is a correctness property.  It tells GCC to act
+as though the disabled alternatives were never defined in the first place. 
+This is useful when adding new instructions to an existing pattern in
+cases where the new instructions are only available for certain cpu
+architecture levels (typically mapped to the <code>-march=</code> command-line
+option).
+
+ <p>In contrast, the <code>preferred_for_size</code> and <code>preferred_for_speed</code>
+attributes are strong optimization hints rather than correctness properties. 
+<code>preferred_for_size</code> tells GCC which alternatives to consider when
+adding or modifying an instruction that GCC wants to optimize for size. 
+<code>preferred_for_speed</code> does the same thing for speed.  Note that things
+like code motion can lead to cases where code optimized for size uses
+alternatives that are not preferred for size, and similarly for speed.
+
+ <p>Although <code>define_insn</code>s can in principle specify the <code>enabled</code>
+attribute directly, it is often clearer to have subsiduary attributes
+for each architectural feature of interest.  The <code>define_insn</code>s
+can then use these subsiduary attributes to say which alternatives
+require which features.  The example below does this for <code>cpu_facility</code>.
+
+ <p>E.g. the following two patterns could easily be merged using the <code>enabled</code>
+attribute:
+
+<pre class="smallexample">     
+     (define_insn "*movdi_old"
+       [(set (match_operand:DI 0 "register_operand" "=d")
+             (match_operand:DI 1 "register_operand" " d"))]
+       "!TARGET_NEW"
+       "lgr %0,%1")
+     
+     (define_insn "*movdi_new"
+       [(set (match_operand:DI 0 "register_operand" "=d,f,d")
+             (match_operand:DI 1 "register_operand" " d,d,f"))]
+       "TARGET_NEW"
+       "@
+        lgr  %0,%1
+        ldgr %0,%1
+        lgdr %0,%1")
+     
+</pre>
+ <p>to:
+
+<pre class="smallexample">     
+     (define_insn "*movdi_combined"
+       [(set (match_operand:DI 0 "register_operand" "=d,f,d")
+             (match_operand:DI 1 "register_operand" " d,d,f"))]
+       ""
+       "@
+        lgr  %0,%1
+        ldgr %0,%1
+        lgdr %0,%1"
+       [(set_attr "cpu_facility" "*,new,new")])
+     
+</pre>
+ <p>with the <code>enabled</code> attribute defined like this:
+
+<pre class="smallexample">     
+     (define_attr "cpu_facility" "standard,new" (const_string "standard"))
+     
+     (define_attr "enabled" ""
+       (cond [(eq_attr "cpu_facility" "standard") (const_int 1)
+              (and (eq_attr "cpu_facility" "new")
+                   (ne (symbol_ref "TARGET_NEW") (const_int 0)))
+              (const_int 1)]
+             (const_int 0)))
+     
+</pre>
+ </body></html>
+

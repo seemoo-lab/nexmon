@@ -1,0 +1,73 @@
+<html lang="en">
+<head>
+<title>cproj - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Complex.html#Complex" title="Complex">
+<link rel="prev" href="cpow.html#cpow" title="cpow">
+<link rel="next" href="creal.html#creal" title="creal">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="cproj"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="creal.html#creal">creal</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="cpow.html#cpow">cpow</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Complex.html#Complex">Complex</a>
+<hr>
+</div>
+
+<h3 class="section">2.17 <code>cproj</code>, <code>cprojf</code>&mdash; Riemann sphere projection</h3>
+
+<p><a name="index-cproj-192"></a><a name="index-cprojf-193"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;complex.h&gt;
+     double complex cproj(double complex <var>z</var>);
+     float complex cprojf(float complex <var>z</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+These functions compute a projection of <var>z</var> onto the Riemann
+sphere: <var>z</var> projects to <var>z</var> except that all complex infinities
+(even those with one infinite part and one NaN part) project
+to positive infinity on the real axis. If <var>z</var> has an infinite part,
+then <code>cproj</code>(<var>z</var>) is equivalent to
+
+   <p>INFINITY + I * copysign(0.0, cimag(z))
+
+   <p><code>cprojf</code> is identical to <code>cproj</code>, except that it performs
+its calculations on <code>floats complex</code>.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+The cproj functions return the value of the projection onto
+the Riemann sphere.
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+<code>cproj</code> and <code>cprojf</code> are ISO C99
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

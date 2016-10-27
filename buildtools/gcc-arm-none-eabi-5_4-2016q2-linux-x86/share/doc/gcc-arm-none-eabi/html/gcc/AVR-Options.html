@@ -1,0 +1,478 @@
+<html lang="en">
+<head>
+<title>AVR Options - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Submodel-Options.html#Submodel-Options" title="Submodel Options">
+<link rel="prev" href="ARM-Options.html#ARM-Options" title="ARM Options">
+<link rel="next" href="Blackfin-Options.html#Blackfin-Options" title="Blackfin Options">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="AVR-Options"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Blackfin-Options.html#Blackfin-Options">Blackfin Options</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="ARM-Options.html#ARM-Options">ARM Options</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Submodel-Options.html#Submodel-Options">Submodel Options</a>
+<hr>
+</div>
+
+<h4 class="subsection">3.17.5 AVR Options</h4>
+
+<p><a name="index-AVR-Options-1433"></a>
+These options are defined for AVR implementations:
+
+     <dl>
+<dt><code>-mmcu=</code><var>mcu</var><dd><a name="index-mmcu-1434"></a>Specify Atmel AVR instruction set architectures (ISA) or MCU type.
+
+     <p>The default for this option is&nbsp;&lsquo;<samp><span class="samp">avr2</span></samp>&rsquo;.
+
+     <p>GCC supports the following AVR devices and ISAs:
+
+     <!-- Copyright (C) 2012-2015 Free Software Foundation, Inc. -->
+     <!-- This is part of the GCC manual. -->
+     <!-- For copying conditions, see the file gcc/doc/include/fdl.texi. -->
+     <!-- This file is generated automatically using -->
+     <!-- gcc/config/avr/gen-avr-mmcu-texi.c from: -->
+     <!-- gcc/config/avr/avr-arch.h -->
+     <!-- gcc/config/avr/avr-devices.c -->
+     <!-- gcc/config/avr/avr-mcus.def -->
+     <!-- Please do not edit manually. -->
+          <dl>
+<dt><code>avr2</code><dd>&ldquo;Classic&rdquo; devices with up to 8&nbsp;KiB of program memory. 
+<br><var>mcu</var>&nbsp;= <code>attiny22</code>, <code>attiny26</code>, <code>at90c8534</code>, <code>at90s2313</code>, <code>at90s2323</code>, <code>at90s2333</code>, <code>at90s2343</code>, <code>at90s4414</code>, <code>at90s4433</code>, <code>at90s4434</code>, <code>at90s8515</code>, <code>at90s8535</code>.
+
+          <br><dt><code>avr25</code><dd>&ldquo;Classic&rdquo; devices with up to 8&nbsp;KiB of program memory and with the <code>MOVW</code> instruction. 
+<br><var>mcu</var>&nbsp;= <code>ata5272</code>, <code>ata6616c</code>, <code>attiny13</code>, <code>attiny13a</code>, <code>attiny2313</code>, <code>attiny2313a</code>, <code>attiny24</code>, <code>attiny24a</code>, <code>attiny25</code>, <code>attiny261</code>, <code>attiny261a</code>, <code>attiny43u</code>, <code>attiny4313</code>, <code>attiny44</code>, <code>attiny44a</code>, <code>attiny441</code>, <code>attiny45</code>, <code>attiny461</code>, <code>attiny461a</code>, <code>attiny48</code>, <code>attiny828</code>, <code>attiny84</code>, <code>attiny84a</code>, <code>attiny841</code>, <code>attiny85</code>, <code>attiny861</code>, <code>attiny861a</code>, <code>attiny87</code>, <code>attiny88</code>, <code>at86rf401</code>.
+
+          <br><dt><code>avr3</code><dd>&ldquo;Classic&rdquo; devices with 16&nbsp;KiB up to 64&nbsp;KiB of  program memory. 
+<br><var>mcu</var>&nbsp;= <code>at43usb355</code>, <code>at76c711</code>.
+
+          <br><dt><code>avr31</code><dd>&ldquo;Classic&rdquo; devices with 128&nbsp;KiB of program memory. 
+<br><var>mcu</var>&nbsp;= <code>atmega103</code>, <code>at43usb320</code>.
+
+          <br><dt><code>avr35</code><dd>&ldquo;Classic&rdquo; devices with 16&nbsp;KiB up to 64&nbsp;KiB of program memory and with the <code>MOVW</code> instruction. 
+<br><var>mcu</var>&nbsp;= <code>ata5505</code>, <code>ata6617c</code>, <code>ata664251</code>, <code>atmega16u2</code>, <code>atmega32u2</code>, <code>atmega8u2</code>, <code>attiny1634</code>, <code>attiny167</code>, <code>at90usb162</code>, <code>at90usb82</code>.
+
+          <br><dt><code>avr4</code><dd>&ldquo;Enhanced&rdquo; devices with up to 8&nbsp;KiB of program memory. 
+<br><var>mcu</var>&nbsp;= <code>ata6285</code>, <code>ata6286</code>, <code>ata6289</code>, <code>ata6612c</code>, <code>atmega48</code>, <code>atmega48a</code>, <code>atmega48p</code>, <code>atmega48pa</code>, <code>atmega8</code>, <code>atmega8a</code>, <code>atmega8hva</code>, <code>atmega8515</code>, <code>atmega8535</code>, <code>atmega88</code>, <code>atmega88a</code>, <code>atmega88p</code>, <code>atmega88pa</code>, <code>at90pwm1</code>, <code>at90pwm2</code>, <code>at90pwm2b</code>, <code>at90pwm3</code>, <code>at90pwm3b</code>, <code>at90pwm81</code>.
+
+          <br><dt><code>avr5</code><dd>&ldquo;Enhanced&rdquo; devices with 16&nbsp;KiB up to 64&nbsp;KiB of program memory. 
+<br><var>mcu</var>&nbsp;= <code>ata5702m322</code>, <code>ata5782</code>, <code>ata5790</code>, <code>ata5790n</code>, <code>ata5795</code>, <code>ata5831</code>, <code>ata6613c</code>, <code>ata6614q</code>, <code>atmega16</code>, <code>atmega16a</code>, <code>atmega16hva</code>, <code>atmega16hva2</code>, <code>atmega16hvb</code>, <code>atmega16hvbrevb</code>, <code>atmega16m1</code>, <code>atmega16u4</code>, <code>atmega161</code>, <code>atmega162</code>, <code>atmega163</code>, <code>atmega164a</code>, <code>atmega164p</code>, <code>atmega164pa</code>, <code>atmega165</code>, <code>atmega165a</code>, <code>atmega165p</code>, <code>atmega165pa</code>, <code>atmega168</code>, <code>atmega168a</code>, <code>atmega168p</code>, <code>atmega168pa</code>, <code>atmega169</code>, <code>atmega169a</code>, <code>atmega169p</code>, <code>atmega169pa</code>, <code>atmega32</code>, <code>atmega32a</code>, <code>atmega32c1</code>, <code>atmega32hvb</code>, <code>atmega32hvbrevb</code>, <code>atmega32m1</code>, <code>atmega32u4</code>, <code>atmega32u6</code>, <code>atmega323</code>, <code>atmega324a</code>, <code>atmega324p</code>, <code>atmega324pa</code>, <code>atmega325</code>, <code>atmega325a</code>, <code>atmega325p</code>, <code>atmega325pa</code>, <code>atmega3250</code>, <code>atmega3250a</code>, <code>atmega3250p</code>, <code>atmega3250pa</code>, <code>atmega328</code>, <code>atmega328p</code>, <code>atmega329</code>, <code>atmega329a</code>, <code>atmega329p</code>, <code>atmega329pa</code>, <code>atmega3290</code>, <code>atmega3290a</code>, <code>atmega3290p</code>, <code>atmega3290pa</code>, <code>atmega406</code>, <code>atmega64</code>, <code>atmega64a</code>, <code>atmega64c1</code>, <code>atmega64hve</code>, <code>atmega64hve2</code>, <code>atmega64m1</code>, <code>atmega64rfr2</code>, <code>atmega640</code>, <code>atmega644</code>, <code>atmega644a</code>, <code>atmega644p</code>, <code>atmega644pa</code>, <code>atmega644rfr2</code>, <code>atmega645</code>, <code>atmega645a</code>, <code>atmega645p</code>, <code>atmega6450</code>, <code>atmega6450a</code>, <code>atmega6450p</code>, <code>atmega649</code>, <code>atmega649a</code>, <code>atmega649p</code>, <code>atmega6490</code>, <code>atmega6490a</code>, <code>atmega6490p</code>, <code>at90can32</code>, <code>at90can64</code>, <code>at90pwm161</code>, <code>at90pwm216</code>, <code>at90pwm316</code>, <code>at90scr100</code>, <code>at90usb646</code>, <code>at90usb647</code>, <code>at94k</code>, <code>m3000</code>.
+
+          <br><dt><code>avr51</code><dd>&ldquo;Enhanced&rdquo; devices with 128&nbsp;KiB of program memory. 
+<br><var>mcu</var>&nbsp;= <code>atmega128</code>, <code>atmega128a</code>, <code>atmega128rfa1</code>, <code>atmega128rfr2</code>, <code>atmega1280</code>, <code>atmega1281</code>, <code>atmega1284</code>, <code>atmega1284p</code>, <code>atmega1284rfr2</code>, <code>at90can128</code>, <code>at90usb1286</code>, <code>at90usb1287</code>.
+
+          <br><dt><code>avr6</code><dd>&ldquo;Enhanced&rdquo; devices with 3-byte PC, i.e. with more than 128&nbsp;KiB of program memory. 
+<br><var>mcu</var>&nbsp;= <code>atmega256rfr2</code>, <code>atmega2560</code>, <code>atmega2561</code>, <code>atmega2564rfr2</code>.
+
+          <br><dt><code>avrxmega2</code><dd>&ldquo;XMEGA&rdquo; devices with more than 8&nbsp;KiB and up to 64&nbsp;KiB of program memory. 
+<br><var>mcu</var>&nbsp;= <code>atxmega16a4</code>, <code>atxmega16a4u</code>, <code>atxmega16c4</code>, <code>atxmega16d4</code>, <code>atxmega16e5</code>, <code>atxmega32a4</code>, <code>atxmega32a4u</code>, <code>atxmega32c3</code>, <code>atxmega32c4</code>, <code>atxmega32d3</code>, <code>atxmega32d4</code>, <code>atxmega32e5</code>, <code>atxmega8e5</code>.
+
+          <br><dt><code>avrxmega4</code><dd>&ldquo;XMEGA&rdquo; devices with more than 64&nbsp;KiB and up to 128&nbsp;KiB of program memory. 
+<br><var>mcu</var>&nbsp;= <code>atxmega64a3</code>, <code>atxmega64a3u</code>, <code>atxmega64a4u</code>, <code>atxmega64b1</code>, <code>atxmega64b3</code>, <code>atxmega64c3</code>, <code>atxmega64d3</code>, <code>atxmega64d4</code>.
+
+          <br><dt><code>avrxmega5</code><dd>&ldquo;XMEGA&rdquo; devices with more than 64&nbsp;KiB and up to 128&nbsp;KiB of program memory and more than 64&nbsp;KiB of RAM. 
+<br><var>mcu</var>&nbsp;= <code>atxmega64a1</code>, <code>atxmega64a1u</code>.
+
+          <br><dt><code>avrxmega6</code><dd>&ldquo;XMEGA&rdquo; devices with more than 128&nbsp;KiB of program memory. 
+<br><var>mcu</var>&nbsp;= <code>atxmega128a3</code>, <code>atxmega128a3u</code>, <code>atxmega128b1</code>, <code>atxmega128b3</code>, <code>atxmega128c3</code>, <code>atxmega128d3</code>, <code>atxmega128d4</code>, <code>atxmega192a3</code>, <code>atxmega192a3u</code>, <code>atxmega192c3</code>, <code>atxmega192d3</code>, <code>atxmega256a3</code>, <code>atxmega256a3b</code>, <code>atxmega256a3bu</code>, <code>atxmega256a3u</code>, <code>atxmega256c3</code>, <code>atxmega256d3</code>, <code>atxmega384c3</code>, <code>atxmega384d3</code>.
+
+          <br><dt><code>avrxmega7</code><dd>&ldquo;XMEGA&rdquo; devices with more than 128&nbsp;KiB of program memory and more than 64&nbsp;KiB of RAM. 
+<br><var>mcu</var>&nbsp;= <code>atxmega128a1</code>, <code>atxmega128a1u</code>, <code>atxmega128a4u</code>.
+
+          <br><dt><code>avrtiny</code><dd>&ldquo;TINY&rdquo; Tiny core devices with 512&nbsp;B up to 4&nbsp;KiB of program memory. 
+<br><var>mcu</var>&nbsp;= <code>attiny10</code>, <code>attiny20</code>, <code>attiny4</code>, <code>attiny40</code>, <code>attiny5</code>, <code>attiny9</code>.
+
+          <br><dt><code>avr1</code><dd>This ISA is implemented by the minimal AVR core and supported for assembler only. 
+<br><var>mcu</var>&nbsp;= <code>attiny11</code>, <code>attiny12</code>, <code>attiny15</code>, <code>attiny28</code>, <code>at90s1200</code>.
+
+     </dl>
+
+     <br><dt><code>-maccumulate-args</code><dd><a name="index-maccumulate_002dargs-1435"></a>Accumulate outgoing function arguments and acquire/release the needed
+stack space for outgoing function arguments once in function
+prologue/epilogue.  Without this option, outgoing arguments are pushed
+before calling a function and popped afterwards.
+
+     <p>Popping the arguments after the function call can be expensive on
+AVR so that accumulating the stack space might lead to smaller
+executables because arguments need not to be removed from the
+stack after such a function call.
+
+     <p>This option can lead to reduced code size for functions that perform
+several calls to functions that get their arguments on the stack like
+calls to printf-like functions.
+
+     <br><dt><code>-mbranch-cost=</code><var>cost</var><dd><a name="index-mbranch_002dcost-1436"></a>Set the branch costs for conditional branch instructions to
+<var>cost</var>.  Reasonable values for <var>cost</var> are small, non-negative
+integers. The default branch cost is 0.
+
+     <br><dt><code>-mcall-prologues</code><dd><a name="index-mcall_002dprologues-1437"></a>Functions prologues/epilogues are expanded as calls to appropriate
+subroutines.  Code size is smaller.
+
+     <br><dt><code>-mint8</code><dd><a name="index-mint8-1438"></a>Assume <code>int</code> to be 8-bit integer.  This affects the sizes of all types: a
+<code>char</code> is 1 byte, an <code>int</code> is 1 byte, a <code>long</code> is 2 bytes,
+and <code>long long</code> is 4 bytes.  Please note that this option does not
+conform to the C standards, but it results in smaller code
+size.
+
+     <br><dt><code>-mn-flash=</code><var>num</var><dd><a name="index-mn_002dflash-1439"></a>Assume that the flash memory has a size of
+<var>num</var> times 64&nbsp;KiB.
+
+     <br><dt><code>-mno-interrupts</code><dd><a name="index-mno_002dinterrupts-1440"></a>Generated code is not compatible with hardware interrupts. 
+Code size is smaller.
+
+     <br><dt><code>-mrelax</code><dd><a name="index-mrelax-1441"></a>Try to replace <code>CALL</code> resp. <code>JMP</code> instruction by the shorter
+<code>RCALL</code> resp. <code>RJMP</code> instruction if applicable. 
+Setting <samp><span class="option">-mrelax</span></samp> just adds the <samp><span class="option">--mlink-relax</span></samp> option to
+the assembler's command line and the <samp><span class="option">--relax</span></samp> option to the
+linker's command line.
+
+     <p>Jump relaxing is performed by the linker because jump offsets are not
+known before code is located. Therefore, the assembler code generated by the
+compiler is the same, but the instructions in the executable may
+differ from instructions in the assembler code.
+
+     <p>Relaxing must be turned on if linker stubs are needed, see the
+section on <code>EIND</code> and linker stubs below.
+
+     <br><dt><code>-mrmw</code><dd><a name="index-mrmw-1442"></a>Assume that the device supports the Read-Modify-Write
+instructions <code>XCH</code>, <code>LAC</code>, <code>LAS</code> and <code>LAT</code>.
+
+     <br><dt><code>-msp8</code><dd><a name="index-msp8-1443"></a>Treat the stack pointer register as an 8-bit register,
+i.e. assume the high byte of the stack pointer is zero. 
+In general, you don't need to set this option by hand.
+
+     <p>This option is used internally by the compiler to select and
+build multilibs for architectures <code>avr2</code> and <code>avr25</code>. 
+These architectures mix devices with and without <code>SPH</code>. 
+For any setting other than <samp><span class="option">-mmcu=avr2</span></samp> or <samp><span class="option">-mmcu=avr25</span></samp>
+the compiler driver adds or removes this option from the compiler
+proper's command line, because the compiler then knows if the device
+or architecture has an 8-bit stack pointer and thus no <code>SPH</code>
+register or not.
+
+     <br><dt><code>-mstrict-X</code><dd><a name="index-mstrict_002dX-1444"></a>Use address register <code>X</code> in a way proposed by the hardware.  This means
+that <code>X</code> is only used in indirect, post-increment or
+pre-decrement addressing.
+
+     <p>Without this option, the <code>X</code> register may be used in the same way
+as <code>Y</code> or <code>Z</code> which then is emulated by additional
+instructions. 
+For example, loading a value with <code>X+const</code> addressing with a
+small non-negative <code>const &lt; 64</code> to a register <var>Rn</var> is
+performed as
+
+     <pre class="example">          adiw r26, const   ; X += const
+          ld   <var>Rn</var>, X        ; <var>Rn</var> = *X
+          sbiw r26, const   ; X -= const
+</pre>
+     <br><dt><code>-mtiny-stack</code><dd><a name="index-mtiny_002dstack-1445"></a>Only change the lower 8&nbsp;bits of the stack pointer.
+
+     <br><dt><code>-nodevicelib</code><dd><a name="index-nodevicelib-1446"></a>Don't link against AVR-LibC's device specific library <code>libdev.a</code>.
+
+     <br><dt><code>-Waddr-space-convert</code><dd><a name="index-Waddr_002dspace_002dconvert-1447"></a>Warn about conversions between address spaces in the case where the
+resulting address space is not contained in the incoming address space. 
+</dl>
+
+<h5 class="subsubsection">3.17.5.1 <code>EIND</code> and Devices with More Than 128 Ki Bytes of Flash</h5>
+
+<p><a name="index-g_t_0040code_007bEIND_007d-1448"></a>Pointers in the implementation are 16&nbsp;bits wide. 
+The address of a function or label is represented as word address so
+that indirect jumps and calls can target any code address in the
+range of 64&nbsp;Ki words.
+
+ <p>In order to facilitate indirect jump on devices with more than 128&nbsp;Ki
+bytes of program memory space, there is a special function register called
+<code>EIND</code> that serves as most significant part of the target address
+when <code>EICALL</code> or <code>EIJMP</code> instructions are used.
+
+ <p>Indirect jumps and calls on these devices are handled as follows by
+the compiler and are subject to some limitations:
+
+     <ul>
+<li>The compiler never sets <code>EIND</code>.
+
+     <li>The compiler uses <code>EIND</code> implicitely in <code>EICALL</code>/<code>EIJMP</code>
+instructions or might read <code>EIND</code> directly in order to emulate an
+indirect call/jump by means of a <code>RET</code> instruction.
+
+     <li>The compiler assumes that <code>EIND</code> never changes during the startup
+code or during the application. In particular, <code>EIND</code> is not
+saved/restored in function or interrupt service routine
+prologue/epilogue.
+
+     <li>For indirect calls to functions and computed goto, the linker
+generates <em>stubs</em>. Stubs are jump pads sometimes also called
+<em>trampolines</em>. Thus, the indirect call/jump jumps to such a stub. 
+The stub contains a direct jump to the desired address.
+
+     <li>Linker relaxation must be turned on so that the linker generates
+the stubs correctly in all situations. See the compiler option
+<samp><span class="option">-mrelax</span></samp> and the linker option <samp><span class="option">--relax</span></samp>. 
+There are corner cases where the linker is supposed to generate stubs
+but aborts without relaxation and without a helpful error message.
+
+     <li>The default linker script is arranged for code with <code>EIND = 0</code>. 
+If code is supposed to work for a setup with <code>EIND != 0</code>, a custom
+linker script has to be used in order to place the sections whose
+name start with <code>.trampolines</code> into the segment where <code>EIND</code>
+points to.
+
+     <li>The startup code from libgcc never sets <code>EIND</code>. 
+Notice that startup code is a blend of code from libgcc and AVR-LibC. 
+For the impact of AVR-LibC on <code>EIND</code>, see the
+<a href="http://nongnu.org/avr-libc/user-manual/">AVR-LibC&nbsp;user&nbsp;manual</a><!-- /@w -->.
+
+     <li>It is legitimate for user-specific startup code to set up <code>EIND</code>
+early, for example by means of initialization code located in
+section <code>.init3</code>. Such code runs prior to general startup code
+that initializes RAM and calls constructors, but after the bit
+of startup code from AVR-LibC that sets <code>EIND</code> to the segment
+where the vector table is located.
+     <pre class="example">          #include &lt;avr/io.h&gt;
+          
+          static void
+          __attribute__((section(".init3"),naked,used,no_instrument_function))
+          init3_set_eind (void)
+          {
+            __asm volatile ("ldi r24,pm_hh8(__trampolines_start)\n\t"
+                            "out %i0,r24" :: "n" (&amp;EIND) : "r24","memory");
+          }
+</pre>
+     <p class="noindent">The <code>__trampolines_start</code> symbol is defined in the linker script.
+
+     <li>Stubs are generated automatically by the linker if
+the following two conditions are met:
+          <ul>
+<li>The address of a label is taken by means of the <code>gs</code> modifier
+(short for <em>generate stubs</em>) like so:
+          <pre class="example">               LDI r24, lo8(gs(<var>func</var>))
+               LDI r25, hi8(gs(<var>func</var>))
+</pre>
+          <li>The final location of that label is in a code segment
+<em>outside</em> the segment where the stubs are located. 
+</ul>
+
+     <li>The compiler emits such <code>gs</code> modifiers for code labels in the
+following situations:
+          <ul>
+<li>Taking address of a function or code label. 
+<li>Computed goto. 
+<li>If prologue-save function is used, see <samp><span class="option">-mcall-prologues</span></samp>
+command-line option. 
+<li>Switch/case dispatch tables. If you do not want such dispatch
+tables you can specify the <samp><span class="option">-fno-jump-tables</span></samp> command-line option. 
+<li>C and C++ constructors/destructors called during startup/shutdown. 
+<li>If the tools hit a <code>gs()</code> modifier explained above. 
+</ul>
+
+     <li>Jumping to non-symbolic addresses like so is <em>not</em> supported:
+
+     <pre class="example">          int main (void)
+          {
+              /* Call function at word address 0x2 */
+              return ((int(*)(void)) 0x2)();
+          }
+</pre>
+     <p>Instead, a stub has to be set up, i.e. the function has to be called
+through a symbol (<code>func_4</code> in the example):
+
+     <pre class="example">          int main (void)
+          {
+              extern int func_4 (void);
+          
+              /* Call function at byte address 0x4 */
+              return func_4();
+          }
+</pre>
+     <p>and the application be linked with <samp><span class="option">-Wl,--defsym,func_4=0x4</span></samp>. 
+Alternatively, <code>func_4</code> can be defined in the linker script. 
+</ul>
+
+<h5 class="subsubsection">3.17.5.2 Handling of the <code>RAMPD</code>, <code>RAMPX</code>, <code>RAMPY</code> and <code>RAMPZ</code> Special Function Registers</h5>
+
+<p><a name="index-g_t_0040code_007bRAMPD_007d-1449"></a><a name="index-g_t_0040code_007bRAMPX_007d-1450"></a><a name="index-g_t_0040code_007bRAMPY_007d-1451"></a><a name="index-g_t_0040code_007bRAMPZ_007d-1452"></a>Some AVR devices support memories larger than the 64&nbsp;KiB range
+that can be accessed with 16-bit pointers.  To access memory locations
+outside this 64&nbsp;KiB range, the contentent of a <code>RAMP</code>
+register is used as high part of the address:
+The <code>X</code>, <code>Y</code>, <code>Z</code> address register is concatenated
+with the <code>RAMPX</code>, <code>RAMPY</code>, <code>RAMPZ</code> special function
+register, respectively, to get a wide address. Similarly,
+<code>RAMPD</code> is used together with direct addressing.
+
+     <ul>
+<li>The startup code initializes the <code>RAMP</code> special function
+registers with zero.
+
+     <li>If a <a href="AVR-Named-Address-Spaces.html#AVR-Named-Address-Spaces">named address space</a> other than
+generic or <code>__flash</code> is used, then <code>RAMPZ</code> is set
+as needed before the operation.
+
+     <li>If the device supports RAM larger than 64&nbsp;KiB and the compiler
+needs to change <code>RAMPZ</code> to accomplish an operation, <code>RAMPZ</code>
+is reset to zero after the operation.
+
+     <li>If the device comes with a specific <code>RAMP</code> register, the ISR
+prologue/epilogue saves/restores that SFR and initializes it with
+zero in case the ISR code might (implicitly) use it.
+
+     <li>RAM larger than 64&nbsp;KiB is not supported by GCC for AVR targets. 
+If you use inline assembler to read from locations outside the
+16-bit address range and change one of the <code>RAMP</code> registers,
+you must reset it to zero after the access.
+
+ </ul>
+
+<h5 class="subsubsection">3.17.5.3 AVR Built-in Macros</h5>
+
+<p>GCC defines several built-in macros so that the user code can test
+for the presence or absence of features.  Almost any of the following
+built-in macros are deduced from device capabilities and thus
+triggered by the <samp><span class="option">-mmcu=</span></samp> command-line option.
+
+ <p>For even more AVR-specific built-in macros see
+<a href="AVR-Named-Address-Spaces.html#AVR-Named-Address-Spaces">AVR Named Address Spaces</a> and <a href="AVR-Built_002din-Functions.html#AVR-Built_002din-Functions">AVR Built-in Functions</a>.
+
+     <dl>
+<dt><code>__AVR_ARCH__</code><dd>Build-in macro that resolves to a decimal number that identifies the
+architecture and depends on the <samp><span class="option">-mmcu=</span><var>mcu</var></samp> option. 
+Possible values are:
+
+     <p><code>2</code>, <code>25</code>, <code>3</code>, <code>31</code>, <code>35</code>,
+<code>4</code>, <code>5</code>, <code>51</code>, <code>6</code>
+
+     <p>for <var>mcu</var>=<code>avr2</code>, <code>avr25</code>, <code>avr3</code>, <code>avr31</code>,
+<code>avr35</code>, <code>avr4</code>, <code>avr5</code>, <code>avr51</code>, <code>avr6</code>,
+
+     <p>respectively and
+
+     <p><code>100</code>, <code>102</code>, <code>104</code>,
+<code>105</code>, <code>106</code>, <code>107</code>
+
+     <p>for <var>mcu</var>=<code>avrtiny</code>, <code>avrxmega2</code>, <code>avrxmega4</code>,
+<code>avrxmega5</code>, <code>avrxmega6</code>, <code>avrxmega7</code>, respectively. 
+If <var>mcu</var> specifies a device, this built-in macro is set
+accordingly. For example, with <samp><span class="option">-mmcu=atmega8</span></samp> the macro is
+defined to <code>4</code>.
+
+     <br><dt><code>__AVR_</code><var>Device</var><code>__</code><dd>Setting <samp><span class="option">-mmcu=</span><var>device</var></samp> defines this built-in macro which reflects
+the device's name. For example, <samp><span class="option">-mmcu=atmega8</span></samp> defines the
+built-in macro <code>__AVR_ATmega8__</code>, <samp><span class="option">-mmcu=attiny261a</span></samp> defines
+<code>__AVR_ATtiny261A__</code>, etc.
+
+     <p>The built-in macros' names follow
+the scheme <code>__AVR_</code><var>Device</var><code>__</code> where <var>Device</var> is
+the device name as from the AVR user manual. The difference between
+<var>Device</var> in the built-in macro and <var>device</var> in
+<samp><span class="option">-mmcu=</span><var>device</var></samp> is that the latter is always lowercase.
+
+     <p>If <var>device</var> is not a device but only a core architecture like
+&lsquo;<samp><span class="samp">avr51</span></samp>&rsquo;, this macro is not defined.
+
+     <br><dt><code>__AVR_DEVICE_NAME__</code><dd>Setting <samp><span class="option">-mmcu=</span><var>device</var></samp> defines this built-in macro to
+the device's name. For example, with <samp><span class="option">-mmcu=atmega8</span></samp> the macro
+is defined to <code>atmega8</code>.
+
+     <p>If <var>device</var> is not a device but only a core architecture like
+&lsquo;<samp><span class="samp">avr51</span></samp>&rsquo;, this macro is not defined.
+
+     <br><dt><code>__AVR_XMEGA__</code><dd>The device / architecture belongs to the XMEGA family of devices.
+
+     <br><dt><code>__AVR_HAVE_ELPM__</code><dd>The device has the the <code>ELPM</code> instruction.
+
+     <br><dt><code>__AVR_HAVE_ELPMX__</code><dd>The device has the <code>ELPM R</code><var>n</var><code>,Z</code> and <code>ELPM
+R</code><var>n</var><code>,Z+</code> instructions.
+
+     <br><dt><code>__AVR_HAVE_MOVW__</code><dd>The device has the <code>MOVW</code> instruction to perform 16-bit
+register-register moves.
+
+     <br><dt><code>__AVR_HAVE_LPMX__</code><dd>The device has the <code>LPM R</code><var>n</var><code>,Z</code> and
+<code>LPM R</code><var>n</var><code>,Z+</code> instructions.
+
+     <br><dt><code>__AVR_HAVE_MUL__</code><dd>The device has a hardware multiplier.
+
+     <br><dt><code>__AVR_HAVE_JMP_CALL__</code><dd>The device has the <code>JMP</code> and <code>CALL</code> instructions. 
+This is the case for devices with at least 16&nbsp;KiB of program
+memory.
+
+     <br><dt><code>__AVR_HAVE_EIJMP_EICALL__</code><dt><code>__AVR_3_BYTE_PC__</code><dd>The device has the <code>EIJMP</code> and <code>EICALL</code> instructions. 
+This is the case for devices with more than 128&nbsp;KiB of program memory. 
+This also means that the program counter
+(PC) is 3&nbsp;bytes wide.
+
+     <br><dt><code>__AVR_2_BYTE_PC__</code><dd>The program counter (PC) is 2&nbsp;bytes wide. This is the case for devices
+with up to 128&nbsp;KiB of program memory.
+
+     <br><dt><code>__AVR_HAVE_8BIT_SP__</code><dt><code>__AVR_HAVE_16BIT_SP__</code><dd>The stack pointer (SP) register is treated as 8-bit respectively
+16-bit register by the compiler. 
+The definition of these macros is affected by <samp><span class="option">-mtiny-stack</span></samp>.
+
+     <br><dt><code>__AVR_HAVE_SPH__</code><dt><code>__AVR_SP8__</code><dd>The device has the SPH (high part of stack pointer) special function
+register or has an 8-bit stack pointer, respectively. 
+The definition of these macros is affected by <samp><span class="option">-mmcu=</span></samp> and
+in the cases of <samp><span class="option">-mmcu=avr2</span></samp> and <samp><span class="option">-mmcu=avr25</span></samp> also
+by <samp><span class="option">-msp8</span></samp>.
+
+     <br><dt><code>__AVR_HAVE_RAMPD__</code><dt><code>__AVR_HAVE_RAMPX__</code><dt><code>__AVR_HAVE_RAMPY__</code><dt><code>__AVR_HAVE_RAMPZ__</code><dd>The device has the <code>RAMPD</code>, <code>RAMPX</code>, <code>RAMPY</code>,
+<code>RAMPZ</code> special function register, respectively.
+
+     <br><dt><code>__NO_INTERRUPTS__</code><dd>This macro reflects the <samp><span class="option">-mno-interrupts</span></samp> command-line option.
+
+     <br><dt><code>__AVR_ERRATA_SKIP__</code><dt><code>__AVR_ERRATA_SKIP_JMP_CALL__</code><dd>Some AVR devices (AT90S8515, ATmega103) must not skip 32-bit
+instructions because of a hardware erratum.  Skip instructions are
+<code>SBRS</code>, <code>SBRC</code>, <code>SBIS</code>, <code>SBIC</code> and <code>CPSE</code>. 
+The second macro is only defined if <code>__AVR_HAVE_JMP_CALL__</code> is also
+set.
+
+     <br><dt><code>__AVR_ISA_RMW__</code><dd>The device has Read-Modify-Write instructions (XCH, LAC, LAS and LAT).
+
+     <br><dt><code>__AVR_SFR_OFFSET__=</code><var>offset</var><dd>Instructions that can address I/O special function registers directly
+like <code>IN</code>, <code>OUT</code>, <code>SBI</code>, etc. may use a different
+address as if addressed by an instruction to access RAM like <code>LD</code>
+or <code>STS</code>. This offset depends on the device architecture and has
+to be subtracted from the RAM address in order to get the
+respective I/O&nbsp;address.
+
+     <br><dt><code>__WITH_AVRLIBC__</code><dd>The compiler is configured to be used together with AVR-Libc. 
+See the <samp><span class="option">--with-avrlibc</span></samp> configure option.
+
+ </dl>
+
+ </body></html>
+

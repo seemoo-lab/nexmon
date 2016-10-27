@@ -1,0 +1,114 @@
+<html lang="en">
+<head>
+<title>MSP430 Options - Using as</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using as">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="MSP430_002dDependent.html#MSP430_002dDependent" title="MSP430-Dependent">
+<link rel="next" href="MSP430-Syntax.html#MSP430-Syntax" title="MSP430 Syntax">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled ``GNU Free Documentation License''.
+
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="MSP430-Options"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="MSP430-Syntax.html#MSP430-Syntax">MSP430 Syntax</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="MSP430_002dDependent.html#MSP430_002dDependent">MSP430-Dependent</a>
+<hr>
+</div>
+
+<h4 class="subsection">9.29.1 Options</h4>
+
+<p><a name="index-MSP-430-options-_0028none_0029-1631"></a><a name="index-options-for-MSP430-_0028none_0029-1632"></a>
+     <dl>
+<dt><code>-mmcu</code><dd>selects the mcu architecture.  If the architecture is 430Xv2 then this
+also enables NOP generation unless the <samp><span class="option">-mN</span></samp> is also specified.
+
+     <br><dt><code>-mcpu</code><dd>selects the cpu architecture.  If the architecture is 430Xv2 then this
+also enables NOP generation unless the <samp><span class="option">-mN</span></samp> is also specified.
+
+     <br><dt><code>-msilicon-errata=</code><var>name</var><code>[,</code><var>name</var><code>...]</code><dd>Implements a fixup for named silicon errata.  Multiple silicon errata
+can be specified by multiple uses of the <samp><span class="option">-msilicon-errata</span></samp>
+option and/or by including the errata names, separated by commas, on
+an individual <samp><span class="option">-msilicon-errata</span></samp> option.  Errata names
+currently recognised by the assembler are:
+
+          <dl>
+<dt><code>cpu4</code><dd><code>PUSH #4</code> and <samp><span class="option">PUSH #8</span></samp> need longer encodings on the
+MSP430.  This option is enabled by default, and cannot be disabled. 
+<br><dt><code>cpu8</code><dd>Do not set the <code>SP</code> to an odd value. 
+<br><dt><code>cpu11</code><dd>Do not update the <code>SR</code> and the <code>PC</code> in the same instruction. 
+<br><dt><code>cpu12</code><dd>Do not use the <code>PC</code> in a <code>CMP</code> or <code>BIT</code> instruction. 
+<br><dt><code>cpu13</code><dd>Do not use an arithmetic instruction to modify the <code>SR</code>. 
+<br><dt><code>cpu19</code><dd>Insert <code>NOP</code> after <code>CPUOFF</code>. 
+</dl>
+
+     <br><dt><code>-msilicon-errata-warn=</code><var>name</var><code>[,</code><var>name</var><code>...]</code><dd>Like the <samp><span class="option">-msilicon-errata</span></samp> option except that instead of
+fixing the specified errata, a warning message is issued instead. 
+This option can be used alongside <samp><span class="option">-msilicon-errata</span></samp> to
+generate messages whenever a problem is fixed, or on its own in order
+to inspect code for potential problems.
+
+     <br><dt><code>-mP</code><dd>enables polymorph instructions handler.
+
+     <br><dt><code>-mQ</code><dd>enables relaxation at assembly time. DANGEROUS!
+
+     <br><dt><code>-ml</code><dd>indicates that the input uses the large code model.
+
+     <br><dt><code>-mn</code><dd>enables the generation of a NOP instruction following any instruction
+that might change the interrupts enabled/disabled state.  The
+pipelined nature of the MSP430 core means that any instruction that
+changes the interrupt state (<code>EINT</code>, <code>DINT</code>, <code>BIC #8,
+SR</code>, <code>BIS #8, SR</code> or <code>MOV.W &lt;&gt;, SR</code>) must be
+followed by a NOP instruction in order to ensure the correct
+processing of interrupts.  By default it is up to the programmer to
+supply these NOP instructions, but this command line option enables
+the automatic insertion by the assembler, if they are missing.
+
+     <br><dt><code>-mN</code><dd>disables the generation of a NOP instruction following any instruction
+that might change the interrupts enabled/disabled state.  This is the
+default behaviour.
+
+     <br><dt><code>-my</code><dd>tells the assembler to generate a warning message if a NOP does not
+immediately forllow an instruction that enables or disables
+interrupts.  This is the default.
+
+     <p>Note that this option can be stacked with the <samp><span class="option">-mn</span></samp> option so
+that the assembler will both warn about missing NOP instructions and
+then insert them automatically.
+
+     <br><dt><code>-mY</code><dd>disables warnings about missing NOP instructions.
+
+     <br><dt><code>-md</code><dd>mark the object file as one that requires data to copied from ROM to
+RAM at execution startup.  Disabled by default.
+
+   </dl>
+
+   </body></html>
+

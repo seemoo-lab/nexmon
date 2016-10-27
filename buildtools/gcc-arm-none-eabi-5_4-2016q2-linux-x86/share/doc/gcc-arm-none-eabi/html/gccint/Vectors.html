@@ -1,0 +1,137 @@
+<html lang="en">
+<head>
+<title>Vectors - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Expression-trees.html#Expression-trees" title="Expression trees">
+<link rel="prev" href="Unary-and-Binary-Expressions.html#Unary-and-Binary-Expressions" title="Unary and Binary Expressions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Vectors"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Unary-and-Binary-Expressions.html#Unary-and-Binary-Expressions">Unary and Binary Expressions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Expression-trees.html#Expression-trees">Expression trees</a>
+<hr>
+</div>
+
+<h4 class="subsection">10.6.4 Vectors</h4>
+
+<p><a name="index-VEC_005fLSHIFT_005fEXPR-1924"></a><a name="index-VEC_005fRSHIFT_005fEXPR-1925"></a><a name="index-VEC_005fWIDEN_005fMULT_005fHI_005fEXPR-1926"></a><a name="index-VEC_005fWIDEN_005fMULT_005fLO_005fEXPR-1927"></a><a name="index-VEC_005fUNPACK_005fHI_005fEXPR-1928"></a><a name="index-VEC_005fUNPACK_005fLO_005fEXPR-1929"></a><a name="index-VEC_005fUNPACK_005fFLOAT_005fHI_005fEXPR-1930"></a><a name="index-VEC_005fUNPACK_005fFLOAT_005fLO_005fEXPR-1931"></a><a name="index-VEC_005fPACK_005fTRUNC_005fEXPR-1932"></a><a name="index-VEC_005fPACK_005fSAT_005fEXPR-1933"></a><a name="index-VEC_005fPACK_005fFIX_005fTRUNC_005fEXPR-1934"></a><a name="index-SAD_005fEXPR-1935"></a>
+     <dl>
+<dt><code>VEC_LSHIFT_EXPR</code><dt><code>VEC_RSHIFT_EXPR</code><dd>These nodes represent whole vector left and right shifts, respectively. 
+The first operand is the vector to shift; it will always be of vector type. 
+The second operand is an expression for the number of bits by which to
+shift.  Note that the result is undefined if the second operand is larger
+than or equal to the first operand's type size.
+
+     <br><dt><code>VEC_WIDEN_MULT_HI_EXPR</code><dt><code>VEC_WIDEN_MULT_LO_EXPR</code><dd>These nodes represent widening vector multiplication of the high and low
+parts of the two input vectors, respectively.  Their operands are vectors
+that contain the same number of elements (<code>N</code>) of the same integral type. 
+The result is a vector that contains half as many elements, of an integral type
+whose size is twice as wide.  In the case of <code>VEC_WIDEN_MULT_HI_EXPR</code> the
+high <code>N/2</code> elements of the two vector are multiplied to produce the
+vector of <code>N/2</code> products. In the case of <code>VEC_WIDEN_MULT_LO_EXPR</code> the
+low <code>N/2</code> elements of the two vector are multiplied to produce the
+vector of <code>N/2</code> products.
+
+     <br><dt><code>VEC_UNPACK_HI_EXPR</code><dt><code>VEC_UNPACK_LO_EXPR</code><dd>These nodes represent unpacking of the high and low parts of the input vector,
+respectively.  The single operand is a vector that contains <code>N</code> elements
+of the same integral or floating point type.  The result is a vector
+that contains half as many elements, of an integral or floating point type
+whose size is twice as wide.  In the case of <code>VEC_UNPACK_HI_EXPR</code> the
+high <code>N/2</code> elements of the vector are extracted and widened (promoted). 
+In the case of <code>VEC_UNPACK_LO_EXPR</code> the low <code>N/2</code> elements of the
+vector are extracted and widened (promoted).
+
+     <br><dt><code>VEC_UNPACK_FLOAT_HI_EXPR</code><dt><code>VEC_UNPACK_FLOAT_LO_EXPR</code><dd>These nodes represent unpacking of the high and low parts of the input vector,
+where the values are converted from fixed point to floating point.  The
+single operand is a vector that contains <code>N</code> elements of the same
+integral type.  The result is a vector that contains half as many elements
+of a floating point type whose size is twice as wide.  In the case of
+<code>VEC_UNPACK_HI_EXPR</code> the high <code>N/2</code> elements of the vector are
+extracted, converted and widened.  In the case of <code>VEC_UNPACK_LO_EXPR</code>
+the low <code>N/2</code> elements of the vector are extracted, converted and widened.
+
+     <br><dt><code>VEC_PACK_TRUNC_EXPR</code><dd>This node represents packing of truncated elements of the two input vectors
+into the output vector.  Input operands are vectors that contain the same
+number of elements of the same integral or floating point type.  The result
+is a vector that contains twice as many elements of an integral or floating
+point type whose size is half as wide. The elements of the two vectors are
+demoted and merged (concatenated) to form the output vector.
+
+     <br><dt><code>VEC_PACK_SAT_EXPR</code><dd>This node represents packing of elements of the two input vectors into the
+output vector using saturation.  Input operands are vectors that contain
+the same number of elements of the same integral type.  The result is a
+vector that contains twice as many elements of an integral type whose size
+is half as wide.  The elements of the two vectors are demoted and merged
+(concatenated) to form the output vector.
+
+     <br><dt><code>VEC_PACK_FIX_TRUNC_EXPR</code><dd>This node represents packing of elements of the two input vectors into the
+output vector, where the values are converted from floating point
+to fixed point.  Input operands are vectors that contain the same number
+of elements of a floating point type.  The result is a vector that contains
+twice as many elements of an integral type whose size is half as wide.  The
+elements of the two vectors are merged (concatenated) to form the output
+vector.
+
+     <br><dt><code>VEC_COND_EXPR</code><dd>These nodes represent <code>?:</code> expressions.  The three operands must be
+vectors of the same size and number of elements.  The second and third
+operands must have the same type as the entire expression.  The first
+operand is of signed integral vector type.  If an element of the first
+operand evaluates to a zero value, the corresponding element of the
+result is taken from the third operand. If it evaluates to a minus one
+value, it is taken from the second operand. It should never evaluate to
+any other value currently, but optimizations should not rely on that
+property. In contrast with a <code>COND_EXPR</code>, all operands are always
+evaluated.
+
+     <br><dt><code>SAD_EXPR</code><dd>This node represents the Sum of Absolute Differences operation.  The three
+operands must be vectors of integral types.  The first and second operand
+must have the same type.  The size of the vector element of the third
+operand must be at lease twice of the size of the vector element of the
+first and second one.  The SAD is calculated between the first and second
+operands, added to the third operand, and returned.
+
+ </dl>
+
+<!--  -->
+<!-- Statements -->
+<!--  -->
+ </body></html>
+

@@ -1,0 +1,77 @@
+<html lang="en">
+<head>
+<title>Statements - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="GENERIC.html#GENERIC" title="GENERIC">
+<link rel="prev" href="Expression-trees.html#Expression-trees" title="Expression trees">
+<link rel="next" href="Functions.html#Functions" title="Functions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Statements"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Functions.html#Functions">Functions</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Expression-trees.html#Expression-trees">Expression trees</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="GENERIC.html#GENERIC">GENERIC</a>
+<hr>
+</div>
+
+<h3 class="section">10.7 Statements</h3>
+
+<p><a name="index-Statements-1936"></a>
+Most statements in GIMPLE are assignment statements, represented by
+<code>GIMPLE_ASSIGN</code>.  No other C expressions can appear at statement level;
+a reference to a volatile object is converted into a
+<code>GIMPLE_ASSIGN</code>.
+
+ <p>There are also several varieties of complex statements.
+
+<ul class="menu">
+<li><a accesskey="1" href="Basic-Statements.html#Basic-Statements">Basic Statements</a>
+<li><a accesskey="2" href="Blocks.html#Blocks">Blocks</a>
+<li><a accesskey="3" href="Statement-Sequences.html#Statement-Sequences">Statement Sequences</a>
+<li><a accesskey="4" href="Empty-Statements.html#Empty-Statements">Empty Statements</a>
+<li><a accesskey="5" href="Jumps.html#Jumps">Jumps</a>
+<li><a accesskey="6" href="Cleanups.html#Cleanups">Cleanups</a>
+<li><a accesskey="7" href="OpenMP.html#OpenMP">OpenMP</a>
+<li><a accesskey="8" href="OpenACC.html#OpenACC">OpenACC</a>
+</ul>
+
+ </body></html>
+
