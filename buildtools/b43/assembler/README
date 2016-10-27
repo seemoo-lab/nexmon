@@ -1,0 +1,103 @@
+===============================================================================
+==        Instruction Set Summary for the core revision >= 5 microcode       ==
+===============================================================================
+
+
+===============================================================================
+Mnemonics | Operands   | Description                     | Operation
+===============================================================================
+
+Arithmetic and logic instructions:
+add       | A,B,rD     | Add                             | rD=A+B
+add.      | A,B,rD     | Add, set Carry                  | rD=A+B SaveCarry
+addc      | A,B,rD     | Add with Carry                  | rD=A+B+Carry
+addc.     | A,B,rD     | Add with Carry, set Carry       | rD=A+B+C SaveCarry
+sub       | A,B,rD     | Subtract                        | rD=A-B
+sub.      | A,B,rD     | Sub, set Carry                  | rD=A-B SaveCarry
+subc      | A,B,rD     | Sub with Carry                  | rD=A-B-Carry
+subc.     | A,B,rD     | Sub with Carry, set Carry       | rD=A-B-C SaveCarry
+mul       | A,B,rD     | multiply (rev 11+ only)         | spr06d=lsb; rD=msb
+
+Branch instructions:
+jmp       | l          | Uncond. jump (virtual instr.)   | PC=l
+jand      | A,B,l      | Jump if binary AND              | if(A&B) PC=l
+jnand     | A,B,l      | Jump if not binary AND          | if(!(A&B)) PC=l
+js        | A,B,l      | Jump if all bits set            | if((A&B)==A) PC=l
+jns       | A,B,l      | Jump if not all bits set        | if((A&B)!=A) PC=l
+je        | A,B,l      | Jump if equal                   | if(A==B) PC=l
+jne       | A,B,l      | Jump if not equal               | if(A!=B) PC=l
+jls       | A,B,l      | Jump if less (signed)           | if(A<B) PC=l
+jges      | A,B,l      | Jump if greater or equal (sign.)| if(A>=B) PC=l
+jgs       | A,B,l      | Jump if greater (signed)        | if(A>B) PC=l
+jles      | A,B,l      | Jump if less or equal (signed)  | if(A<=B) PC=l
+jl        | A,B,l      | Jump if less                    | if(A<B) PC=l
+jge       | A,B,l      | Jump if greater or equal        | if(A>=B) PC=l
+jg        | A,B,l      | Jump if greater                 | if(A>B) PC=l
+jle       | A,B,l      | Jump if less or equal           | if(A<=B) PC=l
+jdn       | A,B,l      | Jump if diff is < 0, no carry   | if(nc(A-B)<0) PC=l
+jdpz      | A,B,l      | Jump if diff is >= 0, no carry  | if(nc(A-B)>=0) PC=l
+jdp       | A,B,l      | Jump if diff is > 0, no carry   | if(nc(A-B)>0) PC=l
+jdnz      | A,B,l      | Jump if diff is <= 0, no carry  | if(nc(A-B)<=0) PC=l
+call      | lrX,l      | Store PC, call function         | lrX=PC; PC=l
+calls     | l          | Store PC, call function         | PC->stack; PC=l
+ret       | lrX,lrY    | Store PC, ret from func         | lrX=PC; PC=lrY
+rets      |            | ret from function               | stack->PC
+jzx       | M,S,A,B,l  | Jump if zero after shift + mask |
+jzxh      | A,l        | Human readable alias for jzx    | See detailed docs
+jnzx      | M,S,A,B,l  | Jump if nonzero after shift+msk |
+jnzxh     | A,l        | Human readable alias for jnzx   | See detailed docs
+jext      | E,A,B,l    | Jump if External Condition true | if(E) PC=l
+jnext     | E,A,B,l    | Jump if External Condition false| if(!E) PC=l
+
+Data transfer instructions:
+mov       | A,rD       | Copy data (virtual instruction) | rD=A
+tkiph     | A,rD       | TKIP S-Box lookup high          | rD=SBOX[hi8(A)]
+tkiphs    | A,rD       | TKIP S-Box lkup hi swap'd       | rD=byteswap(tkiph)
+tkipl     | A,rD       | TKIP S-Box lookup low           | rD=SBOX[lo8(A)]
+tkipls    | A,rD       | TKIP S-Box lkup lo swap'd       | rD=byteswap(tkipl)
+
+Bitwise instructions:
+sra       | A,B,rD     | Arithmetic rightshift           | rD=A>>B fillup sign
+or        | A,B,rD     | Bitwise OR                      | rD=A|B
+and       | A,B,rD     | Bitwise AND                     | rD=A&B
+xor       | A,B,rD     | Bitwise XOR                     | rD=A^B
+sr        | A,B,rD     | Rightshift                      | rD=A>>B
+sl        | A,B,rD     | Leftshift                       | rD=A<<B
+srx       | M,S,A,B,rD | Shift right over two registers  | See detailed docs
+srxh      | A,rD       | Human readable alias for srx    | See detailed docs
+rl        | A,B,rD     | Rotate left                     | rD=lrot(A, B bits)
+rr        | A,B,rD     | Rotate right                    | rD=rrot(A, B bits)
+nand      | A,B,rD     | Clear bits (notmask+and)        | rD=A&(~B)
+orx       | M,S,A,B,rD | OR with shift and select        | See detailed docs
+orxh      | A,B,rD     | Human readable alias for orx    | See detailed docs
+
+Other instructions:
+nap       | none       | Sleep until event               | See detailed docs
+
+
+
+Description of Operands:
+
+rD	= Destination Register (GPR or SPR)
+A	= Source Register (GPR or SPR) or Immediate
+B	= Source Register (GPR or SPR) or Immediate
+M	= Mask
+S	= Shift
+E	= External Condition
+l	= Branch label or address
+lrX	= Link Register (lr0 - lr3)
+lrY	= Link Register (lr0 - lr3)
+
+
+Raw instruction format:
+@bitcode_in_hexadecimal
+Example: @1C0 @C11,@C22,r3
+
+
+Virtual instructions are translated by the assembler to other
+lowlevel instructions.
+
+
+Please also see the detailed microcode documentation at:
+http://bcm-v4.sipsolutions.net/802.11/Microcode
+
