@@ -28,17 +28,17 @@ init: FORCE
 
 obj/%.o: src/%.c
 	@printf "\033[0;31m  COMPILING\033[0m %s => %s (details: log/compiler.log)\n" $< $@
-	$(Q)cat gen/nexmon.pre 2>>$(ERR) | gawk '{ if ($$3 != "$@") print; }' > tmp && mv tmp gen/nexmon.pre
+	$(Q)cat gen/nexmon.pre 2>>log/error.log | gawk '{ if ($$3 != "$@") print; }' > tmp && mv tmp gen/nexmon.pre
 	$(Q)$(CC)gcc $(CFLAGS) -c $< -o $@ >>log/compiler.log
 
 obj/%.o: $(NEXMON_ROOT)/patches/common/%.c
 	@printf "\033[0;31m  COMPILING\033[0m %s => %s (details: log/compiler.log)\n" $< $@
-	$(Q)cat gen/nexmon.pre 2>>$(ERR) | gawk '{ if ($$3 != "$@") print; }' > tmp && mv tmp gen/nexmon.pre
+	$(Q)cat gen/nexmon.pre 2>>log/error.log | gawk '{ if ($$3 != "$@") print; }' > tmp && mv tmp gen/nexmon.pre
 	$(Q)$(CC)gcc $(CFLAGS) -c $< -o $@ >>log/compiler.log
 
 obj/%.o: $(FW_PATH)/%.c
 	@printf "\033[0;31m  COMPILING\033[0m %s => %s (details: log/compiler.log)\n" $< $@
-	$(Q)cat gen/nexmon.pre 2>>$(ERR) | gawk '{ if ($$3 != "$@") print; }' > tmp && mv tmp gen/nexmon.pre
+	$(Q)cat gen/nexmon.pre 2>>log/error.log | gawk '{ if ($$3 != "$@") print; }' > tmp && mv tmp gen/nexmon.pre
 	$(Q)$(CC)gcc $(CFLAGS) -c $< -o $@ >>log/compiler.log
 
 gen/nexmon.ld: $(OBJS)
