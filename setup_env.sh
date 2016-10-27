@@ -12,7 +12,7 @@ if [ $HOSTUNAME == "Darwin" ]; then
 else
 	export CC=$NEXMON_ROOT/buildtools/gcc-arm-none-eabi-5_4-2016q2-linux-x86/bin/arm-none-eabi-
 	export CCPLUGIN=$NEXMON_ROOT/buildtools/gcc-nexmon-plugin/nexmon.so
-	export ZLIBFLATE=zlib-flate -compress
+	export ZLIBFLATE="zlib-flate -compress"
 fi
 
 export Q=@
