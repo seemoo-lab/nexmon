@@ -1,0 +1,7 @@
+.*
+!.gitignore
+obj
+log
+gen
+*.o
+*.elf
