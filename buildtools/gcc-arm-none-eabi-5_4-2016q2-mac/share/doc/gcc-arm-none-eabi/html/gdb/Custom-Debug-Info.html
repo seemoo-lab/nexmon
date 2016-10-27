@@ -1,0 +1,74 @@
+<html lang="en">
+<head>
+<title>Custom Debug Info - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="JIT-Interface.html#JIT-Interface" title="JIT Interface">
+<link rel="prev" href="Unregistering-Code.html#Unregistering-Code" title="Unregistering Code">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Custom-Debug-Info"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Unregistering-Code.html#Unregistering-Code">Unregistering Code</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="JIT-Interface.html#JIT-Interface">JIT Interface</a>
+<hr>
+</div>
+
+<h3 class="section">29.4 Custom Debug Info</h3>
+
+<p><a name="index-custom-JIT-debug-info-3040"></a><a name="index-JIT-debug-info-reader-3041"></a>
+Generating debug information in platform-native file formats (like ELF
+or COFF) may be an overkill for JIT compilers; especially if all the
+debug info is used for is displaying a meaningful backtrace.  The
+issue can be resolved by having the JIT writers decide on a debug info
+format and also provide a reader that parses the debug info generated
+by the JIT compiler.  This section gives a brief overview on writing
+such a parser.  More specific details can be found in the source file
+<samp><span class="file">gdb/jit-reader.in</span></samp>, which is also installed as a header at
+<samp><var>includedir</var><span class="file">/gdb/jit-reader.h</span></samp> for easy inclusion.
+
+   <p>The reader is implemented as a shared object (so this functionality is
+not available on platforms which don't allow loading shared objects at
+runtime).  Two <span class="sc">gdb</span> commands, <code>jit-reader-load</code> and
+<code>jit-reader-unload</code> are provided, to be used to load and unload
+the readers from a preconfigured directory.  Once loaded, the shared
+object is used the parse the debug information emitted by the JIT
+compiler.
+
+<ul class="menu">
+<li><a accesskey="1" href="Using-JIT-Debug-Info-Readers.html#Using-JIT-Debug-Info-Readers">Using JIT Debug Info Readers</a>:        How to use supplied readers correctly
+<li><a accesskey="2" href="Writing-JIT-Debug-Info-Readers.html#Writing-JIT-Debug-Info-Readers">Writing JIT Debug Info Readers</a>:      Creating a debug-info reader
+</ul>
+
+   </body></html>
+

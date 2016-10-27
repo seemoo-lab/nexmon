@@ -1,0 +1,165 @@
+<html lang="en">
+<head>
+<title>User GC - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Type-Information.html#Type-Information" title="Type Information">
+<link rel="prev" href="Inheritance-and-GTY.html#Inheritance-and-GTY" title="Inheritance and GTY">
+<link rel="next" href="GGC-Roots.html#GGC-Roots" title="GGC Roots">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="User-GC"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="GGC-Roots.html#GGC-Roots">GGC Roots</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Inheritance-and-GTY.html#Inheritance-and-GTY">Inheritance and GTY</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Type-Information.html#Type-Information">Type Information</a>
+<hr>
+</div>
+
+<h3 class="section">22.3 Support for user-provided GC marking routines</h3>
+
+<p><a name="index-user-gc-5094"></a>The garbage collector supports types for which no automatic marking
+code is generated.  For these types, the user is required to provide
+three functions: one to act as a marker for garbage collection, and
+two functions to act as marker and pointer walker for pre-compiled
+headers.
+
+ <p>Given a structure <code>struct GTY((user)) my_struct</code>, the following functions
+should be defined to mark <code>my_struct</code>:
+
+<pre class="smallexample">     void gt_ggc_mx (my_struct *p)
+     {
+       /* This marks field 'fld'.  */
+       gt_ggc_mx (p-&gt;fld);
+     }
+     
+     void gt_pch_nx (my_struct *p)
+     {
+       /* This marks field 'fld'.  */
+       gt_pch_nx (tp-&gt;fld);
+     }
+     
+     void gt_pch_nx (my_struct *p, gt_pointer_operator op, void *cookie)
+     {
+       /* For every field 'fld', call the given pointer operator.  */
+       op (&amp;(tp-&gt;fld), cookie);
+     }
+</pre>
+ <p>In general, each marker <code>M</code> should call <code>M</code> for every
+pointer field in the structure.  Fields that are not allocated in GC
+or are not pointers must be ignored.
+
+ <p>For embedded lists (e.g., structures with a <code>next</code> or <code>prev</code>
+pointer), the marker must follow the chain and mark every element in
+it.
+
+ <p>Note that the rules for the pointer walker <code>gt_pch_nx (my_struct
+*, gt_pointer_operator, void *)</code> are slightly different.  In this
+case, the operation <code>op</code> must be applied to the <em>address</em> of
+every pointer field.
+
+<h4 class="subsection">22.3.1 User-provided marking routines for template types</h4>
+
+<p>When a template type <code>TP</code> is marked with <code>GTY</code>, all
+instances of that type are considered user-provided types.  This means
+that the individual instances of <code>TP</code> do not need to be marked
+with <code>GTY</code>.  The user needs to provide template functions to mark
+all the fields of the type.
+
+ <p>The following code snippets represent all the functions that need to
+be provided. Note that type <code>TP</code> may reference to more than one
+type. In these snippets, there is only one type <code>T</code>, but there
+could be more.
+
+<pre class="smallexample">     template&lt;typename T&gt;
+     void gt_ggc_mx (TP&lt;T&gt; *tp)
+     {
+       extern void gt_ggc_mx (T&amp;);
+     
+       /* This marks field 'fld' of type 'T'.  */
+       gt_ggc_mx (tp-&gt;fld);
+     }
+     
+     template&lt;typename T&gt;
+     void gt_pch_nx (TP&lt;T&gt; *tp)
+     {
+       extern void gt_pch_nx (T&amp;);
+     
+       /* This marks field 'fld' of type 'T'.  */
+       gt_pch_nx (tp-&gt;fld);
+     }
+     
+     template&lt;typename T&gt;
+     void gt_pch_nx (TP&lt;T *&gt; *tp, gt_pointer_operator op, void *cookie)
+     {
+       /* For every field 'fld' of 'tp' with type 'T *', call the given
+          pointer operator.  */
+       op (&amp;(tp-&gt;fld), cookie);
+     }
+     
+     template&lt;typename T&gt;
+     void gt_pch_nx (TP&lt;T&gt; *tp, gt_pointer_operator, void *cookie)
+     {
+       extern void gt_pch_nx (T *, gt_pointer_operator, void *);
+     
+       /* For every field 'fld' of 'tp' with type 'T', call the pointer
+          walker for all the fields of T.  */
+       gt_pch_nx (&amp;(tp-&gt;fld), op, cookie);
+     }
+</pre>
+ <p>Support for user-defined types is currently limited. The following
+restrictions apply:
+
+     <ol type=1 start=1>
+<li>Type <code>TP</code> and all the argument types <code>T</code> must be
+marked with <code>GTY</code>.
+
+     <li>Type <code>TP</code> can only have type names in its argument list.
+
+     <li>The pointer walker functions are different for <code>TP&lt;T&gt;</code> and
+<code>TP&lt;T *&gt;</code>. In the case of <code>TP&lt;T&gt;</code>, references to
+<code>T</code> must be handled by calling <code>gt_pch_nx</code> (which
+will, in turn, walk all the pointers inside fields of <code>T</code>). 
+In the case of <code>TP&lt;T *&gt;</code>, references to <code>T *</code> must be
+handled by calling the <code>op</code> function on the address of the
+pointer (see the code snippets above).
+      </ol>
+
+ </body></html>
+

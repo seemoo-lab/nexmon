@@ -1,0 +1,128 @@
+<html lang="en">
+<head>
+<title>MSP430 Options - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Submodel-Options.html#Submodel-Options" title="Submodel Options">
+<link rel="prev" href="Moxie-Options.html#Moxie-Options" title="Moxie Options">
+<link rel="next" href="NDS32-Options.html#NDS32-Options" title="NDS32 Options">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="MSP430-Options"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="NDS32-Options.html#NDS32-Options">NDS32 Options</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Moxie-Options.html#Moxie-Options">Moxie Options</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Submodel-Options.html#Submodel-Options">Submodel Options</a>
+<hr>
+</div>
+
+<h4 class="subsection">3.17.29 MSP430 Options</h4>
+
+<p><a name="index-MSP430-Options-2103"></a>
+These options are defined for the MSP430:
+
+     <dl>
+<dt><code>-masm-hex</code><dd><a name="index-masm_002dhex-2104"></a>Force assembly output to always use hex constants.  Normally such
+constants are signed decimals, but this option is available for
+testsuite and/or aesthetic purposes.
+
+     <br><dt><code>-mmcu=</code><dd><a name="index-mmcu_003d-2105"></a>Select the MCU to target.  This is used to create a C preprocessor
+symbol based upon the MCU name, converted to upper case and pre- and
+post-fixed with `<samp><span class="samp">__</span></samp>'.  This in turn is used by the
+<samp><span class="file">msp430.h</span></samp> header file to select an MCU-specific supplementary
+header file.
+
+     <p>The option also sets the ISA to use.  If the MCU name is one that is
+known to only support the 430 ISA then that is selected, otherwise the
+430X ISA is selected.  A generic MCU name of `<samp><span class="samp">msp430</span></samp>' can also be
+used to select the 430 ISA.  Similarly the generic `<samp><span class="samp">msp430x</span></samp>' MCU
+name selects the 430X ISA.
+
+     <p>In addition an MCU-specific linker script is added to the linker
+command line.  The script's name is the name of the MCU with
+<samp><span class="file">.ld</span></samp> appended.  Thus specifying <samp><span class="option">-mmcu=xxx</span></samp> on the <samp><span class="command">gcc</span></samp>
+command line defines the C preprocessor symbol <code>__XXX__</code> and
+cause the linker to search for a script called <samp><span class="file">xxx.ld</span></samp>.
+
+     <p>This option is also passed on to the assembler.
+
+     <br><dt><code>-mcpu=</code><dd><a name="index-mcpu_003d-2106"></a>Specifies the ISA to use.  Accepted values are `<samp><span class="samp">msp430</span></samp>',
+`<samp><span class="samp">msp430x</span></samp>' and `<samp><span class="samp">msp430xv2</span></samp>'.  This option is deprecated.  The
+<samp><span class="option">-mmcu=</span></samp> option should be used to select the ISA.
+
+     <br><dt><code>-msim</code><dd><a name="index-msim-2107"></a>Link to the simulator runtime libraries and linker script.  Overrides
+any scripts that would be selected by the <samp><span class="option">-mmcu=</span></samp> option.
+
+     <br><dt><code>-mlarge</code><dd><a name="index-mlarge-2108"></a>Use large-model addressing (20-bit pointers, 32-bit <code>size_t</code>).
+
+     <br><dt><code>-msmall</code><dd><a name="index-msmall-2109"></a>Use small-model addressing (16-bit pointers, 16-bit <code>size_t</code>).
+
+     <br><dt><code>-mrelax</code><dd><a name="index-mrelax-2110"></a>This option is passed to the assembler and linker, and allows the
+linker to perform certain optimizations that cannot be done until
+the final link.
+
+     <br><dt><code>mhwmult=</code><dd><a name="index-mhwmult_003d-2111"></a>Describes the type of hardware multiply supported by the target. 
+Accepted values are `<samp><span class="samp">none</span></samp>' for no hardware multiply, `<samp><span class="samp">16bit</span></samp>'
+for the original 16-bit-only multiply supported by early MCUs. 
+`<samp><span class="samp">32bit</span></samp>' for the 16/32-bit multiply supported by later MCUs and
+`<samp><span class="samp">f5series</span></samp>' for the 16/32-bit multiply supported by F5-series MCUs. 
+A value of `<samp><span class="samp">auto</span></samp>' can also be given.  This tells GCC to deduce
+the hardware multiply support based upon the MCU name provided by the
+<samp><span class="option">-mmcu</span></samp> option.  If no <samp><span class="option">-mmcu</span></samp> option is specified then
+`<samp><span class="samp">32bit</span></samp>' hardware multiply support is assumed.  `<samp><span class="samp">auto</span></samp>' is the
+default setting.
+
+     <p>Hardware multiplies are normally performed by calling a library
+routine.  This saves space in the generated code.  When compiling at
+<samp><span class="option">-O3</span></samp> or higher however the hardware multiplier is invoked
+inline.  This makes for bigger, but faster code.
+
+     <p>The hardware multiply routines disable interrupts whilst running and
+restore the previous interrupt state when they finish.  This makes
+them safe to use inside interrupt handlers as well as in normal code.
+
+     <br><dt><code>-minrt</code><dd><a name="index-minrt-2112"></a>Enable the use of a minimum runtime environment - no static
+initializers or constructors.  This is intended for memory-constrained
+devices.  The compiler includes special symbols in some objects
+that tell the linker and runtime which code fragments are required.
+
+ </dl>
+
+ </body></html>
+

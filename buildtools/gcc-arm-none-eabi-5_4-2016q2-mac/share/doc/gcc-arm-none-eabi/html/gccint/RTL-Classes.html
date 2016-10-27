@@ -1,0 +1,190 @@
+<html lang="en">
+<head>
+<title>RTL Classes - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="RTL.html#RTL" title="RTL">
+<link rel="prev" href="RTL-Objects.html#RTL-Objects" title="RTL Objects">
+<link rel="next" href="Accessors.html#Accessors" title="Accessors">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="RTL-Classes"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Accessors.html#Accessors">Accessors</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="RTL-Objects.html#RTL-Objects">RTL Objects</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="RTL.html#RTL">RTL</a>
+<hr>
+</div>
+
+<h3 class="section">13.2 RTL Classes and Formats</h3>
+
+<p><a name="index-RTL-classes-2549"></a><a name="index-classes-of-RTX-codes-2550"></a><a name="index-RTX-codes_002c-classes-of-2551"></a><a name="index-GET_005fRTX_005fCLASS-2552"></a>
+The various expression codes are divided into several <dfn>classes</dfn>,
+which are represented by single characters.  You can determine the class
+of an RTX code with the macro <code>GET_RTX_CLASS (</code><var>code</var><code>)</code>. 
+Currently, <samp><span class="file">rtl.def</span></samp> defines these classes:
+
+     <dl>
+<dt><code>RTX_OBJ</code><dd>An RTX code that represents an actual object, such as a register
+(<code>REG</code>) or a memory location (<code>MEM</code>, <code>SYMBOL_REF</code>). 
+<code>LO_SUM</code>) is also included; instead, <code>SUBREG</code> and
+<code>STRICT_LOW_PART</code> are not in this class, but in class <code>x</code>.
+
+     <br><dt><code>RTX_CONST_OBJ</code><dd>An RTX code that represents a constant object.  <code>HIGH</code> is also
+included in this class.
+
+     <br><dt><code>RTX_COMPARE</code><dd>An RTX code for a non-symmetric comparison, such as <code>GEU</code> or
+<code>LT</code>.
+
+     <br><dt><code>RTX_COMM_COMPARE</code><dd>An RTX code for a symmetric (commutative) comparison, such as <code>EQ</code>
+or <code>ORDERED</code>.
+
+     <br><dt><code>RTX_UNARY</code><dd>An RTX code for a unary arithmetic operation, such as <code>NEG</code>,
+<code>NOT</code>, or <code>ABS</code>.  This category also includes value extension
+(sign or zero) and conversions between integer and floating point.
+
+     <br><dt><code>RTX_COMM_ARITH</code><dd>An RTX code for a commutative binary operation, such as <code>PLUS</code> or
+<code>AND</code>.  <code>NE</code> and <code>EQ</code> are comparisons, so they have class
+<code>&lt;</code>.
+
+     <br><dt><code>RTX_BIN_ARITH</code><dd>An RTX code for a non-commutative binary operation, such as <code>MINUS</code>,
+<code>DIV</code>, or <code>ASHIFTRT</code>.
+
+     <br><dt><code>RTX_BITFIELD_OPS</code><dd>An RTX code for a bit-field operation.  Currently only
+<code>ZERO_EXTRACT</code> and <code>SIGN_EXTRACT</code>.  These have three inputs
+and are lvalues (so they can be used for insertion as well). 
+See <a href="Bit_002dFields.html#Bit_002dFields">Bit-Fields</a>.
+
+     <br><dt><code>RTX_TERNARY</code><dd>An RTX code for other three input operations.  Currently only
+<code>IF_THEN_ELSE</code>,  <code>VEC_MERGE</code>, <code>SIGN_EXTRACT</code>,
+<code>ZERO_EXTRACT</code>, and <code>FMA</code>.
+
+     <br><dt><code>RTX_INSN</code><dd>An RTX code for an entire instruction:  <code>INSN</code>, <code>JUMP_INSN</code>, and
+<code>CALL_INSN</code>.  See <a href="Insns.html#Insns">Insns</a>.
+
+     <br><dt><code>RTX_MATCH</code><dd>An RTX code for something that matches in insns, such as
+<code>MATCH_DUP</code>.  These only occur in machine descriptions.
+
+     <br><dt><code>RTX_AUTOINC</code><dd>An RTX code for an auto-increment addressing mode, such as
+<code>POST_INC</code>.  `<samp><span class="samp">XEXP (</span><var>x</var><span class="samp">, 0)</span></samp>' gives the auto-modified
+register.
+
+     <br><dt><code>RTX_EXTRA</code><dd>All other RTX codes.  This category includes the remaining codes used
+only in machine descriptions (<code>DEFINE_*</code>, etc.).  It also includes
+all the codes describing side effects (<code>SET</code>, <code>USE</code>,
+<code>CLOBBER</code>, etc.) and the non-insns that may appear on an insn
+chain, such as <code>NOTE</code>, <code>BARRIER</code>, and <code>CODE_LABEL</code>. 
+<code>SUBREG</code> is also part of this class. 
+</dl>
+
+ <p><a name="index-RTL-format-2553"></a>For each expression code, <samp><span class="file">rtl.def</span></samp> specifies the number of
+contained objects and their kinds using a sequence of characters
+called the <dfn>format</dfn> of the expression code.  For example,
+the format of <code>subreg</code> is `<samp><span class="samp">ei</span></samp>'.
+
+ <p><a name="index-RTL-format-characters-2554"></a>These are the most commonly used format characters:
+
+     <dl>
+<dt><code>e</code><dd>An expression (actually a pointer to an expression).
+
+     <br><dt><code>i</code><dd>An integer.
+
+     <br><dt><code>w</code><dd>A wide integer.
+
+     <br><dt><code>s</code><dd>A string.
+
+     <br><dt><code>E</code><dd>A vector of expressions. 
+</dl>
+
+ <p>A few other format characters are used occasionally:
+
+     <dl>
+<dt><code>u</code><dd>`<samp><span class="samp">u</span></samp>' is equivalent to `<samp><span class="samp">e</span></samp>' except that it is printed differently
+in debugging dumps.  It is used for pointers to insns.
+
+     <br><dt><code>n</code><dd>`<samp><span class="samp">n</span></samp>' is equivalent to `<samp><span class="samp">i</span></samp>' except that it is printed differently
+in debugging dumps.  It is used for the line number or code number of a
+<code>note</code> insn.
+
+     <br><dt><code>S</code><dd>`<samp><span class="samp">S</span></samp>' indicates a string which is optional.  In the RTL objects in
+core, `<samp><span class="samp">S</span></samp>' is equivalent to `<samp><span class="samp">s</span></samp>', but when the object is read,
+from an `<samp><span class="samp">md</span></samp>' file, the string value of this operand may be omitted. 
+An omitted string is taken to be the null string.
+
+     <br><dt><code>V</code><dd>`<samp><span class="samp">V</span></samp>' indicates a vector which is optional.  In the RTL objects in
+core, `<samp><span class="samp">V</span></samp>' is equivalent to `<samp><span class="samp">E</span></samp>', but when the object is read
+from an `<samp><span class="samp">md</span></samp>' file, the vector value of this operand may be omitted. 
+An omitted vector is effectively the same as a vector of no elements.
+
+     <br><dt><code>B</code><dd>`<samp><span class="samp">B</span></samp>' indicates a pointer to basic block structure.
+
+     <br><dt><code>0</code><dd>`<samp><span class="samp">0</span></samp>' means a slot whose contents do not fit any normal category. 
+`<samp><span class="samp">0</span></samp>' slots are not printed at all in dumps, and are often used in
+special ways by small parts of the compiler. 
+</dl>
+
+ <p>There are macros to get the number of operands and the format
+of an expression code:
+
+     
+<a name="index-GET_005fRTX_005fLENGTH-2555"></a>
+<dl><dt><code>GET_RTX_LENGTH (</code><var>code</var><code>)</code><dd>Number of operands of an RTX of code <var>code</var>.
+
+     <p><a name="index-GET_005fRTX_005fFORMAT-2556"></a><br><dt><code>GET_RTX_FORMAT (</code><var>code</var><code>)</code><dd>The format of an RTX of code <var>code</var>, as a C string. 
+</dl>
+
+ <p>Some classes of RTX codes always have the same format.  For example, it
+is safe to assume that all comparison operations have format <code>ee</code>.
+
+     <dl>
+<dt><code>1</code><dd>All codes of this class have format <code>e</code>.
+
+     <br><dt><code>&lt;</code><dt><code>c</code><dt><code>2</code><dd>All codes of these classes have format <code>ee</code>.
+
+     <br><dt><code>b</code><dt><code>3</code><dd>All codes of these classes have format <code>eee</code>.
+
+     <br><dt><code>i</code><dd>All codes of this class have formats that begin with <code>iuueiee</code>. 
+See <a href="Insns.html#Insns">Insns</a>.  Note that not all RTL objects linked onto an insn chain
+are of class <code>i</code>.
+
+     <br><dt><code>o</code><dt><code>m</code><dt><code>x</code><dd>You can make no assumptions about the format of these codes. 
+</dl>
+
+ </body></html>
+

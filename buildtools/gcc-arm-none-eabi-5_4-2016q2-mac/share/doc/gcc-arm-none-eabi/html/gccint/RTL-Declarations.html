@@ -1,0 +1,76 @@
+<html lang="en">
+<head>
+<title>RTL Declarations - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="RTL.html#RTL" title="RTL">
+<link rel="prev" href="Conversions.html#Conversions" title="Conversions">
+<link rel="next" href="Side-Effects.html#Side-Effects" title="Side Effects">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="RTL-Declarations"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Side-Effects.html#Side-Effects">Side Effects</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Conversions.html#Conversions">Conversions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="RTL.html#RTL">RTL</a>
+<hr>
+</div>
+
+<h3 class="section">13.14 Declarations</h3>
+
+<p><a name="index-RTL-declarations-3027"></a><a name="index-declarations_002c-RTL-3028"></a>
+Declaration expression codes do not represent arithmetic operations
+but rather state assertions about their operands.
+
+     
+<a name="index-strict_005flow_005fpart-3029"></a>
+<a name="index-g_t_0040code_007bsubreg_007d_002c-in-_0040code_007bstrict_005flow_005fpart_007d-3030"></a>
+<dl><dt><code>(strict_low_part (subreg:</code><var>m</var><code> (reg:</code><var>n</var> <var>r</var><code>) 0))</code><dd>This expression code is used in only one context: as the destination operand of a
+<code>set</code> expression.  In addition, the operand of this expression
+must be a non-paradoxical <code>subreg</code> expression.
+
+     <p>The presence of <code>strict_low_part</code> says that the part of the
+register which is meaningful in mode <var>n</var>, but is not part of
+mode <var>m</var>, is not to be altered.  Normally, an assignment to such
+a subreg is allowed to have undefined effects on the rest of the
+register when <var>m</var> is less than a word. 
+</dl>
+
+ </body></html>
+

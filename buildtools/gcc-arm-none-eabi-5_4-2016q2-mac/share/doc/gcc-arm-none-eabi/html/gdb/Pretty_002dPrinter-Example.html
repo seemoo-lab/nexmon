@@ -1,0 +1,74 @@
+<html lang="en">
+<head>
+<title>Pretty-Printer Example - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Pretty-Printing.html#Pretty-Printing" title="Pretty Printing">
+<link rel="prev" href="Pretty_002dPrinter-Introduction.html#Pretty_002dPrinter-Introduction" title="Pretty-Printer Introduction">
+<link rel="next" href="Pretty_002dPrinter-Commands.html#Pretty_002dPrinter-Commands" title="Pretty-Printer Commands">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Pretty-Printer-Example"></a>
+<a name="Pretty_002dPrinter-Example"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Pretty_002dPrinter-Commands.html#Pretty_002dPrinter-Commands">Pretty-Printer Commands</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Pretty_002dPrinter-Introduction.html#Pretty_002dPrinter-Introduction">Pretty-Printer Introduction</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Pretty-Printing.html#Pretty-Printing">Pretty Printing</a>
+<hr>
+</div>
+
+<h4 class="subsection">10.9.2 Pretty-Printer Example</h4>
+
+<p>Here is how a C<tt>++</tt> <code>std::string</code> looks without a pretty-printer:
+
+<pre class="smallexample">     (gdb) print s
+     $1 = {
+       static npos = 4294967295,
+       _M_dataplus = {
+         &lt;std::allocator&lt;char&gt;&gt; = {
+           &lt;__gnu_cxx::new_allocator&lt;char&gt;&gt; = {
+             &lt;No data fields&gt;}, &lt;No data fields&gt;
+           },
+         members of std::basic_string&lt;char, std::char_traits&lt;char&gt;,
+           std::allocator&lt;char&gt; &gt;::_Alloc_hider:
+         _M_p = 0x804a014 "abcd"
+       }
+     }
+</pre>
+   <p>With a pretty-printer for <code>std::string</code> only the contents are printed:
+
+<pre class="smallexample">     (gdb) print s
+     $2 = "abcd"
+</pre>
+   </body></html>
+

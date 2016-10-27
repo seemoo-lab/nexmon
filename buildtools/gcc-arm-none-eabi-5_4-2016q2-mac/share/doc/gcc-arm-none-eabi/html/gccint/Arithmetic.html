@@ -1,0 +1,273 @@
+<html lang="en">
+<head>
+<title>Arithmetic - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="RTL.html#RTL" title="RTL">
+<link rel="prev" href="Regs-and-Memory.html#Regs-and-Memory" title="Regs and Memory">
+<link rel="next" href="Comparisons.html#Comparisons" title="Comparisons">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Arithmetic"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Comparisons.html#Comparisons">Comparisons</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Regs-and-Memory.html#Regs-and-Memory">Regs and Memory</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="RTL.html#RTL">RTL</a>
+<hr>
+</div>
+
+<h3 class="section">13.9 RTL Expressions for Arithmetic</h3>
+
+<p><a name="index-arithmetic_002c-in-RTL-2881"></a><a name="index-math_002c-in-RTL-2882"></a><a name="index-RTL-expressions-for-arithmetic-2883"></a>
+Unless otherwise specified, all the operands of arithmetic expressions
+must be valid for mode <var>m</var>.  An operand is valid for mode <var>m</var>
+if it has mode <var>m</var>, or if it is a <code>const_int</code> or
+<code>const_double</code> and <var>m</var> is a mode of class <code>MODE_INT</code>.
+
+ <p>For commutative binary operations, constants should be placed in the
+second operand.
+
+     
+<a name="index-plus-2884"></a>
+<a name="index-ss_005fplus-2885"></a>
+<a name="index-us_005fplus-2886"></a>
+<a name="index-RTL-sum-2887"></a>
+<a name="index-RTL-addition-2888"></a>
+<a name="index-RTL-addition-with-signed-saturation-2889"></a>
+<a name="index-RTL-addition-with-unsigned-saturation-2890"></a>
+<dl><dt><code>(plus:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dt><code>(ss_plus:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dt><code>(us_plus:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dd>
+These three expressions all represent the sum of the values
+represented by <var>x</var> and <var>y</var> carried out in machine mode
+<var>m</var>.  They differ in their behavior on overflow of integer modes. 
+<code>plus</code> wraps round modulo the width of <var>m</var>; <code>ss_plus</code>
+saturates at the maximum signed value representable in <var>m</var>;
+<code>us_plus</code> saturates at the maximum unsigned value.
+
+     <!-- ??? What happens on overflow of floating point modes? -->
+<p><a name="index-lo_005fsum-2891"></a><br><dt><code>(lo_sum:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dd>
+This expression represents the sum of <var>x</var> and the low-order bits
+of <var>y</var>.  It is used with <code>high</code> (see <a href="Constants.html#Constants">Constants</a>) to
+represent the typical two-instruction sequence used in RISC machines
+to reference a global memory location.
+
+     <p>The number of low order bits is machine-dependent but is
+normally the number of bits in a <code>Pmode</code> item minus the number of
+bits set by <code>high</code>.
+
+     <p><var>m</var> should be <code>Pmode</code>.
+
+     <p><a name="index-minus-2892"></a><a name="index-ss_005fminus-2893"></a><a name="index-us_005fminus-2894"></a><a name="index-RTL-difference-2895"></a><a name="index-RTL-subtraction-2896"></a><a name="index-RTL-subtraction-with-signed-saturation-2897"></a><a name="index-RTL-subtraction-with-unsigned-saturation-2898"></a><br><dt><code>(minus:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dt><code>(ss_minus:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dt><code>(us_minus:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dd>
+These three expressions represent the result of subtracting <var>y</var>
+from <var>x</var>, carried out in mode <var>M</var>.  Behavior on overflow is
+the same as for the three variants of <code>plus</code> (see above).
+
+     <p><a name="index-compare-2899"></a><a name="index-RTL-comparison-2900"></a><br><dt><code>(compare:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dd>Represents the result of subtracting <var>y</var> from <var>x</var> for purposes
+of comparison.  The result is computed without overflow, as if with
+infinite precision.
+
+     <p>Of course, machines can't really subtract with infinite precision. 
+However, they can pretend to do so when only the sign of the result will
+be used, which is the case when the result is stored in the condition
+code.  And that is the <em>only</em> way this kind of expression may
+validly be used: as a value to be stored in the condition codes, either
+<code>(cc0)</code> or a register.  See <a href="Comparisons.html#Comparisons">Comparisons</a>.
+
+     <p>The mode <var>m</var> is not related to the modes of <var>x</var> and <var>y</var>, but
+instead is the mode of the condition code value.  If <code>(cc0)</code> is
+used, it is <code>VOIDmode</code>.  Otherwise it is some mode in class
+<code>MODE_CC</code>, often <code>CCmode</code>.  See <a href="Condition-Code.html#Condition-Code">Condition Code</a>.  If <var>m</var>
+is <code>VOIDmode</code> or <code>CCmode</code>, the operation returns sufficient
+information (in an unspecified format) so that any comparison operator
+can be applied to the result of the <code>COMPARE</code> operation.  For other
+modes in class <code>MODE_CC</code>, the operation only returns a subset of
+this information.
+
+     <p>Normally, <var>x</var> and <var>y</var> must have the same mode.  Otherwise,
+<code>compare</code> is valid only if the mode of <var>x</var> is in class
+<code>MODE_INT</code> and <var>y</var> is a <code>const_int</code> or
+<code>const_double</code> with mode <code>VOIDmode</code>.  The mode of <var>x</var>
+determines what mode the comparison is to be done in; thus it must not
+be <code>VOIDmode</code>.
+
+     <p>If one of the operands is a constant, it should be placed in the
+second operand and the comparison code adjusted as appropriate.
+
+     <p>A <code>compare</code> specifying two <code>VOIDmode</code> constants is not valid
+since there is no way to know in what mode the comparison is to be
+performed; the comparison must either be folded during the compilation
+or the first operand must be loaded into a register while its mode is
+still known.
+
+     <p><a name="index-neg-2901"></a><a name="index-ss_005fneg-2902"></a><a name="index-us_005fneg-2903"></a><a name="index-negation-2904"></a><a name="index-negation-with-signed-saturation-2905"></a><a name="index-negation-with-unsigned-saturation-2906"></a><br><dt><code>(neg:</code><var>m</var> <var>x</var><code>)</code><dt><code>(ss_neg:</code><var>m</var> <var>x</var><code>)</code><dt><code>(us_neg:</code><var>m</var> <var>x</var><code>)</code><dd>These two expressions represent the negation (subtraction from zero) of
+the value represented by <var>x</var>, carried out in mode <var>m</var>.  They
+differ in the behavior on overflow of integer modes.  In the case of
+<code>neg</code>, the negation of the operand may be a number not representable
+in mode <var>m</var>, in which case it is truncated to <var>m</var>.  <code>ss_neg</code>
+and <code>us_neg</code> ensure that an out-of-bounds result saturates to the
+maximum or minimum signed or unsigned value.
+
+     <p><a name="index-mult-2907"></a><a name="index-ss_005fmult-2908"></a><a name="index-us_005fmult-2909"></a><a name="index-multiplication-2910"></a><a name="index-product-2911"></a><a name="index-multiplication-with-signed-saturation-2912"></a><a name="index-multiplication-with-unsigned-saturation-2913"></a><br><dt><code>(mult:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dt><code>(ss_mult:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dt><code>(us_mult:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dd>Represents the signed product of the values represented by <var>x</var> and
+<var>y</var> carried out in machine mode <var>m</var>. 
+<code>ss_mult</code> and <code>us_mult</code> ensure that an out-of-bounds result
+saturates to the maximum or minimum signed or unsigned value.
+
+     <p>Some machines support a multiplication that generates a product wider
+than the operands.  Write the pattern for this as
+
+     <pre class="smallexample">          (mult:<var>m</var> (sign_extend:<var>m</var> <var>x</var>) (sign_extend:<var>m</var> <var>y</var>))
+     </pre>
+     <p>where <var>m</var> is wider than the modes of <var>x</var> and <var>y</var>, which need
+not be the same.
+
+     <p>For unsigned widening multiplication, use the same idiom, but with
+<code>zero_extend</code> instead of <code>sign_extend</code>.
+
+     <p><a name="index-fma-2914"></a><br><dt><code>(fma:</code><var>m</var> <var>x</var> <var>y</var> <var>z</var><code>)</code><dd>Represents the <code>fma</code>, <code>fmaf</code>, and <code>fmal</code> builtin
+functions, which compute `<samp><var>x</var><span class="samp"> * </span><var>y</var><span class="samp"> + </span><var>z</var></samp>'
+without doing an intermediate rounding step.
+
+     <p><a name="index-div-2915"></a><a name="index-ss_005fdiv-2916"></a><a name="index-division-2917"></a><a name="index-signed-division-2918"></a><a name="index-signed-division-with-signed-saturation-2919"></a><a name="index-quotient-2920"></a><br><dt><code>(div:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dt><code>(ss_div:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dd>Represents the quotient in signed division of <var>x</var> by <var>y</var>,
+carried out in machine mode <var>m</var>.  If <var>m</var> is a floating point
+mode, it represents the exact quotient; otherwise, the integerized
+quotient. 
+<code>ss_div</code> ensures that an out-of-bounds result saturates to the maximum
+or minimum signed value.
+
+     <p>Some machines have division instructions in which the operands and
+quotient widths are not all the same; you should represent
+such instructions using <code>truncate</code> and <code>sign_extend</code> as in,
+
+     <pre class="smallexample">          (truncate:<var>m1</var> (div:<var>m2</var> <var>x</var> (sign_extend:<var>m2</var> <var>y</var>)))
+     </pre>
+     <p><a name="index-udiv-2921"></a><a name="index-unsigned-division-2922"></a><a name="index-unsigned-division-with-unsigned-saturation-2923"></a><a name="index-division-2924"></a><br><dt><code>(udiv:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dt><code>(us_div:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dd>Like <code>div</code> but represents unsigned division. 
+<code>us_div</code> ensures that an out-of-bounds result saturates to the maximum
+or minimum unsigned value.
+
+     <p><a name="index-mod-2925"></a><a name="index-umod-2926"></a><a name="index-remainder-2927"></a><a name="index-division-2928"></a><br><dt><code>(mod:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dt><code>(umod:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dd>Like <code>div</code> and <code>udiv</code> but represent the remainder instead of
+the quotient.
+
+     <p><a name="index-smin-2929"></a><a name="index-smax-2930"></a><a name="index-signed-minimum-2931"></a><a name="index-signed-maximum-2932"></a><br><dt><code>(smin:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dt><code>(smax:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dd>Represents the smaller (for <code>smin</code>) or larger (for <code>smax</code>) of
+<var>x</var> and <var>y</var>, interpreted as signed values in mode <var>m</var>. 
+When used with floating point, if both operands are zeros, or if either
+operand is <code>NaN</code>, then it is unspecified which of the two operands
+is returned as the result.
+
+     <p><a name="index-umin-2933"></a><a name="index-umax-2934"></a><a name="index-unsigned-minimum-and-maximum-2935"></a><br><dt><code>(umin:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dt><code>(umax:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dd>Like <code>smin</code> and <code>smax</code>, but the values are interpreted as unsigned
+integers.
+
+     <p><a name="index-not-2936"></a><a name="index-complement_002c-bitwise-2937"></a><a name="index-bitwise-complement-2938"></a><br><dt><code>(not:</code><var>m</var> <var>x</var><code>)</code><dd>Represents the bitwise complement of the value represented by <var>x</var>,
+carried out in mode <var>m</var>, which must be a fixed-point machine mode.
+
+     <p><a name="index-and-2939"></a><a name="index-logical_002dand_002c-bitwise-2940"></a><a name="index-bitwise-logical_002dand-2941"></a><br><dt><code>(and:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dd>Represents the bitwise logical-and of the values represented by
+<var>x</var> and <var>y</var>, carried out in machine mode <var>m</var>, which must be
+a fixed-point machine mode.
+
+     <p><a name="index-ior-2942"></a><a name="index-inclusive_002dor_002c-bitwise-2943"></a><a name="index-bitwise-inclusive_002dor-2944"></a><br><dt><code>(ior:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dd>Represents the bitwise inclusive-or of the values represented by <var>x</var>
+and <var>y</var>, carried out in machine mode <var>m</var>, which must be a
+fixed-point mode.
+
+     <p><a name="index-xor-2945"></a><a name="index-exclusive_002dor_002c-bitwise-2946"></a><a name="index-bitwise-exclusive_002dor-2947"></a><br><dt><code>(xor:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dd>Represents the bitwise exclusive-or of the values represented by <var>x</var>
+and <var>y</var>, carried out in machine mode <var>m</var>, which must be a
+fixed-point mode.
+
+     <p><a name="index-ashift-2948"></a><a name="index-ss_005fashift-2949"></a><a name="index-us_005fashift-2950"></a><a name="index-left-shift-2951"></a><a name="index-shift-2952"></a><a name="index-arithmetic-shift-2953"></a><a name="index-arithmetic-shift-with-signed-saturation-2954"></a><a name="index-arithmetic-shift-with-unsigned-saturation-2955"></a><br><dt><code>(ashift:</code><var>m</var> <var>x</var> <var>c</var><code>)</code><dt><code>(ss_ashift:</code><var>m</var> <var>x</var> <var>c</var><code>)</code><dt><code>(us_ashift:</code><var>m</var> <var>x</var> <var>c</var><code>)</code><dd>These three expressions represent the result of arithmetically shifting <var>x</var>
+left by <var>c</var> places.  They differ in their behavior on overflow of integer
+modes.  An <code>ashift</code> operation is a plain shift with no special behavior
+in case of a change in the sign bit; <code>ss_ashift</code> and <code>us_ashift</code>
+saturates to the minimum or maximum representable value if any of the bits
+shifted out differs from the final sign bit.
+
+     <p><var>x</var> have mode <var>m</var>, a fixed-point machine mode.  <var>c</var>
+be a fixed-point mode or be a constant with mode <code>VOIDmode</code>; which
+mode is determined by the mode called for in the machine description
+entry for the left-shift instruction.  For example, on the VAX, the mode
+of <var>c</var> is <code>QImode</code> regardless of <var>m</var>.
+
+     <p><a name="index-lshiftrt-2956"></a><a name="index-right-shift-2957"></a><a name="index-ashiftrt-2958"></a><br><dt><code>(lshiftrt:</code><var>m</var> <var>x</var> <var>c</var><code>)</code><dt><code>(ashiftrt:</code><var>m</var> <var>x</var> <var>c</var><code>)</code><dd>Like <code>ashift</code> but for right shift.  Unlike the case for left shift,
+these two operations are distinct.
+
+     <p><a name="index-rotate-2959"></a><a name="index-rotate-2960"></a><a name="index-left-rotate-2961"></a><a name="index-rotatert-2962"></a><a name="index-right-rotate-2963"></a><br><dt><code>(rotate:</code><var>m</var> <var>x</var> <var>c</var><code>)</code><dt><code>(rotatert:</code><var>m</var> <var>x</var> <var>c</var><code>)</code><dd>Similar but represent left and right rotate.  If <var>c</var> is a constant,
+use <code>rotate</code>.
+
+     <p><a name="index-abs-2964"></a><a name="index-ss_005fabs-2965"></a><a name="index-absolute-value-2966"></a><br><dt><code>(abs:</code><var>m</var> <var>x</var><code>)</code><br><dt><code>(ss_abs:</code><var>m</var> <var>x</var><code>)</code><dd>Represents the absolute value of <var>x</var>, computed in mode <var>m</var>. 
+<code>ss_abs</code> ensures that an out-of-bounds result saturates to the
+maximum signed value.
+
+     <p><a name="index-sqrt-2967"></a><a name="index-square-root-2968"></a><br><dt><code>(sqrt:</code><var>m</var> <var>x</var><code>)</code><dd>Represents the square root of <var>x</var>, computed in mode <var>m</var>. 
+Most often <var>m</var> will be a floating point mode.
+
+     <p><a name="index-ffs-2969"></a><br><dt><code>(ffs:</code><var>m</var> <var>x</var><code>)</code><dd>Represents one plus the index of the least significant 1-bit in
+<var>x</var>, represented as an integer of mode <var>m</var>.  (The value is
+zero if <var>x</var> is zero.)  The mode of <var>x</var> must be <var>m</var>
+or <code>VOIDmode</code>.
+
+     <p><a name="index-clrsb-2970"></a><br><dt><code>(clrsb:</code><var>m</var> <var>x</var><code>)</code><dd>Represents the number of redundant leading sign bits in <var>x</var>,
+represented as an integer of mode <var>m</var>, starting at the most
+significant bit position.  This is one less than the number of leading
+sign bits (either 0 or 1), with no special cases.  The mode of <var>x</var>
+must be <var>m</var> or <code>VOIDmode</code>.
+
+     <p><a name="index-clz-2971"></a><br><dt><code>(clz:</code><var>m</var> <var>x</var><code>)</code><dd>Represents the number of leading 0-bits in <var>x</var>, represented as an
+integer of mode <var>m</var>, starting at the most significant bit position. 
+If <var>x</var> is zero, the value is determined by
+<code>CLZ_DEFINED_VALUE_AT_ZERO</code> (see <a href="Misc.html#Misc">Misc</a>).  Note that this is one of
+the few expressions that is not invariant under widening.  The mode of
+<var>x</var> must be <var>m</var> or <code>VOIDmode</code>.
+
+     <p><a name="index-ctz-2972"></a><br><dt><code>(ctz:</code><var>m</var> <var>x</var><code>)</code><dd>Represents the number of trailing 0-bits in <var>x</var>, represented as an
+integer of mode <var>m</var>, starting at the least significant bit position. 
+If <var>x</var> is zero, the value is determined by
+<code>CTZ_DEFINED_VALUE_AT_ZERO</code> (see <a href="Misc.html#Misc">Misc</a>).  Except for this case,
+<code>ctz(x)</code> is equivalent to <code>ffs(</code><var>x</var><code>) - 1</code>.  The mode of
+<var>x</var> must be <var>m</var> or <code>VOIDmode</code>.
+
+     <p><a name="index-popcount-2973"></a><br><dt><code>(popcount:</code><var>m</var> <var>x</var><code>)</code><dd>Represents the number of 1-bits in <var>x</var>, represented as an integer of
+mode <var>m</var>.  The mode of <var>x</var> must be <var>m</var> or <code>VOIDmode</code>.
+
+     <p><a name="index-parity-2974"></a><br><dt><code>(parity:</code><var>m</var> <var>x</var><code>)</code><dd>Represents the number of 1-bits modulo 2 in <var>x</var>, represented as an
+integer of mode <var>m</var>.  The mode of <var>x</var> must be <var>m</var> or
+<code>VOIDmode</code>.
+
+     <p><a name="index-bswap-2975"></a><br><dt><code>(bswap:</code><var>m</var> <var>x</var><code>)</code><dd>Represents the value <var>x</var> with the order of bytes reversed, carried out
+in mode <var>m</var>, which must be a fixed-point machine mode. 
+The mode of <var>x</var> must be <var>m</var> or <code>VOIDmode</code>. 
+</dl>
+
+ </body></html>
+

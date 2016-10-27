@@ -1,0 +1,82 @@
+<html lang="en">
+<head>
+<title>Constant Attributes - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Insn-Attributes.html#Insn-Attributes" title="Insn Attributes">
+<link rel="prev" href="Insn-Lengths.html#Insn-Lengths" title="Insn Lengths">
+<link rel="next" href="Mnemonic-Attribute.html#Mnemonic-Attribute" title="Mnemonic Attribute">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Constant-Attributes"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Mnemonic-Attribute.html#Mnemonic-Attribute">Mnemonic Attribute</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Insn-Lengths.html#Insn-Lengths">Insn Lengths</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Insn-Attributes.html#Insn-Attributes">Insn Attributes</a>
+<hr>
+</div>
+
+<h4 class="subsection">16.19.6 Constant Attributes</h4>
+
+<p><a name="index-constant-attributes-3776"></a>
+A special form of <code>define_attr</code>, where the expression for the
+default value is a <code>const</code> expression, indicates an attribute that
+is constant for a given run of the compiler.  Constant attributes may be
+used to specify which variety of processor is used.  For example,
+
+<pre class="smallexample">     (define_attr "cpu" "m88100,m88110,m88000"
+      (const
+       (cond [(symbol_ref "TARGET_88100") (const_string "m88100")
+              (symbol_ref "TARGET_88110") (const_string "m88110")]
+             (const_string "m88000"))))
+     
+     (define_attr "memory" "fast,slow"
+      (const
+       (if_then_else (symbol_ref "TARGET_FAST_MEM")
+                     (const_string "fast")
+                     (const_string "slow"))))
+</pre>
+ <p>The routine generated for constant attributes has no parameters as it
+does not depend on any particular insn.  RTL expressions used to define
+the value of a constant attribute may use the <code>symbol_ref</code> form,
+but may not use either the <code>match_operand</code> form or <code>eq_attr</code>
+forms involving insn attributes.
+
+ </body></html>
+

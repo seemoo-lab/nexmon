@@ -1,0 +1,162 @@
+<html lang="en">
+<head>
+<title>Stack Checking - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stack-and-Calling.html#Stack-and-Calling" title="Stack and Calling">
+<link rel="prev" href="Exception-Handling.html#Exception-Handling" title="Exception Handling">
+<link rel="next" href="Frame-Registers.html#Frame-Registers" title="Frame Registers">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Stack-Checking"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Frame-Registers.html#Frame-Registers">Frame Registers</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Exception-Handling.html#Exception-Handling">Exception Handling</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stack-and-Calling.html#Stack-and-Calling">Stack and Calling</a>
+<hr>
+</div>
+
+<h4 class="subsection">17.9.3 Specifying How Stack Checking is Done</h4>
+
+<p>GCC will check that stack references are within the boundaries of the
+stack, if the option <samp><span class="option">-fstack-check</span></samp> is specified, in one of
+three ways:
+
+     <ol type=1 start=1>
+<li>If the value of the <code>STACK_CHECK_BUILTIN</code> macro is nonzero, GCC
+will assume that you have arranged for full stack checking to be done
+at appropriate places in the configuration files.  GCC will not do
+other special processing.
+
+     <li>If <code>STACK_CHECK_BUILTIN</code> is zero and the value of the
+<code>STACK_CHECK_STATIC_BUILTIN</code> macro is nonzero, GCC will assume
+that you have arranged for static stack checking (checking of the
+static stack frame of functions) to be done at appropriate places
+in the configuration files.  GCC will only emit code to do dynamic
+stack checking (checking on dynamic stack allocations) using the third
+approach below.
+
+     <li>If neither of the above are true, GCC will generate code to periodically
+&ldquo;probe&rdquo; the stack pointer using the values of the macros defined below.
+      </ol>
+
+ <p>If neither STACK_CHECK_BUILTIN nor STACK_CHECK_STATIC_BUILTIN is defined,
+GCC will change its allocation strategy for large objects if the option
+<samp><span class="option">-fstack-check</span></samp> is specified: they will always be allocated
+dynamically if their size exceeds <code>STACK_CHECK_MAX_VAR_SIZE</code> bytes.
+
+<div class="defun">
+&mdash; Macro: <b>STACK_CHECK_BUILTIN</b><var><a name="index-STACK_005fCHECK_005fBUILTIN-4179"></a></var><br>
+<blockquote><p>A nonzero value if stack checking is done by the configuration files in a
+machine-dependent manner.  You should define this macro if stack checking
+is required by the ABI of your machine or if you would like to do stack
+checking in some more efficient way than the generic approach.  The default
+value of this macro is zero. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>STACK_CHECK_STATIC_BUILTIN</b><var><a name="index-STACK_005fCHECK_005fSTATIC_005fBUILTIN-4180"></a></var><br>
+<blockquote><p>A nonzero value if static stack checking is done by the configuration files
+in a machine-dependent manner.  You should define this macro if you would
+like to do static stack checking in some more efficient way than the generic
+approach.  The default value of this macro is zero. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>STACK_CHECK_PROBE_INTERVAL_EXP</b><var><a name="index-STACK_005fCHECK_005fPROBE_005fINTERVAL_005fEXP-4181"></a></var><br>
+<blockquote><p>An integer specifying the interval at which GCC must generate stack probe
+instructions, defined as 2 raised to this integer.  You will normally
+define this macro so that the interval be no larger than the size of
+the &ldquo;guard pages&rdquo; at the end of a stack area.  The default value
+of 12 (4096-byte interval) is suitable for most systems. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>STACK_CHECK_MOVING_SP</b><var><a name="index-STACK_005fCHECK_005fMOVING_005fSP-4182"></a></var><br>
+<blockquote><p>An integer which is nonzero if GCC should move the stack pointer page by page
+when doing probes.  This can be necessary on systems where the stack pointer
+contains the bottom address of the memory area accessible to the executing
+thread at any point in time.  In this situation an alternate signal stack
+is required in order to be able to recover from a stack overflow.  The
+default value of this macro is zero. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>STACK_CHECK_PROTECT</b><var><a name="index-STACK_005fCHECK_005fPROTECT-4183"></a></var><br>
+<blockquote><p>The number of bytes of stack needed to recover from a stack overflow, for
+languages where such a recovery is supported.  The default value of 75 words
+with the <code>setjmp</code>/<code>longjmp</code>-based exception handling mechanism and
+8192 bytes with other exception handling mechanisms should be adequate for
+most machines. 
+</p></blockquote></div>
+
+ <p>The following macros are relevant only if neither STACK_CHECK_BUILTIN
+nor STACK_CHECK_STATIC_BUILTIN is defined; you can omit them altogether
+in the opposite case.
+
+<div class="defun">
+&mdash; Macro: <b>STACK_CHECK_MAX_FRAME_SIZE</b><var><a name="index-STACK_005fCHECK_005fMAX_005fFRAME_005fSIZE-4184"></a></var><br>
+<blockquote><p>The maximum size of a stack frame, in bytes.  GCC will generate probe
+instructions in non-leaf functions to ensure at least this many bytes of
+stack are available.  If a stack frame is larger than this size, stack
+checking will not be reliable and GCC will issue a warning.  The
+default is chosen so that GCC only generates one instruction on most
+systems.  You should normally not change the default value of this macro. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>STACK_CHECK_FIXED_FRAME_SIZE</b><var><a name="index-STACK_005fCHECK_005fFIXED_005fFRAME_005fSIZE-4185"></a></var><br>
+<blockquote><p>GCC uses this value to generate the above warning message.  It
+represents the amount of fixed frame used by a function, not including
+space for any callee-saved registers, temporaries and user variables. 
+You need only specify an upper bound for this amount and will normally
+use the default of four words. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>STACK_CHECK_MAX_VAR_SIZE</b><var><a name="index-STACK_005fCHECK_005fMAX_005fVAR_005fSIZE-4186"></a></var><br>
+<blockquote><p>The maximum size, in bytes, of an object that GCC will place in the
+fixed area of the stack frame when the user specifies
+<samp><span class="option">-fstack-check</span></samp>. 
+GCC computed the default from the values of the above macros and you will
+normally not need to override that default. 
+</p></blockquote></div>
+
+ </body></html>
+

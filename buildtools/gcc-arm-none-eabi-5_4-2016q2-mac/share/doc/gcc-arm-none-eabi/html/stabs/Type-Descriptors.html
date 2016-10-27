@@ -1,0 +1,142 @@
+<html lang="en">
+<head>
+<title>Type Descriptors - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Symbol-Descriptors.html#Symbol-Descriptors" title="Symbol Descriptors">
+<link rel="next" href="Expanded-Reference.html#Expanded-Reference" title="Expanded Reference">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Type-Descriptors"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Expanded-Reference.html#Expanded-Reference">Expanded Reference</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Symbol-Descriptors.html#Symbol-Descriptors">Symbol Descriptors</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="appendix">Appendix C Table of Type Descriptors</h2>
+
+<p>The type descriptor is the character which follows the type number and
+an equals sign.  It specifies what kind of type is being defined. 
+See <a href="String-Field.html#String-Field">String Field</a>, for more information about their use.
+
+     <dl>
+<dt><var>digit</var><dt><code>(</code><dd>Type reference; see <a href="String-Field.html#String-Field">String Field</a>.
+
+     <br><dt><code>-</code><dd>Reference to builtin type; see <a href="Negative-Type-Numbers.html#Negative-Type-Numbers">Negative Type Numbers</a>.
+
+     <br><dt><code>#</code><dd>Method (C<tt>++</tt>); see <a href="Method-Type-Descriptor.html#Method-Type-Descriptor">Method Type Descriptor</a>.
+
+     <br><dt><code>*</code><dd>Pointer; see <a href="Miscellaneous-Types.html#Miscellaneous-Types">Miscellaneous Types</a>.
+
+     <br><dt><code>&amp;</code><dd>Reference (C<tt>++</tt>).
+
+     <br><dt><code>@</code><dd>Type Attributes (AIX); see <a href="String-Field.html#String-Field">String Field</a>.  Member (class and variable)
+type (GNU C<tt>++</tt>); see <a href="Member-Type-Descriptor.html#Member-Type-Descriptor">Member Type Descriptor</a>.
+
+     <br><dt><code>a</code><dd>Array; see <a href="Arrays.html#Arrays">Arrays</a>.
+
+     <br><dt><code>A</code><dd>Open array; see <a href="Arrays.html#Arrays">Arrays</a>.
+
+     <br><dt><code>b</code><dd>Pascal space type (AIX); see <a href="Miscellaneous-Types.html#Miscellaneous-Types">Miscellaneous Types</a>.  Builtin integer
+type (Sun); see <a href="Builtin-Type-Descriptors.html#Builtin-Type-Descriptors">Builtin Type Descriptors</a>.  Const and volatile
+qualified type (OS9000).
+
+     <br><dt><code>B</code><dd>Volatile-qualified type; see <a href="Miscellaneous-Types.html#Miscellaneous-Types">Miscellaneous Types</a>.
+
+     <br><dt><code>c</code><dd>Complex builtin type (AIX); see <a href="Builtin-Type-Descriptors.html#Builtin-Type-Descriptors">Builtin Type Descriptors</a>. 
+Const-qualified type (OS9000).
+
+     <br><dt><code>C</code><dd>COBOL Picture type.  See AIX documentation for details.
+
+     <br><dt><code>d</code><dd>File type; see <a href="Miscellaneous-Types.html#Miscellaneous-Types">Miscellaneous Types</a>.
+
+     <br><dt><code>D</code><dd>N-dimensional dynamic array; see <a href="Arrays.html#Arrays">Arrays</a>.
+
+     <br><dt><code>e</code><dd>Enumeration type; see <a href="Enumerations.html#Enumerations">Enumerations</a>.
+
+     <br><dt><code>E</code><dd>N-dimensional subarray; see <a href="Arrays.html#Arrays">Arrays</a>.
+
+     <br><dt><code>f</code><dd>Function type; see <a href="Function-Types.html#Function-Types">Function Types</a>.
+
+     <br><dt><code>F</code><dd>Pascal function parameter; see <a href="Function-Types.html#Function-Types">Function Types</a>
+
+     <br><dt><code>g</code><dd>Builtin floating point type; see <a href="Builtin-Type-Descriptors.html#Builtin-Type-Descriptors">Builtin Type Descriptors</a>.
+
+     <br><dt><code>G</code><dd>COBOL Group.  See AIX documentation for details.
+
+     <br><dt><code>i</code><dd>Imported type (AIX); see <a href="Cross_002dReferences.html#Cross_002dReferences">Cross-References</a>.  Volatile-qualified
+type (OS9000).
+
+     <br><dt><code>k</code><dd>Const-qualified type; see <a href="Miscellaneous-Types.html#Miscellaneous-Types">Miscellaneous Types</a>.
+
+     <br><dt><code>K</code><dd>COBOL File Descriptor.  See AIX documentation for details.
+
+     <br><dt><code>M</code><dd>Multiple instance type; see <a href="Miscellaneous-Types.html#Miscellaneous-Types">Miscellaneous Types</a>.
+
+     <br><dt><code>n</code><dd>String type; see <a href="Strings.html#Strings">Strings</a>.
+
+     <br><dt><code>N</code><dd>Stringptr; see <a href="Strings.html#Strings">Strings</a>.
+
+     <br><dt><code>o</code><dd>Opaque type; see <a href="Typedefs.html#Typedefs">Typedefs</a>.
+
+     <br><dt><code>p</code><dd>Procedure; see <a href="Function-Types.html#Function-Types">Function Types</a>.
+
+     <br><dt><code>P</code><dd>Packed array; see <a href="Arrays.html#Arrays">Arrays</a>.
+
+     <br><dt><code>r</code><dd>Range type; see <a href="Subranges.html#Subranges">Subranges</a>.
+
+     <br><dt><code>R</code><dd>Builtin floating type; see <a href="Builtin-Type-Descriptors.html#Builtin-Type-Descriptors">Builtin Type Descriptors</a> (Sun).  Pascal
+subroutine parameter; see <a href="Function-Types.html#Function-Types">Function Types</a> (AIX).  Detecting this
+conflict is possible with careful parsing (hint: a Pascal subroutine
+parameter type will always contain a comma, and a builtin type
+descriptor never will).
+
+     <br><dt><code>s</code><dd>Structure type; see <a href="Structures.html#Structures">Structures</a>.
+
+     <br><dt><code>S</code><dd>Set type; see <a href="Miscellaneous-Types.html#Miscellaneous-Types">Miscellaneous Types</a>.
+
+     <br><dt><code>u</code><dd>Union; see <a href="Unions.html#Unions">Unions</a>.
+
+     <br><dt><code>v</code><dd>Variant record.  This is a Pascal and Modula-2 feature which is like a
+union within a struct in C.  See AIX documentation for details.
+
+     <br><dt><code>w</code><dd>Wide character; see <a href="Builtin-Type-Descriptors.html#Builtin-Type-Descriptors">Builtin Type Descriptors</a>.
+
+     <br><dt><code>x</code><dd>Cross-reference; see <a href="Cross_002dReferences.html#Cross_002dReferences">Cross-References</a>.
+
+     <br><dt><code>Y</code><dd>Used by IBM's xlC C<tt>++</tt> compiler (for structures, I think).
+
+     <br><dt><code>z</code><dd>gstring; see <a href="Strings.html#Strings">Strings</a>. 
+</dl>
+
+   </body></html>
+

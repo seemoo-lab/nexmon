@@ -1,0 +1,94 @@
+<html lang="en">
+<head>
+<title>Dump types - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Optimization-info.html#Optimization-info" title="Optimization info">
+<link rel="prev" href="Dump-output-verbosity.html#Dump-output-verbosity" title="Dump output verbosity">
+<link rel="next" href="Dump-examples.html#Dump-examples" title="Dump examples">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Dump-types"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Dump-examples.html#Dump-examples">Dump examples</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Dump-output-verbosity.html#Dump-output-verbosity">Dump output verbosity</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Optimization-info.html#Optimization-info">Optimization info</a>
+<hr>
+</div>
+
+<h4 class="subsection">9.7.5 Dump types</h4>
+
+<p><a name="index-dump-types-1706"></a>
+     <dl>
+<dt><code>dump_printf</code><a name="index-dump_005fprintf-1707"></a><dd>
+This is a generic method for doing formatted output. It takes an
+additional argument <code>dump_kind</code> which signifies the type of
+dump. This method outputs information only when the dumps are enabled
+for this particular <code>dump_kind</code>. Note that the caller doesn't
+need to know if the particular dump is enabled or not, or even the
+file name. The caller only needs to decide which dump output
+information is relevant, and under what conditions. This determines
+the associated flags.
+
+     <p>Consider the following example from <samp><span class="file">loop-unroll.c</span></samp> where an
+informative message about a loop (along with its location) is printed
+when any of the following flags is enabled
+          <ul>
+<li>optimization messages
+<li>RTL dumps
+<li>detailed dumps
+
+     </ul>
+
+     <pre class="example">          int report_flags = MSG_OPTIMIZED_LOCATIONS | TDF_RTL | TDF_DETAILS;
+          dump_printf_loc (report_flags, locus,
+                           "loop turned into non-loop; it never loops.\n");
+     </pre>
+     <br><dt><code>dump_basic_block</code><a name="index-dump_005fbasic_005fblock-1708"></a><dd>Output basic block. 
+<br><dt><code>dump_generic_expr</code><a name="index-dump_005fgeneric_005fexpr-1709"></a><dd>Output generic expression. 
+<br><dt><code>dump_gimple_stmt</code><a name="index-dump_005fgimple_005fstmt-1710"></a><dd>Output gimple statement.
+
+     <p>Note that the above methods also have variants prefixed with
+<code>_loc</code>, such as <code>dump_printf_loc</code>, which are similar except
+they also output the source location information.
+
+ </dl>
+
+ </body></html>
+

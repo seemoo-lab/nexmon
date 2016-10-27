@@ -1,0 +1,75 @@
+<html lang="en">
+<head>
+<title>Transformations On Symbol Tables - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Symbol-Tables.html#Symbol-Tables" title="Symbol Tables">
+<link rel="prev" href="Symbol-Table-Format.html#Symbol-Table-Format" title="Symbol Table Format">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Transformations-On-Symbol-Tables"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Symbol-Table-Format.html#Symbol-Table-Format">Symbol Table Format</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Symbol-Tables.html#Symbol-Tables">Symbol Tables</a>
+<hr>
+</div>
+
+<h3 class="section">7.2 Transformations on Symbol Tables</h3>
+
+<p>The linker concatenates object files and does fixups of externally
+defined symbols.
+
+   <p>You can see the transformations made on stab data by the assembler and
+linker by examining the symbol table after each pass of the build.  To
+do this, use `<samp><span class="samp">nm -ap</span></samp>', which dumps the symbol table, including
+debugging information, unsorted.  For stab entries the columns are:
+<var>value</var>, <var>other</var>, <var>desc</var>, <var>type</var>, <var>string</var>.  For
+assembler and linker symbols, the columns are: <var>value</var>, <var>type</var>,
+<var>string</var>.
+
+   <p>The low 5 bits of the stab type tell the linker how to relocate the
+value of the stab.  Thus for stab types like <code>N_RSYM</code> and
+<code>N_LSYM</code>, where the value is an offset or a register number, the
+low 5 bits are <code>N_ABS</code>, which tells the linker not to relocate the
+value.
+
+   <p>Where the value of a stab contains an assembly language label,
+it is transformed by each build step.  The assembler turns it into a
+relocatable address and the linker turns it into an absolute address.
+
+<ul class="menu">
+<li><a accesskey="1" href="Transformations-On-Static-Variables.html#Transformations-On-Static-Variables">Transformations On Static Variables</a>
+<li><a accesskey="2" href="Transformations-On-Global-Variables.html#Transformations-On-Global-Variables">Transformations On Global Variables</a>
+<li><a accesskey="3" href="Stab-Section-Transformations.html#Stab-Section-Transformations">Stab Section Transformations</a>: 	   For some object file formats,
+                                           things are a bit different. 
+</ul>
+
+   </body></html>
+

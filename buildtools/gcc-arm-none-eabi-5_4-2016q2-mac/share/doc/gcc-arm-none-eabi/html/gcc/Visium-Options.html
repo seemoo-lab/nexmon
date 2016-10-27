@@ -1,0 +1,105 @@
+<html lang="en">
+<head>
+<title>Visium Options - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Submodel-Options.html#Submodel-Options" title="Submodel Options">
+<link rel="prev" href="VAX-Options.html#VAX-Options" title="VAX Options">
+<link rel="next" href="VMS-Options.html#VMS-Options" title="VMS Options">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Visium-Options"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="VMS-Options.html#VMS-Options">VMS Options</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="VAX-Options.html#VAX-Options">VAX Options</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Submodel-Options.html#Submodel-Options">Submodel Options</a>
+<hr>
+</div>
+
+<h4 class="subsection">3.17.50 Visium Options</h4>
+
+<p><a name="index-Visium-options-2632"></a>
+     <dl>
+<dt><code>-mdebug</code><dd><a name="index-mdebug-2633"></a>A program which performs file I/O and is destined to run on an MCM target
+should be linked with this option.  It causes the libraries libc.a and
+libdebug.a to be linked.  The program should be run on the target under
+the control of the GDB remote debugging stub.
+
+     <br><dt><code>-msim</code><dd><a name="index-msim-2634"></a>A program which performs file I/O and is destined to run on the simulator
+should be linked with option.  This causes libraries libc.a and libsim.a to
+be linked.
+
+     <br><dt><code>-mfpu</code><dt><code>-mhard-float</code><dd><a name="index-mfpu-2635"></a><a name="index-mhard_002dfloat-2636"></a>Generate code containing floating-point instructions.  This is the
+default.
+
+     <br><dt><code>-mno-fpu</code><dt><code>-msoft-float</code><dd><a name="index-mno_002dfpu-2637"></a><a name="index-msoft_002dfloat-2638"></a>Generate code containing library calls for floating-point.
+
+     <p><samp><span class="option">-msoft-float</span></samp> changes the calling convention in the output file;
+therefore, it is only useful if you compile <em>all</em> of a program with
+this option.  In particular, you need to compile <samp><span class="file">libgcc.a</span></samp>, the
+library that comes with GCC, with <samp><span class="option">-msoft-float</span></samp> in order for
+this to work.
+
+     <br><dt><code>-mcpu=</code><var>cpu_type</var><dd><a name="index-mcpu-2639"></a>Set the instruction set, register set, and instruction scheduling parameters
+for machine type <var>cpu_type</var>.  Supported values for <var>cpu_type</var> are
+`<samp><span class="samp">mcm</span></samp>', `<samp><span class="samp">gr5</span></samp>' and `<samp><span class="samp">gr6</span></samp>'.
+
+     <p>`<samp><span class="samp">mcm</span></samp>' is a synonym of `<samp><span class="samp">gr5</span></samp>' present for backward compatibility.
+
+     <p>By default (unless configured otherwise), GCC generates code for the GR5
+variant of the Visium architecture.
+
+     <p>With <samp><span class="option">-mcpu=gr6</span></samp>, GCC generates code for the GR6 variant of the Visium
+architecture.  The only difference from GR5 code is that the compiler will
+generate block move instructions.
+
+     <br><dt><code>-mtune=</code><var>cpu_type</var><dd><a name="index-mtune-2640"></a>Set the instruction scheduling parameters for machine type <var>cpu_type</var>,
+but do not set the instruction set or register set that the option
+<samp><span class="option">-mcpu=</span><var>cpu_type</var></samp> would.
+
+     <br><dt><code>-msv-mode</code><dd><a name="index-msv_002dmode-2641"></a>Generate code for the supervisor mode, where there are no restrictions on
+the access to general registers.  This is the default.
+
+     <br><dt><code>-muser-mode</code><dd><a name="index-muser_002dmode-2642"></a>Generate code for the user mode, where the access to some general registers
+is forbidden: on the GR5, registers r24 to r31 cannot be accessed in this
+mode; on the GR6, only registers r29 to r31 are affected. 
+</dl>
+
+ </body></html>
+

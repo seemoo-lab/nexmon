@@ -1,0 +1,199 @@
+<html lang="en">
+<head>
+<title>Frame Filter API - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Python-API.html#Python-API" title="Python API">
+<link rel="prev" href="Type-Printing-API.html#Type-Printing-API" title="Type Printing API">
+<link rel="next" href="Frame-Decorator-API.html#Frame-Decorator-API" title="Frame Decorator API">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Frame-Filter-API"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Frame-Decorator-API.html#Frame-Decorator-API">Frame Decorator API</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Type-Printing-API.html#Type-Printing-API">Type Printing API</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Python-API.html#Python-API">Python API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.2.2.9 Filtering Frames.</h5>
+
+<p><a name="index-frame-filters-api-1975"></a>
+Frame filters are Python objects that manipulate the visibility of a
+frame or frames when a backtrace (see <a href="Backtrace.html#Backtrace">Backtrace</a>) is printed by
+<span class="sc">gdb</span>.
+
+   <p>Only commands that print a backtrace, or, in the case of <span class="sc">gdb/mi</span>
+commands (see <a href="GDB_002fMI.html#GDB_002fMI">GDB/MI</a>), those that return a collection of frames
+are affected.  The commands that work with frame filters are:
+
+   <p><code>backtrace</code> (see <a href="backtrace_002dcommand.html#backtrace_002dcommand">The backtrace command</a>),
+<code>-stack-list-frames</code>
+(see <a href="_002dstack_002dlist_002dframes.html#g_t_002dstack_002dlist_002dframes">The -stack-list-frames command</a>),
+<code>-stack-list-variables</code> (see <a href="_002dstack_002dlist_002dvariables.html#g_t_002dstack_002dlist_002dvariables">The -stack-list-variables command</a>), <code>-stack-list-arguments</code>
+see <a href="_002dstack_002dlist_002darguments.html#g_t_002dstack_002dlist_002darguments">The -stack-list-arguments command</a>) and
+<code>-stack-list-locals</code> (see <a href="_002dstack_002dlist_002dlocals.html#g_t_002dstack_002dlist_002dlocals">The -stack-list-locals command</a>).
+
+   <p>A frame filter works by taking an iterator as an argument, applying
+actions to the contents of that iterator, and returning another
+iterator (or, possibly, the same iterator it was provided in the case
+where the filter does not perform any operations).  Typically, frame
+filters utilize tools such as the Python's <code>itertools</code> module to
+work with and create new iterators from the source iterator. 
+Regardless of how a filter chooses to apply actions, it must not alter
+the underlying <span class="sc">gdb</span> frame or frames, or attempt to alter the
+call-stack within <span class="sc">gdb</span>.  This preserves data integrity within
+<span class="sc">gdb</span>.  Frame filters are executed on a priority basis and care
+should be taken that some frame filters may have been executed before,
+and that some frame filters will be executed after.
+
+   <p>An important consideration when designing frame filters, and well
+worth reflecting upon, is that frame filters should avoid unwinding
+the call stack if possible.  Some stacks can run very deep, into the
+tens of thousands in some cases.  To search every frame when a frame
+filter executes may be too expensive at that step.  The frame filter
+cannot know how many frames it has to iterate over, and it may have to
+iterate through them all.  This ends up duplicating effort as
+<span class="sc">gdb</span> performs this iteration when it prints the frames.  If
+the filter can defer unwinding frames until frame decorators are
+executed, after the last filter has executed, it should.  See <a href="Frame-Decorator-API.html#Frame-Decorator-API">Frame Decorator API</a>, for more information on decorators.  Also, there are
+examples for both frame decorators and filters in later chapters. 
+See <a href="Writing-a-Frame-Filter.html#Writing-a-Frame-Filter">Writing a Frame Filter</a>, for more information.
+
+   <p>The Python dictionary <code>gdb.frame_filters</code> contains key/object
+pairings that comprise a frame filter.  Frame filters in this
+dictionary are called <code>global</code> frame filters, and they are
+available when debugging all inferiors.  These frame filters must
+register with the dictionary directly.  In addition to the
+<code>global</code> dictionary, there are other dictionaries that are loaded
+with different inferiors via auto-loading (see <a href="Python-Auto_002dloading.html#Python-Auto_002dloading">Python Auto-loading</a>).  The two other areas where frame filter dictionaries
+can be found are: <code>gdb.Progspace</code> which contains a
+<code>frame_filters</code> dictionary attribute, and each <code>gdb.Objfile</code>
+object which also contains a <code>frame_filters</code> dictionary
+attribute.
+
+   <p>When a command is executed from <span class="sc">gdb</span> that is compatible with
+frame filters, <span class="sc">gdb</span> combines the <code>global</code>,
+<code>gdb.Progspace</code> and all <code>gdb.Objfile</code> dictionaries currently
+loaded.  All of the <code>gdb.Objfile</code> dictionaries are combined, as
+several frames, and thus several object files, might be in use. 
+<span class="sc">gdb</span> then prunes any frame filter whose <code>enabled</code>
+attribute is <code>False</code>.  This pruned list is then sorted according
+to the <code>priority</code> attribute in each filter.
+
+   <p>Once the dictionaries are combined, pruned and sorted, <span class="sc">gdb</span>
+creates an iterator which wraps each frame in the call stack in a
+<code>FrameDecorator</code> object, and calls each filter in order.  The
+output from the previous filter will always be the input to the next
+filter, and so on.
+
+   <p>Frame filters have a mandatory interface which each frame filter must
+implement, defined here:
+
+<div class="defun">
+&mdash; Function: <b>FrameFilter.filter</b> (<var>iterator</var>)<var><a name="index-FrameFilter_002efilter-1976"></a></var><br>
+<blockquote><p><span class="sc">gdb</span> will call this method on a frame filter when it has
+reached the order in the priority list for that filter.
+
+        <p>For example, if there are four frame filters:
+
+     <pre class="smallexample">          Name         Priority
+          
+          Filter1      5
+          Filter2      10
+          Filter3      100
+          Filter4      1
+     </pre>
+        <p>The order that the frame filters will be called is:
+
+     <pre class="smallexample">          Filter3 -&gt; Filter2 -&gt; Filter1 -&gt; Filter4
+     </pre>
+        <p>Note that the output from <code>Filter3</code> is passed to the input of
+<code>Filter2</code>, and so on.
+
+        <p>This <code>filter</code> method is passed a Python iterator.  This iterator
+contains a sequence of frame decorators that wrap each
+<code>gdb.Frame</code>, or a frame decorator that wraps another frame
+decorator.  The first filter that is executed in the sequence of frame
+filters will receive an iterator entirely comprised of default
+<code>FrameDecorator</code> objects.  However, after each frame filter is
+executed, the previous frame filter may have wrapped some or all of
+the frame decorators with their own frame decorator.  As frame
+decorators must also conform to a mandatory interface, these
+decorators can be assumed to act in a uniform manner (see <a href="Frame-Decorator-API.html#Frame-Decorator-API">Frame Decorator API</a>).
+
+        <p>This method must return an object conforming to the Python iterator
+protocol.  Each item in the iterator must be an object conforming to
+the frame decorator interface.  If a frame filter does not wish to
+perform any operations on this iterator, it should return that
+iterator untouched.
+
+        <p>This method is not optional.  If it does not exist, <span class="sc">gdb</span> will
+raise and print an error. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: <b>FrameFilter.name</b><var><a name="index-FrameFilter_002ename-1977"></a></var><br>
+<blockquote><p>The <code>name</code> attribute must be Python string which contains the
+name of the filter displayed by <span class="sc">gdb</span> (see <a href="Frame-Filter-Management.html#Frame-Filter-Management">Frame Filter Management</a>).  This attribute may contain any combination of letters
+or numbers.  Care should be taken to ensure that it is unique.  This
+attribute is mandatory. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: <b>FrameFilter.enabled</b><var><a name="index-FrameFilter_002eenabled-1978"></a></var><br>
+<blockquote><p>The <code>enabled</code> attribute must be Python boolean.  This attribute
+indicates to <span class="sc">gdb</span> whether the frame filter is enabled, and
+should be considered when frame filters are executed.  If
+<code>enabled</code> is <code>True</code>, then the frame filter will be executed
+when any of the backtrace commands detailed earlier in this chapter
+are executed.  If <code>enabled</code> is <code>False</code>, then the frame
+filter will not be executed.  This attribute is mandatory. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: <b>FrameFilter.priority</b><var><a name="index-FrameFilter_002epriority-1979"></a></var><br>
+<blockquote><p>The <code>priority</code> attribute must be Python integer.  This attribute
+controls the order of execution in relation to other frame filters. 
+There are no imposed limits on the range of <code>priority</code> other than
+it must be a valid integer.  The higher the <code>priority</code> attribute,
+the sooner the frame filter will be executed in relation to other
+frame filters.  Although <code>priority</code> can be negative, it is
+recommended practice to assume zero is the lowest priority that a
+frame filter can be assigned.  Frame filters that have the same
+priority are executed in unsorted order in that priority slot.  This
+attribute is mandatory. 
+</p></blockquote></div>
+
+   </body></html>
+

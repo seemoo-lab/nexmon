@@ -1,0 +1,113 @@
+<html lang="en">
+<head>
+<title>Section Output - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Sections.html#Sections" title="Sections">
+<link rel="prev" href="Section-Input.html#Section-Input" title="Section Input">
+<link rel="next" href="typedef-asection.html#typedef-asection" title="typedef asection">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Section-Output"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="typedef-asection.html#typedef-asection">typedef asection</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Section-Input.html#Section-Input">Section Input</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Sections.html#Sections">Sections</a>
+<hr>
+</div>
+
+<h4 class="subsection">2.6.2 Section output</h4>
+
+<p>To write a new object style BFD, the various sections to be
+written have to be created. They are attached to the BFD in
+the same way as input sections; data is written to the
+sections using <code>bfd_set_section_contents</code>.
+
+   <p>Any program that creates or combines sections (e.g., the assembler
+and linker) must use the <code>asection</code> fields <code>output_section</code> and
+<code>output_offset</code> to indicate the file sections to which each
+section must be written.  (If the section is being created from
+scratch, <code>output_section</code> should probably point to the section
+itself and <code>output_offset</code> should probably be zero.)
+
+   <p>The data to be written comes from input sections attached
+(via <code>output_section</code> pointers) to
+the output sections.  The output section structure can be
+considered a filter for the input section: the output section
+determines the vma of the output data and the name, but the
+input section determines the offset into the output section of
+the data to be written.
+
+   <p>E.g., to create a section "O", starting at 0x100, 0x123 long,
+containing two subsections, "A" at offset 0x0 (i.e., at vma
+0x100) and "B" at offset 0x20 (i.e., at vma 0x120) the <code>asection</code>
+structures would look like:
+
+<pre class="example">        section name          "A"
+          output_offset   0x00
+          size            0x20
+          output_section -----------&gt;  section name    "O"
+                                  |    vma             0x100
+        section name          "B" |    size            0x123
+          output_offset   0x20    |
+          size            0x103   |
+          output_section  --------|
+</pre>
+   <h4 class="subsection">2.6.3 Link orders</h4>
+
+<p>The data within a section is stored in a <dfn>link_order</dfn>. 
+These are much like the fixups in <code>gas</code>.  The link_order
+abstraction allows a section to grow and shrink within itself.
+
+   <p>A link_order knows how big it is, and which is the next
+link_order and where the raw data for it is; it also points to
+a list of relocations which apply to it.
+
+   <p>The link_order is used by the linker to perform relaxing on
+final code.  The compiler creates code which is as big as
+necessary to make it work without relaxing, and the user can
+select whether to relax.  Sometimes relaxing takes a lot of
+time.  The linker runs around the relocations to see if any
+are attached to data which can be shrunk, if so it does it on
+a link_order by link_order basis.
+
+   </body></html>
+

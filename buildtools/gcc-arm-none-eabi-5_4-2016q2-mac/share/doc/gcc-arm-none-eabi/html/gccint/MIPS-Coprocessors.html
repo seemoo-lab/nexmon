@@ -1,0 +1,81 @@
+<html lang="en">
+<head>
+<title>MIPS Coprocessors - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Macros.html#Target-Macros" title="Target Macros">
+<link rel="prev" href="Emulated-TLS.html#Emulated-TLS" title="Emulated TLS">
+<link rel="next" href="PCH-Target.html#PCH-Target" title="PCH Target">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="MIPS-Coprocessors"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="PCH-Target.html#PCH-Target">PCH Target</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Emulated-TLS.html#Emulated-TLS">Emulated TLS</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Macros.html#Target-Macros">Target Macros</a>
+<hr>
+</div>
+
+<h3 class="section">17.26 Defining coprocessor specifics for MIPS targets.</h3>
+
+<p><a name="index-MIPS-coprocessor_002ddefinition-macros-4862"></a>
+The MIPS specification allows MIPS implementations to have as many as 4
+coprocessors, each with as many as 32 private registers.  GCC supports
+accessing these registers and transferring values between the registers
+and memory using asm-ized variables.  For example:
+
+<pre class="smallexample">       register unsigned int cp0count asm ("c0r1");
+       unsigned int d;
+     
+       d = cp0count + 3;
+</pre>
+ <p>(&ldquo;c0r1&rdquo; is the default name of register 1 in coprocessor 0; alternate
+names may be added as described below, or the default names may be
+overridden entirely in <code>SUBTARGET_CONDITIONAL_REGISTER_USAGE</code>.)
+
+ <p>Coprocessor registers are assumed to be epilogue-used; sets to them will
+be preserved even if it does not appear that the register is used again
+later in the function.
+
+ <p>Another note: according to the MIPS spec, coprocessor 1 (if present) is
+the FPU.  One accesses COP1 registers through standard mips
+floating-point support; they are not included in this mechanism.
+
+ </body></html>
+

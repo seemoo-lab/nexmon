@@ -1,0 +1,494 @@
+<html lang="en">
+<head>
+<title>typedef arelent - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Relocations.html#Relocations" title="Relocations">
+<link rel="prev" href="Relocations.html#Relocations" title="Relocations">
+<link rel="next" href="howto-manager.html#howto-manager" title="howto manager">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="typedef-arelent"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="howto-manager.html#howto-manager">howto manager</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Relocations.html#Relocations">Relocations</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Relocations.html#Relocations">Relocations</a>
+<hr>
+</div>
+
+<h4 class="subsection">2.10.1 typedef arelent</h4>
+
+<p>This is the structure of a relocation entry:
+
+<pre class="example">     
+     typedef enum bfd_reloc_status
+     {
+       /* No errors detected.  */
+       bfd_reloc_ok,
+     
+       /* The relocation was performed, but there was an overflow.  */
+       bfd_reloc_overflow,
+     
+       /* The address to relocate was not within the section supplied.  */
+       bfd_reloc_outofrange,
+     
+       /* Used by special functions.  */
+       bfd_reloc_continue,
+     
+       /* Unsupported relocation size requested.  */
+       bfd_reloc_notsupported,
+     
+       /* Unused.  */
+       bfd_reloc_other,
+     
+       /* The symbol to relocate against was undefined.  */
+       bfd_reloc_undefined,
+     
+       /* The relocation was performed, but may not be ok - presently
+          generated only when linking i960 coff files with i960 b.out
+          symbols.  If this type is returned, the error_message argument
+          to bfd_perform_relocation will be set.  */
+       bfd_reloc_dangerous
+      }
+      bfd_reloc_status_type;
+     
+     
+     typedef struct reloc_cache_entry
+     {
+       /* A pointer into the canonical table of pointers.  */
+       struct bfd_symbol **sym_ptr_ptr;
+     
+       /* offset in section.  */
+       bfd_size_type address;
+     
+       /* addend for relocation value.  */
+       bfd_vma addend;
+     
+       /* Pointer to how to perform the required relocation.  */
+       reloc_howto_type *howto;
+     
+     }
+     arelent;
+     
+</pre>
+   <p><strong>Description</strong><br>
+Here is a description of each of the fields within an <code>arelent</code>:
+
+     <ul>
+<li><code>sym_ptr_ptr</code>
+</ul>
+   The symbol table pointer points to a pointer to the symbol
+associated with the relocation request.  It is the pointer
+into the table returned by the back end's
+<code>canonicalize_symtab</code> action. See <a href="Symbols.html#Symbols">Symbols</a>. The symbol is
+referenced through a pointer to a pointer so that tools like
+the linker can fix up all the symbols of the same name by
+modifying only one pointer. The relocation routine looks in
+the symbol and uses the base of the section the symbol is
+attached to and the value of the symbol as the initial
+relocation offset. If the symbol pointer is zero, then the
+section provided is looked up.
+
+     <ul>
+<li><code>address</code>
+</ul>
+   The <code>address</code> field gives the offset in bytes from the base of
+the section data which owns the relocation record to the first
+byte of relocatable information. The actual data relocated
+will be relative to this point; for example, a relocation
+type which modifies the bottom two bytes of a four byte word
+would not touch the first byte pointed to in a big endian
+world.
+
+     <ul>
+<li><code>addend</code>
+</ul>
+   The <code>addend</code> is a value provided by the back end to be added (!) 
+to the relocation offset. Its interpretation is dependent upon
+the howto. For example, on the 68k the code:
+
+<pre class="example">             char foo[];
+             main()
+                     {
+                     return foo[0x12345678];
+                     }
+</pre>
+   <p>Could be compiled into:
+
+<pre class="example">             linkw fp,#-4
+             moveb @#12345678,d0
+             extbl d0
+             unlk fp
+             rts
+</pre>
+   <p>This could create a reloc pointing to <code>foo</code>, but leave the
+offset in the data, something like:
+
+<pre class="example">     RELOCATION RECORDS FOR [.text]:
+     offset   type      value
+     00000006 32        _foo
+     
+     00000000 4e56 fffc          ; linkw fp,#-4
+     00000004 1039 1234 5678     ; moveb @#12345678,d0
+     0000000a 49c0               ; extbl d0
+     0000000c 4e5e               ; unlk fp
+     0000000e 4e75               ; rts
+</pre>
+   <p>Using coff and an 88k, some instructions don't have enough
+space in them to represent the full address range, and
+pointers have to be loaded in two parts. So you'd get something like:
+
+<pre class="example">             or.u     r13,r0,hi16(_foo+0x12345678)
+             ld.b     r2,r13,lo16(_foo+0x12345678)
+             jmp      r1
+</pre>
+   <p>This should create two relocs, both pointing to <code>_foo</code>, and with
+0x12340000 in their addend field. The data would consist of:
+
+<pre class="example">     RELOCATION RECORDS FOR [.text]:
+     offset   type      value
+     00000002 HVRT16    _foo+0x12340000
+     00000006 LVRT16    _foo+0x12340000
+     
+     00000000 5da05678           ; or.u r13,r0,0x5678
+     00000004 1c4d5678           ; ld.b r2,r13,0x5678
+     00000008 f400c001           ; jmp r1
+</pre>
+   <p>The relocation routine digs out the value from the data, adds
+it to the addend to get the original offset, and then adds the
+value of <code>_foo</code>. Note that all 32 bits have to be kept around
+somewhere, to cope with carry from bit 15 to bit 16.
+
+   <p>One further example is the sparc and the a.out format. The
+sparc has a similar problem to the 88k, in that some
+instructions don't have room for an entire offset, but on the
+sparc the parts are created in odd sized lumps. The designers of
+the a.out format chose to not use the data within the section
+for storing part of the offset; all the offset is kept within
+the reloc. Anything in the data should be ignored.
+
+<pre class="example">             save %sp,-112,%sp
+             sethi %hi(_foo+0x12345678),%g2
+             ldsb [%g2+%lo(_foo+0x12345678)],%i0
+             ret
+             restore
+</pre>
+   <p>Both relocs contain a pointer to <code>foo</code>, and the offsets
+contain junk.
+
+<pre class="example">     RELOCATION RECORDS FOR [.text]:
+     offset   type      value
+     00000004 HI22      _foo+0x12345678
+     00000008 LO10      _foo+0x12345678
+     
+     00000000 9de3bf90     ; save %sp,-112,%sp
+     00000004 05000000     ; sethi %hi(_foo+0),%g2
+     00000008 f048a000     ; ldsb [%g2+%lo(_foo+0)],%i0
+     0000000c 81c7e008     ; ret
+     00000010 81e80000     ; restore
+</pre>
+     <ul>
+<li><code>howto</code>
+</ul>
+   The <code>howto</code> field can be imagined as a
+relocation instruction. It is a pointer to a structure which
+contains information on what to do with all of the other
+information in the reloc record and data section. A back end
+would normally have a relocation instruction set and turn
+relocations into pointers to the correct structure on input -
+but it would be possible to create each howto field on demand.
+
+<h5 class="subsubsection">2.10.1.1 <code>enum complain_overflow</code></h5>
+
+<p>Indicates what sort of overflow checking should be done when
+performing a relocation.
+
+<pre class="example">     
+     enum complain_overflow
+     {
+       /* Do not complain on overflow.  */
+       complain_overflow_dont,
+     
+       /* Complain if the value overflows when considered as a signed
+          number one bit larger than the field.  ie. A bitfield of N bits
+          is allowed to represent -2**n to 2**n-1.  */
+       complain_overflow_bitfield,
+     
+       /* Complain if the value overflows when considered as a signed
+          number.  */
+       complain_overflow_signed,
+     
+       /* Complain if the value overflows when considered as an
+          unsigned number.  */
+       complain_overflow_unsigned
+     };
+</pre>
+   <h5 class="subsubsection">2.10.1.2 <code>reloc_howto_type</code></h5>
+
+<p>The <code>reloc_howto_type</code> is a structure which contains all the
+information that libbfd needs to know to tie up a back end's data.
+
+<pre class="example">     struct bfd_symbol;             /* Forward declaration.  */
+     
+     struct reloc_howto_struct
+     {
+       /*  The type field has mainly a documentary use - the back end can
+           do what it wants with it, though normally the back end's
+           external idea of what a reloc number is stored
+           in this field.  For example, a PC relative word relocation
+           in a coff environment has the type 023 - because that's
+           what the outside world calls a R_PCRWORD reloc.  */
+       unsigned int type;
+     
+       /*  The value the final relocation is shifted right by.  This drops
+           unwanted data from the relocation.  */
+       unsigned int rightshift;
+     
+       /*  The size of the item to be relocated.  This is *not* a
+           power-of-two measure.  To get the number of bytes operated
+           on by a type of relocation, use bfd_get_reloc_size.  */
+       int size;
+     
+       /*  The number of bits in the item to be relocated.  This is used
+           when doing overflow checking.  */
+       unsigned int bitsize;
+     
+       /*  The relocation is relative to the field being relocated.  */
+       bfd_boolean pc_relative;
+     
+       /*  The bit position of the reloc value in the destination.
+           The relocated value is left shifted by this amount.  */
+       unsigned int bitpos;
+     
+       /* What type of overflow error should be checked for when
+          relocating.  */
+       enum complain_overflow complain_on_overflow;
+     
+       /* If this field is non null, then the supplied function is
+          called rather than the normal function.  This allows really
+          strange relocation methods to be accommodated (e.g., i960 callj
+          instructions).  */
+       bfd_reloc_status_type (*special_function)
+         (bfd *, arelent *, struct bfd_symbol *, void *, asection *,
+          bfd *, char **);
+     
+       /* The textual name of the relocation type.  */
+       char *name;
+     
+       /* Some formats record a relocation addend in the section contents
+          rather than with the relocation.  For ELF formats this is the
+          distinction between USE_REL and USE_RELA (though the code checks
+          for USE_REL == 1/0).  The value of this field is TRUE if the
+          addend is recorded with the section contents; when performing a
+          partial link (ld -r) the section contents (the data) will be
+          modified.  The value of this field is FALSE if addends are
+          recorded with the relocation (in arelent.addend); when performing
+          a partial link the relocation will be modified.
+          All relocations for all ELF USE_RELA targets should set this field
+          to FALSE (values of TRUE should be looked on with suspicion).
+          However, the converse is not true: not all relocations of all ELF
+          USE_REL targets set this field to TRUE.  Why this is so is peculiar
+          to each particular target.  For relocs that aren't used in partial
+          links (e.g. GOT stuff) it doesn't matter what this is set to.  */
+       bfd_boolean partial_inplace;
+     
+       /* src_mask selects the part of the instruction (or data) to be used
+          in the relocation sum.  If the target relocations don't have an
+          addend in the reloc, eg. ELF USE_REL, src_mask will normally equal
+          dst_mask to extract the addend from the section contents.  If
+          relocations do have an addend in the reloc, eg. ELF USE_RELA, this
+          field should be zero.  Non-zero values for ELF USE_RELA targets are
+          bogus as in those cases the value in the dst_mask part of the
+          section contents should be treated as garbage.  */
+       bfd_vma src_mask;
+     
+       /* dst_mask selects which parts of the instruction (or data) are
+          replaced with a relocated value.  */
+       bfd_vma dst_mask;
+     
+       /* When some formats create PC relative instructions, they leave
+          the value of the pc of the place being relocated in the offset
+          slot of the instruction, so that a PC relative relocation can
+          be made just by adding in an ordinary offset (e.g., sun3 a.out).
+          Some formats leave the displacement part of an instruction
+          empty (e.g., m88k bcs); this flag signals the fact.  */
+       bfd_boolean pcrel_offset;
+     };
+     
+</pre>
+   <p><a name="index-The-HOWTO-Macro-86"></a>
+
+<h5 class="subsubsection">2.10.1.3 <code>The HOWTO Macro</code></h5>
+
+<p><strong>Description</strong><br>
+The HOWTO define is horrible and will go away.
+<pre class="example">     #define HOWTO(C, R, S, B, P, BI, O, SF, NAME, INPLACE, MASKSRC, MASKDST, PC) \
+       { (unsigned) C, R, S, B, P, BI, O, SF, NAME, INPLACE, MASKSRC, MASKDST, PC }
+</pre>
+   <p><strong>Description</strong><br>
+And will be replaced with the totally magic way. But for the
+moment, we are compatible, so do it this way.
+<pre class="example">     #define NEWHOWTO(FUNCTION, NAME, SIZE, REL, IN) \
+       HOWTO (0, 0, SIZE, 0, REL, 0, complain_overflow_dont, FUNCTION, \
+              NAME, FALSE, 0, 0, IN)
+     
+</pre>
+   <p><strong>Description</strong><br>
+This is used to fill in an empty howto entry in an array.
+<pre class="example">     #define EMPTY_HOWTO(C) \
+       HOWTO ((C), 0, 0, 0, FALSE, 0, complain_overflow_dont, NULL, \
+              NULL, FALSE, 0, 0, FALSE)
+     
+</pre>
+   <p><strong>Description</strong><br>
+Helper routine to turn a symbol into a relocation value.
+<pre class="example">     #define HOWTO_PREPARE(relocation, symbol)               \
+       {                                                     \
+         if (symbol != NULL)                                 \
+           {                                                 \
+             if (bfd_is_com_section (symbol-&gt;section))       \
+               {                                             \
+                 relocation = 0;                             \
+               }                                             \
+             else                                            \
+               {                                             \
+                 relocation = symbol-&gt;value;                 \
+               }                                             \
+           }                                                 \
+       }
+     
+</pre>
+   <p><a name="index-bfd_005fget_005freloc_005fsize-87"></a>
+
+<h5 class="subsubsection">2.10.1.4 <code>bfd_get_reloc_size</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     unsigned int bfd_get_reloc_size (reloc_howto_type *);
+</pre>
+   <p><strong>Description</strong><br>
+For a reloc_howto_type that operates on a fixed number of bytes,
+this returns the number of bytes operated on.
+
+   <p><a name="index-arelent_005fchain-88"></a>
+
+<h5 class="subsubsection">2.10.1.5 <code>arelent_chain</code></h5>
+
+<p><strong>Description</strong><br>
+How relocs are tied together in an <code>asection</code>:
+<pre class="example">     typedef struct relent_chain
+     {
+       arelent relent;
+       struct relent_chain *next;
+     }
+     arelent_chain;
+     
+</pre>
+   <p><a name="index-bfd_005fcheck_005foverflow-89"></a>
+
+<h5 class="subsubsection">2.10.1.6 <code>bfd_check_overflow</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     bfd_reloc_status_type bfd_check_overflow
+        (enum complain_overflow how,
+         unsigned int bitsize,
+         unsigned int rightshift,
+         unsigned int addrsize,
+         bfd_vma relocation);
+</pre>
+   <p><strong>Description</strong><br>
+Perform overflow checking on <var>relocation</var> which has
+<var>bitsize</var> significant bits and will be shifted right by
+<var>rightshift</var> bits, on a machine with addresses containing
+<var>addrsize</var> significant bits.  The result is either of
+<code>bfd_reloc_ok</code> or <code>bfd_reloc_overflow</code>.
+
+   <p><a name="index-bfd_005fperform_005frelocation-90"></a>
+
+<h5 class="subsubsection">2.10.1.7 <code>bfd_perform_relocation</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     bfd_reloc_status_type bfd_perform_relocation
+        (bfd *abfd,
+         arelent *reloc_entry,
+         void *data,
+         asection *input_section,
+         bfd *output_bfd,
+         char **error_message);
+</pre>
+   <p><strong>Description</strong><br>
+If <var>output_bfd</var> is supplied to this function, the
+generated image will be relocatable; the relocations are
+copied to the output file after they have been changed to
+reflect the new state of the world. There are two ways of
+reflecting the results of partial linkage in an output file:
+by modifying the output data in place, and by modifying the
+relocation record.  Some native formats (e.g., basic a.out and
+basic coff) have no way of specifying an addend in the
+relocation type, so the addend has to go in the output data. 
+This is no big deal since in these formats the output data
+slot will always be big enough for the addend. Complex reloc
+types with addends were invented to solve just this problem. 
+The <var>error_message</var> argument is set to an error message if
+this return <code>bfd_reloc_dangerous</code>.
+
+   <p><a name="index-bfd_005finstall_005frelocation-91"></a>
+
+<h5 class="subsubsection">2.10.1.8 <code>bfd_install_relocation</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     bfd_reloc_status_type bfd_install_relocation
+        (bfd *abfd,
+         arelent *reloc_entry,
+         void *data, bfd_vma data_start,
+         asection *input_section,
+         char **error_message);
+</pre>
+   <p><strong>Description</strong><br>
+This looks remarkably like <code>bfd_perform_relocation</code>, except it
+does not expect that the section contents have been filled in. 
+I.e., it's suitable for use when creating, rather than applying
+a relocation.
+
+   <p>For now, this function should be considered reserved for the
+assembler.
+
+   </body></html>
+

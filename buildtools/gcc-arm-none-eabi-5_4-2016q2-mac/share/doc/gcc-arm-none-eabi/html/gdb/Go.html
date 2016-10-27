@@ -1,0 +1,86 @@
+<html lang="en">
+<head>
+<title>Go - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Supported-Languages.html#Supported-Languages" title="Supported Languages">
+<link rel="prev" href="D.html#D" title="D">
+<link rel="next" href="Objective_002dC.html#Objective_002dC" title="Objective-C">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Go"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Objective_002dC.html#Objective_002dC">Objective-C</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="D.html#D">D</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Supported-Languages.html#Supported-Languages">Supported Languages</a>
+<hr>
+</div>
+
+<h4 class="subsection">15.4.3 Go</h4>
+
+<p><a name="index-Go-_0028programming-language_0029-965"></a><span class="sc">gdb</span> can be used to debug programs written in Go and compiled with
+<samp><span class="file">gccgo</span></samp> or <samp><span class="file">6g</span></samp> compilers.
+
+   <p>Here is a summary of the Go-specific features and restrictions:
+
+     
+<a name="index-current-Go-package-966"></a>
+<dl><dt><code>The current Go package</code><dd>The name of the current package does not need to be specified when
+specifying global variables and functions.
+
+     <p>For example, given the program:
+
+     <pre class="example">          package main
+          var myglob = "Shall we?"
+          func main () {
+            // ...
+          }
+     </pre>
+     <p>When stopped inside <code>main</code> either of these work:
+
+     <pre class="example">          (gdb) p myglob
+          (gdb) p main.myglob
+     </pre>
+     <p><a name="index-builtin-Go-types-967"></a><br><dt><code>Builtin Go types</code><dd>The <code>string</code> type is recognized by <span class="sc">gdb</span> and is printed
+as a string.
+
+     <p><a name="index-builtin-Go-functions-968"></a><br><dt><code>Builtin Go functions</code><dd>The <span class="sc">gdb</span> expression parser recognizes the <code>unsafe.Sizeof</code>
+function and handles it internally.
+
+     <p><a name="index-restrictions-on-Go-expressions-969"></a><br><dt><code>Restrictions on Go expressions</code><dd>All Go operators are supported except <code>&amp;^</code>. 
+The Go <code>_</code> &ldquo;blank identifier&rdquo; is not supported. 
+Automatic dereferencing of pointers is not supported. 
+</dl>
+
+   </body></html>
+

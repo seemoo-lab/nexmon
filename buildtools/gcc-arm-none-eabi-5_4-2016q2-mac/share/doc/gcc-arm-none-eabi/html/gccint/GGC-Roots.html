@@ -1,0 +1,76 @@
+<html lang="en">
+<head>
+<title>GGC Roots - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Type-Information.html#Type-Information" title="Type Information">
+<link rel="prev" href="User-GC.html#User-GC" title="User GC">
+<link rel="next" href="Files.html#Files" title="Files">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="GGC-Roots"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Files.html#Files">Files</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="User-GC.html#User-GC">User GC</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Type-Information.html#Type-Information">Type Information</a>
+<hr>
+</div>
+
+<h3 class="section">22.4 Marking Roots for the Garbage Collector</h3>
+
+<p><a name="index-roots_002c-marking-5095"></a><a name="index-marking-roots-5096"></a>
+In addition to keeping track of types, the type machinery also locates
+the global variables (<dfn>roots</dfn>) that the garbage collector starts
+at.  Roots must be declared using one of the following syntaxes:
+
+     <ul>
+<li><code>extern GTY(([</code><var>options</var><code>])) </code><var>type</var> <var>name</var><code>;</code>
+<li><code>static GTY(([</code><var>options</var><code>])) </code><var>type</var> <var>name</var><code>;</code>
+</ul>
+ The syntax
+     <ul>
+<li><code>GTY(([</code><var>options</var><code>])) </code><var>type</var> <var>name</var><code>;</code>
+</ul>
+ is <em>not</em> accepted.  There should be an <code>extern</code> declaration
+of such a variable in a header somewhere&mdash;mark that, not the
+definition.  Or, if the variable is only used in one file, make it
+<code>static</code>.
+
+ </body></html>
+

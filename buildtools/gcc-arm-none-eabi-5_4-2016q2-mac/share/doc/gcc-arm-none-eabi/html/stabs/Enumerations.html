@@ -1,0 +1,96 @@
+<html lang="en">
+<head>
+<title>Enumerations - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Types.html#Types" title="Types">
+<link rel="prev" href="Strings.html#Strings" title="Strings">
+<link rel="next" href="Structures.html#Structures" title="Structures">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Enumerations"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Structures.html#Structures">Structures</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Strings.html#Strings">Strings</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Types.html#Types">Types</a>
+<hr>
+</div>
+
+<h3 class="section">5.7 Enumerations</h3>
+
+<p>Enumerations are defined with the `<samp><span class="samp">e</span></samp>' type descriptor.
+
+<!-- FIXME: Where does this information properly go?  Perhaps it is -->
+<!-- redundant with something we already explain. -->
+<p>The source line below declares an enumeration type at file scope. 
+The type definition is located after the <code>N_RBRAC</code> that marks the end of
+the previous procedure's block scope, and before the <code>N_FUN</code> that marks
+the beginning of the next procedure's block scope.  Therefore it does not
+describe a block local symbol, but a file local one.
+
+   <p>The source line:
+
+<pre class="example">     enum e_places {first,second=3,last};
+</pre>
+   <p class="noindent">generates the following stab:
+
+<pre class="example">     .stabs "e_places:T22=efirst:0,second:3,last:4,;",128,0,0,0
+</pre>
+   <p>The symbol descriptor (`<samp><span class="samp">T</span></samp>') says that the stab describes a
+structure, enumeration, or union tag.  The type descriptor `<samp><span class="samp">e</span></samp>',
+following the `<samp><span class="samp">22=</span></samp>' of the type definition narrows it down to an
+enumeration type.  Following the `<samp><span class="samp">e</span></samp>' is a list of the elements of
+the enumeration.  The format is `<samp><var>name</var><span class="samp">:</span><var>value</var><span class="samp">,</span></samp>'.  The
+list of elements ends with `<samp><span class="samp">;</span></samp>'.  The fact that <var>value</var> is
+specified as an integer can cause problems if the value is large.  GCC
+2.5.2 tries to output it in octal in that case with a leading zero,
+which is probably a good thing, although GDB 4.11 supports octal only in
+cases where decimal is perfectly good.  Negative decimal values are
+supported by both GDB and dbx.
+
+   <p>There is no standard way to specify the size of an enumeration type; it
+is determined by the architecture (normally all enumerations types are
+32 bits).  Type attributes can be used to specify an enumeration type of
+another size for debuggers which support them; see <a href="String-Field.html#String-Field">String Field</a>.
+
+   <p>Enumeration types are unusual in that they define symbols for the
+enumeration values (<code>first</code>, <code>second</code>, and <code>third</code> in the
+above example), and even though these symbols are visible in the file as
+a whole (rather than being in a more local namespace like structure
+member names), they are defined in the type definition for the
+enumeration type rather than each having their own symbol.  In order to
+be fast, GDB will only get symbols from such types (in its initial scan
+of the stabs) if the type is the first thing defined after a `<samp><span class="samp">T</span></samp>' or
+`<samp><span class="samp">t</span></samp>' symbol descriptor (the above example fulfills this
+requirement).  If the type does not have a name, the compiler should
+emit it in a nameless stab (see <a href="String-Field.html#String-Field">String Field</a>); GCC does this.
+
+   </body></html>
+

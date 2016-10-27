@@ -1,0 +1,69 @@
+<html lang="en">
+<head>
+<title>AArch64 Opcodes - Using as</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using as">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="AArch64_002dDependent.html#AArch64_002dDependent" title="AArch64-Dependent">
+<link rel="prev" href="AArch64-Directives.html#AArch64-Directives" title="AArch64 Directives">
+<link rel="next" href="AArch64-Mapping-Symbols.html#AArch64-Mapping-Symbols" title="AArch64 Mapping Symbols">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled ``GNU Free Documentation License''.
+
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="AArch64-Opcodes"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="AArch64-Mapping-Symbols.html#AArch64-Mapping-Symbols">AArch64 Mapping Symbols</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="AArch64-Directives.html#AArch64-Directives">AArch64 Directives</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="AArch64_002dDependent.html#AArch64_002dDependent">AArch64-Dependent</a>
+<hr>
+</div>
+
+<h4 class="subsection">9.1.6 Opcodes</h4>
+
+<p><a name="index-AArch64-opcodes-557"></a><a name="index-opcodes-for-AArch64-558"></a>GAS implements all the standard AArch64 opcodes.  It also
+implements several pseudo opcodes, including several synthetic load
+instructions.
+
+     
+<a name="index-g_t_0040code_007bLDR-reg_002c_003d_003cexpr_003e_007d-pseudo-op_002c-AArch64-559"></a>
+<dl><dt><code>LDR =</code><dd>
+     <pre class="smallexample">            ldr &lt;register&gt; , =&lt;expression&gt;
+     </pre>
+     <p>The constant expression will be placed into the nearest literal pool (if it not
+already there) and a PC-relative LDR instruction will be generated.
+
+   </dl>
+
+   <p>For more information on the AArch64 instruction set and assembly language
+notation, see `<samp><span class="samp">ARMv8 Instruction Set Overview</span></samp>' available at
+<a href="http://infocenter.arm.com">http://infocenter.arm.com</a>.
+
+   </body></html>
+

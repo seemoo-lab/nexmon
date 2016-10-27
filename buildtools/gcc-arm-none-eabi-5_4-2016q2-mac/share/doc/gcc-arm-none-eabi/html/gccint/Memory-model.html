@@ -1,0 +1,81 @@
+<html lang="en">
+<head>
+<title>Memory model - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Tree-SSA.html#Tree-SSA" title="Tree SSA">
+<link rel="prev" href="Alias-analysis.html#Alias-analysis" title="Alias analysis">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Memory-model"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Alias-analysis.html#Alias-analysis">Alias analysis</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Tree-SSA.html#Tree-SSA">Tree SSA</a>
+<hr>
+</div>
+
+<h3 class="section">12.5 Memory model</h3>
+
+<p><a name="index-memory-model-2533"></a>
+The memory model used by the middle-end models that of the C/C++
+languages.  The middle-end has the notion of an effective type
+of a memory region which is used for type-based alias analysis.
+
+ <p>The following is a refinement of ISO C99 6.5/6, clarifying the block copy case
+to follow common sense and extending the concept of a dynamic effective
+type to objects with a declared type as required for C++.
+
+<pre class="smallexample">     The effective type of an object for an access to its stored value is
+     the declared type of the object or the effective type determined by
+     a previous store to it.  If a value is stored into an object through
+     an lvalue having a type that is not a character type, then the
+     type of the lvalue becomes the effective type of the object for that
+     access and for subsequent accesses that do not modify the stored value.
+     If a value is copied into an object using <code>memcpy</code> or <code>memmove</code>,
+     or is copied as an array of character type, then the effective type
+     of the modified object for that access and for subsequent accesses that
+     do not modify the value is undetermined.  For all other accesses to an
+     object, the effective type of the object is simply the type of the
+     lvalue used for the access.
+</pre>
+ <!-- Copyright (C) 1988-2015 Free Software Foundation, Inc. -->
+<!-- This is part of the GCC manual. -->
+<!-- For copying conditions, see the file gcc.texi. -->
+</body></html>
+

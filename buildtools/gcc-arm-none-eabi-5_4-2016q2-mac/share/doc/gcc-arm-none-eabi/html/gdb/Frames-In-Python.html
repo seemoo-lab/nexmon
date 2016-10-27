@@ -1,0 +1,237 @@
+<html lang="en">
+<head>
+<title>Frames In Python - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Python-API.html#Python-API" title="Python API">
+<link rel="prev" href="Objfiles-In-Python.html#Objfiles-In-Python" title="Objfiles In Python">
+<link rel="next" href="Blocks-In-Python.html#Blocks-In-Python" title="Blocks In Python">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Frames-In-Python"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Blocks-In-Python.html#Blocks-In-Python">Blocks In Python</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Objfiles-In-Python.html#Objfiles-In-Python">Objfiles In Python</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Python-API.html#Python-API">Python API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.2.2.24 Accessing inferior stack frames from Python.</h5>
+
+<p><a name="index-frames-in-python-2166"></a>When the debugged program stops, <span class="sc">gdb</span> is able to analyze its call
+stack (see <a href="Frames.html#Frames">Stack frames</a>).  The <code>gdb.Frame</code> class
+represents a frame in the stack.  A <code>gdb.Frame</code> object is only valid
+while its corresponding frame exists in the inferior's stack.  If you try
+to use an invalid frame object, <span class="sc">gdb</span> will throw a <code>gdb.error</code>
+exception (see <a href="Exception-Handling.html#Exception-Handling">Exception Handling</a>).
+
+   <p>Two <code>gdb.Frame</code> objects can be compared for equality with the <code>==</code>
+operator, like:
+
+<pre class="smallexample">     (gdb) python print gdb.newest_frame() == gdb.selected_frame ()
+     True
+</pre>
+   <p>The following frame-related functions are available in the <code>gdb</code> module:
+
+   <p><a name="index-gdb_002eselected_005fframe-2167"></a>
+
+<div class="defun">
+&mdash; Function: <b>gdb.selected_frame</b> ()<var><a name="index-gdb_002eselected_005fframe-2168"></a></var><br>
+<blockquote><p>Return the selected frame object.  (see <a href="Selection.html#Selection">Selecting a Frame</a>). 
+</p></blockquote></div>
+
+   <p><a name="index-gdb_002enewest_005fframe-2169"></a>
+
+<div class="defun">
+&mdash; Function: <b>gdb.newest_frame</b> ()<var><a name="index-gdb_002enewest_005fframe-2170"></a></var><br>
+<blockquote><p>Return the newest frame object for the selected thread. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>gdb.frame_stop_reason_string</b> (<var>reason</var>)<var><a name="index-gdb_002eframe_005fstop_005freason_005fstring-2171"></a></var><br>
+<blockquote><p>Return a string explaining the reason why <span class="sc">gdb</span> stopped unwinding
+frames, as expressed by the given <var>reason</var> code (an integer, see the
+<code>unwind_stop_reason</code> method further down in this section). 
+</p></blockquote></div>
+
+   <p>A <code>gdb.Frame</code> object has the following methods:
+
+<div class="defun">
+&mdash; Function: <b>Frame.is_valid</b> ()<var><a name="index-Frame_002eis_005fvalid-2172"></a></var><br>
+<blockquote><p>Returns true if the <code>gdb.Frame</code> object is valid, false if not. 
+A frame object can become invalid if the frame it refers to doesn't
+exist anymore in the inferior.  All <code>gdb.Frame</code> methods will throw
+an exception if it is invalid at the time the method is called. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Frame.name</b> ()<var><a name="index-Frame_002ename-2173"></a></var><br>
+<blockquote><p>Returns the function name of the frame, or <code>None</code> if it can't be
+obtained. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Frame.architecture</b> ()<var><a name="index-Frame_002earchitecture-2174"></a></var><br>
+<blockquote><p>Returns the <code>gdb.Architecture</code> object corresponding to the frame's
+architecture.  See <a href="Architectures-In-Python.html#Architectures-In-Python">Architectures In Python</a>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Frame.type</b> ()<var><a name="index-Frame_002etype-2175"></a></var><br>
+<blockquote><p>Returns the type of the frame.  The value can be one of:
+          <dl>
+<dt><code>gdb.NORMAL_FRAME</code><dd>An ordinary stack frame.
+
+          <br><dt><code>gdb.DUMMY_FRAME</code><dd>A fake stack frame that was created by <span class="sc">gdb</span> when performing an
+inferior function call.
+
+          <br><dt><code>gdb.INLINE_FRAME</code><dd>A frame representing an inlined function.  The function was inlined
+into a <code>gdb.NORMAL_FRAME</code> that is older than this one.
+
+          <br><dt><code>gdb.TAILCALL_FRAME</code><dd>A frame representing a tail call.  See <a href="Tail-Call-Frames.html#Tail-Call-Frames">Tail Call Frames</a>.
+
+          <br><dt><code>gdb.SIGTRAMP_FRAME</code><dd>A signal trampoline frame.  This is the frame created by the OS when
+it calls into a signal handler.
+
+          <br><dt><code>gdb.ARCH_FRAME</code><dd>A fake stack frame representing a cross-architecture call.
+
+          <br><dt><code>gdb.SENTINEL_FRAME</code><dd>This is like <code>gdb.NORMAL_FRAME</code>, but it is only used for the
+newest frame. 
+</dl>
+        </p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Frame.unwind_stop_reason</b> ()<var><a name="index-Frame_002eunwind_005fstop_005freason-2176"></a></var><br>
+<blockquote><p>Return an integer representing the reason why it's not possible to find
+more frames toward the outermost frame.  Use
+<code>gdb.frame_stop_reason_string</code> to convert the value returned by this
+function to a string. The value can be one of:
+
+          <dl>
+<dt><code>gdb.FRAME_UNWIND_NO_REASON</code><dd>No particular reason (older frames should be available).
+
+          <br><dt><code>gdb.FRAME_UNWIND_NULL_ID</code><dd>The previous frame's analyzer returns an invalid result.  This is no
+longer used by <span class="sc">gdb</span>, and is kept only for backward
+compatibility.
+
+          <br><dt><code>gdb.FRAME_UNWIND_OUTERMOST</code><dd>This frame is the outermost.
+
+          <br><dt><code>gdb.FRAME_UNWIND_UNAVAILABLE</code><dd>Cannot unwind further, because that would require knowing the
+values of registers or memory that have not been collected.
+
+          <br><dt><code>gdb.FRAME_UNWIND_INNER_ID</code><dd>This frame ID looks like it ought to belong to a NEXT frame,
+but we got it for a PREV frame.  Normally, this is a sign of
+unwinder failure.  It could also indicate stack corruption.
+
+          <br><dt><code>gdb.FRAME_UNWIND_SAME_ID</code><dd>This frame has the same ID as the previous one.  That means
+that unwinding further would almost certainly give us another
+frame with exactly the same ID, so break the chain.  Normally,
+this is a sign of unwinder failure.  It could also indicate
+stack corruption.
+
+          <br><dt><code>gdb.FRAME_UNWIND_NO_SAVED_PC</code><dd>The frame unwinder did not find any saved PC, but we needed
+one to unwind further.
+
+          <br><dt><code>gdb.FRAME_UNWIND_MEMORY_ERROR</code><dd>The frame unwinder caused an error while trying to access memory.
+
+          <br><dt><code>gdb.FRAME_UNWIND_FIRST_ERROR</code><dd>Any stop reason greater or equal to this value indicates some kind
+of error.  This special value facilitates writing code that tests
+for errors in unwinding in a way that will work correctly even if
+the list of the other values is modified in future <span class="sc">gdb</span>
+versions.  Using it, you could write:
+          <pre class="smallexample">               reason = gdb.selected_frame().unwind_stop_reason ()
+               reason_str =  gdb.frame_stop_reason_string (reason)
+               if reason &gt;=  gdb.FRAME_UNWIND_FIRST_ERROR:
+                   print "An error occured: %s" % reason_str
+          </pre>
+          </dl>
+
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Frame.pc</b> ()<var><a name="index-Frame_002epc-2177"></a></var><br>
+<blockquote><p>Returns the frame's resume address. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Frame.block</b> ()<var><a name="index-Frame_002eblock-2178"></a></var><br>
+<blockquote><p>Return the frame's code block.  See <a href="Blocks-In-Python.html#Blocks-In-Python">Blocks In Python</a>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Frame.function</b> ()<var><a name="index-Frame_002efunction-2179"></a></var><br>
+<blockquote><p>Return the symbol for the function corresponding to this frame. 
+See <a href="Symbols-In-Python.html#Symbols-In-Python">Symbols In Python</a>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Frame.older</b> ()<var><a name="index-Frame_002eolder-2180"></a></var><br>
+<blockquote><p>Return the frame that called this frame. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Frame.newer</b> ()<var><a name="index-Frame_002enewer-2181"></a></var><br>
+<blockquote><p>Return the frame called by this frame. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Frame.find_sal</b> ()<var><a name="index-Frame_002efind_005fsal-2182"></a></var><br>
+<blockquote><p>Return the frame's symtab and line object. 
+See <a href="Symbol-Tables-In-Python.html#Symbol-Tables-In-Python">Symbol Tables In Python</a>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Frame.read_register</b> (<var>register</var>)<var><a name="index-Frame_002eread_005fregister-2183"></a></var><br>
+<blockquote><p>Return the value of <var>register</var> in this frame.  The <var>register</var>
+argument must be a string (e.g., <code>'sp'</code> or <code>'rax'</code>). 
+Returns a <code>Gdb.Value</code> object.  Throws an exception if <var>register</var>
+does not exist. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Frame.read_var</b> (<var>variable </var><span class="roman">[</span><var>, block</var><span class="roman">]</span>)<var><a name="index-Frame_002eread_005fvar-2184"></a></var><br>
+<blockquote><p>Return the value of <var>variable</var> in this frame.  If the optional
+argument <var>block</var> is provided, search for the variable from that
+block; otherwise start at the frame's current block (which is
+determined by the frame's current program counter).  The <var>variable</var>
+argument must be a string or a <code>gdb.Symbol</code> object; <var>block</var> must be a
+<code>gdb.Block</code> object. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Frame.select</b> ()<var><a name="index-Frame_002eselect-2185"></a></var><br>
+<blockquote><p>Set this frame to be the selected frame.  See <a href="Stack.html#Stack">Examining the Stack</a>. 
+</p></blockquote></div>
+
+   </body></html>
+

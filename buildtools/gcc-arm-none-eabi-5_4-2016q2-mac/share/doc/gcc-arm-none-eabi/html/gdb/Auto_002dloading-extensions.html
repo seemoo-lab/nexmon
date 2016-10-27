@@ -1,0 +1,79 @@
+<html lang="en">
+<head>
+<title>Auto-loading extensions - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Extending-GDB.html#Extending-GDB" title="Extending GDB">
+<link rel="prev" href="Guile.html#Guile" title="Guile">
+<link rel="next" href="Multiple-Extension-Languages.html#Multiple-Extension-Languages" title="Multiple Extension Languages">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Auto-loading-extensions"></a>
+<a name="Auto_002dloading-extensions"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Multiple-Extension-Languages.html#Multiple-Extension-Languages">Multiple Extension Languages</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Guile.html#Guile">Guile</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Extending-GDB.html#Extending-GDB">Extending GDB</a>
+<hr>
+</div>
+
+<h3 class="section">23.4 Auto-loading extensions</h3>
+
+<p><a name="index-auto_002dloading-extensions-2780"></a>
+<span class="sc">gdb</span> provides two mechanisms for automatically loading extensions
+when a new object file is read (for example, due to the <code>file</code>
+command, or because the inferior has loaded a shared library):
+<samp><var>objfile</var><span class="file">-gdb.</span><var>ext</var></samp> and the <code>.debug_gdb_scripts</code>
+section of modern file formats like ELF.
+
+<ul class="menu">
+<li><a accesskey="1" href="objfile_002dgdbdotext-file.html#objfile_002dgdbdotext-file">objfile-gdb.ext file</a>:   The <samp><var>objfile</var><span class="file">-gdb.</span><var>ext</var></samp> file
+<li><a accesskey="2" href="dotdebug_005fgdb_005fscripts-section.html#dotdebug_005fgdb_005fscripts-section">.debug_gdb_scripts section</a>:   The <code>.debug_gdb_scripts</code> section
+<li><a accesskey="3" href="Which-flavor-to-choose_003f.html#Which-flavor-to-choose_003f">Which flavor to choose?</a>
+</ul>
+
+   <p>The auto-loading feature is useful for supplying application-specific
+debugging commands and features.
+
+   <p>Auto-loading can be enabled or disabled,
+and the list of auto-loaded scripts can be printed. 
+See the `<samp><span class="samp">auto-loading</span></samp>' section of each extension language
+for more information. 
+For <span class="sc">gdb</span> command files see <a href="Auto_002dloading-sequences.html#Auto_002dloading-sequences">Auto-loading sequences</a>. 
+For Python files see <a href="Python-Auto_002dloading.html#Python-Auto_002dloading">Python Auto-loading</a>.
+
+   <p>Note that loading of this script file also requires accordingly configured
+<code>auto-load safe-path</code> (see <a href="Auto_002dloading-safe-path.html#Auto_002dloading-safe-path">Auto-loading safe path</a>).
+
+   </body></html>
+

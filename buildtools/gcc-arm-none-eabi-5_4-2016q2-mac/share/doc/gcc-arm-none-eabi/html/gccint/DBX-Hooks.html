@@ -1,0 +1,88 @@
+<html lang="en">
+<head>
+<title>DBX Hooks - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Debugging-Info.html#Debugging-Info" title="Debugging Info">
+<link rel="prev" href="DBX-Options.html#DBX-Options" title="DBX Options">
+<link rel="next" href="File-Names-and-DBX.html#File-Names-and-DBX" title="File Names and DBX">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="DBX-Hooks"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="File-Names-and-DBX.html#File-Names-and-DBX">File Names and DBX</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="DBX-Options.html#DBX-Options">DBX Options</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Debugging-Info.html#Debugging-Info">Debugging Info</a>
+<hr>
+</div>
+
+<h4 class="subsection">17.21.3 Open-Ended Hooks for DBX Format</h4>
+
+<!-- prevent bad page break with this line -->
+<p>These are hooks for DBX format.
+
+<div class="defun">
+&mdash; Macro: <b>DBX_OUTPUT_SOURCE_LINE</b> (<var>stream, line, counter</var>)<var><a name="index-DBX_005fOUTPUT_005fSOURCE_005fLINE-4773"></a></var><br>
+<blockquote><p>A C statement to output DBX debugging information before code for line
+number <var>line</var> of the current source file to the stdio stream
+<var>stream</var>.  <var>counter</var> is the number of time the macro was
+invoked, including the current invocation; it is intended to generate
+unique labels in the assembly output.
+
+      <p>This macro should not be defined if the default output is correct, or
+if it can be made correct by defining <code>DBX_LINES_FUNCTION_RELATIVE</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>NO_DBX_FUNCTION_END</b><var><a name="index-NO_005fDBX_005fFUNCTION_005fEND-4774"></a></var><br>
+<blockquote><p>Some stabs encapsulation formats (in particular ECOFF), cannot handle the
+<code>.stabs "",N_FUN,,0,0,Lscope-function-1</code> gdb dbx extension construct. 
+On those machines, define this macro to turn this feature off without
+disturbing the rest of the gdb extensions. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>NO_DBX_BNSYM_ENSYM</b><var><a name="index-NO_005fDBX_005fBNSYM_005fENSYM-4775"></a></var><br>
+<blockquote><p>Some assemblers cannot handle the <code>.stabd BNSYM/ENSYM,0,0</code> gdb dbx
+extension construct.  On those machines, define this macro to turn this
+feature off without disturbing the rest of the gdb extensions. 
+</p></blockquote></div>
+
+ </body></html>
+

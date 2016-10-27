@@ -1,0 +1,261 @@
+<html lang="en">
+<head>
+<title>Logical Operators - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Operands.html#Operands" title="Operands">
+<link rel="prev" href="Conditional-Expressions.html#Conditional-Expressions" title="Conditional Expressions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Logical-Operators"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Conditional-Expressions.html#Conditional-Expressions">Conditional Expressions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Operands.html#Operands">Operands</a>
+<hr>
+</div>
+
+<h4 class="subsection">11.6.4 Logical Operators</h4>
+
+<p><a name="index-Logical-Operators-2144"></a>
+Except when they appear in the condition operand of a
+<code>GIMPLE_COND</code>, logical `and' and `or' operators are simplified
+as follows: <code>a = b &amp;&amp; c</code> becomes
+
+<pre class="smallexample">     T1 = (bool)b;
+     if (T1 == true)
+       T1 = (bool)c;
+     a = T1;
+</pre>
+ <p>Note that <code>T1</code> in this example cannot be an expression temporary,
+because it has two different assignments.
+
+<h4 class="subsection">11.6.5 Manipulating operands</h4>
+
+<p>All gimple operands are of type <code>tree</code>.  But only certain
+types of trees are allowed to be used as operand tuples.  Basic
+validation is controlled by the function
+<code>get_gimple_rhs_class</code>, which given a tree code, returns an
+<code>enum</code> with the following values of type <code>enum
+gimple_rhs_class</code>
+
+     <ul>
+<li><code>GIMPLE_INVALID_RHS</code>
+The tree cannot be used as a GIMPLE operand.
+
+     <li><code>GIMPLE_TERNARY_RHS</code>
+The tree is a valid GIMPLE ternary operation.
+
+     <li><code>GIMPLE_BINARY_RHS</code>
+The tree is a valid GIMPLE binary operation.
+
+     <li><code>GIMPLE_UNARY_RHS</code>
+The tree is a valid GIMPLE unary operation.
+
+     <li><code>GIMPLE_SINGLE_RHS</code>
+The tree is a single object, that cannot be split into simpler
+operands (for instance, <code>SSA_NAME</code>, <code>VAR_DECL</code>, <code>COMPONENT_REF</code>, etc).
+
+     <p>This operand class also acts as an escape hatch for tree nodes
+that may be flattened out into the operand vector, but would need
+more than two slots on the RHS.  For instance, a <code>COND_EXPR</code>
+expression of the form <code>(a op b) ? x : y</code> could be flattened
+out on the operand vector using 4 slots, but it would also
+require additional processing to distinguish <code>c = a op b</code>
+from <code>c = a op b ? x : y</code>.  Something similar occurs with
+<code>ASSERT_EXPR</code>.   In time, these special case tree
+expressions should be flattened into the operand vector. 
+</ul>
+
+ <p>For tree nodes in the categories <code>GIMPLE_TERNARY_RHS</code>,
+<code>GIMPLE_BINARY_RHS</code> and <code>GIMPLE_UNARY_RHS</code>, they cannot be
+stored inside tuples directly.  They first need to be flattened and
+separated into individual components.  For instance, given the GENERIC
+expression
+
+<pre class="smallexample">     a = b + c
+</pre>
+ <p>its tree representation is:
+
+<pre class="smallexample">     MODIFY_EXPR &lt;VAR_DECL  &lt;a&gt;, PLUS_EXPR &lt;VAR_DECL &lt;b&gt;, VAR_DECL &lt;c&gt;&gt;&gt;
+</pre>
+ <p>In this case, the GIMPLE form for this statement is logically
+identical to its GENERIC form but in GIMPLE, the <code>PLUS_EXPR</code>
+on the RHS of the assignment is not represented as a tree,
+instead the two operands are taken out of the <code>PLUS_EXPR</code> sub-tree
+and flattened into the GIMPLE tuple as follows:
+
+<pre class="smallexample">     GIMPLE_ASSIGN &lt;PLUS_EXPR, VAR_DECL &lt;a&gt;, VAR_DECL &lt;b&gt;, VAR_DECL &lt;c&gt;&gt;
+</pre>
+ <h4 class="subsection">11.6.6 Operand vector allocation</h4>
+
+<p>The operand vector is stored at the bottom of the three tuple
+structures that accept operands. This means, that depending on
+the code of a given statement, its operand vector will be at
+different offsets from the base of the structure.  To access
+tuple operands use the following accessors
+
+<div class="defun">
+&mdash; GIMPLE function: unsigned <b>gimple_num_ops</b> (<var>gimple g</var>)<var><a name="index-gimple_005fnum_005fops-2145"></a></var><br>
+<blockquote><p>Returns the number of operands in statement G. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree <b>gimple_op</b> (<var>gimple g, unsigned i</var>)<var><a name="index-gimple_005fop-2146"></a></var><br>
+<blockquote><p>Returns operand <code>I</code> from statement <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree * <b>gimple_ops</b> (<var>gimple g</var>)<var><a name="index-gimple_005fops-2147"></a></var><br>
+<blockquote><p>Returns a pointer into the operand vector for statement <code>G</code>.  This
+is computed using an internal table called <code>gimple_ops_offset_</code>[]. 
+This table is indexed by the gimple code of <code>G</code>.
+
+      <p>When the compiler is built, this table is filled-in using the
+sizes of the structures used by each statement code defined in
+gimple.def.  Since the operand vector is at the bottom of the
+structure, for a gimple code <code>C</code> the offset is computed as sizeof
+(struct-of <code>C</code>) - sizeof (tree).
+
+      <p>This mechanism adds one memory indirection to every access when
+using <code>gimple_op</code>(), if this becomes a bottleneck, a pass can
+choose to memoize the result from <code>gimple_ops</code>() and use that to
+access the operands. 
+</p></blockquote></div>
+
+<h4 class="subsection">11.6.7 Operand validation</h4>
+
+<p>When adding a new operand to a gimple statement, the operand will
+be validated according to what each tuple accepts in its operand
+vector.  These predicates are called by the
+<code>gimple_</code><var>name</var><code>_set_...()</code>.  Each tuple will use one of the
+following predicates (Note, this list is not exhaustive):
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>is_gimple_val</b> (<var>tree t</var>)<var><a name="index-is_005fgimple_005fval-2148"></a></var><br>
+<blockquote><p>Returns true if t is a "GIMPLE value", which are all the
+non-addressable stack variables (variables for which
+<code>is_gimple_reg</code> returns true) and constants (expressions for which
+<code>is_gimple_min_invariant</code> returns true). 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>is_gimple_addressable</b> (<var>tree t</var>)<var><a name="index-is_005fgimple_005faddressable-2149"></a></var><br>
+<blockquote><p>Returns true if t is a symbol or memory reference whose address
+can be taken. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>is_gimple_asm_val</b> (<var>tree t</var>)<var><a name="index-is_005fgimple_005fasm_005fval-2150"></a></var><br>
+<blockquote><p>Similar to <code>is_gimple_val</code> but it also accepts hard registers. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>is_gimple_call_addr</b> (<var>tree t</var>)<var><a name="index-is_005fgimple_005fcall_005faddr-2151"></a></var><br>
+<blockquote><p>Return true if t is a valid expression to use as the function
+called by a <code>GIMPLE_CALL</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>is_gimple_mem_ref_addr</b> (<var>tree t</var>)<var><a name="index-is_005fgimple_005fmem_005fref_005faddr-2152"></a></var><br>
+<blockquote><p>Return true if t is a valid expression to use as first operand
+of a <code>MEM_REF</code> expression. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>is_gimple_constant</b> (<var>tree t</var>)<var><a name="index-is_005fgimple_005fconstant-2153"></a></var><br>
+<blockquote><p>Return true if t is a valid gimple constant. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>is_gimple_min_invariant</b> (<var>tree t</var>)<var><a name="index-is_005fgimple_005fmin_005finvariant-2154"></a></var><br>
+<blockquote><p>Return true if t is a valid minimal invariant.  This is different
+from constants, in that the specific value of t may not be known
+at compile time, but it is known that it doesn't change (e.g.,
+the address of a function local variable). 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>is_gimple_ip_invariant</b> (<var>tree t</var>)<var><a name="index-is_005fgimple_005fip_005finvariant-2155"></a></var><br>
+<blockquote><p>Return true if t is an interprocedural invariant.  This means that t
+is a valid invariant in all functions (e.g. it can be an address of a
+global variable but not of a local one). 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>is_gimple_ip_invariant_address</b> (<var>tree t</var>)<var><a name="index-is_005fgimple_005fip_005finvariant_005faddress-2156"></a></var><br>
+<blockquote><p>Return true if t is an <code>ADDR_EXPR</code> that does not change once the
+program is running (and which is valid in all functions). 
+</p></blockquote></div>
+
+<h4 class="subsection">11.6.8 Statement validation</h4>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>is_gimple_assign</b> (<var>gimple g</var>)<var><a name="index-is_005fgimple_005fassign-2157"></a></var><br>
+<blockquote><p>Return true if the code of g is <code>GIMPLE_ASSIGN</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>is_gimple_call</b> (<var>gimple g</var>)<var><a name="index-is_005fgimple_005fcall-2158"></a></var><br>
+<blockquote><p>Return true if the code of g is <code>GIMPLE_CALL</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>is_gimple_debug</b> (<var>gimple g</var>)<var><a name="index-is_005fgimple_005fdebug-2159"></a></var><br>
+<blockquote><p>Return true if the code of g is <code>GIMPLE_DEBUG</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>gimple_assign_cast_p</b> (<var>const_gimple g</var>)<var><a name="index-gimple_005fassign_005fcast_005fp-2160"></a></var><br>
+<blockquote><p>Return true if g is a <code>GIMPLE_ASSIGN</code> that performs a type cast
+operation. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>gimple_debug_bind_p</b> (<var>gimple g</var>)<var><a name="index-gimple_005fdebug_005fbind_005fp-2161"></a></var><br>
+<blockquote><p>Return true if g is a <code>GIMPLE_DEBUG</code> that binds the value of an
+expression to a variable. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>is_gimple_omp</b> (<var>gimple g</var>)<var><a name="index-is_005fgimple_005fomp-2162"></a></var><br>
+<blockquote><p>Return true if g is any of the OpenMP codes. 
+</p></blockquote></div>
+
+ </body></html>
+

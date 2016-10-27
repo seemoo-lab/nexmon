@@ -1,0 +1,274 @@
+<html lang="en">
+<head>
+<title>Function Entry - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stack-and-Calling.html#Stack-and-Calling" title="Stack and Calling">
+<link rel="prev" href="Caller-Saves.html#Caller-Saves" title="Caller Saves">
+<link rel="next" href="Profiling.html#Profiling" title="Profiling">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Function-Entry"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Profiling.html#Profiling">Profiling</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Caller-Saves.html#Caller-Saves">Caller Saves</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stack-and-Calling.html#Stack-and-Calling">Stack and Calling</a>
+<hr>
+</div>
+
+<h4 class="subsection">17.9.11 Function Entry and Exit</h4>
+
+<p><a name="index-function-entry-and-exit-4290"></a><a name="index-prologue-4291"></a><a name="index-epilogue-4292"></a>
+This section describes the macros that output function entry
+(<dfn>prologue</dfn>) and exit (<dfn>epilogue</dfn>) code.
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_ASM_FUNCTION_PROLOGUE</b> (<var>FILE *file, HOST_WIDE_INT size</var>)<var><a name="index-TARGET_005fASM_005fFUNCTION_005fPROLOGUE-4293"></a></var><br>
+<blockquote><p>If defined, a function that outputs the assembler code for entry to a
+function.  The prologue is responsible for setting up the stack frame,
+initializing the frame pointer register, saving registers that must be
+saved, and allocating <var>size</var> additional bytes of storage for the
+local variables.  <var>size</var> is an integer.  <var>file</var> is a stdio
+stream to which the assembler code should be output.
+
+      <p>The label for the beginning of the function need not be output by this
+macro.  That has already been done when the macro is run.
+
+      <p><a name="index-regs_005fever_005flive-4294"></a>To determine which registers to save, the macro can refer to the array
+<code>regs_ever_live</code>: element <var>r</var> is nonzero if hard register
+<var>r</var> is used anywhere within the function.  This implies the function
+prologue should save register <var>r</var>, provided it is not one of the
+call-used registers.  (<code>TARGET_ASM_FUNCTION_EPILOGUE</code> must likewise use
+<code>regs_ever_live</code>.)
+
+      <p>On machines that have &ldquo;register windows&rdquo;, the function entry code does
+not save on the stack the registers that are in the windows, even if
+they are supposed to be preserved by function calls; instead it takes
+appropriate steps to &ldquo;push&rdquo; the register stack, if any non-call-used
+registers are used in the function.
+
+      <p><a name="index-frame_005fpointer_005fneeded-4295"></a>On machines where functions may or may not have frame-pointers, the
+function entry code must vary accordingly; it must set up the frame
+pointer if one is wanted, and not otherwise.  To determine whether a
+frame pointer is in wanted, the macro can refer to the variable
+<code>frame_pointer_needed</code>.  The variable's value will be 1 at run
+time in a function that needs a frame pointer.  See <a href="Elimination.html#Elimination">Elimination</a>.
+
+      <p>The function entry code is responsible for allocating any stack space
+required for the function.  This stack space consists of the regions
+listed below.  In most cases, these regions are allocated in the
+order listed, with the last listed region closest to the top of the
+stack (the lowest address if <code>STACK_GROWS_DOWNWARD</code> is defined, and
+the highest address if it is not defined).  You can use a different order
+for a machine if doing so is more convenient or required for
+compatibility reasons.  Except in cases where required by standard
+or by a debugger, there is no reason why the stack layout used by GCC
+need agree with that used by other compilers for a machine. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_ASM_FUNCTION_END_PROLOGUE</b> (<var>FILE *file</var>)<var><a name="index-TARGET_005fASM_005fFUNCTION_005fEND_005fPROLOGUE-4296"></a></var><br>
+<blockquote><p>If defined, a function that outputs assembler code at the end of a
+prologue.  This should be used when the function prologue is being
+emitted as RTL, and you have some extra assembler that needs to be
+emitted.  See <a href="prologue-instruction-pattern.html#prologue-instruction-pattern">prologue instruction pattern</a>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_ASM_FUNCTION_BEGIN_EPILOGUE</b> (<var>FILE *file</var>)<var><a name="index-TARGET_005fASM_005fFUNCTION_005fBEGIN_005fEPILOGUE-4297"></a></var><br>
+<blockquote><p>If defined, a function that outputs assembler code at the start of an
+epilogue.  This should be used when the function epilogue is being
+emitted as RTL, and you have some extra assembler that needs to be
+emitted.  See <a href="epilogue-instruction-pattern.html#epilogue-instruction-pattern">epilogue instruction pattern</a>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_ASM_FUNCTION_EPILOGUE</b> (<var>FILE *file, HOST_WIDE_INT size</var>)<var><a name="index-TARGET_005fASM_005fFUNCTION_005fEPILOGUE-4298"></a></var><br>
+<blockquote><p>If defined, a function that outputs the assembler code for exit from a
+function.  The epilogue is responsible for restoring the saved
+registers and stack pointer to their values when the function was
+called, and returning control to the caller.  This macro takes the
+same arguments as the macro <code>TARGET_ASM_FUNCTION_PROLOGUE</code>, and the
+registers to restore are determined from <code>regs_ever_live</code> and
+<code>CALL_USED_REGISTERS</code> in the same way.
+
+      <p>On some machines, there is a single instruction that does all the work
+of returning from the function.  On these machines, give that
+instruction the name `<samp><span class="samp">return</span></samp>' and do not define the macro
+<code>TARGET_ASM_FUNCTION_EPILOGUE</code> at all.
+
+      <p>Do not define a pattern named `<samp><span class="samp">return</span></samp>' if you want the
+<code>TARGET_ASM_FUNCTION_EPILOGUE</code> to be used.  If you want the target
+switches to control whether return instructions or epilogues are used,
+define a `<samp><span class="samp">return</span></samp>' pattern with a validity condition that tests the
+target switches appropriately.  If the `<samp><span class="samp">return</span></samp>' pattern's validity
+condition is false, epilogues will be used.
+
+      <p>On machines where functions may or may not have frame-pointers, the
+function exit code must vary accordingly.  Sometimes the code for these
+two cases is completely different.  To determine whether a frame pointer
+is wanted, the macro can refer to the variable
+<code>frame_pointer_needed</code>.  The variable's value will be 1 when compiling
+a function that needs a frame pointer.
+
+      <p>Normally, <code>TARGET_ASM_FUNCTION_PROLOGUE</code> and
+<code>TARGET_ASM_FUNCTION_EPILOGUE</code> must treat leaf functions specially. 
+The C variable <code>current_function_is_leaf</code> is nonzero for such a
+function.  See <a href="Leaf-Functions.html#Leaf-Functions">Leaf Functions</a>.
+
+      <p>On some machines, some functions pop their arguments on exit while
+others leave that for the caller to do.  For example, the 68020 when
+given <samp><span class="option">-mrtd</span></samp> pops arguments in functions that take a fixed
+number of arguments.
+
+      <p><a name="index-pops_005fargs-4299"></a><a name="index-crtl_002d_003eargs_002epops_005fargs-4300"></a>Your definition of the macro <code>RETURN_POPS_ARGS</code> decides which
+functions pop their own arguments.  <code>TARGET_ASM_FUNCTION_EPILOGUE</code>
+needs to know what was decided.  The number of bytes of the current
+function's arguments that this function should pop is available in
+<code>crtl-&gt;args.pops_args</code>.  See <a href="Scalar-Return.html#Scalar-Return">Scalar Return</a>. 
+</p></blockquote></div>
+
+     <ul>
+<li><a name="index-pretend_005fargs_005fsize-4301"></a><a name="index-crtl_002d_003eargs_002epretend_005fargs_005fsize-4302"></a>A region of <code>crtl-&gt;args.pretend_args_size</code> bytes of
+uninitialized space just underneath the first argument arriving on the
+stack.  (This may not be at the very start of the allocated stack region
+if the calling sequence has pushed anything else since pushing the stack
+arguments.  But usually, on such machines, nothing else has been pushed
+yet, because the function prologue itself does all the pushing.)  This
+region is used on machines where an argument may be passed partly in
+registers and partly in memory, and, in some cases to support the
+features in <code>&lt;stdarg.h&gt;</code>.
+
+     <li>An area of memory used to save certain registers used by the function. 
+The size of this area, which may also include space for such things as
+the return address and pointers to previous stack frames, is
+machine-specific and usually depends on which registers have been used
+in the function.  Machines with register windows often do not require
+a save area.
+
+     <li>A region of at least <var>size</var> bytes, possibly rounded up to an allocation
+boundary, to contain the local variables of the function.  On some machines,
+this region and the save area may occur in the opposite order, with the
+save area closer to the top of the stack.
+
+     <li><a name="index-g_t_0040code_007bACCUMULATE_005fOUTGOING_005fARGS_007d-and-stack-frames-4303"></a>Optionally, when <code>ACCUMULATE_OUTGOING_ARGS</code> is defined, a region of
+<code>crtl-&gt;outgoing_args_size</code> bytes to be used for outgoing
+argument lists of the function.  See <a href="Stack-Arguments.html#Stack-Arguments">Stack Arguments</a>. 
+</ul>
+
+<div class="defun">
+&mdash; Macro: <b>EXIT_IGNORE_STACK</b><var><a name="index-EXIT_005fIGNORE_005fSTACK-4304"></a></var><br>
+<blockquote><p>Define this macro as a C expression that is nonzero if the return
+instruction or the function epilogue ignores the value of the stack
+pointer; in other words, if it is safe to delete an instruction to
+adjust the stack pointer before a return from the function.  The
+default is 0.
+
+      <p>Note that this macro's value is relevant only for functions for which
+frame pointers are maintained.  It is never safe to delete a final
+stack adjustment in a function that has no frame pointer, and the
+compiler knows this regardless of <code>EXIT_IGNORE_STACK</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>EPILOGUE_USES</b> (<var>regno</var>)<var><a name="index-EPILOGUE_005fUSES-4305"></a></var><br>
+<blockquote><p>Define this macro as a C expression that is nonzero for registers that are
+used by the epilogue or the `<samp><span class="samp">return</span></samp>' pattern.  The stack and frame
+pointer registers are already assumed to be used as needed. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>EH_USES</b> (<var>regno</var>)<var><a name="index-EH_005fUSES-4306"></a></var><br>
+<blockquote><p>Define this macro as a C expression that is nonzero for registers that are
+used by the exception handling mechanism, and so should be considered live
+on entry to an exception edge. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_ASM_OUTPUT_MI_THUNK</b> (<var>FILE *file, tree thunk_fndecl, HOST_WIDE_INT delta, HOST_WIDE_INT vcall_offset, tree function</var>)<var><a name="index-TARGET_005fASM_005fOUTPUT_005fMI_005fTHUNK-4307"></a></var><br>
+<blockquote><p>A function that outputs the assembler code for a thunk
+function, used to implement C++ virtual function calls with multiple
+inheritance.  The thunk acts as a wrapper around a virtual function,
+adjusting the implicit object parameter before handing control off to
+the real function.
+
+      <p>First, emit code to add the integer <var>delta</var> to the location that
+contains the incoming first argument.  Assume that this argument
+contains a pointer, and is the one used to pass the <code>this</code> pointer
+in C++.  This is the incoming argument <em>before</em> the function prologue,
+e.g. `<samp><span class="samp">%o0</span></samp>' on a sparc.  The addition must preserve the values of
+all other incoming arguments.
+
+      <p>Then, if <var>vcall_offset</var> is nonzero, an additional adjustment should be
+made after adding <code>delta</code>.  In particular, if <var>p</var> is the
+adjusted pointer, the following adjustment should be made:
+
+     <pre class="smallexample">          p += (*((ptrdiff_t **)p))[vcall_offset/sizeof(ptrdiff_t)]
+     </pre>
+      <p>After the additions, emit code to jump to <var>function</var>, which is a
+<code>FUNCTION_DECL</code>.  This is a direct pure jump, not a call, and does
+not touch the return address.  Hence returning from <var>FUNCTION</var> will
+return to whoever called the current `<samp><span class="samp">thunk</span></samp>'.
+
+      <p>The effect must be as if <var>function</var> had been called directly with
+the adjusted first argument.  This macro is responsible for emitting all
+of the code for a thunk function; <code>TARGET_ASM_FUNCTION_PROLOGUE</code>
+and <code>TARGET_ASM_FUNCTION_EPILOGUE</code> are not invoked.
+
+      <p>The <var>thunk_fndecl</var> is redundant.  (<var>delta</var> and <var>function</var>
+have already been extracted from it.)  It might possibly be useful on
+some targets, but probably not.
+
+      <p>If you do not define this macro, the target-independent code in the C++
+front end will generate a less efficient heavyweight thunk that calls
+<var>function</var> instead of jumping to it.  The generic approach does
+not support varargs. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_ASM_CAN_OUTPUT_MI_THUNK</b> (<var>const_tree thunk_fndecl, HOST_WIDE_INT delta, HOST_WIDE_INT vcall_offset, const_tree function</var>)<var><a name="index-TARGET_005fASM_005fCAN_005fOUTPUT_005fMI_005fTHUNK-4308"></a></var><br>
+<blockquote><p>A function that returns true if TARGET_ASM_OUTPUT_MI_THUNK would be able
+to output the assembler code for the thunk function specified by the
+arguments it is passed, and false otherwise.  In the latter case, the
+generic approach will be used by the C++ front end, with the limitations
+previously exposed. 
+</p></blockquote></div>
+
+ </body></html>
+

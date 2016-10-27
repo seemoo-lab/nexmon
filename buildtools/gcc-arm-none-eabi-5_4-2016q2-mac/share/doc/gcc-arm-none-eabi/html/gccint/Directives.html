@@ -1,0 +1,279 @@
+<html lang="en">
+<head>
+<title>Directives - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Test-Directives.html#Test-Directives" title="Test Directives">
+<link rel="next" href="Selectors.html#Selectors" title="Selectors">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Directives"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Selectors.html#Selectors">Selectors</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Test-Directives.html#Test-Directives">Test Directives</a>
+<hr>
+</div>
+
+<h4 class="subsection">7.2.1 Syntax and Descriptions of test directives</h4>
+
+<p>Test directives appear within comments in a test source file and begin
+with <code>dg-</code>.  Some of these are defined within DejaGnu and others
+are local to the GCC testsuite.
+
+ <p>The order in which test directives appear in a test can be important:
+directives local to GCC sometimes override information used by the
+DejaGnu directives, which know nothing about the GCC directives, so the
+DejaGnu directives must precede GCC directives.
+
+ <p>Several test directives include selectors (see <a href="Selectors.html#Selectors">Selectors</a>)
+which are usually preceded by the keyword <code>target</code> or <code>xfail</code>.
+
+<h5 class="subsubsection">7.2.1.1 Specify how to build the test</h5>
+
+     <dl>
+<dt><code>{ dg-do </code><var>do-what-keyword</var><code> [{ target/xfail </code><var>selector</var><code> }] }</code><dd><var>do-what-keyword</var> specifies how the test is compiled and whether
+it is executed.  It is one of:
+
+          <dl>
+<dt><code>preprocess</code><dd>Compile with <samp><span class="option">-E</span></samp> to run only the preprocessor. 
+<br><dt><code>compile</code><dd>Compile with <samp><span class="option">-S</span></samp> to produce an assembly code file. 
+<br><dt><code>assemble</code><dd>Compile with <samp><span class="option">-c</span></samp> to produce a relocatable object file. 
+<br><dt><code>link</code><dd>Compile, assemble, and link to produce an executable file. 
+<br><dt><code>run</code><dd>Produce and run an executable file, which is expected to return
+an exit code of 0. 
+</dl>
+
+     <p>The default is <code>compile</code>.  That can be overridden for a set of
+tests by redefining <code>dg-do-what-default</code> within the <code>.exp</code>
+file for those tests.
+
+     <p>If the directive includes the optional `<samp><span class="samp">{ target </span><var>selector</var><span class="samp"> }</span></samp>'
+then the test is skipped unless the target system matches the
+<var>selector</var>.
+
+     <p>If <var>do-what-keyword</var> is <code>run</code> and the directive includes
+the optional `<samp><span class="samp">{ xfail </span><var>selector</var><span class="samp"> }</span></samp>' and the selector is met
+then the test is expected to fail.  The <code>xfail</code> clause is ignored
+for other values of <var>do-what-keyword</var>; those tests can use
+directive <code>dg-xfail-if</code>. 
+</dl>
+
+<h5 class="subsubsection">7.2.1.2 Specify additional compiler options</h5>
+
+     <dl>
+<dt><code>{ dg-options </code><var>options</var><code> [{ target </code><var>selector</var><code> }] }</code><dd>This DejaGnu directive provides a list of compiler options, to be used
+if the target system matches <var>selector</var>, that replace the default
+options used for this set of tests.
+
+     <br><dt><code>{ dg-add-options </code><var>feature</var><code> ... }</code><dd>Add any compiler options that are needed to access certain features. 
+This directive does nothing on targets that enable the features by
+default, or that don't provide them at all.  It must come after
+all <code>dg-options</code> directives. 
+For supported values of <var>feature</var> see <a href="Add-Options.html#Add-Options">Add Options</a>.
+
+     <br><dt><code>{ dg-additional-options </code><var>options</var><code> [{ target </code><var>selector</var><code> }] }</code><dd>This directive provides a list of compiler options, to be used
+if the target system matches <var>selector</var>, that are added to the default
+options used for this set of tests. 
+</dl>
+
+<h5 class="subsubsection">7.2.1.3 Modify the test timeout value</h5>
+
+<p>The normal timeout limit, in seconds, is found by searching the
+following in order:
+
+     <ul>
+<li>the value defined by an earlier <code>dg-timeout</code> directive in
+the test
+
+     <li>variable <var>tool_timeout</var> defined by the set of tests
+
+     <li><var>gcc</var>,<var>timeout</var> set in the target board
+
+     <li>300
+</ul>
+
+     <dl>
+<dt><code>{ dg-timeout </code><var>n</var><code> [{target </code><var>selector</var><code> }] }</code><dd>Set the time limit for the compilation and for the execution of the test
+to the specified number of seconds.
+
+     <br><dt><code>{ dg-timeout-factor </code><var>x</var><code> [{ target </code><var>selector</var><code> }] }</code><dd>Multiply the normal time limit for compilation and execution of the test
+by the specified floating-point factor. 
+</dl>
+
+<h5 class="subsubsection">7.2.1.4 Skip a test for some targets</h5>
+
+     <dl>
+<dt><code>{ dg-skip-if </code><var>comment</var><code> { </code><var>selector</var><code> } [{ </code><var>include-opts</var><code> } [{ </code><var>exclude-opts</var><code> }]] }</code><dd>Arguments <var>include-opts</var> and <var>exclude-opts</var> are lists in which
+each element is a string of zero or more GCC options. 
+Skip the test if all of the following conditions are met:
+          <ul>
+<li>the test system is included in <var>selector</var>
+
+          <li>for at least one of the option strings in <var>include-opts</var>,
+every option from that string is in the set of options with which
+the test would be compiled; use `<samp><span class="samp">"*"</span></samp>' for an <var>include-opts</var> list
+that matches any options; that is the default if <var>include-opts</var> is
+not specified
+
+          <li>for each of the option strings in <var>exclude-opts</var>, at least one
+option from that string is not in the set of options with which the test
+would be compiled; use `<samp><span class="samp">""</span></samp>' for an empty <var>exclude-opts</var> list;
+that is the default if <var>exclude-opts</var> is not specified
+</ul>
+
+     <p>For example, to skip a test if option <code>-Os</code> is present:
+
+     <pre class="smallexample">          /* { dg-skip-if "" { *-*-* }  { "-Os" } { "" } } */
+     </pre>
+     <p>To skip a test if both options <code>-O2</code> and <code>-g</code> are present:
+
+     <pre class="smallexample">          /* { dg-skip-if "" { *-*-* }  { "-O2 -g" } { "" } } */
+     </pre>
+     <p>To skip a test if either <code>-O2</code> or <code>-O3</code> is present:
+
+     <pre class="smallexample">          /* { dg-skip-if "" { *-*-* }  { "-O2" "-O3" } { "" } } */
+     </pre>
+     <p>To skip a test unless option <code>-Os</code> is present:
+
+     <pre class="smallexample">          /* { dg-skip-if "" { *-*-* }  { "*" } { "-Os" } } */
+     </pre>
+     <p>To skip a test if either <code>-O2</code> or <code>-O3</code> is used with <code>-g</code>
+but not if <code>-fpic</code> is also present:
+
+     <pre class="smallexample">          /* { dg-skip-if "" { *-*-* }  { "-O2 -g" "-O3 -g" } { "-fpic" } } */
+     </pre>
+     <br><dt><code>{ dg-require-effective-target </code><var>keyword</var><code> [{ </code><var>selector</var><code> }] }</code><dd>Skip the test if the test target, including current multilib flags,
+is not covered by the effective-target keyword. 
+If the directive includes the optional `<samp><span class="samp">{ </span><var>selector</var><span class="samp"> }</span></samp>'
+then the effective-target test is only performed if the target system
+matches the <var>selector</var>. 
+This directive must appear after any <code>dg-do</code> directive in the test
+and before any <code>dg-additional-sources</code> directive. 
+See <a href="Effective_002dTarget-Keywords.html#Effective_002dTarget-Keywords">Effective-Target Keywords</a>.
+
+     <br><dt><code>{ dg-require-</code><var>support</var><code> args }</code><dd>Skip the test if the target does not provide the required support. 
+These directives must appear after any <code>dg-do</code> directive in the test
+and before any <code>dg-additional-sources</code> directive. 
+They require at least one argument, which can be an empty string if the
+specific procedure does not examine the argument. 
+See <a href="Require-Support.html#Require-Support">Require Support</a>, for a complete list of these directives. 
+</dl>
+
+<h5 class="subsubsection">7.2.1.5 Expect a test to fail for some targets</h5>
+
+     <dl>
+<dt><code>{ dg-xfail-if </code><var>comment</var><code> { </code><var>selector</var><code> } [{ </code><var>include-opts</var><code> } [{ </code><var>exclude-opts</var><code> }]] }</code><dd>Expect the test to fail if the conditions (which are the same as for
+<code>dg-skip-if</code>) are met.  This does not affect the execute step.
+
+     <br><dt><code>{ dg-xfail-run-if </code><var>comment</var><code> { </code><var>selector</var><code> } [{ </code><var>include-opts</var><code> } [{ </code><var>exclude-opts</var><code> }]] }</code><dd>Expect the execute step of a test to fail if the conditions (which are
+the same as for <code>dg-skip-if</code>) are met. 
+</dl>
+
+<h5 class="subsubsection">7.2.1.6 Expect the test executable to fail</h5>
+
+     <dl>
+<dt><code>{ dg-shouldfail </code><var>comment</var><code> [{ </code><var>selector</var><code> } [{ </code><var>include-opts</var><code> } [{ </code><var>exclude-opts</var><code> }]]] }</code><dd>Expect the test executable to return a nonzero exit status if the
+conditions (which are the same as for <code>dg-skip-if</code>) are met. 
+</dl>
+
+<h5 class="subsubsection">7.2.1.7 Verify compiler messages</h5>
+
+     <dl>
+<dt><code>{ dg-error </code><var>regexp</var><code> [</code><var>comment</var><code> [{ target/xfail </code><var>selector</var><code> } [</code><var>line</var><code>] }]] }</code><dd>This DejaGnu directive appears on a source line that is expected to get
+an error message, or else specifies the source line associated with the
+message.  If there is no message for that line or if the text of that
+message is not matched by <var>regexp</var> then the check fails and
+<var>comment</var> is included in the <code>FAIL</code> message.  The check does
+not look for the string `<samp><span class="samp">error</span></samp>' unless it is part of <var>regexp</var>.
+
+     <br><dt><code>{ dg-warning </code><var>regexp</var><code> [</code><var>comment</var><code> [{ target/xfail </code><var>selector</var><code> } [</code><var>line</var><code>] }]] }</code><dd>This DejaGnu directive appears on a source line that is expected to get
+a warning message, or else specifies the source line associated with the
+message.  If there is no message for that line or if the text of that
+message is not matched by <var>regexp</var> then the check fails and
+<var>comment</var> is included in the <code>FAIL</code> message.  The check does
+not look for the string `<samp><span class="samp">warning</span></samp>' unless it is part of <var>regexp</var>.
+
+     <br><dt><code>{ dg-message </code><var>regexp</var><code> [</code><var>comment</var><code> [{ target/xfail </code><var>selector</var><code> } [</code><var>line</var><code>] }]] }</code><dd>The line is expected to get a message other than an error or warning. 
+If there is no message for that line or if the text of that message is
+not matched by <var>regexp</var> then the check fails and <var>comment</var> is
+included in the <code>FAIL</code> message.
+
+     <br><dt><code>{ dg-bogus </code><var>regexp</var><code> [</code><var>comment</var><code> [{ target/xfail </code><var>selector</var><code> } [</code><var>line</var><code>] }]] }</code><dd>This DejaGnu directive appears on a source line that should not get a
+message matching <var>regexp</var>, or else specifies the source line
+associated with the bogus message.  It is usually used with `<samp><span class="samp">xfail</span></samp>'
+to indicate that the message is a known problem for a particular set of
+targets.
+
+     <br><dt><code>{ dg-excess-errors </code><var>comment</var><code> [{ target/xfail </code><var>selector</var><code> }] }</code><dd>This DejaGnu directive indicates that the test is expected to fail due
+to compiler messages that are not handled by `<samp><span class="samp">dg-error</span></samp>',
+`<samp><span class="samp">dg-warning</span></samp>' or `<samp><span class="samp">dg-bogus</span></samp>'.  For this directive `<samp><span class="samp">xfail</span></samp>'
+has the same effect as `<samp><span class="samp">target</span></samp>'.
+
+     <br><dt><code>{ dg-prune-output </code><var>regexp</var><code> }</code><dd>Prune messages matching <var>regexp</var> from the test output. 
+</dl>
+
+<h5 class="subsubsection">7.2.1.8 Verify output of the test executable</h5>
+
+     <dl>
+<dt><code>{ dg-output </code><var>regexp</var><code> [{ target/xfail </code><var>selector</var><code> }] }</code><dd>This DejaGnu directive compares <var>regexp</var> to the combined output
+that the test executable writes to <samp><span class="file">stdout</span></samp> and <samp><span class="file">stderr</span></samp>. 
+</dl>
+
+<h5 class="subsubsection">7.2.1.9 Specify additional files for a test</h5>
+
+     <dl>
+<dt><code>{ dg-additional-files "</code><var>filelist</var><code>" }</code><dd>Specify additional files, other than source files, that must be copied
+to the system where the compiler runs.
+
+     <br><dt><code>{ dg-additional-sources "</code><var>filelist</var><code>" }</code><dd>Specify additional source files to appear in the compile line
+following the main test file. 
+</dl>
+
+<h5 class="subsubsection">7.2.1.10 Add checks at the end of a test</h5>
+
+     <dl>
+<dt><code>{ dg-final { </code><var>local-directive</var><code> } }</code><dd>This DejaGnu directive is placed within a comment anywhere in the
+source file and is processed after the test has been compiled and run. 
+Multiple `<samp><span class="samp">dg-final</span></samp>' commands are processed in the order in which
+they appear in the source file.  See <a href="Final-Actions.html#Final-Actions">Final Actions</a>, for a list
+of directives that can be used within <code>dg-final</code>. 
+</dl>
+
+ </body></html>
+

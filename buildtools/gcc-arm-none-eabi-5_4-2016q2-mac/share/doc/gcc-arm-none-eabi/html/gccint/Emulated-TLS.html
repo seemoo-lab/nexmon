@@ -1,0 +1,143 @@
+<html lang="en">
+<head>
+<title>Emulated TLS - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Macros.html#Target-Macros" title="Target Macros">
+<link rel="prev" href="Target-Attributes.html#Target-Attributes" title="Target Attributes">
+<link rel="next" href="MIPS-Coprocessors.html#MIPS-Coprocessors" title="MIPS Coprocessors">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Emulated-TLS"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="MIPS-Coprocessors.html#MIPS-Coprocessors">MIPS Coprocessors</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Target-Attributes.html#Target-Attributes">Target Attributes</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Macros.html#Target-Macros">Target Macros</a>
+<hr>
+</div>
+
+<h3 class="section">17.25 Emulating TLS</h3>
+
+<p><a name="index-Emulated-TLS-4851"></a>
+For targets whose psABI does not provide Thread Local Storage via
+specific relocations and instruction sequences, an emulation layer is
+used.  A set of target hooks allows this emulation layer to be
+configured for the requirements of a particular target.  For instance
+the psABI may in fact specify TLS support in terms of an emulation
+layer.
+
+ <p>The emulation layer works by creating a control object for every TLS
+object.  To access the TLS object, a lookup function is provided
+which, when given the address of the control object, will return the
+address of the current thread's instance of the TLS object.
+
+<div class="defun">
+&mdash; Target Hook: const char * <b>TARGET_EMUTLS_GET_ADDRESS</b><var><a name="index-TARGET_005fEMUTLS_005fGET_005fADDRESS-4852"></a></var><br>
+<blockquote><p>Contains the name of the helper function that uses a TLS control
+object to locate a TLS instance.  The default causes libgcc's
+emulated TLS helper function to be used. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: const char * <b>TARGET_EMUTLS_REGISTER_COMMON</b><var><a name="index-TARGET_005fEMUTLS_005fREGISTER_005fCOMMON-4853"></a></var><br>
+<blockquote><p>Contains the name of the helper function that should be used at
+program startup to register TLS objects that are implicitly
+initialized to zero.  If this is <code>NULL</code>, all TLS objects will
+have explicit initializers.  The default causes libgcc's emulated TLS
+registration function to be used. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: const char * <b>TARGET_EMUTLS_VAR_SECTION</b><var><a name="index-TARGET_005fEMUTLS_005fVAR_005fSECTION-4854"></a></var><br>
+<blockquote><p>Contains the name of the section in which TLS control variables should
+be placed.  The default of <code>NULL</code> allows these to be placed in
+any section. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: const char * <b>TARGET_EMUTLS_TMPL_SECTION</b><var><a name="index-TARGET_005fEMUTLS_005fTMPL_005fSECTION-4855"></a></var><br>
+<blockquote><p>Contains the name of the section in which TLS initializers should be
+placed.  The default of <code>NULL</code> allows these to be placed in any
+section. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: const char * <b>TARGET_EMUTLS_VAR_PREFIX</b><var><a name="index-TARGET_005fEMUTLS_005fVAR_005fPREFIX-4856"></a></var><br>
+<blockquote><p>Contains the prefix to be prepended to TLS control variable names. 
+The default of <code>NULL</code> uses a target-specific prefix. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: const char * <b>TARGET_EMUTLS_TMPL_PREFIX</b><var><a name="index-TARGET_005fEMUTLS_005fTMPL_005fPREFIX-4857"></a></var><br>
+<blockquote><p>Contains the prefix to be prepended to TLS initializer objects.  The
+default of <code>NULL</code> uses a target-specific prefix. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: tree <b>TARGET_EMUTLS_VAR_FIELDS</b> (<var>tree type, tree *name</var>)<var><a name="index-TARGET_005fEMUTLS_005fVAR_005fFIELDS-4858"></a></var><br>
+<blockquote><p>Specifies a function that generates the FIELD_DECLs for a TLS control
+object type.  <var>type</var> is the RECORD_TYPE the fields are for and
+<var>name</var> should be filled with the structure tag, if the default of
+<code>__emutls_object</code> is unsuitable.  The default creates a type suitable
+for libgcc's emulated TLS function. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: tree <b>TARGET_EMUTLS_VAR_INIT</b> (<var>tree var, tree decl, tree tmpl_addr</var>)<var><a name="index-TARGET_005fEMUTLS_005fVAR_005fINIT-4859"></a></var><br>
+<blockquote><p>Specifies a function that generates the CONSTRUCTOR to initialize a
+TLS control object.  <var>var</var> is the TLS control object, <var>decl</var>
+is the TLS object and <var>tmpl_addr</var> is the address of the
+initializer.  The default initializes libgcc's emulated TLS control object. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_EMUTLS_VAR_ALIGN_FIXED</b><var><a name="index-TARGET_005fEMUTLS_005fVAR_005fALIGN_005fFIXED-4860"></a></var><br>
+<blockquote><p>Specifies whether the alignment of TLS control variable objects is
+fixed and should not be increased as some backends may do to optimize
+single objects.  The default is false. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_EMUTLS_DEBUG_FORM_TLS_ADDRESS</b><var><a name="index-TARGET_005fEMUTLS_005fDEBUG_005fFORM_005fTLS_005fADDRESS-4861"></a></var><br>
+<blockquote><p>Specifies whether a DWARF <code>DW_OP_form_tls_address</code> location descriptor
+may be used to describe emulated TLS control objects. 
+</p></blockquote></div>
+
+ </body></html>
+

@@ -1,0 +1,132 @@
+<html lang="en">
+<head>
+<title>Ada Glitches - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Ada.html#Ada" title="Ada">
+<link rel="prev" href="Ravenscar-Profile.html#Ravenscar-Profile" title="Ravenscar Profile">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Ada-Glitches"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Ravenscar-Profile.html#Ravenscar-Profile">Ravenscar Profile</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Ada.html#Ada">Ada</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">15.4.9.9 Known Peculiarities of Ada Mode</h5>
+
+<p><a name="index-Ada_002c-problems-1033"></a>
+Besides the omissions listed previously (see <a href="Omissions-from-Ada.html#Omissions-from-Ada">Omissions from Ada</a>),
+we know of several problems with and limitations of Ada mode in
+<span class="sc">gdb</span>,
+some of which will be fixed with planned future releases of the debugger
+and the GNU Ada compiler.
+
+     <ul>
+<li>Static constants that the compiler chooses not to materialize as objects in
+storage are invisible to the debugger.
+
+     <li>Named parameter associations in function argument lists are ignored (the
+argument lists are treated as positional).
+
+     <li>Many useful library packages are currently invisible to the debugger.
+
+     <li>Fixed-point arithmetic, conversions, input, and output is carried out using
+floating-point arithmetic, and may give results that only approximate those on
+the host machine.
+
+     <li>The GNAT compiler never generates the prefix <code>Standard</code> for any of
+the standard symbols defined by the Ada language.  <span class="sc">gdb</span> knows about
+this: it will strip the prefix from names when you use it, and will never
+look for a name you have so qualified among local symbols, nor match against
+symbols in other packages or subprograms.  If you have
+defined entities anywhere in your program other than parameters and
+local variables whose simple names match names in <code>Standard</code>,
+GNAT's lack of qualification here can cause confusion.  When this happens,
+you can usually resolve the confusion
+by qualifying the problematic names with package
+<code>Standard</code> explicitly. 
+</ul>
+
+   <p>Older versions of the compiler sometimes generate erroneous debugging
+information, resulting in the debugger incorrectly printing the value
+of affected entities.  In some cases, the debugger is able to work
+around an issue automatically. In other cases, the debugger is able
+to work around the issue, but the work-around has to be specifically
+enabled.
+
+   <p><a name="index-set-ada-trust_002dPAD_002dover_002dXVS-1034"></a><a name="index-show-ada-trust_002dPAD_002dover_002dXVS-1035"></a>
+     <dl>
+<dt><code>set ada trust-PAD-over-XVS on</code><dd>Configure GDB to strictly follow the GNAT encoding when computing the
+value of Ada entities, particularly when <code>PAD</code> and <code>PAD___XVS</code>
+types are involved (see <code>ada/exp_dbug.ads</code> in the GCC sources for
+a complete description of the encoding used by the GNAT compiler). 
+This is the default.
+
+     <br><dt><code>set ada trust-PAD-over-XVS off</code><dd>This is related to the encoding using by the GNAT compiler.  If <span class="sc">gdb</span>
+sometimes prints the wrong value for certain entities, changing <code>ada
+trust-PAD-over-XVS</code> to <code>off</code> activates a work-around which may fix
+the issue.  It is always safe to set <code>ada trust-PAD-over-XVS</code> to
+<code>off</code>, but this incurs a slight performance penalty, so it is
+recommended to leave this setting to <code>on</code> unless necessary.
+
+   </dl>
+
+   <p><a name="index-GNAT-descriptive-types-1036"></a><a name="index-GNAT-encoding-1037"></a>Internally, the debugger also relies on the compiler following a number
+of conventions known as the `<samp><span class="samp">GNAT Encoding</span></samp>', all documented in
+<samp><span class="file">gcc/ada/exp_dbug.ads</span></samp> in the GCC sources. This encoding describes
+how the debugging information should be generated for certain types. 
+In particular, this convention makes use of <dfn>descriptive types</dfn>,
+which are artificial types generated purely to help the debugger.
+
+   <p>These encodings were defined at a time when the debugging information
+format used was not powerful enough to describe some of the more complex
+types available in Ada.  Since DWARF allows us to express nearly all
+Ada features, the long-term goal is to slowly replace these descriptive
+types by their pure DWARF equivalent.  To facilitate that transition,
+a new maintenance option is available to force the debugger to ignore
+those descriptive types.  It allows the user to quickly evaluate how
+well <span class="sc">gdb</span> works without them.
+
+     
+<a name="index-maint-ada-set-ignore_002ddescriptive_002dtypes-1038"></a>
+<dl><dt><code>maintenance ada set ignore-descriptive-types [on|off]</code><dd>Control whether the debugger should ignore descriptive types. 
+The default is not to ignore descriptives types (<code>off</code>).
+
+     <p><a name="index-maint-ada-show-ignore_002ddescriptive_002dtypes-1039"></a><br><dt><code>maintenance ada show ignore-descriptive-types</code><dd>Show if descriptive types are ignored by <span class="sc">gdb</span>.
+
+   </dl>
+
+   </body></html>
+

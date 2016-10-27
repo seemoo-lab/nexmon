@@ -1,0 +1,150 @@
+<html lang="en">
+<head>
+<title>Procedures - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Program-Structure.html#Program-Structure" title="Program Structure">
+<link rel="prev" href="Line-Numbers.html#Line-Numbers" title="Line Numbers">
+<link rel="next" href="Nested-Procedures.html#Nested-Procedures" title="Nested Procedures">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Procedures"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Nested-Procedures.html#Nested-Procedures">Nested Procedures</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Line-Numbers.html#Line-Numbers">Line Numbers</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Program-Structure.html#Program-Structure">Program Structure</a>
+<hr>
+</div>
+
+<h3 class="section">2.5 Procedures</h3>
+
+<p><a name="index-N_005fFUN_002c-for-functions-13"></a><a name="index-N_005fFNAME-14"></a><a name="index-N_005fSTSYM_002c-for-functions-_0028Sun-acc_0029-15"></a><a name="index-N_005fGSYM_002c-for-functions-_0028Sun-acc_0029-16"></a>All of the following stabs normally use the <code>N_FUN</code> symbol type. 
+However, Sun's <code>acc</code> compiler on SunOS4 uses <code>N_GSYM</code> and
+<code>N_STSYM</code>, which means that the value of the stab for the function
+is useless and the debugger must get the address of the function from
+the non-stab symbols instead.  On systems where non-stab symbols have
+leading underscores, the stabs will lack underscores and the debugger
+needs to know about the leading underscore to match up the stab and the
+non-stab symbol.  BSD Fortran is said to use <code>N_FNAME</code> with the
+same restriction; the value of the symbol is not useful (I'm not sure it
+really does use this, because GDB doesn't handle this and no one has
+complained).
+
+   <p><a name="index-C_005fFUN-17"></a>A function is represented by an `<samp><span class="samp">F</span></samp>' symbol descriptor for a global
+(extern) function, and `<samp><span class="samp">f</span></samp>' for a static (local) function.  For
+a.out, the value of the symbol is the address of the start of the
+function; it is already relocated.  For stabs in ELF, the SunPRO
+compiler version 2.0.1 and GCC put out an address which gets relocated
+by the linker.  In a future release SunPRO is planning to put out zero,
+in which case the address can be found from the ELF (non-stab) symbol. 
+Because looking things up in the ELF symbols would probably be slow, I'm
+not sure how to find which symbol of that name is the right one, and
+this doesn't provide any way to deal with nested functions, it would
+probably be better to make the value of the stab an address relative to
+the start of the file, or just absolute.  See <a href="ELF-Linker-Relocation.html#ELF-Linker-Relocation">ELF Linker Relocation</a> for more information on linker relocation of stabs in ELF
+files.  For XCOFF, the stab uses the <code>C_FUN</code> storage class and the
+value of the stab is meaningless; the address of the function can be
+found from the csect symbol (XTY_LD/XMC_PR).
+
+   <p>The type information of the stab represents the return type of the
+function; thus `<samp><span class="samp">foo:f5</span></samp>' means that foo is a function returning type
+5.  There is no need to try to get the line number of the start of the
+function from the stab for the function; it is in the next
+<code>N_SLINE</code> symbol.
+
+<!-- FIXME: verify whether the "I suspect" below is true or not. -->
+<p>Some compilers (such as Sun's Solaris compiler) support an extension for
+specifying the types of the arguments.  I suspect this extension is not
+used for old (non-prototyped) function definitions in C.  If the
+extension is in use, the type information of the stab for the function
+is followed by type information for each argument, with each argument
+preceded by `<samp><span class="samp">;</span></samp>'.  An argument type of 0 means that additional
+arguments are being passed, whose types and number may vary (`<samp><span class="samp">...</span></samp>'
+in ANSI C).  GDB has tolerated this extension (parsed the syntax, if not
+necessarily used the information) since at least version 4.8; I don't
+know whether all versions of dbx tolerate it.  The argument types given
+here are not redundant with the symbols for the formal parameters
+(see <a href="Parameters.html#Parameters">Parameters</a>); they are the types of the arguments as they are
+passed, before any conversions might take place.  For example, if a C
+function which is declared without a prototype takes a <code>float</code>
+argument, the value is passed as a <code>double</code> but then converted to a
+<code>float</code>.  Debuggers need to use the types given in the arguments
+when printing values, but when calling the function they need to use the
+types given in the symbol defining the function.
+
+   <p>If the return type and types of arguments of a function which is defined
+in another source file are specified (i.e., a function prototype in ANSI
+C), traditionally compilers emit no stab; the only way for the debugger
+to find the information is if the source file where the function is
+defined was also compiled with debugging symbols.  As an extension the
+Solaris compiler uses symbol descriptor `<samp><span class="samp">P</span></samp>' followed by the return
+type of the function, followed by the arguments, each preceded by
+`<samp><span class="samp">;</span></samp>', as in a stab with symbol descriptor `<samp><span class="samp">f</span></samp>' or `<samp><span class="samp">F</span></samp>'. 
+This use of symbol descriptor `<samp><span class="samp">P</span></samp>' can be distinguished from its use
+for register parameters (see <a href="Register-Parameters.html#Register-Parameters">Register Parameters</a>) by the fact that it has
+symbol type <code>N_FUN</code>.
+
+   <p>The AIX documentation also defines symbol descriptor `<samp><span class="samp">J</span></samp>' as an
+internal function.  I assume this means a function nested within another
+function.  It also says symbol descriptor `<samp><span class="samp">m</span></samp>' is a module in
+Modula-2 or extended Pascal.
+
+   <p>Procedures (functions which do not return values) are represented as
+functions returning the <code>void</code> type in C.  I don't see why this couldn't
+be used for all languages (inventing a <code>void</code> type for this purpose if
+necessary), but the AIX documentation defines `<samp><span class="samp">I</span></samp>', `<samp><span class="samp">P</span></samp>', and
+`<samp><span class="samp">Q</span></samp>' for internal, global, and static procedures, respectively. 
+These symbol descriptors are unusual in that they are not followed by
+type information.
+
+   <p>The following example shows a stab for a function <code>main</code> which
+returns type number <code>1</code>.  The <code>_main</code> specified for the value
+is a reference to an assembler label which is used to fill in the start
+address of the function.
+
+<pre class="example">     .stabs "main:F1",36,0,0,_main      # <span class="roman">36 is N_FUN</span>
+</pre>
+   <p>The stab representing a procedure is located immediately following the
+code of the procedure.  This stab is in turn directly followed by a
+group of other stabs describing elements of the procedure.  These other
+stabs describe the procedure's parameters, its block local variables, and
+its block structure.
+
+   <p>If functions can appear in different sections, then the debugger may not
+be able to find the end of a function.  Recent versions of GCC will mark
+the end of a function with an <code>N_FUN</code> symbol with an empty string
+for the name.  The value is the address of the end of the current
+function.  Without such a symbol, there is no indication of the address
+of the end of a function, and you must assume that it ended at the
+starting address of the next function or at the end of the text section
+for the program.
+
+   </body></html>
+

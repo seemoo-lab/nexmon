@@ -1,0 +1,124 @@
+<html lang="en">
+<head>
+<title>IPA Protocol Objects - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="In_002dProcess-Agent-Protocol.html#In_002dProcess-Agent-Protocol" title="In-Process Agent Protocol">
+<link rel="next" href="IPA-Protocol-Commands.html#IPA-Protocol-Commands" title="IPA Protocol Commands">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="IPA-Protocol-Objects"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="IPA-Protocol-Commands.html#IPA-Protocol-Commands">IPA Protocol Commands</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="In_002dProcess-Agent-Protocol.html#In_002dProcess-Agent-Protocol">In-Process Agent Protocol</a>
+<hr>
+</div>
+
+<h4 class="subsection">30.1.1 IPA Protocol Objects</h4>
+
+<p><a name="index-ipa-protocol-objects-3054"></a>
+The commands sent to and results received from agent may contain some
+complex data types called <dfn>objects</dfn>.
+
+   <p>The in-process agent is running on the same machine with <span class="sc">gdb</span>
+or GDBserver, so it doesn't have to handle as much differences between
+two ends as remote protocol (see <a href="Remote-Protocol.html#Remote-Protocol">Remote Protocol</a>) tries to handle. 
+However, there are still some differences of two ends in two processes:
+
+     <ol type=1 start=1>
+<li>word size.  On some 64-bit machines, <span class="sc">gdb</span> or GDBserver can be
+compiled as a 64-bit executable, while in-process agent is a 32-bit one. 
+<li>ABI.  Some machines may have multiple types of ABI, <span class="sc">gdb</span> or
+GDBserver is compiled with one, and in-process agent is compiled with
+the other one.
+        </ol>
+
+   <p>Here are the IPA Protocol Objects:
+
+     <ol type=1 start=1>
+<li>agent expression object.  It represents an agent expression
+(see <a href="Agent-Expressions.html#Agent-Expressions">Agent Expressions</a>). 
+<a name="agent-expression-object"></a>
+<li>tracepoint action object.  It represents a tracepoint action
+(see <a href="Tracepoint-Actions.html#Tracepoint-Actions">Tracepoint Action Lists</a>) to collect registers,
+memory, static trace data and to evaluate expression. 
+<a name="tracepoint-action-object"></a>
+<li>tracepoint object.  It represents a tracepoint (see <a href="Tracepoints.html#Tracepoints">Tracepoints</a>). 
+<a name="tracepoint-object"></a>
+
+        </ol>
+
+   <p>The following table describes important attributes of each IPA protocol
+object:
+
+   <p><table summary=""><tr align="left"><th valign="top" width="30%">Name </th><th valign="top" width="20%">Size </th><th valign="top" width="50%">Description
+<br></th></tr><tr align="left"><td valign="top" width="30%"><em>agent expression object</em> </td><td valign="top" width="20%"></td><td valign="top" width="50%">
+<br></td></tr><tr align="left"><td valign="top" width="30%">length </td><td valign="top" width="20%">4 </td><td valign="top" width="50%">length of bytes code
+<br></td></tr><tr align="left"><td valign="top" width="30%">byte code </td><td valign="top" width="20%"><var>length</var> </td><td valign="top" width="50%">contents of byte code
+<br></td></tr><tr align="left"><td valign="top" width="30%"><em>tracepoint action for collecting memory</em> </td><td valign="top" width="20%"></td><td valign="top" width="50%">
+<br></td></tr><tr align="left"><td valign="top" width="30%">'M' </td><td valign="top" width="20%">1 </td><td valign="top" width="50%">type of tracepoint action
+<br></td></tr><tr align="left"><td valign="top" width="30%">addr </td><td valign="top" width="20%">8 </td><td valign="top" width="50%">if <var>basereg</var> is `<samp><span class="samp">-1</span></samp>', <var>addr</var> is the
+address of the lowest byte to collect, otherwise <var>addr</var> is the offset
+of <var>basereg</var> for memory collecting. 
+<br></td></tr><tr align="left"><td valign="top" width="30%">len </td><td valign="top" width="20%">8 </td><td valign="top" width="50%">length of memory for collecting
+<br></td></tr><tr align="left"><td valign="top" width="30%">basereg </td><td valign="top" width="20%">4 </td><td valign="top" width="50%">the register number containing the starting
+memory address for collecting. 
+<br></td></tr><tr align="left"><td valign="top" width="30%"><em>tracepoint action for collecting registers</em> </td><td valign="top" width="20%"></td><td valign="top" width="50%">
+<br></td></tr><tr align="left"><td valign="top" width="30%">'R' </td><td valign="top" width="20%">1 </td><td valign="top" width="50%">type of tracepoint action
+<br></td></tr><tr align="left"><td valign="top" width="30%"><em>tracepoint action for collecting static trace data</em> </td><td valign="top" width="20%"></td><td valign="top" width="50%">
+<br></td></tr><tr align="left"><td valign="top" width="30%">'L' </td><td valign="top" width="20%">1 </td><td valign="top" width="50%">type of tracepoint action
+<br></td></tr><tr align="left"><td valign="top" width="30%"><em>tracepoint action for expression evaluation</em> </td><td valign="top" width="20%"></td><td valign="top" width="50%">
+<br></td></tr><tr align="left"><td valign="top" width="30%">'X' </td><td valign="top" width="20%">1 </td><td valign="top" width="50%">type of tracepoint action
+<br></td></tr><tr align="left"><td valign="top" width="30%">agent expression </td><td valign="top" width="20%">length of </td><td valign="top" width="50%"><a href="agent-expression-object.html#agent-expression-object">agent expression object</a>
+<br></td></tr><tr align="left"><td valign="top" width="30%"><em>tracepoint object</em> </td><td valign="top" width="20%"></td><td valign="top" width="50%">
+<br></td></tr><tr align="left"><td valign="top" width="30%">number </td><td valign="top" width="20%">4 </td><td valign="top" width="50%">number of tracepoint
+<br></td></tr><tr align="left"><td valign="top" width="30%">address </td><td valign="top" width="20%">8 </td><td valign="top" width="50%">address of tracepoint inserted on
+<br></td></tr><tr align="left"><td valign="top" width="30%">type </td><td valign="top" width="20%">4 </td><td valign="top" width="50%">type of tracepoint
+<br></td></tr><tr align="left"><td valign="top" width="30%">enabled </td><td valign="top" width="20%">1 </td><td valign="top" width="50%">enable or disable of tracepoint
+<br></td></tr><tr align="left"><td valign="top" width="30%">step_count </td><td valign="top" width="20%">8 </td><td valign="top" width="50%">step
+<br></td></tr><tr align="left"><td valign="top" width="30%">pass_count </td><td valign="top" width="20%">8 </td><td valign="top" width="50%">pass
+<br></td></tr><tr align="left"><td valign="top" width="30%">numactions </td><td valign="top" width="20%">4 </td><td valign="top" width="50%">number of tracepoint actions
+<br></td></tr><tr align="left"><td valign="top" width="30%">hit count </td><td valign="top" width="20%">8 </td><td valign="top" width="50%">hit count
+<br></td></tr><tr align="left"><td valign="top" width="30%">trace frame usage </td><td valign="top" width="20%">8 </td><td valign="top" width="50%">trace frame usage
+<br></td></tr><tr align="left"><td valign="top" width="30%">compiled_cond </td><td valign="top" width="20%">8 </td><td valign="top" width="50%">compiled condition
+<br></td></tr><tr align="left"><td valign="top" width="30%">orig_size </td><td valign="top" width="20%">8 </td><td valign="top" width="50%">orig size
+<br></td></tr><tr align="left"><td valign="top" width="30%">condition </td><td valign="top" width="20%">4 if condition is NULL otherwise length of
+<a href="agent-expression-object.html#agent-expression-object">agent expression object</a>
+</td><td valign="top" width="50%">zero if condition is NULL, otherwise is
+<a href="agent-expression-object.html#agent-expression-object">agent expression object</a>
+<br></td></tr><tr align="left"><td valign="top" width="30%">actions </td><td valign="top" width="20%">variable
+</td><td valign="top" width="50%">numactions number of <a href="tracepoint-action-object.html#tracepoint-action-object">tracepoint action object</a>
+   <br></td></tr></table>
+
+   </body></html>
+

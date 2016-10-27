@@ -1,0 +1,77 @@
+<html lang="en">
+<head>
+<title>Transformations On Global Variables - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Transformations-On-Symbol-Tables.html#Transformations-On-Symbol-Tables" title="Transformations On Symbol Tables">
+<link rel="prev" href="Transformations-On-Static-Variables.html#Transformations-On-Static-Variables" title="Transformations On Static Variables">
+<link rel="next" href="Stab-Section-Transformations.html#Stab-Section-Transformations" title="Stab Section Transformations">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Transformations-On-Global-Variables"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Stab-Section-Transformations.html#Stab-Section-Transformations">Stab Section Transformations</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Transformations-On-Static-Variables.html#Transformations-On-Static-Variables">Transformations On Static Variables</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Transformations-On-Symbol-Tables.html#Transformations-On-Symbol-Tables">Transformations On Symbol Tables</a>
+<hr>
+</div>
+
+<h4 class="subsection">7.2.2 Transformations on Global Variables</h4>
+
+<p>Stabs for global variables do not contain location information. In
+this case, the debugger finds location information in the assembler or
+linker symbol table entry describing the variable.  The source line:
+
+<pre class="example">     char g_foo = 'c';
+</pre>
+   <p class="noindent">generates the stab:
+
+<pre class="example">     .stabs "g_foo:G2",32,0,0,0
+</pre>
+   <p>The variable is represented by two symbol table entries in the object
+file (see below).  The first one originated as a stab.  The second one
+is an external symbol.  The upper case `<samp><span class="samp">D</span></samp>' signifies that the
+<code>n_type</code> field of the symbol table contains 7, <code>N_DATA</code> with
+local linkage.  The stab's value is zero since the value is not used for
+<code>N_GSYM</code> stabs.  The value of the linker symbol is the relocatable
+address corresponding to the variable.
+
+<pre class="example">     00000000 - 00 0000  GSYM g_foo:G2
+     00000080 D _g_foo
+</pre>
+   <p class="noindent">These entries as transformed by the linker.  The linker symbol table
+entry now holds an absolute address:
+
+<pre class="example">     00000000 - 00 0000  GSYM g_foo:G2
+     ...
+     0000e008 D _g_foo
+</pre>
+   </body></html>
+

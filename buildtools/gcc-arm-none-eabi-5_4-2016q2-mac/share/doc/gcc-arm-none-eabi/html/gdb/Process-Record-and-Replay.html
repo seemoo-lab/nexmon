@@ -1,0 +1,435 @@
+<html lang="en">
+<head>
+<title>Process Record and Replay - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Reverse-Execution.html#Reverse-Execution" title="Reverse Execution">
+<link rel="next" href="Stack.html#Stack" title="Stack">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Process-Record-and-Replay"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Stack.html#Stack">Stack</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Reverse-Execution.html#Reverse-Execution">Reverse Execution</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">7 Recording Inferior's Execution and Replaying It</h2>
+
+<p><a name="index-process-record-and-replay-426"></a><a name="index-recording-inferior_0027s-execution-and-replaying-it-427"></a>
+On some platforms, <span class="sc">gdb</span> provides a special <dfn>process record
+and replay</dfn> target that can record a log of the process execution, and
+replay it later with both forward and reverse execution commands.
+
+   <p><a name="index-replay-mode-428"></a>When this target is in use, if the execution log includes the record
+for the next instruction, <span class="sc">gdb</span> will debug in <dfn>replay
+mode</dfn>.  In the replay mode, the inferior does not really execute code
+instructions.  Instead, all the events that normally happen during
+code execution are taken from the execution log.  While code is not
+really executed in replay mode, the values of registers (including the
+program counter register) and the memory of the inferior are still
+changed as they normally would.  Their contents are taken from the
+execution log.
+
+   <p><a name="index-record-mode-429"></a>If the record for the next instruction is not in the execution log,
+<span class="sc">gdb</span> will debug in <dfn>record mode</dfn>.  In this mode, the
+inferior executes normally, and <span class="sc">gdb</span> records the execution log
+for future replay.
+
+   <p>The process record and replay target supports reverse execution
+(see <a href="Reverse-Execution.html#Reverse-Execution">Reverse Execution</a>), even if the platform on which the
+inferior runs does not.  However, the reverse execution is limited in
+this case by the range of the instructions recorded in the execution
+log.  In other words, reverse execution on platforms that don't
+support it directly can only be done in the replay mode.
+
+   <p>When debugging in the reverse direction, <span class="sc">gdb</span> will work in
+replay mode as long as the execution log includes the record for the
+previous instruction; otherwise, it will work in record mode, if the
+platform supports reverse execution, or stop if not.
+
+   <p>For architecture environments that support process record and replay,
+<span class="sc">gdb</span> provides the following commands:
+
+     
+<a name="index-target-record-430"></a>
+<a name="index-target-record_002dfull-431"></a>
+<a name="index-target-record_002dbtrace-432"></a>
+<a name="index-record-433"></a>
+<a name="index-record-full-434"></a>
+<a name="index-record-btrace-435"></a>
+<a name="index-record-btrace-bts-436"></a>
+<a name="index-record-btrace-pt-437"></a>
+<a name="index-record-bts-438"></a>
+<a name="index-record-pt-439"></a>
+<a name="index-rec-440"></a>
+<a name="index-rec-full-441"></a>
+<a name="index-rec-btrace-442"></a>
+<a name="index-rec-btrace-bts-443"></a>
+<a name="index-rec-btrace-pt-444"></a>
+<a name="index-rec-bts-445"></a>
+<a name="index-rec-pt-446"></a>
+<dl><dt><code>record </code><var>method</var><dd>This command starts the process record and replay target.  The
+recording method can be specified as parameter.  Without a parameter
+the command uses the <code>full</code> recording method.  The following
+recording methods are available:
+
+          <dl>
+<dt><code>full</code><dd>Full record/replay recording using <span class="sc">gdb</span>'s software record and
+replay implementation.  This method allows replaying and reverse
+execution.
+
+          <br><dt><code>btrace </code><var>format</var><dd>Hardware-supported instruction recording.  This method does not record
+data.  Further, the data is collected in a ring buffer so old data will
+be overwritten when the buffer is full.  It allows limited reverse
+execution.  Variables and registers are not available during reverse
+execution.
+
+          <p>The recording format can be specified as parameter.  Without a parameter
+the command chooses the recording format.  The following recording
+formats are available:
+
+               <dl>
+<dt><code>bts</code><dd><a name="index-branch-trace-store-447"></a>Use the <dfn>Branch Trace Store</dfn> (<acronym>BTS</acronym>) recording format.  In
+this format, the processor stores a from/to record for each executed
+branch in the btrace ring buffer.
+
+               <br><dt><code>pt</code><dd><a name="index-Intel_0028R_0029-Processor-Trace-448"></a>Use the <dfn>Intel(R) Processor Trace</dfn> recording format.  In this
+format, the processor stores the execution trace in a compressed form
+that is afterwards decoded by <span class="sc">gdb</span>.
+
+               <p>The trace can be recorded with very low overhead.  The compressed
+trace format also allows small trace buffers to already contain a big
+number of instructions compared to <acronym>BTS</acronym>.
+
+               <p>Decoding the recorded execution trace, on the other hand, is more
+expensive than decoding <acronym>BTS</acronym> trace.  This is mostly due to the
+increased number of instructions to process.  You should increase the
+buffer-size with care. 
+</dl>
+
+          <p>Not all recording formats may be available on all processors. 
+</dl>
+
+     <p>The process record and replay target can only debug a process that is
+already running.  Therefore, you need first to start the process with
+the <kbd>run</kbd> or <kbd>start</kbd> commands, and then start the recording
+with the <kbd>record </kbd><var>method</var> command.
+
+     <p><a name="index-displaced-stepping_002c-and-process-record-and-replay-449"></a>Displaced stepping (see <a href="Maintenance-Commands.html#Maintenance-Commands">displaced stepping</a>)
+will be automatically disabled when process record and replay target
+is started.  That's because the process record and replay target
+doesn't support displaced stepping.
+
+     <p><a name="index-non_002dstop-mode_002c-and-process-record-and-replay-450"></a><a name="index-asynchronous-execution_002c-and-process-record-and-replay-451"></a>If the inferior is in the non-stop mode (see <a href="Non_002dStop-Mode.html#Non_002dStop-Mode">Non-Stop Mode</a>) or in
+the asynchronous execution mode (see <a href="Background-Execution.html#Background-Execution">Background Execution</a>), not
+all recording methods are available.  The <code>full</code> recording method
+does not support these two modes.
+
+     <p><a name="index-record-stop-452"></a><a name="index-rec-s-453"></a><br><dt><code>record stop</code><dd>Stop the process record and replay target.  When process record and
+replay target stops, the entire execution log will be deleted and the
+inferior will either be terminated, or will remain in its final state.
+
+     <p>When you stop the process record and replay target in record mode (at
+the end of the execution log), the inferior will be stopped at the
+next instruction that would have been recorded.  In other words, if
+you record for a while and then stop recording, the inferior process
+will be left in the same state as if the recording never happened.
+
+     <p>On the other hand, if the process record and replay target is stopped
+while in replay mode (that is, not at the end of the execution log,
+but at some earlier point), the inferior process will become &ldquo;live&rdquo;
+at that earlier state, and it will then be possible to continue the
+usual &ldquo;live&rdquo; debugging of the process from that state.
+
+     <p>When the inferior process exits, or <span class="sc">gdb</span> detaches from it,
+process record and replay target will automatically stop itself.
+
+     <p><a name="index-record-goto-454"></a><br><dt><code>record goto</code><dd>Go to a specific location in the execution log.  There are several
+ways to specify the location to go to:
+
+          <dl>
+<dt><code>record goto begin</code><dt><code>record goto start</code><dd>Go to the beginning of the execution log.
+
+          <br><dt><code>record goto end</code><dd>Go to the end of the execution log.
+
+          <br><dt><code>record goto </code><var>n</var><dd>Go to instruction number <var>n</var> in the execution log. 
+</dl>
+
+     <p><a name="index-record-save-455"></a><br><dt><code>record save </code><var>filename</var><dd>Save the execution log to a file <samp><var>filename</var></samp>. 
+Default filename is <samp><span class="file">gdb_record.</span><var>process_id</var></samp>, where
+<var>process_id</var> is the process ID of the inferior.
+
+     <p>This command may not be available for all recording methods.
+
+     <p><a name="index-record-restore-456"></a><br><dt><code>record restore </code><var>filename</var><dd>Restore the execution log from a file <samp><var>filename</var></samp>. 
+File must have been created with <code>record save</code>.
+
+     <p><a name="index-set-record-full-457"></a><br><dt><code>set record full insn-number-max </code><var>limit</var><dt><code>set record full insn-number-max unlimited</code><dd>Set the limit of instructions to be recorded for the <code>full</code>
+recording method.  Default value is 200000.
+
+     <p>If <var>limit</var> is a positive number, then <span class="sc">gdb</span> will start
+deleting instructions from the log once the number of the record
+instructions becomes greater than <var>limit</var>.  For every new recorded
+instruction, <span class="sc">gdb</span> will delete the earliest recorded
+instruction to keep the number of recorded instructions at the limit. 
+(Since deleting recorded instructions loses information, <span class="sc">gdb</span>
+lets you control what happens when the limit is reached, by means of
+the <code>stop-at-limit</code> option, described below.)
+
+     <p>If <var>limit</var> is <code>unlimited</code> or zero, <span class="sc">gdb</span> will never
+delete recorded instructions from the execution log.  The number of
+recorded instructions is limited only by the available memory.
+
+     <p><a name="index-show-record-full-458"></a><br><dt><code>show record full insn-number-max</code><dd>Show the limit of instructions to be recorded with the <code>full</code>
+recording method.
+
+     <br><dt><code>set record full stop-at-limit</code><dd>Control the behavior of the  <code>full</code> recording method when the
+number of recorded instructions reaches the limit.  If ON (the
+default), <span class="sc">gdb</span> will stop when the limit is reached for the
+first time and ask you whether you want to stop the inferior or
+continue running it and recording the execution log.  If you decide
+to continue recording, each new recorded instruction will cause the
+oldest one to be deleted.
+
+     <p>If this option is OFF, <span class="sc">gdb</span> will automatically delete the
+oldest record to make room for each new one, without asking.
+
+     <br><dt><code>show record full stop-at-limit</code><dd>Show the current setting of <code>stop-at-limit</code>.
+
+     <br><dt><code>set record full memory-query</code><dd>Control the behavior when <span class="sc">gdb</span> is unable to record memory
+changes caused by an instruction for the <code>full</code> recording method. 
+If ON, <span class="sc">gdb</span> will query whether to stop the inferior in that
+case.
+
+     <p>If this option is OFF (the default), <span class="sc">gdb</span> will automatically
+ignore the effect of such instructions on memory.  Later, when
+<span class="sc">gdb</span> replays this execution log, it will mark the log of this
+instruction as not accessible, and it will not affect the replay
+results.
+
+     <br><dt><code>show record full memory-query</code><dd>Show the current setting of <code>memory-query</code>.
+
+     <p><a name="index-set-record-btrace-459"></a>The <code>btrace</code> record target does not trace data.  As a
+convenience, when replaying, <span class="sc">gdb</span> reads read-only memory off
+the live program directly, assuming that the addresses of the
+read-only areas don't change.  This for example makes it possible to
+disassemble code while replaying, but not to print variables. 
+In some cases, being able to inspect variables might be useful. 
+You can use the following command for that:
+
+     <br><dt><code>set record btrace replay-memory-access</code><dd>Control the behavior of the <code>btrace</code> recording method when
+accessing memory during replay.  If <code>read-only</code> (the default),
+<span class="sc">gdb</span> will only allow accesses to read-only memory. 
+If <code>read-write</code>, <span class="sc">gdb</span> will allow accesses to read-only
+and to read-write memory.  Beware that the accessed memory corresponds
+to the live target and not necessarily to the current replay
+position.
+
+     <p><a name="index-show-record-btrace-460"></a><br><dt><code>show record btrace replay-memory-access</code><dd>Show the current setting of <code>replay-memory-access</code>.
+
+     <p><a name="index-set-record-btrace-bts-461"></a><br><dt><code>set record btrace bts buffer-size </code><var>size</var><dt><code>set record btrace bts buffer-size unlimited</code><dd>Set the requested ring buffer size for branch tracing in <acronym>BTS</acronym>
+format.  Default is 64KB.
+
+     <p>If <var>size</var> is a positive number, then <span class="sc">gdb</span> will try to
+allocate a buffer of at least <var>size</var> bytes for each new thread
+that uses the btrace recording method and the <acronym>BTS</acronym> format. 
+The actually obtained buffer size may differ from the requested
+<var>size</var>.  Use the <code>info record</code> command to see the actual
+buffer size for each thread that uses the btrace recording method and
+the <acronym>BTS</acronym> format.
+
+     <p>If <var>limit</var> is <code>unlimited</code> or zero, <span class="sc">gdb</span> will try to
+allocate a buffer of 4MB.
+
+     <p>Bigger buffers mean longer traces.  On the other hand, <span class="sc">gdb</span> will
+also need longer to process the branch trace data before it can be used.
+
+     <br><dt><code>show record btrace bts buffer-size </code><var>size</var><dd>Show the current setting of the requested ring buffer size for branch
+tracing in <acronym>BTS</acronym> format.
+
+     <p><a name="index-set-record-btrace-pt-462"></a><br><dt><code>set record btrace pt buffer-size </code><var>size</var><dt><code>set record btrace pt buffer-size unlimited</code><dd>Set the requested ring buffer size for branch tracing in Intel(R)
+Processor Trace format.  Default is 16KB.
+
+     <p>If <var>size</var> is a positive number, then <span class="sc">gdb</span> will try to
+allocate a buffer of at least <var>size</var> bytes for each new thread
+that uses the btrace recording method and the Intel(R) Processor Trace
+format.  The actually obtained buffer size may differ from the
+requested <var>size</var>.  Use the <code>info record</code> command to see the
+actual buffer size for each thread.
+
+     <p>If <var>limit</var> is <code>unlimited</code> or zero, <span class="sc">gdb</span> will try to
+allocate a buffer of 4MB.
+
+     <p>Bigger buffers mean longer traces.  On the other hand, <span class="sc">gdb</span> will
+also need longer to process the branch trace data before it can be used.
+
+     <br><dt><code>show record btrace pt buffer-size </code><var>size</var><dd>Show the current setting of the requested ring buffer size for branch
+tracing in Intel(R) Processor Trace format.
+
+     <p><a name="index-info-record-463"></a><br><dt><code>info record</code><dd>Show various statistics about the recording depending on the recording
+method:
+
+          <dl>
+<dt><code>full</code><dd>For the <code>full</code> recording method, it shows the state of process
+record and its in-memory execution log buffer, including:
+
+               <ul>
+<li>Whether in record mode or replay mode. 
+<li>Lowest recorded instruction number (counting from when the current execution log started recording instructions). 
+<li>Highest recorded instruction number. 
+<li>Current instruction about to be replayed (if in replay mode). 
+<li>Number of instructions contained in the execution log. 
+<li>Maximum number of instructions that may be contained in the execution log. 
+</ul>
+
+          <br><dt><code>btrace</code><dd>For the <code>btrace</code> recording method, it shows:
+
+               <ul>
+<li>Recording format. 
+<li>Number of instructions that have been recorded. 
+<li>Number of blocks of sequential control-flow formed by the recorded
+instructions. 
+<li>Whether in record mode or replay mode. 
+</ul>
+
+          <p>For the <code>bts</code> recording format, it also shows:
+               <ul>
+<li>Size of the perf ring buffer. 
+</ul>
+
+          <p>For the <code>pt</code> recording format, it also shows:
+               <ul>
+<li>Size of the perf ring buffer. 
+</ul>
+          </dl>
+
+     <p><a name="index-record-delete-464"></a><a name="index-rec-del-465"></a><br><dt><code>record delete</code><dd>When record target runs in replay mode (&ldquo;in the past&rdquo;), delete the
+subsequent execution log and begin to record a new execution log starting
+from the current address.  This means you will abandon the previously
+recorded &ldquo;future&rdquo; and begin recording a new &ldquo;future&rdquo;.
+
+     <p><a name="index-record-instruction_002dhistory-466"></a><a name="index-rec-instruction_002dhistory-467"></a><br><dt><code>record instruction-history</code><dd>Disassembles instructions from the recorded execution log.  By
+default, ten instructions are disassembled.  This can be changed using
+the <code>set record instruction-history-size</code> command.  Instructions
+are printed in execution order.  There are several ways to specify
+what part of the execution log to disassemble:
+
+          <dl>
+<dt><code>record instruction-history </code><var>insn</var><dd>Disassembles ten instructions starting from instruction number
+<var>insn</var>.
+
+          <br><dt><code>record instruction-history </code><var>insn</var><code>, +/-</code><var>n</var><dd>Disassembles <var>n</var> instructions around instruction number
+<var>insn</var>.  If <var>n</var> is preceded with <code>+</code>, disassembles
+<var>n</var> instructions after instruction number <var>insn</var>.  If
+<var>n</var> is preceded with <code>-</code>, disassembles <var>n</var>
+instructions before instruction number <var>insn</var>.
+
+          <br><dt><code>record instruction-history</code><dd>Disassembles ten more instructions after the last disassembly.
+
+          <br><dt><code>record instruction-history -</code><dd>Disassembles ten more instructions before the last disassembly.
+
+          <br><dt><code>record instruction-history </code><var>begin</var> <var>end</var><dd>Disassembles instructions beginning with instruction number
+<var>begin</var> until instruction number <var>end</var>.  The instruction
+number <var>end</var> is included. 
+</dl>
+
+     <p>This command may not be available for all recording methods.
+
+     <p><a name="index-set-record-468"></a><br><dt><code>set record instruction-history-size </code><var>size</var><dt><code>set record instruction-history-size unlimited</code><dd>Define how many instructions to disassemble in the <code>record
+instruction-history</code> command.  The default value is 10. 
+A <var>size</var> of <code>unlimited</code> means unlimited instructions.
+
+     <p><a name="index-show-record-469"></a><br><dt><code>show record instruction-history-size</code><dd>Show how many instructions to disassemble in the <code>record
+instruction-history</code> command.
+
+     <p><a name="index-record-function_002dcall_002dhistory-470"></a><a name="index-rec-function_002dcall_002dhistory-471"></a><br><dt><code>record function-call-history</code><dd>Prints the execution history at function granularity. It prints one
+line for each sequence of instructions that belong to the same
+function giving the name of that function, the source lines
+for this instruction sequence (if the <code>/l</code> modifier is
+specified), and the instructions numbers that form the sequence (if
+the <code>/i</code> modifier is specified).  The function names are indented
+to reflect the call stack depth if the <code>/c</code> modifier is
+specified.  The <code>/l</code>, <code>/i</code>, and <code>/c</code> modifiers can be
+given together.
+
+     <pre class="smallexample">          (gdb) <b>list 1, 10</b>
+          1   void foo (void)
+          2   {
+          3   }
+          4
+          5   void bar (void)
+          6   {
+          7     ...
+          8     foo ();
+          9     ...
+          10  }
+          (gdb) <b>record function-call-history /ilc</b>
+          1  bar     inst 1,4     at foo.c:6,8
+          2    foo   inst 5,10    at foo.c:2,3
+          3  bar     inst 11,13   at foo.c:9,10
+     </pre>
+     <p>By default, ten lines are printed.  This can be changed using the
+<code>set record function-call-history-size</code> command.  Functions are
+printed in execution order.  There are several ways to specify what
+to print:
+
+          <dl>
+<dt><code>record function-call-history </code><var>func</var><dd>Prints ten functions starting from function number <var>func</var>.
+
+          <br><dt><code>record function-call-history </code><var>func</var><code>, +/-</code><var>n</var><dd>Prints <var>n</var> functions around function number <var>func</var>.  If
+<var>n</var> is preceded with <code>+</code>, prints <var>n</var> functions after
+function number <var>func</var>.  If <var>n</var> is preceded with <code>-</code>,
+prints <var>n</var> functions before function number <var>func</var>.
+
+          <br><dt><code>record function-call-history</code><dd>Prints ten more functions after the last ten-line print.
+
+          <br><dt><code>record function-call-history -</code><dd>Prints ten more functions before the last ten-line print.
+
+          <br><dt><code>record function-call-history </code><var>begin</var> <var>end</var><dd>Prints functions beginning with function number <var>begin</var> until
+function number <var>end</var>.  The function number <var>end</var> is included. 
+</dl>
+
+     <p>This command may not be available for all recording methods.
+
+     <br><dt><code>set record function-call-history-size </code><var>size</var><dt><code>set record function-call-history-size unlimited</code><dd>Define how many lines to print in the
+<code>record function-call-history</code> command.  The default value is 10. 
+A size of <code>unlimited</code> means unlimited lines.
+
+     <br><dt><code>show record function-call-history-size</code><dd>Show how many lines to print in the
+<code>record function-call-history</code> command. 
+</dl>
+
+   </body></html>
+

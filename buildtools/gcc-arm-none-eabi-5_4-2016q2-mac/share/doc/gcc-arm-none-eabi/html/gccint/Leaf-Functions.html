@@ -1,0 +1,120 @@
+<html lang="en">
+<head>
+<title>Leaf Functions - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Registers.html#Registers" title="Registers">
+<link rel="prev" href="Values-in-Registers.html#Values-in-Registers" title="Values in Registers">
+<link rel="next" href="Stack-Registers.html#Stack-Registers" title="Stack Registers">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Leaf-Functions"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Stack-Registers.html#Stack-Registers">Stack Registers</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Values-in-Registers.html#Values-in-Registers">Values in Registers</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Registers.html#Registers">Registers</a>
+<hr>
+</div>
+
+<h4 class="subsection">17.7.4 Handling Leaf Functions</h4>
+
+<p><a name="index-leaf-functions-4088"></a><a name="index-functions_002c-leaf-4089"></a>On some machines, a leaf function (i.e., one which makes no calls) can run
+more efficiently if it does not make its own register window.  Often this
+means it is required to receive its arguments in the registers where they
+are passed by the caller, instead of the registers where they would
+normally arrive.
+
+ <p>The special treatment for leaf functions generally applies only when
+other conditions are met; for example, often they may use only those
+registers for its own variables and temporaries.  We use the term &ldquo;leaf
+function&rdquo; to mean a function that is suitable for this special
+handling, so that functions with no calls are not necessarily &ldquo;leaf
+functions&rdquo;.
+
+ <p>GCC assigns register numbers before it knows whether the function is
+suitable for leaf function treatment.  So it needs to renumber the
+registers in order to output a leaf function.  The following macros
+accomplish this.
+
+<div class="defun">
+&mdash; Macro: <b>LEAF_REGISTERS</b><var><a name="index-LEAF_005fREGISTERS-4090"></a></var><br>
+<blockquote><p>Name of a char vector, indexed by hard register number, which
+contains 1 for a register that is allowable in a candidate for leaf
+function treatment.
+
+      <p>If leaf function treatment involves renumbering the registers, then the
+registers marked here should be the ones before renumbering&mdash;those that
+GCC would ordinarily allocate.  The registers which will actually be
+used in the assembler code, after renumbering, should not be marked with 1
+in this vector.
+
+      <p>Define this macro only if the target machine offers a way to optimize
+the treatment of leaf functions. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>LEAF_REG_REMAP</b> (<var>regno</var>)<var><a name="index-LEAF_005fREG_005fREMAP-4091"></a></var><br>
+<blockquote><p>A C expression whose value is the register number to which <var>regno</var>
+should be renumbered, when a function is treated as a leaf function.
+
+      <p>If <var>regno</var> is a register number which should not appear in a leaf
+function before renumbering, then the expression should yield &minus;1, which
+will cause the compiler to abort.
+
+      <p>Define this macro only if the target machine offers a way to optimize the
+treatment of leaf functions, and registers need to be renumbered to do
+this. 
+</p></blockquote></div>
+
+ <p><a name="index-current_005ffunction_005fis_005fleaf-4092"></a><a name="index-current_005ffunction_005fuses_005fonly_005fleaf_005fregs-4093"></a><code>TARGET_ASM_FUNCTION_PROLOGUE</code> and
+<code>TARGET_ASM_FUNCTION_EPILOGUE</code> must usually treat leaf functions
+specially.  They can test the C variable <code>current_function_is_leaf</code>
+which is nonzero for leaf functions.  <code>current_function_is_leaf</code> is
+set prior to local register allocation and is valid for the remaining
+compiler passes.  They can also test the C variable
+<code>current_function_uses_only_leaf_regs</code> which is nonzero for leaf
+functions which only use leaf registers. 
+<code>current_function_uses_only_leaf_regs</code> is valid after all passes
+that modify the instructions have been run and is only useful if
+<code>LEAF_REGISTERS</code> is defined. 
+<!-- changed this to fix overfull.  ALSO:  why the "it" at the beginning -->
+<!-- of the next paragraph?!  -mew 2feb93 -->
+
+ </body></html>
+

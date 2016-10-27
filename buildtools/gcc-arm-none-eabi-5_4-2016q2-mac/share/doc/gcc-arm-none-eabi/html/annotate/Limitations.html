@@ -1,0 +1,105 @@
+<html lang="en">
+<head>
+<title>Limitations - GDB's Obsolete Annotations</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GDB's Obsolete Annotations">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Annotations-Overview.html#Annotations-Overview" title="Annotations Overview">
+<link rel="next" href="Migrating-to-GDB_002fMI.html#Migrating-to-GDB_002fMI" title="Migrating to GDB/MI">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1994-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Limitations"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Migrating-to-GDB_002fMI.html#Migrating-to-GDB_002fMI">Migrating to GDB/MI</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Annotations-Overview.html#Annotations-Overview">Annotations Overview</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">2 Limitations of the Annotation Interface</h2>
+
+<p>The level two annotations mechanism is known to have a number of
+technical and architectural limitations.  As a consequence, in 2001,
+with the release of <span class="sc">gdb</span> 5.1 and the addition of <span class="sc">gdb/mi</span>,
+the annotation interface was marked as deprecated.
+
+   <p>This chapter discusses the known problems.
+
+<h3 class="section">2.1 Dependant on <span class="sc">cli</span> output</h3>
+
+<p>The annotation interface works by interspersing markups with
+<span class="sc">gdb</span> normal command-line interpreter output.  Unfortunately, this
+makes the annotation client dependant on not just the annotations, but
+also the <span class="sc">cli</span> output.  This is because the client is forced to
+assume that specific <span class="sc">gdb</span> commands provide specific information. 
+Any change to <span class="sc">gdb</span>'s <span class="sc">cli</span> output modifies or removes that
+information and, consequently, likely breaks the client.
+
+   <p>Since the <span class="sc">gdb/mi</span> output is independent of the <span class="sc">cli</span>, it does not
+have this problem.
+
+<h3 class="section">2.2 Scalability</h3>
+
+<p>The annotation interface relies on value annotations (see <a href="Value-Annotations.html#Value-Annotations">Value Annotations</a>) and the display mechanism as a way of obtaining up-to-date
+value information.  These mechanisms are not scalable.
+
+   <p>In a graphical environment, where many values can be displayed
+simultaneously, a serious performance problem occurs when the client
+tries to first extract from <span class="sc">gdb</span>, and then re-display, all those
+values.  The client should instead only request and update the values
+that changed.
+
+   <p>The <span class="sc">gdb/mi</span> Variable Objects provide just that mechanism.
+
+<h3 class="section">2.3 Correctness</h3>
+
+<p>The annotation interface assumes that a variable's value can only be
+changed when the target is running.  This assumption is not correct.  A
+single assignment to a single variable can result in the entire target,
+and all displayed values, needing an update.
+
+   <p>The <span class="sc">gdb/mi</span> Variable Objects include a mechanism for efficiently
+reporting such changes.
+
+<h3 class="section">2.4 Reliability</h3>
+
+<p>The <span class="sc">gdb/mi</span> interface includes a dedicated test directory
+(<samp><span class="file">gdb/gdb.mi</span></samp>), and any addition or fix to <span class="sc">gdb/mi</span> must include
+testsuite changes.
+
+<h3 class="section">2.5 Maintainability</h3>
+
+<p>The annotation mechanism was implemented by interspersing <span class="sc">cli</span> print
+statements with various annotations.  As a consequence, any <span class="sc">cli</span>
+output change can alter the annotation output.
+
+   <p>Since the <span class="sc">gdb/mi</span> output is independent of the <span class="sc">cli</span>, and the
+<span class="sc">gdb/mi</span> is increasingly implemented independent of the <span class="sc">cli</span>
+code, its long term maintenance is much easier.
+
+   </body></html>
+

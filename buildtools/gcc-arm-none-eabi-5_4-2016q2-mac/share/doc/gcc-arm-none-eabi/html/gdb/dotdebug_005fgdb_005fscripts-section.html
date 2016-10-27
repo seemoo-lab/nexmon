@@ -1,0 +1,139 @@
+<html lang="en">
+<head>
+<title>dotdebug_gdb_scripts section - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Auto_002dloading-extensions.html#Auto_002dloading-extensions" title="Auto-loading extensions">
+<link rel="prev" href="objfile_002dgdbdotext-file.html#objfile_002dgdbdotext-file" title="objfile-gdbdotext file">
+<link rel="next" href="Which-flavor-to-choose_003f.html#Which-flavor-to-choose_003f" title="Which flavor to choose?">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="dotdebug_gdb_scripts-section"></a>
+<a name="dotdebug_005fgdb_005fscripts-section"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Which-flavor-to-choose_003f.html#Which-flavor-to-choose_003f">Which flavor to choose?</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="objfile_002dgdbdotext-file.html#objfile_002dgdbdotext-file">objfile-gdbdotext file</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Auto_002dloading-extensions.html#Auto_002dloading-extensions">Auto-loading extensions</a>
+<hr>
+</div>
+
+<h4 class="subsection">23.4.2 The <code>.debug_gdb_scripts</code> section</h4>
+
+<p><a name="index-g_t_0040code_007b_002edebug_005fgdb_005fscripts_007d-section-2787"></a>
+For systems using file formats like ELF and COFF,
+when <span class="sc">gdb</span> loads a new object file
+it will look for a special section named <code>.debug_gdb_scripts</code>. 
+If this section exists, its contents is a list of null-terminated entries
+specifying scripts to load.  Each entry begins with a non-null prefix byte that
+specifies the kind of entry, typically the extension language and whether the
+script is in a file or inlined in <code>.debug_gdb_scripts</code>.
+
+   <p>The following entries are supported:
+
+     <dl>
+<dt><code>SECTION_SCRIPT_ID_PYTHON_FILE = 1</code><br><dt><code>SECTION_SCRIPT_ID_SCHEME_FILE = 3</code><br><dt><code>SECTION_SCRIPT_ID_PYTHON_TEXT = 4</code><br><dt><code>SECTION_SCRIPT_ID_SCHEME_TEXT = 6</code><dd></dl>
+
+<h5 class="subsubsection">23.4.2.1 Script File Entries</h5>
+
+<p>If the entry specifies a file, <span class="sc">gdb</span> will look for the file first
+in the current directory and then along the source search path
+(see <a href="Source-Path.html#Source-Path">Specifying Source Directories</a>),
+except that <samp><span class="file">$cdir</span></samp> is not searched, since the compilation
+directory is not relevant to scripts.
+
+   <p>File entries can be placed in section <code>.debug_gdb_scripts</code> with,
+for example, this GCC macro for Python scripts.
+
+<pre class="example">     /* Note: The "MS" section flags are to remove duplicates.  */
+     #define DEFINE_GDB_PY_SCRIPT(script_name) \
+       asm("\
+     .pushsection \".debug_gdb_scripts\", \"MS\",@progbits,1\n\
+     .byte 1 /* Python */\n\
+     .asciz \"" script_name "\"\n\
+     .popsection \n\
+     ");
+</pre>
+   <p class="noindent">For Guile scripts, replace <code>.byte 1</code> with <code>.byte 3</code>. 
+Then one can reference the macro in a header or source file like this:
+
+<pre class="example">     DEFINE_GDB_PY_SCRIPT ("my-app-scripts.py")
+</pre>
+   <p>The script name may include directories if desired.
+
+   <p>Note that loading of this script file also requires accordingly configured
+<code>auto-load safe-path</code> (see <a href="Auto_002dloading-safe-path.html#Auto_002dloading-safe-path">Auto-loading safe path</a>).
+
+   <p>If the macro invocation is put in a header, any application or library
+using this header will get a reference to the specified script,
+and with the use of <code>"MS"</code> attributes on the section, the linker
+will remove duplicates.
+
+<h5 class="subsubsection">23.4.2.2 Script Text Entries</h5>
+
+<p>Script text entries allow to put the executable script in the entry
+itself instead of loading it from a file. 
+The first line of the entry, everything after the prefix byte and up to
+the first newline (<code>0xa</code>) character, is the script name, and must not
+contain any kind of space character, e.g., spaces or tabs. 
+The rest of the entry, up to the trailing null byte, is the script to
+execute in the specified language.  The name needs to be unique among
+all script names, as <span class="sc">gdb</span> executes each script only once based
+on its name.
+
+   <p>Here is an example from file <samp><span class="file">py-section-script.c</span></samp> in the <span class="sc">gdb</span>
+testsuite.
+
+<pre class="example">     #include "symcat.h"
+     #include "gdb/section-scripts.h"
+     asm(
+     ".pushsection \".debug_gdb_scripts\", \"MS\",@progbits,1\n"
+     ".byte " XSTRING (SECTION_SCRIPT_ID_PYTHON_TEXT) "\n"
+     ".ascii \"gdb.inlined-script\\n\"\n"
+     ".ascii \"class test_cmd (gdb.Command):\\n\"\n"
+     ".ascii \"  def __init__ (self):\\n\"\n"
+     ".ascii \"    super (test_cmd, self).__init__ ("
+         "\\\"test-cmd\\\", gdb.COMMAND_OBSCURE)\\n\"\n"
+     ".ascii \"  def invoke (self, arg, from_tty):\\n\"\n"
+     ".ascii \"    print (\\\"test-cmd output, arg = %s\\\" % arg)\\n\"\n"
+     ".ascii \"test_cmd ()\\n\"\n"
+     ".byte 0\n"
+     ".popsection\n"
+     );
+</pre>
+   <p>Loading of inlined scripts requires a properly configured
+<code>auto-load safe-path</code> (see <a href="Auto_002dloading-safe-path.html#Auto_002dloading-safe-path">Auto-loading safe path</a>). 
+The path to specify in <code>auto-load safe-path</code> is the path of the file
+containing the <code>.debug_gdb_scripts</code> section.
+
+   </body></html>
+

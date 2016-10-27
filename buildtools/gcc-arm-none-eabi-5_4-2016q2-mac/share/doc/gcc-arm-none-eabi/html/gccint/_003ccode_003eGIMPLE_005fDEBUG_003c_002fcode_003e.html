@@ -1,0 +1,141 @@
+<html lang="en">
+<head>
+<title>@code{GIMPLE_DEBUG} - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Tuple-specific-accessors.html#Tuple-specific-accessors" title="Tuple specific accessors">
+<link rel="prev" href="_0040code_007bGIMPLE_005fCOND_007d.html#g_t_0040code_007bGIMPLE_005fCOND_007d" title="@code{GIMPLE_COND}">
+<link rel="next" href="_0040code_007bGIMPLE_005fEH_005fFILTER_007d.html#g_t_0040code_007bGIMPLE_005fEH_005fFILTER_007d" title="@code{GIMPLE_EH_FILTER}">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="%3ccode%3eGIMPLE_DEBUG%3c%2fcode%3e"></a>
+<a name="g_t_003ccode_003eGIMPLE_005fDEBUG_003c_002fcode_003e"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="_003ccode_003eGIMPLE_005fEH_005fFILTER_003c_002fcode_003e.html#g_t_003ccode_003eGIMPLE_005fEH_005fFILTER_003c_002fcode_003e">&lt;code&gt;GIMPLE_EH_FILTER&lt;/code&gt;</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="_003ccode_003eGIMPLE_005fCOND_003c_002fcode_003e.html#g_t_003ccode_003eGIMPLE_005fCOND_003c_002fcode_003e">&lt;code&gt;GIMPLE_COND&lt;/code&gt;</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Tuple-specific-accessors.html#Tuple-specific-accessors">Tuple specific accessors</a>
+<hr>
+</div>
+
+<h4 class="subsection">11.8.7 <code>GIMPLE_DEBUG</code></h4>
+
+<p><a name="index-g_t_0040code_007bGIMPLE_005fDEBUG_007d-2293"></a><a name="index-g_t_0040code_007bGIMPLE_005fDEBUG_005fBIND_007d-2294"></a>
+
+<div class="defun">
+&mdash; GIMPLE function: gdebug <b>*gimple_build_debug_bind</b> (<var>tree var, tree value, gimple stmt</var>)<var><a name="index-g_t_002agimple_005fbuild_005fdebug_005fbind-2295"></a></var><br>
+<blockquote><p>Build a <code>GIMPLE_DEBUG</code> statement with <code>GIMPLE_DEBUG_BIND</code> of
+<code>subcode</code>.  The effect of this statement is to tell debug
+information generation machinery that the value of user variable
+<code>var</code> is given by <code>value</code> at that point, and to remain with
+that value until <code>var</code> runs out of scope, a
+dynamically-subsequent debug bind statement overrides the binding, or
+conflicting values reach a control flow merge point.  Even if
+components of the <code>value</code> expression change afterwards, the
+variable is supposed to retain the same value, though not necessarily
+the same location.
+
+      <p>It is expected that <code>var</code> be most often a tree for automatic user
+variables (<code>VAR_DECL</code> or <code>PARM_DECL</code>) that satisfy the
+requirements for gimple registers, but it may also be a tree for a
+scalarized component of a user variable (<code>ARRAY_REF</code>,
+<code>COMPONENT_REF</code>), or a debug temporary (<code>DEBUG_EXPR_DECL</code>).
+
+      <p>As for <code>value</code>, it can be an arbitrary tree expression, but it is
+recommended that it be in a suitable form for a gimple assignment
+<code>RHS</code>.  It is not expected that user variables that could appear
+as <code>var</code> ever appear in <code>value</code>, because in the latter we'd
+have their <code>SSA_NAME</code>s instead, but even if they were not in SSA
+form, user variables appearing in <code>value</code> are to be regarded as
+part of the executable code space, whereas those in <code>var</code> are to
+be regarded as part of the source code space.  There is no way to
+refer to the value bound to a user variable within a <code>value</code>
+expression.
+
+      <p>If <code>value</code> is <code>GIMPLE_DEBUG_BIND_NOVALUE</code>, debug information
+generation machinery is informed that the variable <code>var</code> is
+unbound, i.e., that its value is indeterminate, which sometimes means
+it is really unavailable, and other times that the compiler could not
+keep track of it.
+
+      <p>Block and location information for the newly-created stmt are
+taken from <code>stmt</code>, if given. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree <b>gimple_debug_bind_get_var</b> (<var>gimple stmt</var>)<var><a name="index-gimple_005fdebug_005fbind_005fget_005fvar-2296"></a></var><br>
+<blockquote><p>Return the user variable <var>var</var> that is bound at <code>stmt</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree <b>gimple_debug_bind_get_value</b> (<var>gimple stmt</var>)<var><a name="index-gimple_005fdebug_005fbind_005fget_005fvalue-2297"></a></var><br>
+<blockquote><p>Return the value expression that is bound to a user variable at
+<code>stmt</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree * <b>gimple_debug_bind_get_value_ptr</b> (<var>gimple stmt</var>)<var><a name="index-gimple_005fdebug_005fbind_005fget_005fvalue_005fptr-2298"></a></var><br>
+<blockquote><p>Return a pointer to the value expression that is bound to a user
+variable at <code>stmt</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_debug_bind_set_var</b> (<var>gimple stmt, tree var</var>)<var><a name="index-gimple_005fdebug_005fbind_005fset_005fvar-2299"></a></var><br>
+<blockquote><p>Modify the user variable bound at <code>stmt</code> to <var>var</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_debug_bind_set_value</b> (<var>gimple stmt, tree var</var>)<var><a name="index-gimple_005fdebug_005fbind_005fset_005fvalue-2300"></a></var><br>
+<blockquote><p>Modify the value bound to the user variable bound at <code>stmt</code> to
+<var>value</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_debug_bind_reset_value</b> (<var>gimple stmt</var>)<var><a name="index-gimple_005fdebug_005fbind_005freset_005fvalue-2301"></a></var><br>
+<blockquote><p>Modify the value bound to the user variable bound at <code>stmt</code> so
+that the variable becomes unbound. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>gimple_debug_bind_has_value_p</b> (<var>gimple stmt</var>)<var><a name="index-gimple_005fdebug_005fbind_005fhas_005fvalue_005fp-2302"></a></var><br>
+<blockquote><p>Return <code>TRUE</code> if <code>stmt</code> binds a user variable to a value,
+and <code>FALSE</code> if it unbinds the variable. 
+</p></blockquote></div>
+
+ </body></html>
+

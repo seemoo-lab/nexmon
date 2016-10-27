@@ -1,0 +1,99 @@
+<html lang="en">
+<head>
+<title>Shared Library GDB/MI Catchpoint Commands - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="GDB_002fMI-Catchpoint-Commands.html#GDB_002fMI-Catchpoint-Commands" title="GDB/MI Catchpoint Commands">
+<link rel="next" href="Ada-Exception-GDB_002fMI-Catchpoint-Commands.html#Ada-Exception-GDB_002fMI-Catchpoint-Commands" title="Ada Exception GDB/MI Catchpoint Commands">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Shared-Library-GDB%2fMI-Catchpoint-Commands"></a>
+<a name="Shared-Library-GDB_002fMI-Catchpoint-Commands"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Ada-Exception-GDB_002fMI-Catchpoint-Commands.html#Ada-Exception-GDB_002fMI-Catchpoint-Commands">Ada Exception GDB/MI Catchpoint Commands</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="GDB_002fMI-Catchpoint-Commands.html#GDB_002fMI-Catchpoint-Commands">GDB/MI Catchpoint Commands</a>
+<hr>
+</div>
+
+<h4 class="subsection">27.9.1 Shared Library <span class="sc">gdb/mi</span> Catchpoints</h4>
+
+<h4 class="subheading">The <code>-catch-load</code> Command</h4>
+
+<p><a name="index-g_t_002dcatch_002dload-2886"></a>
+
+<h5 class="subsubheading">Synopsis</h5>
+
+<pre class="smallexample">      -catch-load [ -t ] [ -d ] <var>regexp</var>
+</pre>
+   <p>Add a catchpoint for library load events.  If the `<samp><span class="samp">-t</span></samp>' option is used,
+the catchpoint is a temporary one (see <a href="Set-Breaks.html#Set-Breaks">Setting Breakpoints</a>).  If the `<samp><span class="samp">-d</span></samp>' option is used, the catchpoint is created
+in a disabled state.  The `<samp><span class="samp">regexp</span></samp>' argument is a regular
+expression used to match the name of the loaded library.
+
+<h5 class="subsubheading"><span class="sc">gdb</span> Command</h5>
+
+<p>The corresponding <span class="sc">gdb</span> command is `<samp><span class="samp">catch load</span></samp>'.
+
+<h5 class="subsubheading">Example</h5>
+
+<pre class="smallexample">     -catch-load -t foo.so
+     ^done,bkpt={number="1",type="catchpoint",disp="del",enabled="y",
+     what="load of library matching foo.so",catch-type="load",times="0"}
+     (gdb)
+</pre>
+<h4 class="subheading">The <code>-catch-unload</code> Command</h4>
+
+<p><a name="index-g_t_002dcatch_002dunload-2887"></a>
+
+<h5 class="subsubheading">Synopsis</h5>
+
+<pre class="smallexample">      -catch-unload [ -t ] [ -d ] <var>regexp</var>
+</pre>
+   <p>Add a catchpoint for library unload events.  If the `<samp><span class="samp">-t</span></samp>' option is
+used, the catchpoint is a temporary one (see <a href="Set-Breaks.html#Set-Breaks">Setting Breakpoints</a>).  If the `<samp><span class="samp">-d</span></samp>' option is used, the catchpoint is
+created in a disabled state.  The `<samp><span class="samp">regexp</span></samp>' argument is a regular
+expression used to match the name of the unloaded library.
+
+<h5 class="subsubheading"><span class="sc">gdb</span> Command</h5>
+
+<p>The corresponding <span class="sc">gdb</span> command is `<samp><span class="samp">catch unload</span></samp>'.
+
+<h5 class="subsubheading">Example</h5>
+
+<pre class="smallexample">     -catch-unload -d bar.so
+     ^done,bkpt={number="2",type="catchpoint",disp="keep",enabled="n",
+     what="load of library matching bar.so",catch-type="unload",times="0"}
+     (gdb)
+</pre>
+   </body></html>
+

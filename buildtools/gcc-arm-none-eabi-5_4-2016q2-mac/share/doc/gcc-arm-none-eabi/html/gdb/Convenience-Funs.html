@@ -1,0 +1,193 @@
+<html lang="en">
+<head>
+<title>Convenience Funs - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Data.html#Data" title="Data">
+<link rel="prev" href="Convenience-Vars.html#Convenience-Vars" title="Convenience Vars">
+<link rel="next" href="Registers.html#Registers" title="Registers">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Convenience-Funs"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Registers.html#Registers">Registers</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Convenience-Vars.html#Convenience-Vars">Convenience Vars</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Data.html#Data">Data</a>
+<hr>
+</div>
+
+<h3 class="section">10.12 Convenience Functions</h3>
+
+<p><a name="index-convenience-functions-691"></a><span class="sc">gdb</span> also supplies some <dfn>convenience functions</dfn>.  These
+have a syntax similar to convenience variables.  A convenience
+function can be used in an expression just like an ordinary function;
+however, a convenience function is implemented internally to
+<span class="sc">gdb</span>.
+
+   <p>These functions do not require <span class="sc">gdb</span> to be configured with
+<code>Python</code> support, which means that they are always available.
+
+     <dl>
+<dt><code>$_isvoid (</code><var>expr</var><code>)</code><dd><a name="index-g_t_0024_005fisvoid_0040r_007b_002c-convenience-function_007d-692"></a>Return one if the expression <var>expr</var> is <code>void</code>.  Otherwise it
+returns zero.
+
+     <p>A <code>void</code> expression is an expression where the type of the result
+is <code>void</code>.  For example, you can examine a convenience variable
+(see <a href="Convenience-Vars.html#Convenience-Vars">Convenience Variables</a>) to check whether
+it is <code>void</code>:
+
+     <pre class="smallexample">          (gdb) print $_exitcode
+          $1 = void
+          (gdb) print $_isvoid ($_exitcode)
+          $2 = 1
+          (gdb) run
+          Starting program: ./a.out
+          [Inferior 1 (process 29572) exited normally]
+          (gdb) print $_exitcode
+          $3 = 0
+          (gdb) print $_isvoid ($_exitcode)
+          $4 = 0
+     </pre>
+     <p>In the example above, we used <code>$_isvoid</code> to check whether
+<code>$_exitcode</code> is <code>void</code> before and after the execution of the
+program being debugged.  Before the execution there is no exit code to
+be examined, therefore <code>$_exitcode</code> is <code>void</code>.  After the
+execution the program being debugged returned zero, therefore
+<code>$_exitcode</code> is zero, which means that it is not <code>void</code>
+anymore.
+
+     <p>The <code>void</code> expression can also be a call of a function from the
+program being debugged.  For example, given the following function:
+
+     <pre class="smallexample">          void
+          foo (void)
+          {
+          }
+     </pre>
+     <p>The result of calling it inside <span class="sc">gdb</span> is <code>void</code>:
+
+     <pre class="smallexample">          (gdb) print foo ()
+          $1 = void
+          (gdb) print $_isvoid (foo ())
+          $2 = 1
+          (gdb) set $v = foo ()
+          (gdb) print $v
+          $3 = void
+          (gdb) print $_isvoid ($v)
+          $4 = 1
+     </pre>
+     </dl>
+
+   <p>These functions require <span class="sc">gdb</span> to be configured with
+<code>Python</code> support.
+
+     <dl>
+<dt><code>$_memeq(</code><var>buf1</var><code>, </code><var>buf2</var><code>, </code><var>length</var><code>)</code><dd><a name="index-g_t_0024_005fmemeq_0040r_007b_002c-convenience-function_007d-693"></a>Returns one if the <var>length</var> bytes at the addresses given by
+<var>buf1</var> and <var>buf2</var> are equal. 
+Otherwise it returns zero.
+
+     <br><dt><code>$_regex(</code><var>str</var><code>, </code><var>regex</var><code>)</code><dd><a name="index-g_t_0024_005fregex_0040r_007b_002c-convenience-function_007d-694"></a>Returns one if the string <var>str</var> matches the regular expression
+<var>regex</var>.  Otherwise it returns zero. 
+The syntax of the regular expression is that specified by <code>Python</code>'s
+regular expression support.
+
+     <br><dt><code>$_streq(</code><var>str1</var><code>, </code><var>str2</var><code>)</code><dd><a name="index-g_t_0024_005fstreq_0040r_007b_002c-convenience-function_007d-695"></a>Returns one if the strings <var>str1</var> and <var>str2</var> are equal. 
+Otherwise it returns zero.
+
+     <br><dt><code>$_strlen(</code><var>str</var><code>)</code><dd><a name="index-g_t_0024_005fstrlen_0040r_007b_002c-convenience-function_007d-696"></a>Returns the length of string <var>str</var>.
+
+     <br><dt><code>$_caller_is(</code><var>name</var><span class="roman">[</span><code>, </code><var>number_of_frames</var><span class="roman">]</span><code>)</code><dd><a name="index-g_t_0024_005fcaller_005fis_0040r_007b_002c-convenience-function_007d-697"></a>Returns one if the calling function's name is equal to <var>name</var>. 
+Otherwise it returns zero.
+
+     <p>If the optional argument <var>number_of_frames</var> is provided,
+it is the number of frames up in the stack to look. 
+The default is 1.
+
+     <p>Example:
+
+     <pre class="smallexample">          (gdb) backtrace
+          #0  bottom_func ()
+              at testsuite/gdb.python/py-caller-is.c:21
+          #1  0x00000000004005a0 in middle_func ()
+              at testsuite/gdb.python/py-caller-is.c:27
+          #2  0x00000000004005ab in top_func ()
+              at testsuite/gdb.python/py-caller-is.c:33
+          #3  0x00000000004005b6 in main ()
+              at testsuite/gdb.python/py-caller-is.c:39
+          (gdb) print $_caller_is ("middle_func")
+          $1 = 1
+          (gdb) print $_caller_is ("top_func", 2)
+          $1 = 1
+     </pre>
+     <br><dt><code>$_caller_matches(</code><var>regexp</var><span class="roman">[</span><code>, </code><var>number_of_frames</var><span class="roman">]</span><code>)</code><dd><a name="index-g_t_0024_005fcaller_005fmatches_0040r_007b_002c-convenience-function_007d-698"></a>Returns one if the calling function's name matches the regular expression
+<var>regexp</var>.  Otherwise it returns zero.
+
+     <p>If the optional argument <var>number_of_frames</var> is provided,
+it is the number of frames up in the stack to look. 
+The default is 1.
+
+     <br><dt><code>$_any_caller_is(</code><var>name</var><span class="roman">[</span><code>, </code><var>number_of_frames</var><span class="roman">]</span><code>)</code><dd><a name="index-g_t_0024_005fany_005fcaller_005fis_0040r_007b_002c-convenience-function_007d-699"></a>Returns one if any calling function's name is equal to <var>name</var>. 
+Otherwise it returns zero.
+
+     <p>If the optional argument <var>number_of_frames</var> is provided,
+it is the number of frames up in the stack to look. 
+The default is 1.
+
+     <p>This function differs from <code>$_caller_is</code> in that this function
+checks all stack frames from the immediate caller to the frame specified
+by <var>number_of_frames</var>, whereas <code>$_caller_is</code> only checks the
+frame specified by <var>number_of_frames</var>.
+
+     <br><dt><code>$_any_caller_matches(</code><var>regexp</var><span class="roman">[</span><code>, </code><var>number_of_frames</var><span class="roman">]</span><code>)</code><dd><a name="index-g_t_0024_005fany_005fcaller_005fmatches_0040r_007b_002c-convenience-function_007d-700"></a>Returns one if any calling function's name matches the regular expression
+<var>regexp</var>.  Otherwise it returns zero.
+
+     <p>If the optional argument <var>number_of_frames</var> is provided,
+it is the number of frames up in the stack to look. 
+The default is 1.
+
+     <p>This function differs from <code>$_caller_matches</code> in that this function
+checks all stack frames from the immediate caller to the frame specified
+by <var>number_of_frames</var>, whereas <code>$_caller_matches</code> only checks the
+frame specified by <var>number_of_frames</var>.
+
+   </dl>
+
+   <p><span class="sc">gdb</span> provides the ability to list and get help on
+convenience functions.
+
+     <dl>
+<dt><code>help function</code><dd><a name="index-help-function-701"></a><a name="index-show-all-convenience-functions-702"></a>Print a list of all convenience functions. 
+</dl>
+
+   </body></html>
+

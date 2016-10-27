@@ -1,0 +1,200 @@
+<html lang="en">
+<head>
+<title>Blocks In Guile - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Guile-API.html#Guile-API" title="Guile API">
+<link rel="prev" href="Frames-In-Guile.html#Frames-In-Guile" title="Frames In Guile">
+<link rel="next" href="Symbols-In-Guile.html#Symbols-In-Guile" title="Symbols In Guile">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Blocks-In-Guile"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Symbols-In-Guile.html#Symbols-In-Guile">Symbols In Guile</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Frames-In-Guile.html#Frames-In-Guile">Frames In Guile</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Guile-API.html#Guile-API">Guile API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.3.3.16 Accessing blocks from Guile.</h5>
+
+<p><a name="index-blocks-in-guile-2591"></a><a name="index-g_t_003cgdb_003ablock_003e-2592"></a>
+In <span class="sc">gdb</span>, symbols are stored in blocks.  A block corresponds
+roughly to a scope in the source code.  Blocks are organized
+hierarchically, and are represented individually in Guile as an object
+of type <code>&lt;gdb:block&gt;</code>.  Blocks rely on debugging information being
+available.
+
+   <p>A frame has a block.  Please see <a href="Frames-In-Guile.html#Frames-In-Guile">Frames In Guile</a>, for a more
+in-depth discussion of frames.
+
+   <p>The outermost block is known as the <dfn>global block</dfn>.  The global
+block typically holds public global variables and functions.
+
+   <p>The block nested just inside the global block is the <dfn>static
+block</dfn>.  The static block typically holds file-scoped variables and
+functions.
+
+   <p><span class="sc">gdb</span> provides a method to get a block's superblock, but there
+is currently no way to examine the sub-blocks of a block, or to
+iterate over all the blocks in a symbol table (see <a href="Symbol-Tables-In-Guile.html#Symbol-Tables-In-Guile">Symbol Tables In Guile</a>).
+
+   <p>Here is a short example that should help explain blocks:
+
+<pre class="smallexample">     /* This is in the global block.  */
+     int global;
+     
+     /* This is in the static block.  */
+     static int file_scope;
+     
+     /* 'function' is in the global block, and 'argument' is
+        in a block nested inside of 'function'.  */
+     int function (int argument)
+     {
+       /* 'local' is in a block inside 'function'.  It may or may
+          not be in the same block as 'argument'.  */
+       int local;
+     
+       {
+          /* 'inner' is in a block whose superblock is the one holding
+             'local'.  */
+          int inner;
+     
+          /* If this call is expanded by the compiler, you may see
+             a nested block here whose function is 'inline_function'
+             and whose superblock is the one holding 'inner'.  */
+          inline_function ();
+       }
+     }
+</pre>
+   <p>The following block-related procedures are provided by the
+<code>(gdb)</code> module:
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>block?</b><var> object<a name="index-block_003f-2593"></a></var><br>
+<blockquote><p>Return <code>#t</code> if <var>object</var> is a <code>&lt;gdb:block&gt;</code> object. 
+Otherwise return <code>#f</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>block-valid?</b><var> block<a name="index-block_002dvalid_003f-2594"></a></var><br>
+<blockquote><p>Returns <code>#t</code> if <code>&lt;gdb:block&gt;</code> <var>block</var> is valid,
+<code>#f</code> if not.  A block object can become invalid if the block it
+refers to doesn't exist anymore in the inferior.  All other
+<code>&lt;gdb:block&gt;</code> methods will throw an exception if it is invalid at
+the time the procedure is called.  The block's validity is also checked
+during iteration over symbols of the block. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>block-start</b><var> block<a name="index-block_002dstart-2595"></a></var><br>
+<blockquote><p>Return the start address of <code>&lt;gdb:block&gt;</code> <var>block</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>block-end</b><var> block<a name="index-block_002dend-2596"></a></var><br>
+<blockquote><p>Return the end address of <code>&lt;gdb:block&gt;</code> <var>block</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>block-function</b><var> block<a name="index-block_002dfunction-2597"></a></var><br>
+<blockquote><p>Return the name of <code>&lt;gdb:block&gt;</code> <var>block</var> represented as a
+<code>&lt;gdb:symbol&gt;</code> object. 
+If the block is not named, then <code>#f</code> is returned.
+
+        <p>For ordinary function blocks, the superblock is the static block. 
+However, you should note that it is possible for a function block to
+have a superblock that is not the static block &ndash; for instance this
+happens for an inlined function. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>block-superblock</b><var> block<a name="index-block_002dsuperblock-2598"></a></var><br>
+<blockquote><p>Return the block containing <code>&lt;gdb:block&gt;</code> <var>block</var>. 
+If the parent block does not exist, then <code>#f</code> is returned. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>block-global-block</b><var> block<a name="index-block_002dglobal_002dblock-2599"></a></var><br>
+<blockquote><p>Return the global block associated with <code>&lt;gdb:block&gt;</code> <var>block</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>block-static-block</b><var> block<a name="index-block_002dstatic_002dblock-2600"></a></var><br>
+<blockquote><p>Return the static block associated with <code>&lt;gdb:block&gt;</code> <var>block</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>block-global?</b><var> block<a name="index-block_002dglobal_003f-2601"></a></var><br>
+<blockquote><p>Return <code>#t</code> if <code>&lt;gdb:block&gt;</code> <var>block</var> is a global block. 
+Otherwise return <code>#f</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>block-static?</b><var> block<a name="index-block_002dstatic_003f-2602"></a></var><br>
+<blockquote><p>Return <code>#t</code> if <code>&lt;gdb:block&gt;</code> <var>block</var> is a static block. 
+Otherwise return <code>#f</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>block-symbols</b><var><a name="index-block_002dsymbols-2603"></a></var><br>
+<blockquote><p>Return a list of all symbols (as &lt;gdb:symbol&gt; objects) in
+<code>&lt;gdb:block&gt;</code> <var>block</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>make-block-symbols-iterator</b><var> block<a name="index-make_002dblock_002dsymbols_002diterator-2604"></a></var><br>
+<blockquote><p>Return an object of type <code>&lt;gdb:iterator&gt;</code> that will iterate
+over all symbols of the block. 
+Guile programs should not assume that a specific block object will
+always contain a given symbol, since changes in <span class="sc">gdb</span> features and
+infrastructure may cause symbols move across blocks in a symbol table. 
+See <a href="Iterators-In-Guile.html#Iterators-In-Guile">Iterators In Guile</a>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>block-symbols-progress?</b><var><a name="index-block_002dsymbols_002dprogress_003f-2605"></a></var><br>
+<blockquote><p>Return #t if the object is a &lt;gdb:block-symbols-progress&gt; object. 
+This object would be obtained from the <code>progress</code> element of the
+<code>&lt;gdb:iterator&gt;</code> object returned by <code>make-block-symbols-iterator</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>lookup-block</b><var> pc<a name="index-lookup_002dblock-2606"></a></var><br>
+<blockquote><p>Return the innermost <code>&lt;gdb:block&gt;</code> containing the given <var>pc</var>
+value.  If the block cannot be found for the <var>pc</var> value specified,
+the function will return <code>#f</code>. 
+</p></blockquote></div>
+
+   </body></html>
+

@@ -1,0 +1,123 @@
+<html lang="en">
+<head>
+<title>CC0 Condition Codes - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Condition-Code.html#Condition-Code" title="Condition Code">
+<link rel="next" href="MODE_005fCC-Condition-Codes.html#MODE_005fCC-Condition-Codes" title="MODE_CC Condition Codes">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="CC0-Condition-Codes"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="MODE_005fCC-Condition-Codes.html#MODE_005fCC-Condition-Codes">MODE_CC Condition Codes</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Condition-Code.html#Condition-Code">Condition Code</a>
+<hr>
+</div>
+
+<h4 class="subsection">17.15.1 Representation of condition codes using <code>(cc0)</code></h4>
+
+<p><a name="index-cc0-4428"></a>
+<a name="index-cc_005fstatus-4429"></a>The file <samp><span class="file">conditions.h</span></samp> defines a variable <code>cc_status</code> to
+describe how the condition code was computed (in case the interpretation of
+the condition code depends on the instruction that it was set by).  This
+variable contains the RTL expressions on which the condition code is
+currently based, and several standard flags.
+
+ <p>Sometimes additional machine-specific flags must be defined in the machine
+description header file.  It can also add additional machine-specific
+information by defining <code>CC_STATUS_MDEP</code>.
+
+<div class="defun">
+&mdash; Macro: <b>CC_STATUS_MDEP</b><var><a name="index-CC_005fSTATUS_005fMDEP-4430"></a></var><br>
+<blockquote><p>C code for a data type which is used for declaring the <code>mdep</code>
+component of <code>cc_status</code>.  It defaults to <code>int</code>.
+
+      <p>This macro is not used on machines that do not use <code>cc0</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>CC_STATUS_MDEP_INIT</b><var><a name="index-CC_005fSTATUS_005fMDEP_005fINIT-4431"></a></var><br>
+<blockquote><p>A C expression to initialize the <code>mdep</code> field to &ldquo;empty&rdquo;. 
+The default definition does nothing, since most machines don't use
+the field anyway.  If you want to use the field, you should probably
+define this macro to initialize it.
+
+      <p>This macro is not used on machines that do not use <code>cc0</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>NOTICE_UPDATE_CC</b> (<var>exp, insn</var>)<var><a name="index-NOTICE_005fUPDATE_005fCC-4432"></a></var><br>
+<blockquote><p>A C compound statement to set the components of <code>cc_status</code>
+appropriately for an insn <var>insn</var> whose body is <var>exp</var>.  It is
+this macro's responsibility to recognize insns that set the condition
+code as a byproduct of other activity as well as those that explicitly
+set <code>(cc0)</code>.
+
+      <p>This macro is not used on machines that do not use <code>cc0</code>.
+
+      <p>If there are insns that do not set the condition code but do alter
+other machine registers, this macro must check to see whether they
+invalidate the expressions that the condition code is recorded as
+reflecting.  For example, on the 68000, insns that store in address
+registers do not set the condition code, which means that usually
+<code>NOTICE_UPDATE_CC</code> can leave <code>cc_status</code> unaltered for such
+insns.  But suppose that the previous insn set the condition code
+based on location `<samp><span class="samp">a4@(102)</span></samp>' and the current insn stores a new
+value in `<samp><span class="samp">a4</span></samp>'.  Although the condition code is not changed by
+this, it will no longer be true that it reflects the contents of
+`<samp><span class="samp">a4@(102)</span></samp>'.  Therefore, <code>NOTICE_UPDATE_CC</code> must alter
+<code>cc_status</code> in this case to say that nothing is known about the
+condition code value.
+
+      <p>The definition of <code>NOTICE_UPDATE_CC</code> must be prepared to deal
+with the results of peephole optimization: insns whose patterns are
+<code>parallel</code> RTXs containing various <code>reg</code>, <code>mem</code> or
+constants which are just the operands.  The RTL structure of these
+insns is not sufficient to indicate what the insns actually do.  What
+<code>NOTICE_UPDATE_CC</code> should do when it sees one is just to run
+<code>CC_STATUS_INIT</code>.
+
+      <p>A possible definition of <code>NOTICE_UPDATE_CC</code> is to call a function
+that looks at an attribute (see <a href="Insn-Attributes.html#Insn-Attributes">Insn Attributes</a>) named, for example,
+`<samp><span class="samp">cc</span></samp>'.  This avoids having detailed information about patterns in
+two places, the <samp><span class="file">md</span></samp> file and in <code>NOTICE_UPDATE_CC</code>. 
+</p></blockquote></div>
+
+ </body></html>
+

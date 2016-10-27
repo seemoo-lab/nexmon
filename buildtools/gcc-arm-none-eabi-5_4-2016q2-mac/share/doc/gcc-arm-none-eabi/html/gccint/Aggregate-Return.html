@@ -1,0 +1,148 @@
+<html lang="en">
+<head>
+<title>Aggregate Return - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stack-and-Calling.html#Stack-and-Calling" title="Stack and Calling">
+<link rel="prev" href="Scalar-Return.html#Scalar-Return" title="Scalar Return">
+<link rel="next" href="Caller-Saves.html#Caller-Saves" title="Caller Saves">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Aggregate-Return"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Caller-Saves.html#Caller-Saves">Caller Saves</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Scalar-Return.html#Scalar-Return">Scalar Return</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stack-and-Calling.html#Stack-and-Calling">Stack and Calling</a>
+<hr>
+</div>
+
+<h4 class="subsection">17.9.9 How Large Values Are Returned</h4>
+
+<p><a name="index-aggregates-as-return-values-4279"></a><a name="index-large-return-values-4280"></a><a name="index-returning-aggregate-values-4281"></a><a name="index-structure-value-address-4282"></a>
+When a function value's mode is <code>BLKmode</code> (and in some other
+cases), the value is not returned according to
+<code>TARGET_FUNCTION_VALUE</code> (see <a href="Scalar-Return.html#Scalar-Return">Scalar Return</a>).  Instead, the
+caller passes the address of a block of memory in which the value
+should be stored.  This address is called the <dfn>structure value
+address</dfn>.
+
+ <p>This section describes how to control returning structure values in
+memory.
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_RETURN_IN_MEMORY</b> (<var>const_tree type, const_tree fntype</var>)<var><a name="index-TARGET_005fRETURN_005fIN_005fMEMORY-4283"></a></var><br>
+<blockquote><p>This target hook should return a nonzero value to say to return the
+function value in memory, just as large structures are always returned. 
+Here <var>type</var> will be the data type of the value, and <var>fntype</var>
+will be the type of the function doing the returning, or <code>NULL</code> for
+libcalls.
+
+      <p>Note that values of mode <code>BLKmode</code> must be explicitly handled
+by this function.  Also, the option <samp><span class="option">-fpcc-struct-return</span></samp>
+takes effect regardless of this macro.  On most systems, it is
+possible to leave the hook undefined; this causes a default
+definition to be used, whose value is the constant 1 for <code>BLKmode</code>
+values, and 0 otherwise.
+
+      <p>Do not use this hook to indicate that structures and unions should always
+be returned in memory.  You should instead use <code>DEFAULT_PCC_STRUCT_RETURN</code>
+to indicate this. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DEFAULT_PCC_STRUCT_RETURN</b><var><a name="index-DEFAULT_005fPCC_005fSTRUCT_005fRETURN-4284"></a></var><br>
+<blockquote><p>Define this macro to be 1 if all structure and union return values must be
+in memory.  Since this results in slower code, this should be defined
+only if needed for compatibility with other compilers or with an ABI. 
+If you define this macro to be 0, then the conventions used for structure
+and union return values are decided by the <code>TARGET_RETURN_IN_MEMORY</code>
+target hook.
+
+      <p>If not defined, this defaults to the value 1. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: rtx <b>TARGET_STRUCT_VALUE_RTX</b> (<var>tree fndecl, int incoming</var>)<var><a name="index-TARGET_005fSTRUCT_005fVALUE_005fRTX-4285"></a></var><br>
+<blockquote><p>This target hook should return the location of the structure value
+address (normally a <code>mem</code> or <code>reg</code>), or 0 if the address is
+passed as an &ldquo;invisible&rdquo; first argument.  Note that <var>fndecl</var> may
+be <code>NULL</code>, for libcalls.  You do not need to define this target
+hook if the address is always passed as an &ldquo;invisible&rdquo; first
+argument.
+
+      <p>On some architectures the place where the structure value address
+is found by the called function is not the same place that the
+caller put it.  This can be due to register windows, or it could
+be because the function prologue moves it to a different place. 
+<var>incoming</var> is <code>1</code> or <code>2</code> when the location is needed in
+the context of the called function, and <code>0</code> in the context of
+the caller.
+
+      <p>If <var>incoming</var> is nonzero and the address is to be found on the
+stack, return a <code>mem</code> which refers to the frame pointer. If
+<var>incoming</var> is <code>2</code>, the result is being used to fetch the
+structure value address at the beginning of a function.  If you need
+to emit adjusting code, you should do it at this point. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>PCC_STATIC_STRUCT_RETURN</b><var><a name="index-PCC_005fSTATIC_005fSTRUCT_005fRETURN-4286"></a></var><br>
+<blockquote><p>Define this macro if the usual system convention on the target machine
+for returning structures and unions is for the called function to return
+the address of a static variable containing the value.
+
+      <p>Do not define this if the usual system convention is for the caller to
+pass an address to the subroutine.
+
+      <p>This macro has effect in <samp><span class="option">-fpcc-struct-return</span></samp> mode, but it does
+nothing when you use <samp><span class="option">-freg-struct-return</span></samp> mode. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: machine_mode <b>TARGET_GET_RAW_RESULT_MODE</b> (<var>int regno</var>)<var><a name="index-TARGET_005fGET_005fRAW_005fRESULT_005fMODE-4287"></a></var><br>
+<blockquote><p>This target hook returns the mode to be used when accessing raw return registers in <code>__builtin_return</code>.  Define this macro if the value in <var>reg_raw_mode</var> is not correct. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: machine_mode <b>TARGET_GET_RAW_ARG_MODE</b> (<var>int regno</var>)<var><a name="index-TARGET_005fGET_005fRAW_005fARG_005fMODE-4288"></a></var><br>
+<blockquote><p>This target hook returns the mode to be used when accessing raw argument registers in <code>__builtin_apply_args</code>.  Define this macro if the value in <var>reg_raw_mode</var> is not correct. 
+</p></blockquote></div>
+
+ </body></html>
+

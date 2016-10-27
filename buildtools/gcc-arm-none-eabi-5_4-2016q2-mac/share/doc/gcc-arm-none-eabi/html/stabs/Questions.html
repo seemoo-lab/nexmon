@@ -1,0 +1,76 @@
+<html lang="en">
+<head>
+<title>Questions - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Expanded-Reference.html#Expanded-Reference" title="Expanded Reference">
+<link rel="next" href="Stab-Sections.html#Stab-Sections" title="Stab Sections">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Questions"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Stab-Sections.html#Stab-Sections">Stab Sections</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Expanded-Reference.html#Expanded-Reference">Expanded Reference</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="appendix">Appendix E Questions and Anomalies</h2>
+
+     <ul>
+<li><!-- I think this is changed in GCC 2.4.5 to put the line number there. -->
+For GNU C stabs defining local and global variables (<code>N_LSYM</code> and
+<code>N_GSYM</code>), the desc field is supposed to contain the source
+line number on which the variable is defined.  In reality the desc
+field is always 0.  (This behavior is defined in <samp><span class="file">dbxout.c</span></samp> and
+putting a line number in desc is controlled by `<samp><span class="samp">#ifdef
+WINNING_GDB</span></samp>', which defaults to false). GDB supposedly uses this
+information if you say `<samp><span class="samp">list </span><var>var</var></samp>'.  In reality, <var>var</var> can
+be a variable defined in the program and GDB says `<samp><span class="samp">function
+</span><var>var</var><span class="samp"> not defined</span></samp>'.
+
+     <li>In GNU C stabs, there seems to be no way to differentiate tag types:
+structures, unions, and enums (symbol descriptor `<samp><span class="samp">T</span></samp>') and typedefs
+(symbol descriptor `<samp><span class="samp">t</span></samp>') defined at file scope from types defined locally
+to a procedure or other more local scope.  They all use the <code>N_LSYM</code>
+stab type.  Types defined at procedure scope are emitted after the
+<code>N_RBRAC</code> of the preceding function and before the code of the
+procedure in which they are defined.  This is exactly the same as
+types defined in the source file between the two procedure bodies. 
+GDB over-compensates by placing all types in block #1, the block for
+symbols of file scope.  This is true for default, `<samp><span class="samp">-ansi</span></samp>' and
+`<samp><span class="samp">-traditional</span></samp>' compiler options. (Bugs gcc/1063, gdb/1066.)
+
+     <li>What ends the procedure scope?  Is it the proc block's <code>N_RBRAC</code> or the
+next <code>N_FUN</code>?  (I believe its the first.) 
+</ul>
+
+   </body></html>
+

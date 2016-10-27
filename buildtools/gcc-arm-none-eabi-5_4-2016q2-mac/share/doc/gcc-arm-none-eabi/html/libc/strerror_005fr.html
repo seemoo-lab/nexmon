@@ -1,0 +1,98 @@
+<html lang="en">
+<head>
+<title>strerror_r - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Strings.html#Strings" title="Strings">
+<link rel="prev" href="strerror.html#strerror" title="strerror">
+<link rel="next" href="strlen.html#strlen" title="strlen">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="strerror_r"></a>
+<a name="strerror_005fr"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="strlen.html#strlen">strlen</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="strerror.html#strerror">strerror</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Strings.html#Strings">Strings</a>
+<hr>
+</div>
+
+<h3 class="section">5.28 <code>strerror_r</code>&mdash;convert error number to string and copy to buffer</h3>
+
+<p><a name="index-strerror_005fr-444"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;string.h&gt;
+     #ifdef _GNU_SOURCE
+     char *strerror_r(int <var>errnum</var>, char *<var>buffer</var>, size_t <var>n</var>);
+     #else
+     int strerror_r(int <var>errnum</var>, char *<var>buffer</var>, size_t <var>n</var>);
+     #endif
+     
+</pre>
+   <p><strong>Description</strong><br>
+<code>strerror_r</code> converts the error number <var>errnum</var> into a
+string and copies the result into the supplied <var>buffer</var> for
+a length up to <var>n</var>, including the NUL terminator. The value of
+<var>errnum</var> is usually a copy of <code>errno</code>.  If <code>errnum</code> is not a known
+error number, the result is the empty string.
+
+   <p>See <code>strerror</code> for how strings are mapped to <code>errnum</code>.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+There are two variants: the GNU version always returns a NUL-terminated
+string, which is <var>buffer</var> if all went well, but which is another
+pointer if <var>n</var> was too small (leaving <var>buffer</var> untouched).  If the
+return is not <var>buffer</var>, your application must not modify that string. 
+The POSIX version returns 0 on success, <var>EINVAL</var> if <code>errnum</code> was not
+recognized, and <var>ERANGE</var> if <var>n</var> was too small.  The variant chosen
+depends on macros that you define before inclusion of <code>string.h</code>.
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+<code>strerror_r</code> with a <var>char *</var> result is a GNU extension. 
+<code>strerror_r</code> with an <var>int</var> result is required by POSIX 2001. 
+This function is compliant only if <code>_user_strerror</code> is not provided,
+or if it is thread-safe and uses separate storage according to whether
+the second argument of that function is non-zero.  For more details
+on <code>_user_strerror</code>, see the <code>strerror</code> documentation.
+
+   <p>POSIX states that the contents of <var>buf</var> are unspecified on error,
+although this implementation guarantees a NUL-terminated string for
+all except <var>n</var> of 0.
+
+   <p>POSIX recommends that unknown <var>errnum</var> result in a message including
+that value, however it is not a requirement and this implementation
+provides only an empty string (unless you provide <code>_user_strerror</code>). 
+POSIX also recommends that unknown <var>errnum</var> fail with EINVAL even
+when providing such a message, however it is not a requirement and
+this implementation will return success if <code>_user_strerror</code> provided
+a non-empty alternate string without assigning into its third argument.
+
+   <p><code>strerror_r</code> requires no supporting OS subroutines.
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

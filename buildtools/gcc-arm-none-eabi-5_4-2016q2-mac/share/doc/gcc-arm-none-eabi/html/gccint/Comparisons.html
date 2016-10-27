@@ -1,0 +1,144 @@
+<html lang="en">
+<head>
+<title>Comparisons - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="RTL.html#RTL" title="RTL">
+<link rel="prev" href="Arithmetic.html#Arithmetic" title="Arithmetic">
+<link rel="next" href="Bit_002dFields.html#Bit_002dFields" title="Bit-Fields">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Comparisons"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Bit_002dFields.html#Bit_002dFields">Bit-Fields</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Arithmetic.html#Arithmetic">Arithmetic</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="RTL.html#RTL">RTL</a>
+<hr>
+</div>
+
+<h3 class="section">13.10 Comparison Operations</h3>
+
+<p><a name="index-RTL-comparison-operations-2976"></a>
+Comparison operators test a relation on two operands and are considered
+to represent a machine-dependent nonzero value described by, but not
+necessarily equal to, <code>STORE_FLAG_VALUE</code> (see <a href="Misc.html#Misc">Misc</a>)
+if the relation holds, or zero if it does not, for comparison operators
+whose results have a `MODE_INT' mode,
+<code>FLOAT_STORE_FLAG_VALUE</code> (see <a href="Misc.html#Misc">Misc</a>) if the relation holds, or
+zero if it does not, for comparison operators that return floating-point
+values, and a vector of either <code>VECTOR_STORE_FLAG_VALUE</code> (see <a href="Misc.html#Misc">Misc</a>)
+if the relation holds, or of zeros if it does not, for comparison operators
+that return vector results. 
+The mode of the comparison operation is independent of the mode
+of the data being compared.  If the comparison operation is being tested
+(e.g., the first operand of an <code>if_then_else</code>), the mode must be
+<code>VOIDmode</code>.
+
+ <p><a name="index-condition-codes-2977"></a>There are two ways that comparison operations may be used.  The
+comparison operators may be used to compare the condition codes
+<code>(cc0)</code> against zero, as in <code>(eq (cc0) (const_int 0))</code>.  Such
+a construct actually refers to the result of the preceding instruction
+in which the condition codes were set.  The instruction setting the
+condition code must be adjacent to the instruction using the condition
+code; only <code>note</code> insns may separate them.
+
+ <p>Alternatively, a comparison operation may directly compare two data
+objects.  The mode of the comparison is determined by the operands; they
+must both be valid for a common machine mode.  A comparison with both
+operands constant would be invalid as the machine mode could not be
+deduced from it, but such a comparison should never exist in RTL due to
+constant folding.
+
+ <p>In the example above, if <code>(cc0)</code> were last set to
+<code>(compare </code><var>x</var> <var>y</var><code>)</code>, the comparison operation is
+identical to <code>(eq </code><var>x</var> <var>y</var><code>)</code>.  Usually only one style
+of comparisons is supported on a particular machine, but the combine
+pass will try to merge the operations to produce the <code>eq</code> shown
+in case it exists in the context of the particular insn involved.
+
+ <p>Inequality comparisons come in two flavors, signed and unsigned.  Thus,
+there are distinct expression codes <code>gt</code> and <code>gtu</code> for signed and
+unsigned greater-than.  These can produce different results for the same
+pair of integer values: for example, 1 is signed greater-than &minus;1 but not
+unsigned greater-than, because &minus;1 when regarded as unsigned is actually
+<code>0xffffffff</code> which is greater than 1.
+
+ <p>The signed comparisons are also used for floating point values.  Floating
+point comparisons are distinguished by the machine modes of the operands.
+
+     
+<a name="index-eq-2978"></a>
+<a name="index-equal-2979"></a>
+<dl><dt><code>(eq:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dd><code>STORE_FLAG_VALUE</code> if the values represented by <var>x</var> and <var>y</var>
+are equal, otherwise 0.
+
+     <p><a name="index-ne-2980"></a><a name="index-not-equal-2981"></a><br><dt><code>(ne:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dd><code>STORE_FLAG_VALUE</code> if the values represented by <var>x</var> and <var>y</var>
+are not equal, otherwise 0.
+
+     <p><a name="index-gt-2982"></a><a name="index-greater-than-2983"></a><br><dt><code>(gt:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dd><code>STORE_FLAG_VALUE</code> if the <var>x</var> is greater than <var>y</var>.  If they
+are fixed-point, the comparison is done in a signed sense.
+
+     <p><a name="index-gtu-2984"></a><a name="index-greater-than-2985"></a><a name="index-unsigned-greater-than-2986"></a><br><dt><code>(gtu:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dd>Like <code>gt</code> but does unsigned comparison, on fixed-point numbers only.
+
+     <p><a name="index-lt-2987"></a><a name="index-less-than-2988"></a><a name="index-ltu-2989"></a><a name="index-unsigned-less-than-2990"></a><br><dt><code>(lt:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dt><code>(ltu:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dd>Like <code>gt</code> and <code>gtu</code> but test for &ldquo;less than&rdquo;.
+
+     <p><a name="index-ge-2991"></a><a name="index-greater-than-2992"></a><a name="index-geu-2993"></a><a name="index-unsigned-greater-than-2994"></a><br><dt><code>(ge:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dt><code>(geu:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dd>Like <code>gt</code> and <code>gtu</code> but test for &ldquo;greater than or equal&rdquo;.
+
+     <p><a name="index-le-2995"></a><a name="index-less-than-or-equal-2996"></a><a name="index-leu-2997"></a><a name="index-unsigned-less-than-2998"></a><br><dt><code>(le:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dt><code>(leu:</code><var>m</var> <var>x</var> <var>y</var><code>)</code><dd>Like <code>gt</code> and <code>gtu</code> but test for &ldquo;less than or equal&rdquo;.
+
+     <p><a name="index-if_005fthen_005felse-2999"></a><br><dt><code>(if_then_else </code><var>cond</var> <var>then</var> <var>else</var><code>)</code><dd>This is not a comparison operation but is listed here because it is
+always used in conjunction with a comparison operation.  To be
+precise, <var>cond</var> is a comparison expression.  This expression
+represents a choice, according to <var>cond</var>, between the value
+represented by <var>then</var> and the one represented by <var>else</var>.
+
+     <p>On most machines, <code>if_then_else</code> expressions are valid only
+to express conditional jumps.
+
+     <p><a name="index-cond-3000"></a><br><dt><code>(cond [</code><var>test1</var> <var>value1</var> <var>test2</var> <var>value2</var><code> ...] </code><var>default</var><code>)</code><dd>Similar to <code>if_then_else</code>, but more general.  Each of <var>test1</var>,
+<var>test2</var>, <small class="dots">...</small> is performed in turn.  The result of this expression is
+the <var>value</var> corresponding to the first nonzero test, or <var>default</var> if
+none of the tests are nonzero expressions.
+
+     <p>This is currently not valid for instruction patterns and is supported only
+for insn attributes.  See <a href="Insn-Attributes.html#Insn-Attributes">Insn Attributes</a>. 
+</dl>
+
+ </body></html>
+

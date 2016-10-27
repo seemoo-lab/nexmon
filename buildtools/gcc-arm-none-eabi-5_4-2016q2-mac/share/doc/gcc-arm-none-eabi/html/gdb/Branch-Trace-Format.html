@@ -1,0 +1,103 @@
+<html lang="en">
+<head>
+<title>Branch Trace Format - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Remote-Protocol.html#Remote-Protocol" title="Remote Protocol">
+<link rel="prev" href="Traceframe-Info-Format.html#Traceframe-Info-Format" title="Traceframe Info Format">
+<link rel="next" href="Branch-Trace-Configuration-Format.html#Branch-Trace-Configuration-Format" title="Branch Trace Configuration Format">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Branch-Trace-Format"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Branch-Trace-Configuration-Format.html#Branch-Trace-Configuration-Format">Branch Trace Configuration Format</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Traceframe-Info-Format.html#Traceframe-Info-Format">Traceframe Info Format</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Remote-Protocol.html#Remote-Protocol">Remote Protocol</a>
+<hr>
+</div>
+
+<h3 class="section">E.19 Branch Trace Format</h3>
+
+<p><a name="index-branch-trace-format-3493"></a>
+In order to display the branch trace of an inferior thread,
+<span class="sc">gdb</span> needs to obtain the list of branches.  This list is
+represented as list of sequential code blocks that are connected via
+branches.  The code in each block has been executed sequentially.
+
+   <p>This list is obtained using the `<samp><span class="samp">qXfer:btrace:read</span></samp>'
+(see <a href="qXfer-btrace-read.html#qXfer-btrace-read">qXfer btrace read</a>) packet and is an XML document.
+
+   <p><span class="sc">gdb</span> must be linked with the Expat library to support XML
+traceframe info discovery.  See <a href="Expat.html#Expat">Expat</a>.
+
+   <p>The top-level structure of the document is shown below:
+
+<pre class="smallexample">     &lt;?xml version="1.0"?&gt;
+     &lt;!DOCTYPE btrace
+               PUBLIC "+//IDN gnu.org//DTD GDB Branch Trace V1.0//EN"
+                      "http://sourceware.org/gdb/gdb-btrace.dtd"&gt;
+     &lt;btrace&gt;
+        block...
+     &lt;/btrace&gt;
+</pre>
+     <ul>
+<li>A block of sequentially executed instructions starting at <var>begin</var>
+and ending at <var>end</var>:
+
+     <pre class="smallexample">          &lt;block begin="<var>begin</var>" end="<var>end</var>"/&gt;
+     </pre>
+     </ul>
+
+   <p>The formal DTD for the branch trace format is given below:
+
+<pre class="smallexample">     &lt;!ELEMENT btrace  (block* | pt) &gt;
+     &lt;!ATTLIST btrace  version CDATA   #FIXED "1.0"&gt;
+     
+     &lt;!ELEMENT block        EMPTY&gt;
+     &lt;!ATTLIST block        begin  CDATA   #REQUIRED
+                            end    CDATA   #REQUIRED&gt;
+     
+     &lt;!ELEMENT pt (pt-config?, raw?)&gt;
+     
+     &lt;!ELEMENT pt-config (cpu?)&gt;
+     
+     &lt;!ELEMENT cpu EMPTY&gt;
+     &lt;!ATTLIST cpu vendor   CDATA #REQUIRED
+                   family   CDATA #REQUIRED
+                   model    CDATA #REQUIRED
+                   stepping CDATA #REQUIRED&gt;
+     
+     &lt;!ELEMENT raw (#PCDATA)&gt;
+</pre>
+   </body></html>
+

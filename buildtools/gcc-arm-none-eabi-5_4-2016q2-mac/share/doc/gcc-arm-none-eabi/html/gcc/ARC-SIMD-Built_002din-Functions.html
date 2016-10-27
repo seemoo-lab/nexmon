@@ -1,0 +1,250 @@
+<html lang="en">
+<head>
+<title>ARC SIMD Built-in Functions - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Builtins.html#Target-Builtins" title="Target Builtins">
+<link rel="prev" href="ARC-Built_002din-Functions.html#ARC-Built_002din-Functions" title="ARC Built-in Functions">
+<link rel="next" href="ARM-iWMMXt-Built_002din-Functions.html#ARM-iWMMXt-Built_002din-Functions" title="ARM iWMMXt Built-in Functions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="ARC-SIMD-Built-in-Functions"></a>
+<a name="ARC-SIMD-Built_002din-Functions"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="ARM-iWMMXt-Built_002din-Functions.html#ARM-iWMMXt-Built_002din-Functions">ARM iWMMXt Built-in Functions</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="ARC-Built_002din-Functions.html#ARC-Built_002din-Functions">ARC Built-in Functions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Builtins.html#Target-Builtins">Target Builtins</a>
+<hr>
+</div>
+
+<h4 class="subsection">6.58.5 ARC SIMD Built-in Functions</h4>
+
+<p>SIMD builtins provided by the compiler can be used to generate the
+vector instructions.  This section describes the available builtins
+and their usage in programs.  With the <samp><span class="option">-msimd</span></samp> option, the
+compiler provides 128-bit vector types, which can be specified using
+the <code>vector_size</code> attribute.  The header file <samp><span class="file">arc-simd.h</span></samp>
+can be included to use the following predefined types:
+<pre class="example">     typedef int __v4si   __attribute__((vector_size(16)));
+     typedef short __v8hi __attribute__((vector_size(16)));
+</pre>
+ <p>These types can be used to define 128-bit variables.  The built-in
+functions listed in the following section can be used on these
+variables to generate the vector operations.
+
+ <p>For all builtins, <code>__builtin_arc_</code><var>someinsn</var>, the header file
+<samp><span class="file">arc-simd.h</span></samp> also provides equivalent macros called
+<code>_</code><var>someinsn</var> that can be used for programming ease and
+improved readability.  The following macros for DMA control are also
+provided:
+<pre class="example">     #define _setup_dma_in_channel_reg _vdiwr
+     #define _setup_dma_out_channel_reg _vdowr
+</pre>
+ <p>The following is a complete list of all the SIMD built-ins provided
+for ARC, grouped by calling signature.
+
+ <p>The following take two <code>__v8hi</code> arguments and return a
+<code>__v8hi</code> result:
+<pre class="example">     __v8hi __builtin_arc_vaddaw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vaddw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vand (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vandaw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vavb (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vavrb (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vbic (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vbicaw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vdifaw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vdifw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_veqw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vh264f (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vh264ft (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vh264fw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vlew (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vltw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vmaxaw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vmaxw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vminaw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vminw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vmr1aw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vmr1w (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vmr2aw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vmr2w (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vmr3aw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vmr3w (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vmr4aw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vmr4w (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vmr5aw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vmr5w (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vmr6aw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vmr6w (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vmr7aw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vmr7w (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vmrb (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vmulaw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vmulfaw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vmulfw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vmulw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vnew (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vor (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vsubaw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vsubw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vsummw (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vvc1f (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vvc1ft (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vxor (__v8hi, __v8hi)
+     __v8hi __builtin_arc_vxoraw (__v8hi, __v8hi)
+</pre>
+ <p>The following take one <code>__v8hi</code> and one <code>int</code> argument and return a
+<code>__v8hi</code> result:
+
+<pre class="example">     __v8hi __builtin_arc_vbaddw (__v8hi, int)
+     __v8hi __builtin_arc_vbmaxw (__v8hi, int)
+     __v8hi __builtin_arc_vbminw (__v8hi, int)
+     __v8hi __builtin_arc_vbmulaw (__v8hi, int)
+     __v8hi __builtin_arc_vbmulfw (__v8hi, int)
+     __v8hi __builtin_arc_vbmulw (__v8hi, int)
+     __v8hi __builtin_arc_vbrsubw (__v8hi, int)
+     __v8hi __builtin_arc_vbsubw (__v8hi, int)
+</pre>
+ <p>The following take one <code>__v8hi</code> argument and one <code>int</code> argument which
+must be a 3-bit compile time constant indicating a register number
+I0-I7.  They return a <code>__v8hi</code> result.
+<pre class="example">     __v8hi __builtin_arc_vasrw (__v8hi, const int)
+     __v8hi __builtin_arc_vsr8 (__v8hi, const int)
+     __v8hi __builtin_arc_vsr8aw (__v8hi, const int)
+</pre>
+ <p>The following take one <code>__v8hi</code> argument and one <code>int</code>
+argument which must be a 6-bit compile time constant.  They return a
+<code>__v8hi</code> result.
+<pre class="example">     __v8hi __builtin_arc_vasrpwbi (__v8hi, const int)
+     __v8hi __builtin_arc_vasrrpwbi (__v8hi, const int)
+     __v8hi __builtin_arc_vasrrwi (__v8hi, const int)
+     __v8hi __builtin_arc_vasrsrwi (__v8hi, const int)
+     __v8hi __builtin_arc_vasrwi (__v8hi, const int)
+     __v8hi __builtin_arc_vsr8awi (__v8hi, const int)
+     __v8hi __builtin_arc_vsr8i (__v8hi, const int)
+</pre>
+ <p>The following take one <code>__v8hi</code> argument and one <code>int</code> argument which
+must be a 8-bit compile time constant.  They return a <code>__v8hi</code>
+result.
+<pre class="example">     __v8hi __builtin_arc_vd6tapf (__v8hi, const int)
+     __v8hi __builtin_arc_vmvaw (__v8hi, const int)
+     __v8hi __builtin_arc_vmvw (__v8hi, const int)
+     __v8hi __builtin_arc_vmvzw (__v8hi, const int)
+</pre>
+ <p>The following take two <code>int</code> arguments, the second of which which
+must be a 8-bit compile time constant.  They return a <code>__v8hi</code>
+result:
+<pre class="example">     __v8hi __builtin_arc_vmovaw (int, const int)
+     __v8hi __builtin_arc_vmovw (int, const int)
+     __v8hi __builtin_arc_vmovzw (int, const int)
+</pre>
+ <p>The following take a single <code>__v8hi</code> argument and return a
+<code>__v8hi</code> result:
+<pre class="example">     __v8hi __builtin_arc_vabsaw (__v8hi)
+     __v8hi __builtin_arc_vabsw (__v8hi)
+     __v8hi __builtin_arc_vaddsuw (__v8hi)
+     __v8hi __builtin_arc_vexch1 (__v8hi)
+     __v8hi __builtin_arc_vexch2 (__v8hi)
+     __v8hi __builtin_arc_vexch4 (__v8hi)
+     __v8hi __builtin_arc_vsignw (__v8hi)
+     __v8hi __builtin_arc_vupbaw (__v8hi)
+     __v8hi __builtin_arc_vupbw (__v8hi)
+     __v8hi __builtin_arc_vupsbaw (__v8hi)
+     __v8hi __builtin_arc_vupsbw (__v8hi)
+</pre>
+ <p>The following take two <code>int</code> arguments and return no result:
+<pre class="example">     void __builtin_arc_vdirun (int, int)
+     void __builtin_arc_vdorun (int, int)
+</pre>
+ <p>The following take two <code>int</code> arguments and return no result.  The
+first argument must a 3-bit compile time constant indicating one of
+the DR0-DR7 DMA setup channels:
+<pre class="example">     void __builtin_arc_vdiwr (const int, int)
+     void __builtin_arc_vdowr (const int, int)
+</pre>
+ <p>The following take an <code>int</code> argument and return no result:
+<pre class="example">     void __builtin_arc_vendrec (int)
+     void __builtin_arc_vrec (int)
+     void __builtin_arc_vrecrun (int)
+     void __builtin_arc_vrun (int)
+</pre>
+ <p>The following take a <code>__v8hi</code> argument and two <code>int</code>
+arguments and return a <code>__v8hi</code> result.  The second argument must
+be a 3-bit compile time constants, indicating one the registers I0-I7,
+and the third argument must be an 8-bit compile time constant.
+
+ <p><em>Note:</em> Although the equivalent hardware instructions do not take
+an SIMD register as an operand, these builtins overwrite the relevant
+bits of the <code>__v8hi</code> register provided as the first argument with
+the value loaded from the <code>[Ib, u8]</code> location in the SDM.
+
+<pre class="example">     __v8hi __builtin_arc_vld32 (__v8hi, const int, const int)
+     __v8hi __builtin_arc_vld32wh (__v8hi, const int, const int)
+     __v8hi __builtin_arc_vld32wl (__v8hi, const int, const int)
+     __v8hi __builtin_arc_vld64 (__v8hi, const int, const int)
+</pre>
+ <p>The following take two <code>int</code> arguments and return a <code>__v8hi</code>
+result.  The first argument must be a 3-bit compile time constants,
+indicating one the registers I0-I7, and the second argument must be an
+8-bit compile time constant.
+
+<pre class="example">     __v8hi __builtin_arc_vld128 (const int, const int)
+     __v8hi __builtin_arc_vld64w (const int, const int)
+</pre>
+ <p>The following take a <code>__v8hi</code> argument and two <code>int</code>
+arguments and return no result.  The second argument must be a 3-bit
+compile time constants, indicating one the registers I0-I7, and the
+third argument must be an 8-bit compile time constant.
+
+<pre class="example">     void __builtin_arc_vst128 (__v8hi, const int, const int)
+     void __builtin_arc_vst64 (__v8hi, const int, const int)
+</pre>
+ <p>The following take a <code>__v8hi</code> argument and three <code>int</code>
+arguments and return no result.  The second argument must be a 3-bit
+compile-time constant, identifying the 16-bit sub-register to be
+stored, the third argument must be a 3-bit compile time constants,
+indicating one the registers I0-I7, and the fourth argument must be an
+8-bit compile time constant.
+
+<pre class="example">     void __builtin_arc_vst16_n (__v8hi, const int, const int, const int)
+     void __builtin_arc_vst32_n (__v8hi, const int, const int, const int)
+</pre>
+ </body></html>
+

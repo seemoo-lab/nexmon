@@ -1,0 +1,113 @@
+<html lang="en">
+<head>
+<title>Substitutions - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Mode-Iterators.html#Mode-Iterators" title="Mode Iterators">
+<link rel="prev" href="Defining-Mode-Iterators.html#Defining-Mode-Iterators" title="Defining Mode Iterators">
+<link rel="next" href="Examples.html#Examples" title="Examples">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Substitutions"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Examples.html#Examples">Examples</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Defining-Mode-Iterators.html#Defining-Mode-Iterators">Defining Mode Iterators</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Mode-Iterators.html#Mode-Iterators">Mode Iterators</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">16.23.1.2 Substitution in Mode Iterators</h5>
+
+<p><a name="index-define_005fmode_005fattr-3839"></a>
+If an <samp><span class="file">.md</span></samp> file construct uses mode iterators, each version of the
+construct will often need slightly different strings or modes.  For
+example:
+
+     <ul>
+<li>When a <code>define_expand</code> defines several <code>add</code><var>m</var><code>3</code> patterns
+(see <a href="Standard-Names.html#Standard-Names">Standard Names</a>), each expander will need to use the
+appropriate mode name for <var>m</var>.
+
+     <li>When a <code>define_insn</code> defines several instruction patterns,
+each instruction will often use a different assembler mnemonic.
+
+     <li>When a <code>define_insn</code> requires operands with different modes,
+using an iterator for one of the operand modes usually requires a specific
+mode for the other operand(s). 
+</ul>
+
+ <p>GCC supports such variations through a system of &ldquo;mode attributes&rdquo;. 
+There are two standard attributes: <code>mode</code>, which is the name of
+the mode in lower case, and <code>MODE</code>, which is the same thing in
+upper case.  You can define other attributes using:
+
+<pre class="smallexample">     (define_mode_attr <var>name</var> [(<var>mode1</var> "<var>value1</var>") ... (<var>moden</var> "<var>valuen</var>")])
+</pre>
+ <p>where <var>name</var> is the name of the attribute and <var>valuei</var>
+is the value associated with <var>modei</var>.
+
+ <p>When GCC replaces some <var>:iterator</var> with <var>:mode</var>, it will scan
+each string and mode in the pattern for sequences of the form
+<code>&lt;</code><var>iterator</var><code>:</code><var>attr</var><code>&gt;</code>, where <var>attr</var> is the name of a
+mode attribute.  If the attribute is defined for <var>mode</var>, the whole
+<code>&lt;...&gt;</code> sequence will be replaced by the appropriate attribute
+value.
+
+ <p>For example, suppose an <samp><span class="file">.md</span></samp> file has:
+
+<pre class="smallexample">     (define_mode_iterator P [(SI "Pmode == SImode") (DI "Pmode == DImode")])
+     (define_mode_attr load [(SI "lw") (DI "ld")])
+</pre>
+ <p>If one of the patterns that uses <code>:P</code> contains the string
+<code>"&lt;P:load&gt;\t%0,%1"</code>, the <code>SI</code> version of that pattern
+will use <code>"lw\t%0,%1"</code> and the <code>DI</code> version will use
+<code>"ld\t%0,%1"</code>.
+
+ <p>Here is an example of using an attribute for a mode:
+
+<pre class="smallexample">     (define_mode_iterator LONG [SI DI])
+     (define_mode_attr SHORT [(SI "HI") (DI "SI")])
+     (define_insn ...
+       (sign_extend:LONG (match_operand:&lt;LONG:SHORT&gt; ...)) ...)
+</pre>
+ <p>The <var>iterator</var><code>:</code> prefix may be omitted, in which case the
+substitution will be attempted for every iterator expansion.
+
+ </body></html>
+

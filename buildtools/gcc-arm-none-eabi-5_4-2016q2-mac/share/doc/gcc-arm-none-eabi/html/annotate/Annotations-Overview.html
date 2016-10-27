@@ -1,0 +1,92 @@
+<html lang="en">
+<head>
+<title>Annotations Overview - GDB's Obsolete Annotations</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GDB's Obsolete Annotations">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="index.html#Top" title="Top">
+<link rel="next" href="Limitations.html#Limitations" title="Limitations">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1994-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<h1 class="settitle">GDB's Obsolete Annotations</h1>
+<div class="node">
+<p>
+<a name="Annotations-Overview"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Limitations.html#Limitations">Limitations</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="index.html#Top">Top</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">1 What is an Annotation?</h2>
+
+<p><a name="index-annotations-1"></a>
+To produce obsolete level two annotations, start <span class="sc">gdb</span> with the
+<code>--annotate=2</code> option.
+
+   <p>Annotations start with a newline character, two `<samp><span class="samp">control-z</span></samp>'
+characters, and the name of the annotation.  If there is no additional
+information associated with this annotation, the name of the annotation
+is followed immediately by a newline.  If there is additional
+information, the name of the annotation is followed by a space, the
+additional information, and a newline.  The additional information
+cannot contain newline characters.
+
+   <p>Any output not beginning with a newline and two `<samp><span class="samp">control-z</span></samp>'
+characters denotes literal output from <span class="sc">gdb</span>.  Currently there is
+no need for <span class="sc">gdb</span> to output a newline followed by two
+`<samp><span class="samp">control-z</span></samp>' characters, but if there was such a need, the
+annotations could be extended with an `<samp><span class="samp">escape</span></samp>' annotation which
+means those three characters as output.
+
+   <p>A simple example of starting up <span class="sc">gdb</span> with annotations is:
+
+<pre class="smallexample">     $ gdb --annotate=2
+     GNU GDB 5.0
+     Copyright 2000 Free Software Foundation, Inc.
+     GDB is free software, covered by the GNU General Public License,
+     and you are welcome to change it and/or distribute copies of it
+     under certain conditions.
+     Type "show copying" to see the conditions.
+     There is absolutely no warranty for GDB.  Type "show warranty"
+     for details.
+     This GDB was configured as "sparc-sun-sunos4.1.3"
+     
+     ^Z^Zpre-prompt
+     (gdb)
+     ^Z^Zprompt
+     quit
+     
+     ^Z^Zpost-prompt
+     $
+</pre>
+   <p>Here `<samp><span class="samp">quit</span></samp>' is input to <span class="sc">gdb</span>; the rest is output from
+<span class="sc">gdb</span>.  The three lines beginning `<samp><span class="samp">^Z^Z</span></samp>' (where `<samp><span class="samp">^Z</span></samp>'
+denotes a `<samp><span class="samp">control-z</span></samp>' character) are annotations; the rest is
+output from <span class="sc">gdb</span>.
+
+   </body></html>
+

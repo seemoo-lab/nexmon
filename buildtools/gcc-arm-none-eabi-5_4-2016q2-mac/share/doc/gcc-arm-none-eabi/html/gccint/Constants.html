@@ -1,0 +1,215 @@
+<html lang="en">
+<head>
+<title>Constants - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="RTL.html#RTL" title="RTL">
+<link rel="prev" href="Machine-Modes.html#Machine-Modes" title="Machine Modes">
+<link rel="next" href="Regs-and-Memory.html#Regs-and-Memory" title="Regs and Memory">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Constants"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Regs-and-Memory.html#Regs-and-Memory">Regs and Memory</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Machine-Modes.html#Machine-Modes">Machine Modes</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="RTL.html#RTL">RTL</a>
+<hr>
+</div>
+
+<h3 class="section">13.7 Constant Expression Types</h3>
+
+<p><a name="index-RTL-constants-2820"></a><a name="index-RTL-constant-expression-types-2821"></a>
+The simplest RTL expressions are those that represent constant values.
+
+     
+<a name="index-const_005fint-2822"></a>
+<dl><dt><code>(const_int </code><var>i</var><code>)</code><dd>This type of expression represents the integer value <var>i</var>.  <var>i</var>
+is customarily accessed with the macro <code>INTVAL</code> as in
+<code>INTVAL (</code><var>exp</var><code>)</code>, which is equivalent to <code>XWINT (</code><var>exp</var><code>, 0)</code>.
+
+     <p>Constants generated for modes with fewer bits than in
+<code>HOST_WIDE_INT</code> must be sign extended to full width (e.g., with
+<code>gen_int_mode</code>).  For constants for modes with more bits than in
+<code>HOST_WIDE_INT</code> the implied high order bits of that constant are
+copies of the top bit.  Note however that values are neither
+inherently signed nor inherently unsigned; where necessary, signedness
+is determined by the rtl operation instead.
+
+     <p><a name="index-const0_005frtx-2823"></a><a name="index-const1_005frtx-2824"></a><a name="index-const2_005frtx-2825"></a><a name="index-constm1_005frtx-2826"></a>There is only one expression object for the integer value zero; it is
+the value of the variable <code>const0_rtx</code>.  Likewise, the only
+expression for integer value one is found in <code>const1_rtx</code>, the only
+expression for integer value two is found in <code>const2_rtx</code>, and the
+only expression for integer value negative one is found in
+<code>constm1_rtx</code>.  Any attempt to create an expression of code
+<code>const_int</code> and value zero, one, two or negative one will return
+<code>const0_rtx</code>, <code>const1_rtx</code>, <code>const2_rtx</code> or
+<code>constm1_rtx</code> as appropriate.
+
+     <p><a name="index-const_005ftrue_005frtx-2827"></a>Similarly, there is only one object for the integer whose value is
+<code>STORE_FLAG_VALUE</code>.  It is found in <code>const_true_rtx</code>.  If
+<code>STORE_FLAG_VALUE</code> is one, <code>const_true_rtx</code> and
+<code>const1_rtx</code> will point to the same object.  If
+<code>STORE_FLAG_VALUE</code> is &minus;1, <code>const_true_rtx</code> and
+<code>constm1_rtx</code> will point to the same object.
+
+     <p><a name="index-const_005fdouble-2828"></a><br><dt><code>(const_double:</code><var>m</var> <var>i0</var> <var>i1</var><code> ...)</code><dd>This represents either a floating-point constant of mode <var>m</var> or
+(on older ports that do not define
+<code>TARGET_SUPPORTS_WIDE_INT</code>) an integer constant too large to fit
+into <code>HOST_BITS_PER_WIDE_INT</code> bits but small enough to fit within
+twice that number of bits.  In the latter case, <var>m</var> will be
+<code>VOIDmode</code>.  For integral values constants for modes with more
+bits than twice the number in <code>HOST_WIDE_INT</code> the implied high
+order bits of that constant are copies of the top bit of
+<code>CONST_DOUBLE_HIGH</code>.  Note however that integral values are
+neither inherently signed nor inherently unsigned; where necessary,
+signedness is determined by the rtl operation instead.
+
+     <p>On more modern ports, <code>CONST_DOUBLE</code> only represents floating
+point values.  New ports define <code>TARGET_SUPPORTS_WIDE_INT</code> to
+make this designation.
+
+     <p><a name="index-CONST_005fDOUBLE_005fLOW-2829"></a>If <var>m</var> is <code>VOIDmode</code>, the bits of the value are stored in
+<var>i0</var> and <var>i1</var>.  <var>i0</var> is customarily accessed with the macro
+<code>CONST_DOUBLE_LOW</code> and <var>i1</var> with <code>CONST_DOUBLE_HIGH</code>.
+
+     <p>If the constant is floating point (regardless of its precision), then
+the number of integers used to store the value depends on the size of
+<code>REAL_VALUE_TYPE</code> (see <a href="Floating-Point.html#Floating-Point">Floating Point</a>).  The integers
+represent a floating point number, but not precisely in the target
+machine's or host machine's floating point format.  To convert them to
+the precise bit pattern used by the target machine, use the macro
+<code>REAL_VALUE_TO_TARGET_DOUBLE</code> and friends (see <a href="Data-Output.html#Data-Output">Data Output</a>).
+
+     <p><a name="index-CONST_005fWIDE_005fINT-2830"></a><br><dt><code>(const_wide_int:</code><var>m</var> <var>nunits</var> <var>elt0</var><code> ...)</code><dd>This contains an array of <code>HOST_WIDE_INT</code>s that is large enough
+to hold any constant that can be represented on the target.  This form
+of rtl is only used on targets that define
+<code>TARGET_SUPPORTS_WIDE_INT</code> to be nonzero and then
+<code>CONST_DOUBLE</code>s are only used to hold floating-point values.  If
+the target leaves <code>TARGET_SUPPORTS_WIDE_INT</code> defined as 0,
+<code>CONST_WIDE_INT</code>s are not used and <code>CONST_DOUBLE</code>s are as
+they were before.
+
+     <p>The values are stored in a compressed format.  The higher-order
+0s or -1s are not represented if they are just the logical sign
+extension of the number that is represented.
+
+     <p><a name="index-CONST_005fWIDE_005fINT_005fVEC-2831"></a><br><dt><code>CONST_WIDE_INT_VEC (</code><var>code</var><code>)</code><dd>Returns the entire array of <code>HOST_WIDE_INT</code>s that are used to
+store the value.  This macro should be rarely used.
+
+     <p><a name="index-CONST_005fWIDE_005fINT_005fNUNITS-2832"></a><br><dt><code>CONST_WIDE_INT_NUNITS (</code><var>code</var><code>)</code><dd>The number of <code>HOST_WIDE_INT</code>s used to represent the number. 
+Note that this generally is smaller than the number of
+<code>HOST_WIDE_INT</code>s implied by the mode size.
+
+     <p><a name="index-CONST_005fWIDE_005fINT_005fELT-2833"></a><br><dt><code>CONST_WIDE_INT_NUNITS (</code><var>code</var><code>,</code><var>i</var><code>)</code><dd>Returns the <code>i</code>th element of the array.   Element 0 is contains
+the low order bits of the constant.
+
+     <p><a name="index-const_005ffixed-2834"></a><br><dt><code>(const_fixed:</code><var>m</var><code> ...)</code><dd>Represents a fixed-point constant of mode <var>m</var>. 
+The operand is a data structure of type <code>struct fixed_value</code> and
+is accessed with the macro <code>CONST_FIXED_VALUE</code>.  The high part of
+data is accessed with <code>CONST_FIXED_VALUE_HIGH</code>; the low part is
+accessed with <code>CONST_FIXED_VALUE_LOW</code>.
+
+     <p><a name="index-const_005fvector-2835"></a><br><dt><code>(const_vector:</code><var>m</var><code> [</code><var>x0</var> <var>x1</var><code> ...])</code><dd>Represents a vector constant.  The square brackets stand for the vector
+containing the constant elements.  <var>x0</var>, <var>x1</var> and so on are
+the <code>const_int</code>, <code>const_double</code> or <code>const_fixed</code> elements.
+
+     <p>The number of units in a <code>const_vector</code> is obtained with the macro
+<code>CONST_VECTOR_NUNITS</code> as in <code>CONST_VECTOR_NUNITS (</code><var>v</var><code>)</code>.
+
+     <p>Individual elements in a vector constant are accessed with the macro
+<code>CONST_VECTOR_ELT</code> as in <code>CONST_VECTOR_ELT (</code><var>v</var><code>, </code><var>n</var><code>)</code>
+where <var>v</var> is the vector constant and <var>n</var> is the element
+desired.
+
+     <p><a name="index-const_005fstring-2836"></a><br><dt><code>(const_string </code><var>str</var><code>)</code><dd>Represents a constant string with value <var>str</var>.  Currently this is
+used only for insn attributes (see <a href="Insn-Attributes.html#Insn-Attributes">Insn Attributes</a>) since constant
+strings in C are placed in memory.
+
+     <p><a name="index-symbol_005fref-2837"></a><br><dt><code>(symbol_ref:</code><var>mode</var> <var>symbol</var><code>)</code><dd>Represents the value of an assembler label for data.  <var>symbol</var> is
+a string that describes the name of the assembler label.  If it starts
+with a `<samp><span class="samp">*</span></samp>', the label is the rest of <var>symbol</var> not including
+the `<samp><span class="samp">*</span></samp>'.  Otherwise, the label is <var>symbol</var>, usually prefixed
+with `<samp><span class="samp">_</span></samp>'.
+
+     <p>The <code>symbol_ref</code> contains a mode, which is usually <code>Pmode</code>. 
+Usually that is the only mode for which a symbol is directly valid.
+
+     <p><a name="index-label_005fref-2838"></a><br><dt><code>(label_ref:</code><var>mode</var> <var>label</var><code>)</code><dd>Represents the value of an assembler label for code.  It contains one
+operand, an expression, which must be a <code>code_label</code> or a <code>note</code>
+of type <code>NOTE_INSN_DELETED_LABEL</code> that appears in the instruction
+sequence to identify the place where the label should go.
+
+     <p>The reason for using a distinct expression type for code label
+references is so that jump optimization can distinguish them.
+
+     <p>The <code>label_ref</code> contains a mode, which is usually <code>Pmode</code>. 
+Usually that is the only mode for which a label is directly valid.
+
+     <p><a name="index-const-2839"></a><br><dt><code>(const:</code><var>m</var> <var>exp</var><code>)</code><dd>Represents a constant that is the result of an assembly-time
+arithmetic computation.  The operand, <var>exp</var>, is an expression that
+contains only constants (<code>const_int</code>, <code>symbol_ref</code> and
+<code>label_ref</code> expressions) combined with <code>plus</code> and
+<code>minus</code>.  However, not all combinations are valid, since the
+assembler cannot do arbitrary arithmetic on relocatable symbols.
+
+     <p><var>m</var> should be <code>Pmode</code>.
+
+     <p><a name="index-high-2840"></a><br><dt><code>(high:</code><var>m</var> <var>exp</var><code>)</code><dd>Represents the high-order bits of <var>exp</var>, usually a
+<code>symbol_ref</code>.  The number of bits is machine-dependent and is
+normally the number of bits specified in an instruction that initializes
+the high order bits of a register.  It is used with <code>lo_sum</code> to
+represent the typical two-instruction sequence used in RISC machines to
+reference a global memory location.
+
+     <p><var>m</var> should be <code>Pmode</code>. 
+</dl>
+
+ <p><a name="index-CONST0_005fRTX-2841"></a><a name="index-CONST1_005fRTX-2842"></a><a name="index-CONST2_005fRTX-2843"></a>The macro <code>CONST0_RTX (</code><var>mode</var><code>)</code> refers to an expression with
+value 0 in mode <var>mode</var>.  If mode <var>mode</var> is of mode class
+<code>MODE_INT</code>, it returns <code>const0_rtx</code>.  If mode <var>mode</var> is of
+mode class <code>MODE_FLOAT</code>, it returns a <code>CONST_DOUBLE</code>
+expression in mode <var>mode</var>.  Otherwise, it returns a
+<code>CONST_VECTOR</code> expression in mode <var>mode</var>.  Similarly, the macro
+<code>CONST1_RTX (</code><var>mode</var><code>)</code> refers to an expression with value 1 in
+mode <var>mode</var> and similarly for <code>CONST2_RTX</code>.  The
+<code>CONST1_RTX</code> and <code>CONST2_RTX</code> macros are undefined
+for vector modes.
+
+ </body></html>
+

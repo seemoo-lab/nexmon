@@ -1,0 +1,131 @@
+<html lang="en">
+<head>
+<title>C Constraint Interface - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Constraints.html#Constraints" title="Constraints">
+<link rel="prev" href="Define-Constraints.html#Define-Constraints" title="Define Constraints">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="C-Constraint-Interface"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Define-Constraints.html#Define-Constraints">Define Constraints</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Constraints.html#Constraints">Constraints</a>
+<hr>
+</div>
+
+<h4 class="subsection">16.8.8 Testing constraints from C</h4>
+
+<p><a name="index-testing-constraints-3371"></a><a name="index-constraints_002c-testing-3372"></a>
+It is occasionally useful to test a constraint from C code rather than
+implicitly via the constraint string in a <code>match_operand</code>.  The
+generated file <samp><span class="file">tm_p.h</span></samp> declares a few interfaces for working
+with constraints.  At present these are defined for all constraints
+except <code>g</code> (which is equivalent to <code>general_operand</code>).
+
+ <p>Some valid constraint names are not valid C identifiers, so there is a
+mangling scheme for referring to them from C.  Constraint names that
+do not contain angle brackets or underscores are left unchanged. 
+Underscores are doubled, each `<samp><span class="samp">&lt;</span></samp>' is replaced with `<samp><span class="samp">_l</span></samp>', and
+each `<samp><span class="samp">&gt;</span></samp>' with `<samp><span class="samp">_g</span></samp>'.  Here are some examples:
+
+<!-- the @c's prevent double blank lines in the printed manual. -->
+<pre class="example">
+     <p><table summary=""><tr align="left"><td valign="top"><strong>Original</strong> </td><td valign="top"><strong>Mangled</strong>  <br></td></tr><tr align="left"><td valign="top"><code>x</code>     </td><td valign="top"><code>x</code>       <br></td></tr><tr align="left"><td valign="top"><code>P42x</code>  </td><td valign="top"><code>P42x</code>    <br></td></tr><tr align="left"><td valign="top"><code>P4_x</code>  </td><td valign="top"><code>P4__x</code>   <br></td></tr><tr align="left"><td valign="top"><code>P4&gt;x</code>  </td><td valign="top"><code>P4_gx</code>   <br></td></tr><tr align="left"><td valign="top"><code>P4&gt;&gt;</code>  </td><td valign="top"><code>P4_g_g</code>  <br></td></tr><tr align="left"><td valign="top"><code>P4_g&gt;</code> </td><td valign="top"><code>P4__g_g</code>
+     <br></td></tr></table>
+</pre>
+ <p>Throughout this section, the variable <var>c</var> is either a constraint
+in the abstract sense, or a constant from <code>enum constraint_num</code>;
+the variable <var>m</var> is a mangled constraint name (usually as part of
+a larger identifier).
+
+<div class="defun">
+&mdash; Enum: <b>constraint_num</b><var><a name="index-constraint_005fnum-3373"></a></var><br>
+<blockquote><p>For each constraint except <code>g</code>, there is a corresponding
+enumeration constant: `<samp><span class="samp">CONSTRAINT_</span></samp>' plus the mangled name of the
+constraint.  Functions that take an <code>enum constraint_num</code> as an
+argument expect one of these constants. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: inline bool <b>satisfies_constraint_</b><var>m </var>(<var>rtx exp</var>)<var><a name="index-satisfies_005fconstraint_005f-3374"></a></var><br>
+<blockquote><p>For each non-register constraint <var>m</var> except <code>g</code>, there is
+one of these functions; it returns <code>true</code> if <var>exp</var> satisfies the
+constraint.  These functions are only visible if <samp><span class="file">rtl.h</span></samp> was included
+before <samp><span class="file">tm_p.h</span></samp>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: bool <b>constraint_satisfied_p</b> (<var>rtx exp, enum constraint_num c</var>)<var><a name="index-constraint_005fsatisfied_005fp-3375"></a></var><br>
+<blockquote><p>Like the <code>satisfies_constraint_</code><var>m</var> functions, but the
+constraint to test is given as an argument, <var>c</var>.  If <var>c</var>
+specifies a register constraint, this function will always return
+<code>false</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: enum reg_class <b>reg_class_for_constraint</b> (<var>enum constraint_num c</var>)<var><a name="index-reg_005fclass_005ffor_005fconstraint-3376"></a></var><br>
+<blockquote><p>Returns the register class associated with <var>c</var>.  If <var>c</var> is not
+a register constraint, or those registers are not available for the
+currently selected subtarget, returns <code>NO_REGS</code>. 
+</p></blockquote></div>
+
+ <p>Here is an example use of <code>satisfies_constraint_</code><var>m</var>.  In
+peephole optimizations (see <a href="Peephole-Definitions.html#Peephole-Definitions">Peephole Definitions</a>), operand
+constraint strings are ignored, so if there are relevant constraints,
+they must be tested in the C condition.  In the example, the
+optimization is applied if operand 2 does <em>not</em> satisfy the
+`<samp><span class="samp">K</span></samp>' constraint.  (This is a simplified version of a peephole
+definition from the i386 machine description.)
+
+<pre class="smallexample">     (define_peephole2
+       [(match_scratch:SI 3 "r")
+        (set (match_operand:SI 0 "register_operand" "")
+             (mult:SI (match_operand:SI 1 "memory_operand" "")
+                      (match_operand:SI 2 "immediate_operand" "")))]
+     
+       "!satisfies_constraint_K (operands[2])"
+     
+       [(set (match_dup 3) (match_dup 1))
+        (set (match_dup 0) (mult:SI (match_dup 3) (match_dup 2)))]
+     
+       "")
+</pre>
+ </body></html>
+

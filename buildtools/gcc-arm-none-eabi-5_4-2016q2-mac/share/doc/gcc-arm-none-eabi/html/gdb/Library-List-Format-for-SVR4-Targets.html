@@ -1,0 +1,103 @@
+<html lang="en">
+<head>
+<title>Library List Format for SVR4 Targets - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Remote-Protocol.html#Remote-Protocol" title="Remote Protocol">
+<link rel="prev" href="Library-List-Format.html#Library-List-Format" title="Library List Format">
+<link rel="next" href="Memory-Map-Format.html#Memory-Map-Format" title="Memory Map Format">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Library-List-Format-for-SVR4-Targets"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Memory-Map-Format.html#Memory-Map-Format">Memory Map Format</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Library-List-Format.html#Library-List-Format">Library List Format</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Remote-Protocol.html#Remote-Protocol">Remote Protocol</a>
+<hr>
+</div>
+
+<h3 class="section">E.15 Library List Format for SVR4 Targets</h3>
+
+<p><a name="index-library-list-format_002c-remote-protocol-3489"></a>
+On SVR4 platforms <span class="sc">gdb</span> can use the symbol table of a dynamic loader
+(e.g. <samp><span class="file">ld.so</span></samp>) and normal memory operations to maintain a list of
+shared libraries.  Still a special library list provided by this packet is
+more efficient for the <span class="sc">gdb</span> remote protocol.
+
+   <p>The `<samp><span class="samp">qXfer:libraries-svr4:read</span></samp>' packet returns an XML document which lists
+loaded libraries and their SVR4 linker parameters.  For each library on SVR4
+target, the following parameters are reported:
+
+     <ul>
+<li><code>name</code>, the absolute file name from the <code>l_name</code> field of
+<code>struct link_map</code>. 
+<li><code>lm</code> with address of <code>struct link_map</code> used for TLS
+(Thread Local Storage) access. 
+<li><code>l_addr</code>, the displacement as read from the field <code>l_addr</code> of
+<code>struct link_map</code>.  For prelinked libraries this is not an absolute
+memory address.  It is a displacement of absolute memory address against
+address the file was prelinked to during the library load. 
+<li><code>l_ld</code>, which is memory address of the <code>PT_DYNAMIC</code> segment
+</ul>
+
+   <p>Additionally the single <code>main-lm</code> attribute specifies address of
+<code>struct link_map</code> used for the main executable.  This parameter is used
+for TLS access and its presence is optional.
+
+   <p><span class="sc">gdb</span> must be linked with the Expat library to support XML
+SVR4 library lists.  See <a href="Expat.html#Expat">Expat</a>.
+
+   <p>A simple memory map, with two loaded libraries (which do not use prelink),
+looks like this:
+
+<pre class="smallexample">     &lt;library-list-svr4 version="1.0" main-lm="0xe4f8f8"&gt;
+       &lt;library name="/lib/ld-linux.so.2" lm="0xe4f51c" l_addr="0xe2d000"
+                l_ld="0xe4eefc"/&gt;
+       &lt;library name="/lib/libc.so.6" lm="0xe4fbe8" l_addr="0x154000"
+                l_ld="0x152350"/&gt;
+     &lt;/library-list-svr&gt;
+</pre>
+   <p>The format of an SVR4 library list is described by this DTD:
+
+<pre class="smallexample">     &lt;!-- library-list-svr4: Root element with versioning --&gt;
+     &lt;!ELEMENT library-list-svr4  (library)*&gt;
+     &lt;!ATTLIST library-list-svr4  version CDATA   #FIXED  "1.0"&gt;
+     &lt;!ATTLIST library-list-svr4  main-lm CDATA   #IMPLIED&gt;
+     &lt;!ELEMENT library            EMPTY&gt;
+     &lt;!ATTLIST library            name    CDATA   #REQUIRED&gt;
+     &lt;!ATTLIST library            lm      CDATA   #REQUIRED&gt;
+     &lt;!ATTLIST library            l_addr  CDATA   #REQUIRED&gt;
+     &lt;!ATTLIST library            l_ld    CDATA   #REQUIRED&gt;
+</pre>
+   </body></html>
+

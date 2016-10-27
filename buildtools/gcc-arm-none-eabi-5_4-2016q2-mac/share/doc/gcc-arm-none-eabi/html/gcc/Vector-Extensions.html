@@ -1,0 +1,222 @@
+<html lang="en">
+<head>
+<title>Vector Extensions - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="C-Extensions.html#C-Extensions" title="C Extensions">
+<link rel="prev" href="Return-Address.html#Return-Address" title="Return Address">
+<link rel="next" href="Offsetof.html#Offsetof" title="Offsetof">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Vector-Extensions"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Offsetof.html#Offsetof">Offsetof</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Return-Address.html#Return-Address">Return Address</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="C-Extensions.html#C-Extensions">C Extensions</a>
+<hr>
+</div>
+
+<h3 class="section">6.48 Using Vector Instructions through Built-in Functions</h3>
+
+<p>On some targets, the instruction set contains SIMD vector instructions which
+operate on multiple values contained in one large register at the same time. 
+For example, on the x86 the MMX, 3DNow! and SSE extensions can be used
+this way.
+
+ <p>The first step in using these extensions is to provide the necessary data
+types.  This should be done using an appropriate <code>typedef</code>:
+
+<pre class="smallexample">     typedef int v4si __attribute__ ((vector_size (16)));
+</pre>
+ <p class="noindent">The <code>int</code> type specifies the base type, while the attribute specifies
+the vector size for the variable, measured in bytes.  For example, the
+declaration above causes the compiler to set the mode for the <code>v4si</code>
+type to be 16 bytes wide and divided into <code>int</code> sized units.  For
+a 32-bit <code>int</code> this means a vector of 4 units of 4 bytes, and the
+corresponding mode of <code>foo</code> is <acronym>V4SI</acronym>.
+
+ <p>The <code>vector_size</code> attribute is only applicable to integral and
+float scalars, although arrays, pointers, and function return values
+are allowed in conjunction with this construct. Only sizes that are
+a power of two are currently allowed.
+
+ <p>All the basic integer types can be used as base types, both as signed
+and as unsigned: <code>char</code>, <code>short</code>, <code>int</code>, <code>long</code>,
+<code>long long</code>.  In addition, <code>float</code> and <code>double</code> can be
+used to build floating-point vector types.
+
+ <p>Specifying a combination that is not valid for the current architecture
+causes GCC to synthesize the instructions using a narrower mode. 
+For example, if you specify a variable of type <code>V4SI</code> and your
+architecture does not allow for this specific SIMD type, GCC
+produces code that uses 4 <code>SIs</code>.
+
+ <p>The types defined in this manner can be used with a subset of normal C
+operations.  Currently, GCC allows using the following operators
+on these types: <code>+, -, *, /, unary minus, ^, |, &amp;, ~, %</code>.
+
+ <p>The operations behave like C++ <code>valarrays</code>.  Addition is defined as
+the addition of the corresponding elements of the operands.  For
+example, in the code below, each of the 4 elements in <var>a</var> is
+added to the corresponding 4 elements in <var>b</var> and the resulting
+vector is stored in <var>c</var>.
+
+<pre class="smallexample">     typedef int v4si __attribute__ ((vector_size (16)));
+     
+     v4si a, b, c;
+     
+     c = a + b;
+</pre>
+ <p>Subtraction, multiplication, division, and the logical operations
+operate in a similar manner.  Likewise, the result of using the unary
+minus or complement operators on a vector type is a vector whose
+elements are the negative or complemented values of the corresponding
+elements in the operand.
+
+ <p>It is possible to use shifting operators <code>&lt;&lt;</code>, <code>&gt;&gt;</code> on
+integer-type vectors. The operation is defined as following: <code>{a0,
+a1, ..., an} &gt;&gt; {b0, b1, ..., bn} == {a0 &gt;&gt; b0, a1 &gt;&gt; b1,
+..., an &gt;&gt; bn}</code>. Vector operands must have the same number of
+elements.
+
+ <p>For convenience, it is allowed to use a binary vector operation
+where one operand is a scalar. In that case the compiler transforms
+the scalar operand into a vector where each element is the scalar from
+the operation. The transformation happens only if the scalar could be
+safely converted to the vector-element type. 
+Consider the following code.
+
+<pre class="smallexample">     typedef int v4si __attribute__ ((vector_size (16)));
+     
+     v4si a, b, c;
+     long l;
+     
+     a = b + 1;    /* a = b + {1,1,1,1}; */
+     a = 2 * b;    /* a = {2,2,2,2} * b; */
+     
+     a = l + a;    /* Error, cannot convert long to int. */
+</pre>
+ <p>Vectors can be subscripted as if the vector were an array with
+the same number of elements and base type.  Out of bound accesses
+invoke undefined behavior at run time.  Warnings for out of bound
+accesses for vector subscription can be enabled with
+<samp><span class="option">-Warray-bounds</span></samp>.
+
+ <p>Vector comparison is supported with standard comparison
+operators: <code>==, !=, &lt;, &lt;=, &gt;, &gt;=</code>. Comparison operands can be
+vector expressions of integer-type or real-type. Comparison between
+integer-type vectors and real-type vectors are not supported.  The
+result of the comparison is a vector of the same width and number of
+elements as the comparison operands with a signed integral element
+type.
+
+ <p>Vectors are compared element-wise producing 0 when comparison is false
+and -1 (constant of the appropriate type where all bits are set)
+otherwise. Consider the following example.
+
+<pre class="smallexample">     typedef int v4si __attribute__ ((vector_size (16)));
+     
+     v4si a = {1,2,3,4};
+     v4si b = {3,2,1,4};
+     v4si c;
+     
+     c = a &gt;  b;     /* The result would be {0, 0,-1, 0}  */
+     c = a == b;     /* The result would be {0,-1, 0,-1}  */
+</pre>
+ <p>In C++, the ternary operator <code>?:</code> is available. <code>a?b:c</code>, where
+<code>b</code> and <code>c</code> are vectors of the same type and <code>a</code> is an
+integer vector with the same number of elements of the same size as <code>b</code>
+and <code>c</code>, computes all three arguments and creates a vector
+<code>{a[0]?b[0]:c[0], a[1]?b[1]:c[1], ...}</code>.  Note that unlike in
+OpenCL, <code>a</code> is thus interpreted as <code>a != 0</code> and not <code>a &lt; 0</code>. 
+As in the case of binary operations, this syntax is also accepted when
+one of <code>b</code> or <code>c</code> is a scalar that is then transformed into a
+vector. If both <code>b</code> and <code>c</code> are scalars and the type of
+<code>true?b:c</code> has the same size as the element type of <code>a</code>, then
+<code>b</code> and <code>c</code> are converted to a vector type whose elements have
+this type and with the same number of elements as <code>a</code>.
+
+ <p>In C++, the logic operators <code>!, &amp;&amp;, ||</code> are available for vectors. 
+<code>!v</code> is equivalent to <code>v == 0</code>, <code>a &amp;&amp; b</code> is equivalent to
+<code>a!=0 &amp; b!=0</code> and <code>a || b</code> is equivalent to <code>a!=0 | b!=0</code>. 
+For mixed operations between a scalar <code>s</code> and a vector <code>v</code>,
+<code>s &amp;&amp; v</code> is equivalent to <code>s?v!=0:0</code> (the evaluation is
+short-circuit) and <code>v &amp;&amp; s</code> is equivalent to <code>v!=0 &amp; (s?-1:0)</code>.
+
+ <p>Vector shuffling is available using functions
+<code>__builtin_shuffle (vec, mask)</code> and
+<code>__builtin_shuffle (vec0, vec1, mask)</code>. 
+Both functions construct a permutation of elements from one or two
+vectors and return a vector of the same type as the input vector(s). 
+The <var>mask</var> is an integral vector with the same width (<var>W</var>)
+and element count (<var>N</var>) as the output vector.
+
+ <p>The elements of the input vectors are numbered in memory ordering of
+<var>vec0</var> beginning at 0 and <var>vec1</var> beginning at <var>N</var>.  The
+elements of <var>mask</var> are considered modulo <var>N</var> in the single-operand
+case and modulo 2*<var>N</var> in the two-operand case.
+
+ <p>Consider the following example,
+
+<pre class="smallexample">     typedef int v4si __attribute__ ((vector_size (16)));
+     
+     v4si a = {1,2,3,4};
+     v4si b = {5,6,7,8};
+     v4si mask1 = {0,1,1,3};
+     v4si mask2 = {0,4,2,5};
+     v4si res;
+     
+     res = __builtin_shuffle (a, mask1);       /* res is {1,2,2,4}  */
+     res = __builtin_shuffle (a, b, mask2);    /* res is {1,5,3,6}  */
+</pre>
+ <p>Note that <code>__builtin_shuffle</code> is intentionally semantically
+compatible with the OpenCL <code>shuffle</code> and <code>shuffle2</code> functions.
+
+ <p>You can declare variables and use them in function calls and returns, as
+well as in assignments and some casts.  You can specify a vector type as
+a return type for a function.  Vector types can also be used as function
+arguments.  It is possible to cast from one vector type to another,
+provided they are of the same size (in fact, you can also cast vectors
+to and from other datatypes of the same size).
+
+ <p>You cannot operate between vectors of different lengths or different
+signedness without a cast.
+
+ </body></html>
+

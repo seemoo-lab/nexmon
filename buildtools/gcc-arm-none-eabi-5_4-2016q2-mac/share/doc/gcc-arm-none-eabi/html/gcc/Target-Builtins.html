@@ -1,0 +1,96 @@
+<html lang="en">
+<head>
+<title>Target Builtins - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="C-Extensions.html#C-Extensions" title="C Extensions">
+<link rel="prev" href="Other-Builtins.html#Other-Builtins" title="Other Builtins">
+<link rel="next" href="Target-Format-Checks.html#Target-Format-Checks" title="Target Format Checks">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Target-Builtins"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Target-Format-Checks.html#Target-Format-Checks">Target Format Checks</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Other-Builtins.html#Other-Builtins">Other Builtins</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="C-Extensions.html#C-Extensions">C Extensions</a>
+<hr>
+</div>
+
+<h3 class="section">6.58 Built-in Functions Specific to Particular Target Machines</h3>
+
+<p>On some target machines, GCC supports many built-in functions specific
+to those machines.  Generally these generate calls to specific machine
+instructions, but allow the compiler to schedule those calls.
+
+<ul class="menu">
+<li><a accesskey="1" href="AArch64-Built_002din-Functions.html#AArch64-Built_002din-Functions">AArch64 Built-in Functions</a>
+<li><a accesskey="2" href="Alpha-Built_002din-Functions.html#Alpha-Built_002din-Functions">Alpha Built-in Functions</a>
+<li><a accesskey="3" href="Altera-Nios-II-Built_002din-Functions.html#Altera-Nios-II-Built_002din-Functions">Altera Nios II Built-in Functions</a>
+<li><a accesskey="4" href="ARC-Built_002din-Functions.html#ARC-Built_002din-Functions">ARC Built-in Functions</a>
+<li><a accesskey="5" href="ARC-SIMD-Built_002din-Functions.html#ARC-SIMD-Built_002din-Functions">ARC SIMD Built-in Functions</a>
+<li><a accesskey="6" href="ARM-iWMMXt-Built_002din-Functions.html#ARM-iWMMXt-Built_002din-Functions">ARM iWMMXt Built-in Functions</a>
+<li><a accesskey="7" href="ARM-C-Language-Extensions-_0028ACLE_0029.html#ARM-C-Language-Extensions-_0028ACLE_0029">ARM C Language Extensions (ACLE)</a>
+<li><a accesskey="8" href="ARM-Floating-Point-Status-and-Control-Intrinsics.html#ARM-Floating-Point-Status-and-Control-Intrinsics">ARM Floating Point Status and Control Intrinsics</a>
+<li><a accesskey="9" href="AVR-Built_002din-Functions.html#AVR-Built_002din-Functions">AVR Built-in Functions</a>
+<li><a href="Blackfin-Built_002din-Functions.html#Blackfin-Built_002din-Functions">Blackfin Built-in Functions</a>
+<li><a href="FR_002dV-Built_002din-Functions.html#FR_002dV-Built_002din-Functions">FR-V Built-in Functions</a>
+<li><a href="MIPS-DSP-Built_002din-Functions.html#MIPS-DSP-Built_002din-Functions">MIPS DSP Built-in Functions</a>
+<li><a href="MIPS-Paired_002dSingle-Support.html#MIPS-Paired_002dSingle-Support">MIPS Paired-Single Support</a>
+<li><a href="MIPS-Loongson-Built_002din-Functions.html#MIPS-Loongson-Built_002din-Functions">MIPS Loongson Built-in Functions</a>
+<li><a href="Other-MIPS-Built_002din-Functions.html#Other-MIPS-Built_002din-Functions">Other MIPS Built-in Functions</a>
+<li><a href="MSP430-Built_002din-Functions.html#MSP430-Built_002din-Functions">MSP430 Built-in Functions</a>
+<li><a href="NDS32-Built_002din-Functions.html#NDS32-Built_002din-Functions">NDS32 Built-in Functions</a>
+<li><a href="picoChip-Built_002din-Functions.html#picoChip-Built_002din-Functions">picoChip Built-in Functions</a>
+<li><a href="PowerPC-Built_002din-Functions.html#PowerPC-Built_002din-Functions">PowerPC Built-in Functions</a>
+<li><a href="PowerPC-AltiVec_002fVSX-Built_002din-Functions.html#PowerPC-AltiVec_002fVSX-Built_002din-Functions">PowerPC AltiVec/VSX Built-in Functions</a>
+<li><a href="PowerPC-Hardware-Transactional-Memory-Built_002din-Functions.html#PowerPC-Hardware-Transactional-Memory-Built_002din-Functions">PowerPC Hardware Transactional Memory Built-in Functions</a>
+<li><a href="RX-Built_002din-Functions.html#RX-Built_002din-Functions">RX Built-in Functions</a>
+<li><a href="S_002f390-System-z-Built_002din-Functions.html#S_002f390-System-z-Built_002din-Functions">S/390 System z Built-in Functions</a>
+<li><a href="SH-Built_002din-Functions.html#SH-Built_002din-Functions">SH Built-in Functions</a>
+<li><a href="SPARC-VIS-Built_002din-Functions.html#SPARC-VIS-Built_002din-Functions">SPARC VIS Built-in Functions</a>
+<li><a href="SPU-Built_002din-Functions.html#SPU-Built_002din-Functions">SPU Built-in Functions</a>
+<li><a href="TI-C6X-Built_002din-Functions.html#TI-C6X-Built_002din-Functions">TI C6X Built-in Functions</a>
+<li><a href="TILE_002dGx-Built_002din-Functions.html#TILE_002dGx-Built_002din-Functions">TILE-Gx Built-in Functions</a>
+<li><a href="TILEPro-Built_002din-Functions.html#TILEPro-Built_002din-Functions">TILEPro Built-in Functions</a>
+<li><a href="x86-Built_002din-Functions.html#x86-Built_002din-Functions">x86 Built-in Functions</a>
+<li><a href="x86-transactional-memory-intrinsics.html#x86-transactional-memory-intrinsics">x86 transactional memory intrinsics</a>
+</ul>
+
+ </body></html>
+

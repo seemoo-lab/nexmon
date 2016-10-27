@@ -1,0 +1,100 @@
+<html lang="en">
+<head>
+<title>fgetc - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stdio.html#Stdio" title="Stdio">
+<link rel="prev" href="fflush.html#fflush" title="fflush">
+<link rel="next" href="fgetpos.html#fgetpos" title="fgetpos">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="fgetc"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="fgetpos.html#fgetpos">fgetpos</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="fflush.html#fflush">fflush</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stdio.html#Stdio">Stdio</a>
+<hr>
+</div>
+
+<h3 class="section">4.10 <code>fgetc</code>, <code>fgetc_unlocked</code>&mdash;get a character from a file or stream</h3>
+
+<p><a name="index-fgetc-175"></a><a name="index-fgetc_005funlocked-176"></a><a name="index-g_t_005ffgetc_005fr-177"></a><a name="index-g_t_005ffgetc_005funlocked_005fr-178"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;stdio.h&gt;
+     int fgetc(FILE *<var>fp</var>);
+     
+     #define _BSD_SOURCE
+     #include &lt;stdio.h&gt;
+     int fgetc_unlocked(FILE *<var>fp</var>);
+     
+     #include &lt;stdio.h&gt;
+     int _fgetc_r(struct _reent *<var>ptr</var>, FILE *<var>fp</var>);
+     
+     #define _BSD_SOURCE
+     #include &lt;stdio.h&gt;
+     int _fgetc_unlocked_r(struct _reent *<var>ptr</var>, FILE *<var>fp</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+Use <code>fgetc</code> to get the next single character from the file or stream
+identified by <var>fp</var>.  As a side effect, <code>fgetc</code> advances the file's
+current position indicator.
+
+   <p>For a macro version of this function, see <code>getc</code>.
+
+   <p><code>fgetc_unlocked</code> is a non-thread-safe version of <code>fgetc</code>. 
+<code>fgetc_unlocked</code> may only safely be used within a scope
+protected by flockfile() (or ftrylockfile()) and funlockfile().  This
+function may safely be used in a multi-threaded program if and only
+if they are called while the invoking thread owns the (FILE *)
+object, as is the case after a successful call to the flockfile() or
+ftrylockfile() functions.  If threads are disabled, then
+<code>fgetc_unlocked</code> is equivalent to <code>fgetc</code>.
+
+   <p>The functions <code>_fgetc_r</code> and <code>_fgetc_unlocked_r</code> are simply reentrant
+versions that are passed the additional reentrant structure pointer
+argument: <var>ptr</var>.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+The next character (read as an <code>unsigned char</code>, and cast to
+<code>int</code>), unless there is no more data, or the host system reports a
+read error; in either of these situations, <code>fgetc</code> returns <code>EOF</code>.
+
+   <p>You can distinguish the two situations that cause an <code>EOF</code> result by
+using the <code>ferror</code> and <code>feof</code> functions.
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+ANSI C requires <code>fgetc</code>.
+
+   <p><code>fgetc_unlocked</code> is a BSD extension also provided by GNU libc.
+
+   <p>Supporting OS subroutines required: <code>close</code>, <code>fstat</code>, <code>isatty</code>,
+<code>lseek</code>, <code>read</code>, <code>sbrk</code>, <code>write</code>.
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

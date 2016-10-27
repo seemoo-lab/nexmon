@@ -1,0 +1,95 @@
+<html lang="en">
+<head>
+<title>LCSSA - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation" title="Loop Analysis and Representation">
+<link rel="prev" href="Loop-manipulation.html#Loop-manipulation" title="Loop manipulation">
+<link rel="next" href="Scalar-evolutions.html#Scalar-evolutions" title="Scalar evolutions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="LCSSA"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Scalar-evolutions.html#Scalar-evolutions">Scalar evolutions</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Loop-manipulation.html#Loop-manipulation">Loop manipulation</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation">Loop Analysis and Representation</a>
+<hr>
+</div>
+
+<h3 class="section">15.4 Loop-closed SSA form</h3>
+
+<p><a name="index-LCSSA-3233"></a><a name="index-Loop_002dclosed-SSA-form-3234"></a>
+Throughout the loop optimizations on tree level, one extra condition is
+enforced on the SSA form:  No SSA name is used outside of the loop in
+that it is defined.  The SSA form satisfying this condition is called
+&ldquo;loop-closed SSA form&rdquo; &ndash; LCSSA.  To enforce LCSSA, PHI nodes must be
+created at the exits of the loops for the SSA names that are used
+outside of them.  Only the real operands (not virtual SSA names) are
+held in LCSSA, in order to save memory.
+
+ <p>There are various benefits of LCSSA:
+
+     <ul>
+<li>Many optimizations (value range analysis, final value
+replacement) are interested in the values that are defined in the loop
+and used outside of it, i.e., exactly those for that we create new PHI
+nodes. 
+<li>In induction variable analysis, it is not necessary to specify the
+loop in that the analysis should be performed &ndash; the scalar evolution
+analysis always returns the results with respect to the loop in that the
+SSA name is defined. 
+<li>It makes updating of SSA form during loop transformations simpler. 
+Without LCSSA, operations like loop unrolling may force creation of PHI
+nodes arbitrarily far from the loop, while in LCSSA, the SSA form can be
+updated locally.  However, since we only keep real operands in LCSSA, we
+cannot use this advantage (we could have local updating of real
+operands, but it is not much more efficient than to use generic SSA form
+updating for it as well; the amount of changes to SSA is the same). 
+</ul>
+
+ <p>However, it also means LCSSA must be updated.  This is usually
+straightforward, unless you create a new value in loop and use it
+outside, or unless you manipulate loop exit edges (functions are
+provided to make these manipulations simple). 
+<code>rewrite_into_loop_closed_ssa</code> is used to rewrite SSA form to
+LCSSA, and <code>verify_loop_closed_ssa</code> to check that the invariant of
+LCSSA is preserved.
+
+ </body></html>
+

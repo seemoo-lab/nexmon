@@ -1,0 +1,149 @@
+<html lang="en">
+<head>
+<title>Elimination - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stack-and-Calling.html#Stack-and-Calling" title="Stack and Calling">
+<link rel="prev" href="Frame-Registers.html#Frame-Registers" title="Frame Registers">
+<link rel="next" href="Stack-Arguments.html#Stack-Arguments" title="Stack Arguments">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Elimination"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Stack-Arguments.html#Stack-Arguments">Stack Arguments</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Frame-Registers.html#Frame-Registers">Frame Registers</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stack-and-Calling.html#Stack-and-Calling">Stack and Calling</a>
+<hr>
+</div>
+
+<h4 class="subsection">17.9.5 Eliminating Frame Pointer and Arg Pointer</h4>
+
+<!-- prevent bad page break with this line -->
+<p>This is about eliminating the frame pointer and arg pointer.
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_FRAME_POINTER_REQUIRED</b> (<var>void</var>)<var><a name="index-TARGET_005fFRAME_005fPOINTER_005fREQUIRED-4207"></a></var><br>
+<blockquote><p>This target hook should return <code>true</code> if a function must have and use
+a frame pointer.  This target hook is called in the reload pass.  If its return
+value is <code>true</code> the function will have a frame pointer.
+
+      <p>This target hook can in principle examine the current function and decide
+according to the facts, but on most machines the constant <code>false</code> or the
+constant <code>true</code> suffices.  Use <code>false</code> when the machine allows code
+to be generated with no frame pointer, and doing so saves some time or space. 
+Use <code>true</code> when there is no possible advantage to avoiding a frame
+pointer.
+
+      <p>In certain cases, the compiler does not know how to produce valid code
+without a frame pointer.  The compiler recognizes those cases and
+automatically gives the function a frame pointer regardless of what
+<code>TARGET_FRAME_POINTER_REQUIRED</code> returns.  You don't need to worry about
+them.
+
+      <p>In a function that does not require a frame pointer, the frame pointer
+register can be allocated for ordinary usage, unless you mark it as a
+fixed register.  See <code>FIXED_REGISTERS</code> for more information.
+
+      <p>Default return value is <code>false</code>. 
+</p></blockquote></div>
+
+ <p><a name="index-get_005fframe_005fsize-4208"></a>
+
+<div class="defun">
+&mdash; Macro: <b>INITIAL_FRAME_POINTER_OFFSET</b> (<var>depth-var</var>)<var><a name="index-INITIAL_005fFRAME_005fPOINTER_005fOFFSET-4209"></a></var><br>
+<blockquote><p>A C statement to store in the variable <var>depth-var</var> the difference
+between the frame pointer and the stack pointer values immediately after
+the function prologue.  The value would be computed from information
+such as the result of <code>get_frame_size ()</code> and the tables of
+registers <code>regs_ever_live</code> and <code>call_used_regs</code>.
+
+      <p>If <code>ELIMINABLE_REGS</code> is defined, this macro will be not be used and
+need not be defined.  Otherwise, it must be defined even if
+<code>TARGET_FRAME_POINTER_REQUIRED</code> always returns true; in that
+case, you may set <var>depth-var</var> to anything. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ELIMINABLE_REGS</b><var><a name="index-ELIMINABLE_005fREGS-4210"></a></var><br>
+<blockquote><p>If defined, this macro specifies a table of register pairs used to
+eliminate unneeded registers that point into the stack frame.  If it is not
+defined, the only elimination attempted by the compiler is to replace
+references to the frame pointer with references to the stack pointer.
+
+      <p>The definition of this macro is a list of structure initializations, each
+of which specifies an original and replacement register.
+
+      <p>On some machines, the position of the argument pointer is not known until
+the compilation is completed.  In such a case, a separate hard register
+must be used for the argument pointer.  This register can be eliminated by
+replacing it with either the frame pointer or the argument pointer,
+depending on whether or not the frame pointer has been eliminated.
+
+      <p>In this case, you might specify:
+     <pre class="smallexample">          #define ELIMINABLE_REGS  \
+          {{ARG_POINTER_REGNUM, STACK_POINTER_REGNUM}, \
+           {ARG_POINTER_REGNUM, FRAME_POINTER_REGNUM}, \
+           {FRAME_POINTER_REGNUM, STACK_POINTER_REGNUM}}
+     </pre>
+      <p>Note that the elimination of the argument pointer with the stack pointer is
+specified first since that is the preferred elimination. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_CAN_ELIMINATE</b> (<var>const int from_reg, const int to_reg</var>)<var><a name="index-TARGET_005fCAN_005fELIMINATE-4211"></a></var><br>
+<blockquote><p>This target hook should returns <code>true</code> if the compiler is allowed to
+try to replace register number <var>from_reg</var> with register number
+<var>to_reg</var>.  This target hook need only be defined if <code>ELIMINABLE_REGS</code>
+is defined, and will usually be <code>true</code>, since most of the cases
+preventing register elimination are things that the compiler already
+knows about.
+
+      <p>Default return value is <code>true</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>INITIAL_ELIMINATION_OFFSET</b> (<var>from-reg, to-reg, offset-var</var>)<var><a name="index-INITIAL_005fELIMINATION_005fOFFSET-4212"></a></var><br>
+<blockquote><p>This macro is similar to <code>INITIAL_FRAME_POINTER_OFFSET</code>.  It
+specifies the initial difference between the specified pair of
+registers.  This macro must be defined if <code>ELIMINABLE_REGS</code> is
+defined. 
+</p></blockquote></div>
+
+ </body></html>
+

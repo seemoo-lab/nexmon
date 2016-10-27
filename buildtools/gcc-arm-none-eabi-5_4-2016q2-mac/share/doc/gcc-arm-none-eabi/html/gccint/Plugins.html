@@ -1,0 +1,81 @@
+<html lang="en">
+<head>
+<title>Plugins - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Type-Information.html#Type-Information" title="Type Information">
+<link rel="next" href="LTO.html#LTO" title="LTO">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Plugins"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="LTO.html#LTO">LTO</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Type-Information.html#Type-Information">Type Information</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">23 Plugins</h2>
+
+<p><a name="index-Plugins-5102"></a>
+GCC plugins are loadable modules that provide extra features to the
+compiler.  Like GCC itself they can be distributed in source and
+binary forms.
+
+ <p>GCC plugins provide developers with a rich subset of
+the GCC API to allow them to extend GCC as they see fit. 
+Whether it is writing an additional optimization pass,
+transforming code, or analyzing information, plugins
+can be quite useful.
+
+<ul class="menu">
+<li><a accesskey="1" href="Plugins-loading.html#Plugins-loading">Plugins loading</a>:       How can we load plugins. 
+<li><a accesskey="2" href="Plugin-API.html#Plugin-API">Plugin API</a>:            The APIs for plugins. 
+<li><a accesskey="3" href="Plugins-pass.html#Plugins-pass">Plugins pass</a>:          How a plugin interact with the pass manager. 
+<li><a accesskey="4" href="Plugins-GC.html#Plugins-GC">Plugins GC</a>:            How a plugin Interact with GCC Garbage Collector. 
+<li><a accesskey="5" href="Plugins-description.html#Plugins-description">Plugins description</a>:   Giving information about a plugin itself. 
+<li><a accesskey="6" href="Plugins-attr.html#Plugins-attr">Plugins attr</a>:          Registering custom attributes or pragmas. 
+<li><a accesskey="7" href="Plugins-recording.html#Plugins-recording">Plugins recording</a>:     Recording information about pass execution. 
+<li><a accesskey="8" href="Plugins-gate.html#Plugins-gate">Plugins gate</a>:          Controlling which passes are being run. 
+<li><a accesskey="9" href="Plugins-tracking.html#Plugins-tracking">Plugins tracking</a>:      Keeping track of available passes. 
+<li><a href="Plugins-building.html#Plugins-building">Plugins building</a>:      How can we build a plugin. 
+</ul>
+
+ </body></html>
+

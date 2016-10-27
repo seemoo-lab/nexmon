@@ -1,0 +1,81 @@
+<html lang="en">
+<head>
+<title>Memory Usage - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="BFD-front-end.html#BFD-front-end" title="BFD front end">
+<link rel="prev" href="Miscellaneous.html#Miscellaneous" title="Miscellaneous">
+<link rel="next" href="Initialization.html#Initialization" title="Initialization">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Memory-Usage"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Initialization.html#Initialization">Initialization</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Miscellaneous.html#Miscellaneous">Miscellaneous</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="BFD-front-end.html#BFD-front-end">BFD front end</a>
+<hr>
+</div>
+
+<h3 class="section">2.4 Memory Usage</h3>
+
+<p>BFD keeps all of its internal structures in obstacks. There is one obstack
+per open BFD file, into which the current state is stored. When a BFD is
+closed, the obstack is deleted, and so everything which has been
+allocated by BFD for the closing file is thrown away.
+
+   <p>BFD does not free anything created by an application, but pointers into
+<code>bfd</code> structures become invalid on a <code>bfd_close</code>; for example,
+after a <code>bfd_close</code> the vector passed to
+<code>bfd_canonicalize_symtab</code> is still around, since it has been
+allocated by the application, but the data that it pointed to are
+lost.
+
+   <p>The general rule is to not close a BFD until all operations dependent
+upon data from the BFD have been completed, or all the data from within
+the file has been copied. To help with the management of memory, there
+is a function (<code>bfd_alloc_size</code>) which returns the number of bytes
+in obstacks associated with the supplied BFD. This could be used to
+select the greediest open BFD, close it to reclaim the memory, perform
+some operation and reopen the BFD again, to get a fresh copy of the data
+structures.
+
+   </body></html>
+

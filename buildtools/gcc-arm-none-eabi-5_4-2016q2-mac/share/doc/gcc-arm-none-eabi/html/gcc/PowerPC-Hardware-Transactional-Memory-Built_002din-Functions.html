@@ -1,0 +1,258 @@
+<html lang="en">
+<head>
+<title>PowerPC Hardware Transactional Memory Built-in Functions - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Builtins.html#Target-Builtins" title="Target Builtins">
+<link rel="prev" href="PowerPC-AltiVec_002fVSX-Built_002din-Functions.html#PowerPC-AltiVec_002fVSX-Built_002din-Functions" title="PowerPC AltiVec/VSX Built-in Functions">
+<link rel="next" href="RX-Built_002din-Functions.html#RX-Built_002din-Functions" title="RX Built-in Functions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="PowerPC-Hardware-Transactional-Memory-Built-in-Functions"></a>
+<a name="PowerPC-Hardware-Transactional-Memory-Built_002din-Functions"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="RX-Built_002din-Functions.html#RX-Built_002din-Functions">RX Built-in Functions</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="PowerPC-AltiVec_002fVSX-Built_002din-Functions.html#PowerPC-AltiVec_002fVSX-Built_002din-Functions">PowerPC AltiVec/VSX Built-in Functions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Builtins.html#Target-Builtins">Target Builtins</a>
+<hr>
+</div>
+
+<h4 class="subsection">6.58.21 PowerPC Hardware Transactional Memory Built-in Functions</h4>
+
+<p>GCC provides two interfaces for accessing the Hardware Transactional
+Memory (HTM) instructions available on some of the PowerPC family
+of processors (eg, POWER8).  The two interfaces come in a low level
+interface, consisting of built-in functions specific to PowerPC and a
+higher level interface consisting of inline functions that are common
+between PowerPC and S/390.
+
+<h5 class="subsubsection">6.58.21.1 PowerPC HTM Low Level Built-in Functions</h5>
+
+<p>The following low level built-in functions are available with
+<samp><span class="option">-mhtm</span></samp> or <samp><span class="option">-mcpu=CPU</span></samp> where CPU is `power8' or later. 
+They all generate the machine instruction that is part of the name.
+
+ <p>The HTM builtins (with the exception of <code>__builtin_tbegin</code>) return
+the full 4-bit condition register value set by their associated hardware
+instruction.  The header file <code>htmintrin.h</code> defines some macros that can
+be used to decipher the return value.  The <code>__builtin_tbegin</code> builtin
+returns a simple true or false value depending on whether a transaction was
+successfully started or not.  The arguments of the builtins match exactly the
+type and order of the associated hardware instruction's operands, except for
+the <code>__builtin_tcheck</code> builtin, which does not take any input arguments. 
+Refer to the ISA manual for a description of each instruction's operands.
+
+<pre class="smallexample">     unsigned int __builtin_tbegin (unsigned int)
+     unsigned int __builtin_tend (unsigned int)
+     
+     unsigned int __builtin_tabort (unsigned int)
+     unsigned int __builtin_tabortdc (unsigned int, unsigned int, unsigned int)
+     unsigned int __builtin_tabortdci (unsigned int, unsigned int, int)
+     unsigned int __builtin_tabortwc (unsigned int, unsigned int, unsigned int)
+     unsigned int __builtin_tabortwci (unsigned int, unsigned int, int)
+     
+     unsigned int __builtin_tcheck (void)
+     unsigned int __builtin_treclaim (unsigned int)
+     unsigned int __builtin_trechkpt (void)
+     unsigned int __builtin_tsr (unsigned int)
+</pre>
+ <p>In addition to the above HTM built-ins, we have added built-ins for
+some common extended mnemonics of the HTM instructions:
+
+<pre class="smallexample">     unsigned int __builtin_tendall (void)
+     unsigned int __builtin_tresume (void)
+     unsigned int __builtin_tsuspend (void)
+</pre>
+ <p>Note that the semantics of the above HTM builtins are required to mimic
+the locking semantics used for critical sections.  Builtins that are used
+to create a new transaction or restart a suspended transaction must have
+lock acquisition like semantics while those builtins that end or suspend a
+transaction must have lock release like semantics.  Specifically, this must
+mimic lock semantics as specified by C++11, for example: Lock acquisition is
+as-if an execution of __atomic_exchange_n(&amp;globallock,1,__ATOMIC_ACQUIRE)
+that returns 0, and lock release is as-if an execution of
+__atomic_store(&amp;globallock,0,__ATOMIC_RELEASE), with globallock being an
+implicit implementation-defined lock used for all transactions.  The HTM
+instructions associated with with the builtins inherently provide the
+correct acquisition and release hardware barriers required.  However,
+the compiler must also be prohibited from moving loads and stores across
+the builtins in a way that would violate their semantics.  This has been
+accomplished by adding memory barriers to the associated HTM instructions
+(which is a conservative approach to provide acquire and release semantics). 
+Earlier versions of the compiler did not treat the HTM instructions as
+memory barriers.  A <code>__TM_FENCE__</code> macro has been added, which can
+be used to determine whether the current compiler treats HTM instructions
+as memory barriers or not.  This allows the user to explicitly add memory
+barriers to their code when using an older version of the compiler.
+
+ <p>The following set of built-in functions are available to gain access
+to the HTM specific special purpose registers.
+
+<pre class="smallexample">     unsigned long __builtin_get_texasr (void)
+     unsigned long __builtin_get_texasru (void)
+     unsigned long __builtin_get_tfhar (void)
+     unsigned long __builtin_get_tfiar (void)
+     
+     void __builtin_set_texasr (unsigned long);
+     void __builtin_set_texasru (unsigned long);
+     void __builtin_set_tfhar (unsigned long);
+     void __builtin_set_tfiar (unsigned long);
+</pre>
+ <p>Example usage of these low level built-in functions may look like:
+
+<pre class="smallexample">     #include &lt;htmintrin.h&gt;
+     
+     int num_retries = 10;
+     
+     while (1)
+       {
+         if (__builtin_tbegin (0))
+           {
+             /* Transaction State Initiated.  */
+             if (is_locked (lock))
+               __builtin_tabort (0);
+             ... transaction code...
+             __builtin_tend (0);
+             break;
+           }
+         else
+           {
+             /* Transaction State Failed.  Use locks if the transaction
+                failure is "persistent" or we've tried too many times.  */
+             if (num_retries-- &lt;= 0
+                 || _TEXASRU_FAILURE_PERSISTENT (__builtin_get_texasru ()))
+               {
+                 acquire_lock (lock);
+                 ... non transactional fallback path...
+                 release_lock (lock);
+                 break;
+               }
+           }
+       }
+</pre>
+ <p>One final built-in function has been added that returns the value of
+the 2-bit Transaction State field of the Machine Status Register (MSR)
+as stored in <code>CR0</code>.
+
+<pre class="smallexample">     unsigned long __builtin_ttest (void)
+</pre>
+ <p>This built-in can be used to determine the current transaction state
+using the following code example:
+
+<pre class="smallexample">     #include &lt;htmintrin.h&gt;
+     
+     unsigned char tx_state = _HTM_STATE (__builtin_ttest ());
+     
+     if (tx_state == _HTM_TRANSACTIONAL)
+       {
+         /* Code to use in transactional state.  */
+       }
+     else if (tx_state == _HTM_NONTRANSACTIONAL)
+       {
+         /* Code to use in non-transactional state.  */
+       }
+     else if (tx_state == _HTM_SUSPENDED)
+       {
+         /* Code to use in transaction suspended state.  */
+       }
+</pre>
+ <h5 class="subsubsection">6.58.21.2 PowerPC HTM High Level Inline Functions</h5>
+
+<p>The following high level HTM interface is made available by including
+<code>&lt;htmxlintrin.h&gt;</code> and using <samp><span class="option">-mhtm</span></samp> or <samp><span class="option">-mcpu=CPU</span></samp>
+where CPU is `power8' or later.  This interface is common between PowerPC
+and S/390, allowing users to write one HTM source implementation that
+can be compiled and executed on either system.
+
+<pre class="smallexample">     long __TM_simple_begin (void)
+     long __TM_begin (void* const TM_buff)
+     long __TM_end (void)
+     void __TM_abort (void)
+     void __TM_named_abort (unsigned char const code)
+     void __TM_resume (void)
+     void __TM_suspend (void)
+     
+     long __TM_is_user_abort (void* const TM_buff)
+     long __TM_is_named_user_abort (void* const TM_buff, unsigned char *code)
+     long __TM_is_illegal (void* const TM_buff)
+     long __TM_is_footprint_exceeded (void* const TM_buff)
+     long __TM_nesting_depth (void* const TM_buff)
+     long __TM_is_nested_too_deep(void* const TM_buff)
+     long __TM_is_conflict(void* const TM_buff)
+     long __TM_is_failure_persistent(void* const TM_buff)
+     long __TM_failure_address(void* const TM_buff)
+     long long __TM_failure_code(void* const TM_buff)
+</pre>
+ <p>Using these common set of HTM inline functions, we can create
+a more portable version of the HTM example in the previous
+section that will work on either PowerPC or S/390:
+
+<pre class="smallexample">     #include &lt;htmxlintrin.h&gt;
+     
+     int num_retries = 10;
+     TM_buff_type TM_buff;
+     
+     while (1)
+       {
+         if (__TM_begin (TM_buff) == _HTM_TBEGIN_STARTED)
+           {
+             /* Transaction State Initiated.  */
+             if (is_locked (lock))
+               __TM_abort ();
+             ... transaction code...
+             __TM_end ();
+             break;
+           }
+         else
+           {
+             /* Transaction State Failed.  Use locks if the transaction
+                failure is "persistent" or we've tried too many times.  */
+             if (num_retries-- &lt;= 0
+                 || __TM_is_failure_persistent (TM_buff))
+               {
+                 acquire_lock (lock);
+                 ... non transactional fallback path...
+                 release_lock (lock);
+                 break;
+               }
+           }
+       }
+</pre>
+ </body></html>
+

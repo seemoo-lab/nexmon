@@ -1,0 +1,84 @@
+<html lang="en">
+<head>
+<title>Hash Tables - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="BFD-front-end.html#BFD-front-end" title="BFD front end">
+<link rel="prev" href="Linker-Functions.html#Linker-Functions" title="Linker Functions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Hash-Tables"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Linker-Functions.html#Linker-Functions">Linker Functions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="BFD-front-end.html#BFD-front-end">BFD front end</a>
+<hr>
+</div>
+
+<h3 class="section">2.18 Hash Tables</h3>
+
+<p><a name="index-Hash-tables-2257"></a>BFD provides a simple set of hash table functions.  Routines
+are provided to initialize a hash table, to free a hash table,
+to look up a string in a hash table and optionally create an
+entry for it, and to traverse a hash table.  There is
+currently no routine to delete an string from a hash table.
+
+   <p>The basic hash table does not permit any data to be stored
+with a string.  However, a hash table is designed to present a
+base class from which other types of hash tables may be
+derived.  These derived types may store additional information
+with the string.  Hash tables were implemented in this way,
+rather than simply providing a data pointer in a hash table
+entry, because they were designed for use by the linker back
+ends.  The linker may create thousands of hash table entries,
+and the overhead of allocating private data and storing and
+following pointers becomes noticeable.
+
+   <p>The basic hash table code is in <code>hash.c</code>.
+
+<ul class="menu">
+<li><a accesskey="1" href="Creating-and-Freeing-a-Hash-Table.html#Creating-and-Freeing-a-Hash-Table">Creating and Freeing a Hash Table</a>
+<li><a accesskey="2" href="Looking-Up-or-Entering-a-String.html#Looking-Up-or-Entering-a-String">Looking Up or Entering a String</a>
+<li><a accesskey="3" href="Traversing-a-Hash-Table.html#Traversing-a-Hash-Table">Traversing a Hash Table</a>
+<li><a accesskey="4" href="Deriving-a-New-Hash-Table-Type.html#Deriving-a-New-Hash-Table-Type">Deriving a New Hash Table Type</a>
+</ul>
+
+   </body></html>
+

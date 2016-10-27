@@ -1,0 +1,80 @@
+<html lang="en">
+<head>
+<title>Using Assembly Language with C - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="C-Extensions.html#C-Extensions" title="C Extensions">
+<link rel="prev" href="Volatiles.html#Volatiles" title="Volatiles">
+<link rel="next" href="Alternate-Keywords.html#Alternate-Keywords" title="Alternate Keywords">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Using-Assembly-Language-with-C"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Alternate-Keywords.html#Alternate-Keywords">Alternate Keywords</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Volatiles.html#Volatiles">Volatiles</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="C-Extensions.html#C-Extensions">C Extensions</a>
+<hr>
+</div>
+
+<h3 class="section">6.43 How to Use Inline Assembly Language in C Code</h3>
+
+<p><a name="index-g_t_0040code_007basm_007d-keyword-3414"></a><a name="index-assembly-language-in-C-3415"></a><a name="index-inline-assembly-language-3416"></a><a name="index-mixing-assembly-language-and-C-3417"></a>
+The <code>asm</code> keyword allows you to embed assembler instructions
+within C code.  GCC provides two forms of inline <code>asm</code>
+statements.  A <dfn>basic </dfn><code>asm</code> statement is one with no
+operands (see <a href="Basic-Asm.html#Basic-Asm">Basic Asm</a>), while an <dfn>extended </dfn><code>asm</code>
+statement (see <a href="Extended-Asm.html#Extended-Asm">Extended Asm</a>) includes one or more operands. 
+The extended form is preferred for mixing C and assembly language
+within a function, but to include assembly language at
+top level you must use basic <code>asm</code>.
+
+ <p>You can also use the <code>asm</code> keyword to override the assembler name
+for a C symbol, or to place a C variable in a specific register.
+
+<ul class="menu">
+<li><a accesskey="1" href="Basic-Asm.html#Basic-Asm">Basic Asm</a>:           Inline assembler without operands. 
+<li><a accesskey="2" href="Extended-Asm.html#Extended-Asm">Extended Asm</a>:        Inline assembler with operands. 
+<li><a accesskey="3" href="Constraints.html#Constraints">Constraints</a>:         Constraints for <code>asm</code> operands
+<li><a accesskey="4" href="Asm-Labels.html#Asm-Labels">Asm Labels</a>:          Specifying the assembler name to use for a C symbol. 
+<li><a accesskey="5" href="Explicit-Reg-Vars.html#Explicit-Reg-Vars">Explicit Reg Vars</a>:   Defining variables residing in specified registers. 
+<li><a accesskey="6" href="Size-of-an-asm.html#Size-of-an-asm">Size of an asm</a>:      How GCC calculates the size of an <code>asm</code> block. 
+</ul>
+
+ </body></html>
+

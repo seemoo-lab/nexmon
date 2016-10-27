@@ -1,0 +1,65 @@
+<html lang="en">
+<head>
+<title>In-Process Agent Protocol - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="In_002dProcess-Agent.html#In_002dProcess-Agent" title="In-Process Agent">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="In-Process-Agent-Protocol"></a>
+<a name="In_002dProcess-Agent-Protocol"></a>
+Up:&nbsp;<a rel="up" accesskey="u" href="In_002dProcess-Agent.html#In_002dProcess-Agent">In-Process Agent</a>
+<hr>
+</div>
+
+<h3 class="section">30.1 In-Process Agent Protocol</h3>
+
+<p><a name="index-in_002dprocess-agent-protocol-3053"></a>
+The in-process agent is able to communicate with both <span class="sc">gdb</span> and
+GDBserver (see <a href="In_002dProcess-Agent.html#In_002dProcess-Agent">In-Process Agent</a>).  This section documents the protocol
+used for communications between <span class="sc">gdb</span> or GDBserver and the IPA. 
+In general, <span class="sc">gdb</span> or GDBserver sends commands
+(see <a href="IPA-Protocol-Commands.html#IPA-Protocol-Commands">IPA Protocol Commands</a>) and data to in-process agent, and then
+in-process agent replies back with the return result of the command, or
+some other information.  The data sent to in-process agent is composed
+of primitive data types, such as 4-byte or 8-byte type, and composite
+types, which are called objects (see <a href="IPA-Protocol-Objects.html#IPA-Protocol-Objects">IPA Protocol Objects</a>).
+
+<ul class="menu">
+<li><a accesskey="1" href="IPA-Protocol-Objects.html#IPA-Protocol-Objects">IPA Protocol Objects</a>
+<li><a accesskey="2" href="IPA-Protocol-Commands.html#IPA-Protocol-Commands">IPA Protocol Commands</a>
+</ul>
+
+   </body></html>
+

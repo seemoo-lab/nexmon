@@ -1,0 +1,63 @@
+<html lang="en">
+<head>
+<title>Nested Symbols - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Cplusplus.html#Cplusplus" title="Cplusplus">
+<link rel="prev" href="Class-Names.html#Class-Names" title="Class Names">
+<link rel="next" href="Basic-Cplusplus-Types.html#Basic-Cplusplus-Types" title="Basic Cplusplus Types">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Nested-Symbols"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Basic-Cplusplus-Types.html#Basic-Cplusplus-Types">Basic Cplusplus Types</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Class-Names.html#Class-Names">Class Names</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Cplusplus.html#Cplusplus">Cplusplus</a>
+<hr>
+</div>
+
+<h3 class="section">8.2 Defining a Symbol Within Another Type</h3>
+
+<p>In C<tt>++</tt>, a symbol (such as a type name) can be defined within another type. 
+<!-- FIXME: Needs example. -->
+
+   <p>In stabs, this is sometimes represented by making the name of a symbol
+which contains `<samp><span class="samp">::</span></samp>'.  Such a pair of colons does not end the name
+of the symbol, the way a single colon would (see <a href="String-Field.html#String-Field">String Field</a>).  I'm
+not sure how consistently used or well thought out this mechanism is. 
+So that a pair of colons in this position always has this meaning,
+`<samp><span class="samp">:</span></samp>' cannot be used as a symbol descriptor.
+
+   <p>For example, if the string for a stab is `<samp><span class="samp">foo::bar::baz:t5=*6</span></samp>',
+then <code>foo::bar::baz</code> is the name of the symbol, `<samp><span class="samp">t</span></samp>' is the
+symbol descriptor, and `<samp><span class="samp">5=*6</span></samp>' is the type information.
+
+   </body></html>
+

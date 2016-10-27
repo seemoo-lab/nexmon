@@ -1,0 +1,112 @@
+<html lang="en">
+<head>
+<title>Type Printing API - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Python-API.html#Python-API" title="Python API">
+<link rel="prev" href="Writing-a-Pretty_002dPrinter.html#Writing-a-Pretty_002dPrinter" title="Writing a Pretty-Printer">
+<link rel="next" href="Frame-Filter-API.html#Frame-Filter-API" title="Frame Filter API">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Type-Printing-API"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Frame-Filter-API.html#Frame-Filter-API">Frame Filter API</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Writing-a-Pretty_002dPrinter.html#Writing-a-Pretty_002dPrinter">Writing a Pretty-Printer</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Python-API.html#Python-API">Python API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.2.2.8 Type Printing API</h5>
+
+<p><a name="index-type-printing-API-for-Python-1969"></a>
+<span class="sc">gdb</span> provides a way for Python code to customize type display. 
+This is mainly useful for substituting canonical typedef names for
+types.
+
+   <p><a name="index-type-printer-1970"></a>A <dfn>type printer</dfn> is just a Python object conforming to a certain
+protocol.  A simple base class implementing the protocol is provided;
+see <a href="gdb_002etypes.html#gdb_002etypes">gdb.types</a>.  A type printer must supply at least:
+
+<div class="defun">
+&mdash; Instance Variable of type_printer: <b>enabled</b><var><a name="index-enabled-1971"></a></var><br>
+<blockquote><p>A boolean which is True if the printer is enabled, and False
+otherwise.  This is manipulated by the <code>enable type-printer</code>
+and <code>disable type-printer</code> commands. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Instance Variable of type_printer: <b>name</b><var><a name="index-name-1972"></a></var><br>
+<blockquote><p>The name of the type printer.  This must be a string.  This is used by
+the <code>enable type-printer</code> and <code>disable type-printer</code>
+commands. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Method on type_printer: <b>instantiate</b> (<var>self</var>)<var><a name="index-instantiate-on-type_005fprinter-1973"></a></var><br>
+<blockquote><p>This is called by <span class="sc">gdb</span> at the start of type-printing.  It is
+only called if the type printer is enabled.  This method must return a
+new object that supplies a <code>recognize</code> method, as described below. 
+</p></blockquote></div>
+
+   <p>When displaying a type, say via the <code>ptype</code> command, <span class="sc">gdb</span>
+will compute a list of type recognizers.  This is done by iterating
+first over the per-objfile type printers (see <a href="Objfiles-In-Python.html#Objfiles-In-Python">Objfiles In Python</a>),
+followed by the per-progspace type printers (see <a href="Progspaces-In-Python.html#Progspaces-In-Python">Progspaces In Python</a>), and finally the global type printers.
+
+   <p><span class="sc">gdb</span> will call the <code>instantiate</code> method of each enabled
+type printer.  If this method returns <code>None</code>, then the result is
+ignored; otherwise, it is appended to the list of recognizers.
+
+   <p>Then, when <span class="sc">gdb</span> is going to display a type name, it iterates
+over the list of recognizers.  For each one, it calls the recognition
+function, stopping if the function returns a non-<code>None</code> value. 
+The recognition function is defined as:
+
+<div class="defun">
+&mdash; Method on type_recognizer: <b>recognize</b> (<var>self, type</var>)<var><a name="index-recognize-on-type_005frecognizer-1974"></a></var><br>
+<blockquote><p>If <var>type</var> is not recognized, return <code>None</code>.  Otherwise,
+return a string which is to be printed as the name of <var>type</var>. 
+The <var>type</var> argument will be an instance of <code>gdb.Type</code>
+(see <a href="Types-In-Python.html#Types-In-Python">Types In Python</a>). 
+</p></blockquote></div>
+
+   <p><span class="sc">gdb</span> uses this two-pass approach so that type printers can
+efficiently cache information without holding on to it too long.  For
+example, it can be convenient to look up type information in a type
+printer and hold it for a recognizer's lifetime; if a single pass were
+done then type printers would have to make use of the event system in
+order to avoid holding information that could become stale as the
+inferior changed.
+
+   </body></html>
+

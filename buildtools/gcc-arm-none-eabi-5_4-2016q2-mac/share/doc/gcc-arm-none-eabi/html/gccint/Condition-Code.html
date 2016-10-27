@@ -1,0 +1,101 @@
+<html lang="en">
+<head>
+<title>Condition Code - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Macros.html#Target-Macros" title="Target Macros">
+<link rel="prev" href="Anchored-Addresses.html#Anchored-Addresses" title="Anchored Addresses">
+<link rel="next" href="Costs.html#Costs" title="Costs">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Condition-Code"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Costs.html#Costs">Costs</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Anchored-Addresses.html#Anchored-Addresses">Anchored Addresses</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Macros.html#Target-Macros">Target Macros</a>
+<hr>
+</div>
+
+<h3 class="section">17.15 Condition Code Status</h3>
+
+<p><a name="index-condition-code-status-4427"></a>
+The macros in this section can be split in two families, according to the
+two ways of representing condition codes in GCC.
+
+ <p>The first representation is the so called <code>(cc0)</code> representation
+(see <a href="Jump-Patterns.html#Jump-Patterns">Jump Patterns</a>), where all instructions can have an implicit
+clobber of the condition codes.  The second is the condition code
+register representation, which provides better schedulability for
+architectures that do have a condition code register, but on which
+most instructions do not affect it.  The latter category includes
+most RISC machines.
+
+ <p>The implicit clobbering poses a strong restriction on the placement of
+the definition and use of the condition code.  In the past the definition
+and use were always adjacent.  However, recent changes to support trapping
+arithmatic may result in the definition and user being in different blocks. 
+Thus, there may be a <code>NOTE_INSN_BASIC_BLOCK</code> between them.  Additionally,
+the definition may be the source of exception handling edges.
+
+ <p>These restrictions can prevent important
+optimizations on some machines.  For example, on the IBM RS/6000, there
+is a delay for taken branches unless the condition code register is set
+three instructions earlier than the conditional branch.  The instruction
+scheduler cannot perform this optimization if it is not permitted to
+separate the definition and use of the condition code register.
+
+ <p>For this reason, it is possible and suggested to use a register to
+represent the condition code for new ports.  If there is a specific
+condition code register in the machine, use a hard register.  If the
+condition code or comparison result can be placed in any general register,
+or if there are multiple condition registers, use a pseudo register. 
+Registers used to store the condition code value will usually have a mode
+that is in class <code>MODE_CC</code>.
+
+ <p>Alternatively, you can use <code>BImode</code> if the comparison operator is
+specified already in the compare instruction.  In this case, you are not
+interested in most macros in this section.
+
+<ul class="menu">
+<li><a accesskey="1" href="CC0-Condition-Codes.html#CC0-Condition-Codes">CC0 Condition Codes</a>:       Old style representation of condition codes. 
+<li><a accesskey="2" href="MODE_005fCC-Condition-Codes.html#MODE_005fCC-Condition-Codes">MODE_CC Condition Codes</a>:   Modern representation of condition codes. 
+</ul>
+
+ </body></html>
+

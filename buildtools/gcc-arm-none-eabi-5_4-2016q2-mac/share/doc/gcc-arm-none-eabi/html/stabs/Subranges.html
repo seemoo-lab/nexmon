@@ -1,0 +1,77 @@
+<html lang="en">
+<head>
+<title>Subranges - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Types.html#Types" title="Types">
+<link rel="prev" href="Cross_002dReferences.html#Cross_002dReferences" title="Cross-References">
+<link rel="next" href="Arrays.html#Arrays" title="Arrays">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Subranges"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Arrays.html#Arrays">Arrays</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Cross_002dReferences.html#Cross_002dReferences">Cross-References</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Types.html#Types">Types</a>
+<hr>
+</div>
+
+<h3 class="section">5.4 Subrange Types</h3>
+
+<p>The `<samp><span class="samp">r</span></samp>' type descriptor defines a type as a subrange of another
+type.  It is followed by type information for the type of which it is a
+subrange, a semicolon, an integral lower bound, a semicolon, an
+integral upper bound, and a semicolon.  The AIX documentation does not
+specify the trailing semicolon, in an effort to specify array indexes
+more cleanly, but a subrange which is not an array index has always
+included a trailing semicolon (see <a href="Arrays.html#Arrays">Arrays</a>).
+
+   <p>Instead of an integer, either bound can be one of the following:
+
+     <dl>
+<dt><code>A </code><var>offset</var><dd>The bound is passed by reference on the stack at offset <var>offset</var>
+from the argument list.  See <a href="Parameters.html#Parameters">Parameters</a>, for more information on such
+offsets.
+
+     <br><dt><code>T </code><var>offset</var><dd>The bound is passed by value on the stack at offset <var>offset</var> from
+the argument list.
+
+     <br><dt><code>a </code><var>register-number</var><dd>The bound is passed by reference in register number
+<var>register-number</var>.
+
+     <br><dt><code>t </code><var>register-number</var><dd>The bound is passed by value in register number <var>register-number</var>.
+
+     <br><dt><code>J</code><dd>There is no bound. 
+</dl>
+
+   <p>Subranges are also used for builtin types; see <a href="Traditional-Builtin-Types.html#Traditional-Builtin-Types">Traditional Builtin Types</a>.
+
+   </body></html>
+

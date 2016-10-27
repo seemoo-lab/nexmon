@@ -1,0 +1,89 @@
+<html lang="en">
+<head>
+<title>GNU/Linux Options - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Submodel-Options.html#Submodel-Options" title="Submodel Options">
+<link rel="prev" href="FRV-Options.html#FRV-Options" title="FRV Options">
+<link rel="next" href="H8_002f300-Options.html#H8_002f300-Options" title="H8/300 Options">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="GNU%2fLinux-Options"></a>
+<a name="GNU_002fLinux-Options"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="H8_002f300-Options.html#H8_002f300-Options">H8/300 Options</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="FRV-Options.html#FRV-Options">FRV Options</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Submodel-Options.html#Submodel-Options">Submodel Options</a>
+<hr>
+</div>
+
+<h4 class="subsection">3.17.14 GNU/Linux Options</h4>
+
+<p>These `<samp><span class="samp">-m</span></samp>' options are defined for GNU/Linux targets:
+
+     <dl>
+<dt><code>-mglibc</code><dd><a name="index-mglibc-1681"></a>Use the GNU C library.  This is the default except
+on `<samp><span class="samp">*-*-linux-*uclibc*</span></samp>' and `<samp><span class="samp">*-*-linux-*android*</span></samp>' targets.
+
+     <br><dt><code>-muclibc</code><dd><a name="index-muclibc-1682"></a>Use uClibc C library.  This is the default on
+`<samp><span class="samp">*-*-linux-*uclibc*</span></samp>' targets.
+
+     <br><dt><code>-mbionic</code><dd><a name="index-mbionic-1683"></a>Use Bionic C library.  This is the default on
+`<samp><span class="samp">*-*-linux-*android*</span></samp>' targets.
+
+     <br><dt><code>-mandroid</code><dd><a name="index-mandroid-1684"></a>Compile code compatible with Android platform.  This is the default on
+`<samp><span class="samp">*-*-linux-*android*</span></samp>' targets.
+
+     <p>When compiling, this option enables <samp><span class="option">-mbionic</span></samp>, <samp><span class="option">-fPIC</span></samp>,
+<samp><span class="option">-fno-exceptions</span></samp> and <samp><span class="option">-fno-rtti</span></samp> by default.  When linking,
+this option makes the GCC driver pass Android-specific options to the linker. 
+Finally, this option causes the preprocessor macro <code>__ANDROID__</code>
+to be defined.
+
+     <br><dt><code>-tno-android-cc</code><dd><a name="index-tno_002dandroid_002dcc-1685"></a>Disable compilation effects of <samp><span class="option">-mandroid</span></samp>, i.e., do not enable
+<samp><span class="option">-mbionic</span></samp>, <samp><span class="option">-fPIC</span></samp>, <samp><span class="option">-fno-exceptions</span></samp> and
+<samp><span class="option">-fno-rtti</span></samp> by default.
+
+     <br><dt><code>-tno-android-ld</code><dd><a name="index-tno_002dandroid_002dld-1686"></a>Disable linking effects of <samp><span class="option">-mandroid</span></samp>, i.e., pass standard Linux
+linking options to the linker.
+
+ </dl>
+
+ </body></html>
+

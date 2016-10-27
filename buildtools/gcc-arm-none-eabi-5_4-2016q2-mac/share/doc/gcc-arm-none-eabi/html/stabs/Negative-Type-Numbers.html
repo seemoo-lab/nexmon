@@ -1,0 +1,197 @@
+<html lang="en">
+<head>
+<title>Negative Type Numbers - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Builtin-Types.html#Builtin-Types" title="Builtin Types">
+<link rel="prev" href="Builtin-Type-Descriptors.html#Builtin-Type-Descriptors" title="Builtin Type Descriptors">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Negative-Type-Numbers"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Builtin-Type-Descriptors.html#Builtin-Type-Descriptors">Builtin Type Descriptors</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Builtin-Types.html#Builtin-Types">Builtin Types</a>
+<hr>
+</div>
+
+<h4 class="subsection">5.1.3 Negative Type Numbers</h4>
+
+<p>This is the method used in XCOFF for defining builtin types. 
+Since the debugger knows about the builtin types anyway, the idea of
+negative type numbers is simply to give a special type number which
+indicates the builtin type.  There is no stab defining these types.
+
+   <p>There are several subtle issues with negative type numbers.
+
+   <p>One is the size of the type.  A builtin type (for example the C types
+<code>int</code> or <code>long</code>) might have different sizes depending on
+compiler options, the target architecture, the ABI, etc.  This issue
+doesn't come up for IBM tools since (so far) they just target the
+RS/6000; the sizes indicated below for each size are what the IBM
+RS/6000 tools use.  To deal with differing sizes, either define separate
+negative type numbers for each size (which works but requires changing
+the debugger, and, unless you get both AIX dbx and GDB to accept the
+change, introduces an incompatibility), or use a type attribute
+(see <a href="String-Field.html#String-Field">String Field</a>) to define a new type with the appropriate size
+(which merely requires a debugger which understands type attributes,
+like AIX dbx or GDB).  For example,
+
+<pre class="example">     .stabs "boolean:t10=@s8;-16",128,0,0,0
+</pre>
+   <p>defines an 8-bit boolean type, and
+
+<pre class="example">     .stabs "boolean:t10=@s64;-16",128,0,0,0
+</pre>
+   <p>defines a 64-bit boolean type.
+
+   <p>A similar issue is the format of the type.  This comes up most often for
+floating-point types, which could have various formats (particularly
+extended doubles, which vary quite a bit even among IEEE systems). 
+Again, it is best to define a new negative type number for each
+different format; changing the format based on the target system has
+various problems.  One such problem is that the Alpha has both VAX and
+IEEE floating types.  One can easily imagine one library using the VAX
+types and another library in the same executable using the IEEE types. 
+Another example is that the interpretation of whether a boolean is true
+or false can be based on the least significant bit, most significant
+bit, whether it is zero, etc., and different compilers (or different
+options to the same compiler) might provide different kinds of boolean.
+
+   <p>The last major issue is the names of the types.  The name of a given
+type depends <em>only</em> on the negative type number given; these do not
+vary depending on the language, the target system, or anything else. 
+One can always define separate type numbers&mdash;in the following list you
+will see for example separate <code>int</code> and <code>integer*4</code> types
+which are identical except for the name.  But compatibility can be
+maintained by not inventing new negative type numbers and instead just
+defining a new type with a new name.  For example:
+
+<pre class="example">     .stabs "CARDINAL:t10=-8",128,0,0,0
+</pre>
+   <p>Here is the list of negative type numbers.  The phrase <dfn>integral
+type</dfn> is used to mean twos-complement (I strongly suspect that all
+machines which use stabs use twos-complement; most machines use
+twos-complement these days).
+
+     <dl>
+<dt><code>-1</code><dd><code>int</code>, 32 bit signed integral type.
+
+     <br><dt><code>-2</code><dd><code>char</code>, 8 bit type holding a character.   Both GDB and dbx on AIX
+treat this as signed.  GCC uses this type whether <code>char</code> is signed
+or not, which seems like a bad idea.  The AIX compiler (<code>xlc</code>) seems to
+avoid this type; it uses -5 instead for <code>char</code>.
+
+     <br><dt><code>-3</code><dd><code>short</code>, 16 bit signed integral type.
+
+     <br><dt><code>-4</code><dd><code>long</code>, 32 bit signed integral type.
+
+     <br><dt><code>-5</code><dd><code>unsigned char</code>, 8 bit unsigned integral type.
+
+     <br><dt><code>-6</code><dd><code>signed char</code>, 8 bit signed integral type.
+
+     <br><dt><code>-7</code><dd><code>unsigned short</code>, 16 bit unsigned integral type.
+
+     <br><dt><code>-8</code><dd><code>unsigned int</code>, 32 bit unsigned integral type.
+
+     <br><dt><code>-9</code><dd><code>unsigned</code>, 32 bit unsigned integral type.
+
+     <br><dt><code>-10</code><dd><code>unsigned long</code>, 32 bit unsigned integral type.
+
+     <br><dt><code>-11</code><dd><code>void</code>, type indicating the lack of a value.
+
+     <br><dt><code>-12</code><dd><code>float</code>, IEEE single precision.
+
+     <br><dt><code>-13</code><dd><code>double</code>, IEEE double precision.
+
+     <br><dt><code>-14</code><dd><code>long double</code>, IEEE double precision.  The compiler claims the size
+will increase in a future release, and for binary compatibility you have
+to avoid using <code>long double</code>.  I hope when they increase it they
+use a new negative type number.
+
+     <br><dt><code>-15</code><dd><code>integer</code>.  32 bit signed integral type.
+
+     <br><dt><code>-16</code><dd><code>boolean</code>.  32 bit type.  GDB and GCC assume that zero is false,
+one is true, and other values have unspecified meaning.  I hope this
+agrees with how the IBM tools use the type.
+
+     <br><dt><code>-17</code><dd><code>short real</code>.  IEEE single precision.
+
+     <br><dt><code>-18</code><dd><code>real</code>.  IEEE double precision.
+
+     <br><dt><code>-19</code><dd><code>stringptr</code>.  See <a href="Strings.html#Strings">Strings</a>.
+
+     <br><dt><code>-20</code><dd><code>character</code>, 8 bit unsigned character type.
+
+     <br><dt><code>-21</code><dd><code>logical*1</code>, 8 bit type.  This Fortran type has a split
+personality in that it is used for boolean variables, but can also be
+used for unsigned integers.  0 is false, 1 is true, and other values are
+non-boolean.
+
+     <br><dt><code>-22</code><dd><code>logical*2</code>, 16 bit type.  This Fortran type has a split
+personality in that it is used for boolean variables, but can also be
+used for unsigned integers.  0 is false, 1 is true, and other values are
+non-boolean.
+
+     <br><dt><code>-23</code><dd><code>logical*4</code>, 32 bit type.  This Fortran type has a split
+personality in that it is used for boolean variables, but can also be
+used for unsigned integers.  0 is false, 1 is true, and other values are
+non-boolean.
+
+     <br><dt><code>-24</code><dd><code>logical</code>, 32 bit type.  This Fortran type has a split
+personality in that it is used for boolean variables, but can also be
+used for unsigned integers.  0 is false, 1 is true, and other values are
+non-boolean.
+
+     <br><dt><code>-25</code><dd><code>complex</code>.  A complex type consisting of two IEEE single-precision
+floating point values.
+
+     <br><dt><code>-26</code><dd><code>complex</code>.  A complex type consisting of two IEEE double-precision
+floating point values.
+
+     <br><dt><code>-27</code><dd><code>integer*1</code>, 8 bit signed integral type.
+
+     <br><dt><code>-28</code><dd><code>integer*2</code>, 16 bit signed integral type.
+
+     <br><dt><code>-29</code><dd><code>integer*4</code>, 32 bit signed integral type.
+
+     <br><dt><code>-30</code><dd><code>wchar</code>.  Wide character, 16 bits wide, unsigned (what format? 
+Unicode?).
+
+     <br><dt><code>-31</code><dd><code>long long</code>, 64 bit signed integral type.
+
+     <br><dt><code>-32</code><dd><code>unsigned long long</code>, 64 bit unsigned integral type.
+
+     <br><dt><code>-33</code><dd><code>logical*8</code>, 64 bit unsigned integral type.
+
+     <br><dt><code>-34</code><dd><code>integer*8</code>, 64 bit signed integral type. 
+</dl>
+
+   </body></html>
+

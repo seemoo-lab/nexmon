@@ -1,0 +1,78 @@
+<html lang="en">
+<head>
+<title>@code{GIMPLE_OMP_RETURN} - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Tuple-specific-accessors.html#Tuple-specific-accessors" title="Tuple specific accessors">
+<link rel="prev" href="_0040code_007bGIMPLE_005fOMP_005fPARALLEL_007d.html#g_t_0040code_007bGIMPLE_005fOMP_005fPARALLEL_007d" title="@code{GIMPLE_OMP_PARALLEL}">
+<link rel="next" href="_0040code_007bGIMPLE_005fOMP_005fSECTION_007d.html#g_t_0040code_007bGIMPLE_005fOMP_005fSECTION_007d" title="@code{GIMPLE_OMP_SECTION}">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="%3ccode%3eGIMPLE_OMP_RETURN%3c%2fcode%3e"></a>
+<a name="g_t_003ccode_003eGIMPLE_005fOMP_005fRETURN_003c_002fcode_003e"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="_003ccode_003eGIMPLE_005fOMP_005fSECTION_003c_002fcode_003e.html#g_t_003ccode_003eGIMPLE_005fOMP_005fSECTION_003c_002fcode_003e">&lt;code&gt;GIMPLE_OMP_SECTION&lt;/code&gt;</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="_003ccode_003eGIMPLE_005fOMP_005fPARALLEL_003c_002fcode_003e.html#g_t_003ccode_003eGIMPLE_005fOMP_005fPARALLEL_003c_002fcode_003e">&lt;code&gt;GIMPLE_OMP_PARALLEL&lt;/code&gt;</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Tuple-specific-accessors.html#Tuple-specific-accessors">Tuple specific accessors</a>
+<hr>
+</div>
+
+<h4 class="subsection">11.8.20 <code>GIMPLE_OMP_RETURN</code></h4>
+
+<p><a name="index-g_t_0040code_007bGIMPLE_005fOMP_005fRETURN_007d-2386"></a>
+
+<div class="defun">
+&mdash; GIMPLE function: gimple <b>gimple_build_omp_return</b> (<var>bool wait_p</var>)<var><a name="index-gimple_005fbuild_005fomp_005freturn-2387"></a></var><br>
+<blockquote><p>Build a <code>GIMPLE_OMP_RETURN</code> statement. <code>WAIT_P</code> is true if this is a
+non-waiting return. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_omp_return_set_nowait</b> (<var>gimple s</var>)<var><a name="index-gimple_005fomp_005freturn_005fset_005fnowait-2388"></a></var><br>
+<blockquote><p>Set the nowait flag on <code>GIMPLE_OMP_RETURN</code> statement <code>S</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>gimple_omp_return_nowait_p</b> (<var>gimple g</var>)<var><a name="index-gimple_005fomp_005freturn_005fnowait_005fp-2389"></a></var><br>
+<blockquote><p>Return true if <code>OMP</code> return statement <code>G</code> has the
+<code>GF_OMP_RETURN_NOWAIT</code> flag set. 
+</p></blockquote></div>
+
+ </body></html>
+

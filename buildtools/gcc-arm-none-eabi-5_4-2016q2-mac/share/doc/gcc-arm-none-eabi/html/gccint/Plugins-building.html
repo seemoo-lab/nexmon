@@ -1,0 +1,102 @@
+<html lang="en">
+<head>
+<title>Plugins building - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Plugins.html#Plugins" title="Plugins">
+<link rel="prev" href="Plugins-tracking.html#Plugins-tracking" title="Plugins tracking">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Plugins-building"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Plugins-tracking.html#Plugins-tracking">Plugins tracking</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Plugins.html#Plugins">Plugins</a>
+<hr>
+</div>
+
+<h3 class="section">23.10 Building GCC plugins</h3>
+
+<p>If plugins are enabled, GCC installs the headers needed to build a
+plugin (somewhere in the installation tree, e.g. under
+<samp><span class="file">/usr/local</span></samp>).  In particular a <samp><span class="file">plugin/include</span></samp> directory
+is installed, containing all the header files needed to build plugins.
+
+ <p>On most systems, you can query this <code>plugin</code> directory by
+invoking <samp><span class="command">gcc -print-file-name=plugin</span></samp> (replace if needed
+<samp><span class="command">gcc</span></samp> with the appropriate program path).
+
+ <p>Inside plugins, this <code>plugin</code> directory name can be queried by
+calling <code>default_plugin_dir_name ()</code>.
+
+ <p>Plugins may know, when they are compiled, the GCC version for which
+<samp><span class="file">plugin-version.h</span></samp> is provided.  The constant macros
+<code>GCCPLUGIN_VERSION_MAJOR</code>, <code>GCCPLUGIN_VERSION_MINOR</code>,
+<code>GCCPLUGIN_VERSION_PATCHLEVEL</code>, <code>GCCPLUGIN_VERSION</code> are
+integer numbers, so a plugin could ensure it is built for GCC 4.7 with
+<pre class="smallexample">     #if GCCPLUGIN_VERSION != 4007
+     #error this GCC plugin is for GCC 4.7
+     #endif
+</pre>
+ <p>The following GNU Makefile excerpt shows how to build a simple plugin:
+
+<pre class="smallexample">     HOST_GCC=g++
+     TARGET_GCC=gcc
+     PLUGIN_SOURCE_FILES= plugin1.c plugin2.cc
+     GCCPLUGINS_DIR:= $(shell $(TARGET_GCC) -print-file-name=plugin)
+     CXXFLAGS+= -I$(GCCPLUGINS_DIR)/include -fPIC -fno-rtti -O2
+     
+     plugin.so: $(PLUGIN_SOURCE_FILES)
+        $(HOST_GCC) -shared $(CXXFLAGS) $^ -o $@
+</pre>
+ <p>A single source file plugin may be built with <code>g++ -I`gcc
+-print-file-name=plugin`/include -fPIC -shared -fno-rtti -O2 plugin.c -o
+plugin.so</code>, using backquote shell syntax to query the <samp><span class="file">plugin</span></samp>
+directory.
+
+ <p>When a plugin needs to use <samp><span class="command">gengtype</span></samp>, be sure that both
+<samp><span class="file">gengtype</span></samp> and <samp><span class="file">gtype.state</span></samp> have the same version as the
+GCC for which the plugin is built.
+
+<!-- Copyright (C) 2010-2015 Free Software Foundation, Inc. -->
+<!-- This is part of the GCC manual. -->
+<!-- For copying conditions, see the file gcc.texi. -->
+<!-- Contributed by Jan Hubicka <jh@suse.cz> and -->
+<!-- Diego Novillo <dnovillo@google.com> -->
+</body></html>
+

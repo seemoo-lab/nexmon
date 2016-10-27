@@ -1,0 +1,93 @@
+<html lang="en">
+<head>
+<title>Type Checking - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Checks.html#Checks" title="Checks">
+<link rel="next" href="Range-Checking.html#Range-Checking" title="Range Checking">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Type-Checking"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Range-Checking.html#Range-Checking">Range Checking</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Checks.html#Checks">Checks</a>
+<hr>
+</div>
+
+<h4 class="subsection">15.3.1 An Overview of Type Checking</h4>
+
+<p>Some languages, such as C and C<tt>++</tt>, are strongly typed, meaning that the
+arguments to operators and functions have to be of the correct type,
+otherwise an error occurs.  These checks prevent type mismatch
+errors from ever causing any run-time problems.  For example,
+
+<pre class="smallexample">     int klass::my_method(char *b) { return  b ? 1 : 2; }
+     
+     (gdb) print obj.my_method (0)
+     $1 = 2
+<br>but<br>
+     (gdb) print obj.my_method (0x1234)
+     Cannot resolve method klass::my_method to any overloaded instance
+</pre>
+   <p>The second example fails because in C<tt>++</tt> the integer constant
+`<samp><span class="samp">0x1234</span></samp>' is not type-compatible with the pointer parameter type.
+
+   <p>For the expressions you use in <span class="sc">gdb</span> commands, you can tell
+<span class="sc">gdb</span> to not enforce strict type checking or
+to treat any mismatches as errors and abandon the expression;
+When type checking is disabled, <span class="sc">gdb</span> successfully evaluates
+expressions like the second example above.
+
+   <p>Even if type checking is off, there may be other reasons
+related to type that prevent <span class="sc">gdb</span> from evaluating an expression. 
+For instance, <span class="sc">gdb</span> does not know how to add an <code>int</code> and
+a <code>struct foo</code>.  These particular type errors have nothing to do
+with the language in use and usually arise from expressions which make
+little sense to evaluate anyway.
+
+   <p><span class="sc">gdb</span> provides some additional commands for controlling type checking:
+
+   <p><a name="index-set-check-type-926"></a><a name="index-show-check-type-927"></a>
+     <dl>
+<dt><code>set check type on</code><dt><code>set check type off</code><dd>Set strict type checking on or off.  If any type mismatches occur in
+evaluating an expression while type checking is on, <span class="sc">gdb</span> prints a
+message and aborts evaluation of the expression.
+
+     <br><dt><code>show check type</code><dd>Show the current setting of type checking and whether <span class="sc">gdb</span>
+is enforcing strict type checking rules. 
+</dl>
+
+   <p><a name="index-range-checking-928"></a><a name="index-checks_002c-range-929"></a>
+
+   </body></html>
+

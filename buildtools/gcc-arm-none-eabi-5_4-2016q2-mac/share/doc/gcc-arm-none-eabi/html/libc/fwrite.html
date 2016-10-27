@@ -1,0 +1,102 @@
+<html lang="en">
+<head>
+<title>fwrite - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stdio.html#Stdio" title="Stdio">
+<link rel="prev" href="fwide.html#fwide" title="fwide">
+<link rel="next" href="getc.html#getc" title="getc">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="fwrite"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="getc.html#getc">getc</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="fwide.html#fwide">fwide</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stdio.html#Stdio">Stdio</a>
+<hr>
+</div>
+
+<h3 class="section">4.32 <code>fwrite</code>, <code>fwrite_unlocked</code>&mdash;write array elements</h3>
+
+<p><a name="index-fwrite-248"></a><a name="index-fwrite_005funlocked-249"></a><a name="index-g_t_005ffwrite_005fr-250"></a><a name="index-g_t_005ffwrite_005funlocked_005fr-251"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;stdio.h&gt;
+     size_t fwrite(const void *restrict <var>buf</var>, size_t <var>size</var>,
+         size_t <var>count</var>, FILE *restrict <var>fp</var>);
+     
+     #define _BSD_SOURCE
+     #include &lt;stdio.h&gt;
+     size_t fwrite_unlocked(const void *restrict <var>buf</var>, size_t <var>size</var>,
+         size_t <var>count</var>, FILE *restrict <var>fp</var>);
+     
+     #include &lt;stdio.h&gt;
+     size_t _fwrite_r(struct _reent *<var>ptr</var>, const void *restrict <var>buf</var>, size_t <var>size</var>,
+         size_t <var>count</var>, FILE *restrict <var>fp</var>);
+     
+     #include &lt;stdio.h&gt;
+     size_t _fwrite_unlocked_r(struct _reent *<var>ptr</var>, const void *restrict <var>buf</var>, size_t <var>size</var>,
+         size_t <var>count</var>, FILE *restrict <var>fp</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+<code>fwrite</code> attempts to copy, starting from the memory location
+<var>buf</var>, <var>count</var> elements (each of size <var>size</var>) into the file or
+stream identified by <var>fp</var>.  <code>fwrite</code> may copy fewer elements than
+<var>count</var> if an error intervenes.
+
+   <p><code>fwrite</code> also advances the file position indicator (if any) for
+<var>fp</var> by the number of <em>characters</em> actually written.
+
+   <p><code>fwrite_unlocked</code> is a non-thread-safe version of <code>fwrite</code>. 
+<code>fwrite_unlocked</code> may only safely be used within a scope
+protected by flockfile() (or ftrylockfile()) and funlockfile().  This
+function may safely be used in a multi-threaded program if and only
+if they are called while the invoking thread owns the (FILE *)
+object, as is the case after a successful call to the flockfile() or
+ftrylockfile() functions.  If threads are disabled, then
+<code>fwrite_unlocked</code> is equivalent to <code>fwrite</code>.
+
+   <p><code>_fwrite_r</code> and <code>_fwrite_unlocked_r</code> are simply reentrant versions of the
+above that take an additional reentrant structure argument: <var>ptr</var>.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+If <code>fwrite</code> succeeds in writing all the elements you specify, the
+result is the same as the argument <var>count</var>.  In any event, the
+result is the number of complete elements that <code>fwrite</code> copied to
+the file.
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+ANSI C requires <code>fwrite</code>.
+
+   <p><code>fwrite_unlocked</code> is a BSD extension also provided by GNU libc.
+
+   <p>Supporting OS subroutines required: <code>close</code>, <code>fstat</code>, <code>isatty</code>,
+<code>lseek</code>, <code>read</code>, <code>sbrk</code>, <code>write</code>.
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

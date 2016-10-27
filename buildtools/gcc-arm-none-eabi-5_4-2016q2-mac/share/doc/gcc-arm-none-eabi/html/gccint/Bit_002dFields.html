@@ -1,0 +1,95 @@
+<html lang="en">
+<head>
+<title>Bit-Fields - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="RTL.html#RTL" title="RTL">
+<link rel="prev" href="Comparisons.html#Comparisons" title="Comparisons">
+<link rel="next" href="Vector-Operations.html#Vector-Operations" title="Vector Operations">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Bit-Fields"></a>
+<a name="Bit_002dFields"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Vector-Operations.html#Vector-Operations">Vector Operations</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Comparisons.html#Comparisons">Comparisons</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="RTL.html#RTL">RTL</a>
+<hr>
+</div>
+
+<h3 class="section">13.11 Bit-Fields</h3>
+
+<p><a name="index-bit_002dfields-3001"></a>
+Special expression codes exist to represent bit-field instructions.
+
+     
+<a name="index-sign_005fextract-3002"></a>
+<a name="index-g_t_0040code_007bBITS_005fBIG_005fENDIAN_007d_002c-effect-on-_0040code_007bsign_005fextract_007d-3003"></a>
+<dl><dt><code>(sign_extract:</code><var>m</var> <var>loc</var> <var>size</var> <var>pos</var><code>)</code><dd>This represents a reference to a sign-extended bit-field contained or
+starting in <var>loc</var> (a memory or register reference).  The bit-field
+is <var>size</var> bits wide and starts at bit <var>pos</var>.  The compilation
+option <code>BITS_BIG_ENDIAN</code> says which end of the memory unit
+<var>pos</var> counts from.
+
+     <p>If <var>loc</var> is in memory, its mode must be a single-byte integer mode. 
+If <var>loc</var> is in a register, the mode to use is specified by the
+operand of the <code>insv</code> or <code>extv</code> pattern
+(see <a href="Standard-Names.html#Standard-Names">Standard Names</a>) and is usually a full-word integer mode,
+which is the default if none is specified.
+
+     <p>The mode of <var>pos</var> is machine-specific and is also specified
+in the <code>insv</code> or <code>extv</code> pattern.
+
+     <p>The mode <var>m</var> is the same as the mode that would be used for
+<var>loc</var> if it were a register.
+
+     <p>A <code>sign_extract</code> can not appear as an lvalue, or part thereof,
+in RTL.
+
+     <p><a name="index-zero_005fextract-3004"></a><br><dt><code>(zero_extract:</code><var>m</var> <var>loc</var> <var>size</var> <var>pos</var><code>)</code><dd>Like <code>sign_extract</code> but refers to an unsigned or zero-extended
+bit-field.  The same sequence of bits are extracted, but they
+are filled to an entire word with zeros instead of by sign-extension.
+
+     <p>Unlike <code>sign_extract</code>, this type of expressions can be lvalues
+in RTL; they may appear on the left side of an assignment, indicating
+insertion of a value into the specified bit-field. 
+</dl>
+
+ </body></html>
+

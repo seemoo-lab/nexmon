@@ -1,0 +1,156 @@
+<html lang="en">
+<head>
+<title>Symbol Tables In Python - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Python-API.html#Python-API" title="Python API">
+<link rel="prev" href="Symbols-In-Python.html#Symbols-In-Python" title="Symbols In Python">
+<link rel="next" href="Line-Tables-In-Python.html#Line-Tables-In-Python" title="Line Tables In Python">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Symbol-Tables-In-Python"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Line-Tables-In-Python.html#Line-Tables-In-Python">Line Tables In Python</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Symbols-In-Python.html#Symbols-In-Python">Symbols In Python</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Python-API.html#Python-API">Python API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.2.2.27 Symbol table representation in Python.</h5>
+
+<p><a name="index-symbol-tables-in-python-2261"></a><a name="index-gdb_002eSymtab-2262"></a><a name="index-gdb_002eSymtab_005fand_005fline-2263"></a>
+Access to symbol table data maintained by <span class="sc">gdb</span> on the inferior
+is exposed to Python via two objects: <code>gdb.Symtab_and_line</code> and
+<code>gdb.Symtab</code>.  Symbol table and line data for a frame is returned
+from the <code>find_sal</code> method in <code>gdb.Frame</code> object. 
+See <a href="Frames-In-Python.html#Frames-In-Python">Frames In Python</a>.
+
+   <p>For more information on <span class="sc">gdb</span>'s symbol table management, see
+<a href="Symbols.html#Symbols">Examining the Symbol Table</a>, for more information.
+
+   <p>A <code>gdb.Symtab_and_line</code> object has the following attributes:
+
+<div class="defun">
+&mdash; Variable: <b>Symtab_and_line.symtab</b><var><a name="index-Symtab_005fand_005fline_002esymtab-2264"></a></var><br>
+<blockquote><p>The symbol table object (<code>gdb.Symtab</code>) for this frame. 
+This attribute is not writable. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: <b>Symtab_and_line.pc</b><var><a name="index-Symtab_005fand_005fline_002epc-2265"></a></var><br>
+<blockquote><p>Indicates the start of the address range occupied by code for the
+current source line.  This attribute is not writable. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: <b>Symtab_and_line.last</b><var><a name="index-Symtab_005fand_005fline_002elast-2266"></a></var><br>
+<blockquote><p>Indicates the end of the address range occupied by code for the current
+source line.  This attribute is not writable. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: <b>Symtab_and_line.line</b><var><a name="index-Symtab_005fand_005fline_002eline-2267"></a></var><br>
+<blockquote><p>Indicates the current line number for this object.  This
+attribute is not writable. 
+</p></blockquote></div>
+
+   <p>A <code>gdb.Symtab_and_line</code> object has the following methods:
+
+<div class="defun">
+&mdash; Function: <b>Symtab_and_line.is_valid</b> ()<var><a name="index-Symtab_005fand_005fline_002eis_005fvalid-2268"></a></var><br>
+<blockquote><p>Returns <code>True</code> if the <code>gdb.Symtab_and_line</code> object is valid,
+<code>False</code> if not.  A <code>gdb.Symtab_and_line</code> object can become
+invalid if the Symbol table and line object it refers to does not
+exist in <span class="sc">gdb</span> any longer.  All other
+<code>gdb.Symtab_and_line</code> methods will throw an exception if it is
+invalid at the time the method is called. 
+</p></blockquote></div>
+
+   <p>A <code>gdb.Symtab</code> object has the following attributes:
+
+<div class="defun">
+&mdash; Variable: <b>Symtab.filename</b><var><a name="index-Symtab_002efilename-2269"></a></var><br>
+<blockquote><p>The symbol table's source filename.  This attribute is not writable. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: <b>Symtab.objfile</b><var><a name="index-Symtab_002eobjfile-2270"></a></var><br>
+<blockquote><p>The symbol table's backing object file.  See <a href="Objfiles-In-Python.html#Objfiles-In-Python">Objfiles In Python</a>. 
+This attribute is not writable. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: <b>Symtab.producer</b><var><a name="index-Symtab_002eproducer-2271"></a></var><br>
+<blockquote><p>The name and possibly version number of the program that
+compiled the code in the symbol table. 
+The contents of this string is up to the compiler. 
+If no producer information is available then <code>None</code> is returned. 
+This attribute is not writable. 
+</p></blockquote></div>
+
+   <p>A <code>gdb.Symtab</code> object has the following methods:
+
+<div class="defun">
+&mdash; Function: <b>Symtab.is_valid</b> ()<var><a name="index-Symtab_002eis_005fvalid-2272"></a></var><br>
+<blockquote><p>Returns <code>True</code> if the <code>gdb.Symtab</code> object is valid,
+<code>False</code> if not.  A <code>gdb.Symtab</code> object can become invalid if
+the symbol table it refers to does not exist in <span class="sc">gdb</span> any
+longer.  All other <code>gdb.Symtab</code> methods will throw an exception
+if it is invalid at the time the method is called. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Symtab.fullname</b> ()<var><a name="index-Symtab_002efullname-2273"></a></var><br>
+<blockquote><p>Return the symbol table's source absolute file name. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Symtab.global_block</b> ()<var><a name="index-Symtab_002eglobal_005fblock-2274"></a></var><br>
+<blockquote><p>Return the global block of the underlying symbol table. 
+See <a href="Blocks-In-Python.html#Blocks-In-Python">Blocks In Python</a>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Symtab.static_block</b> ()<var><a name="index-Symtab_002estatic_005fblock-2275"></a></var><br>
+<blockquote><p>Return the static block of the underlying symbol table. 
+See <a href="Blocks-In-Python.html#Blocks-In-Python">Blocks In Python</a>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>Symtab.linetable</b> ()<var><a name="index-Symtab_002elinetable-2276"></a></var><br>
+<blockquote><p>Return the line table associated with the symbol table. 
+See <a href="Line-Tables-In-Python.html#Line-Tables-In-Python">Line Tables In Python</a>. 
+</p></blockquote></div>
+
+   </body></html>
+

@@ -1,0 +1,95 @@
+<html lang="en">
+<head>
+<title>Include Files - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Program-Structure.html#Program-Structure" title="Program Structure">
+<link rel="prev" href="Source-Files.html#Source-Files" title="Source Files">
+<link rel="next" href="Line-Numbers.html#Line-Numbers" title="Line Numbers">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Include-Files"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Line-Numbers.html#Line-Numbers">Line Numbers</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Source-Files.html#Source-Files">Source Files</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Program-Structure.html#Program-Structure">Program Structure</a>
+<hr>
+</div>
+
+<h3 class="section">2.3 Names of Include Files</h3>
+
+<p>There are several schemes for dealing with include files: the
+traditional <code>N_SOL</code> approach, Sun's <code>N_BINCL</code> approach, and the
+XCOFF <code>C_BINCL</code> approach (which despite the similar name has little in
+common with <code>N_BINCL</code>).
+
+   <p><a name="index-N_005fSOL-4"></a>An <code>N_SOL</code> symbol specifies which include file subsequent symbols
+refer to.  The string field is the name of the file and the value is the
+text address corresponding to the end of the previous include file and
+the start of this one.  To specify the main source file again, use an
+<code>N_SOL</code> symbol with the name of the main source file.
+
+   <p><a name="index-N_005fBINCL-5"></a><a name="index-N_005fEINCL-6"></a><a name="index-N_005fEXCL-7"></a>The <code>N_BINCL</code> approach works as follows.  An <code>N_BINCL</code> symbol
+specifies the start of an include file.  In an object file, only the
+string is significant; the linker puts data into some of the other
+fields.  The end of the include file is marked by an <code>N_EINCL</code>
+symbol (which has no string field).  In an object file, there is no
+significant data in the <code>N_EINCL</code> symbol.  <code>N_BINCL</code> and
+<code>N_EINCL</code> can be nested.
+
+   <p>If the linker detects that two source files have identical stabs between
+an <code>N_BINCL</code> and <code>N_EINCL</code> pair (as will generally be the case
+for a header file), then it only puts out the stabs once.  Each
+additional occurrence is replaced by an <code>N_EXCL</code> symbol.  I believe
+the GNU linker and the Sun (both SunOS4 and Solaris) linker are the only
+ones which supports this feature.
+
+   <p>A linker which supports this feature will set the value of a
+<code>N_BINCL</code> symbol to the total of all the characters in the stabs
+strings included in the header file, omitting any file numbers.  The
+value of an <code>N_EXCL</code> symbol is the same as the value of the
+<code>N_BINCL</code> symbol it replaces.  This information can be used to
+match up <code>N_EXCL</code> and <code>N_BINCL</code> symbols which have the same
+filename.  The <code>N_EINCL</code> value, and the values of the other and
+description fields for all three, appear to always be zero.
+
+   <p><a name="index-C_005fBINCL-8"></a><a name="index-C_005fEINCL-9"></a>For the start of an include file in XCOFF, use the <samp><span class="file">.bi</span></samp> assembler
+directive, which generates a <code>C_BINCL</code> symbol.  A <samp><span class="file">.ei</span></samp>
+directive, which generates a <code>C_EINCL</code> symbol, denotes the end of
+the include file.  Both directives are followed by the name of the
+source file in quotes, which becomes the string for the symbol. 
+The value of each symbol, produced automatically by the assembler
+and linker, is the offset into the executable of the beginning
+(inclusive, as you'd expect) or end (inclusive, as you would not expect)
+of the portion of the COFF line table that corresponds to this include
+file.  <code>C_BINCL</code> and <code>C_EINCL</code> do not nest.
+
+   </body></html>
+

@@ -1,0 +1,86 @@
+<html lang="en">
+<head>
+<title>Blocks - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Statements.html#Statements" title="Statements">
+<link rel="prev" href="Basic-Statements.html#Basic-Statements" title="Basic Statements">
+<link rel="next" href="Statement-Sequences.html#Statement-Sequences" title="Statement Sequences">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Blocks"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Statement-Sequences.html#Statement-Sequences">Statement Sequences</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Basic-Statements.html#Basic-Statements">Basic Statements</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Statements.html#Statements">Statements</a>
+<hr>
+</div>
+
+<h4 class="subsection">10.7.2 Blocks</h4>
+
+<p><a name="index-Blocks-1938"></a>
+Block scopes and the variables they declare in GENERIC are
+expressed using the <code>BIND_EXPR</code> code, which in previous
+versions of GCC was primarily used for the C statement-expression
+extension.
+
+ <p>Variables in a block are collected into <code>BIND_EXPR_VARS</code> in
+declaration order through their <code>TREE_CHAIN</code> field.  Any runtime
+initialization is moved out of <code>DECL_INITIAL</code> and into a
+statement in the controlled block.  When gimplifying from C or C++,
+this initialization replaces the <code>DECL_STMT</code>.  These variables
+will never require cleanups.  The scope of these variables is just the
+body
+
+ <p>Variable-length arrays (VLAs) complicate this process, as their
+size often refers to variables initialized earlier in the block. 
+To handle this, we currently split the block at that point, and
+move the VLA into a new, inner <code>BIND_EXPR</code>.  This strategy
+may change in the future.
+
+ <p>A C++ program will usually contain more <code>BIND_EXPR</code>s than
+there are syntactic blocks in the source code, since several C++
+constructs have implicit scopes associated with them.  On the
+other hand, although the C++ front end uses pseudo-scopes to
+handle cleanups for objects with destructors, these don't
+translate into the GIMPLE form; multiple declarations at the same
+level use the same <code>BIND_EXPR</code>.
+
+ </body></html>
+

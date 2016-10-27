@@ -1,0 +1,88 @@
+<html lang="en">
+<head>
+<title>Attributes - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="GENERIC.html#GENERIC" title="GENERIC">
+<link rel="prev" href="Declarations.html#Declarations" title="Declarations">
+<link rel="next" href="Expression-trees.html#Expression-trees" title="Expression trees">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Attributes"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Expression-trees.html#Expression-trees">Expression trees</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Declarations.html#Declarations">Declarations</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="GENERIC.html#GENERIC">GENERIC</a>
+<hr>
+</div>
+
+<h3 class="section">10.5 Attributes in trees</h3>
+
+<p><a name="index-attributes-1817"></a>
+Attributes, as specified using the <code>__attribute__</code> keyword, are
+represented internally as a <code>TREE_LIST</code>.  The <code>TREE_PURPOSE</code>
+is the name of the attribute, as an <code>IDENTIFIER_NODE</code>.  The
+<code>TREE_VALUE</code> is a <code>TREE_LIST</code> of the arguments of the
+attribute, if any, or <code>NULL_TREE</code> if there are no arguments; the
+arguments are stored as the <code>TREE_VALUE</code> of successive entries in
+the list, and may be identifiers or expressions.  The <code>TREE_CHAIN</code>
+of the attribute is the next attribute in a list of attributes applying
+to the same declaration or type, or <code>NULL_TREE</code> if there are no
+further attributes in the list.
+
+ <p>Attributes may be attached to declarations and to types; these
+attributes may be accessed with the following macros.  All attributes
+are stored in this way, and many also cause other changes to the
+declaration or type or to other internal compiler data structures.
+
+<div class="defun">
+&mdash; Tree Macro: tree <b>DECL_ATTRIBUTES</b> (<var>tree decl</var>)<var><a name="index-DECL_005fATTRIBUTES-1818"></a></var><br>
+<blockquote><p>This macro returns the attributes on the declaration <var>decl</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Tree Macro: tree <b>TYPE_ATTRIBUTES</b> (<var>tree type</var>)<var><a name="index-TYPE_005fATTRIBUTES-1819"></a></var><br>
+<blockquote><p>This macro returns the attributes on the type <var>type</var>. 
+</p></blockquote></div>
+
+<!--  -->
+<!-- Expressions -->
+<!--  -->
+</body></html>
+

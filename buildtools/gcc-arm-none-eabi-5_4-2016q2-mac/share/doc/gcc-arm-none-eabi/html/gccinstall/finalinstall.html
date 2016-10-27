@@ -1,0 +1,172 @@
+<html lang="en">
+<head>
+<title>Installing GCC: Final installation</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Installing GCC: Final installation">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="top" href="#Top">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, the Front-Cover texts being (a) (see below), and
+with the Back-Cover Texts being (b) (see below).  A copy of the
+license is included in the section entitled "GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<h1 class="settitle">Installing GCC: Final installation</h1>
+Now that GCC has been built (and optionally tested), you can install it with
+<pre class="smallexample">     cd <var>objdir</var> &amp;&amp; make install
+</pre>
+   <p>We strongly recommend to install into a target directory where there is
+no previous version of GCC present.  Also, the GNAT runtime should not
+be stripped, as this would break certain features of the debugger that
+depend on this debugging information (catching Ada exceptions for
+instance).
+
+   <p>That step completes the installation of GCC; user level binaries can
+be found in <samp><var>prefix</var><span class="file">/bin</span></samp> where <var>prefix</var> is the value
+you specified with the <samp><span class="option">--prefix</span></samp> to configure (or
+<samp><span class="file">/usr/local</span></samp> by default).  (If you specified <samp><span class="option">--bindir</span></samp>,
+that directory will be used instead; otherwise, if you specified
+<samp><span class="option">--exec-prefix</span></samp>, <samp><var>exec-prefix</var><span class="file">/bin</span></samp> will be used.) 
+Headers for the C++ and Java libraries are installed in
+<samp><var>prefix</var><span class="file">/include</span></samp>; libraries in <samp><var>libdir</var></samp>
+(normally <samp><var>prefix</var><span class="file">/lib</span></samp>); internal parts of the compiler in
+<samp><var>libdir</var><span class="file">/gcc</span></samp> and <samp><var>libexecdir</var><span class="file">/gcc</span></samp>; documentation
+in info format in <samp><var>infodir</var></samp> (normally
+<samp><var>prefix</var><span class="file">/info</span></samp>).
+
+   <p>When installing cross-compilers, GCC's executables
+are not only installed into <samp><var>bindir</var></samp>, that
+is, <samp><var>exec-prefix</var><span class="file">/bin</span></samp>, but additionally into
+<samp><var>exec-prefix</var><span class="file">/</span><var>target-alias</var><span class="file">/bin</span></samp>, if that directory
+exists.  Typically, such <dfn>tooldirs</dfn> hold target-specific
+binutils, including assembler and linker.
+
+   <p>Installation into a temporary staging area or into a <samp><span class="command">chroot</span></samp>
+jail can be achieved with the command
+
+<pre class="smallexample">     make DESTDIR=<var>path-to-rootdir</var> install
+</pre>
+   <p class="noindent">where <var>path-to-rootdir</var> is the absolute path of
+a directory relative to which all installation paths will be
+interpreted.  Note that the directory specified by <code>DESTDIR</code>
+need not exist yet; it will be created if necessary.
+
+   <p>There is a subtle point with tooldirs and <code>DESTDIR</code>:
+If you relocate a cross-compiler installation with
+e.g. `<samp><span class="samp">DESTDIR=</span><var>rootdir</var></samp>', then the directory
+<samp><var>rootdir</var><span class="file">/</span><var>exec-prefix</var><span class="file">/</span><var>target-alias</var><span class="file">/bin</span></samp> will
+be filled with duplicated GCC executables only if it already exists,
+it will not be created otherwise.  This is regarded as a feature,
+not as a bug, because it gives slightly more control to the packagers
+using the <code>DESTDIR</code> feature.
+
+   <p>You can install stripped programs and libraries with
+
+<pre class="smallexample">     make install-strip
+</pre>
+   <p>If you are bootstrapping a released version of GCC then please
+quickly review the build status page for your release, available from
+<a href="http://gcc.gnu.org/buildstat.html">http://gcc.gnu.org/buildstat.html</a>. 
+If your system is not listed for the version of GCC that you built,
+send a note to
+<a href="mailto:gcc@gcc.gnu.org">gcc@gcc.gnu.org</a> indicating
+that you successfully built and installed GCC. 
+Include the following information:
+
+     <ul>
+<li>Output from running <samp><var>srcdir</var><span class="file">/config.guess</span></samp>.  Do not send
+that file itself, just the one-line output from running it.
+
+     <li>The output of `<samp><span class="samp">gcc -v</span></samp>' for your newly installed <samp><span class="command">gcc</span></samp>. 
+This tells us which version of GCC you built and the options you passed to
+configure.
+
+     <li>Whether you enabled all languages or a subset of them.  If you used a
+full distribution then this information is part of the configure
+options in the output of `<samp><span class="samp">gcc -v</span></samp>', but if you downloaded the
+&ldquo;core&rdquo; compiler plus additional front ends then it isn't apparent
+which ones you built unless you tell us about it.
+
+     <li>If the build was for GNU/Linux, also include:
+          <ul>
+<li>The distribution name and version (e.g., Red Hat 7.1 or Debian 2.2.3);
+this information should be available from <samp><span class="file">/etc/issue</span></samp>.
+
+          <li>The version of the Linux kernel, available from `<samp><span class="samp">uname --version</span></samp>'
+or `<samp><span class="samp">uname -a</span></samp>'.
+
+          <li>The version of glibc you used; for RPM-based systems like Red Hat,
+Mandrake, and SuSE type `<samp><span class="samp">rpm -q glibc</span></samp>' to get the glibc version,
+and on systems like Debian and Progeny use `<samp><span class="samp">dpkg -l libc6</span></samp>'. 
+</ul>
+     For other systems, you can include similar information if you think it is
+relevant.
+
+     <li>Any other information that you think would be useful to people building
+GCC on the same configuration.  The new entry in the build status list
+will include a link to the archived copy of your message. 
+</ul>
+
+   <p>We'd also like to know if the
+<a href="specific.html">host/target specific installation notes</a>
+didn't include your host/target information or if that information is
+incomplete or out of date.  Send a note to
+<a href="mailto:gcc@gcc.gnu.org">gcc@gcc.gnu.org</a> detailing how the information should be changed.
+
+   <p>If you find a bug, please report it following the
+<a href="../bugs/">bug reporting guidelines</a>.
+
+   <p>If you want to print the GCC manuals, do `<samp><span class="samp">cd </span><var>objdir</var><span class="samp">; make
+dvi</span></samp>'.  You will need to have <samp><span class="command">texi2dvi</span></samp> (version at least 4.7)
+and TeX installed.  This creates a number of <samp><span class="file">.dvi</span></samp> files in
+subdirectories of <samp><var>objdir</var></samp>; these may be converted for
+printing with programs such as <samp><span class="command">dvips</span></samp>.  Alternately, by using
+`<samp><span class="samp">make pdf</span></samp>' in place of `<samp><span class="samp">make dvi</span></samp>', you can create documentation
+in the form of <samp><span class="file">.pdf</span></samp> files; this requires <samp><span class="command">texi2pdf</span></samp>, which
+is included with Texinfo version 4.8 and later.  You can also
+<a href="http://shop.fsf.org/">buy printed manuals from the Free Software Foundation</a>, though such manuals may not be for the most
+recent version of GCC.
+
+   <p>If you would like to generate online HTML documentation, do `<samp><span class="samp">cd
+</span><var>objdir</var><span class="samp">; make html</span></samp>' and HTML will be generated for the gcc manuals in
+<samp><var>objdir</var><span class="file">/gcc/HTML</span></samp>.
+
+   <p><hr />
+<p><a href="./index.html">Return to the GCC Installation page</a>
+
+<!-- ***Binaries**************************************************************** -->
+<!-- ***Specific**************************************************************** -->
+<!-- ***Old documentation****************************************************** -->
+<!-- ***GFDL******************************************************************** -->
+<!-- *************************************************************************** -->
+<!-- Part 6 The End of the Document -->
+</body></html>
+

@@ -1,0 +1,191 @@
+<html lang="en">
+<head>
+<title>File layout - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="mmo.html#mmo" title="mmo">
+<link rel="prev" href="mmo.html#mmo" title="mmo">
+<link rel="next" href="Symbol_002dtable.html#Symbol_002dtable" title="Symbol-table">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="File-layout"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Symbol_002dtable.html#Symbol_002dtable">Symbol-table</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="mmo.html#mmo">mmo</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="mmo.html#mmo">mmo</a>
+<hr>
+</div>
+
+<h4 class="subsection">3.5.1 File layout</h4>
+
+<p>The mmo file contents is not partitioned into named sections as
+with e.g. ELF.  Memory areas is formed by specifying the
+location of the data that follows.  Only the memory area
+`<samp><span class="samp">0x0000...00</span></samp>' to `<samp><span class="samp">0x01ff...ff</span></samp>' is executable, so
+it is used for code (and constants) and the area
+`<samp><span class="samp">0x2000...00</span></samp>' to `<samp><span class="samp">0x20ff...ff</span></samp>' is used for
+writable data.  See <a href="mmo-section-mapping.html#mmo-section-mapping">mmo section mapping</a>.
+
+   <p>There is provision for specifying &ldquo;special data&rdquo; of 65536
+different types.  We use type 80 (decimal), arbitrarily chosen the
+same as the ELF <code>e_machine</code> number for MMIX, filling it with
+section information normally found in ELF objects. See <a href="mmo-section-mapping.html#mmo-section-mapping">mmo section mapping</a>.
+
+   <p>Contents is entered as 32-bit words, xor:ed over previous
+contents, always zero-initialized.  A word that starts with the
+byte `<samp><span class="samp">0x98</span></samp>' forms a command called a `<samp><span class="samp">lopcode</span></samp>', where
+the next byte distinguished between the thirteen lopcodes.  The
+two remaining bytes, called the `<samp><span class="samp">Y</span></samp>' and `<samp><span class="samp">Z</span></samp>' fields, or
+the `<samp><span class="samp">YZ</span></samp>' field (a 16-bit big-endian number), are used for
+various purposes different for each lopcode.  As documented in
+<a href="http://mmix.cs.hm.edu/doc/mmixal.pdf">http://mmix.cs.hm.edu/doc/mmixal.pdf</a>,
+the lopcodes are:
+
+     <dl>
+<dt><code>lop_quote</code><dd>0x98000001.  The next word is contents, regardless of whether it
+starts with 0x98 or not.
+
+     <br><dt><code>lop_loc</code><dd>0x9801YYZZ, where `<samp><span class="samp">Z</span></samp>' is 1 or 2.  This is a location
+directive, setting the location for the next data to the next
+32-bit word (for Z = 1) or 64-bit word (for Z = 2),
+plus Y * 2^56.  Normally `<samp><span class="samp">Y</span></samp>' is 0 for the text segment
+and 2 for the data segment.  Beware that the low bits of non-
+tetrabyte-aligned values are silently discarded when being
+automatically incremented and when storing contents (in contrast
+to e.g. its use as current location when followed by lop_fixo
+et al before the next possibly-quoted tetrabyte contents).
+
+     <br><dt><code>lop_skip</code><dd>0x9802YYZZ.  Increase the current location by `<samp><span class="samp">YZ</span></samp>' bytes.
+
+     <br><dt><code>lop_fixo</code><dd>0x9803YYZZ, where `<samp><span class="samp">Z</span></samp>' is 1 or 2.  Store the current location
+as 64 bits into the location pointed to by the next 32-bit
+(Z = 1) or 64-bit (Z = 2) word, plus Y *
+2^56.
+
+     <br><dt><code>lop_fixr</code><dd>0x9804YYZZ.  `<samp><span class="samp">YZ</span></samp>' is stored into the current location plus
+2 - 4 * YZ.
+
+     <br><dt><code>lop_fixrx</code><dd>0x980500ZZ.  `<samp><span class="samp">Z</span></samp>' is 16 or 24.  A value `<samp><span class="samp">L</span></samp>' derived from
+the following 32-bit word are used in a manner similar to
+`<samp><span class="samp">YZ</span></samp>' in lop_fixr: it is xor:ed into the current location
+minus 4 * L.  The first byte of the word is 0 or 1.  If it
+is 1, then L = (<var>lowest 24 bits of word</var>) - 2^Z, if 0,
+then L = (<var>lowest 24 bits of word</var>).
+
+     <br><dt><code>lop_file</code><dd>0x9806YYZZ.  `<samp><span class="samp">Y</span></samp>' is the file number, `<samp><span class="samp">Z</span></samp>' is count of
+32-bit words.  Set the file number to `<samp><span class="samp">Y</span></samp>' and the line
+counter to 0.  The next Z * 4 bytes contain the file name,
+padded with zeros if the count is not a multiple of four.  The
+same `<samp><span class="samp">Y</span></samp>' may occur multiple times, but `<samp><span class="samp">Z</span></samp>' must be 0 for
+all but the first occurrence.
+
+     <br><dt><code>lop_line</code><dd>0x9807YYZZ.  `<samp><span class="samp">YZ</span></samp>' is the line number.  Together with
+lop_file, it forms the source location for the next 32-bit word. 
+Note that for each non-lopcode 32-bit word, line numbers are
+assumed incremented by one.
+
+     <br><dt><code>lop_spec</code><dd>0x9808YYZZ.  `<samp><span class="samp">YZ</span></samp>' is the type number.  Data until the next
+lopcode other than lop_quote forms special data of type `<samp><span class="samp">YZ</span></samp>'. 
+See <a href="mmo-section-mapping.html#mmo-section-mapping">mmo section mapping</a>.
+
+     <p>Other types than 80, (or type 80 with a content that does not
+parse) is stored in sections named <code>.MMIX.spec_data.</code><var>n</var>
+where <var>n</var> is the `<samp><span class="samp">YZ</span></samp>'-type.  The flags for such a
+sections say not to allocate or load the data.  The vma is 0. 
+Contents of multiple occurrences of special data <var>n</var> is
+concatenated to the data of the previous lop_spec <var>n</var>s.  The
+location in data or code at which the lop_spec occurred is lost.
+
+     <br><dt><code>lop_pre</code><dd>0x980901ZZ.  The first lopcode in a file.  The `<samp><span class="samp">Z</span></samp>' field forms the
+length of header information in 32-bit words, where the first word
+tells the time in seconds since `<samp><span class="samp">00:00:00 GMT Jan 1 1970</span></samp>'.
+
+     <br><dt><code>lop_post</code><dd>0x980a00ZZ.  Z &gt; 32.  This lopcode follows after all
+content-generating lopcodes in a program.  The `<samp><span class="samp">Z</span></samp>' field
+denotes the value of `<samp><span class="samp">rG</span></samp>' at the beginning of the program. 
+The following 256 - Z big-endian 64-bit words are loaded
+into global registers `<samp><span class="samp">$G</span></samp>' <small class="dots">...</small> `<samp><span class="samp">$255</span></samp>'.
+
+     <br><dt><code>lop_stab</code><dd>0x980b0000.  The next-to-last lopcode in a program.  Must follow
+immediately after the lop_post lopcode and its data.  After this
+lopcode follows all symbols in a compressed format
+(see <a href="Symbol_002dtable.html#Symbol_002dtable">Symbol-table</a>).
+
+     <br><dt><code>lop_end</code><dd>0x980cYYZZ.  The last lopcode in a program.  It must follow the
+lop_stab lopcode and its data.  The `<samp><span class="samp">YZ</span></samp>' field contains the
+number of 32-bit words of symbol table information after the
+preceding lop_stab lopcode. 
+</dl>
+
+   <p>Note that the lopcode "fixups"; <code>lop_fixr</code>, <code>lop_fixrx</code> and
+<code>lop_fixo</code> are not generated by BFD, but are handled.  They are
+generated by <code>mmixal</code>.
+
+   <p>This trivial one-label, one-instruction file:
+
+<pre class="example">      :Main TRAP 1,2,3
+</pre>
+   <p>can be represented this way in mmo:
+
+<pre class="example">      0x98090101 - lop_pre, one 32-bit word with timestamp.
+      &lt;timestamp&gt;
+      0x98010002 - lop_loc, text segment, using a 64-bit address.
+                   Note that mmixal does not emit this for the file above.
+      0x00000000 - Address, high 32 bits.
+      0x00000000 - Address, low 32 bits.
+      0x98060002 - lop_file, 2 32-bit words for file-name.
+      0x74657374 - "test"
+      0x2e730000 - ".s\0\0"
+      0x98070001 - lop_line, line 1.
+      0x00010203 - TRAP 1,2,3
+      0x980a00ff - lop_post, setting $255 to 0.
+      0x00000000
+      0x00000000
+      0x980b0000 - lop_stab for ":Main" = 0, serial 1.
+      0x203a4040   See <a href="Symbol_002dtable.html#Symbol_002dtable">Symbol-table</a>.
+      0x10404020
+      0x4d206120
+      0x69016e00
+      0x81000000
+      0x980c0005 - lop_end; symbol table contained five 32-bit words.
+</pre>
+   </body></html>
+

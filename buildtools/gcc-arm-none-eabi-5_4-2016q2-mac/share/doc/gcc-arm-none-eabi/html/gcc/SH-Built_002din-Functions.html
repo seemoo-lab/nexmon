@@ -1,0 +1,104 @@
+<html lang="en">
+<head>
+<title>SH Built-in Functions - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Builtins.html#Target-Builtins" title="Target Builtins">
+<link rel="prev" href="S_002f390-System-z-Built_002din-Functions.html#S_002f390-System-z-Built_002din-Functions" title="S/390 System z Built-in Functions">
+<link rel="next" href="SPARC-VIS-Built_002din-Functions.html#SPARC-VIS-Built_002din-Functions" title="SPARC VIS Built-in Functions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="SH-Built-in-Functions"></a>
+<a name="SH-Built_002din-Functions"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="SPARC-VIS-Built_002din-Functions.html#SPARC-VIS-Built_002din-Functions">SPARC VIS Built-in Functions</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="S_002f390-System-z-Built_002din-Functions.html#S_002f390-System-z-Built_002din-Functions">S/390 System z Built-in Functions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Builtins.html#Target-Builtins">Target Builtins</a>
+<hr>
+</div>
+
+<h4 class="subsection">6.58.24 SH Built-in Functions</h4>
+
+<p>The following built-in functions are supported on the SH1, SH2, SH3 and SH4
+families of processors:
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_set_thread_pointer</b> (<var>void *ptr</var>)<var><a name="index-g_t_005f_005fbuiltin_005fset_005fthread_005fpointer-4139"></a></var><br>
+<blockquote><p>Sets the `<samp><span class="samp">GBR</span></samp>' register to the specified value <var>ptr</var>.  This is usually
+used by system code that manages threads and execution contexts.  The compiler
+normally does not generate code that modifies the contents of `<samp><span class="samp">GBR</span></samp>' and
+thus the value is preserved across function calls.  Changing the `<samp><span class="samp">GBR</span></samp>'
+value in user code must be done with caution, since the compiler might use
+`<samp><span class="samp">GBR</span></samp>' in order to access thread local variables.
+
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void * <b>__builtin_thread_pointer</b> (<var>void</var>)<var><a name="index-g_t_005f_005fbuiltin_005fthread_005fpointer-4140"></a></var><br>
+<blockquote><p>Returns the value that is currently set in the `<samp><span class="samp">GBR</span></samp>' register. 
+Memory loads and stores that use the thread pointer as a base address are
+turned into `<samp><span class="samp">GBR</span></samp>' based displacement loads and stores, if possible. 
+For example:
+     <pre class="smallexample">          struct my_tcb
+          {
+             int a, b, c, d, e;
+          };
+          
+          int get_tcb_value (void)
+          {
+            // Generate `<samp><span class="samp">mov.l @(8,gbr),r0</span></samp>' instruction
+            return ((my_tcb*)__builtin_thread_pointer ())-&gt;c;
+          }
+          
+     </pre>
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: unsigned int <b>__builtin_sh_get_fpscr</b> (<var>void</var>)<var><a name="index-g_t_005f_005fbuiltin_005fsh_005fget_005ffpscr-4141"></a></var><br>
+<blockquote><p>Returns the value that is currently set in the `<samp><span class="samp">FPSCR</span></samp>' register. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_sh_set_fpscr</b> (<var>unsigned int val</var>)<var><a name="index-g_t_005f_005fbuiltin_005fsh_005fset_005ffpscr-4142"></a></var><br>
+<blockquote><p>Sets the `<samp><span class="samp">FPSCR</span></samp>' register to the specified value <var>val</var>, while
+preserving the current values of the FR, SZ and PR bits. 
+</p></blockquote></div>
+
+ </body></html>
+

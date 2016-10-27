@@ -1,0 +1,84 @@
+<html lang="en">
+<head>
+<title>Looking Up or Entering a String - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Hash-Tables.html#Hash-Tables" title="Hash Tables">
+<link rel="prev" href="Creating-and-Freeing-a-Hash-Table.html#Creating-and-Freeing-a-Hash-Table" title="Creating and Freeing a Hash Table">
+<link rel="next" href="Traversing-a-Hash-Table.html#Traversing-a-Hash-Table" title="Traversing a Hash Table">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Looking-Up-or-Entering-a-String"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Traversing-a-Hash-Table.html#Traversing-a-Hash-Table">Traversing a Hash Table</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Creating-and-Freeing-a-Hash-Table.html#Creating-and-Freeing-a-Hash-Table">Creating and Freeing a Hash Table</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Hash-Tables.html#Hash-Tables">Hash Tables</a>
+<hr>
+</div>
+
+<h4 class="subsection">2.18.2 Looking up or entering a string</h4>
+
+<p><a name="index-bfd_005fhash_005flookup-2264"></a>The function <code>bfd_hash_lookup</code> is used both to look up a
+string in the hash table and to create a new entry.
+
+   <p>If the <var>create</var> argument is <code>FALSE</code>, <code>bfd_hash_lookup</code>
+will look up a string.  If the string is found, it will
+returns a pointer to a <code>struct bfd_hash_entry</code>.  If the
+string is not found in the table <code>bfd_hash_lookup</code> will
+return <code>NULL</code>.  You should not modify any of the fields in
+the returns <code>struct bfd_hash_entry</code>.
+
+   <p>If the <var>create</var> argument is <code>TRUE</code>, the string will be
+entered into the hash table if it is not already there. 
+Either way a pointer to a <code>struct bfd_hash_entry</code> will be
+returned, either to the existing structure or to a newly
+created one.  In this case, a <code>NULL</code> return means that an
+error occurred.
+
+   <p>If the <var>create</var> argument is <code>TRUE</code>, and a new entry is
+created, the <var>copy</var> argument is used to decide whether to
+copy the string onto the hash table objalloc or not.  If
+<var>copy</var> is passed as <code>FALSE</code>, you must be careful not to
+deallocate or modify the string as long as the hash table
+exists.
+
+   </body></html>
+

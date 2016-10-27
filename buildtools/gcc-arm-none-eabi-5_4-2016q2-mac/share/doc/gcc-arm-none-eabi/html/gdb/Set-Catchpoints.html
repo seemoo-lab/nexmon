@@ -1,0 +1,288 @@
+<html lang="en">
+<head>
+<title>Set Catchpoints - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Breakpoints.html#Breakpoints" title="Breakpoints">
+<link rel="prev" href="Set-Watchpoints.html#Set-Watchpoints" title="Set Watchpoints">
+<link rel="next" href="Delete-Breaks.html#Delete-Breaks" title="Delete Breaks">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Set-Catchpoints"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Delete-Breaks.html#Delete-Breaks">Delete Breaks</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Set-Watchpoints.html#Set-Watchpoints">Set Watchpoints</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Breakpoints.html#Breakpoints">Breakpoints</a>
+<hr>
+</div>
+
+<h4 class="subsection">5.1.3 Setting Catchpoints</h4>
+
+<p><a name="index-catchpoints_002c-setting-265"></a><a name="index-exception-handlers-266"></a><a name="index-event-handling-267"></a>
+You can use <dfn>catchpoints</dfn> to cause the debugger to stop for certain
+kinds of program events, such as C<tt>++</tt> exceptions or the loading of a
+shared library.  Use the <code>catch</code> command to set a catchpoint.
+
+     
+<a name="index-catch-268"></a>
+<dl><dt><code>catch </code><var>event</var><dd>Stop when <var>event</var> occurs.  The <var>event</var> can be any of the following:
+
+          <dl>
+<dt><code>throw </code><span class="roman">[</span><var>regexp</var><span class="roman">]</span><dt><code>rethrow </code><span class="roman">[</span><var>regexp</var><span class="roman">]</span><dt><code>catch </code><span class="roman">[</span><var>regexp</var><span class="roman">]</span><dd><a name="index-catch-throw-269"></a><a name="index-catch-rethrow-270"></a><a name="index-catch-catch-271"></a><a name="index-stop-on-C_0040t_007b_002b_002b_007d-exceptions-272"></a>The throwing, re-throwing, or catching of a C<tt>++</tt> exception.
+
+          <p>If <var>regexp</var> is given, then only exceptions whose type matches the
+regular expression will be caught.
+
+          <p><a name="index-g_t_0024_005fexception_0040r_007b_002c-convenience-variable_007d-273"></a>The convenience variable <code>$_exception</code> is available at an
+exception-related catchpoint, on some systems.  This holds the
+exception being thrown.
+
+          <p>There are currently some limitations to C<tt>++</tt> exception handling in
+<span class="sc">gdb</span>:
+
+               <ul>
+<li>The support for these commands is system-dependent.  Currently, only
+systems using the `<samp><span class="samp">gnu-v3</span></samp>' C<tt>++</tt> ABI (see <a href="ABI.html#ABI">ABI</a>) are
+supported.
+
+               <li>The regular expression feature and the <code>$_exception</code> convenience
+variable rely on the presence of some SDT probes in <code>libstdc++</code>. 
+If these probes are not present, then these features cannot be used. 
+These probes were first available in the GCC 4.8 release, but whether
+or not they are available in your GCC also depends on how it was
+built.
+
+               <li>The <code>$_exception</code> convenience variable is only valid at the
+instruction at which an exception-related catchpoint is set.
+
+               <li>When an exception-related catchpoint is hit, <span class="sc">gdb</span> stops at a
+location in the system library which implements runtime exception
+support for C<tt>++</tt>, usually <code>libstdc++</code>.  You can use <code>up</code>
+(see <a href="Selection.html#Selection">Selection</a>) to get to your code.
+
+               <li>If you call a function interactively, <span class="sc">gdb</span> normally returns
+control to you when the function has finished executing.  If the call
+raises an exception, however, the call may bypass the mechanism that
+returns control to you and cause your program either to abort or to
+simply continue running until it hits a breakpoint, catches a signal
+that <span class="sc">gdb</span> is listening for, or exits.  This is the case even if
+you set a catchpoint for the exception; catchpoints on exceptions are
+disabled within interactive calls.  See <a href="Calling.html#Calling">Calling</a>, for information on
+controlling this with <code>set unwind-on-terminating-exception</code>.
+
+               <li>You cannot raise an exception interactively.
+
+               <li>You cannot install an exception handler interactively. 
+</ul>
+
+          <br><dt><code>exception</code><dd><a name="index-catch-exception-274"></a><a name="index-Ada-exception-catching-275"></a><a name="index-catch-Ada-exceptions-276"></a>An Ada exception being raised.  If an exception name is specified
+at the end of the command (eg <code>catch exception Program_Error</code>),
+the debugger will stop only when this specific exception is raised. 
+Otherwise, the debugger stops execution when any Ada exception is raised.
+
+          <p>When inserting an exception catchpoint on a user-defined exception whose
+name is identical to one of the exceptions defined by the language, the
+fully qualified name must be used as the exception name.  Otherwise,
+<span class="sc">gdb</span> will assume that it should stop on the pre-defined exception
+rather than the user-defined one.  For instance, assuming an exception
+called <code>Constraint_Error</code> is defined in package <code>Pck</code>, then
+the command to use to catch such exceptions is <kbd>catch exception
+Pck.Constraint_Error</kbd>.
+
+          <br><dt><code>exception unhandled</code><dd><a name="index-catch-exception-unhandled-277"></a>An exception that was raised but is not handled by the program.
+
+          <br><dt><code>assert</code><dd><a name="index-catch-assert-278"></a>A failed Ada assertion.
+
+          <br><dt><code>exec</code><dd><a name="index-catch-exec-279"></a><a name="index-break-on-fork_002fexec-280"></a>A call to <code>exec</code>.  This is currently only available for HP-UX
+and <span class="sc">gnu</span>/Linux.
+
+          <br><dt><code>syscall</code><dt><code>syscall </code><span class="roman">[</span><var>name</var> <span class="roman">|</span> <var>number</var><span class="roman">]</span><code> ...</code><dd><a name="index-catch-syscall-281"></a><a name="index-break-on-a-system-call_002e-282"></a>A call to or return from a system call, a.k.a. <dfn>syscall</dfn>.  A
+syscall is a mechanism for application programs to request a service
+from the operating system (OS) or one of the OS system services. 
+<span class="sc">gdb</span> can catch some or all of the syscalls issued by the
+debuggee, and show the related information for each syscall.  If no
+argument is specified, calls to and returns from all system calls
+will be caught.
+
+          <p><var>name</var> can be any system call name that is valid for the
+underlying OS.  Just what syscalls are valid depends on the OS.  On
+GNU and Unix systems, you can find the full list of valid syscall
+names on <samp><span class="file">/usr/include/asm/unistd.h</span></samp>.
+
+          <!-- For MS-Windows, the syscall names and the corresponding numbers -->
+<!-- can be found, e.g., on this URL: -->
+<!-- http://www.metasploit.com/users/opcode/syscalls.html -->
+<!-- but we don't support Windows syscalls yet. -->
+<p>Normally, <span class="sc">gdb</span> knows in advance which syscalls are valid for
+each OS, so you can use the <span class="sc">gdb</span> command-line completion
+facilities (see <a href="Completion.html#Completion">command completion</a>) to list the
+available choices.
+
+          <p>You may also specify the system call numerically.  A syscall's
+number is the value passed to the OS's syscall dispatcher to
+identify the requested service.  When you specify the syscall by its
+name, <span class="sc">gdb</span> uses its database of syscalls to convert the name
+into the corresponding numeric code, but using the number directly
+may be useful if <span class="sc">gdb</span>'s database does not have the complete
+list of syscalls on your system (e.g., because <span class="sc">gdb</span> lags
+behind the OS upgrades).
+
+          <p>The example below illustrates how this command works if you don't provide
+arguments to it:
+
+          <pre class="smallexample">               (gdb) catch syscall
+               Catchpoint 1 (syscall)
+               (gdb) r
+               Starting program: /tmp/catch-syscall
+               
+               Catchpoint 1 (call to syscall 'close'), \
+               	   0xffffe424 in __kernel_vsyscall ()
+               (gdb) c
+               Continuing.
+               
+               Catchpoint 1 (returned from syscall 'close'), \
+               	0xffffe424 in __kernel_vsyscall ()
+               (gdb)
+          </pre>
+          <p>Here is an example of catching a system call by name:
+
+          <pre class="smallexample">               (gdb) catch syscall chroot
+               Catchpoint 1 (syscall 'chroot' [61])
+               (gdb) r
+               Starting program: /tmp/catch-syscall
+               
+               Catchpoint 1 (call to syscall 'chroot'), \
+               		   0xffffe424 in __kernel_vsyscall ()
+               (gdb) c
+               Continuing.
+               
+               Catchpoint 1 (returned from syscall 'chroot'), \
+               	0xffffe424 in __kernel_vsyscall ()
+               (gdb)
+          </pre>
+          <p>An example of specifying a system call numerically.  In the case
+below, the syscall number has a corresponding entry in the XML
+file, so <span class="sc">gdb</span> finds its name and prints it:
+
+          <pre class="smallexample">               (gdb) catch syscall 252
+               Catchpoint 1 (syscall(s) 'exit_group')
+               (gdb) r
+               Starting program: /tmp/catch-syscall
+               
+               Catchpoint 1 (call to syscall 'exit_group'), \
+               		   0xffffe424 in __kernel_vsyscall ()
+               (gdb) c
+               Continuing.
+               
+               Program exited normally.
+               (gdb)
+          </pre>
+          <p>However, there can be situations when there is no corresponding name
+in XML file for that syscall number.  In this case, <span class="sc">gdb</span> prints
+a warning message saying that it was not able to find the syscall name,
+but the catchpoint will be set anyway.  See the example below:
+
+          <pre class="smallexample">               (gdb) catch syscall 764
+               warning: The number '764' does not represent a known syscall.
+               Catchpoint 2 (syscall 764)
+               (gdb)
+          </pre>
+          <p>If you configure <span class="sc">gdb</span> using the `<samp><span class="samp">--without-expat</span></samp>' option,
+it will not be able to display syscall names.  Also, if your
+architecture does not have an XML file describing its system calls,
+you will not be able to see the syscall names.  It is important to
+notice that these two features are used for accessing the syscall
+name database.  In either case, you will see a warning like this:
+
+          <pre class="smallexample">               (gdb) catch syscall
+               warning: Could not open "syscalls/i386-linux.xml"
+               warning: Could not load the syscall XML file 'syscalls/i386-linux.xml'.
+               GDB will not be able to display syscall names.
+               Catchpoint 1 (syscall)
+               (gdb)
+          </pre>
+          <p>Of course, the file name will change depending on your architecture and system.
+
+          <p>Still using the example above, you can also try to catch a syscall by its
+number.  In this case, you would see something like:
+
+          <pre class="smallexample">               (gdb) catch syscall 252
+               Catchpoint 1 (syscall(s) 252)
+          </pre>
+          <p>Again, in this case <span class="sc">gdb</span> would not be able to display syscall's names.
+
+          <br><dt><code>fork</code><dd><a name="index-catch-fork-283"></a>A call to <code>fork</code>.  This is currently only available for HP-UX
+and <span class="sc">gnu</span>/Linux.
+
+          <br><dt><code>vfork</code><dd><a name="index-catch-vfork-284"></a>A call to <code>vfork</code>.  This is currently only available for HP-UX
+and <span class="sc">gnu</span>/Linux.
+
+          <br><dt><code>load </code><span class="roman">[</span><code>regexp</code><span class="roman">]</span><dt><code>unload </code><span class="roman">[</span><code>regexp</code><span class="roman">]</span><dd><a name="index-catch-load-285"></a><a name="index-catch-unload-286"></a>The loading or unloading of a shared library.  If <var>regexp</var> is
+given, then the catchpoint will stop only if the regular expression
+matches one of the affected libraries.
+
+          <br><dt><code>signal </code><span class="roman">[</span><var>signal</var><code>... </code><span class="roman">|</span><code> `<samp></code><span class="samp">all</span><code></samp>'</code><span class="roman">]</span><dd><a name="index-catch-signal-287"></a>The delivery of a signal.
+
+          <p>With no arguments, this catchpoint will catch any signal that is not
+used internally by <span class="sc">gdb</span>, specifically, all signals except
+`<samp><span class="samp">SIGTRAP</span></samp>' and `<samp><span class="samp">SIGINT</span></samp>'.
+
+          <p>With the argument `<samp><span class="samp">all</span></samp>', all signals, including those used by
+<span class="sc">gdb</span>, will be caught.  This argument cannot be used with other
+signal names.
+
+          <p>Otherwise, the arguments are a list of signal names as given to
+<code>handle</code> (see <a href="Signals.html#Signals">Signals</a>).  Only signals specified in this list
+will be caught.
+
+          <p>One reason that <code>catch signal</code> can be more useful than
+<code>handle</code> is that you can attach commands and conditions to the
+catchpoint.
+
+          <p>When a signal is caught by a catchpoint, the signal's <code>stop</code> and
+<code>print</code> settings, as specified by <code>handle</code>, are ignored. 
+However, whether the signal is still delivered to the inferior depends
+on the <code>pass</code> setting; this can be changed in the catchpoint's
+commands.
+
+     </dl>
+
+     <br><dt><code>tcatch </code><var>event</var><dd><a name="index-tcatch-288"></a>Set a catchpoint that is enabled only for one stop.  The catchpoint is
+automatically deleted after the first time the event is caught.
+
+   </dl>
+
+   <p>Use the <code>info break</code> command to list the current catchpoints.
+
+   </body></html>
+

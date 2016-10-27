@@ -1,0 +1,106 @@
+<html lang="en">
+<head>
+<title>GDB's Obsolete Annotations</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GDB's Obsolete Annotations">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="#Top">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1994-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License".-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+This file documents <span class="sc">gdb</span>'s obsolete annotations.
+
+   <p>Copyright &copy; 1994-2015 Free Software Foundation, Inc.
+
+   <p>Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled &ldquo;GNU
+Free Documentation License&rdquo;.
+
+<div class="node">
+<p>
+<a name="Top"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Annotations-Overview.html#Annotations-Overview">Annotations Overview</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="../index.html#dir">(dir)</a>
+<hr>
+</div>
+
+<h2 class="unnumbered">GDB Annotations</h2>
+
+<p>This document describes the obsolete level two annotation interface
+implemented in older <span class="sc">gdb</span> versions.
+
+<ul class="menu">
+<li><a accesskey="1" href="Annotations-Overview.html#Annotations-Overview">Annotations Overview</a>:   What annotations are; the general syntax. 
+<li><a accesskey="2" href="Limitations.html#Limitations">Limitations</a>:            Limitations of the annotation interface. 
+<li><a accesskey="3" href="Migrating-to-GDB_002fMI.html#Migrating-to-GDB_002fMI">Migrating to GDB/MI</a>:    Migrating to GDB/MI
+<li><a accesskey="4" href="Server-Prefix.html#Server-Prefix">Server Prefix</a>:        Issuing a command without affecting user state. 
+<li><a accesskey="5" href="Value-Annotations.html#Value-Annotations">Value Annotations</a>:    Values are marked as such. 
+<li><a accesskey="6" href="Frame-Annotations.html#Frame-Annotations">Frame Annotations</a>:    Stack frames are annotated. 
+<li><a accesskey="7" href="Displays.html#Displays">Displays</a>:             <span class="sc">gdb</span> can be told to display something periodically. 
+<li><a accesskey="8" href="Prompting.html#Prompting">Prompting</a>:            Annotations marking <span class="sc">gdb</span>'s need for input. 
+<li><a accesskey="9" href="Errors.html#Errors">Errors</a>:               Annotations for error messages. 
+<li><a href="Breakpoint-Info.html#Breakpoint-Info">Breakpoint Info</a>:      Information on breakpoints. 
+<li><a href="Invalidation.html#Invalidation">Invalidation</a>:         Some annotations describe things now invalid. 
+<li><a href="Annotations-for-Running.html#Annotations-for-Running">Annotations for Running</a>
+                        Whether the program is running, how it stopped, etc. 
+<li><a href="Source-Annotations.html#Source-Annotations">Source Annotations</a>:   Annotations describing source code. 
+<li><a href="Multi_002dthreaded-Apps.html#Multi_002dthreaded-Apps">Multi-threaded Apps</a>:  An annotation that reports multi-threadedness.
+
+<li><a href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License">GNU Free Documentation License</a>
+</ul>
+
+   <div class="contents">
+<h2>Table of Contents</h2>
+<ul>
+<li><a name="toc_Top" href="index.html#Top">GDB Annotations</a>
+<li><a name="toc_Annotations-Overview" href="Annotations-Overview.html#Annotations-Overview">1 What is an Annotation?</a>
+<li><a name="toc_Limitations" href="Limitations.html#Limitations">2 Limitations of the Annotation Interface</a>
+<ul>
+<li><a href="Limitations.html#Limitations">2.1 Dependant on <span class="sc">cli</span> output</a>
+<li><a href="Limitations.html#Limitations">2.2 Scalability</a>
+<li><a href="Limitations.html#Limitations">2.3 Correctness</a>
+<li><a href="Limitations.html#Limitations">2.4 Reliability</a>
+<li><a href="Limitations.html#Limitations">2.5 Maintainability</a>
+</li></ul>
+<li><a name="toc_Migrating-to-GDB_002fMI" href="Migrating-to-GDB_002fMI.html#Migrating-to-GDB_002fMI">3 Migrating to <span class="sc">gdb/mi</span></a>
+<li><a name="toc_Server-Prefix" href="Server-Prefix.html#Server-Prefix">4 The Server Prefix</a>
+<li><a name="toc_Value-Annotations" href="Value-Annotations.html#Value-Annotations">5 Values</a>
+<li><a name="toc_Frame-Annotations" href="Frame-Annotations.html#Frame-Annotations">6 Frames</a>
+<li><a name="toc_Displays" href="Displays.html#Displays">7 Displays</a>
+<li><a name="toc_Prompting" href="Prompting.html#Prompting">8 Annotation for <span class="sc">gdb</span> Input</a>
+<li><a name="toc_Errors" href="Errors.html#Errors">9 Errors</a>
+<li><a name="toc_Breakpoint-Info" href="Breakpoint-Info.html#Breakpoint-Info">10 Information on Breakpoints</a>
+<li><a name="toc_Invalidation" href="Invalidation.html#Invalidation">11 Invalidation Notices</a>
+<li><a name="toc_Annotations-for-Running" href="Annotations-for-Running.html#Annotations-for-Running">12 Running the Program</a>
+<li><a name="toc_Source-Annotations" href="Source-Annotations.html#Source-Annotations">13 Displaying Source</a>
+<li><a name="toc_Multi_002dthreaded-Apps" href="Multi_002dthreaded-Apps.html#Multi_002dthreaded-Apps">14 Multi-threaded Applications</a>
+<li><a name="toc_GNU-Free-Documentation-License" href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License">Appendix A GNU Free Documentation License</a>
+</li></ul>
+</div>
+
+   </body></html>
+

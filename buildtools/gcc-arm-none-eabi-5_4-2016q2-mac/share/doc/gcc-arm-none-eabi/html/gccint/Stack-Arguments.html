@@ -1,0 +1,229 @@
+<html lang="en">
+<head>
+<title>Stack Arguments - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stack-and-Calling.html#Stack-and-Calling" title="Stack and Calling">
+<link rel="prev" href="Elimination.html#Elimination" title="Elimination">
+<link rel="next" href="Register-Arguments.html#Register-Arguments" title="Register Arguments">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Stack-Arguments"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Register-Arguments.html#Register-Arguments">Register Arguments</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Elimination.html#Elimination">Elimination</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stack-and-Calling.html#Stack-and-Calling">Stack and Calling</a>
+<hr>
+</div>
+
+<h4 class="subsection">17.9.6 Passing Function Arguments on the Stack</h4>
+
+<p><a name="index-arguments-on-stack-4213"></a><a name="index-stack-arguments-4214"></a>
+The macros in this section control how arguments are passed
+on the stack.  See the following section for other macros that
+control passing certain arguments in registers.
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_PROMOTE_PROTOTYPES</b> (<var>const_tree fntype</var>)<var><a name="index-TARGET_005fPROMOTE_005fPROTOTYPES-4215"></a></var><br>
+<blockquote><p>This target hook returns <code>true</code> if an argument declared in a
+prototype as an integral type smaller than <code>int</code> should actually be
+passed as an <code>int</code>.  In addition to avoiding errors in certain
+cases of mismatch, it also makes for better code on certain machines. 
+The default is to not promote prototypes. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>PUSH_ARGS</b><var><a name="index-PUSH_005fARGS-4216"></a></var><br>
+<blockquote><p>A C expression.  If nonzero, push insns will be used to pass
+outgoing arguments. 
+If the target machine does not have a push instruction, set it to zero. 
+That directs GCC to use an alternate strategy: to
+allocate the entire argument block and then store the arguments into
+it.  When <code>PUSH_ARGS</code> is nonzero, <code>PUSH_ROUNDING</code> must be defined too. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>PUSH_ARGS_REVERSED</b><var><a name="index-PUSH_005fARGS_005fREVERSED-4217"></a></var><br>
+<blockquote><p>A C expression.  If nonzero, function arguments will be evaluated from
+last to first, rather than from first to last.  If this macro is not
+defined, it defaults to <code>PUSH_ARGS</code> on targets where the stack
+and args grow in opposite directions, and 0 otherwise. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>PUSH_ROUNDING</b> (<var>npushed</var>)<var><a name="index-PUSH_005fROUNDING-4218"></a></var><br>
+<blockquote><p>A C expression that is the number of bytes actually pushed onto the
+stack when an instruction attempts to push <var>npushed</var> bytes.
+
+      <p>On some machines, the definition
+
+     <pre class="smallexample">          #define PUSH_ROUNDING(BYTES) (BYTES)
+     </pre>
+      <p class="noindent">will suffice.  But on other machines, instructions that appear
+to push one byte actually push two bytes in an attempt to maintain
+alignment.  Then the definition should be
+
+     <pre class="smallexample">          #define PUSH_ROUNDING(BYTES) (((BYTES) + 1) &amp; ~1)
+     </pre>
+      <p>If the value of this macro has a type, it should be an unsigned type. 
+</p></blockquote></div>
+
+ <p><a name="index-outgoing_005fargs_005fsize-4219"></a><a name="index-crtl_002d_003eoutgoing_005fargs_005fsize-4220"></a>
+
+<div class="defun">
+&mdash; Macro: <b>ACCUMULATE_OUTGOING_ARGS</b><var><a name="index-ACCUMULATE_005fOUTGOING_005fARGS-4221"></a></var><br>
+<blockquote><p>A C expression.  If nonzero, the maximum amount of space required for outgoing arguments
+will be computed and placed into
+<code>crtl-&gt;outgoing_args_size</code>.  No space will be pushed
+onto the stack for each call; instead, the function prologue should
+increase the stack frame size by this amount.
+
+      <p>Setting both <code>PUSH_ARGS</code> and <code>ACCUMULATE_OUTGOING_ARGS</code>
+is not proper. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>REG_PARM_STACK_SPACE</b> (<var>fndecl</var>)<var><a name="index-REG_005fPARM_005fSTACK_005fSPACE-4222"></a></var><br>
+<blockquote><p>Define this macro if functions should assume that stack space has been
+allocated for arguments even when their values are passed in
+registers.
+
+      <p>The value of this macro is the size, in bytes, of the area reserved for
+arguments passed in registers for the function represented by <var>fndecl</var>,
+which can be zero if GCC is calling a library function. 
+The argument <var>fndecl</var> can be the FUNCTION_DECL, or the type itself
+of the function.
+
+      <p>This space can be allocated by the caller, or be a part of the
+machine-dependent stack frame: <code>OUTGOING_REG_PARM_STACK_SPACE</code> says
+which. 
+</p></blockquote></div>
+ <!-- above is overfull.  not sure what to do.  -mew 5feb93  did -->
+<!-- something, not sure if it looks good.  -mew 10feb93 -->
+
+<div class="defun">
+&mdash; Macro: <b>INCOMING_REG_PARM_STACK_SPACE</b> (<var>fndecl</var>)<var><a name="index-INCOMING_005fREG_005fPARM_005fSTACK_005fSPACE-4223"></a></var><br>
+<blockquote><p>Like <code>REG_PARM_STACK_SPACE</code>, but for incoming register arguments. 
+Define this macro if space guaranteed when compiling a function body
+is different to space required when making a call, a situation that
+can arise with K&amp;R style function definitions. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>OUTGOING_REG_PARM_STACK_SPACE</b> (<var>fntype</var>)<var><a name="index-OUTGOING_005fREG_005fPARM_005fSTACK_005fSPACE-4224"></a></var><br>
+<blockquote><p>Define this to a nonzero value if it is the responsibility of the
+caller to allocate the area reserved for arguments passed in registers
+when calling a function of <var>fntype</var>.  <var>fntype</var> may be NULL
+if the function called is a library function.
+
+      <p>If <code>ACCUMULATE_OUTGOING_ARGS</code> is defined, this macro controls
+whether the space for these arguments counts in the value of
+<code>crtl-&gt;outgoing_args_size</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>STACK_PARMS_IN_REG_PARM_AREA</b><var><a name="index-STACK_005fPARMS_005fIN_005fREG_005fPARM_005fAREA-4225"></a></var><br>
+<blockquote><p>Define this macro if <code>REG_PARM_STACK_SPACE</code> is defined, but the
+stack parameters don't skip the area specified by it. 
+<!-- i changed this, makes more sens and it should have taken care of the -->
+<!-- overfull.. not as specific, tho.  -mew 5feb93 -->
+
+      <p>Normally, when a parameter is not passed in registers, it is placed on the
+stack beyond the <code>REG_PARM_STACK_SPACE</code> area.  Defining this macro
+suppresses this behavior and causes the parameter to be passed on the
+stack in its natural location. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: int <b>TARGET_RETURN_POPS_ARGS</b> (<var>tree fundecl, tree funtype, int size</var>)<var><a name="index-TARGET_005fRETURN_005fPOPS_005fARGS-4226"></a></var><br>
+<blockquote><p>This target hook returns the number of bytes of its own arguments that
+a function pops on returning, or 0 if the function pops no arguments
+and the caller must therefore pop them all after the function returns.
+
+      <p><var>fundecl</var> is a C variable whose value is a tree node that describes
+the function in question.  Normally it is a node of type
+<code>FUNCTION_DECL</code> that describes the declaration of the function. 
+From this you can obtain the <code>DECL_ATTRIBUTES</code> of the function.
+
+      <p><var>funtype</var> is a C variable whose value is a tree node that
+describes the function in question.  Normally it is a node of type
+<code>FUNCTION_TYPE</code> that describes the data type of the function. 
+From this it is possible to obtain the data types of the value and
+arguments (if known).
+
+      <p>When a call to a library function is being considered, <var>fundecl</var>
+will contain an identifier node for the library function.  Thus, if
+you need to distinguish among various library functions, you can do so
+by their names.  Note that &ldquo;library function&rdquo; in this context means
+a function used to perform arithmetic, whose name is known specially
+in the compiler and was not mentioned in the C code being compiled.
+
+      <p><var>size</var> is the number of bytes of arguments passed on the
+stack.  If a variable number of bytes is passed, it is zero, and
+argument popping will always be the responsibility of the calling function.
+
+      <p>On the VAX, all functions always pop their arguments, so the definition
+of this macro is <var>size</var>.  On the 68000, using the standard
+calling convention, no functions pop their arguments, so the value of
+the macro is always 0 in this case.  But an alternative calling
+convention is available in which functions that take a fixed number of
+arguments pop them but other functions (such as <code>printf</code>) pop
+nothing (the caller pops all).  When this convention is in use,
+<var>funtype</var> is examined to determine whether a function takes a fixed
+number of arguments. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>CALL_POPS_ARGS</b> (<var>cum</var>)<var><a name="index-CALL_005fPOPS_005fARGS-4227"></a></var><br>
+<blockquote><p>A C expression that should indicate the number of bytes a call sequence
+pops off the stack.  It is added to the value of <code>RETURN_POPS_ARGS</code>
+when compiling a function call.
+
+      <p><var>cum</var> is the variable in which all arguments to the called function
+have been accumulated.
+
+      <p>On certain architectures, such as the SH5, a call trampoline is used
+that pops certain registers off the stack, depending on the arguments
+that have been passed to the function.  Since this is a property of the
+call site, not of the called function, <code>RETURN_POPS_ARGS</code> is not
+appropriate. 
+</p></blockquote></div>
+
+ </body></html>
+

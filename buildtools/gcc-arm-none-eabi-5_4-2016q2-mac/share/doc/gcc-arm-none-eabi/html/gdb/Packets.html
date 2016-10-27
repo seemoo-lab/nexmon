@@ -1,0 +1,673 @@
+<html lang="en">
+<head>
+<title>Packets - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Remote-Protocol.html#Remote-Protocol" title="Remote Protocol">
+<link rel="prev" href="Overview.html#Overview" title="Overview">
+<link rel="next" href="Stop-Reply-Packets.html#Stop-Reply-Packets" title="Stop Reply Packets">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Packets"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Stop-Reply-Packets.html#Stop-Reply-Packets">Stop Reply Packets</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Overview.html#Overview">Overview</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Remote-Protocol.html#Remote-Protocol">Remote Protocol</a>
+<hr>
+</div>
+
+<h3 class="section">E.2 Packets</h3>
+
+<p>The following table provides a complete list of all currently defined
+<var>command</var>s and their corresponding response <var>data</var>. 
+See <a href="File_002dI_002fO-Remote-Protocol-Extension.html#File_002dI_002fO-Remote-Protocol-Extension">File-I/O Remote Protocol Extension</a>, for details about the File
+I/O extension of the remote protocol.
+
+   <p>Each packet's description has a template showing the packet's overall
+syntax, followed by an explanation of the packet's meaning.  We
+include spaces in some of the templates for clarity; these are not
+part of the packet's syntax.  No <span class="sc">gdb</span> packet uses spaces to
+separate its components.  For example, a template like `<samp><span class="samp">foo
+</span><var>bar</var> <var>baz</var></samp>' describes a packet beginning with the three ASCII
+bytes `<samp><span class="samp">foo</span></samp>', followed by a <var>bar</var>, followed directly by a
+<var>baz</var>.  <span class="sc">gdb</span> does not transmit a space character between the
+`<samp><span class="samp">foo</span></samp>' and the <var>bar</var>, or between the <var>bar</var> and the
+<var>baz</var>.
+
+   <p><a name="index-g_t_0040var_007bthread_002did_007d_002c-in-remote-protocol-3298"></a><a name="thread_002did-syntax"></a>
+Several packets and replies include a <var>thread-id</var> field to identify
+a thread.  Normally these are positive numbers with a target-specific
+interpretation, formatted as big-endian hex strings.  A <var>thread-id</var>
+can also be a literal `<samp><span class="samp">-1</span></samp>' to indicate all threads, or `<samp><span class="samp">0</span></samp>' to
+pick any thread.
+
+   <p>In addition, the remote protocol supports a multiprocess feature in
+which the <var>thread-id</var> syntax is extended to optionally include both
+process and thread ID fields, as `<samp><span class="samp">p</span><var>pid</var><span class="samp">.</span><var>tid</var></samp>'. 
+The <var>pid</var> (process) and <var>tid</var> (thread) components each have the
+format described above: a positive number with target-specific
+interpretation formatted as a big-endian hex string, literal `<samp><span class="samp">-1</span></samp>'
+to indicate all processes or threads (respectively), or `<samp><span class="samp">0</span></samp>' to
+indicate an arbitrary process or thread.  Specifying just a process, as
+`<samp><span class="samp">p</span><var>pid</var></samp>', is equivalent to `<samp><span class="samp">p</span><var>pid</var><span class="samp">.-1</span></samp>'.  It is an
+error to specify all processes but a specific thread, such as
+`<samp><span class="samp">p-1.</span><var>tid</var></samp>'.  Note that the `<samp><span class="samp">p</span></samp>' prefix is <em>not</em> used
+for those packets and replies explicitly documented to include a process
+ID, rather than a <var>thread-id</var>.
+
+   <p>The multiprocess <var>thread-id</var> syntax extensions are only used if both
+<span class="sc">gdb</span> and the stub report support for the `<samp><span class="samp">multiprocess</span></samp>'
+feature using `<samp><span class="samp">qSupported</span></samp>'.  See <a href="multiprocess-extensions.html#multiprocess-extensions">multiprocess extensions</a>, for
+more information.
+
+   <p>Note that all packet forms beginning with an upper- or lower-case
+letter, other than those described here, are reserved for future use.
+
+   <p>Here are the packet descriptions.
+
+     <dl>
+<dt>`<samp><span class="samp">!</span></samp>'<dd><a name="index-g_t_0040samp_007b_0021_007d-packet-3299"></a><a name="extended-mode"></a>
+Enable extended mode.  In extended mode, the remote server is made
+persistent.  The `<samp><span class="samp">R</span></samp>' packet is used to restart the program being
+debugged.
+
+     <p>Reply:
+          <dl>
+<dt>`<samp><span class="samp">OK</span></samp>'<dd>The remote target both supports and has enabled extended mode. 
+</dl>
+
+     <br><dt>`<samp><span class="samp">?</span></samp>'<dd><a name="index-g_t_0040samp_007b_003f_007d-packet-3300"></a><a name="g_t_003f-packet"></a>
+Indicate the reason the target halted.  The reply is the same as for
+step and continue.  This packet has a special interpretation when the
+target is in non-stop mode; see <a href="Remote-Non_002dStop.html#Remote-Non_002dStop">Remote Non-Stop</a>.
+
+     <p>Reply:
+See <a href="Stop-Reply-Packets.html#Stop-Reply-Packets">Stop Reply Packets</a>, for the reply specifications.
+
+     <br><dt>`<samp><span class="samp">A </span><var>arglen</var><span class="samp">,</span><var>argnum</var><span class="samp">,</span><var>arg</var><span class="samp">,...</span></samp>'<dd><a name="index-g_t_0040samp_007bA_007d-packet-3301"></a>Initialized <code>argv[]</code> array passed into program. <var>arglen</var>
+specifies the number of bytes in the hex encoded byte stream
+<var>arg</var>.  See <code>gdbserver</code> for more details.
+
+     <p>Reply:
+          <dl>
+<dt>`<samp><span class="samp">OK</span></samp>'<dd>The arguments were set. 
+<br><dt>`<samp><span class="samp">E </span><var>NN</var></samp>'<dd>An error occurred. 
+</dl>
+
+     <br><dt>`<samp><span class="samp">b </span><var>baud</var></samp>'<dd><a name="index-g_t_0040samp_007bb_007d-packet-3302"></a>(Don't use this packet; its behavior is not well-defined.) 
+Change the serial line speed to <var>baud</var>.
+
+     <p>JTC: <em>When does the transport layer state change?  When it's
+received, or after the ACK is transmitted.  In either case, there are
+problems if the command or the acknowledgment packet is dropped.</em>
+
+     <p>Stan: <em>If people really wanted to add something like this, and get
+it working for the first time, they ought to modify ser-unix.c to send
+some kind of out-of-band message to a specially-setup stub and have the
+switch happen "in between" packets, so that from remote protocol's point
+of view, nothing actually happened.</em>
+
+     <br><dt>`<samp><span class="samp">B </span><var>addr</var><span class="samp">,</span><var>mode</var></samp>'<dd><a name="index-g_t_0040samp_007bB_007d-packet-3303"></a>Set (<var>mode</var> is `<samp><span class="samp">S</span></samp>') or clear (<var>mode</var> is `<samp><span class="samp">C</span></samp>') a
+breakpoint at <var>addr</var>.
+
+     <p>Don't use this packet.  Use the `<samp><span class="samp">Z</span></samp>' and `<samp><span class="samp">z</span></samp>' packets instead
+(see <a href="insert-breakpoint-or-watchpoint-packet.html#insert-breakpoint-or-watchpoint-packet">insert breakpoint or watchpoint packet</a>).
+
+     <p><a name="index-g_t_0040samp_007bbc_007d-packet-3304"></a><a name="bc"></a>
+<br><dt>`<samp><span class="samp">bc</span></samp>'<dd>Backward continue.  Execute the target system in reverse.  No parameter. 
+See <a href="Reverse-Execution.html#Reverse-Execution">Reverse Execution</a>, for more information.
+
+     <p>Reply:
+See <a href="Stop-Reply-Packets.html#Stop-Reply-Packets">Stop Reply Packets</a>, for the reply specifications.
+
+     <p><a name="index-g_t_0040samp_007bbs_007d-packet-3305"></a><a name="bs"></a>
+<br><dt>`<samp><span class="samp">bs</span></samp>'<dd>Backward single step.  Execute one instruction in reverse.  No parameter. 
+See <a href="Reverse-Execution.html#Reverse-Execution">Reverse Execution</a>, for more information.
+
+     <p>Reply:
+See <a href="Stop-Reply-Packets.html#Stop-Reply-Packets">Stop Reply Packets</a>, for the reply specifications.
+
+     <br><dt>`<samp><span class="samp">c [</span><var>addr</var><span class="samp">]</span></samp>'<dd><a name="index-g_t_0040samp_007bc_007d-packet-3306"></a>Continue at <var>addr</var>, which is the address to resume.  If <var>addr</var>
+is omitted, resume at current address.
+
+     <p>This packet is deprecated for multi-threading support.  See <a href="vCont-packet.html#vCont-packet">vCont packet</a>.
+
+     <p>Reply:
+See <a href="Stop-Reply-Packets.html#Stop-Reply-Packets">Stop Reply Packets</a>, for the reply specifications.
+
+     <br><dt>`<samp><span class="samp">C </span><var>sig</var><span class="samp">[;</span><var>addr</var><span class="samp">]</span></samp>'<dd><a name="index-g_t_0040samp_007bC_007d-packet-3307"></a>Continue with signal <var>sig</var> (hex signal number).  If
+`<samp><span class="samp">;</span><var>addr</var></samp>' is omitted, resume at same address.
+
+     <p>This packet is deprecated for multi-threading support.  See <a href="vCont-packet.html#vCont-packet">vCont packet</a>.
+
+     <p>Reply:
+See <a href="Stop-Reply-Packets.html#Stop-Reply-Packets">Stop Reply Packets</a>, for the reply specifications.
+
+     <br><dt>`<samp><span class="samp">d</span></samp>'<dd><a name="index-g_t_0040samp_007bd_007d-packet-3308"></a>Toggle debug flag.
+
+     <p>Don't use this packet; instead, define a general set packet
+(see <a href="General-Query-Packets.html#General-Query-Packets">General Query Packets</a>).
+
+     <br><dt>`<samp><span class="samp">D</span></samp>'<dt>`<samp><span class="samp">D;</span><var>pid</var></samp>'<dd><a name="index-g_t_0040samp_007bD_007d-packet-3309"></a>The first form of the packet is used to detach <span class="sc">gdb</span> from the
+remote system.  It is sent to the remote target
+before <span class="sc">gdb</span> disconnects via the <code>detach</code> command.
+
+     <p>The second form, including a process ID, is used when multiprocess
+protocol extensions are enabled (see <a href="multiprocess-extensions.html#multiprocess-extensions">multiprocess extensions</a>), to
+detach only a specific process.  The <var>pid</var> is specified as a
+big-endian hex string.
+
+     <p>Reply:
+          <dl>
+<dt>`<samp><span class="samp">OK</span></samp>'<dd>for success
+<br><dt>`<samp><span class="samp">E </span><var>NN</var></samp>'<dd>for an error
+</dl>
+
+     <br><dt>`<samp><span class="samp">F </span><var>RC</var><span class="samp">,</span><var>EE</var><span class="samp">,</span><var>CF</var><span class="samp">;</span><var>XX</var></samp>'<dd><a name="index-g_t_0040samp_007bF_007d-packet-3310"></a>A reply from <span class="sc">gdb</span> to an `<samp><span class="samp">F</span></samp>' packet sent by the target. 
+This is part of the File-I/O protocol extension.  See <a href="File_002dI_002fO-Remote-Protocol-Extension.html#File_002dI_002fO-Remote-Protocol-Extension">File-I/O Remote Protocol Extension</a>, for the specification.
+
+     <br><dt>`<samp><span class="samp">g</span></samp>'<dd><a name="read-registers-packet"></a>
+<a name="index-g_t_0040samp_007bg_007d-packet-3311"></a>Read general registers.
+
+     <p>Reply:
+          <dl>
+<dt>`<samp><var>XX<small class="dots">...</small></var></samp>'<dd>Each byte of register data is described by two hex digits.  The bytes
+with the register are transmitted in target byte order.  The size of
+each register and their position within the `<samp><span class="samp">g</span></samp>' packet are
+determined by the <span class="sc">gdb</span> internal gdbarch functions
+<code>DEPRECATED_REGISTER_RAW_SIZE</code> and <code>gdbarch_register_name</code>.  The
+specification of several standard `<samp><span class="samp">g</span></samp>' packets is specified below.
+
+          <p>When reading registers from a trace frame (see <a href="Analyze-Collected-Data.html#Analyze-Collected-Data">Using the Collected Data</a>), the stub may also return a string of
+literal `<samp><span class="samp">x</span></samp>''s in place of the register data digits, to indicate
+that the corresponding register has not been collected, thus its value
+is unavailable.  For example, for an architecture with 4 registers of
+4 bytes each, the following reply indicates to <span class="sc">gdb</span> that
+registers 0 and 2 have not been collected, while registers 1 and 3
+have been collected, and both have zero value:
+
+          <pre class="smallexample">               -&gt; <code>g</code>
+               &lt;- <code>xxxxxxxx00000000xxxxxxxx00000000</code>
+          </pre>
+          <br><dt>`<samp><span class="samp">E </span><var>NN</var></samp>'<dd>for an error. 
+</dl>
+
+     <br><dt>`<samp><span class="samp">G </span><var>XX<small class="dots">...</small></var></samp>'<dd><a name="index-g_t_0040samp_007bG_007d-packet-3312"></a>Write general registers.  See <a href="read-registers-packet.html#read-registers-packet">read registers packet</a>, for a
+description of the <var>XX<small class="dots">...</small></var> data.
+
+     <p>Reply:
+          <dl>
+<dt>`<samp><span class="samp">OK</span></samp>'<dd>for success
+<br><dt>`<samp><span class="samp">E </span><var>NN</var></samp>'<dd>for an error
+</dl>
+
+     <br><dt>`<samp><span class="samp">H </span><var>op</var> <var>thread-id</var></samp>'<dd><a name="index-g_t_0040samp_007bH_007d-packet-3313"></a>Set thread for subsequent operations (`<samp><span class="samp">m</span></samp>', `<samp><span class="samp">M</span></samp>', `<samp><span class="samp">g</span></samp>',
+`<samp><span class="samp">G</span></samp>', et.al.).  Depending on the operation to be performed, <var>op</var>
+should be `<samp><span class="samp">c</span></samp>' for step and continue operations (note that this
+is deprecated, supporting the `<samp><span class="samp">vCont</span></samp>' command is a better
+option), and `<samp><span class="samp">g</span></samp>' for other operations.  The thread designator
+<var>thread-id</var> has the format and interpretation described in
+<a href="thread_002did-syntax.html#thread_002did-syntax">thread-id syntax</a>.
+
+     <p>Reply:
+          <dl>
+<dt>`<samp><span class="samp">OK</span></samp>'<dd>for success
+<br><dt>`<samp><span class="samp">E </span><var>NN</var></samp>'<dd>for an error
+</dl>
+
+     <!-- FIXME: JTC: -->
+<!-- 'H': How restrictive (or permissive) is the thread model.  If a -->
+<!-- thread is selected and stopped, are other threads allowed -->
+<!-- to continue to execute?  As I mentioned above, I think the -->
+<!-- semantics of each command when a thread is selected must be -->
+<!-- described.  For example: -->
+<!-- 'g':    If the stub supports threads and a specific thread is -->
+<!-- selected, returns the register block from that thread; -->
+<!-- otherwise returns current registers. -->
+<!-- 'G'     If the stub supports threads and a specific thread is -->
+<!-- selected, sets the registers of the register block of -->
+<!-- that thread; otherwise sets current registers. -->
+<br><dt>`<samp><span class="samp">i [</span><var>addr</var><span class="samp">[,</span><var>nnn</var><span class="samp">]]</span></samp>'<dd><a name="cycle-step-packet"></a>
+<a name="index-g_t_0040samp_007bi_007d-packet-3314"></a>Step the remote target by a single clock cycle.  If `<samp><span class="samp">,</span><var>nnn</var></samp>' is
+present, cycle step <var>nnn</var> cycles.  If <var>addr</var> is present, cycle
+step starting at that address.
+
+     <br><dt>`<samp><span class="samp">I</span></samp>'<dd><a name="index-g_t_0040samp_007bI_007d-packet-3315"></a>Signal, then cycle step.  See <a href="step-with-signal-packet.html#step-with-signal-packet">step with signal packet</a>.  See <a href="cycle-step-packet.html#cycle-step-packet">cycle step packet</a>.
+
+     <br><dt>`<samp><span class="samp">k</span></samp>'<dd><a name="index-g_t_0040samp_007bk_007d-packet-3316"></a>Kill request.
+
+     <p>The exact effect of this packet is not specified.
+
+     <p>For a bare-metal target, it may power cycle or reset the target
+system.  For that reason, the `<samp><span class="samp">k</span></samp>' packet has no reply.
+
+     <p>For a single-process target, it may kill that process if possible.
+
+     <p>A multiple-process target may choose to kill just one process, or all
+that are under <span class="sc">gdb</span>'s control.  For more precise control, use
+the vKill packet (see <a href="vKill-packet.html#vKill-packet">vKill packet</a>).
+
+     <p>If the target system immediately closes the connection in response to
+`<samp><span class="samp">k</span></samp>', <span class="sc">gdb</span> does not consider the lack of packet
+acknowledgment to be an error, and assumes the kill was successful.
+
+     <p>If connected using <kbd>target extended-remote</kbd>, and the target does
+not close the connection in response to a kill request, <span class="sc">gdb</span>
+probes the target state as if a new connection was opened
+(see <a href="_003f-packet.html#g_t_003f-packet">? packet</a>).
+
+     <br><dt>`<samp><span class="samp">m </span><var>addr</var><span class="samp">,</span><var>length</var></samp>'<dd><a name="index-g_t_0040samp_007bm_007d-packet-3317"></a>Read <var>length</var> addressable memory units starting at address <var>addr</var>
+(see <a href="addressable-memory-unit.html#addressable-memory-unit">addressable memory unit</a>).  Note that <var>addr</var> may not be aligned to
+any particular boundary.
+
+     <p>The stub need not use any particular size or alignment when gathering
+data from memory for the response; even if <var>addr</var> is word-aligned
+and <var>length</var> is a multiple of the word size, the stub is free to
+use byte accesses, or not.  For this reason, this packet may not be
+suitable for accessing memory-mapped I/O devices. 
+<a name="index-alignment-of-remote-memory-accesses-3318"></a><a name="index-size-of-remote-memory-accesses-3319"></a><a name="index-memory_002c-alignment-and-size-of-remote-accesses-3320"></a>
+Reply:
+          <dl>
+<dt>`<samp><var>XX<small class="dots">...</small></var></samp>'<dd>Memory contents; each byte is transmitted as a two-digit hexadecimal number. 
+The reply may contain fewer addressable memory units than requested if the
+server was able to read only part of the region of memory. 
+<br><dt>`<samp><span class="samp">E </span><var>NN</var></samp>'<dd><var>NN</var> is errno
+</dl>
+
+     <br><dt>`<samp><span class="samp">M </span><var>addr</var><span class="samp">,</span><var>length</var><span class="samp">:</span><var>XX<small class="dots">...</small></var></samp>'<dd><a name="index-g_t_0040samp_007bM_007d-packet-3321"></a>Write <var>length</var> addressable memory units starting at address <var>addr</var>
+(see <a href="addressable-memory-unit.html#addressable-memory-unit">addressable memory unit</a>).  The data is given by <var>XX<small class="dots">...</small></var>; each
+byte is transmitted as a two-digit hexadecimal number.
+
+     <p>Reply:
+          <dl>
+<dt>`<samp><span class="samp">OK</span></samp>'<dd>for success
+<br><dt>`<samp><span class="samp">E </span><var>NN</var></samp>'<dd>for an error (this includes the case where only part of the data was
+written). 
+</dl>
+
+     <br><dt>`<samp><span class="samp">p </span><var>n</var></samp>'<dd><a name="index-g_t_0040samp_007bp_007d-packet-3322"></a>Read the value of register <var>n</var>; <var>n</var> is in hex. 
+See <a href="read-registers-packet.html#read-registers-packet">read registers packet</a>, for a description of how the returned
+register value is encoded.
+
+     <p>Reply:
+          <dl>
+<dt>`<samp><var>XX<small class="dots">...</small></var></samp>'<dd>the register's value
+<br><dt>`<samp><span class="samp">E </span><var>NN</var></samp>'<dd>for an error
+<br><dt>`<samp><span class="samp"><!-- /@w --></span></samp>'<dd>Indicating an unrecognized <var>query</var>. 
+</dl>
+
+     <br><dt>`<samp><span class="samp">P </span><var>n<small class="dots">...</small></var><span class="samp">=</span><var>r<small class="dots">...</small></var></samp>'<dd><a name="write-register-packet"></a>
+<a name="index-g_t_0040samp_007bP_007d-packet-3323"></a>Write register <var>n<small class="dots">...</small></var> with value <var>r<small class="dots">...</small></var>.  The register
+number <var>n</var> is in hexadecimal, and <var>r<small class="dots">...</small></var> contains two hex
+digits for each byte in the register (target byte order).
+
+     <p>Reply:
+          <dl>
+<dt>`<samp><span class="samp">OK</span></samp>'<dd>for success
+<br><dt>`<samp><span class="samp">E </span><var>NN</var></samp>'<dd>for an error
+</dl>
+
+     <br><dt>`<samp><span class="samp">q </span><var>name</var> <var>params</var><span class="samp">...</span></samp>'<dt>`<samp><span class="samp">Q </span><var>name</var> <var>params</var><span class="samp">...</span></samp>'<dd><a name="index-g_t_0040samp_007bq_007d-packet-3324"></a><a name="index-g_t_0040samp_007bQ_007d-packet-3325"></a>General query (`<samp><span class="samp">q</span></samp>') and set (`<samp><span class="samp">Q</span></samp>').  These packets are
+described fully in <a href="General-Query-Packets.html#General-Query-Packets">General Query Packets</a>.
+
+     <br><dt>`<samp><span class="samp">r</span></samp>'<dd><a name="index-g_t_0040samp_007br_007d-packet-3326"></a>Reset the entire system.
+
+     <p>Don't use this packet; use the `<samp><span class="samp">R</span></samp>' packet instead.
+
+     <br><dt>`<samp><span class="samp">R </span><var>XX</var></samp>'<dd><a name="index-g_t_0040samp_007bR_007d-packet-3327"></a>Restart the program being debugged.  The <var>XX</var>, while needed, is ignored. 
+This packet is only available in extended mode (see <a href="extended-mode.html#extended-mode">extended mode</a>).
+
+     <p>The `<samp><span class="samp">R</span></samp>' packet has no reply.
+
+     <br><dt>`<samp><span class="samp">s [</span><var>addr</var><span class="samp">]</span></samp>'<dd><a name="index-g_t_0040samp_007bs_007d-packet-3328"></a>Single step, resuming at <var>addr</var>.  If
+<var>addr</var> is omitted, resume at same address.
+
+     <p>This packet is deprecated for multi-threading support.  See <a href="vCont-packet.html#vCont-packet">vCont packet</a>.
+
+     <p>Reply:
+See <a href="Stop-Reply-Packets.html#Stop-Reply-Packets">Stop Reply Packets</a>, for the reply specifications.
+
+     <br><dt>`<samp><span class="samp">S </span><var>sig</var><span class="samp">[;</span><var>addr</var><span class="samp">]</span></samp>'<dd><a name="step-with-signal-packet"></a>
+<a name="index-g_t_0040samp_007bS_007d-packet-3329"></a>Step with signal.  This is analogous to the `<samp><span class="samp">C</span></samp>' packet, but
+requests a single-step, rather than a normal resumption of execution.
+
+     <p>This packet is deprecated for multi-threading support.  See <a href="vCont-packet.html#vCont-packet">vCont packet</a>.
+
+     <p>Reply:
+See <a href="Stop-Reply-Packets.html#Stop-Reply-Packets">Stop Reply Packets</a>, for the reply specifications.
+
+     <br><dt>`<samp><span class="samp">t </span><var>addr</var><span class="samp">:</span><var>PP</var><span class="samp">,</span><var>MM</var></samp>'<dd><a name="index-g_t_0040samp_007bt_007d-packet-3330"></a>Search backwards starting at address <var>addr</var> for a match with pattern
+<var>PP</var> and mask <var>MM</var>, both of which are are 4 byte long. 
+There must be at least 3 digits in <var>addr</var>.
+
+     <br><dt>`<samp><span class="samp">T </span><var>thread-id</var></samp>'<dd><a name="index-g_t_0040samp_007bT_007d-packet-3331"></a>Find out if the thread <var>thread-id</var> is alive.  See <a href="thread_002did-syntax.html#thread_002did-syntax">thread-id syntax</a>.
+
+     <p>Reply:
+          <dl>
+<dt>`<samp><span class="samp">OK</span></samp>'<dd>thread is still alive
+<br><dt>`<samp><span class="samp">E </span><var>NN</var></samp>'<dd>thread is dead
+</dl>
+
+     <br><dt>`<samp><span class="samp">v</span></samp>'<dd>Packets starting with `<samp><span class="samp">v</span></samp>' are identified by a multi-letter name,
+up to the first `<samp><span class="samp">;</span></samp>' or `<samp><span class="samp">?</span></samp>' (or the end of the packet).
+
+     <br><dt>`<samp><span class="samp">vAttach;</span><var>pid</var></samp>'<dd><a name="index-g_t_0040samp_007bvAttach_007d-packet-3332"></a>Attach to a new process with the specified process ID <var>pid</var>. 
+The process ID is a
+hexadecimal integer identifying the process.  In all-stop mode, all
+threads in the attached process are stopped; in non-stop mode, it may be
+attached without being stopped if that is supported by the target.
+
+     <!-- In non-stop mode, on a successful vAttach, the stub should set the -->
+<!-- current thread to a thread of the newly-attached process.  After -->
+<!-- attaching, GDB queries for the attached process's thread ID with qC. -->
+<!-- Also note that, from a user perspective, whether or not the -->
+<!-- target is stopped on attach in non-stop mode depends on whether you -->
+<!-- use the foreground or background version of the attach command, not -->
+<!-- on what vAttach does; GDB does the right thing with respect to either -->
+<!-- stopping or restarting threads. -->
+<p>This packet is only available in extended mode (see <a href="extended-mode.html#extended-mode">extended mode</a>).
+
+     <p>Reply:
+          <dl>
+<dt>`<samp><span class="samp">E </span><var>nn</var></samp>'<dd>for an error
+<br><dt>`<samp><span class="samp">Any stop packet</span></samp>'<dd>for success in all-stop mode (see <a href="Stop-Reply-Packets.html#Stop-Reply-Packets">Stop Reply Packets</a>)
+<br><dt>`<samp><span class="samp">OK</span></samp>'<dd>for success in non-stop mode (see <a href="Remote-Non_002dStop.html#Remote-Non_002dStop">Remote Non-Stop</a>)
+</dl>
+
+     <br><dt>`<samp><span class="samp">vCont[;</span><var>action</var><span class="samp">[:</span><var>thread-id</var><span class="samp">]]...</span></samp>'<dd><a name="index-g_t_0040samp_007bvCont_007d-packet-3333"></a><a name="vCont-packet"></a>
+Resume the inferior, specifying different actions for each thread. 
+If an action is specified with no <var>thread-id</var>, then it is applied to any
+threads that don't have a specific action specified; if no default action is
+specified then other threads should remain stopped in all-stop mode and
+in their current state in non-stop mode. 
+Specifying multiple
+default actions is an error; specifying no actions is also an error. 
+Thread IDs are specified using the syntax described in <a href="thread_002did-syntax.html#thread_002did-syntax">thread-id syntax</a>.
+
+     <p>Currently supported actions are:
+
+          <dl>
+<dt>`<samp><span class="samp">c</span></samp>'<dd>Continue. 
+<br><dt>`<samp><span class="samp">C </span><var>sig</var></samp>'<dd>Continue with signal <var>sig</var>.  The signal <var>sig</var> should be two hex digits. 
+<br><dt>`<samp><span class="samp">s</span></samp>'<dd>Step. 
+<br><dt>`<samp><span class="samp">S </span><var>sig</var></samp>'<dd>Step with signal <var>sig</var>.  The signal <var>sig</var> should be two hex digits. 
+<br><dt>`<samp><span class="samp">t</span></samp>'<dd>Stop. 
+<br><dt>`<samp><span class="samp">r </span><var>start</var><span class="samp">,</span><var>end</var></samp>'<dd>Step once, and then keep stepping as long as the thread stops at
+addresses between <var>start</var> (inclusive) and <var>end</var> (exclusive). 
+The remote stub reports a stop reply when either the thread goes out
+of the range or is stopped due to an unrelated reason, such as hitting
+a breakpoint.  See <a href="range-stepping.html#range-stepping">range stepping</a>.
+
+          <p>If the range is empty (<var>start</var> == <var>end</var>), then the action
+becomes equivalent to the `<samp><span class="samp">s</span></samp>' action.  In other words,
+single-step once, and report the stop (even if the stepped instruction
+jumps to <var>start</var>).
+
+          <p>(A stop reply may be sent at any point even if the PC is still within
+the stepping range; for example, it is valid to implement this packet
+in a degenerate way as a single instruction step operation.)
+
+     </dl>
+
+     <p>The optional argument <var>addr</var> normally associated with the
+`<samp><span class="samp">c</span></samp>', `<samp><span class="samp">C</span></samp>', `<samp><span class="samp">s</span></samp>', and `<samp><span class="samp">S</span></samp>' packets is
+not supported in `<samp><span class="samp">vCont</span></samp>'.
+
+     <p>The `<samp><span class="samp">t</span></samp>' action is only relevant in non-stop mode
+(see <a href="Remote-Non_002dStop.html#Remote-Non_002dStop">Remote Non-Stop</a>) and may be ignored by the stub otherwise. 
+A stop reply should be generated for any affected thread not already stopped. 
+When a thread is stopped by means of a `<samp><span class="samp">t</span></samp>' action,
+the corresponding stop reply should indicate that the thread has stopped with
+signal `<samp><span class="samp">0</span></samp>', regardless of whether the target uses some other signal
+as an implementation detail.
+
+     <p>The stub must support `<samp><span class="samp">vCont</span></samp>' if it reports support for
+multiprocess extensions (see <a href="multiprocess-extensions.html#multiprocess-extensions">multiprocess extensions</a>).  Note that in
+this case `<samp><span class="samp">vCont</span></samp>' actions can be specified to apply to all threads
+in a process by using the `<samp><span class="samp">p</span><var>pid</var><span class="samp">.-1</span></samp>' form of the
+<var>thread-id</var>.
+
+     <p>Reply:
+See <a href="Stop-Reply-Packets.html#Stop-Reply-Packets">Stop Reply Packets</a>, for the reply specifications.
+
+     <br><dt>`<samp><span class="samp">vCont?</span></samp>'<dd><a name="index-g_t_0040samp_007bvCont_003f_007d-packet-3334"></a>Request a list of actions supported by the `<samp><span class="samp">vCont</span></samp>' packet.
+
+     <p>Reply:
+          <dl>
+<dt>`<samp><span class="samp">vCont[;</span><var>action</var><span class="samp">...]</span></samp>'<dd>The `<samp><span class="samp">vCont</span></samp>' packet is supported.  Each <var>action</var> is a supported
+command in the `<samp><span class="samp">vCont</span></samp>' packet. 
+<br><dt>`<samp><span class="samp"><!-- /@w --></span></samp>'<dd>The `<samp><span class="samp">vCont</span></samp>' packet is not supported. 
+</dl>
+
+     <br><dt>`<samp><span class="samp">vFile:</span><var>operation</var><span class="samp">:</span><var>parameter</var><span class="samp">...</span></samp>'<dd><a name="index-g_t_0040samp_007bvFile_007d-packet-3335"></a>Perform a file operation on the target system.  For details,
+see <a href="Host-I_002fO-Packets.html#Host-I_002fO-Packets">Host I/O Packets</a>.
+
+     <br><dt>`<samp><span class="samp">vFlashErase:</span><var>addr</var><span class="samp">,</span><var>length</var></samp>'<dd><a name="index-g_t_0040samp_007bvFlashErase_007d-packet-3336"></a>Direct the stub to erase <var>length</var> bytes of flash starting at
+<var>addr</var>.  The region may enclose any number of flash blocks, but
+its start and end must fall on block boundaries, as indicated by the
+flash block size appearing in the memory map (see <a href="Memory-Map-Format.html#Memory-Map-Format">Memory Map Format</a>).  <span class="sc">gdb</span> groups flash memory programming operations
+together, and sends a `<samp><span class="samp">vFlashDone</span></samp>' request after each group; the
+stub is allowed to delay erase operation until the `<samp><span class="samp">vFlashDone</span></samp>'
+packet is received.
+
+     <p>Reply:
+          <dl>
+<dt>`<samp><span class="samp">OK</span></samp>'<dd>for success
+<br><dt>`<samp><span class="samp">E </span><var>NN</var></samp>'<dd>for an error
+</dl>
+
+     <br><dt>`<samp><span class="samp">vFlashWrite:</span><var>addr</var><span class="samp">:</span><var>XX<small class="dots">...</small></var></samp>'<dd><a name="index-g_t_0040samp_007bvFlashWrite_007d-packet-3337"></a>Direct the stub to write data to flash address <var>addr</var>.  The data
+is passed in binary form using the same encoding as for the `<samp><span class="samp">X</span></samp>'
+packet (see <a href="Binary-Data.html#Binary-Data">Binary Data</a>).  The memory ranges specified by
+`<samp><span class="samp">vFlashWrite</span></samp>' packets preceding a `<samp><span class="samp">vFlashDone</span></samp>' packet must
+not overlap, and must appear in order of increasing addresses
+(although `<samp><span class="samp">vFlashErase</span></samp>' packets for higher addresses may already
+have been received; the ordering is guaranteed only between
+`<samp><span class="samp">vFlashWrite</span></samp>' packets).  If a packet writes to an address that was
+neither erased by a preceding `<samp><span class="samp">vFlashErase</span></samp>' packet nor by some other
+target-specific method, the results are unpredictable.
+
+     <p>Reply:
+          <dl>
+<dt>`<samp><span class="samp">OK</span></samp>'<dd>for success
+<br><dt>`<samp><span class="samp">E.memtype</span></samp>'<dd>for vFlashWrite addressing non-flash memory
+<br><dt>`<samp><span class="samp">E </span><var>NN</var></samp>'<dd>for an error
+</dl>
+
+     <br><dt>`<samp><span class="samp">vFlashDone</span></samp>'<dd><a name="index-g_t_0040samp_007bvFlashDone_007d-packet-3338"></a>Indicate to the stub that flash programming operation is finished. 
+The stub is permitted to delay or batch the effects of a group of
+`<samp><span class="samp">vFlashErase</span></samp>' and `<samp><span class="samp">vFlashWrite</span></samp>' packets until a
+`<samp><span class="samp">vFlashDone</span></samp>' packet is received.  The contents of the affected
+regions of flash memory are unpredictable until the `<samp><span class="samp">vFlashDone</span></samp>'
+request is completed.
+
+     <br><dt>`<samp><span class="samp">vKill;</span><var>pid</var></samp>'<dd><a name="index-g_t_0040samp_007bvKill_007d-packet-3339"></a><a name="vKill-packet"></a>
+Kill the process with the specified process ID <var>pid</var>, which is a
+hexadecimal integer identifying the process.  This packet is used in
+preference to `<samp><span class="samp">k</span></samp>' when multiprocess protocol extensions are
+supported; see <a href="multiprocess-extensions.html#multiprocess-extensions">multiprocess extensions</a>.
+
+     <p>Reply:
+          <dl>
+<dt>`<samp><span class="samp">E </span><var>nn</var></samp>'<dd>for an error
+<br><dt>`<samp><span class="samp">OK</span></samp>'<dd>for success
+</dl>
+
+     <br><dt>`<samp><span class="samp">vRun;</span><var>filename</var><span class="samp">[;</span><var>argument</var><span class="samp">]...</span></samp>'<dd><a name="index-g_t_0040samp_007bvRun_007d-packet-3340"></a>Run the program <var>filename</var>, passing it each <var>argument</var> on its
+command line.  The file and arguments are hex-encoded strings.  If
+<var>filename</var> is an empty string, the stub may use a default program
+(e.g. the last program run).  The program is created in the stopped
+state.
+
+     <!-- FIXME:  What about non-stop mode? -->
+<p>This packet is only available in extended mode (see <a href="extended-mode.html#extended-mode">extended mode</a>).
+
+     <p>Reply:
+          <dl>
+<dt>`<samp><span class="samp">E </span><var>nn</var></samp>'<dd>for an error
+<br><dt>`<samp><span class="samp">Any stop packet</span></samp>'<dd>for success (see <a href="Stop-Reply-Packets.html#Stop-Reply-Packets">Stop Reply Packets</a>)
+</dl>
+
+     <br><dt>`<samp><span class="samp">vStopped</span></samp>'<dd><a name="index-g_t_0040samp_007bvStopped_007d-packet-3341"></a>See <a href="Notification-Packets.html#Notification-Packets">Notification Packets</a>.
+
+     <br><dt>`<samp><span class="samp">X </span><var>addr</var><span class="samp">,</span><var>length</var><span class="samp">:</span><var>XX<small class="dots">...</small></var></samp>'<dd><a name="X-packet"></a>
+<a name="index-g_t_0040samp_007bX_007d-packet-3342"></a>Write data to memory, where the data is transmitted in binary. 
+Memory is specified by its address <var>addr</var> and number of addressable memory
+units <var>length</var> (see <a href="addressable-memory-unit.html#addressable-memory-unit">addressable memory unit</a>);
+`<samp><var>XX</var><span class="samp">...</span></samp>' is binary data (see <a href="Binary-Data.html#Binary-Data">Binary Data</a>).
+
+     <p>Reply:
+          <dl>
+<dt>`<samp><span class="samp">OK</span></samp>'<dd>for success
+<br><dt>`<samp><span class="samp">E </span><var>NN</var></samp>'<dd>for an error
+</dl>
+
+     <br><dt>`<samp><span class="samp">z </span><var>type</var><span class="samp">,</span><var>addr</var><span class="samp">,</span><var>kind</var></samp>'<dt>`<samp><span class="samp">Z </span><var>type</var><span class="samp">,</span><var>addr</var><span class="samp">,</span><var>kind</var></samp>'<dd><a name="insert-breakpoint-or-watchpoint-packet"></a>
+<a name="index-g_t_0040samp_007bz_007d-packet-3343"></a><a name="index-g_t_0040samp_007bZ_007d-packets-3344"></a>Insert (`<samp><span class="samp">Z</span></samp>') or remove (`<samp><span class="samp">z</span></samp>') a <var>type</var> breakpoint or
+watchpoint starting at address <var>address</var> of kind <var>kind</var>.
+
+     <p>Each breakpoint and watchpoint packet <var>type</var> is documented
+separately.
+
+     <p><em>Implementation notes: A remote target shall return an empty string
+for an unrecognized breakpoint or watchpoint packet </em><var>type</var><em>.  A
+remote target shall support either both or neither of a given
+`<samp></em><span class="samp">Z</span><var>type</var><span class="samp">...</span><em></samp>' and `<samp></em><span class="samp">z</span><var>type</var><span class="samp">...</span><em></samp>' packet pair.  To
+avoid potential problems with duplicate packets, the operations should
+be implemented in an idempotent way.</em>
+
+     <br><dt>`<samp><span class="samp">z0,</span><var>addr</var><span class="samp">,</span><var>kind</var></samp>'<dt>`<samp><span class="samp">Z0,</span><var>addr</var><span class="samp">,</span><var>kind</var><span class="samp">[;</span><var>cond_list</var><span class="samp">...][;cmds:</span><var>persist</var><span class="samp">,</span><var>cmd_list</var><span class="samp">...]</span></samp>'<dd><a name="index-g_t_0040samp_007bz0_007d-packet-3345"></a><a name="index-g_t_0040samp_007bZ0_007d-packet-3346"></a>Insert (`<samp><span class="samp">Z0</span></samp>') or remove (`<samp><span class="samp">z0</span></samp>') a memory breakpoint at address
+<var>addr</var> of type <var>kind</var>.
+
+     <p>A memory breakpoint is implemented by replacing the instruction at
+<var>addr</var> with a software breakpoint or trap instruction.  The
+<var>kind</var> is target-specific and typically indicates the size of
+the breakpoint in bytes that should be inserted.  E.g., the <span class="sc">arm</span>
+and <span class="sc">mips</span> can insert either a 2 or 4 byte breakpoint.  Some
+architectures have additional meanings for <var>kind</var>;
+<var>cond_list</var> is an optional list of conditional expressions in bytecode
+form that should be evaluated on the target's side.  These are the
+conditions that should be taken into consideration when deciding if
+the breakpoint trigger should be reported back to <var>GDBN</var>.
+
+     <p>See also the `<samp><span class="samp">swbreak</span></samp>' stop reason (see <a href="swbreak-stop-reason.html#swbreak-stop-reason">swbreak stop reason</a>)
+for how to best report a memory breakpoint event to <span class="sc">gdb</span>.
+
+     <p>The <var>cond_list</var> parameter is comprised of a series of expressions,
+concatenated without separators. Each expression has the following form:
+
+          <dl>
+<dt>`<samp><span class="samp">X </span><var>len</var><span class="samp">,</span><var>expr</var></samp>'<dd><var>len</var> is the length of the bytecode expression and <var>expr</var> is the
+actual conditional expression in bytecode form.
+
+     </dl>
+
+     <p>The optional <var>cmd_list</var> parameter introduces commands that may be
+run on the target, rather than being reported back to <span class="sc">gdb</span>. 
+The parameter starts with a numeric flag <var>persist</var>; if the flag is
+nonzero, then the breakpoint may remain active and the commands
+continue to be run even when <span class="sc">gdb</span> disconnects from the target. 
+Following this flag is a series of expressions concatenated with no
+separators.  Each expression has the following form:
+
+          <dl>
+<dt>`<samp><span class="samp">X </span><var>len</var><span class="samp">,</span><var>expr</var></samp>'<dd><var>len</var> is the length of the bytecode expression and <var>expr</var> is the
+actual conditional expression in bytecode form.
+
+     </dl>
+
+     <p>see <a href="Architecture_002dSpecific-Protocol-Details.html#Architecture_002dSpecific-Protocol-Details">Architecture-Specific Protocol Details</a>.
+
+     <p><em>Implementation note: It is possible for a target to copy or move
+code that contains memory breakpoints (e.g., when implementing
+overlays).  The behavior of this packet, in the presence of such a
+target, is not defined.</em>
+
+     <p>Reply:
+          <dl>
+<dt>`<samp><span class="samp">OK</span></samp>'<dd>success
+<br><dt>`<samp><span class="samp"><!-- /@w --></span></samp>'<dd>not supported
+<br><dt>`<samp><span class="samp">E </span><var>NN</var></samp>'<dd>for an error
+</dl>
+
+     <br><dt>`<samp><span class="samp">z1,</span><var>addr</var><span class="samp">,</span><var>kind</var></samp>'<dt>`<samp><span class="samp">Z1,</span><var>addr</var><span class="samp">,</span><var>kind</var><span class="samp">[;</span><var>cond_list</var><span class="samp">...]</span></samp>'<dd><a name="index-g_t_0040samp_007bz1_007d-packet-3347"></a><a name="index-g_t_0040samp_007bZ1_007d-packet-3348"></a>Insert (`<samp><span class="samp">Z1</span></samp>') or remove (`<samp><span class="samp">z1</span></samp>') a hardware breakpoint at
+address <var>addr</var>.
+
+     <p>A hardware breakpoint is implemented using a mechanism that is not
+dependant on being able to modify the target's memory.  The <var>kind</var>
+and <var>cond_list</var> have the same meaning as in `<samp><span class="samp">Z0</span></samp>' packets.
+
+     <p><em>Implementation note: A hardware breakpoint is not affected by code
+movement.</em>
+
+     <p>Reply:
+          <dl>
+<dt>`<samp><span class="samp">OK</span></samp>'<dd>success
+<br><dt>`<samp><span class="samp"><!-- /@w --></span></samp>'<dd>not supported
+<br><dt>`<samp><span class="samp">E </span><var>NN</var></samp>'<dd>for an error
+</dl>
+
+     <br><dt>`<samp><span class="samp">z2,</span><var>addr</var><span class="samp">,</span><var>kind</var></samp>'<dt>`<samp><span class="samp">Z2,</span><var>addr</var><span class="samp">,</span><var>kind</var></samp>'<dd><a name="index-g_t_0040samp_007bz2_007d-packet-3349"></a><a name="index-g_t_0040samp_007bZ2_007d-packet-3350"></a>Insert (`<samp><span class="samp">Z2</span></samp>') or remove (`<samp><span class="samp">z2</span></samp>') a write watchpoint at <var>addr</var>. 
+The number of bytes to watch is specified by <var>kind</var>.
+
+     <p>Reply:
+          <dl>
+<dt>`<samp><span class="samp">OK</span></samp>'<dd>success
+<br><dt>`<samp><span class="samp"><!-- /@w --></span></samp>'<dd>not supported
+<br><dt>`<samp><span class="samp">E </span><var>NN</var></samp>'<dd>for an error
+</dl>
+
+     <br><dt>`<samp><span class="samp">z3,</span><var>addr</var><span class="samp">,</span><var>kind</var></samp>'<dt>`<samp><span class="samp">Z3,</span><var>addr</var><span class="samp">,</span><var>kind</var></samp>'<dd><a name="index-g_t_0040samp_007bz3_007d-packet-3351"></a><a name="index-g_t_0040samp_007bZ3_007d-packet-3352"></a>Insert (`<samp><span class="samp">Z3</span></samp>') or remove (`<samp><span class="samp">z3</span></samp>') a read watchpoint at <var>addr</var>. 
+The number of bytes to watch is specified by <var>kind</var>.
+
+     <p>Reply:
+          <dl>
+<dt>`<samp><span class="samp">OK</span></samp>'<dd>success
+<br><dt>`<samp><span class="samp"><!-- /@w --></span></samp>'<dd>not supported
+<br><dt>`<samp><span class="samp">E </span><var>NN</var></samp>'<dd>for an error
+</dl>
+
+     <br><dt>`<samp><span class="samp">z4,</span><var>addr</var><span class="samp">,</span><var>kind</var></samp>'<dt>`<samp><span class="samp">Z4,</span><var>addr</var><span class="samp">,</span><var>kind</var></samp>'<dd><a name="index-g_t_0040samp_007bz4_007d-packet-3353"></a><a name="index-g_t_0040samp_007bZ4_007d-packet-3354"></a>Insert (`<samp><span class="samp">Z4</span></samp>') or remove (`<samp><span class="samp">z4</span></samp>') an access watchpoint at <var>addr</var>. 
+The number of bytes to watch is specified by <var>kind</var>.
+
+     <p>Reply:
+          <dl>
+<dt>`<samp><span class="samp">OK</span></samp>'<dd>success
+<br><dt>`<samp><span class="samp"><!-- /@w --></span></samp>'<dd>not supported
+<br><dt>`<samp><span class="samp">E </span><var>NN</var></samp>'<dd>for an error
+</dl>
+
+   </dl>
+
+   </body></html>
+

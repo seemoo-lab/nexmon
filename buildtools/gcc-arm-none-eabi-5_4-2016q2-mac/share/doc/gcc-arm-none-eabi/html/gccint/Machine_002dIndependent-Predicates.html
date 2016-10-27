@@ -1,0 +1,205 @@
+<html lang="en">
+<head>
+<title>Machine-Independent Predicates - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Predicates.html#Predicates" title="Predicates">
+<link rel="next" href="Defining-Predicates.html#Defining-Predicates" title="Defining Predicates">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Machine-Independent-Predicates"></a>
+<a name="Machine_002dIndependent-Predicates"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Defining-Predicates.html#Defining-Predicates">Defining Predicates</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Predicates.html#Predicates">Predicates</a>
+<hr>
+</div>
+
+<h4 class="subsection">16.7.1 Machine-Independent Predicates</h4>
+
+<p><a name="index-machine_002dindependent-predicates-3283"></a><a name="index-generic-predicates-3284"></a>
+These are the generic predicates available to all back ends.  They are
+defined in <samp><span class="file">recog.c</span></samp>.  The first category of predicates allow
+only constant, or <dfn>immediate</dfn>, operands.
+
+<div class="defun">
+&mdash; Function: <b>immediate_operand</b><var><a name="index-immediate_005foperand-3285"></a></var><br>
+<blockquote><p>This predicate allows any sort of constant that fits in <var>mode</var>. 
+It is an appropriate choice for instructions that take operands that
+must be constant. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>const_int_operand</b><var><a name="index-const_005fint_005foperand-3286"></a></var><br>
+<blockquote><p>This predicate allows any <code>CONST_INT</code> expression that fits in
+<var>mode</var>.  It is an appropriate choice for an immediate operand that
+does not allow a symbol or label. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>const_double_operand</b><var><a name="index-const_005fdouble_005foperand-3287"></a></var><br>
+<blockquote><p>This predicate accepts any <code>CONST_DOUBLE</code> expression that has
+exactly <var>mode</var>.  If <var>mode</var> is <code>VOIDmode</code>, it will also
+accept <code>CONST_INT</code>.  It is intended for immediate floating point
+constants. 
+</p></blockquote></div>
+
+<p class="noindent">The second category of predicates allow only some kind of machine
+register.
+
+<div class="defun">
+&mdash; Function: <b>register_operand</b><var><a name="index-register_005foperand-3288"></a></var><br>
+<blockquote><p>This predicate allows any <code>REG</code> or <code>SUBREG</code> expression that
+is valid for <var>mode</var>.  It is often suitable for arithmetic
+instruction operands on a RISC machine. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>pmode_register_operand</b><var><a name="index-pmode_005fregister_005foperand-3289"></a></var><br>
+<blockquote><p>This is a slight variant on <code>register_operand</code> which works around
+a limitation in the machine-description reader.
+
+     <pre class="smallexample">          (match_operand <var>n</var> "pmode_register_operand" <var>constraint</var>)
+     </pre>
+      <p class="noindent">means exactly what
+
+     <pre class="smallexample">          (match_operand:P <var>n</var> "register_operand" <var>constraint</var>)
+     </pre>
+      <p class="noindent">would mean, if the machine-description reader accepted `<samp><span class="samp">:P</span></samp>'
+mode suffixes.  Unfortunately, it cannot, because <code>Pmode</code> is an
+alias for some other mode, and might vary with machine-specific
+options.  See <a href="Misc.html#Misc">Misc</a>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>scratch_operand</b><var><a name="index-scratch_005foperand-3290"></a></var><br>
+<blockquote><p>This predicate allows hard registers and <code>SCRATCH</code> expressions,
+but not pseudo-registers.  It is used internally by <code>match_scratch</code>;
+it should not be used directly. 
+</p></blockquote></div>
+
+<p class="noindent">The third category of predicates allow only some kind of memory reference.
+
+<div class="defun">
+&mdash; Function: <b>memory_operand</b><var><a name="index-memory_005foperand-3291"></a></var><br>
+<blockquote><p>This predicate allows any valid reference to a quantity of mode
+<var>mode</var> in memory, as determined by the weak form of
+<code>GO_IF_LEGITIMATE_ADDRESS</code> (see <a href="Addressing-Modes.html#Addressing-Modes">Addressing Modes</a>). 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>address_operand</b><var><a name="index-address_005foperand-3292"></a></var><br>
+<blockquote><p>This predicate is a little unusual; it allows any operand that is a
+valid expression for the <em>address</em> of a quantity of mode
+<var>mode</var>, again determined by the weak form of
+<code>GO_IF_LEGITIMATE_ADDRESS</code>.  To first order, if
+`<samp><span class="samp">(mem:</span><var>mode</var><span class="samp">&nbsp;(</span><var>exp</var><span class="samp">))<!-- /@w --></span></samp>' is acceptable to
+<code>memory_operand</code>, then <var>exp</var> is acceptable to
+<code>address_operand</code>.  Note that <var>exp</var> does not necessarily have
+the mode <var>mode</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>indirect_operand</b><var><a name="index-indirect_005foperand-3293"></a></var><br>
+<blockquote><p>This is a stricter form of <code>memory_operand</code> which allows only
+memory references with a <code>general_operand</code> as the address
+expression.  New uses of this predicate are discouraged, because
+<code>general_operand</code> is very permissive, so it's hard to tell what
+an <code>indirect_operand</code> does or does not allow.  If a target has
+different requirements for memory operands for different instructions,
+it is better to define target-specific predicates which enforce the
+hardware's requirements explicitly. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>push_operand</b><var><a name="index-push_005foperand-3294"></a></var><br>
+<blockquote><p>This predicate allows a memory reference suitable for pushing a value
+onto the stack.  This will be a <code>MEM</code> which refers to
+<code>stack_pointer_rtx</code>, with a side-effect in its address expression
+(see <a href="Incdec.html#Incdec">Incdec</a>); which one is determined by the
+<code>STACK_PUSH_CODE</code> macro (see <a href="Frame-Layout.html#Frame-Layout">Frame Layout</a>). 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>pop_operand</b><var><a name="index-pop_005foperand-3295"></a></var><br>
+<blockquote><p>This predicate allows a memory reference suitable for popping a value
+off the stack.  Again, this will be a <code>MEM</code> referring to
+<code>stack_pointer_rtx</code>, with a side-effect in its address
+expression.  However, this time <code>STACK_POP_CODE</code> is expected. 
+</p></blockquote></div>
+
+<p class="noindent">The fourth category of predicates allow some combination of the above
+operands.
+
+<div class="defun">
+&mdash; Function: <b>nonmemory_operand</b><var><a name="index-nonmemory_005foperand-3296"></a></var><br>
+<blockquote><p>This predicate allows any immediate or register operand valid for <var>mode</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>nonimmediate_operand</b><var><a name="index-nonimmediate_005foperand-3297"></a></var><br>
+<blockquote><p>This predicate allows any register or memory operand valid for <var>mode</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>general_operand</b><var><a name="index-general_005foperand-3298"></a></var><br>
+<blockquote><p>This predicate allows any immediate, register, or memory operand
+valid for <var>mode</var>. 
+</p></blockquote></div>
+
+<p class="noindent">Finally, there are two generic operator predicates.
+
+<div class="defun">
+&mdash; Function: <b>comparison_operator</b><var><a name="index-comparison_005foperator-3299"></a></var><br>
+<blockquote><p>This predicate matches any expression which performs an arithmetic
+comparison in <var>mode</var>; that is, <code>COMPARISON_P</code> is true for the
+expression code. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: <b>ordered_comparison_operator</b><var><a name="index-ordered_005fcomparison_005foperator-3300"></a></var><br>
+<blockquote><p>This predicate matches any expression which performs an arithmetic
+comparison in <var>mode</var> and whose expression code is valid for integer
+modes; that is, the expression code will be one of <code>eq</code>, <code>ne</code>,
+<code>lt</code>, <code>ltu</code>, <code>le</code>, <code>leu</code>, <code>gt</code>, <code>gtu</code>,
+<code>ge</code>, <code>geu</code>. 
+</p></blockquote></div>
+
+ </body></html>
+

@@ -1,0 +1,92 @@
+<html lang="en">
+<head>
+<title>Stack Registers - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Registers.html#Registers" title="Registers">
+<link rel="prev" href="Leaf-Functions.html#Leaf-Functions" title="Leaf Functions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Stack-Registers"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Leaf-Functions.html#Leaf-Functions">Leaf Functions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Registers.html#Registers">Registers</a>
+<hr>
+</div>
+
+<h4 class="subsection">17.7.5 Registers That Form a Stack</h4>
+
+<p>There are special features to handle computers where some of the
+&ldquo;registers&rdquo; form a stack.  Stack registers are normally written by
+pushing onto the stack, and are numbered relative to the top of the
+stack.
+
+ <p>Currently, GCC can only handle one group of stack-like registers, and
+they must be consecutively numbered.  Furthermore, the existing
+support for stack-like registers is specific to the 80387 floating
+point coprocessor.  If you have a new architecture that uses
+stack-like registers, you will need to do substantial work on
+<samp><span class="file">reg-stack.c</span></samp> and write your machine description to cooperate
+with it, as well as defining these macros.
+
+<div class="defun">
+&mdash; Macro: <b>STACK_REGS</b><var><a name="index-STACK_005fREGS-4094"></a></var><br>
+<blockquote><p>Define this if the machine has any stack-like registers. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>STACK_REG_COVER_CLASS</b><var><a name="index-STACK_005fREG_005fCOVER_005fCLASS-4095"></a></var><br>
+<blockquote><p>This is a cover class containing the stack registers.  Define this if
+the machine has any stack-like registers. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>FIRST_STACK_REG</b><var><a name="index-FIRST_005fSTACK_005fREG-4096"></a></var><br>
+<blockquote><p>The number of the first stack-like register.  This one is the top
+of the stack. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>LAST_STACK_REG</b><var><a name="index-LAST_005fSTACK_005fREG-4097"></a></var><br>
+<blockquote><p>The number of the last stack-like register.  This one is the bottom of
+the stack. 
+</p></blockquote></div>
+
+ </body></html>
+

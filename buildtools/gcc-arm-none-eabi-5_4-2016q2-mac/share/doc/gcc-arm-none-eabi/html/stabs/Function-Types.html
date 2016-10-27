@@ -1,0 +1,83 @@
+<html lang="en">
+<head>
+<title>Function Types - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Types.html#Types" title="Types">
+<link rel="prev" href="Unions.html#Unions" title="Unions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Function-Types"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Unions.html#Unions">Unions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Types.html#Types">Types</a>
+<hr>
+</div>
+
+<h3 class="section">5.11 Function Types</h3>
+
+<p>Various types can be defined for function variables.  These types are
+not used in defining functions (see <a href="Procedures.html#Procedures">Procedures</a>); they are used for
+things like pointers to functions.
+
+   <p>The simple, traditional, type is type descriptor `<samp><span class="samp">f</span></samp>' is followed by
+type information for the return type of the function, followed by a
+semicolon.
+
+   <p>This does not deal with functions for which the number and types of the
+parameters are part of the type, as in Modula-2 or ANSI C.  AIX provides
+extensions to specify these, using the `<samp><span class="samp">f</span></samp>', `<samp><span class="samp">F</span></samp>', `<samp><span class="samp">p</span></samp>', and
+`<samp><span class="samp">R</span></samp>' type descriptors.
+
+   <p>First comes the type descriptor.  If it is `<samp><span class="samp">f</span></samp>' or `<samp><span class="samp">F</span></samp>', this
+type involves a function rather than a procedure, and the type
+information for the return type of the function follows, followed by a
+comma.  Then comes the number of parameters to the function and a
+semicolon.  Then, for each parameter, there is the name of the parameter
+followed by a colon (this is only present for type descriptors `<samp><span class="samp">R</span></samp>'
+and `<samp><span class="samp">F</span></samp>' which represent Pascal function or procedure parameters),
+type information for the parameter, a comma, 0 if passed by reference or
+1 if passed by value, and a semicolon.  The type definition ends with a
+semicolon.
+
+   <p>For example, this variable definition:
+
+<pre class="example">     int (*g_pf)();
+</pre>
+   <p class="noindent">generates the following code:
+
+<pre class="example">     .stabs "g_pf:G24=*25=f1",32,0,0,0
+         .common _g_pf,4,"bss"
+</pre>
+   <p>The variable defines a new type, 24, which is a pointer to another new
+type, 25, which is a function returning <code>int</code>.
+
+   </body></html>
+

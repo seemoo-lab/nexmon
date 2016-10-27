@@ -1,0 +1,119 @@
+<html lang="en">
+<head>
+<title>fgetwc - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stdio.html#Stdio" title="Stdio">
+<link rel="prev" href="fgets.html#fgets" title="fgets">
+<link rel="next" href="fgetws.html#fgetws" title="fgetws">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="fgetwc"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="fgetws.html#fgetws">fgetws</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="fgets.html#fgets">fgets</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stdio.html#Stdio">Stdio</a>
+<hr>
+</div>
+
+<h3 class="section">4.13 <code>fgetwc</code>, <code>getwc</code>, <code>fgetwc_unlocked</code>, <code>getwc_unlocked</code>&mdash;get a wide character from a file or stream</h3>
+
+<p><a name="index-fgetwc-185"></a><a name="index-fgetwc_005funlocked-186"></a><a name="index-g_t_005ffgetwc_005fr-187"></a><a name="index-g_t_005ffgetwc_005funlocked_005fr-188"></a><a name="index-getwc-189"></a><a name="index-getwc_005funlocked-190"></a><a name="index-g_t_005fgetwc_005fr-191"></a><a name="index-g_t_005fgetwc_005funlocked_005fr-192"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;stdio.h&gt;
+     #include &lt;wchar.h&gt;
+     wint_t fgetwc(FILE *<var>fp</var>);
+     
+     #define _GNU_SOURCE
+     #include &lt;stdio.h&gt;
+     #include &lt;wchar.h&gt;
+     wint_t fgetwc_unlocked(FILE *<var>fp</var>);
+     
+     #include &lt;stdio.h&gt;
+     #include &lt;wchar.h&gt;
+     wint_t _fgetwc_r(struct _reent *<var>ptr</var>, FILE *<var>fp</var>);
+     
+     #include &lt;stdio.h&gt;
+     #include &lt;wchar.h&gt;
+     wint_t _fgetwc_unlocked_r(struct _reent *<var>ptr</var>, FILE *<var>fp</var>);
+     
+     #include &lt;stdio.h&gt;
+     #include &lt;wchar.h&gt;
+     wint_t getwc(FILE *<var>fp</var>);
+     
+     #define _GNU_SOURCE
+     #include &lt;stdio.h&gt;
+     #include &lt;wchar.h&gt;
+     wint_t getwc_unlocked(FILE *<var>fp</var>);
+     
+     #include &lt;stdio.h&gt;
+     #include &lt;wchar.h&gt;
+     wint_t _getwc_r(struct _reent *<var>ptr</var>, FILE *<var>fp</var>);
+     
+     #include &lt;stdio.h&gt;
+     #include &lt;wchar.h&gt;
+     wint_t _getwc_unlocked_r(struct _reent *<var>ptr</var>, FILE *<var>fp</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+Use <code>fgetwc</code> to get the next wide character from the file or stream
+identified by <var>fp</var>.  As a side effect, <code>fgetwc</code> advances the file's
+current position indicator.
+
+   <p><code>fgetwc_unlocked</code> is a non-thread-safe version of <code>fgetwc</code>. 
+<code>fgetwc_unlocked</code> may only safely be used within a scope
+protected by flockfile() (or ftrylockfile()) and funlockfile().  This
+function may safely be used in a multi-threaded program if and only
+if they are called while the invoking thread owns the (FILE *)
+object, as is the case after a successful call to the flockfile() or
+ftrylockfile() functions.  If threads are disabled, then
+<code>fgetwc_unlocked</code> is equivalent to <code>fgetwc</code>.
+
+   <p>The <code>getwc</code> and <code>getwc_unlocked</code> functions or macros functions identically
+to <code>fgetwc</code> and <code>fgetwc_unlocked</code>.  It may be implemented as a macro, and
+may evaluate its argument more than once. There is no reason ever to use it.
+
+   <p><code>_fgetwc_r</code>, <code>_getwc_r</code>, <code>_fgetwc_unlocked_r</code>, and <code>_getwc_unlocked_r</code>
+are simply reentrant versions of the above functions that are passed the
+additional reentrant structure pointer argument: <var>ptr</var>.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+The next wide character cast to <code>wint_t</code>, unless there is no more data,
+or the host system reports a read error; in either of these situations,
+<code>fgetwc</code> and <code>getwc</code> return <code>WEOF</code>.
+
+   <p>You can distinguish the two situations that cause an <code>EOF</code> result by
+using the <code>ferror</code> and <code>feof</code> functions.
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+<code>fgetwc</code> and <code>getwc</code> are required by C99 and POSIX.1-2001.
+
+   <p><code>fgetwc_unlocked</code> and <code>getwc_unlocked</code> are GNU extensions.
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

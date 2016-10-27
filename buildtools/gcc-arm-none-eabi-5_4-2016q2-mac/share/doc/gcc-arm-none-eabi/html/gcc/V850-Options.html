@@ -1,0 +1,208 @@
+<html lang="en">
+<head>
+<title>V850 Options - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Submodel-Options.html#Submodel-Options" title="Submodel Options">
+<link rel="prev" href="TILEPro-Options.html#TILEPro-Options" title="TILEPro Options">
+<link rel="next" href="VAX-Options.html#VAX-Options" title="VAX Options">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="V850-Options"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="VAX-Options.html#VAX-Options">VAX Options</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="TILEPro-Options.html#TILEPro-Options">TILEPro Options</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Submodel-Options.html#Submodel-Options">Submodel Options</a>
+<hr>
+</div>
+
+<h4 class="subsection">3.17.48 V850 Options</h4>
+
+<p><a name="index-V850-Options-2592"></a>
+These `<samp><span class="samp">-m</span></samp>' options are defined for V850 implementations:
+
+     <dl>
+<dt><code>-mlong-calls</code><dt><code>-mno-long-calls</code><dd><a name="index-mlong_002dcalls-2593"></a><a name="index-mno_002dlong_002dcalls-2594"></a>Treat all calls as being far away (near).  If calls are assumed to be
+far away, the compiler always loads the function's address into a
+register, and calls indirect through the pointer.
+
+     <br><dt><code>-mno-ep</code><dt><code>-mep</code><dd><a name="index-mno_002dep-2595"></a><a name="index-mep-2596"></a>Do not optimize (do optimize) basic blocks that use the same index
+pointer 4 or more times to copy pointer into the <code>ep</code> register, and
+use the shorter <code>sld</code> and <code>sst</code> instructions.  The <samp><span class="option">-mep</span></samp>
+option is on by default if you optimize.
+
+     <br><dt><code>-mno-prolog-function</code><dt><code>-mprolog-function</code><dd><a name="index-mno_002dprolog_002dfunction-2597"></a><a name="index-mprolog_002dfunction-2598"></a>Do not use (do use) external functions to save and restore registers
+at the prologue and epilogue of a function.  The external functions
+are slower, but use less code space if more than one function saves
+the same number of registers.  The <samp><span class="option">-mprolog-function</span></samp> option
+is on by default if you optimize.
+
+     <br><dt><code>-mspace</code><dd><a name="index-mspace-2599"></a>Try to make the code as small as possible.  At present, this just turns
+on the <samp><span class="option">-mep</span></samp> and <samp><span class="option">-mprolog-function</span></samp> options.
+
+     <br><dt><code>-mtda=</code><var>n</var><dd><a name="index-mtda-2600"></a>Put static or global variables whose size is <var>n</var> bytes or less into
+the tiny data area that register <code>ep</code> points to.  The tiny data
+area can hold up to 256 bytes in total (128 bytes for byte references).
+
+     <br><dt><code>-msda=</code><var>n</var><dd><a name="index-msda-2601"></a>Put static or global variables whose size is <var>n</var> bytes or less into
+the small data area that register <code>gp</code> points to.  The small data
+area can hold up to 64 kilobytes.
+
+     <br><dt><code>-mzda=</code><var>n</var><dd><a name="index-mzda-2602"></a>Put static or global variables whose size is <var>n</var> bytes or less into
+the first 32 kilobytes of memory.
+
+     <br><dt><code>-mv850</code><dd><a name="index-mv850-2603"></a>Specify that the target processor is the V850.
+
+     <br><dt><code>-mv850e3v5</code><dd><a name="index-mv850e3v5-2604"></a>Specify that the target processor is the V850E3V5.  The preprocessor
+constant <code>__v850e3v5__</code> is defined if this option is used.
+
+     <br><dt><code>-mv850e2v4</code><dd><a name="index-mv850e2v4-2605"></a>Specify that the target processor is the V850E3V5.  This is an alias for
+the <samp><span class="option">-mv850e3v5</span></samp> option.
+
+     <br><dt><code>-mv850e2v3</code><dd><a name="index-mv850e2v3-2606"></a>Specify that the target processor is the V850E2V3.  The preprocessor
+constant <code>__v850e2v3__</code> is defined if this option is used.
+
+     <br><dt><code>-mv850e2</code><dd><a name="index-mv850e2-2607"></a>Specify that the target processor is the V850E2.  The preprocessor
+constant <code>__v850e2__</code> is defined if this option is used.
+
+     <br><dt><code>-mv850e1</code><dd><a name="index-mv850e1-2608"></a>Specify that the target processor is the V850E1.  The preprocessor
+constants <code>__v850e1__</code> and <code>__v850e__</code> are defined if
+this option is used.
+
+     <br><dt><code>-mv850es</code><dd><a name="index-mv850es-2609"></a>Specify that the target processor is the V850ES.  This is an alias for
+the <samp><span class="option">-mv850e1</span></samp> option.
+
+     <br><dt><code>-mv850e</code><dd><a name="index-mv850e-2610"></a>Specify that the target processor is the V850E.  The preprocessor
+constant <code>__v850e__</code> is defined if this option is used.
+
+     <p>If neither <samp><span class="option">-mv850</span></samp> nor <samp><span class="option">-mv850e</span></samp> nor <samp><span class="option">-mv850e1</span></samp>
+nor <samp><span class="option">-mv850e2</span></samp> nor <samp><span class="option">-mv850e2v3</span></samp> nor <samp><span class="option">-mv850e3v5</span></samp>
+are defined then a default target processor is chosen and the
+relevant `<samp><span class="samp">__v850*__</span></samp>' preprocessor constant is defined.
+
+     <p>The preprocessor constants <code>__v850</code> and <code>__v851__</code> are always
+defined, regardless of which processor variant is the target.
+
+     <br><dt><code>-mdisable-callt</code><dt><code>-mno-disable-callt</code><dd><a name="index-mdisable_002dcallt-2611"></a><a name="index-mno_002ddisable_002dcallt-2612"></a>This option suppresses generation of the <code>CALLT</code> instruction for the
+v850e, v850e1, v850e2, v850e2v3 and v850e3v5 flavors of the v850
+architecture.
+
+     <p>This option is enabled by default when the RH850 ABI is
+in use (see <samp><span class="option">-mrh850-abi</span></samp>), and disabled by default when the
+GCC ABI is in use.  If <code>CALLT</code> instructions are being generated
+then the C preprocessor symbol <code>__V850_CALLT__</code> is defined.
+
+     <br><dt><code>-mrelax</code><dt><code>-mno-relax</code><dd><a name="index-mrelax-2613"></a><a name="index-mno_002drelax-2614"></a>Pass on (or do not pass on) the <samp><span class="option">-mrelax</span></samp> command-line option
+to the assembler.
+
+     <br><dt><code>-mlong-jumps</code><dt><code>-mno-long-jumps</code><dd><a name="index-mlong_002djumps-2615"></a><a name="index-mno_002dlong_002djumps-2616"></a>Disable (or re-enable) the generation of PC-relative jump instructions.
+
+     <br><dt><code>-msoft-float</code><dt><code>-mhard-float</code><dd><a name="index-msoft_002dfloat-2617"></a><a name="index-mhard_002dfloat-2618"></a>Disable (or re-enable) the generation of hardware floating point
+instructions.  This option is only significant when the target
+architecture is `<samp><span class="samp">V850E2V3</span></samp>' or higher.  If hardware floating point
+instructions are being generated then the C preprocessor symbol
+<code>__FPU_OK__</code> is defined, otherwise the symbol
+<code>__NO_FPU__</code> is defined.
+
+     <br><dt><code>-mloop</code><dd><a name="index-mloop-2619"></a>Enables the use of the e3v5 LOOP instruction.  The use of this
+instruction is not enabled by default when the e3v5 architecture is
+selected because its use is still experimental.
+
+     <br><dt><code>-mrh850-abi</code><dt><code>-mghs</code><dd><a name="index-mrh850_002dabi-2620"></a><a name="index-mghs-2621"></a>Enables support for the RH850 version of the V850 ABI.  This is the
+default.  With this version of the ABI the following rules apply:
+
+          <ul>
+<li>Integer sized structures and unions are returned via a memory pointer
+rather than a register.
+
+          <li>Large structures and unions (more than 8 bytes in size) are passed by
+value.
+
+          <li>Functions are aligned to 16-bit boundaries.
+
+          <li>The <samp><span class="option">-m8byte-align</span></samp> command-line option is supported.
+
+          <li>The <samp><span class="option">-mdisable-callt</span></samp> command-line option is enabled by
+default.  The <samp><span class="option">-mno-disable-callt</span></samp> command-line option is not
+supported. 
+</ul>
+
+     <p>When this version of the ABI is enabled the C preprocessor symbol
+<code>__V850_RH850_ABI__</code> is defined.
+
+     <br><dt><code>-mgcc-abi</code><dd><a name="index-mgcc_002dabi-2622"></a>Enables support for the old GCC version of the V850 ABI.  With this
+version of the ABI the following rules apply:
+
+          <ul>
+<li>Integer sized structures and unions are returned in register <code>r10</code>.
+
+          <li>Large structures and unions (more than 8 bytes in size) are passed by
+reference.
+
+          <li>Functions are aligned to 32-bit boundaries, unless optimizing for
+size.
+
+          <li>The <samp><span class="option">-m8byte-align</span></samp> command-line option is not supported.
+
+          <li>The <samp><span class="option">-mdisable-callt</span></samp> command-line option is supported but not
+enabled by default. 
+</ul>
+
+     <p>When this version of the ABI is enabled the C preprocessor symbol
+<code>__V850_GCC_ABI__</code> is defined.
+
+     <br><dt><code>-m8byte-align</code><dt><code>-mno-8byte-align</code><dd><a name="index-m8byte_002dalign-2623"></a><a name="index-mno_002d8byte_002dalign-2624"></a>Enables support for <code>double</code> and <code>long long</code> types to be
+aligned on 8-byte boundaries.  The default is to restrict the
+alignment of all objects to at most 4-bytes.  When
+<samp><span class="option">-m8byte-align</span></samp> is in effect the C preprocessor symbol
+<code>__V850_8BYTE_ALIGN__</code> is defined.
+
+     <br><dt><code>-mbig-switch</code><dd><a name="index-mbig_002dswitch-2625"></a>Generate code suitable for big switch tables.  Use this option only if
+the assembler/linker complain about out of range branches within a switch
+table.
+
+     <br><dt><code>-mapp-regs</code><dd><a name="index-mapp_002dregs-2626"></a>This option causes r2 and r5 to be used in the code generated by
+the compiler.  This setting is the default.
+
+     <br><dt><code>-mno-app-regs</code><dd><a name="index-mno_002dapp_002dregs-2627"></a>This option causes r2 and r5 to be treated as fixed registers.
+
+ </dl>
+
+ </body></html>
+

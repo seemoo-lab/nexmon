@@ -1,0 +1,163 @@
+<html lang="en">
+<head>
+<title>Classes - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="C-and-C_002b_002b-Trees.html#C-and-C_002b_002b-Trees" title="C and C++ Trees">
+<link rel="prev" href="Namespaces.html#Namespaces" title="Namespaces">
+<link rel="next" href="Functions-for-C_002b_002b.html#Functions-for-C_002b_002b" title="Functions for C++">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Classes"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Functions-for-C_002b_002b.html#Functions-for-C_002b_002b">Functions for C++</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Namespaces.html#Namespaces">Namespaces</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="C-and-C_002b_002b-Trees.html#C-and-C_002b_002b-Trees">C and C++ Trees</a>
+<hr>
+</div>
+
+<h4 class="subsection">10.10.3 Classes</h4>
+
+<p><a name="index-class_002c-scope-2039"></a><a name="index-RECORD_005fTYPE-2040"></a><a name="index-UNION_005fTYPE-2041"></a><a name="index-CLASSTYPE_005fDECLARED_005fCLASS-2042"></a><a name="index-TYPE_005fBINFO-2043"></a><a name="index-BINFO_005fTYPE-2044"></a><a name="index-TYPE_005fFIELDS-2045"></a><a name="index-TYPE_005fVFIELD-2046"></a><a name="index-TYPE_005fMETHODS-2047"></a>
+Besides namespaces, the other high-level scoping construct in C++ is the
+class.  (Throughout this manual the term <dfn>class</dfn> is used to mean the
+types referred to in the ANSI/ISO C++ Standard as classes; these include
+types defined with the <code>class</code>, <code>struct</code>, and <code>union</code>
+keywords.)
+
+ <p>A class type is represented by either a <code>RECORD_TYPE</code> or a
+<code>UNION_TYPE</code>.  A class declared with the <code>union</code> tag is
+represented by a <code>UNION_TYPE</code>, while classes declared with either
+the <code>struct</code> or the <code>class</code> tag are represented by
+<code>RECORD_TYPE</code>s.  You can use the <code>CLASSTYPE_DECLARED_CLASS</code>
+macro to discern whether or not a particular type is a <code>class</code> as
+opposed to a <code>struct</code>.  This macro will be true only for classes
+declared with the <code>class</code> tag.
+
+ <p>Almost all non-function members are available on the <code>TYPE_FIELDS</code>
+list.  Given one member, the next can be found by following the
+<code>TREE_CHAIN</code>.  You should not depend in any way on the order in
+which fields appear on this list.  All nodes on this list will be
+`<samp><span class="samp">DECL</span></samp>' nodes.  A <code>FIELD_DECL</code> is used to represent a non-static
+data member, a <code>VAR_DECL</code> is used to represent a static data
+member, and a <code>TYPE_DECL</code> is used to represent a type.  Note that
+the <code>CONST_DECL</code> for an enumeration constant will appear on this
+list, if the enumeration type was declared in the class.  (Of course,
+the <code>TYPE_DECL</code> for the enumeration type will appear here as well.) 
+There are no entries for base classes on this list.  In particular,
+there is no <code>FIELD_DECL</code> for the &ldquo;base-class portion&rdquo; of an
+object.
+
+ <p>The <code>TYPE_VFIELD</code> is a compiler-generated field used to point to
+virtual function tables.  It may or may not appear on the
+<code>TYPE_FIELDS</code> list.  However, back ends should handle the
+<code>TYPE_VFIELD</code> just like all the entries on the <code>TYPE_FIELDS</code>
+list.
+
+ <p>The function members are available on the <code>TYPE_METHODS</code> list. 
+Again, subsequent members are found by following the <code>TREE_CHAIN</code>
+field.  If a function is overloaded, each of the overloaded functions
+appears; no <code>OVERLOAD</code> nodes appear on the <code>TYPE_METHODS</code>
+list.  Implicitly declared functions (including default constructors,
+copy constructors, assignment operators, and destructors) will appear on
+this list as well.
+
+ <p>Every class has an associated <dfn>binfo</dfn>, which can be obtained with
+<code>TYPE_BINFO</code>.  Binfos are used to represent base-classes.  The
+binfo given by <code>TYPE_BINFO</code> is the degenerate case, whereby every
+class is considered to be its own base-class.  The base binfos for a
+particular binfo are held in a vector, whose length is obtained with
+<code>BINFO_N_BASE_BINFOS</code>.  The base binfos themselves are obtained
+with <code>BINFO_BASE_BINFO</code> and <code>BINFO_BASE_ITERATE</code>.  To add a
+new binfo, use <code>BINFO_BASE_APPEND</code>.  The vector of base binfos can
+be obtained with <code>BINFO_BASE_BINFOS</code>, but normally you do not need
+to use that.  The class type associated with a binfo is given by
+<code>BINFO_TYPE</code>.  It is not always the case that <code>BINFO_TYPE
+(TYPE_BINFO (x))</code>, because of typedefs and qualified types.  Neither is
+it the case that <code>TYPE_BINFO (BINFO_TYPE (y))</code> is the same binfo as
+<code>y</code>.  The reason is that if <code>y</code> is a binfo representing a
+base-class <code>B</code> of a derived class <code>D</code>, then <code>BINFO_TYPE
+(y)</code> will be <code>B</code>, and <code>TYPE_BINFO (BINFO_TYPE (y))</code> will be
+<code>B</code> as its own base-class, rather than as a base-class of <code>D</code>.
+
+ <p>The access to a base type can be found with <code>BINFO_BASE_ACCESS</code>. 
+This will produce <code>access_public_node</code>, <code>access_private_node</code>
+or <code>access_protected_node</code>.  If bases are always public,
+<code>BINFO_BASE_ACCESSES</code> may be <code>NULL</code>.
+
+ <p><code>BINFO_VIRTUAL_P</code> is used to specify whether the binfo is inherited
+virtually or not.  The other flags, <code>BINFO_MARKED_P</code> and
+<code>BINFO_FLAG_1</code> to <code>BINFO_FLAG_6</code> can be used for language
+specific use.
+
+ <p>The following macros can be used on a tree node representing a class-type.
+
+     <dl>
+<dt><code>LOCAL_CLASS_P</code><a name="index-LOCAL_005fCLASS_005fP-2048"></a><dd>This predicate holds if the class is local class <em>i.e.</em> declared
+inside a function body.
+
+     <br><dt><code>TYPE_POLYMORPHIC_P</code><a name="index-TYPE_005fPOLYMORPHIC_005fP-2049"></a><dd>This predicate holds if the class has at least one virtual function
+(declared or inherited).
+
+     <br><dt><code>TYPE_HAS_DEFAULT_CONSTRUCTOR</code><a name="index-TYPE_005fHAS_005fDEFAULT_005fCONSTRUCTOR-2050"></a><dd>This predicate holds whenever its argument represents a class-type with
+default constructor.
+
+     <br><dt><code>CLASSTYPE_HAS_MUTABLE</code><a name="index-CLASSTYPE_005fHAS_005fMUTABLE-2051"></a><dt><code>TYPE_HAS_MUTABLE_P</code><a name="index-TYPE_005fHAS_005fMUTABLE_005fP-2052"></a><dd>These predicates hold for a class-type having a mutable data member.
+
+     <br><dt><code>CLASSTYPE_NON_POD_P</code><a name="index-CLASSTYPE_005fNON_005fPOD_005fP-2053"></a><dd>This predicate holds only for class-types that are not PODs.
+
+     <br><dt><code>TYPE_HAS_NEW_OPERATOR</code><a name="index-TYPE_005fHAS_005fNEW_005fOPERATOR-2054"></a><dd>This predicate holds for a class-type that defines
+<code>operator new</code>.
+
+     <br><dt><code>TYPE_HAS_ARRAY_NEW_OPERATOR</code><a name="index-TYPE_005fHAS_005fARRAY_005fNEW_005fOPERATOR-2055"></a><dd>This predicate holds for a class-type for which
+<code>operator new[]</code> is defined.
+
+     <br><dt><code>TYPE_OVERLOADS_CALL_EXPR</code><a name="index-TYPE_005fOVERLOADS_005fCALL_005fEXPR-2056"></a><dd>This predicate holds for class-type for which the function call
+<code>operator()</code> is overloaded.
+
+     <br><dt><code>TYPE_OVERLOADS_ARRAY_REF</code><a name="index-TYPE_005fOVERLOADS_005fARRAY_005fREF-2057"></a><dd>This predicate holds for a class-type that overloads
+<code>operator[]</code>
+
+     <br><dt><code>TYPE_OVERLOADS_ARROW</code><a name="index-TYPE_005fOVERLOADS_005fARROW-2058"></a><dd>This predicate holds for a class-type for which <code>operator-&gt;</code> is
+overloaded.
+
+ </dl>
+
+ </body></html>
+

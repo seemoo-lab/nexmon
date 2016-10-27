@@ -1,0 +1,98 @@
+<html lang="en">
+<head>
+<title>GIMPLE API - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Match-and-Simplify.html#Match-and-Simplify" title="Match and Simplify">
+<link rel="next" href="The-Language.html#The-Language" title="The Language">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="GIMPLE-API"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="The-Language.html#The-Language">The Language</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Match-and-Simplify.html#Match-and-Simplify">Match and Simplify</a>
+<hr>
+</div>
+
+<h3 class="section">25.1 GIMPLE API</h3>
+
+<p><a name="index-GIMPLE-API-5112"></a>
+
+<div class="defun">
+&mdash; GIMPLE function: tree <b>gimple_simplify</b> (<var>enum tree_code, tree, tree, gimple_seq *, tree </var>(<var>*</var>)(<var>tree</var>))<var><a name="index-gimple_005fsimplify-5113"></a></var><br>
+&mdash; GIMPLE function: tree <b>gimple_simplify</b> (<var>enum tree_code, tree, tree, tree, gimple_seq *, tree </var>(<var>*</var>)(<var>tree</var>))<var><a name="index-gimple_005fsimplify-5114"></a></var><br>
+&mdash; GIMPLE function: tree <b>gimple_simplify</b> (<var>enum tree_code, tree, tree, tree, tree, gimple_seq *, tree </var>(<var>*</var>)(<var>tree</var>))<var><a name="index-gimple_005fsimplify-5115"></a></var><br>
+&mdash; GIMPLE function: tree <b>gimple_simplify</b> (<var>enum built_in_function, tree, tree, gimple_seq *, tree </var>(<var>*</var>)(<var>tree</var>))<var><a name="index-gimple_005fsimplify-5116"></a></var><br>
+&mdash; GIMPLE function: tree <b>gimple_simplify</b> (<var>enum built_in_function, tree, tree, tree, gimple_seq *, tree </var>(<var>*</var>)(<var>tree</var>))<var><a name="index-gimple_005fsimplify-5117"></a></var><br>
+&mdash; GIMPLE function: tree <b>gimple_simplify</b> (<var>enum built_in_function, tree, tree, tree, gimple_seq *, tree </var>(<var>*</var>)(<var>tree</var>))<var><a name="index-gimple_005fsimplify-5118"></a></var><br>
+<blockquote><p>The main GIMPLE API entry to the expression simplifications mimicing
+that of the GENERIC fold_{unary,binary,ternary} functions. 
+</p></blockquote></div>
+
+ <p>thus providing n-ary overloads for operation or function.  The
+additional arguments are a gimple_seq where built statements are
+inserted on (if <code>NULL</code> then simplifications requiring new statements
+are not performed) and a valueization hook that can be used to
+tie simplifications to a SSA lattice.
+
+ <p>In addition to those APIs <code>fold_stmt</code> is overloaded with
+a valueization hook:
+
+<div class="defun">
+&mdash; bool: fold_stmt <b>(</b><var>gimple_stmt_iterator *, tree </var>(<var>*</var>)(<var>tree</var>))<var>;<a name="index-g_t_0028-5119"></a></var><br>
+</div>
+
+ <p>Ontop of these a <code>fold_buildN</code>-like API for GIMPLE is introduced:
+
+<div class="defun">
+&mdash; GIMPLE function: tree <b>gimple_build</b> (<var>gimple_seq *, location_t, enum tree_code, tree, tree, tree </var>(<var>*valueize</var>) (<var>tree</var>)<var> = NULL</var>)<var>;<a name="index-gimple_005fbuild-5120"></a></var><br>
+&mdash; GIMPLE function: tree <b>gimple_build</b> (<var>gimple_seq *, location_t, enum tree_code, tree, tree, tree, tree </var>(<var>*valueize</var>) (<var>tree</var>)<var> = NULL</var>)<var>;<a name="index-gimple_005fbuild-5121"></a></var><br>
+&mdash; GIMPLE function: tree <b>gimple_build</b> (<var>gimple_seq *, location_t, enum tree_code, tree, tree, tree, tree, tree </var>(<var>*valueize</var>) (<var>tree</var>)<var> = NULL</var>)<var>;<a name="index-gimple_005fbuild-5122"></a></var><br>
+&mdash; GIMPLE function: tree <b>gimple_build</b> (<var>gimple_seq *, location_t, enum built_in_function, tree, tree, tree </var>(<var>*valueize</var>) (<var>tree</var>)<var> = NULL</var>)<var>;<a name="index-gimple_005fbuild-5123"></a></var><br>
+&mdash; GIMPLE function: tree <b>gimple_build</b> (<var>gimple_seq *, location_t, enum built_in_function, tree, tree, tree, tree </var>(<var>*valueize</var>) (<var>tree</var>)<var> = NULL</var>)<var>;<a name="index-gimple_005fbuild-5124"></a></var><br>
+&mdash; GIMPLE function: tree <b>gimple_convert</b> (<var>gimple_seq *, location_t, tree, tree</var>)<var>;<a name="index-gimple_005fconvert-5125"></a></var><br>
+</div>
+
+ <p>which is supposed to replace <code>force_gimple_operand (fold_buildN (...), ...)</code>
+and calls to <code>fold_convert</code>.  Overloads without the <code>location_t</code>
+argument exist.  Built statements are inserted on the provided sequence
+and simplification is performed using the optional valueization hook.
+
+ </body></html>
+

@@ -1,0 +1,143 @@
+<html lang="en">
+<head>
+<title>Profile information - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Control-Flow.html#Control-Flow" title="Control Flow">
+<link rel="prev" href="Edges.html#Edges" title="Edges">
+<link rel="next" href="Maintaining-the-CFG.html#Maintaining-the-CFG" title="Maintaining the CFG">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Profile-information"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Maintaining-the-CFG.html#Maintaining-the-CFG">Maintaining the CFG</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Edges.html#Edges">Edges</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Control-Flow.html#Control-Flow">Control Flow</a>
+<hr>
+</div>
+
+<h3 class="section">14.3 Profile information</h3>
+
+<p><a name="index-profile-representation-3194"></a>In many cases a compiler must make a choice whether to trade speed in
+one part of code for speed in another, or to trade code size for code
+speed.  In such cases it is useful to know information about how often
+some given block will be executed.  That is the purpose for
+maintaining profile within the flow graph. 
+GCC can handle profile information obtained through <dfn>profile
+feedback</dfn>, but it can also estimate branch probabilities based on
+statics and heuristics.
+
+ <p><a name="index-profile-feedback-3195"></a>The feedback based profile is produced by compiling the program with
+instrumentation, executing it on a train run and reading the numbers
+of executions of basic blocks and edges back to the compiler while
+re-compiling the program to produce the final executable.  This method
+provides very accurate information about where a program spends most
+of its time on the train run.  Whether it matches the average run of
+course depends on the choice of train data set, but several studies
+have shown that the behavior of a program usually changes just
+marginally over different data sets.
+
+ <p><a name="index-Static-profile-estimation-3196"></a><a name="index-branch-prediction-3197"></a><a name="index-predict_002edef-3198"></a>When profile feedback is not available, the compiler may be asked to
+attempt to predict the behavior of each branch in the program using a
+set of heuristics (see <samp><span class="file">predict.def</span></samp> for details) and compute
+estimated frequencies of each basic block by propagating the
+probabilities over the graph.
+
+ <p><a name="index-frequency_002c-count_002c-BB_005fFREQ_005fBASE-3199"></a>Each <code>basic_block</code> contains two integer fields to represent
+profile information: <code>frequency</code> and <code>count</code>.  The
+<code>frequency</code> is an estimation how often is basic block executed
+within a function.  It is represented as an integer scaled in the
+range from 0 to <code>BB_FREQ_BASE</code>.  The most frequently executed
+basic block in function is initially set to <code>BB_FREQ_BASE</code> and
+the rest of frequencies are scaled accordingly.  During optimization,
+the frequency of the most frequent basic block can both decrease (for
+instance by loop unrolling) or grow (for instance by cross-jumping
+optimization), so scaling sometimes has to be performed multiple
+times.
+
+ <p><a name="index-gcov_005ftype-3200"></a>The <code>count</code> contains hard-counted numbers of execution measured
+during training runs and is nonzero only when profile feedback is
+available.  This value is represented as the host's widest integer
+(typically a 64 bit integer) of the special type <code>gcov_type</code>.
+
+ <p>Most optimization passes can use only the frequency information of a
+basic block, but a few passes may want to know hard execution counts. 
+The frequencies should always match the counts after scaling, however
+during updating of the profile information numerical error may
+accumulate into quite large errors.
+
+ <p><a name="index-REG_005fBR_005fPROB_005fBASE_002c-EDGE_005fFREQUENCY-3201"></a>Each edge also contains a branch probability field: an integer in the
+range from 0 to <code>REG_BR_PROB_BASE</code>.  It represents probability of
+passing control from the end of the <code>src</code> basic block to the
+<code>dest</code> basic block, i.e. the probability that control will flow
+along this edge.  The <code>EDGE_FREQUENCY</code> macro is available to
+compute how frequently a given edge is taken.  There is a <code>count</code>
+field for each edge as well, representing same information as for a
+basic block.
+
+ <p>The basic block frequencies are not represented in the instruction
+stream, but in the RTL representation the edge frequencies are
+represented for conditional jumps (via the <code>REG_BR_PROB</code>
+macro) since they are used when instructions are output to the
+assembly file and the flow graph is no longer maintained.
+
+ <p><a name="index-reverse-probability-3202"></a>The probability that control flow arrives via a given edge to its
+destination basic block is called <dfn>reverse probability</dfn> and is not
+directly represented, but it may be easily computed from frequencies
+of basic blocks.
+
+ <p><a name="index-redirect_005fedge_005fand_005fbranch-3203"></a>Updating profile information is a delicate task that can unfortunately
+not be easily integrated with the CFG manipulation API.  Many of the
+functions and hooks to modify the CFG, such as
+<code>redirect_edge_and_branch</code>, do not have enough information to
+easily update the profile, so updating it is in the majority of cases
+left up to the caller.  It is difficult to uncover bugs in the profile
+updating code, because they manifest themselves only by producing
+worse code, and checking profile consistency is not possible because
+of numeric error accumulation.  Hence special attention needs to be
+given to this issue in each pass that modifies the CFG.
+
+ <p><a name="index-REG_005fBR_005fPROB_005fBASE_002c-BB_005fFREQ_005fBASE_002c-count-3204"></a>It is important to point out that <code>REG_BR_PROB_BASE</code> and
+<code>BB_FREQ_BASE</code> are both set low enough to be possible to compute
+second power of any frequency or probability in the flow graph, it is
+not possible to even square the <code>count</code> field, as modern CPUs are
+fast enough to execute $2^32$ operations quickly.
+
+ </body></html>
+

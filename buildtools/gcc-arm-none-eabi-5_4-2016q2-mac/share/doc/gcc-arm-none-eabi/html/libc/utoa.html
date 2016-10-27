@@ -1,0 +1,68 @@
+<html lang="en">
+<head>
+<title>utoa - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stdlib.html#Stdlib" title="Stdlib">
+<link rel="prev" href="system.html#system" title="system">
+<link rel="next" href="wcstombs.html#wcstombs" title="wcstombs">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="utoa"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="wcstombs.html#wcstombs">wcstombs</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="system.html#system">system</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stdlib.html#Stdlib">Stdlib</a>
+<hr>
+</div>
+
+<h3 class="section">2.49 <code>utoa</code>&mdash;unsigned integer to string</h3>
+
+<p><a name="index-utoa-112"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;stdlib.h&gt;
+     char *utoa(unsigned <var>value</var>, char *<var>str</var>, int <var>base</var>);
+     char *__utoa(unsigned <var>value</var>, char *<var>str</var>, int <var>base</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+<code>utoa</code> converts the unsigned integer [&lt;value&gt;] to a null-terminated string
+using the specified base, which must be between 2 and 36, inclusive. 
+<var>str</var> should be an array long enough to contain the converted
+value, which in the worst case is sizeof(int)*8+1 bytes.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+A pointer to the string, <var>str</var>, or NULL if <var>base</var> is invalid.
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+<code>utoa</code> is non-ANSI.
+
+   <p>No supporting OS subroutine calls are required.
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

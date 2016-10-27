@@ -1,0 +1,153 @@
+<html lang="en">
+<head>
+<title>Symbol Tables In Guile - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Guile-API.html#Guile-API" title="Guile API">
+<link rel="prev" href="Symbols-In-Guile.html#Symbols-In-Guile" title="Symbols In Guile">
+<link rel="next" href="Breakpoints-In-Guile.html#Breakpoints-In-Guile" title="Breakpoints In Guile">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Symbol-Tables-In-Guile"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Breakpoints-In-Guile.html#Breakpoints-In-Guile">Breakpoints In Guile</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Symbols-In-Guile.html#Symbols-In-Guile">Symbols In Guile</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Guile-API.html#Guile-API">Guile API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.3.3.18 Symbol table representation in Guile.</h5>
+
+<p><a name="index-symbol-tables-in-guile-2647"></a><a name="index-g_t_003cgdb_003asymtab_003e-2648"></a><a name="index-g_t_003cgdb_003asal_003e-2649"></a>
+Access to symbol table data maintained by <span class="sc">gdb</span> on the inferior
+is exposed to Guile via two objects: <code>&lt;gdb:sal&gt;</code> (symtab-and-line) and
+<code>&lt;gdb:symtab&gt;</code>.  Symbol table and line data for a frame is returned
+from the <code>frame-find-sal</code> <code>&lt;gdb:frame&gt;</code> procedure. 
+See <a href="Frames-In-Guile.html#Frames-In-Guile">Frames In Guile</a>.
+
+   <p>For more information on <span class="sc">gdb</span>'s symbol table management, see
+<a href="Symbols.html#Symbols">Examining the Symbol Table</a>.
+
+   <p>The following symtab-related procedures are provided by the
+<code>(gdb)</code> module:
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>symtab?</b><var> object<a name="index-symtab_003f-2650"></a></var><br>
+<blockquote><p>Return <code>#t</code> if <var>object</var> is an object of type <code>&lt;gdb:symtab&gt;</code>. 
+Otherwise return <code>#f</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>symtab-valid?</b><var> symtab<a name="index-symtab_002dvalid_003f-2651"></a></var><br>
+<blockquote><p>Return <code>#t</code> if the <code>&lt;gdb:symtab&gt;</code> object is valid,
+<code>#f</code> if not.  A <code>&lt;gdb:symtab&gt;</code> object becomes invalid when
+the symbol table it refers to no longer exists in <span class="sc">gdb</span>. 
+All other <code>&lt;gdb:symtab&gt;</code> procedures will throw an exception
+if it is invalid at the time the procedure is called. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>symtab-filename</b><var> symtab<a name="index-symtab_002dfilename-2652"></a></var><br>
+<blockquote><p>Return the symbol table's source filename. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>symtab-fullname</b><var> symtab<a name="index-symtab_002dfullname-2653"></a></var><br>
+<blockquote><p>Return the symbol table's source absolute file name. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>symtab-objfile</b><var> symtab<a name="index-symtab_002dobjfile-2654"></a></var><br>
+<blockquote><p>Return the symbol table's backing object file.  See <a href="Objfiles-In-Guile.html#Objfiles-In-Guile">Objfiles In Guile</a>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>symtab-global-block</b><var> symtab<a name="index-symtab_002dglobal_002dblock-2655"></a></var><br>
+<blockquote><p>Return the global block of the underlying symbol table. 
+See <a href="Blocks-In-Guile.html#Blocks-In-Guile">Blocks In Guile</a>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>symtab-static-block</b><var> symtab<a name="index-symtab_002dstatic_002dblock-2656"></a></var><br>
+<blockquote><p>Return the static block of the underlying symbol table. 
+See <a href="Blocks-In-Guile.html#Blocks-In-Guile">Blocks In Guile</a>. 
+</p></blockquote></div>
+
+   <p>The following symtab-and-line-related procedures are provided by the
+<code>(gdb)</code> module:
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>sal?</b><var> object<a name="index-sal_003f-2657"></a></var><br>
+<blockquote><p>Return <code>#t</code> if <var>object</var> is an object of type <code>&lt;gdb:sal&gt;</code>. 
+Otherwise return <code>#f</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>sal-valid?</b><var> sal<a name="index-sal_002dvalid_003f-2658"></a></var><br>
+<blockquote><p>Return <code>#t</code> if <var>sal</var> is valid, <code>#f</code> if not. 
+A <code>&lt;gdb:sal&gt;</code> object becomes invalid when the Symbol table object
+it refers to no longer exists in <span class="sc">gdb</span>.  All other
+<code>&lt;gdb:sal&gt;</code> procedures will throw an exception if it is
+invalid at the time the procedure is called. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>sal-symtab</b><var> sal<a name="index-sal_002dsymtab-2659"></a></var><br>
+<blockquote><p>Return the symbol table object (<code>&lt;gdb:symtab&gt;</code>) for <var>sal</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>sal-line</b><var> sal<a name="index-sal_002dline-2660"></a></var><br>
+<blockquote><p>Return the line number for <var>sal</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>sal-pc</b><var> sal<a name="index-sal_002dpc-2661"></a></var><br>
+<blockquote><p>Return the start of the address range occupied by code for <var>sal</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>sal-last</b><var> sal<a name="index-sal_002dlast-2662"></a></var><br>
+<blockquote><p>Return the end of the address range occupied by code for <var>sal</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>find-pc-line</b><var> pc<a name="index-find_002dpc_002dline-2663"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:sal&gt;</code> object corresponding to the <var>pc</var> value. 
+If an invalid value of <var>pc</var> is passed as an argument, then the
+<code>symtab</code> and <code>line</code> attributes of the returned <code>&lt;gdb:sal&gt;</code>
+object will be <code>#f</code> and 0 respectively. 
+</p></blockquote></div>
+
+   </body></html>
+

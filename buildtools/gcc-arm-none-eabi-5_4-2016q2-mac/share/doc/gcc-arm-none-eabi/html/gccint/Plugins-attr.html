@@ -1,0 +1,117 @@
+<html lang="en">
+<head>
+<title>Plugins attr - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Plugins.html#Plugins" title="Plugins">
+<link rel="prev" href="Plugins-description.html#Plugins-description" title="Plugins description">
+<link rel="next" href="Plugins-recording.html#Plugins-recording" title="Plugins recording">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Plugins-attr"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Plugins-recording.html#Plugins-recording">Plugins recording</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Plugins-description.html#Plugins-description">Plugins description</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Plugins.html#Plugins">Plugins</a>
+<hr>
+</div>
+
+<h3 class="section">23.6 Registering custom attributes or pragmas</h3>
+
+<p>For analysis (or other) purposes it is useful to be able to add custom
+attributes or pragmas.
+
+ <p>The <code>PLUGIN_ATTRIBUTES</code> callback is called during attribute
+registration. Use the <code>register_attribute</code> function to register
+custom attributes.
+
+<pre class="smallexample">     /* Attribute handler callback */
+     static tree
+     handle_user_attribute (tree *node, tree name, tree args,
+                            int flags, bool *no_add_attrs)
+     {
+       return NULL_TREE;
+     }
+     
+     /* Attribute definition */
+     static struct attribute_spec user_attr =
+       { "user", 1, 1, false,  false, false, handle_user_attribute, false };
+     
+     /* Plugin callback called during attribute registration.
+     Registered with register_callback (plugin_name, PLUGIN_ATTRIBUTES, register_attributes, NULL)
+     */
+     static void
+     register_attributes (void *event_data, void *data)
+     {
+       warning (0, G_("Callback to register attributes"));
+       register_attribute (&amp;user_attr);
+     }
+     
+</pre>
+ <p>The <i>PLUGIN_PRAGMAS</i> callback is called once during pragmas
+registration. Use the <code>c_register_pragma</code>,
+<code>c_register_pragma_with_data</code>,
+<code>c_register_pragma_with_expansion</code>,
+<code>c_register_pragma_with_expansion_and_data</code> functions to register
+custom pragmas and their handlers (which often want to call
+<code>pragma_lex</code>) from <samp><span class="file">c-family/c-pragma.h</span></samp>.
+
+<pre class="smallexample">     /* Plugin callback called during pragmas registration. Registered with
+          register_callback (plugin_name, PLUGIN_PRAGMAS,
+                             register_my_pragma, NULL);
+     */
+     static void
+     register_my_pragma (void *event_data, void *data)
+     {
+       warning (0, G_("Callback to register pragmas"));
+       c_register_pragma ("GCCPLUGIN", "sayhello", handle_pragma_sayhello);
+     }
+</pre>
+ <p>It is suggested to pass <code>"GCCPLUGIN"</code> (or a short name identifying
+your plugin) as the &ldquo;space&rdquo; argument of your pragma.
+
+ <p>Pragmas registered with <code>c_register_pragma_with_expansion</code> or
+<code>c_register_pragma_with_expansion_and_data</code> support
+preprocessor expansions. For example:
+
+<pre class="smallexample">     #define NUMBER 10
+     #pragma GCCPLUGIN foothreshold (NUMBER)
+</pre>
+ </body></html>
+

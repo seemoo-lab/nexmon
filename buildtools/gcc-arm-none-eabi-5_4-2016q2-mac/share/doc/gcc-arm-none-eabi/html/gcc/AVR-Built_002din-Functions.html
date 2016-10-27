@@ -1,0 +1,133 @@
+<html lang="en">
+<head>
+<title>AVR Built-in Functions - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Builtins.html#Target-Builtins" title="Target Builtins">
+<link rel="prev" href="ARM-Floating-Point-Status-and-Control-Intrinsics.html#ARM-Floating-Point-Status-and-Control-Intrinsics" title="ARM Floating Point Status and Control Intrinsics">
+<link rel="next" href="Blackfin-Built_002din-Functions.html#Blackfin-Built_002din-Functions" title="Blackfin Built-in Functions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="AVR-Built-in-Functions"></a>
+<a name="AVR-Built_002din-Functions"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Blackfin-Built_002din-Functions.html#Blackfin-Built_002din-Functions">Blackfin Built-in Functions</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="ARM-Floating-Point-Status-and-Control-Intrinsics.html#ARM-Floating-Point-Status-and-Control-Intrinsics">ARM Floating Point Status and Control Intrinsics</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Builtins.html#Target-Builtins">Target Builtins</a>
+<hr>
+</div>
+
+<h4 class="subsection">6.58.9 AVR Built-in Functions</h4>
+
+<p>For each built-in function for AVR, there is an equally named,
+uppercase built-in macro defined. That way users can easily query if
+or if not a specific built-in is implemented or not. For example, if
+<code>__builtin_avr_nop</code> is available the macro
+<code>__BUILTIN_AVR_NOP</code> is defined to <code>1</code> and undefined otherwise.
+
+ <p>The following built-in functions map to the respective machine
+instruction, i.e. <code>nop</code>, <code>sei</code>, <code>cli</code>, <code>sleep</code>,
+<code>wdr</code>, <code>swap</code>, <code>fmul</code>, <code>fmuls</code>
+resp. <code>fmulsu</code>. The three <code>fmul*</code> built-ins are implemented
+as library call if no hardware multiplier is available.
+
+<pre class="smallexample">     void __builtin_avr_nop (void)
+     void __builtin_avr_sei (void)
+     void __builtin_avr_cli (void)
+     void __builtin_avr_sleep (void)
+     void __builtin_avr_wdr (void)
+     unsigned char __builtin_avr_swap (unsigned char)
+     unsigned int __builtin_avr_fmul (unsigned char, unsigned char)
+     int __builtin_avr_fmuls (char, char)
+     int __builtin_avr_fmulsu (char, unsigned char)
+</pre>
+ <p>In order to delay execution for a specific number of cycles, GCC
+implements
+<pre class="smallexample">     void __builtin_avr_delay_cycles (unsigned long ticks)
+</pre>
+ <p class="noindent"><code>ticks</code> is the number of ticks to delay execution. Note that this
+built-in does not take into account the effect of interrupts that
+might increase delay time. <code>ticks</code> must be a compile-time
+integer constant; delays with a variable number of cycles are not supported.
+
+<pre class="smallexample">     char __builtin_avr_flash_segment (const __memx void*)
+</pre>
+ <p class="noindent">This built-in takes a byte address to the 24-bit
+<a href="AVR-Named-Address-Spaces.html#AVR-Named-Address-Spaces">address space</a> <code>__memx</code> and returns
+the number of the flash segment (the 64 KiB chunk) where the address
+points to.  Counting starts at <code>0</code>. 
+If the address does not point to flash memory, return <code>-1</code>.
+
+<pre class="smallexample">     unsigned char __builtin_avr_insert_bits (unsigned long map, unsigned char bits, unsigned char val)
+</pre>
+ <p class="noindent">Insert bits from <var>bits</var> into <var>val</var> and return the resulting
+value. The nibbles of <var>map</var> determine how the insertion is
+performed: Let <var>X</var> be the <var>n</var>-th nibble of <var>map</var>
+     <ol type=1 start=1>
+<li>If <var>X</var> is <code>0xf</code>,
+then the <var>n</var>-th bit of <var>val</var> is returned unaltered.
+
+     <li>If X is in the range 0<small class="dots">...</small>7,
+then the <var>n</var>-th result bit is set to the <var>X</var>-th bit of <var>bits</var>
+
+     <li>If X is in the range 8<small class="dots">...</small><code>0xe</code>,
+then the <var>n</var>-th result bit is undefined.
+      </ol>
+
+<p class="noindent">One typical use case for this built-in is adjusting input and
+output values to non-contiguous port layouts. Some examples:
+
+<pre class="smallexample">     // same as val, bits is unused
+     __builtin_avr_insert_bits (0xffffffff, bits, val)
+</pre>
+ <pre class="smallexample">     // same as bits, val is unused
+     __builtin_avr_insert_bits (0x76543210, bits, val)
+</pre>
+ <pre class="smallexample">     // same as rotating bits by 4
+     __builtin_avr_insert_bits (0x32107654, bits, 0)
+</pre>
+ <pre class="smallexample">     // high nibble of result is the high nibble of val
+     // low nibble of result is the low nibble of bits
+     __builtin_avr_insert_bits (0xffff3210, bits, val)
+</pre>
+ <pre class="smallexample">     // reverse the bit order of bits
+     __builtin_avr_insert_bits (0x01234567, bits, 0)
+</pre>
+ </body></html>
+

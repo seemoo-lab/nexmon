@@ -1,0 +1,342 @@
+<html lang="en">
+<head>
+<title>Breakpoints In Guile - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Guile-API.html#Guile-API" title="Guile API">
+<link rel="prev" href="Symbol-Tables-In-Guile.html#Symbol-Tables-In-Guile" title="Symbol Tables In Guile">
+<link rel="next" href="Lazy-Strings-In-Guile.html#Lazy-Strings-In-Guile" title="Lazy Strings In Guile">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Breakpoints-In-Guile"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Lazy-Strings-In-Guile.html#Lazy-Strings-In-Guile">Lazy Strings In Guile</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Symbol-Tables-In-Guile.html#Symbol-Tables-In-Guile">Symbol Tables In Guile</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Guile-API.html#Guile-API">Guile API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.3.3.19 Manipulating breakpoints using Guile</h5>
+
+<p><a name="index-breakpoints-in-guile-2664"></a><a name="index-g_t_003cgdb_003abreakpoint_003e-2665"></a>
+Breakpoints in Guile are represented by objects of type
+<code>&lt;gdb:breakpoint&gt;</code>.  New breakpoints can be created with the
+<code>make-breakpoint</code> Guile function, and then added to <span class="sc">gdb</span> with the
+<code>register-breakpoint!</code> Guile function. 
+This two-step approach is taken to separate out the side-effect of adding
+the breakpoint to <span class="sc">gdb</span> from <code>make-breakpoint</code>.
+
+   <p>Support is also provided to view and manipulate breakpoints created
+outside of Guile.
+
+   <p>The following breakpoint-related procedures are provided by the
+<code>(gdb)</code> module:
+
+<!-- TODO: line length -->
+<div class="defun">
+&mdash; Scheme Procedure: <b>make-breakpoint</b><var> location </var><span class="roman">[</span><var>#:type type</var><span class="roman">]</span> <span class="roman">[</span><var>#:wp-class wp-class</var><span class="roman">]</span> <span class="roman">[</span><var>#:internal internal</var><span class="roman">]</span><var><a name="index-make_002dbreakpoint-2666"></a></var><br>
+<blockquote><p>Create a new breakpoint at <var>location</var>, a string naming the
+location of the breakpoint, or an expression that defines a watchpoint. 
+The contents can be any location recognized by the <code>break</code> command,
+or in the case of a watchpoint, by the <code>watch</code> command.
+
+        <p>The breakpoint is initially marked as `<samp><span class="samp">invalid</span></samp>'. 
+The breakpoint is not usable until it has been registered with <span class="sc">gdb</span>
+with <code>register-breakpoint!</code>, at which point it becomes `<samp><span class="samp">valid</span></samp>'. 
+The result is the <code>&lt;gdb:breakpoint&gt;</code> object representing the breakpoint.
+
+        <p>The optional <var>type</var> denotes the breakpoint to create. 
+This argument can be either <code>BP_BREAKPOINT</code> or <code>BP_WATCHPOINT</code>,
+and defaults to <code>BP_BREAKPOINT</code>.
+
+        <p>The optional <var>wp-class</var> argument defines the class of watchpoint to
+create, if <var>type</var> is <code>BP_WATCHPOINT</code>.  If a watchpoint class is
+not provided, it is assumed to be a <code>WP_WRITE</code> class.
+
+        <p>The optional <var>internal</var> argument allows the breakpoint to become
+invisible to the user.  The breakpoint will neither be reported when
+registered, nor will it be listed in the output from <code>info breakpoints</code>
+(but will be listed with the <code>maint info breakpoints</code> command). 
+If an internal flag is not provided, the breakpoint is visible
+(non-internal).
+
+        <p>When a watchpoint is created, <span class="sc">gdb</span> will try to create a
+hardware assisted watchpoint.  If successful, the type of the watchpoint
+is changed from <code>BP_WATCHPOINT</code> to <code>BP_HARDWARE_WATCHPOINT</code>
+for <code>WP_WRITE</code>, <code>BP_READ_WATCHPOINT</code> for <code>WP_READ</code>,
+and <code>BP_ACCESS_WATCHPOINT</code> for <code>WP_ACCESS</code>. 
+If not successful, the type of the watchpoint is left as <code>WP_WATCHPOINT</code>.
+
+        <p>The available types are represented by constants defined in the <code>gdb</code>
+module:
+
+          <dl>
+<dt><code>BP_BREAKPOINT</code><a name="index-BP_005fBREAKPOINT-2667"></a><dd>Normal code breakpoint.
+
+          <br><dt><code>BP_WATCHPOINT</code><a name="index-BP_005fWATCHPOINT-2668"></a><dd>Watchpoint breakpoint.
+
+          <br><dt><code>BP_HARDWARE_WATCHPOINT</code><a name="index-BP_005fHARDWARE_005fWATCHPOINT-2669"></a><dd>Hardware assisted watchpoint. 
+This value cannot be specified when creating the breakpoint.
+
+          <br><dt><code>BP_READ_WATCHPOINT</code><a name="index-BP_005fREAD_005fWATCHPOINT-2670"></a><dd>Hardware assisted read watchpoint. 
+This value cannot be specified when creating the breakpoint.
+
+          <br><dt><code>BP_ACCESS_WATCHPOINT</code><a name="index-BP_005fACCESS_005fWATCHPOINT-2671"></a><dd>Hardware assisted access watchpoint. 
+This value cannot be specified when creating the breakpoint. 
+</dl>
+
+        <p>The available watchpoint types represented by constants are defined in the
+<code>(gdb)</code> module:
+
+          <dl>
+<dt><code>WP_READ</code><a name="index-WP_005fREAD-2672"></a><dd>Read only watchpoint.
+
+          <br><dt><code>WP_WRITE</code><a name="index-WP_005fWRITE-2673"></a><dd>Write only watchpoint.
+
+          <br><dt><code>WP_ACCESS</code><a name="index-WP_005fACCESS-2674"></a><dd>Read/Write watchpoint. 
+</dl>
+
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>register-breakpoint!</b><var> breakpoint<a name="index-register_002dbreakpoint_0021-2675"></a></var><br>
+<blockquote><p>Add <var>breakpoint</var>, a <code>&lt;gdb:breakpoint&gt;</code> object, to <span class="sc">gdb</span>'s
+list of breakpoints.  The breakpoint must have been created with
+<code>make-breakpoint</code>.  One cannot register breakpoints that have been
+created outside of Guile.  Once a breakpoint is registered it becomes
+`<samp><span class="samp">valid</span></samp>'. 
+It is an error to register an already registered breakpoint. 
+The result is unspecified. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>delete-breakpoint!</b><var> breakpoint<a name="index-delete_002dbreakpoint_0021-2676"></a></var><br>
+<blockquote><p>Remove <var>breakpoint</var> from <span class="sc">gdb</span>'s list of breakpoints. 
+This also invalidates the Guile <var>breakpoint</var> object. 
+Any further attempt to access the object will throw an exception.
+
+        <p>If <var>breakpoint</var> was created from Guile with <code>make-breakpoint</code>
+it may be re-registered with <span class="sc">gdb</span>, in which case the breakpoint
+becomes valid again. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>breakpoints</b><var><a name="index-breakpoints-2677"></a></var><br>
+<blockquote><p>Return a list of all breakpoints. 
+Each element of the list is a <code>&lt;gdb:breakpoint&gt;</code> object. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>breakpoint?</b><var> object<a name="index-breakpoint_003f-2678"></a></var><br>
+<blockquote><p>Return <code>#t</code> if <var>object</var> is a <code>&lt;gdb:breakpoint&gt;</code> object,
+and <code>#f</code> otherwise. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>breakpoint-valid?</b><var> breakpoint<a name="index-breakpoint_002dvalid_003f-2679"></a></var><br>
+<blockquote><p>Return <code>#t</code> if <var>breakpoint</var> is valid, <code>#f</code> otherwise. 
+Breakpoints created with <code>make-breakpoint</code> are marked as invalid
+until they are registered with <span class="sc">gdb</span> with <code>register-breakpoint!</code>. 
+A <code>&lt;gdb:breakpoint&gt;</code> object can become invalid
+if the user deletes the breakpoint.  In this case, the object still
+exists, but the underlying breakpoint does not.  In the cases of
+watchpoint scope, the watchpoint remains valid even if execution of the
+inferior leaves the scope of that watchpoint. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>breakpoint-number</b><var> breakpoint<a name="index-breakpoint_002dnumber-2680"></a></var><br>
+<blockquote><p>Return the breakpoint's number &mdash; the identifier used by
+the user to manipulate the breakpoint. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>breakpoint-type</b><var> breakpoint<a name="index-breakpoint_002dtype-2681"></a></var><br>
+<blockquote><p>Return the breakpoint's type &mdash; the identifier used to
+determine the actual breakpoint type or use-case. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>breakpoint-visible?</b><var> breakpoint<a name="index-breakpoint_002dvisible_003f-2682"></a></var><br>
+<blockquote><p>Return <code>#t</code> if the breakpoint is visible to the user
+when hit, or when the `<samp><span class="samp">info breakpoints</span></samp>' command is run. 
+Otherwise return <code>#f</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>breakpoint-location</b><var> breakpoint<a name="index-breakpoint_002dlocation-2683"></a></var><br>
+<blockquote><p>Return the location of the breakpoint, as specified by
+the user.  It is a string.  If the breakpoint does not have a location
+(that is, it is a watchpoint) return <code>#f</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>breakpoint-expression</b><var> breakpoint<a name="index-breakpoint_002dexpression-2684"></a></var><br>
+<blockquote><p>Return the breakpoint expression, as specified by the user.  It is a string. 
+If the breakpoint does not have an expression (the breakpoint is not a
+watchpoint) return <code>#f</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>breakpoint-enabled?</b><var> breakpoint<a name="index-breakpoint_002denabled_003f-2685"></a></var><br>
+<blockquote><p>Return <code>#t</code> if the breakpoint is enabled, and <code>#f</code> otherwise. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>set-breakpoint-enabled!</b><var> breakpoint flag<a name="index-set_002dbreakpoint_002denabled_0021-2686"></a></var><br>
+<blockquote><p>Set the enabled state of <var>breakpoint</var> to <var>flag</var>. 
+If flag is <code>#f</code> it is disabled, otherwise it is enabled. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>breakpoint-silent?</b><var> breakpoint<a name="index-breakpoint_002dsilent_003f-2687"></a></var><br>
+<blockquote><p>Return <code>#t</code> if the breakpoint is silent, and <code>#f</code> otherwise.
+
+        <p>Note that a breakpoint can also be silent if it has commands and the
+first command is <code>silent</code>.  This is not reported by the
+<code>silent</code> attribute. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>set-breakpoint-silent!</b><var> breakpoint flag<a name="index-set_002dbreakpoint_002dsilent_0021-2688"></a></var><br>
+<blockquote><p>Set the silent state of <var>breakpoint</var> to <var>flag</var>. 
+If flag is <code>#f</code> the breakpoint is made silent,
+otherwise it is made non-silent (or noisy). 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>breakpoint-ignore-count</b><var> breakpoint<a name="index-breakpoint_002dignore_002dcount-2689"></a></var><br>
+<blockquote><p>Return the ignore count for <var>breakpoint</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>set-breakpoint-ignore-count!</b><var> breakpoint count<a name="index-set_002dbreakpoint_002dignore_002dcount_0021-2690"></a></var><br>
+<blockquote><p>Set the ignore count for <var>breakpoint</var> to <var>count</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>breakpoint-hit-count</b><var> breakpoint<a name="index-breakpoint_002dhit_002dcount-2691"></a></var><br>
+<blockquote><p>Return hit count of <var>breakpoint</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>set-breakpoint-hit-count!</b><var> breakpoint count<a name="index-set_002dbreakpoint_002dhit_002dcount_0021-2692"></a></var><br>
+<blockquote><p>Set the hit count of <var>breakpoint</var> to <var>count</var>. 
+At present, <var>count</var> must be zero. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>breakpoint-thread</b><var> breakpoint<a name="index-breakpoint_002dthread-2693"></a></var><br>
+<blockquote><p>Return the thread-id for thread-specific breakpoint <var>breakpoint</var>. 
+Return #f if <var>breakpoint</var> is not thread-specific. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>set-breakpoint-thread!</b><var> breakpoint thread-id|#f<a name="index-set_002dbreakpoint_002dthread_0021-2694"></a></var><br>
+<blockquote><p>Set the thread-id for <var>breakpoint</var> to <var>thread-id</var>. 
+If set to <code>#f</code>, the breakpoint is no longer thread-specific. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>breakpoint-task</b><var> breakpoint<a name="index-breakpoint_002dtask-2695"></a></var><br>
+<blockquote><p>If the breakpoint is Ada task-specific, return the Ada task id. 
+If the breakpoint is not task-specific (or the underlying
+language is not Ada), return <code>#f</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>set-breakpoint-task!</b><var> breakpoint task<a name="index-set_002dbreakpoint_002dtask_0021-2696"></a></var><br>
+<blockquote><p>Set the Ada task of <var>breakpoint</var> to <var>task</var>. 
+If set to <code>#f</code>, the breakpoint is no longer task-specific. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>breakpoint-condition</b><var> breakpoint<a name="index-breakpoint_002dcondition-2697"></a></var><br>
+<blockquote><p>Return the condition of <var>breakpoint</var>, as specified by the user. 
+It is a string.  If there is no condition, return <code>#f</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>set-breakpoint-condition!</b><var> breakpoint condition<a name="index-set_002dbreakpoint_002dcondition_0021-2698"></a></var><br>
+<blockquote><p>Set the condition of <var>breakpoint</var> to <var>condition</var>,
+which must be a string.  If set to <code>#f</code> then the breakpoint
+becomes unconditional. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>breakpoint-stop</b><var> breakpoint<a name="index-breakpoint_002dstop-2699"></a></var><br>
+<blockquote><p>Return the stop predicate of <var>breakpoint</var>. 
+See <code>set-breakpoint-stop!</code> below in this section. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>set-breakpoint-stop!</b><var> breakpoint procedure|#f<a name="index-set_002dbreakpoint_002dstop_0021-2700"></a></var><br>
+<blockquote><p>Set the stop predicate of <var>breakpoint</var>.  The predicate
+<var>procedure</var> takes one argument: the &lt;gdb:breakpoint&gt; object. 
+If this predicate is set to a procedure then it is invoked whenever
+the inferior reaches this breakpoint.  If it returns <code>#t</code>,
+or any non-<code>#f</code> value, then the inferior is stopped,
+otherwise the inferior will continue.
+
+        <p>If there are multiple breakpoints at the same location with a
+<code>stop</code> predicate, each one will be called regardless of the
+return status of the previous.  This ensures that all <code>stop</code>
+predicates have a chance to execute at that location.  In this scenario
+if one of the methods returns <code>#t</code> but the others return
+<code>#f</code>, the inferior will still be stopped.
+
+        <p>You should not alter the execution state of the inferior (i.e., step,
+next, etc.), alter the current frame context (i.e., change the current
+active frame), or alter, add or delete any breakpoint.  As a general
+rule, you should not alter any data within <span class="sc">gdb</span> or the inferior
+at this time.
+
+        <p>Example <code>stop</code> implementation:
+
+     <pre class="smallexample">          (define (my-stop? bkpt)
+            (let ((int-val (parse-and-eval "foo")))
+              (value=? int-val 3)))
+          (define bkpt (make-breakpoint "main.c:42"))
+          (register-breakpoint! bkpt)
+          (set-breakpoint-stop! bkpt my-stop?)
+     </pre>
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>breakpoint-commands</b><var> breakpoint<a name="index-breakpoint_002dcommands-2701"></a></var><br>
+<blockquote><p>Return the commands attached to <var>breakpoint</var> as a string,
+or <code>#f</code> if there are none. 
+</p></blockquote></div>
+
+   </body></html>
+

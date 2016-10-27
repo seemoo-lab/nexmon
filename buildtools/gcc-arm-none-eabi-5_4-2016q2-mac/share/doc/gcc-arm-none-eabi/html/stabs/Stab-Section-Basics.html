@@ -1,0 +1,113 @@
+<html lang="en">
+<head>
+<title>Stab Section Basics - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stab-Sections.html#Stab-Sections" title="Stab Sections">
+<link rel="next" href="ELF-Linker-Relocation.html#ELF-Linker-Relocation" title="ELF Linker Relocation">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Stab-Section-Basics"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="ELF-Linker-Relocation.html#ELF-Linker-Relocation">ELF Linker Relocation</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stab-Sections.html#Stab-Sections">Stab Sections</a>
+<hr>
+</div>
+
+<h3 class="appendixsec">F.1 How to Embed Stabs in Sections</h3>
+
+<p>The assembler creates two custom sections, a section named <code>.stab</code>
+which contains an array of fixed length structures, one struct per stab,
+and a section named <code>.stabstr</code> containing all the variable length
+strings that are referenced by stabs in the <code>.stab</code> section.  The
+byte order of the stabs binary data depends on the object file format. 
+For ELF, it matches the byte order of the ELF file itself, as determined
+from the <code>EI_DATA</code> field in the <code>e_ident</code> member of the ELF
+header.  For SOM, it is always big-endian (is this true??? FIXME).  For
+COFF, it matches the byte order of the COFF headers.  The meaning of the
+fields is the same as for a.out (see <a href="Symbol-Table-Format.html#Symbol-Table-Format">Symbol Table Format</a>), except
+that the <code>n_strx</code> field is relative to the strings for the current
+compilation unit (which can be found using the synthetic N_UNDF stab
+described below), rather than the entire string table.
+
+   <p>The first stab in the <code>.stab</code> section for each compilation unit is
+synthetic, generated entirely by the assembler, with no corresponding
+<code>.stab</code> directive as input to the assembler.  This stab contains
+the following fields:
+
+     <dl>
+<dt><code>n_strx</code><dd>Offset in the <code>.stabstr</code> section to the source filename.
+
+     <br><dt><code>n_type</code><dd><code>N_UNDF</code>.
+
+     <br><dt><code>n_other</code><dd>Unused field, always zero. 
+This may eventually be used to hold overflows from the count in
+the <code>n_desc</code> field.
+
+     <br><dt><code>n_desc</code><dd>Count of upcoming symbols, i.e., the number of remaining stabs for this
+source file.
+
+     <br><dt><code>n_value</code><dd>Size of the string table fragment associated with this source file, in
+bytes. 
+</dl>
+
+   <p>The <code>.stabstr</code> section always starts with a null byte (so that string
+offsets of zero reference a null string), followed by random length strings,
+each of which is null byte terminated.
+
+   <p>The ELF section header for the <code>.stab</code> section has its
+<code>sh_link</code> member set to the section number of the <code>.stabstr</code>
+section, and the <code>.stabstr</code> section has its ELF section
+header <code>sh_type</code> member set to <code>SHT_STRTAB</code> to mark it as a
+string table.  SOM and COFF have no way of linking the sections together
+or marking them as string tables.
+
+   <p>For COFF, the <code>.stab</code> and <code>.stabstr</code> sections may be simply
+concatenated by the linker.  GDB then uses the <code>n_desc</code> fields to
+figure out the extent of the original sections.  Similarly, the
+<code>n_value</code> fields of the header symbols are added together in order
+to get the actual position of the strings in a desired <code>.stabstr</code>
+section.  Although this design obviates any need for the linker to
+relocate or otherwise manipulate <code>.stab</code> and <code>.stabstr</code>
+sections, it also requires some care to ensure that the offsets are
+calculated correctly.  For instance, if the linker were to pad in
+between the <code>.stabstr</code> sections before concatenating, then the
+offsets to strings in the middle of the executable's <code>.stabstr</code>
+section would be wrong.
+
+   <p>The GNU linker is able to optimize stabs information by merging
+duplicate strings and removing duplicate header file information
+(see <a href="Include-Files.html#Include-Files">Include Files</a>).  When some versions of the GNU linker optimize
+stabs in sections, they remove the leading <code>N_UNDF</code> symbol and
+arranges for all the <code>n_strx</code> fields to be relative to the start of
+the <code>.stabstr</code> section.
+
+   </body></html>
+

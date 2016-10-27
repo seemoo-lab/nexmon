@@ -1,0 +1,109 @@
+<html lang="en">
+<head>
+<title>NDS32 Options - Using as</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using as">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="NDS32_002dDependent.html#NDS32_002dDependent" title="NDS32-Dependent">
+<link rel="next" href="NDS32-Syntax.html#NDS32-Syntax" title="NDS32 Syntax">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled ``GNU Free Documentation License''.
+
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="NDS32-Options"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="NDS32-Syntax.html#NDS32-Syntax">NDS32 Syntax</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="NDS32_002dDependent.html#NDS32_002dDependent">NDS32-Dependent</a>
+<hr>
+</div>
+
+<h4 class="subsection">9.30.1 NDS32 Options</h4>
+
+<p><a name="index-NDS32-options-1661"></a><a name="index-options-for-NDS32-1662"></a>The NDS32 configurations of <span class="sc">gnu</span> <code>as</code> support these
+special options:
+
+<!-- man begin OPTIONS -->
+<dl>
+<dt><code>-O1</code><dd>Optimize for performance.
+
+     <br><dt><code>-Os</code><dd>Optimize for space.
+
+     <br><dt><code>-EL</code><dd>Produce little endian data output.
+
+     <br><dt><code>-EB</code><dd>Produce little endian data output.
+
+     <br><dt><code>-mpic</code><dd>Generate PIC.
+
+     <br><dt><code>-mno-fp-as-gp-relax</code><dd>Suppress fp-as-gp relaxation for this file.
+
+     <br><dt><code>-mb2bb-relax</code><dd>Back-to-back branch optimization.
+
+     <br><dt><code>-mno-all-relax</code><dd>Suppress all relaxation for this file.
+
+     <br><dt><code>-march=&lt;arch name&gt;</code><dd>Assemble for architecture &lt;arch name&gt; which could be v3, v3j, v3m, v3f,
+v3s, v2, v2j, v2f, v2s.
+
+     <br><dt><code>-mbaseline=&lt;baseline&gt;</code><dd>Assemble for baseline &lt;baseline&gt; which could be v2, v3, v3m.
+
+     <br><dt><code>-mfpu-freg=</code><var>FREG</var><dd>Specify a FPU configuration.
+          <dl>
+<dt><code>0      8 SP /  4 DP registers</code><br><dt><code>1     16 SP /  8 DP registers</code><br><dt><code>2     32 SP / 16 DP registers</code><br><dt><code>3     32 SP / 32 DP registers</code><dd></dl>
+
+     <br><dt><code>-mabi=</code><var>abi</var><dd>Specify a abi version &lt;abi&gt; could be v1, v2, v2fp, v2fpp.
+
+     <br><dt><code>-m[no-]mac</code><dd>Enable/Disable Multiply instructions support.
+
+     <br><dt><code>-m[no-]div</code><dd>Enable/Disable Divide instructions support.
+
+     <br><dt><code>-m[no-]16bit-ext</code><dd>Enable/Disable 16-bit extension
+
+     <br><dt><code>-m[no-]dx-regs</code><dd>Enable/Disable d0/d1 registers
+
+     <br><dt><code>-m[no-]perf-ext</code><dd>Enable/Disable Performance extension
+
+     <br><dt><code>-m[no-]perf2-ext</code><dd>Enable/Disable Performance extension 2
+
+     <br><dt><code>-m[no-]string-ext</code><dd>Enable/Disable String extension
+
+     <br><dt><code>-m[no-]reduced-regs</code><dd>Enable/Disable Reduced Register configuration (GPR16) option
+
+     <br><dt><code>-m[no-]audio-isa-ext</code><dd>Enable/Disable AUDIO ISA extension
+
+     <br><dt><code>-m[no-]fpu-sp-ext</code><dd>Enable/Disable FPU SP extension
+
+     <br><dt><code>-m[no-]fpu-dp-ext</code><dd>Enable/Disable FPU DP extension
+
+     <br><dt><code>-m[no-]fpu-fma</code><dd>Enable/Disable FPU fused-multiply-add instructions
+
+     <br><dt><code>-mall-ext</code><dd>Turn on all extensions and instructions support
+</dl>
+   <!-- man end -->
+
+   </body></html>
+

@@ -1,0 +1,166 @@
+<html lang="en">
+<head>
+<title>Sparc-Constants - Using as</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using as">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Sparc_002dSyntax.html#Sparc_002dSyntax" title="Sparc-Syntax">
+<link rel="prev" href="Sparc_002dRegs.html#Sparc_002dRegs" title="Sparc-Regs">
+<link rel="next" href="Sparc_002dRelocs.html#Sparc_002dRelocs" title="Sparc-Relocs">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled ``GNU Free Documentation License''.
+
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Sparc-Constants"></a>
+<a name="Sparc_002dConstants"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Sparc_002dRelocs.html#Sparc_002dRelocs">Sparc-Relocs</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Sparc_002dRegs.html#Sparc_002dRegs">Sparc-Regs</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Sparc_002dSyntax.html#Sparc_002dSyntax">Sparc-Syntax</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">9.42.3.3 Constants</h5>
+
+<p><a name="index-Sparc-constants-2026"></a><a name="index-constants_002c-Sparc-2027"></a>
+Several Sparc instructions take an immediate operand field for
+which mnemonic names exist.  Two such examples are `<samp><span class="samp">membar</span></samp>'
+and `<samp><span class="samp">prefetch</span></samp>'.  Another example are the set of V9
+memory access instruction that allow specification of an
+address space identifier.
+
+   <p>The `<samp><span class="samp">membar</span></samp>' instruction specifies a memory barrier that is
+the defined by the operand which is a bitmask.  The supported
+mask mnemonics are:
+
+     <ul>
+<li>`<samp><span class="samp">#Sync</span></samp>' requests that all operations (including nonmemory
+reference operations) appearing prior to the <code>membar</code> must have
+been performed and the effects of any exceptions become visible before
+any instructions after the <code>membar</code> may be initiated.  This
+corresponds to <code>membar</code> cmask field bit 2.
+
+     <li>`<samp><span class="samp">#MemIssue</span></samp>' requests that all memory reference operations
+appearing prior to the <code>membar</code> must have been performed before
+any memory operation after the <code>membar</code> may be initiated.  This
+corresponds to <code>membar</code> cmask field bit 1.
+
+     <li>`<samp><span class="samp">#Lookaside</span></samp>' requests that a store appearing prior to the
+<code>membar</code> must complete before any load following the
+<code>membar</code> referencing the same address can be initiated.  This
+corresponds to <code>membar</code> cmask field bit 0.
+
+     <li>`<samp><span class="samp">#StoreStore</span></samp>' defines that the effects of all stores appearing
+prior to the <code>membar</code> instruction must be visible to all
+processors before the effect of any stores following the
+<code>membar</code>.  Equivalent to the deprecated <code>stbar</code> instruction. 
+This corresponds to <code>membar</code> mmask field bit 3.
+
+     <li>`<samp><span class="samp">#LoadStore</span></samp>' defines all loads appearing prior to the
+<code>membar</code> instruction must have been performed before the effect
+of any stores following the <code>membar</code> is visible to any other
+processor.  This corresponds to <code>membar</code> mmask field bit 2.
+
+     <li>`<samp><span class="samp">#StoreLoad</span></samp>' defines that the effects of all stores appearing
+prior to the <code>membar</code> instruction must be visible to all
+processors before loads following the <code>membar</code> may be performed. 
+This corresponds to <code>membar</code> mmask field bit 1.
+
+     <li>`<samp><span class="samp">#LoadLoad</span></samp>' defines that all loads appearing prior to the
+<code>membar</code> instruction must have been performed before any loads
+following the <code>membar</code> may be performed.  This corresponds to
+<code>membar</code> mmask field bit 0.
+
+   </ul>
+
+   <p>These values can be ored together, for example:
+
+<pre class="example">     membar #Sync
+     membar #StoreLoad | #LoadLoad
+     membar #StoreLoad | #StoreStore
+</pre>
+   <p>The <code>prefetch</code> and <code>prefetcha</code> instructions take a prefetch
+function code.  The following prefetch function code constant
+mnemonics are available:
+
+     <ul>
+<li>`<samp><span class="samp">#n_reads</span></samp>' requests a prefetch for several reads, and corresponds
+to a prefetch function code of 0.
+
+     <p>`<samp><span class="samp">#one_read</span></samp>' requests a prefetch for one read, and corresponds
+to a prefetch function code of 1.
+
+     <p>`<samp><span class="samp">#n_writes</span></samp>' requests a prefetch for several writes (and possibly
+reads), and corresponds to a prefetch function code of 2.
+
+     <p>`<samp><span class="samp">#one_write</span></samp>' requests a prefetch for one write, and corresponds
+to a prefetch function code of 3.
+
+     <p>`<samp><span class="samp">#page</span></samp>' requests a prefetch page, and corresponds to a prefetch
+function code of 4.
+
+     <p>`<samp><span class="samp">#invalidate</span></samp>' requests a prefetch invalidate, and corresponds to
+a prefetch function code of 16.
+
+     <p>`<samp><span class="samp">#unified</span></samp>' requests a prefetch to the nearest unified cache, and
+corresponds to a prefetch function code of 17.
+
+     <p>`<samp><span class="samp">#n_reads_strong</span></samp>' requests a strong prefetch for several reads,
+and corresponds to a prefetch function code of 20.
+
+     <p>`<samp><span class="samp">#one_read_strong</span></samp>' requests a strong prefetch for one read,
+and corresponds to a prefetch function code of 21.
+
+     <p>`<samp><span class="samp">#n_writes_strong</span></samp>' requests a strong prefetch for several writes,
+and corresponds to a prefetch function code of 22.
+
+     <p>`<samp><span class="samp">#one_write_strong</span></samp>' requests a strong prefetch for one write,
+and corresponds to a prefetch function code of 23.
+
+     <p>Onle one prefetch code may be specified.  Here are some examples:
+
+     <pre class="example">          prefetch  [%l0 + %l2], #one_read
+          prefetch  [%g2 + 8], #n_writes
+          prefetcha [%g1] 0x8, #unified
+          prefetcha [%o0 + 0x10] %asi, #n_reads
+     </pre>
+     <p>The actual behavior of a given prefetch function code is processor
+specific.  If a processor does not implement a given prefetch
+function code, it will treat the prefetch instruction as a nop.
+
+     <p>For instructions that accept an immediate address space identifier,
+<code>as</code> provides many mnemonics corresponding to
+V9 defined as well as UltraSPARC and Niagara extended values. 
+For example, `<samp><span class="samp">#ASI_P</span></samp>' and `<samp><span class="samp">#ASI_BLK_INIT_QUAD_LDD_AIUS</span></samp>'. 
+See the V9 and processor specific manuals for details.
+
+   </ul>
+
+   </body></html>
+

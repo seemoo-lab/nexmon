@@ -1,0 +1,231 @@
+<html lang="en">
+<head>
+<title>Writing an Xmethod - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Python-API.html#Python-API" title="Python API">
+<link rel="prev" href="Xmethod-API.html#Xmethod-API" title="Xmethod API">
+<link rel="next" href="Inferiors-In-Python.html#Inferiors-In-Python" title="Inferiors In Python">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Writing-an-Xmethod"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Inferiors-In-Python.html#Inferiors-In-Python">Inferiors In Python</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Xmethod-API.html#Xmethod-API">Xmethod API</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Python-API.html#Python-API">Python API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.2.2.15 Writing an Xmethod</h5>
+
+<p><a name="index-writing-xmethods-in-Python-2007"></a>
+Implementing xmethods in Python will require implementing xmethod
+matchers and xmethod workers (see <a href="Xmethods-In-Python.html#Xmethods-In-Python">Xmethods In Python</a>).  Consider
+the following C<tt>++</tt> class:
+
+<pre class="smallexample">     class MyClass
+     {
+     public:
+       MyClass (int a) : a_(a) { }
+     
+       int geta (void) { return a_; }
+       int operator+ (int b);
+     
+     private:
+       int a_;
+     };
+     
+     int
+     MyClass::operator+ (int b)
+     {
+       return a_ + b;
+     }
+</pre>
+   <p class="noindent">Let us define two xmethods for the class <code>MyClass</code>, one
+replacing the method <code>geta</code>, and another adding an overloaded
+flavor of <code>operator+</code> which takes a <code>MyClass</code> argument (the
+C<tt>++</tt> code above already has an overloaded <code>operator+</code>
+which takes an <code>int</code> argument).  The xmethod matcher can be
+defined as follows:
+
+<pre class="smallexample">     class MyClass_geta(gdb.xmethod.XMethod):
+         def __init__(self):
+             gdb.xmethod.XMethod.__init__(self, 'geta')
+     
+         def get_worker(self, method_name):
+             if method_name == 'geta':
+                 return MyClassWorker_geta()
+     
+     
+     class MyClass_sum(gdb.xmethod.XMethod):
+         def __init__(self):
+             gdb.xmethod.XMethod.__init__(self, 'sum')
+     
+         def get_worker(self, method_name):
+             if method_name == 'operator+':
+                 return MyClassWorker_plus()
+     
+     
+     class MyClassMatcher(gdb.xmethod.XMethodMatcher):
+         def __init__(self):
+             gdb.xmethod.XMethodMatcher.__init__(self, 'MyClassMatcher')
+             # List of methods 'managed' by this matcher
+             self.methods = [MyClass_geta(), MyClass_sum()]
+     
+         def match(self, class_type, method_name):
+             if class_type.tag != 'MyClass':
+                 return None
+             workers = []
+             for method in self.methods:
+                 if method.enabled:
+                     worker = method.get_worker(method_name)
+                     if worker:
+                         workers.append(worker)
+     
+             return workers
+</pre>
+   <p class="noindent">Notice that the <code>match</code> method of <code>MyClassMatcher</code> returns
+a worker object of type <code>MyClassWorker_geta</code> for the <code>geta</code>
+method, and a worker object of type <code>MyClassWorker_plus</code> for the
+<code>operator+</code> method.  This is done indirectly via helper classes
+derived from <code>gdb.xmethod.XMethod</code>.  One does not need to use the
+<code>methods</code> attribute in a matcher as it is optional.  However, if a
+matcher manages more than one xmethod, it is a good practice to list the
+xmethods in the <code>methods</code> attribute of the matcher.  This will then
+facilitate enabling and disabling individual xmethods via the
+<code>enable/disable</code> commands.  Notice also that a worker object is
+returned only if the corresponding entry in the <code>methods</code> attribute
+of the matcher is enabled.
+
+   <p>The implementation of the worker classes returned by the matcher setup
+above is as follows:
+
+<pre class="smallexample">     class MyClassWorker_geta(gdb.xmethod.XMethodWorker):
+         def get_arg_types(self):
+             return None
+     
+         def get_result_type(self, obj):
+             return gdb.lookup_type('int')
+     
+         def __call__(self, obj):
+             return obj['a_']
+     
+     
+     class MyClassWorker_plus(gdb.xmethod.XMethodWorker):
+         def get_arg_types(self):
+             return gdb.lookup_type('MyClass')
+     
+         def get_result_type(self, obj):
+             return gdb.lookup_type('int')
+     
+         def __call__(self, obj, other):
+             return obj['a_'] + other['a_']
+</pre>
+   <p>For <span class="sc">gdb</span> to actually lookup a xmethod, it has to be
+registered with it.  The matcher defined above is registered with
+<span class="sc">gdb</span> globally as follows:
+
+<pre class="smallexample">     gdb.xmethod.register_xmethod_matcher(None, MyClassMatcher())
+</pre>
+   <p>If an object <code>obj</code> of type <code>MyClass</code> is initialized in C<tt>++</tt>
+code as follows:
+
+<pre class="smallexample">     MyClass obj(5);
+</pre>
+   <p class="noindent">then, after loading the Python script defining the xmethod matchers
+and workers into <code>GDBN</code>, invoking the method <code>geta</code> or using
+the operator <code>+</code> on <code>obj</code> will invoke the xmethods
+defined above:
+
+<pre class="smallexample">     (gdb) p obj.geta()
+     $1 = 5
+     
+     (gdb) p obj + obj
+     $2 = 10
+</pre>
+   <p>Consider another example with a C++ template class:
+
+<pre class="smallexample">     template &lt;class T&gt;
+     class MyTemplate
+     {
+     public:
+       MyTemplate () : dsize_(10), data_ (new T [10]) { }
+       ~MyTemplate () { delete [] data_; }
+     
+       int footprint (void)
+       {
+         return sizeof (T) * dsize_ + sizeof (MyTemplate&lt;T&gt;);
+       }
+     
+     private:
+       int dsize_;
+       T *data_;
+     };
+</pre>
+   <p>Let us implement an xmethod for the above class which serves as a
+replacement for the <code>footprint</code> method.  The full code listing
+of the xmethod workers and xmethod matchers is as follows:
+
+<pre class="smallexample">     class MyTemplateWorker_footprint(gdb.xmethod.XMethodWorker):
+         def __init__(self, class_type):
+             self.class_type = class_type
+     
+         def get_arg_types(self):
+             return None
+     
+         def get_result_type(self):
+             return gdb.lookup_type('int')
+     
+         def __call__(self, obj):
+             return (self.class_type.sizeof +
+                     obj['dsize_'] *
+                     self.class_type.template_argument(0).sizeof)
+     
+     
+     class MyTemplateMatcher_footprint(gdb.xmethod.XMethodMatcher):
+         def __init__(self):
+             gdb.xmethod.XMethodMatcher.__init__(self, 'MyTemplateMatcher')
+     
+         def match(self, class_type, method_name):
+             if (re.match('MyTemplate&lt;[ \t\n]*[_a-zA-Z][ _a-zA-Z0-9]*&gt;',
+                          class_type.tag) and
+                 method_name == 'footprint'):
+                 return MyTemplateWorker_footprint(class_type)
+</pre>
+   <p>Notice that, in this example, we have not used the <code>methods</code>
+attribute of the matcher as the matcher manages only one xmethod.  The
+user can enable/disable this xmethod by enabling/disabling the matcher
+itself.
+
+   </body></html>
+

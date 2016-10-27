@@ -1,0 +1,84 @@
+<html lang="en">
+<head>
+<title>x86 specific memory model extensions for transactional memory - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="C-Extensions.html#C-Extensions" title="C Extensions">
+<link rel="prev" href="Integer-Overflow-Builtins.html#Integer-Overflow-Builtins" title="Integer Overflow Builtins">
+<link rel="next" href="Object-Size-Checking.html#Object-Size-Checking" title="Object Size Checking">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="x86-specific-memory-model-extensions-for-transactional-memory"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Object-Size-Checking.html#Object-Size-Checking">Object Size Checking</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Integer-Overflow-Builtins.html#Integer-Overflow-Builtins">Integer Overflow Builtins</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="C-Extensions.html#C-Extensions">C Extensions</a>
+<hr>
+</div>
+
+<h3 class="section">6.53 x86-Specific Memory Model Extensions for Transactional Memory</h3>
+
+<p>The x86 architecture supports additional memory ordering flags
+to mark lock critical sections for hardware lock elision. 
+These must be specified in addition to an existing memory model to
+atomic intrinsics.
+
+     <dl>
+<dt><code>__ATOMIC_HLE_ACQUIRE</code><dd>Start lock elision on a lock variable. 
+Memory model must be <code>__ATOMIC_ACQUIRE</code> or stronger. 
+<br><dt><code>__ATOMIC_HLE_RELEASE</code><dd>End lock elision on a lock variable. 
+Memory model must be <code>__ATOMIC_RELEASE</code> or stronger. 
+</dl>
+
+ <p>When a lock acquire fails it is required for good performance to abort
+the transaction quickly. This can be done with a <code>_mm_pause</code>
+
+<pre class="smallexample">     #include &lt;immintrin.h&gt; // For _mm_pause
+     
+     int lockvar;
+     
+     /* Acquire lock with lock elision */
+     while (__atomic_exchange_n(&amp;lockvar, 1, __ATOMIC_ACQUIRE|__ATOMIC_HLE_ACQUIRE))
+         _mm_pause(); /* Abort failed transaction */
+     ...
+     /* Free lock with lock elision */
+     __atomic_store_n(&amp;lockvar, 0, __ATOMIC_RELEASE|__ATOMIC_HLE_RELEASE);
+</pre>
+ </body></html>
+

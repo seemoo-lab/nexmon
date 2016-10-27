@@ -1,0 +1,120 @@
+<html lang="en">
+<head>
+<title>Multi-Alternative - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Constraints.html#Constraints" title="Constraints">
+<link rel="prev" href="Simple-Constraints.html#Simple-Constraints" title="Simple Constraints">
+<link rel="next" href="Class-Preferences.html#Class-Preferences" title="Class Preferences">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Multi-Alternative"></a>
+<a name="Multi_002dAlternative"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Class-Preferences.html#Class-Preferences">Class Preferences</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Simple-Constraints.html#Simple-Constraints">Simple Constraints</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Constraints.html#Constraints">Constraints</a>
+<hr>
+</div>
+
+<h4 class="subsection">16.8.2 Multiple Alternative Constraints</h4>
+
+<p><a name="index-multiple-alternative-constraints-3341"></a>
+Sometimes a single instruction has multiple alternative sets of possible
+operands.  For example, on the 68000, a logical-or instruction can combine
+register or an immediate value into memory, or it can combine any kind of
+operand into a register; but it cannot combine one memory location into
+another.
+
+ <p>These constraints are represented as multiple alternatives.  An alternative
+can be described by a series of letters for each operand.  The overall
+constraint for an operand is made from the letters for this operand
+from the first alternative, a comma, the letters for this operand from
+the second alternative, a comma, and so on until the last alternative. 
+Here is how it is done for fullword logical-or on the 68000:
+
+<pre class="smallexample">     (define_insn "iorsi3"
+       [(set (match_operand:SI 0 "general_operand" "=m,d")
+             (ior:SI (match_operand:SI 1 "general_operand" "%0,0")
+                     (match_operand:SI 2 "general_operand" "dKs,dmKs")))]
+       ...)
+</pre>
+ <p>The first alternative has `<samp><span class="samp">m</span></samp>' (memory) for operand 0, `<samp><span class="samp">0</span></samp>' for
+operand 1 (meaning it must match operand 0), and `<samp><span class="samp">dKs</span></samp>' for operand
+2.  The second alternative has `<samp><span class="samp">d</span></samp>' (data register) for operand 0,
+`<samp><span class="samp">0</span></samp>' for operand 1, and `<samp><span class="samp">dmKs</span></samp>' for operand 2.  The `<samp><span class="samp">=</span></samp>' and
+`<samp><span class="samp">%</span></samp>' in the constraints apply to all the alternatives; their
+meaning is explained in the next section (see <a href="Class-Preferences.html#Class-Preferences">Class Preferences</a>).
+
+<!-- FIXME Is this ? and ! stuff of use in asm()?  If not, hide unless INTERNAL -->
+<p>If all the operands fit any one alternative, the instruction is valid. 
+Otherwise, for each alternative, the compiler counts how many instructions
+must be added to copy the operands so that that alternative applies. 
+The alternative requiring the least copying is chosen.  If two alternatives
+need the same amount of copying, the one that comes first is chosen. 
+These choices can be altered with the `<samp><span class="samp">?</span></samp>' and `<samp><span class="samp">!</span></samp>' characters:
+
+     
+<a name="index-g_t_0040samp_007b_003f_007d-in-constraint-3342"></a>
+<a name="index-question-mark-3343"></a>
+<dl><dt><code>?</code><dd>Disparage slightly the alternative that the `<samp><span class="samp">?</span></samp>' appears in,
+as a choice when no alternative applies exactly.  The compiler regards
+this alternative as one unit more costly for each `<samp><span class="samp">?</span></samp>' that appears
+in it.
+
+     <p><a name="index-g_t_0040samp_007b_0021_007d-in-constraint-3344"></a><a name="index-exclamation-point-3345"></a><br><dt><code>!</code><dd>Disparage severely the alternative that the `<samp><span class="samp">!</span></samp>' appears in. 
+This alternative can still be used if it fits without reloading,
+but if reloading is needed, some other alternative will be used.
+
+     <p><a name="index-g_t_0040samp_007b_005e_007d-in-constraint-3346"></a><a name="index-caret-3347"></a><br><dt><code>^</code><dd>This constraint is analogous to `<samp><span class="samp">?</span></samp>' but it disparages slightly
+the alternative only if the operand with the `<samp><span class="samp">^</span></samp>' needs a reload.
+
+     <p><a name="index-g_t_0040samp_007b_0024_007d-in-constraint-3348"></a><a name="index-dollar-sign-3349"></a><br><dt><code>$</code><dd>This constraint is analogous to `<samp><span class="samp">!</span></samp>' but it disparages severely
+the alternative only if the operand with the `<samp><span class="samp">$</span></samp>' needs a reload. 
+</dl>
+
+ <p>When an insn pattern has multiple alternatives in its constraints, often
+the appearance of the assembler code is determined mostly by which
+alternative was matched.  When this is so, the C code for writing the
+assembler code can use the variable <code>which_alternative</code>, which is
+the ordinal number of the alternative that was actually satisfied (0 for
+the first, 1 for the second alternative, etc.).  See <a href="Output-Statement.html#Output-Statement">Output Statement</a>.
+
+ </body></html>
+

@@ -1,0 +1,89 @@
+<html lang="en">
+<head>
+<title>putwchar - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stdio.html#Stdio" title="Stdio">
+<link rel="prev" href="putw.html#putw" title="putw">
+<link rel="next" href="remove.html#remove" title="remove">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="putwchar"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="remove.html#remove">remove</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="putw.html#putw">putw</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stdio.html#Stdio">Stdio</a>
+<hr>
+</div>
+
+<h3 class="section">4.51 <code>putwchar</code>, <code>putwchar_unlocked</code>&mdash;write a wide character to standard output</h3>
+
+<p><a name="index-putwchar-295"></a><a name="index-putwchar_005funlocked-296"></a><a name="index-g_t_005fputwchar_005fr-297"></a><a name="index-g_t_005fputwchar_005funlocked_005fr-298"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;wchar.h&gt;
+     wint_t putwchar(wchar_t <var>wc</var>);
+     
+     #include &lt;wchar.h&gt;
+     wint_t putwchar_unlocked(wchar_t <var>wc</var>);
+     
+     #include &lt;wchar.h&gt;
+     wint_t _putwchar_r(struct _reent *<var>reent</var>, wchar_t <var>wc</var>);
+     
+     #include &lt;wchar.h&gt;
+     wint_t _putwchar_unlocked_r(struct _reent *<var>reent</var>, wchar_t <var>wc</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+The <code>putwchar</code> function or macro is the wide-character equivalent of
+the <code>putchar</code> function. It writes the wide character wc to stdout.
+
+   <p><code>putwchar_unlocked</code> is a non-thread-safe version of <code>putwchar</code>. 
+<code>putwchar_unlocked</code> may only safely be used within a scope
+protected by flockfile() (or ftrylockfile()) and funlockfile().  This
+function may safely be used in a multi-threaded program if and only
+if they are called while the invoking thread owns the (FILE *)
+object, as is the case after a successful call to the flockfile() or
+ftrylockfile() functions.  If threads are disabled, then
+<code>putwchar_unlocked</code> is equivalent to <code>putwchar</code>.
+
+   <p>The alternate functions <code>_putwchar_r</code> and <code>_putwchar_unlocked_r</code> are
+reentrant versions of the above.  The extra argument <var>reent</var> is a pointer
+to a reentrancy structure.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+If successful, <code>putwchar</code> returns its argument <var>wc</var>.  If an error
+intervenes, the result is <code>EOF</code>.  You can use `<code>ferror(stdin)</code>' to
+query for errors.
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+<code>putwchar</code> is required by C99.
+
+   <p><code>putwchar_unlocked</code> is a GNU extension.
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

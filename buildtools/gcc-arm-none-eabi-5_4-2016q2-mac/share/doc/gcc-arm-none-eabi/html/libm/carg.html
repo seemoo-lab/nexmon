@@ -1,0 +1,68 @@
+<html lang="en">
+<head>
+<title>carg - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Complex.html#Complex" title="Complex">
+<link rel="prev" href="cacosh.html#cacosh" title="cacosh">
+<link rel="next" href="casin.html#casin" title="casin">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="carg"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="casin.html#casin">casin</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="cacosh.html#cacosh">cacosh</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Complex.html#Complex">Complex</a>
+<hr>
+</div>
+
+<h3 class="section">2.4 <code>carg</code>, <code>cargf</code>&mdash;argument (phase angle)</h3>
+
+<p><a name="index-carg-165"></a><a name="index-cargf-166"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;complex.h&gt;
+     double carg(double complex <var>z</var>);
+     float cargf(float complex <var>z</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+These functions compute the argument (also called phase angle)
+of <var>z</var>, with a branch cut along the negative real axis.
+
+   <p><code>cargf</code> is identical to <code>carg</code>, except that it performs
+its calculations on <code>floats complex</code>.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+The carg functions return the value of the argument in the
+interval [-pi, +pi]
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+<code>carg</code> and <code>cargf</code> are ISO C99
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

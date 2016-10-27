@@ -1,0 +1,145 @@
+<html lang="en">
+<head>
+<title>Guard Macros - The GNU C Preprocessor Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="The GNU C Preprocessor Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Line-Numbering.html#Line-Numbering" title="Line Numbering">
+<link rel="next" href="Files.html#Files" title="Files">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Guard-Macros"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Files.html#Files">Files</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Line-Numbering.html#Line-Numbering">Line Numbering</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="unnumbered">The Multiple-Include Optimization</h2>
+
+<p><a name="index-guard-macros-18"></a><a name="index-controlling-macros-19"></a><a name="index-multiple_002dinclude-optimization-20"></a>
+Header files are often of the form
+
+<pre class="smallexample">     #ifndef FOO
+     #define FOO
+     ...
+     #endif
+</pre>
+   <p class="noindent">to prevent the compiler from processing them more than once.  The
+preprocessor notices such header files, so that if the header file
+appears in a subsequent <code>#include</code> directive and <code>FOO</code> is
+defined, then it is ignored and it doesn't preprocess or even re-open
+the file a second time.  This is referred to as the <dfn>multiple
+include optimization</dfn>.
+
+   <p>Under what circumstances is such an optimization valid?  If the file
+were included a second time, it can only be optimized away if that
+inclusion would result in no tokens to return, and no relevant
+directives to process.  Therefore the current implementation imposes
+requirements and makes some allowances as follows:
+
+     <ol type=1 start=1>
+<li>There must be no tokens outside the controlling <code>#if</code>-<code>#endif</code>
+pair, but whitespace and comments are permitted.
+
+     <li>There must be no directives outside the controlling directive pair, but
+the <dfn>null directive</dfn> (a line containing nothing other than a single
+`<samp><span class="samp">#</span></samp>' and possibly whitespace) is permitted.
+
+     <li>The opening directive must be of the form
+
+     <pre class="smallexample">          #ifndef FOO
+     </pre>
+     <p>or
+
+     <pre class="smallexample">          #if !defined FOO     [equivalently, #if !defined(FOO)]
+     </pre>
+     <li>In the second form above, the tokens forming the <code>#if</code> expression
+must have come directly from the source file&mdash;no macro expansion must
+have been involved.  This is because macro definitions can change, and
+tracking whether or not a relevant change has been made is not worth the
+implementation cost.
+
+     <li>There can be no <code>#else</code> or <code>#elif</code> directives at the outer
+conditional block level, because they would probably contain something
+of interest to a subsequent pass.
+        </ol>
+
+   <p>First, when pushing a new file on the buffer stack,
+<code>_stack_include_file</code> sets the controlling macro <code>mi_cmacro</code> to
+<code>NULL</code>, and sets <code>mi_valid</code> to <code>true</code>.  This indicates
+that the preprocessor has not yet encountered anything that would
+invalidate the multiple-include optimization.  As described in the next
+few paragraphs, these two variables having these values effectively
+indicates top-of-file.
+
+   <p>When about to return a token that is not part of a directive,
+<code>_cpp_lex_token</code> sets <code>mi_valid</code> to <code>false</code>.  This
+enforces the constraint that tokens outside the controlling conditional
+block invalidate the optimization.
+
+   <p>The <code>do_if</code>, when appropriate, and <code>do_ifndef</code> directive
+handlers pass the controlling macro to the function
+<code>push_conditional</code>.  cpplib maintains a stack of nested conditional
+blocks, and after processing every opening conditional this function
+pushes an <code>if_stack</code> structure onto the stack.  In this structure
+it records the controlling macro for the block, provided there is one
+and we're at top-of-file (as described above).  If an <code>#elif</code> or
+<code>#else</code> directive is encountered, the controlling macro for that
+block is cleared to <code>NULL</code>.  Otherwise, it survives until the
+<code>#endif</code> closing the block, upon which <code>do_endif</code> sets
+<code>mi_valid</code> to true and stores the controlling macro in
+<code>mi_cmacro</code>.
+
+   <p><code>_cpp_handle_directive</code> clears <code>mi_valid</code> when processing any
+directive other than an opening conditional and the null directive. 
+With this, and requiring top-of-file to record a controlling macro, and
+no <code>#else</code> or <code>#elif</code> for it to survive and be copied to
+<code>mi_cmacro</code> by <code>do_endif</code>, we have enforced the absence of
+directives outside the main conditional block for the optimization to be
+on.
+
+   <p>Note that whilst we are inside the conditional block, <code>mi_valid</code> is
+likely to be reset to <code>false</code>, but this does not matter since
+the closing <code>#endif</code> restores it to <code>true</code> if appropriate.
+
+   <p>Finally, since <code>_cpp_lex_direct</code> pops the file off the buffer stack
+at <code>EOF</code> without returning a token, if the <code>#endif</code> directive
+was not followed by any tokens, <code>mi_valid</code> is <code>true</code> and
+<code>_cpp_pop_file_buffer</code> remembers the controlling macro associated
+with the file.  Subsequent calls to <code>stack_include_file</code> result in
+no buffer being pushed if the controlling macro is defined, effecting
+the optimization.
+
+   <p>A quick word on how we handle the
+
+<pre class="smallexample">     #if !defined FOO
+</pre>
+   <p class="noindent">case.  <code>_cpp_parse_expr</code> and <code>parse_defined</code> take steps to see
+whether the three stages `<samp><span class="samp">!</span></samp>', `<samp><span class="samp">defined-expression</span></samp>' and
+`<samp><span class="samp">end-of-directive</span></samp>' occur in order in a <code>#if</code> expression.  If
+so, they return the guard macro to <code>do_if</code> in the variable
+<code>mi_ind_cmacro</code>, and otherwise set it to <code>NULL</code>. 
+<code>enter_macro_context</code> sets <code>mi_valid</code> to false, so if a macro
+was expanded whilst parsing any part of the expression, then the
+top-of-file test in <code>push_conditional</code> fails and the optimization
+is turned off.
+
+   </body></html>
+

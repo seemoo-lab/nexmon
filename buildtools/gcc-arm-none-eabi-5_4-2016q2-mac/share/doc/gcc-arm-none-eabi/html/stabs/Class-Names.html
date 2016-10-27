@@ -1,0 +1,69 @@
+<html lang="en">
+<head>
+<title>Class Names - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Cplusplus.html#Cplusplus" title="Cplusplus">
+<link rel="next" href="Nested-Symbols.html#Nested-Symbols" title="Nested Symbols">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Class-Names"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Nested-Symbols.html#Nested-Symbols">Nested Symbols</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Cplusplus.html#Cplusplus">Cplusplus</a>
+<hr>
+</div>
+
+<h3 class="section">8.1 C<tt>++</tt> Class Names</h3>
+
+<p>In C<tt>++</tt>, a class name which is declared with <code>class</code>, <code>struct</code>,
+or <code>union</code>, is not only a tag, as in C, but also a type name.  Thus
+there should be stabs with both `<samp><span class="samp">t</span></samp>' and `<samp><span class="samp">T</span></samp>' symbol descriptors
+(see <a href="Typedefs.html#Typedefs">Typedefs</a>).
+
+   <p>To save space, there is a special abbreviation for this case.  If the
+`<samp><span class="samp">T</span></samp>' symbol descriptor is followed by `<samp><span class="samp">t</span></samp>', then the stab
+defines both a type name and a tag.
+
+   <p>For example, the C<tt>++</tt> code
+
+<pre class="example">     struct foo {int x;};
+</pre>
+   <p>can be represented as either
+
+<pre class="example">     .stabs "foo:T19=s4x:1,0,32;;",128,0,0,0       # <span class="roman">128 is N_LSYM</span>
+     .stabs "foo:t19",128,0,0,0
+</pre>
+   <p>or
+
+<pre class="example">     .stabs "foo:Tt19=s4x:1,0,32;;",128,0,0,0
+</pre>
+   </body></html>
+

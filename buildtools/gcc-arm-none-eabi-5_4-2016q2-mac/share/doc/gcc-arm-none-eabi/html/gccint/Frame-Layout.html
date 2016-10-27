@@ -1,0 +1,329 @@
+<html lang="en">
+<head>
+<title>Frame Layout - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stack-and-Calling.html#Stack-and-Calling" title="Stack and Calling">
+<link rel="next" href="Exception-Handling.html#Exception-Handling" title="Exception Handling">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Frame-Layout"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Exception-Handling.html#Exception-Handling">Exception Handling</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stack-and-Calling.html#Stack-and-Calling">Stack and Calling</a>
+<hr>
+</div>
+
+<h4 class="subsection">17.9.1 Basic Stack Layout</h4>
+
+<p><a name="index-stack-frame-layout-4143"></a><a name="index-frame-layout-4144"></a>
+<!-- prevent bad page break with this line -->
+Here is the basic stack layout.
+
+<div class="defun">
+&mdash; Macro: <b>STACK_GROWS_DOWNWARD</b><var><a name="index-STACK_005fGROWS_005fDOWNWARD-4145"></a></var><br>
+<blockquote><p>Define this macro if pushing a word onto the stack moves the stack
+pointer to a smaller address.
+
+      <p>When we say, &ldquo;define this macro if <small class="dots">...</small>&rdquo;, it means that the
+compiler checks this macro only with <code>#ifdef</code> so the precise
+definition used does not matter. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>STACK_PUSH_CODE</b><var><a name="index-STACK_005fPUSH_005fCODE-4146"></a></var><br>
+<blockquote><p>This macro defines the operation used when something is pushed
+on the stack.  In RTL, a push operation will be
+<code>(set (mem (STACK_PUSH_CODE (reg sp))) ...)</code>
+
+      <p>The choices are <code>PRE_DEC</code>, <code>POST_DEC</code>, <code>PRE_INC</code>,
+and <code>POST_INC</code>.  Which of these is correct depends on
+the stack direction and on whether the stack pointer points
+to the last item on the stack or whether it points to the
+space for the next item on the stack.
+
+      <p>The default is <code>PRE_DEC</code> when <code>STACK_GROWS_DOWNWARD</code> is
+defined, which is almost always right, and <code>PRE_INC</code> otherwise,
+which is often wrong. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>FRAME_GROWS_DOWNWARD</b><var><a name="index-FRAME_005fGROWS_005fDOWNWARD-4147"></a></var><br>
+<blockquote><p>Define this macro to nonzero value if the addresses of local variable slots
+are at negative offsets from the frame pointer. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ARGS_GROW_DOWNWARD</b><var><a name="index-ARGS_005fGROW_005fDOWNWARD-4148"></a></var><br>
+<blockquote><p>Define this macro if successive arguments to a function occupy decreasing
+addresses on the stack. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>STARTING_FRAME_OFFSET</b><var><a name="index-STARTING_005fFRAME_005fOFFSET-4149"></a></var><br>
+<blockquote><p>Offset from the frame pointer to the first local variable slot to be allocated.
+
+      <p>If <code>FRAME_GROWS_DOWNWARD</code>, find the next slot's offset by
+subtracting the first slot's length from <code>STARTING_FRAME_OFFSET</code>. 
+Otherwise, it is found by adding the length of the first slot to the
+value <code>STARTING_FRAME_OFFSET</code>. 
+<!-- i'm not sure if the above is still correct.. had to change it to get -->
+<!-- rid of an overfull.  -mew 2feb93 -->
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>STACK_ALIGNMENT_NEEDED</b><var><a name="index-STACK_005fALIGNMENT_005fNEEDED-4150"></a></var><br>
+<blockquote><p>Define to zero to disable final alignment of the stack during reload. 
+The nonzero default for this macro is suitable for most ports.
+
+      <p>On ports where <code>STARTING_FRAME_OFFSET</code> is nonzero or where there
+is a register save block following the local block that doesn't require
+alignment to <code>STACK_BOUNDARY</code>, it may be beneficial to disable
+stack alignment and do it in the backend. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>STACK_POINTER_OFFSET</b><var><a name="index-STACK_005fPOINTER_005fOFFSET-4151"></a></var><br>
+<blockquote><p>Offset from the stack pointer register to the first location at which
+outgoing arguments are placed.  If not specified, the default value of
+zero is used.  This is the proper value for most machines.
+
+      <p>If <code>ARGS_GROW_DOWNWARD</code>, this is the offset to the location above
+the first location at which outgoing arguments are placed. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>FIRST_PARM_OFFSET</b> (<var>fundecl</var>)<var><a name="index-FIRST_005fPARM_005fOFFSET-4152"></a></var><br>
+<blockquote><p>Offset from the argument pointer register to the first argument's
+address.  On some machines it may depend on the data type of the
+function.
+
+      <p>If <code>ARGS_GROW_DOWNWARD</code>, this is the offset to the location above
+the first argument's address. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>STACK_DYNAMIC_OFFSET</b> (<var>fundecl</var>)<var><a name="index-STACK_005fDYNAMIC_005fOFFSET-4153"></a></var><br>
+<blockquote><p>Offset from the stack pointer register to an item dynamically allocated
+on the stack, e.g., by <code>alloca</code>.
+
+      <p>The default value for this macro is <code>STACK_POINTER_OFFSET</code> plus the
+length of the outgoing arguments.  The default is correct for most
+machines.  See <samp><span class="file">function.c</span></samp> for details. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>INITIAL_FRAME_ADDRESS_RTX</b><var><a name="index-INITIAL_005fFRAME_005fADDRESS_005fRTX-4154"></a></var><br>
+<blockquote><p>A C expression whose value is RTL representing the address of the initial
+stack frame. This address is passed to <code>RETURN_ADDR_RTX</code> and
+<code>DYNAMIC_CHAIN_ADDRESS</code>.  If you don't define this macro, a reasonable
+default value will be used.  Define this macro in order to make frame pointer
+elimination work in the presence of <code>__builtin_frame_address (count)</code> and
+<code>__builtin_return_address (count)</code> for <code>count</code> not equal to zero. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DYNAMIC_CHAIN_ADDRESS</b> (<var>frameaddr</var>)<var><a name="index-DYNAMIC_005fCHAIN_005fADDRESS-4155"></a></var><br>
+<blockquote><p>A C expression whose value is RTL representing the address in a stack
+frame where the pointer to the caller's frame is stored.  Assume that
+<var>frameaddr</var> is an RTL expression for the address of the stack frame
+itself.
+
+      <p>If you don't define this macro, the default is to return the value
+of <var>frameaddr</var>&mdash;that is, the stack frame address is also the
+address of the stack word that points to the previous frame. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>SETUP_FRAME_ADDRESSES</b><var><a name="index-SETUP_005fFRAME_005fADDRESSES-4156"></a></var><br>
+<blockquote><p>If defined, a C expression that produces the machine-specific code to
+setup the stack so that arbitrary frames can be accessed.  For example,
+on the SPARC, we must flush all of the register windows to the stack
+before we can access arbitrary stack frames.  You will seldom need to
+define this macro. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: rtx <b>TARGET_BUILTIN_SETJMP_FRAME_VALUE</b> (<var>void</var>)<var><a name="index-TARGET_005fBUILTIN_005fSETJMP_005fFRAME_005fVALUE-4157"></a></var><br>
+<blockquote><p>This target hook should return an rtx that is used to store
+the address of the current frame into the built in <code>setjmp</code> buffer. 
+The default value, <code>virtual_stack_vars_rtx</code>, is correct for most
+machines.  One reason you may need to define this target hook is if
+<code>hard_frame_pointer_rtx</code> is the appropriate value on your machine. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>FRAME_ADDR_RTX</b> (<var>frameaddr</var>)<var><a name="index-FRAME_005fADDR_005fRTX-4158"></a></var><br>
+<blockquote><p>A C expression whose value is RTL representing the value of the frame
+address for the current frame.  <var>frameaddr</var> is the frame pointer
+of the current frame.  This is used for __builtin_frame_address. 
+You need only define this macro if the frame address is not the same
+as the frame pointer.  Most machines do not need to define it. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>RETURN_ADDR_RTX</b> (<var>count, frameaddr</var>)<var><a name="index-RETURN_005fADDR_005fRTX-4159"></a></var><br>
+<blockquote><p>A C expression whose value is RTL representing the value of the return
+address for the frame <var>count</var> steps up from the current frame, after
+the prologue.  <var>frameaddr</var> is the frame pointer of the <var>count</var>
+frame, or the frame pointer of the <var>count</var> &minus; 1 frame if
+<code>RETURN_ADDR_IN_PREVIOUS_FRAME</code> is nonzero.
+
+      <p>The value of the expression must always be the correct address when
+<var>count</var> is zero, but may be <code>NULL_RTX</code> if there is no way to
+determine the return address of other frames. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>RETURN_ADDR_IN_PREVIOUS_FRAME</b><var><a name="index-RETURN_005fADDR_005fIN_005fPREVIOUS_005fFRAME-4160"></a></var><br>
+<blockquote><p>Define this macro to nonzero value if the return address of a particular
+stack frame is accessed from the frame pointer of the previous stack
+frame.  The zero default for this macro is suitable for most ports. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>INCOMING_RETURN_ADDR_RTX</b><var><a name="index-INCOMING_005fRETURN_005fADDR_005fRTX-4161"></a></var><br>
+<blockquote><p>A C expression whose value is RTL representing the location of the
+incoming return address at the beginning of any function, before the
+prologue.  This RTL is either a <code>REG</code>, indicating that the return
+value is saved in `<samp><span class="samp">REG</span></samp>', or a <code>MEM</code> representing a location in
+the stack.
+
+      <p>You only need to define this macro if you want to support call frame
+debugging information like that provided by DWARF 2.
+
+      <p>If this RTL is a <code>REG</code>, you should also define
+<code>DWARF_FRAME_RETURN_COLUMN</code> to <code>DWARF_FRAME_REGNUM (REGNO)</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DWARF_ALT_FRAME_RETURN_COLUMN</b><var><a name="index-DWARF_005fALT_005fFRAME_005fRETURN_005fCOLUMN-4162"></a></var><br>
+<blockquote><p>A C expression whose value is an integer giving a DWARF 2 column
+number that may be used as an alternative return column.  The column
+must not correspond to any gcc hard register (that is, it must not
+be in the range of <code>DWARF_FRAME_REGNUM</code>).
+
+      <p>This macro can be useful if <code>DWARF_FRAME_RETURN_COLUMN</code> is set to a
+general register, but an alternative column needs to be used for signal
+frames.  Some targets have also used different frame return columns
+over time. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DWARF_ZERO_REG</b><var><a name="index-DWARF_005fZERO_005fREG-4163"></a></var><br>
+<blockquote><p>A C expression whose value is an integer giving a DWARF 2 register
+number that is considered to always have the value zero.  This should
+only be defined if the target has an architected zero register, and
+someone decided it was a good idea to use that register number to
+terminate the stack backtrace.  New ports should avoid this. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_DWARF_HANDLE_FRAME_UNSPEC</b> (<var>const char *label, rtx pattern, int index</var>)<var><a name="index-TARGET_005fDWARF_005fHANDLE_005fFRAME_005fUNSPEC-4164"></a></var><br>
+<blockquote><p>This target hook allows the backend to emit frame-related insns that
+contain UNSPECs or UNSPEC_VOLATILEs.  The DWARF 2 call frame debugging
+info engine will invoke it on insns of the form
+     <pre class="smallexample">          (set (reg) (unspec [...] UNSPEC_INDEX))
+     </pre>
+      <p>and
+     <pre class="smallexample">          (set (reg) (unspec_volatile [...] UNSPECV_INDEX)).
+     </pre>
+      <p>to let the backend emit the call frame instructions.  <var>label</var> is
+the CFI label attached to the insn, <var>pattern</var> is the pattern of
+the insn and <var>index</var> is <code>UNSPEC_INDEX</code> or <code>UNSPECV_INDEX</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>INCOMING_FRAME_SP_OFFSET</b><var><a name="index-INCOMING_005fFRAME_005fSP_005fOFFSET-4165"></a></var><br>
+<blockquote><p>A C expression whose value is an integer giving the offset, in bytes,
+from the value of the stack pointer register to the top of the stack
+frame at the beginning of any function, before the prologue.  The top of
+the frame is defined to be the value of the stack pointer in the
+previous frame, just before the call instruction.
+
+      <p>You only need to define this macro if you want to support call frame
+debugging information like that provided by DWARF 2. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ARG_POINTER_CFA_OFFSET</b> (<var>fundecl</var>)<var><a name="index-ARG_005fPOINTER_005fCFA_005fOFFSET-4166"></a></var><br>
+<blockquote><p>A C expression whose value is an integer giving the offset, in bytes,
+from the argument pointer to the canonical frame address (cfa).  The
+final value should coincide with that calculated by
+<code>INCOMING_FRAME_SP_OFFSET</code>.  Which is unfortunately not usable
+during virtual register instantiation.
+
+      <p>The default value for this macro is
+<code>FIRST_PARM_OFFSET (fundecl) + crtl-&gt;args.pretend_args_size</code>,
+which is correct for most machines; in general, the arguments are found
+immediately before the stack frame.  Note that this is not the case on
+some targets that save registers into the caller's frame, such as SPARC
+and rs6000, and so such targets need to define this macro.
+
+      <p>You only need to define this macro if the default is incorrect, and you
+want to support call frame debugging information like that provided by
+DWARF 2. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>FRAME_POINTER_CFA_OFFSET</b> (<var>fundecl</var>)<var><a name="index-FRAME_005fPOINTER_005fCFA_005fOFFSET-4167"></a></var><br>
+<blockquote><p>If defined, a C expression whose value is an integer giving the offset
+in bytes from the frame pointer to the canonical frame address (cfa). 
+The final value should coincide with that calculated by
+<code>INCOMING_FRAME_SP_OFFSET</code>.
+
+      <p>Normally the CFA is calculated as an offset from the argument pointer,
+via <code>ARG_POINTER_CFA_OFFSET</code>, but if the argument pointer is
+variable due to the ABI, this may not be possible.  If this macro is
+defined, it implies that the virtual register instantiation should be
+based on the frame pointer instead of the argument pointer.  Only one
+of <code>FRAME_POINTER_CFA_OFFSET</code> and <code>ARG_POINTER_CFA_OFFSET</code>
+should be defined. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>CFA_FRAME_BASE_OFFSET</b> (<var>fundecl</var>)<var><a name="index-CFA_005fFRAME_005fBASE_005fOFFSET-4168"></a></var><br>
+<blockquote><p>If defined, a C expression whose value is an integer giving the offset
+in bytes from the canonical frame address (cfa) to the frame base used
+in DWARF 2 debug information.  The default is zero.  A different value
+may reduce the size of debug information on some ports. 
+</p></blockquote></div>
+
+ </body></html>
+

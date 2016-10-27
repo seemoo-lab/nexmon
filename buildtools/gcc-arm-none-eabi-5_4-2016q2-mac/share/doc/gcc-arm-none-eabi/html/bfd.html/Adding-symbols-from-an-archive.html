@@ -1,0 +1,100 @@
+<html lang="en">
+<head>
+<title>Adding symbols from an archive - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Adding-Symbols-to-the-Hash-Table.html#Adding-Symbols-to-the-Hash-Table" title="Adding Symbols to the Hash Table">
+<link rel="prev" href="Adding-symbols-from-an-object-file.html#Adding-symbols-from-an-object-file" title="Adding symbols from an object file">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Adding-symbols-from-an-archive"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Adding-symbols-from-an-object-file.html#Adding-symbols-from-an-object-file">Adding symbols from an object file</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Adding-Symbols-to-the-Hash-Table.html#Adding-Symbols-to-the-Hash-Table">Adding Symbols to the Hash Table</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">2.17.2.3 Adding symbols from an archive</h5>
+
+<p>When the <code>_bfd_link_add_symbols</code> routine is passed an
+archive, it must look through the symbols defined by the
+archive and decide which elements of the archive should be
+included in the link.  For each such element it must call the
+<code>add_archive_element</code> linker callback, and it must add the
+symbols from the object file to the linker hash table.  (The
+callback may in fact indicate that a replacement BFD should be
+used, in which case the symbols from that BFD should be added
+to the linker hash table instead.)
+
+   <p><a name="index-g_t_005fbfd_005fgeneric_005flink_005fadd_005farchive_005fsymbols-2247"></a>In most cases the work of looking through the symbols in the
+archive should be done by the
+<code>_bfd_generic_link_add_archive_symbols</code> function. 
+<code>_bfd_generic_link_add_archive_symbols</code> is passed a function
+to call to make the final decision about adding an archive
+element to the link and to do the actual work of adding the
+symbols to the linker hash table.  If the element is to
+be included, the <code>add_archive_element</code> linker callback
+routine must be called with the element as an argument, and
+the element's symbols must be added to the linker hash table
+just as though the element had itself been passed to the
+<code>_bfd_link_add_symbols</code> function.
+
+   <p>When the a.out <code>_bfd_link_add_symbols</code> function receives an
+archive, it calls <code>_bfd_generic_link_add_archive_symbols</code>
+passing <code>aout_link_check_archive_element</code> as the function
+argument. <code>aout_link_check_archive_element</code> calls
+<code>aout_link_check_ar_symbols</code>.  If the latter decides to add
+the element (an element is only added if it provides a real,
+non-common, definition for a previously undefined or common
+symbol) it calls the <code>add_archive_element</code> callback and then
+<code>aout_link_check_archive_element</code> calls
+<code>aout_link_add_symbols</code> to actually add the symbols to the
+linker hash table - possibly those of a substitute BFD, if the
+<code>add_archive_element</code> callback avails itself of that option.
+
+   <p>The ECOFF back end is unusual in that it does not normally
+call <code>_bfd_generic_link_add_archive_symbols</code>, because ECOFF
+archives already contain a hash table of symbols.  The ECOFF
+back end searches the archive itself to avoid the overhead of
+creating a new hash table.
+
+   </body></html>
+

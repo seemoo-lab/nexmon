@@ -1,0 +1,310 @@
+<html lang="en">
+<head>
+<title>Lexer - The GNU C Preprocessor Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="The GNU C Preprocessor Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Conventions.html#Conventions" title="Conventions">
+<link rel="next" href="Hash-Nodes.html#Hash-Nodes" title="Hash Nodes">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Lexer"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Hash-Nodes.html#Hash-Nodes">Hash Nodes</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Conventions.html#Conventions">Conventions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="unnumbered">The Lexer</h2>
+
+<p><a name="index-lexer-3"></a><a name="index-newlines-4"></a><a name="index-escaped-newlines-5"></a>
+
+<h3 class="section">Overview</h3>
+
+<p>The lexer is contained in the file <samp><span class="file">lex.c</span></samp>.  It is a hand-coded
+lexer, and not implemented as a state machine.  It can understand C, C++
+and Objective-C source code, and has been extended to allow reasonably
+successful preprocessing of assembly language.  The lexer does not make
+an initial pass to strip out trigraphs and escaped newlines, but handles
+them as they are encountered in a single pass of the input file.  It
+returns preprocessing tokens individually, not a line at a time.
+
+   <p>It is mostly transparent to users of the library, since the library's
+interface for obtaining the next token, <code>cpp_get_token</code>, takes care
+of lexing new tokens, handling directives, and expanding macros as
+necessary.  However, the lexer does expose some functionality so that
+clients of the library can easily spell a given token, such as
+<code>cpp_spell_token</code> and <code>cpp_token_len</code>.  These functions are
+useful when generating diagnostics, and for emitting the preprocessed
+output.
+
+<h3 class="section">Lexing a token</h3>
+
+<p>Lexing of an individual token is handled by <code>_cpp_lex_direct</code> and
+its subroutines.  In its current form the code is quite complicated,
+with read ahead characters and such-like, since it strives to not step
+back in the character stream in preparation for handling non-ASCII file
+encodings.  The current plan is to convert any such files to UTF-8
+before processing them.  This complexity is therefore unnecessary and
+will be removed, so I'll not discuss it further here.
+
+   <p>The job of <code>_cpp_lex_direct</code> is simply to lex a token.  It is not
+responsible for issues like directive handling, returning lookahead
+tokens directly, multiple-include optimization, or conditional block
+skipping.  It necessarily has a minor r&ocirc;le to play in memory
+management of lexed lines.  I discuss these issues in a separate section
+(see <a href="Lexing-a-line.html#Lexing-a-line">Lexing a line</a>).
+
+   <p>The lexer places the token it lexes into storage pointed to by the
+variable <code>cur_token</code>, and then increments it.  This variable is
+important for correct diagnostic positioning.  Unless a specific line
+and column are passed to the diagnostic routines, they will examine the
+<code>line</code> and <code>col</code> values of the token just before the location
+that <code>cur_token</code> points to, and use that location to report the
+diagnostic.
+
+   <p>The lexer does not consider whitespace to be a token in its own right. 
+If whitespace (other than a new line) precedes a token, it sets the
+<code>PREV_WHITE</code> bit in the token's flags.  Each token has its
+<code>line</code> and <code>col</code> variables set to the line and column of the
+first character of the token.  This line number is the line number in
+the translation unit, and can be converted to a source (file, line) pair
+using the line map code.
+
+   <p>The first token on a logical, i.e. unescaped, line has the flag
+<code>BOL</code> set for beginning-of-line.  This flag is intended for
+internal use, both to distinguish a `<samp><span class="samp">#</span></samp>' that begins a directive
+from one that doesn't, and to generate a call-back to clients that want
+to be notified about the start of every non-directive line with tokens
+on it.  Clients cannot reliably determine this for themselves: the first
+token might be a macro, and the tokens of a macro expansion do not have
+the <code>BOL</code> flag set.  The macro expansion may even be empty, and the
+next token on the line certainly won't have the <code>BOL</code> flag set.
+
+   <p>New lines are treated specially; exactly how the lexer handles them is
+context-dependent.  The C standard mandates that directives are
+terminated by the first unescaped newline character, even if it appears
+in the middle of a macro expansion.  Therefore, if the state variable
+<code>in_directive</code> is set, the lexer returns a <code>CPP_EOF</code> token,
+which is normally used to indicate end-of-file, to indicate
+end-of-directive.  In a directive a <code>CPP_EOF</code> token never means
+end-of-file.  Conveniently, if the caller was <code>collect_args</code>, it
+already handles <code>CPP_EOF</code> as if it were end-of-file, and reports an
+error about an unterminated macro argument list.
+
+   <p>The C standard also specifies that a new line in the middle of the
+arguments to a macro is treated as whitespace.  This white space is
+important in case the macro argument is stringified.  The state variable
+<code>parsing_args</code> is nonzero when the preprocessor is collecting the
+arguments to a macro call.  It is set to 1 when looking for the opening
+parenthesis to a function-like macro, and 2 when collecting the actual
+arguments up to the closing parenthesis, since these two cases need to
+be distinguished sometimes.  One such time is here: the lexer sets the
+<code>PREV_WHITE</code> flag of a token if it meets a new line when
+<code>parsing_args</code> is set to 2.  It doesn't set it if it meets a new
+line when <code>parsing_args</code> is 1, since then code like
+
+<pre class="smallexample">     #define foo() bar
+     foo
+     baz
+</pre>
+   <p class="noindent">would be output with an erroneous space before `<samp><span class="samp">baz</span></samp>':
+
+<pre class="smallexample">     foo
+      baz
+</pre>
+   <p>This is a good example of the subtlety of getting token spacing correct
+in the preprocessor; there are plenty of tests in the testsuite for
+corner cases like this.
+
+   <p>The lexer is written to treat each of `<samp><span class="samp">\r</span></samp>', `<samp><span class="samp">\n</span></samp>', `<samp><span class="samp">\r\n</span></samp>'
+and `<samp><span class="samp">\n\r</span></samp>' as a single new line indicator.  This allows it to
+transparently preprocess MS-DOS, Macintosh and Unix files without their
+needing to pass through a special filter beforehand.
+
+   <p>We also decided to treat a backslash, either `<samp><span class="samp">\</span></samp>' or the trigraph
+`<samp><span class="samp">??/</span></samp>', separated from one of the above newline indicators by
+non-comment whitespace only, as intending to escape the newline.  It
+tends to be a typing mistake, and cannot reasonably be mistaken for
+anything else in any of the C-family grammars.  Since handling it this
+way is not strictly conforming to the ISO standard, the library issues a
+warning wherever it encounters it.
+
+   <p>Handling newlines like this is made simpler by doing it in one place
+only.  The function <code>handle_newline</code> takes care of all newline
+characters, and <code>skip_escaped_newlines</code> takes care of arbitrarily
+long sequences of escaped newlines, deferring to <code>handle_newline</code>
+to handle the newlines themselves.
+
+   <p>The most painful aspect of lexing ISO-standard C and C++ is handling
+trigraphs and backlash-escaped newlines.  Trigraphs are processed before
+any interpretation of the meaning of a character is made, and unfortunately
+there is a trigraph representation for a backslash, so it is possible for
+the trigraph `<samp><span class="samp">??/</span></samp>' to introduce an escaped newline.
+
+   <p>Escaped newlines are tedious because theoretically they can occur
+anywhere&mdash;between the `<samp><span class="samp">+</span></samp>' and `<samp><span class="samp">=</span></samp>' of the `<samp><span class="samp">+=</span></samp>' token,
+within the characters of an identifier, and even between the `<samp><span class="samp">*</span></samp>'
+and `<samp><span class="samp">/</span></samp>' that terminates a comment.  Moreover, you cannot be sure
+there is just one&mdash;there might be an arbitrarily long sequence of them.
+
+   <p>So, for example, the routine that lexes a number, <code>parse_number</code>,
+cannot assume that it can scan forwards until the first non-number
+character and be done with it, because this could be the `<samp><span class="samp">\</span></samp>'
+introducing an escaped newline, or the `<samp><span class="samp">?</span></samp>' introducing the trigraph
+sequence that represents the `<samp><span class="samp">\</span></samp>' of an escaped newline.  If it
+encounters a `<samp><span class="samp">?</span></samp>' or `<samp><span class="samp">\</span></samp>', it calls <code>skip_escaped_newlines</code>
+to skip over any potential escaped newlines before checking whether the
+number has been finished.
+
+   <p>Similarly code in the main body of <code>_cpp_lex_direct</code> cannot simply
+check for a `<samp><span class="samp">=</span></samp>' after a `<samp><span class="samp">+</span></samp>' character to determine whether it
+has a `<samp><span class="samp">+=</span></samp>' token; it needs to be prepared for an escaped newline of
+some sort.  Such cases use the function <code>get_effective_char</code>, which
+returns the first character after any intervening escaped newlines.
+
+   <p>The lexer needs to keep track of the correct column position, including
+counting tabs as specified by the <samp><span class="option">-ftabstop=</span></samp> option.  This
+should be done even within C-style comments; they can appear in the
+middle of a line, and we want to report diagnostics in the correct
+position for text appearing after the end of the comment.
+
+   <p><a name="Invalid-identifiers"></a>
+Some identifiers, such as <code>__VA_ARGS__</code> and poisoned identifiers,
+may be invalid and require a diagnostic.  However, if they appear in a
+macro expansion we don't want to complain with each use of the macro. 
+It is therefore best to catch them during the lexing stage, in
+<code>parse_identifier</code>.  In both cases, whether a diagnostic is needed
+or not is dependent upon the lexer's state.  For example, we don't want
+to issue a diagnostic for re-poisoning a poisoned identifier, or for
+using <code>__VA_ARGS__</code> in the expansion of a variable-argument macro. 
+Therefore <code>parse_identifier</code> makes use of state flags to determine
+whether a diagnostic is appropriate.  Since we change state on a
+per-token basis, and don't lex whole lines at a time, this is not a
+problem.
+
+   <p>Another place where state flags are used to change behavior is whilst
+lexing header names.  Normally, a `<samp><span class="samp">&lt;</span></samp>' would be lexed as a single
+token.  After a <code>#include</code> directive, though, it should be lexed as
+a single token as far as the nearest `<samp><span class="samp">&gt;</span></samp>' character.  Note that we
+don't allow the terminators of header names to be escaped; the first
+`<samp><span class="samp">"</span></samp>' or `<samp><span class="samp">&gt;</span></samp>' terminates the header name.
+
+   <p>Interpretation of some character sequences depends upon whether we are
+lexing C, C++ or Objective-C, and on the revision of the standard in
+force.  For example, `<samp><span class="samp">::</span></samp>' is a single token in C++, but in C it is
+two separate `<samp><span class="samp">:</span></samp>' tokens and almost certainly a syntax error.  Such
+cases are handled by <code>_cpp_lex_direct</code> based upon command-line
+flags stored in the <code>cpp_options</code> structure.
+
+   <p>Once a token has been lexed, it leads an independent existence.  The
+spelling of numbers, identifiers and strings is copied to permanent
+storage from the original input buffer, so a token remains valid and
+correct even if its source buffer is freed with <code>_cpp_pop_buffer</code>. 
+The storage holding the spellings of such tokens remains until the
+client program calls cpp_destroy, probably at the end of the translation
+unit.
+
+   <p><a name="Lexing-a-line"></a>
+
+<h3 class="section">Lexing a line</h3>
+
+<p><a name="index-token-run-6"></a>
+When the preprocessor was changed to return pointers to tokens, one
+feature I wanted was some sort of guarantee regarding how long a
+returned pointer remains valid.  This is important to the stand-alone
+preprocessor, the future direction of the C family front ends, and even
+to cpplib itself internally.
+
+   <p>Occasionally the preprocessor wants to be able to peek ahead in the
+token stream.  For example, after the name of a function-like macro, it
+wants to check the next token to see if it is an opening parenthesis. 
+Another example is that, after reading the first few tokens of a
+<code>#pragma</code> directive and not recognizing it as a registered pragma,
+it wants to backtrack and allow the user-defined handler for unknown
+pragmas to access the full <code>#pragma</code> token stream.  The stand-alone
+preprocessor wants to be able to test the current token with the
+previous one to see if a space needs to be inserted to preserve their
+separate tokenization upon re-lexing (paste avoidance), so it needs to
+be sure the pointer to the previous token is still valid.  The
+recursive-descent C++ parser wants to be able to perform tentative
+parsing arbitrarily far ahead in the token stream, and then to be able
+to jump back to a prior position in that stream if necessary.
+
+   <p>The rule I chose, which is fairly natural, is to arrange that the
+preprocessor lex all tokens on a line consecutively into a token buffer,
+which I call a <dfn>token run</dfn>, and when meeting an unescaped new line
+(newlines within comments do not count either), to start lexing back at
+the beginning of the run.  Note that we do <em>not</em> lex a line of
+tokens at once; if we did that <code>parse_identifier</code> would not have
+state flags available to warn about invalid identifiers (see <a href="Invalid-identifiers.html#Invalid-identifiers">Invalid identifiers</a>).
+
+   <p>In other words, accessing tokens that appeared earlier in the current
+line is valid, but since each logical line overwrites the tokens of the
+previous line, tokens from prior lines are unavailable.  In particular,
+since a directive only occupies a single logical line, this means that
+the directive handlers like the <code>#pragma</code> handler can jump around
+in the directive's tokens if necessary.
+
+   <p>Two issues remain: what about tokens that arise from macro expansions,
+and what happens when we have a long line that overflows the token run?
+
+   <p>Since we promise clients that we preserve the validity of pointers that
+we have already returned for tokens that appeared earlier in the line,
+we cannot reallocate the run.  Instead, on overflow it is expanded by
+chaining a new token run on to the end of the existing one.
+
+   <p>The tokens forming a macro's replacement list are collected by the
+<code>#define</code> handler, and placed in storage that is only freed by
+<code>cpp_destroy</code>.  So if a macro is expanded in the line of tokens,
+the pointers to the tokens of its expansion that are returned will always
+remain valid.  However, macros are a little trickier than that, since
+they give rise to three sources of fresh tokens.  They are the built-in
+macros like <code>__LINE__</code>, and the `<samp><span class="samp">#</span></samp>' and `<samp><span class="samp">##</span></samp>' operators
+for stringification and token pasting.  I handled this by allocating
+space for these tokens from the lexer's token run chain.  This means
+they automatically receive the same lifetime guarantees as lexed tokens,
+and we don't need to concern ourselves with freeing them.
+
+   <p>Lexing into a line of tokens solves some of the token memory management
+issues, but not all.  The opening parenthesis after a function-like
+macro name might lie on a different line, and the front ends definitely
+want the ability to look ahead past the end of the current line.  So
+cpplib only moves back to the start of the token run at the end of a
+line if the variable <code>keep_tokens</code> is zero.  Line-buffering is
+quite natural for the preprocessor, and as a result the only time cpplib
+needs to increment this variable is whilst looking for the opening
+parenthesis to, and reading the arguments of, a function-like macro.  In
+the near future cpplib will export an interface to increment and
+decrement this variable, so that clients can share full control over the
+lifetime of token pointers too.
+
+   <p>The routine <code>_cpp_lex_token</code> handles moving to new token runs,
+calling <code>_cpp_lex_direct</code> to lex new tokens, or returning
+previously-lexed tokens if we stepped back in the token stream.  It also
+checks each token for the <code>BOL</code> flag, which might indicate a
+directive that needs to be handled, or require a start-of-line call-back
+to be made.  <code>_cpp_lex_token</code> also handles skipping over tokens in
+failed conditional blocks, and invalidates the control macro of the
+multiple-include optimization if a token was successfully lexed outside
+a directive.  In other words, its callers do not need to concern
+themselves with such issues.
+
+   </body></html>
+

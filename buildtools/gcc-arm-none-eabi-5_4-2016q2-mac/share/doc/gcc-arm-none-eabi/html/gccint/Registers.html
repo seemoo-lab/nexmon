@@ -1,0 +1,76 @@
+<html lang="en">
+<head>
+<title>Registers - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Macros.html#Target-Macros" title="Target Macros">
+<link rel="prev" href="Type-Layout.html#Type-Layout" title="Type Layout">
+<link rel="next" href="Register-Classes.html#Register-Classes" title="Register Classes">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Registers"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Register-Classes.html#Register-Classes">Register Classes</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Type-Layout.html#Type-Layout">Type Layout</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Macros.html#Target-Macros">Target Macros</a>
+<hr>
+</div>
+
+<h3 class="section">17.7 Register Usage</h3>
+
+<p><a name="index-register-usage-4044"></a>
+This section explains how to describe what registers the target machine
+has, and how (in general) they can be used.
+
+ <p>The description of which registers a specific instruction can use is
+done with register classes; see <a href="Register-Classes.html#Register-Classes">Register Classes</a>.  For information
+on using registers to access a stack frame, see <a href="Frame-Registers.html#Frame-Registers">Frame Registers</a>. 
+For passing values in registers, see <a href="Register-Arguments.html#Register-Arguments">Register Arguments</a>. 
+For returning values in registers, see <a href="Scalar-Return.html#Scalar-Return">Scalar Return</a>.
+
+<ul class="menu">
+<li><a accesskey="1" href="Register-Basics.html#Register-Basics">Register Basics</a>:              Number and kinds of registers. 
+<li><a accesskey="2" href="Allocation-Order.html#Allocation-Order">Allocation Order</a>:             Order in which registers are allocated. 
+<li><a accesskey="3" href="Values-in-Registers.html#Values-in-Registers">Values in Registers</a>:          What kinds of values each reg can hold. 
+<li><a accesskey="4" href="Leaf-Functions.html#Leaf-Functions">Leaf Functions</a>:               Renumbering registers for leaf functions. 
+<li><a accesskey="5" href="Stack-Registers.html#Stack-Registers">Stack Registers</a>:              Handling a register stack such as 80387. 
+</ul>
+
+ </body></html>
+

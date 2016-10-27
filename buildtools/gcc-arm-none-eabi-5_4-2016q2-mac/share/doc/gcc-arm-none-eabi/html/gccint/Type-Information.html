@@ -1,0 +1,137 @@
+<html lang="en">
+<head>
+<title>Type Information - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Header-Dirs.html#Header-Dirs" title="Header Dirs">
+<link rel="next" href="Plugins.html#Plugins" title="Plugins">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Type-Information"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Plugins.html#Plugins">Plugins</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Header-Dirs.html#Header-Dirs">Header Dirs</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">22 Memory Management and Type Information</h2>
+
+<p><a name="index-GGC-5073"></a><a name="index-GTY-5074"></a>
+GCC uses some fairly sophisticated memory management techniques, which
+involve determining information about GCC's data structures from GCC's
+source code and using this information to perform garbage collection and
+implement precompiled headers.
+
+ <p>A full C++ parser would be too complicated for this task, so a limited
+subset of C++ is interpreted and special markers are used to determine
+what parts of the source to look at.  All <code>struct</code>, <code>union</code>
+and <code>template</code> structure declarations that define data structures
+that are allocated under control of the garbage collector must be
+marked.  All global variables that hold pointers to garbage-collected
+memory must also be marked.  Finally, all global variables that need
+to be saved and restored by a precompiled header must be marked.  (The
+precompiled header mechanism can only save static variables if they're
+scalar. Complex data structures must be allocated in garbage-collected
+memory to be saved in a precompiled header.)
+
+ <p>The full format of a marker is
+<pre class="smallexample">     GTY (([<var>option</var>] [(<var>param</var>)], [<var>option</var>] [(<var>param</var>)] ...))
+</pre>
+ <p class="noindent">but in most cases no options are needed.  The outer double parentheses
+are still necessary, though: <code>GTY(())</code>.  Markers can appear:
+
+     <ul>
+<li>In a structure definition, before the open brace;
+<li>In a global variable declaration, after the keyword <code>static</code> or
+<code>extern</code>; and
+<li>In a structure field definition, before the name of the field. 
+</ul>
+
+ <p>Here are some examples of marking simple data structures and globals.
+
+<pre class="smallexample">     struct GTY(()) <var>tag</var>
+     {
+       <var>fields</var>...
+     };
+     
+     typedef struct GTY(()) <var>tag</var>
+     {
+       <var>fields</var>...
+     } *<var>typename</var>;
+     
+     static GTY(()) struct <var>tag</var> *<var>list</var>;   /* <span class="roman">points to GC memory</span> */
+     static GTY(()) int <var>counter</var>;        /* <span class="roman">save counter in a PCH</span> */
+</pre>
+ <p>The parser understands simple typedefs such as
+<code>typedef struct </code><var>tag</var><code> *</code><var>name</var><code>;</code> and
+<code>typedef int </code><var>name</var><code>;</code>. 
+These don't need to be marked.
+
+ <p>Since <code>gengtype</code>'s understanding of C++ is limited, there are
+several constructs and declarations that are not supported inside
+classes/structures marked for automatic GC code generation.  The
+following C++ constructs produce a <code>gengtype</code> error on
+structures/classes marked for automatic GC code generation:
+
+     <ul>
+<li>Type definitions inside classes/structures are not supported. 
+<li>Enumerations inside classes/structures are not supported. 
+</ul>
+
+ <p>If you have a class or structure using any of the above constructs,
+you need to mark that class as <code>GTY ((user))</code> and provide your
+own marking routines (see section <a href="User-GC.html#User-GC">User GC</a> for details).
+
+ <p>It is always valid to include function definitions inside classes. 
+Those are always ignored by <code>gengtype</code>, as it only cares about
+data members.
+
+<ul class="menu">
+<li><a accesskey="1" href="GTY-Options.html#GTY-Options">GTY Options</a>:          What goes inside a <code>GTY(())</code>. 
+<li><a accesskey="2" href="Inheritance-and-GTY.html#Inheritance-and-GTY">Inheritance and GTY</a>:  Adding GTY to a class hierarchy. 
+<li><a accesskey="3" href="User-GC.html#User-GC">User GC</a>: 		Adding user-provided GC marking routines. 
+<li><a accesskey="4" href="GGC-Roots.html#GGC-Roots">GGC Roots</a>:            Making global variables GGC roots. 
+<li><a accesskey="5" href="Files.html#Files">Files</a>:                How the generated files work. 
+<li><a accesskey="6" href="Invoking-the-garbage-collector.html#Invoking-the-garbage-collector">Invoking the garbage collector</a>:    How to invoke the garbage collector. 
+<li><a accesskey="7" href="Troubleshooting.html#Troubleshooting">Troubleshooting</a>:      When something does not work as expected. 
+</ul>
+
+ </body></html>
+

@@ -1,0 +1,70 @@
+<html lang="en">
+<head>
+<title>catan - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Complex.html#Complex" title="Complex">
+<link rel="prev" href="casinh.html#casinh" title="casinh">
+<link rel="next" href="catanh.html#catanh" title="catanh">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="catan"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="catanh.html#catanh">catanh</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="casinh.html#casinh">casinh</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Complex.html#Complex">Complex</a>
+<hr>
+</div>
+
+<h3 class="section">2.7 <code>catan</code>, <code>catanf</code>&mdash;complex arc tangent</h3>
+
+<p><a name="index-catan-171"></a><a name="index-catanf-172"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;complex.h&gt;
+     double complex catan(double complex <var>z</var>);
+     float complex catanf(float complex <var>z</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+These functions compute the complex arc tangent of <var>z</var>,
+with branch cuts outside the interval [-i, +i] along the
+imaginary axis.
+
+   <p><code>catanf</code> is identical to <code>catan</code>, except that it performs
+its calculations on <code>floats complex</code>.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+These functions return the complex arc tangent value, in the range
+of a strip mathematically  unbounded  along the imaginary axis
+and in the interval [-pi/2, +pi/2] along the real axis.
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+<code>catan</code> and <code>catanf</code> are ISO C99
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

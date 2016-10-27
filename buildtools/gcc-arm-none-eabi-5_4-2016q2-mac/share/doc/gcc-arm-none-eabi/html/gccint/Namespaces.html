@@ -1,0 +1,126 @@
+<html lang="en">
+<head>
+<title>Namespaces - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="C-and-C_002b_002b-Trees.html#C-and-C_002b_002b-Trees" title="C and C++ Trees">
+<link rel="prev" href="Types-for-C_002b_002b.html#Types-for-C_002b_002b" title="Types for C++">
+<link rel="next" href="Classes.html#Classes" title="Classes">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Namespaces"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Classes.html#Classes">Classes</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Types-for-C_002b_002b.html#Types-for-C_002b_002b">Types for C++</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="C-and-C_002b_002b-Trees.html#C-and-C_002b_002b-Trees">C and C++ Trees</a>
+<hr>
+</div>
+
+<h4 class="subsection">10.10.2 Namespaces</h4>
+
+<p><a name="index-namespace_002c-scope-2032"></a><a name="index-NAMESPACE_005fDECL-2033"></a>
+The root of the entire intermediate representation is the variable
+<code>global_namespace</code>.  This is the namespace specified with <code>::</code>
+in C++ source code.  All other namespaces, types, variables, functions,
+and so forth can be found starting with this namespace.
+
+ <p>However, except for the fact that it is distinguished as the root of the
+representation, the global namespace is no different from any other
+namespace.  Thus, in what follows, we describe namespaces generally,
+rather than the global namespace in particular.
+
+ <p>A namespace is represented by a <code>NAMESPACE_DECL</code> node.
+
+ <p>The following macros and functions can be used on a <code>NAMESPACE_DECL</code>:
+
+     <dl>
+<dt><code>DECL_NAME</code><a name="index-DECL_005fNAME-2034"></a><dd>This macro is used to obtain the <code>IDENTIFIER_NODE</code> corresponding to
+the unqualified name of the name of the namespace (see <a href="Identifiers.html#Identifiers">Identifiers</a>). 
+The name of the global namespace is `<samp><span class="samp">::</span></samp>', even though in C++ the
+global namespace is unnamed.  However, you should use comparison with
+<code>global_namespace</code>, rather than <code>DECL_NAME</code> to determine
+whether or not a namespace is the global one.  An unnamed namespace
+will have a <code>DECL_NAME</code> equal to <code>anonymous_namespace_name</code>. 
+Within a single translation unit, all unnamed namespaces will have the
+same name.
+
+     <br><dt><code>DECL_CONTEXT</code><a name="index-DECL_005fCONTEXT-2035"></a><dd>This macro returns the enclosing namespace.  The <code>DECL_CONTEXT</code> for
+the <code>global_namespace</code> is <code>NULL_TREE</code>.
+
+     <br><dt><code>DECL_NAMESPACE_ALIAS</code><a name="index-DECL_005fNAMESPACE_005fALIAS-2036"></a><dd>If this declaration is for a namespace alias, then
+<code>DECL_NAMESPACE_ALIAS</code> is the namespace for which this one is an
+alias.
+
+     <p>Do not attempt to use <code>cp_namespace_decls</code> for a namespace which is
+an alias.  Instead, follow <code>DECL_NAMESPACE_ALIAS</code> links until you
+reach an ordinary, non-alias, namespace, and call
+<code>cp_namespace_decls</code> there.
+
+     <br><dt><code>DECL_NAMESPACE_STD_P</code><a name="index-DECL_005fNAMESPACE_005fSTD_005fP-2037"></a><dd>This predicate holds if the namespace is the special <code>::std</code>
+namespace.
+
+     <br><dt><code>cp_namespace_decls</code><a name="index-cp_005fnamespace_005fdecls-2038"></a><dd>This function will return the declarations contained in the namespace,
+including types, overloaded functions, other namespaces, and so forth. 
+If there are no declarations, this function will return
+<code>NULL_TREE</code>.  The declarations are connected through their
+<code>TREE_CHAIN</code> fields.
+
+     <p>Although most entries on this list will be declarations,
+<code>TREE_LIST</code> nodes may also appear.  In this case, the
+<code>TREE_VALUE</code> will be an <code>OVERLOAD</code>.  The value of the
+<code>TREE_PURPOSE</code> is unspecified; back ends should ignore this value. 
+As with the other kinds of declarations returned by
+<code>cp_namespace_decls</code>, the <code>TREE_CHAIN</code> will point to the next
+declaration in this list.
+
+     <p>For more information on the kinds of declarations that can occur on this
+list, See <a href="Declarations.html#Declarations">Declarations</a>.  Some declarations will not appear on this
+list.  In particular, no <code>FIELD_DECL</code>, <code>LABEL_DECL</code>, or
+<code>PARM_DECL</code> nodes will appear here.
+
+     <p>This function cannot be used with namespaces that have
+<code>DECL_NAMESPACE_ALIAS</code> set.
+
+ </dl>
+
+<!--  -->
+<!-- Classes -->
+<!--  -->
+</body></html>
+

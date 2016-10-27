@@ -1,0 +1,125 @@
+<html lang="en">
+<head>
+<title>XGATE-Syntax - Using as</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using as">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="XGATE_002dDependent.html#XGATE_002dDependent" title="XGATE-Dependent">
+<link rel="prev" href="XGATE_002dOpts.html#XGATE_002dOpts" title="XGATE-Opts">
+<link rel="next" href="XGATE_002dDirectives.html#XGATE_002dDirectives" title="XGATE-Directives">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled ``GNU Free Documentation License''.
+
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="XGATE-Syntax"></a>
+<a name="XGATE_002dSyntax"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="XGATE_002dDirectives.html#XGATE_002dDirectives">XGATE-Directives</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="XGATE_002dOpts.html#XGATE_002dOpts">XGATE-Opts</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="XGATE_002dDependent.html#XGATE_002dDependent">XGATE-Dependent</a>
+<hr>
+</div>
+
+<h4 class="subsection">9.50.2 Syntax</h4>
+
+<p><a name="index-XGATE-syntax-2400"></a><a name="index-syntax_002c-XGATE-2401"></a>
+In XGATE RISC syntax, the instruction name comes first and it may
+be followed by up to three operands. Operands are separated by commas
+(`<samp><span class="samp">,</span></samp>'). <code>as</code> will complain if too many operands are specified
+for a given instruction. The same will happen if you specified too few
+ operands.
+
+<pre class="smallexample">     nop
+     ldl  #23
+     CMP  R1, R2
+</pre>
+   <p><a name="index-line-comment-character_002c-XGATE-2402"></a><a name="index-XGATE-line-comment-character-2403"></a>The presence of a `<samp><span class="samp">;</span></samp>' character or a `<samp><span class="samp">!</span></samp>' character anywhere
+on a line indicates the start of a comment that extends to the end of
+that line.
+
+   <p>A `<samp><span class="samp">*</span></samp>' or a `<samp><span class="samp">#</span></samp>' character at the start of a line also
+introduces a line comment, but these characters do not work elsewhere
+on the line.  If the first character of the line is a `<samp><span class="samp">#</span></samp>' then as
+well as starting a comment, the line could also be logical line number
+directive (see <a href="Comments.html#Comments">Comments</a>) or a preprocessor control command
+(see <a href="Preprocessing.html#Preprocessing">Preprocessing</a>).
+
+   <p><a name="index-line-separator_002c-XGATE-2404"></a><a name="index-statement-separator_002c-XGATE-2405"></a><a name="index-XGATE-line-separator-2406"></a>The XGATE assembler does not currently support a line separator
+character.
+
+   <p><a name="index-XGATE-addressing-modes-2407"></a><a name="index-addressing-modes_002c-XGATE-2408"></a>The following addressing modes are understood for XGATE:
+     <dl>
+<dt><dfn>Inherent</dfn><dd>`<samp></samp>'
+
+     <br><dt><dfn>Immediate 3 Bit Wide</dfn><dd>`<samp><span class="samp">#</span><var>number</var></samp>'
+
+     <br><dt><dfn>Immediate 4 Bit Wide</dfn><dd>`<samp><span class="samp">#</span><var>number</var></samp>'
+
+     <br><dt><dfn>Immediate 8 Bit Wide</dfn><dd>`<samp><span class="samp">#</span><var>number</var></samp>'
+
+     <br><dt><dfn>Monadic Addressing</dfn><dd>`<samp><var>reg</var></samp>'
+
+     <br><dt><dfn>Dyadic Addressing</dfn><dd>`<samp><var>reg</var><span class="samp">, </span><var>reg</var></samp>'
+
+     <br><dt><dfn>Triadic Addressing</dfn><dd>`<samp><var>reg</var><span class="samp">, </span><var>reg</var><span class="samp">, </span><var>reg</var></samp>'
+
+     <br><dt><dfn>Relative Addressing 9 Bit Wide</dfn><dd>`<samp><span class="samp">*</span><var>symbol</var></samp>'
+
+     <br><dt><dfn>Relative Addressing 10 Bit Wide</dfn><dd>`<samp><span class="samp">*</span><var>symbol</var></samp>'
+
+     <br><dt><dfn>Index Register plus Immediate Offset</dfn><dd>`<samp><var>reg</var><span class="samp">, (</span><var>reg</var><span class="samp">, #</span><var>number</var><span class="samp">)</span></samp>'
+
+     <br><dt><dfn>Index Register plus Register Offset</dfn><dd>`<samp><var>reg</var><span class="samp">, </span><var>reg</var><span class="samp">, </span><var>reg</var></samp>'
+
+     <br><dt><dfn>Index Register plus Register Offset with Post-increment</dfn><dd>`<samp><var>reg</var><span class="samp">, </span><var>reg</var><span class="samp">, </span><var>reg</var><span class="samp">+</span></samp>'
+
+     <br><dt><dfn>Index Register plus Register Offset with Pre-decrement</dfn><dd>`<samp><var>reg</var><span class="samp">, </span><var>reg</var><span class="samp">, -</span><var>reg</var></samp>'
+
+     <p>The register can be either `<samp><span class="samp">R0</span></samp>', `<samp><span class="samp">R1</span></samp>', `<samp><span class="samp">R2</span></samp>', `<samp><span class="samp">R3</span></samp>',
+`<samp><span class="samp">R4</span></samp>', `<samp><span class="samp">R5</span></samp>', `<samp><span class="samp">R6</span></samp>' or `<samp><span class="samp">R7</span></samp>'.
+
+   </dl>
+
+   <p>Convience macro opcodes to deal with 16-bit values have been added.
+
+     <dl>
+<dt><dfn>Immediate 16 Bit Wide</dfn><dd>`<samp><span class="samp">#</span><var>number</var></samp>', or `<samp><span class="samp">*</span><var>symbol</var></samp>'
+
+     <p>For example:
+
+     <pre class="smallexample">          ldw R1, #1024
+          ldw R3, timer
+          ldw R1, (R1, #0)
+          COM R1
+          stw R2, (R1, #0)
+     </pre>
+     </dl>
+
+   </body></html>
+

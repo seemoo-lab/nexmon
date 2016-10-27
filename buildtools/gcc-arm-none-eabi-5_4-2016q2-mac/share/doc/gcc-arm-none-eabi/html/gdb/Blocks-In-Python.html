@@ -1,0 +1,187 @@
+<html lang="en">
+<head>
+<title>Blocks In Python - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Python-API.html#Python-API" title="Python API">
+<link rel="prev" href="Frames-In-Python.html#Frames-In-Python" title="Frames In Python">
+<link rel="next" href="Symbols-In-Python.html#Symbols-In-Python" title="Symbols In Python">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Blocks-In-Python"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Symbols-In-Python.html#Symbols-In-Python">Symbols In Python</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Frames-In-Python.html#Frames-In-Python">Frames In Python</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Python-API.html#Python-API">Python API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.2.2.25 Accessing blocks from Python.</h5>
+
+<p><a name="index-blocks-in-python-2186"></a><a name="index-gdb_002eBlock-2187"></a>
+In <span class="sc">gdb</span>, symbols are stored in blocks.  A block corresponds
+roughly to a scope in the source code.  Blocks are organized
+hierarchically, and are represented individually in Python as a
+<code>gdb.Block</code>.  Blocks rely on debugging information being
+available.
+
+   <p>A frame has a block.  Please see <a href="Frames-In-Python.html#Frames-In-Python">Frames In Python</a>, for a more
+in-depth discussion of frames.
+
+   <p>The outermost block is known as the <dfn>global block</dfn>.  The global
+block typically holds public global variables and functions.
+
+   <p>The block nested just inside the global block is the <dfn>static
+block</dfn>.  The static block typically holds file-scoped variables and
+functions.
+
+   <p><span class="sc">gdb</span> provides a method to get a block's superblock, but there
+is currently no way to examine the sub-blocks of a block, or to
+iterate over all the blocks in a symbol table (see <a href="Symbol-Tables-In-Python.html#Symbol-Tables-In-Python">Symbol Tables In Python</a>).
+
+   <p>Here is a short example that should help explain blocks:
+
+<pre class="smallexample">     /* This is in the global block.  */
+     int global;
+     
+     /* This is in the static block.  */
+     static int file_scope;
+     
+     /* 'function' is in the global block, and 'argument' is
+        in a block nested inside of 'function'.  */
+     int function (int argument)
+     {
+       /* 'local' is in a block inside 'function'.  It may or may
+          not be in the same block as 'argument'.  */
+       int local;
+     
+       {
+          /* 'inner' is in a block whose superblock is the one holding
+             'local'.  */
+          int inner;
+     
+          /* If this call is expanded by the compiler, you may see
+             a nested block here whose function is 'inline_function'
+             and whose superblock is the one holding 'inner'.  */
+          inline_function ();
+       }
+     }
+</pre>
+   <p>A <code>gdb.Block</code> is iterable.  The iterator returns the symbols
+(see <a href="Symbols-In-Python.html#Symbols-In-Python">Symbols In Python</a>) local to the block.  Python programs
+should not assume that a specific block object will always contain a
+given symbol, since changes in <span class="sc">gdb</span> features and
+infrastructure may cause symbols move across blocks in a symbol
+table.
+
+   <p>The following block-related functions are available in the <code>gdb</code>
+module:
+
+   <p><a name="index-gdb_002eblock_005ffor_005fpc-2188"></a>
+
+<div class="defun">
+&mdash; Function: <b>gdb.block_for_pc</b> (<var>pc</var>)<var><a name="index-gdb_002eblock_005ffor_005fpc-2189"></a></var><br>
+<blockquote><p>Return the innermost <code>gdb.Block</code> containing the given <var>pc</var>
+value.  If the block cannot be found for the <var>pc</var> value specified,
+the function will return <code>None</code>. 
+</p></blockquote></div>
+
+   <p>A <code>gdb.Block</code> object has the following methods:
+
+<div class="defun">
+&mdash; Function: <b>Block.is_valid</b> ()<var><a name="index-Block_002eis_005fvalid-2190"></a></var><br>
+<blockquote><p>Returns <code>True</code> if the <code>gdb.Block</code> object is valid,
+<code>False</code> if not.  A block object can become invalid if the block it
+refers to doesn't exist anymore in the inferior.  All other
+<code>gdb.Block</code> methods will throw an exception if it is invalid at
+the time the method is called.  The block's validity is also checked
+during iteration over symbols of the block. 
+</p></blockquote></div>
+
+   <p>A <code>gdb.Block</code> object has the following attributes:
+
+<div class="defun">
+&mdash; Variable: <b>Block.start</b><var><a name="index-Block_002estart-2191"></a></var><br>
+<blockquote><p>The start address of the block.  This attribute is not writable. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: <b>Block.end</b><var><a name="index-Block_002eend-2192"></a></var><br>
+<blockquote><p>The end address of the block.  This attribute is not writable. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: <b>Block.function</b><var><a name="index-Block_002efunction-2193"></a></var><br>
+<blockquote><p>The name of the block represented as a <code>gdb.Symbol</code>.  If the
+block is not named, then this attribute holds <code>None</code>.  This
+attribute is not writable.
+
+        <p>For ordinary function blocks, the superblock is the static block. 
+However, you should note that it is possible for a function block to
+have a superblock that is not the static block &ndash; for instance this
+happens for an inlined function. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: <b>Block.superblock</b><var><a name="index-Block_002esuperblock-2194"></a></var><br>
+<blockquote><p>The block containing this block.  If this parent block does not exist,
+this attribute holds <code>None</code>.  This attribute is not writable. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: <b>Block.global_block</b><var><a name="index-Block_002eglobal_005fblock-2195"></a></var><br>
+<blockquote><p>The global block associated with this block.  This attribute is not
+writable. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: <b>Block.static_block</b><var><a name="index-Block_002estatic_005fblock-2196"></a></var><br>
+<blockquote><p>The static block associated with this block.  This attribute is not
+writable. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: <b>Block.is_global</b><var><a name="index-Block_002eis_005fglobal-2197"></a></var><br>
+<blockquote><p><code>True</code> if the <code>gdb.Block</code> object is a global block,
+<code>False</code> if not.  This attribute is not
+writable. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: <b>Block.is_static</b><var><a name="index-Block_002eis_005fstatic-2198"></a></var><br>
+<blockquote><p><code>True</code> if the <code>gdb.Block</code> object is a static block,
+<code>False</code> if not.  This attribute is not writable. 
+</p></blockquote></div>
+
+   </body></html>
+

@@ -1,0 +1,84 @@
+<html lang="en">
+<head>
+<title>Peephole Definitions - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Machine-Desc.html#Machine-Desc" title="Machine Desc">
+<link rel="prev" href="Including-Patterns.html#Including-Patterns" title="Including Patterns">
+<link rel="next" href="Insn-Attributes.html#Insn-Attributes" title="Insn Attributes">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Peephole-Definitions"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Insn-Attributes.html#Insn-Attributes">Insn Attributes</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Including-Patterns.html#Including-Patterns">Including Patterns</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Machine-Desc.html#Machine-Desc">Machine Desc</a>
+<hr>
+</div>
+
+<h3 class="section">16.18 Machine-Specific Peephole Optimizers</h3>
+
+<p><a name="index-peephole-optimizer-definitions-3711"></a><a name="index-defining-peephole-optimizers-3712"></a>
+In addition to instruction patterns the <samp><span class="file">md</span></samp> file may contain
+definitions of machine-specific peephole optimizations.
+
+ <p>The combiner does not notice certain peephole optimizations when the data
+flow in the program does not suggest that it should try them.  For example,
+sometimes two consecutive insns related in purpose can be combined even
+though the second one does not appear to use a register computed in the
+first one.  A machine-specific peephole optimizer can detect such
+opportunities.
+
+ <p>There are two forms of peephole definitions that may be used.  The
+original <code>define_peephole</code> is run at assembly output time to
+match insns and substitute assembly text.  Use of <code>define_peephole</code>
+is deprecated.
+
+ <p>A newer <code>define_peephole2</code> matches insns and substitutes new
+insns.  The <code>peephole2</code> pass is run after register allocation
+but before scheduling, which may result in much better code for
+targets that do scheduling.
+
+<ul class="menu">
+<li><a accesskey="1" href="define_005fpeephole.html#define_005fpeephole">define_peephole</a>:      RTL to Text Peephole Optimizers
+<li><a accesskey="2" href="define_005fpeephole2.html#define_005fpeephole2">define_peephole2</a>:     RTL to RTL Peephole Optimizers
+</ul>
+
+ </body></html>
+

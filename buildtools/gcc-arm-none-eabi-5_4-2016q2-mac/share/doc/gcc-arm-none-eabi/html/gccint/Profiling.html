@@ -1,0 +1,104 @@
+<html lang="en">
+<head>
+<title>Profiling - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stack-and-Calling.html#Stack-and-Calling" title="Stack and Calling">
+<link rel="prev" href="Function-Entry.html#Function-Entry" title="Function Entry">
+<link rel="next" href="Tail-Calls.html#Tail-Calls" title="Tail Calls">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Profiling"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Tail-Calls.html#Tail-Calls">Tail Calls</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Function-Entry.html#Function-Entry">Function Entry</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stack-and-Calling.html#Stack-and-Calling">Stack and Calling</a>
+<hr>
+</div>
+
+<h4 class="subsection">17.9.12 Generating Code for Profiling</h4>
+
+<p><a name="index-profiling_002c-code-generation-4309"></a>
+These macros will help you generate code for profiling.
+
+<div class="defun">
+&mdash; Macro: <b>FUNCTION_PROFILER</b> (<var>file, labelno</var>)<var><a name="index-FUNCTION_005fPROFILER-4310"></a></var><br>
+<blockquote><p>A C statement or compound statement to output to <var>file</var> some
+assembler code to call the profiling subroutine <code>mcount</code>.
+
+      <p><a name="index-mcount-4311"></a>The details of how <code>mcount</code> expects to be called are determined by
+your operating system environment, not by GCC.  To figure them out,
+compile a small program for profiling using the system's installed C
+compiler and look at the assembler code that results.
+
+      <p>Older implementations of <code>mcount</code> expect the address of a counter
+variable to be loaded into some register.  The name of this variable is
+`<samp><span class="samp">LP</span></samp>' followed by the number <var>labelno</var>, so you would generate
+the name using `<samp><span class="samp">LP%d</span></samp>' in a <code>fprintf</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>PROFILE_HOOK</b><var><a name="index-PROFILE_005fHOOK-4312"></a></var><br>
+<blockquote><p>A C statement or compound statement to output to <var>file</var> some assembly
+code to call the profiling subroutine <code>mcount</code> even the target does
+not support profiling. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>NO_PROFILE_COUNTERS</b><var><a name="index-NO_005fPROFILE_005fCOUNTERS-4313"></a></var><br>
+<blockquote><p>Define this macro to be an expression with a nonzero value if the
+<code>mcount</code> subroutine on your system does not need a counter variable
+allocated for each function.  This is true for almost all modern
+implementations.  If you define this macro, you must not use the
+<var>labelno</var> argument to <code>FUNCTION_PROFILER</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>PROFILE_BEFORE_PROLOGUE</b><var><a name="index-PROFILE_005fBEFORE_005fPROLOGUE-4314"></a></var><br>
+<blockquote><p>Define this macro if the code for function profiling should come before
+the function prologue.  Normally, the profiling code comes after. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_KEEP_LEAF_WHEN_PROFILED</b> (<var>void</var>)<var><a name="index-TARGET_005fKEEP_005fLEAF_005fWHEN_005fPROFILED-4315"></a></var><br>
+<blockquote><p>This target hook returns true if the target wants the leaf flag for the current function to stay true even if it calls mcount.  This might make sense for targets using the leaf flag only to determine whether a stack frame needs to be generated or not and for which the call to mcount is generated before the function prologue. 
+</p></blockquote></div>
+
+ </body></html>
+

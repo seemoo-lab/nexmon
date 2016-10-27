@@ -1,0 +1,62 @@
+<html lang="en">
+<head>
+<title>Reentrant Syscalls - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Syscalls.html#Syscalls" title="Syscalls">
+<link rel="prev" href="Stubs.html#Stubs" title="Stubs">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Reentrant-Syscalls"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Stubs.html#Stubs">Stubs</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Syscalls.html#Syscalls">Syscalls</a>
+<hr>
+</div>
+
+<h3 class="section">12.2 Reentrant covers for OS subroutines</h3>
+
+<p>Since the system subroutines are used by other library routines that
+require reentrancy, <samp><span class="file">libc.a</span></samp> provides cover routines (for example,
+the reentrant version of <code>fork</code> is <code>_fork_r</code>).  These cover
+routines are consistent with the other reentrant subroutines in this
+library, and achieve reentrancy by using a reserved global data block
+(see <a href="Reentrancy.html#Reentrancy">Reentrancy</a>).
+
+<ul class="menu">
+<li><a accesskey="1" href="_005fclose_005fr.html#g_t_005fclose_005fr">_close_r</a>: 	Reentrant version of close
+<li><a accesskey="2" href="_005fexecve_005fr.html#g_t_005fexecve_005fr">_execve_r</a>: 	Reentrant version of execve
+<li><a accesskey="3" href="_005ffork_005fr.html#g_t_005ffork_005fr">_fork_r</a>: 	Reentrant version of fork
+<li><a accesskey="4" href="_005ffstat_005fr.html#g_t_005ffstat_005fr">_fstat_r</a>: 	Reentrant version of fstat
+<li><a accesskey="5" href="_005fgetpid_005fr.html#g_t_005fgetpid_005fr">_getpid_r</a>: 	Reentrant version of getpid
+<li><a accesskey="6" href="_005fkill_005fr.html#g_t_005fkill_005fr">_kill_r</a>: 	Reentrant version of kill
+<li><a accesskey="7" href="_005flink_005fr.html#g_t_005flink_005fr">_link_r</a>: 	Reentrant version of link
+<li><a accesskey="8" href="_005flseek_005fr.html#g_t_005flseek_005fr">_lseek_r</a>: 	Reentrant version of lseek
+<li><a accesskey="9" href="_005fopen_005fr.html#g_t_005fopen_005fr">_open_r</a>: 	Reentrant version of open
+<li><a href="_005fread_005fr.html#g_t_005fread_005fr">_read_r</a>: 	Reentrant version of read
+<li><a href="_005fsbrk_005fr.html#g_t_005fsbrk_005fr">_sbrk_r</a>: 	Reentrant version of sbrk
+<li><a href="_005fstat_005fr.html#g_t_005fstat_005fr">_stat_r</a>: 	Reentrant version of stat
+<li><a href="_005ftimes_005fr.html#g_t_005ftimes_005fr">_times_r</a>: 	Reentrant version of times
+<li><a href="_005funlink_005fr.html#g_t_005funlink_005fr">_unlink_r</a>: 	Reentrant version of unlink
+<li><a href="_005fwait_005fr.html#g_t_005fwait_005fr">_wait_r</a>: 	Reentrant version of wait
+<li><a href="_005fwrite_005fr.html#g_t_005fwrite_005fr">_write_r</a>: 	Reentrant version of write
+</ul>
+
+   </body></html>
+

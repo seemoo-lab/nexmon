@@ -1,0 +1,174 @@
+<html lang="en">
+<head>
+<title>Library Calls - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Macros.html#Target-Macros" title="Target Macros">
+<link rel="prev" href="Trampolines.html#Trampolines" title="Trampolines">
+<link rel="next" href="Addressing-Modes.html#Addressing-Modes" title="Addressing Modes">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Library-Calls"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Addressing-Modes.html#Addressing-Modes">Addressing Modes</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Trampolines.html#Trampolines">Trampolines</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Macros.html#Target-Macros">Target Macros</a>
+<hr>
+</div>
+
+<h3 class="section">17.12 Implicit Calls to Library Routines</h3>
+
+<p><a name="index-library-subroutine-names-4353"></a><a name="index-g_t_0040file_007blibgcc_002ea_007d-4354"></a>
+<!-- prevent bad page break with this line -->
+Here is an explanation of implicit calls to library routines.
+
+<div class="defun">
+&mdash; Macro: <b>DECLARE_LIBRARY_RENAMES</b><var><a name="index-DECLARE_005fLIBRARY_005fRENAMES-4355"></a></var><br>
+<blockquote><p>This macro, if defined, should expand to a piece of C code that will get
+expanded when compiling functions for libgcc.a.  It can be used to
+provide alternate names for GCC's internal library functions if there
+are ABI-mandated names that the compiler should provide. 
+</p></blockquote></div>
+
+ <p><a name="index-set_005foptab_005flibfunc-4356"></a><a name="index-init_005fone_005flibfunc-4357"></a>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_INIT_LIBFUNCS</b> (<var>void</var>)<var><a name="index-TARGET_005fINIT_005fLIBFUNCS-4358"></a></var><br>
+<blockquote><p>This hook should declare additional library routines or rename
+existing ones, using the functions <code>set_optab_libfunc</code> and
+<code>init_one_libfunc</code> defined in <samp><span class="file">optabs.c</span></samp>. 
+<code>init_optabs</code> calls this macro after initializing all the normal
+library routines.
+
+      <p>The default is to do nothing.  Most ports don't need to define this hook. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_LIBFUNC_GNU_PREFIX</b><var><a name="index-TARGET_005fLIBFUNC_005fGNU_005fPREFIX-4359"></a></var><br>
+<blockquote><p>If false (the default), internal library routines start with two
+underscores.  If set to true, these routines start with <code>__gnu_</code>
+instead.  E.g., <code>__muldi3</code> changes to <code>__gnu_muldi3</code>.  This
+currently only affects functions defined in <samp><span class="file">libgcc2.c</span></samp>.  If this
+is set to true, the <samp><span class="file">tm.h</span></samp> file must also
+<code>#define LIBGCC2_GNU_PREFIX</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>FLOAT_LIB_COMPARE_RETURNS_BOOL</b> (<var>mode, comparison</var>)<var><a name="index-FLOAT_005fLIB_005fCOMPARE_005fRETURNS_005fBOOL-4360"></a></var><br>
+<blockquote><p>This macro should return <code>true</code> if the library routine that
+implements the floating point comparison operator <var>comparison</var> in
+mode <var>mode</var> will return a boolean, and <var>false</var> if it will
+return a tristate.
+
+      <p>GCC's own floating point libraries return tristates from the
+comparison operators, so the default returns false always.  Most ports
+don't need to define this macro. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>TARGET_LIB_INT_CMP_BIASED</b><var><a name="index-TARGET_005fLIB_005fINT_005fCMP_005fBIASED-4361"></a></var><br>
+<blockquote><p>This macro should evaluate to <code>true</code> if the integer comparison
+functions (like <code>__cmpdi2</code>) return 0 to indicate that the first
+operand is smaller than the second, 1 to indicate that they are equal,
+and 2 to indicate that the first operand is greater than the second. 
+If this macro evaluates to <code>false</code> the comparison functions return
+&minus;1, 0, and 1 instead of 0, 1, and 2.  If the target uses the routines
+in <samp><span class="file">libgcc.a</span></samp>, you do not need to define this macro. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>TARGET_HAS_NO_HW_DIVIDE</b><var><a name="index-TARGET_005fHAS_005fNO_005fHW_005fDIVIDE-4362"></a></var><br>
+<blockquote><p>This macro should be defined if the target has no hardware divide
+instructions.  If this macro is defined, GCC will use an algorithm which
+make use of simple logical and arithmetic operations for 64-bit
+division.  If the macro is not defined, GCC will use an algorithm which
+make use of a 64-bit by 32-bit divide primitive. 
+</p></blockquote></div>
+
+ <p><a name="index-g_t_0040code_007bEDOM_007d_002c-implicit-usage-4363"></a><a name="index-matherr-4364"></a>
+
+<div class="defun">
+&mdash; Macro: <b>TARGET_EDOM</b><var><a name="index-TARGET_005fEDOM-4365"></a></var><br>
+<blockquote><p>The value of <code>EDOM</code> on the target machine, as a C integer constant
+expression.  If you don't define this macro, GCC does not attempt to
+deposit the value of <code>EDOM</code> into <code>errno</code> directly.  Look in
+<samp><span class="file">/usr/include/errno.h</span></samp> to find the value of <code>EDOM</code> on your
+system.
+
+      <p>If you do not define <code>TARGET_EDOM</code>, then compiled code reports
+domain errors by calling the library function and letting it report the
+error.  If mathematical functions on your system use <code>matherr</code> when
+there is an error, then you should leave <code>TARGET_EDOM</code> undefined so
+that <code>matherr</code> is used normally. 
+</p></blockquote></div>
+
+ <p><a name="index-g_t_0040code_007berrno_007d_002c-implicit-usage-4366"></a>
+
+<div class="defun">
+&mdash; Macro: <b>GEN_ERRNO_RTX</b><var><a name="index-GEN_005fERRNO_005fRTX-4367"></a></var><br>
+<blockquote><p>Define this macro as a C expression to create an rtl expression that
+refers to the global &ldquo;variable&rdquo; <code>errno</code>.  (On certain systems,
+<code>errno</code> may not actually be a variable.)  If you don't define this
+macro, a reasonable default is used. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_LIBC_HAS_FUNCTION</b> (<var>enum function_class fn_class</var>)<var><a name="index-TARGET_005fLIBC_005fHAS_005fFUNCTION-4368"></a></var><br>
+<blockquote><p>This hook determines whether a function from a class of functions
+<var>fn_class</var> is present at the runtime. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>NEXT_OBJC_RUNTIME</b><var><a name="index-NEXT_005fOBJC_005fRUNTIME-4369"></a></var><br>
+<blockquote><p>Set this macro to 1 to use the "NeXT" Objective-C message sending conventions
+by default.  This calling convention involves passing the object, the selector
+and the method arguments all at once to the method-lookup library function. 
+This is the usual setting when targeting Darwin/Mac OS X systems, which have
+the NeXT runtime installed.
+
+      <p>If the macro is set to 0, the "GNU" Objective-C message sending convention
+will be used by default.  This convention passes just the object and the
+selector to the method-lookup function, which returns a pointer to the method.
+
+      <p>In either case, it remains possible to select code-generation for the alternate
+scheme, by means of compiler command line switches. 
+</p></blockquote></div>
+
+ </body></html>
+

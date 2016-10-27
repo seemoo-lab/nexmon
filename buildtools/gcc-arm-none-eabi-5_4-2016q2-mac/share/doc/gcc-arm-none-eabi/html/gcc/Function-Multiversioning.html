@@ -1,0 +1,110 @@
+<html lang="en">
+<head>
+<title>Function Multiversioning - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="C_002b_002b-Extensions.html#C_002b_002b-Extensions" title="C++ Extensions">
+<link rel="prev" href="C_002b_002b-Attributes.html#C_002b_002b-Attributes" title="C++ Attributes">
+<link rel="next" href="Namespace-Association.html#Namespace-Association" title="Namespace Association">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Function-Multiversioning"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Namespace-Association.html#Namespace-Association">Namespace Association</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="C_002b_002b-Attributes.html#C_002b_002b-Attributes">C++ Attributes</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="C_002b_002b-Extensions.html#C_002b_002b-Extensions">C++ Extensions</a>
+<hr>
+</div>
+
+<h3 class="section">7.8 Function Multiversioning</h3>
+
+<p><a name="index-function-versions-4232"></a>
+With the GNU C++ front end, for x86 targets, you may specify multiple
+versions of a function, where each function is specialized for a
+specific target feature.  At runtime, the appropriate version of the
+function is automatically executed depending on the characteristics of
+the execution platform.  Here is an example.
+
+<pre class="smallexample">     __attribute__ ((target ("default")))
+     int foo ()
+     {
+       // The default version of foo.
+       return 0;
+     }
+     
+     __attribute__ ((target ("sse4.2")))
+     int foo ()
+     {
+       // foo version for SSE4.2
+       return 1;
+     }
+     
+     __attribute__ ((target ("arch=atom")))
+     int foo ()
+     {
+       // foo version for the Intel ATOM processor
+       return 2;
+     }
+     
+     __attribute__ ((target ("arch=amdfam10")))
+     int foo ()
+     {
+       // foo version for the AMD Family 0x10 processors.
+       return 3;
+     }
+     
+     int main ()
+     {
+       int (*p)() = &amp;foo;
+       assert ((*p) () == foo ());
+       return 0;
+     }
+</pre>
+ <p>In the above example, four versions of function foo are created. The
+first version of foo with the target attribute "default" is the default
+version.  This version gets executed when no other target specific
+version qualifies for execution on a particular platform. A new version
+of foo is created by using the same function signature but with a
+different target string.  Function foo is called or a pointer to it is
+taken just like a regular function.  GCC takes care of doing the
+dispatching to call the right version at runtime.  Refer to the
+<a href="http://gcc.gnu.org/wiki/FunctionMultiVersioning">GCC wiki on Function Multiversioning</a> for more details.
+
+ </body></html>
+

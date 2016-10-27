@@ -1,0 +1,93 @@
+<html lang="en">
+<head>
+<title>Prompt - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Controlling-GDB.html#Controlling-GDB" title="Controlling GDB">
+<link rel="next" href="Editing.html#Editing" title="Editing">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Prompt"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Editing.html#Editing">Editing</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Controlling-GDB.html#Controlling-GDB">Controlling GDB</a>
+<hr>
+</div>
+
+<h3 class="section">22.1 Prompt</h3>
+
+<p><a name="index-prompt-1622"></a>
+<span class="sc">gdb</span> indicates its readiness to read a command by printing a string
+called the <dfn>prompt</dfn>.  This string is normally `<samp><span class="samp">(gdb)</span></samp>'.  You
+can change the prompt string with the <code>set prompt</code> command.  For
+instance, when debugging <span class="sc">gdb</span> with <span class="sc">gdb</span>, it is useful to change
+the prompt in one of the <span class="sc">gdb</span> sessions so that you can always tell
+which one you are talking to.
+
+   <p><em>Note:</em>  <code>set prompt</code> does not add a space for you after the
+prompt you set.  This allows you to set a prompt which ends in a space
+or a prompt that does not.
+
+     
+<a name="index-set-prompt-1623"></a>
+<dl><dt><code>set prompt </code><var>newprompt</var><dd>Directs <span class="sc">gdb</span> to use <var>newprompt</var> as its prompt string henceforth.
+
+     <p><a name="index-show-prompt-1624"></a><br><dt><code>show prompt</code><dd>Prints a line of the form: `<samp><span class="samp">Gdb's prompt is: </span><var>your-prompt</var></samp>'
+</dl>
+
+   <p>Versions of <span class="sc">gdb</span> that ship with Python scripting enabled have
+prompt extensions.  The commands for interacting with these extensions
+are:
+
+     
+<a name="index-set-extended_002dprompt-1625"></a>
+<dl><dt><code>set extended-prompt </code><var>prompt</var><dd>Set an extended prompt that allows for substitutions. 
+See <a href="gdb_002eprompt.html#gdb_002eprompt">gdb.prompt</a>, for a list of escape sequences that can be used for
+substitution.  Any escape sequences specified as part of the prompt
+string are replaced with the corresponding strings each time the prompt
+is displayed.
+
+     <p>For example:
+
+     <pre class="smallexample">          set extended-prompt Current working directory: \w (gdb)
+     </pre>
+     <p>Note that when an extended-prompt is set, it takes control of the
+<var>prompt_hook</var> hook.  See <a href="prompt_005fhook.html#prompt_005fhook">prompt_hook</a>, for further information.
+
+     <p><a name="index-show-extended_002dprompt-1626"></a><br><dt><code>show extended-prompt</code><dd>Prints the extended prompt.  Any escape sequences specified as part of
+the prompt string with <code>set extended-prompt</code>, are replaced with the
+corresponding strings each time the prompt is displayed. 
+</dl>
+
+   </body></html>
+

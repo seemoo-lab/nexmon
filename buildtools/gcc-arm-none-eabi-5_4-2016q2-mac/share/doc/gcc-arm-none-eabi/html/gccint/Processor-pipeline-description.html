@@ -1,0 +1,483 @@
+<html lang="en">
+<head>
+<title>Processor pipeline description - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Insn-Attributes.html#Insn-Attributes" title="Insn Attributes">
+<link rel="prev" href="Delay-Slots.html#Delay-Slots" title="Delay Slots">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Processor-pipeline-description"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Delay-Slots.html#Delay-Slots">Delay Slots</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Insn-Attributes.html#Insn-Attributes">Insn Attributes</a>
+<hr>
+</div>
+
+<h4 class="subsection">16.19.9 Specifying processor pipeline description</h4>
+
+<p><a name="index-processor-pipeline-description-3780"></a><a name="index-processor-functional-units-3781"></a><a name="index-instruction-latency-time-3782"></a><a name="index-interlock-delays-3783"></a><a name="index-data-dependence-delays-3784"></a><a name="index-reservation-delays-3785"></a><a name="index-pipeline-hazard-recognizer-3786"></a><a name="index-automaton-based-pipeline-description-3787"></a><a name="index-regular-expressions-3788"></a><a name="index-deterministic-finite-state-automaton-3789"></a><a name="index-automaton-based-scheduler-3790"></a><a name="index-RISC-3791"></a><a name="index-VLIW-3792"></a>
+To achieve better performance, most modern processors
+(super-pipelined, superscalar <acronym>RISC</acronym>, and <acronym>VLIW</acronym>
+processors) have many <dfn>functional units</dfn> on which several
+instructions can be executed simultaneously.  An instruction starts
+execution if its issue conditions are satisfied.  If not, the
+instruction is stalled until its conditions are satisfied.  Such
+<dfn>interlock (pipeline) delay</dfn> causes interruption of the fetching
+of successor instructions (or demands nop instructions, e.g. for some
+MIPS processors).
+
+ <p>There are two major kinds of interlock delays in modern processors. 
+The first one is a data dependence delay determining <dfn>instruction
+latency time</dfn>.  The instruction execution is not started until all
+source data have been evaluated by prior instructions (there are more
+complex cases when the instruction execution starts even when the data
+are not available but will be ready in given time after the
+instruction execution start).  Taking the data dependence delays into
+account is simple.  The data dependence (true, output, and
+anti-dependence) delay between two instructions is given by a
+constant.  In most cases this approach is adequate.  The second kind
+of interlock delays is a reservation delay.  The reservation delay
+means that two instructions under execution will be in need of shared
+processors resources, i.e. buses, internal registers, and/or
+functional units, which are reserved for some time.  Taking this kind
+of delay into account is complex especially for modern <acronym>RISC</acronym>
+processors.
+
+ <p>The task of exploiting more processor parallelism is solved by an
+instruction scheduler.  For a better solution to this problem, the
+instruction scheduler has to have an adequate description of the
+processor parallelism (or <dfn>pipeline description</dfn>).  GCC
+machine descriptions describe processor parallelism and functional
+unit reservations for groups of instructions with the aid of
+<dfn>regular expressions</dfn>.
+
+ <p>The GCC instruction scheduler uses a <dfn>pipeline hazard recognizer</dfn> to
+figure out the possibility of the instruction issue by the processor
+on a given simulated processor cycle.  The pipeline hazard recognizer is
+automatically generated from the processor pipeline description.  The
+pipeline hazard recognizer generated from the machine description
+is based on a deterministic finite state automaton (<acronym>DFA</acronym>):
+the instruction issue is possible if there is a transition from one
+automaton state to another one.  This algorithm is very fast, and
+furthermore, its speed is not dependent on processor
+complexity<a rel="footnote" href="#fn-1" name="fnd-1"><sup>1</sup></a>.
+
+ <p><a name="index-automaton-based-pipeline-description-3793"></a>The rest of this section describes the directives that constitute
+an automaton-based processor pipeline description.  The order of
+these constructions within the machine description file is not
+important.
+
+ <p><a name="index-define_005fautomaton-3794"></a><a name="index-pipeline-hazard-recognizer-3795"></a>The following optional construction describes names of automata
+generated and used for the pipeline hazards recognition.  Sometimes
+the generated finite state automaton used by the pipeline hazard
+recognizer is large.  If we use more than one automaton and bind functional
+units to the automata, the total size of the automata is usually
+less than the size of the single automaton.  If there is no one such
+construction, only one finite state automaton is generated.
+
+<pre class="smallexample">     (define_automaton <var>automata-names</var>)
+</pre>
+ <p><var>automata-names</var> is a string giving names of the automata.  The
+names are separated by commas.  All the automata should have unique names. 
+The automaton name is used in the constructions <code>define_cpu_unit</code> and
+<code>define_query_cpu_unit</code>.
+
+ <p><a name="index-define_005fcpu_005funit-3796"></a><a name="index-processor-functional-units-3797"></a>Each processor functional unit used in the description of instruction
+reservations should be described by the following construction.
+
+<pre class="smallexample">     (define_cpu_unit <var>unit-names</var> [<var>automaton-name</var>])
+</pre>
+ <p><var>unit-names</var> is a string giving the names of the functional units
+separated by commas.  Don't use name `<samp><span class="samp">nothing</span></samp>', it is reserved
+for other goals.
+
+ <p><var>automaton-name</var> is a string giving the name of the automaton with
+which the unit is bound.  The automaton should be described in
+construction <code>define_automaton</code>.  You should give
+<dfn>automaton-name</dfn>, if there is a defined automaton.
+
+ <p>The assignment of units to automata are constrained by the uses of the
+units in insn reservations.  The most important constraint is: if a
+unit reservation is present on a particular cycle of an alternative
+for an insn reservation, then some unit from the same automaton must
+be present on the same cycle for the other alternatives of the insn
+reservation.  The rest of the constraints are mentioned in the
+description of the subsequent constructions.
+
+ <p><a name="index-define_005fquery_005fcpu_005funit-3798"></a><a name="index-querying-function-unit-reservations-3799"></a>The following construction describes CPU functional units analogously
+to <code>define_cpu_unit</code>.  The reservation of such units can be
+queried for an automaton state.  The instruction scheduler never
+queries reservation of functional units for given automaton state.  So
+as a rule, you don't need this construction.  This construction could
+be used for future code generation goals (e.g. to generate
+<acronym>VLIW</acronym> insn templates).
+
+<pre class="smallexample">     (define_query_cpu_unit <var>unit-names</var> [<var>automaton-name</var>])
+</pre>
+ <p><var>unit-names</var> is a string giving names of the functional units
+separated by commas.
+
+ <p><var>automaton-name</var> is a string giving the name of the automaton with
+which the unit is bound.
+
+ <p><a name="index-define_005finsn_005freservation-3800"></a><a name="index-instruction-latency-time-3801"></a><a name="index-regular-expressions-3802"></a><a name="index-data-bypass-3803"></a>The following construction is the major one to describe pipeline
+characteristics of an instruction.
+
+<pre class="smallexample">     (define_insn_reservation <var>insn-name</var> <var>default_latency</var>
+                              <var>condition</var> <var>regexp</var>)
+</pre>
+ <p><var>default_latency</var> is a number giving latency time of the
+instruction.  There is an important difference between the old
+description and the automaton based pipeline description.  The latency
+time is used for all dependencies when we use the old description.  In
+the automaton based pipeline description, the given latency time is only
+used for true dependencies.  The cost of anti-dependencies is always
+zero and the cost of output dependencies is the difference between
+latency times of the producing and consuming insns (if the difference
+is negative, the cost is considered to be zero).  You can always
+change the default costs for any description by using the target hook
+<code>TARGET_SCHED_ADJUST_COST</code> (see <a href="Scheduling.html#Scheduling">Scheduling</a>).
+
+ <p><var>insn-name</var> is a string giving the internal name of the insn.  The
+internal names are used in constructions <code>define_bypass</code> and in
+the automaton description file generated for debugging.  The internal
+name has nothing in common with the names in <code>define_insn</code>.  It is a
+good practice to use insn classes described in the processor manual.
+
+ <p><var>condition</var> defines what RTL insns are described by this
+construction.  You should remember that you will be in trouble if
+<var>condition</var> for two or more different
+<code>define_insn_reservation</code> constructions is TRUE for an insn.  In
+this case what reservation will be used for the insn is not defined. 
+Such cases are not checked during generation of the pipeline hazards
+recognizer because in general recognizing that two conditions may have
+the same value is quite difficult (especially if the conditions
+contain <code>symbol_ref</code>).  It is also not checked during the
+pipeline hazard recognizer work because it would slow down the
+recognizer considerably.
+
+ <p><var>regexp</var> is a string describing the reservation of the cpu's functional
+units by the instruction.  The reservations are described by a regular
+expression according to the following syntax:
+
+<pre class="smallexample">            regexp = regexp "," oneof
+                   | oneof
+     
+            oneof = oneof "|" allof
+                  | allof
+     
+            allof = allof "+" repeat
+                  | repeat
+     
+            repeat = element "*" number
+                   | element
+     
+            element = cpu_function_unit_name
+                    | reservation_name
+                    | result_name
+                    | "nothing"
+                    | "(" regexp ")"
+</pre>
+     <ul>
+<li>`<samp><span class="samp">,</span></samp>' is used for describing the start of the next cycle in
+the reservation.
+
+     <li>`<samp><span class="samp">|</span></samp>' is used for describing a reservation described by the first
+regular expression <strong>or</strong> a reservation described by the second
+regular expression <strong>or</strong> etc.
+
+     <li>`<samp><span class="samp">+</span></samp>' is used for describing a reservation described by the first
+regular expression <strong>and</strong> a reservation described by the
+second regular expression <strong>and</strong> etc.
+
+     <li>`<samp><span class="samp">*</span></samp>' is used for convenience and simply means a sequence in which
+the regular expression are repeated <var>number</var> times with cycle
+advancing (see `<samp><span class="samp">,</span></samp>').
+
+     <li>`<samp><span class="samp">cpu_function_unit_name</span></samp>' denotes reservation of the named
+functional unit.
+
+     <li>`<samp><span class="samp">reservation_name</span></samp>' &mdash; see description of construction
+`<samp><span class="samp">define_reservation</span></samp>'.
+
+     <li>`<samp><span class="samp">nothing</span></samp>' denotes no unit reservations. 
+</ul>
+
+ <p><a name="index-define_005freservation-3804"></a>Sometimes unit reservations for different insns contain common parts. 
+In such case, you can simplify the pipeline description by describing
+the common part by the following construction
+
+<pre class="smallexample">     (define_reservation <var>reservation-name</var> <var>regexp</var>)
+</pre>
+ <p><var>reservation-name</var> is a string giving name of <var>regexp</var>. 
+Functional unit names and reservation names are in the same name
+space.  So the reservation names should be different from the
+functional unit names and can not be the reserved name `<samp><span class="samp">nothing</span></samp>'.
+
+ <p><a name="index-define_005fbypass-3805"></a><a name="index-instruction-latency-time-3806"></a><a name="index-data-bypass-3807"></a>The following construction is used to describe exceptions in the
+latency time for given instruction pair.  This is so called bypasses.
+
+<pre class="smallexample">     (define_bypass <var>number</var> <var>out_insn_names</var> <var>in_insn_names</var>
+                    [<var>guard</var>])
+</pre>
+ <p><var>number</var> defines when the result generated by the instructions
+given in string <var>out_insn_names</var> will be ready for the
+instructions given in string <var>in_insn_names</var>.  Each of these
+strings is a comma-separated list of filename-style globs and
+they refer to the names of <code>define_insn_reservation</code>s. 
+For example:
+<pre class="smallexample">     (define_bypass 1 "cpu1_load_*, cpu1_store_*" "cpu1_load_*")
+</pre>
+ <p>defines a bypass between instructions that start with
+`<samp><span class="samp">cpu1_load_</span></samp>' or `<samp><span class="samp">cpu1_store_</span></samp>' and those that start with
+`<samp><span class="samp">cpu1_load_</span></samp>'.
+
+ <p><var>guard</var> is an optional string giving the name of a C function which
+defines an additional guard for the bypass.  The function will get the
+two insns as parameters.  If the function returns zero the bypass will
+be ignored for this case.  The additional guard is necessary to
+recognize complicated bypasses, e.g. when the consumer is only an address
+of insn `<samp><span class="samp">store</span></samp>' (not a stored value).
+
+ <p>If there are more one bypass with the same output and input insns, the
+chosen bypass is the first bypass with a guard in description whose
+guard function returns nonzero.  If there is no such bypass, then
+bypass without the guard function is chosen.
+
+ <p><a name="index-exclusion_005fset-3808"></a><a name="index-presence_005fset-3809"></a><a name="index-final_005fpresence_005fset-3810"></a><a name="index-absence_005fset-3811"></a><a name="index-final_005fabsence_005fset-3812"></a><a name="index-VLIW-3813"></a><a name="index-RISC-3814"></a>The following five constructions are usually used to describe
+<acronym>VLIW</acronym> processors, or more precisely, to describe a placement
+of small instructions into <acronym>VLIW</acronym> instruction slots.  They
+can be used for <acronym>RISC</acronym> processors, too.
+
+<pre class="smallexample">     (exclusion_set <var>unit-names</var> <var>unit-names</var>)
+     (presence_set <var>unit-names</var> <var>patterns</var>)
+     (final_presence_set <var>unit-names</var> <var>patterns</var>)
+     (absence_set <var>unit-names</var> <var>patterns</var>)
+     (final_absence_set <var>unit-names</var> <var>patterns</var>)
+</pre>
+ <p><var>unit-names</var> is a string giving names of functional units
+separated by commas.
+
+ <p><var>patterns</var> is a string giving patterns of functional units
+separated by comma.  Currently pattern is one unit or units
+separated by white-spaces.
+
+ <p>The first construction (`<samp><span class="samp">exclusion_set</span></samp>') means that each
+functional unit in the first string can not be reserved simultaneously
+with a unit whose name is in the second string and vice versa.  For
+example, the construction is useful for describing processors
+(e.g. some SPARC processors) with a fully pipelined floating point
+functional unit which can execute simultaneously only single floating
+point insns or only double floating point insns.
+
+ <p>The second construction (`<samp><span class="samp">presence_set</span></samp>') means that each
+functional unit in the first string can not be reserved unless at
+least one of pattern of units whose names are in the second string is
+reserved.  This is an asymmetric relation.  For example, it is useful
+for description that <acronym>VLIW</acronym> `<samp><span class="samp">slot1</span></samp>' is reserved after
+`<samp><span class="samp">slot0</span></samp>' reservation.  We could describe it by the following
+construction
+
+<pre class="smallexample">     (presence_set "slot1" "slot0")
+</pre>
+ <p>Or `<samp><span class="samp">slot1</span></samp>' is reserved only after `<samp><span class="samp">slot0</span></samp>' and unit `<samp><span class="samp">b0</span></samp>'
+reservation.  In this case we could write
+
+<pre class="smallexample">     (presence_set "slot1" "slot0 b0")
+</pre>
+ <p>The third construction (`<samp><span class="samp">final_presence_set</span></samp>') is analogous to
+`<samp><span class="samp">presence_set</span></samp>'.  The difference between them is when checking is
+done.  When an instruction is issued in given automaton state
+reflecting all current and planned unit reservations, the automaton
+state is changed.  The first state is a source state, the second one
+is a result state.  Checking for `<samp><span class="samp">presence_set</span></samp>' is done on the
+source state reservation, checking for `<samp><span class="samp">final_presence_set</span></samp>' is
+done on the result reservation.  This construction is useful to
+describe a reservation which is actually two subsequent reservations. 
+For example, if we use
+
+<pre class="smallexample">     (presence_set "slot1" "slot0")
+</pre>
+ <p>the following insn will be never issued (because `<samp><span class="samp">slot1</span></samp>' requires
+`<samp><span class="samp">slot0</span></samp>' which is absent in the source state).
+
+<pre class="smallexample">     (define_reservation "insn_and_nop" "slot0 + slot1")
+</pre>
+ <p>but it can be issued if we use analogous `<samp><span class="samp">final_presence_set</span></samp>'.
+
+ <p>The forth construction (`<samp><span class="samp">absence_set</span></samp>') means that each functional
+unit in the first string can be reserved only if each pattern of units
+whose names are in the second string is not reserved.  This is an
+asymmetric relation (actually `<samp><span class="samp">exclusion_set</span></samp>' is analogous to
+this one but it is symmetric).  For example it might be useful in a
+<acronym>VLIW</acronym> description to say that `<samp><span class="samp">slot0</span></samp>' cannot be reserved
+after either `<samp><span class="samp">slot1</span></samp>' or `<samp><span class="samp">slot2</span></samp>' have been reserved.  This
+can be described as:
+
+<pre class="smallexample">     (absence_set "slot0" "slot1, slot2")
+</pre>
+ <p>Or `<samp><span class="samp">slot2</span></samp>' can not be reserved if `<samp><span class="samp">slot0</span></samp>' and unit `<samp><span class="samp">b0</span></samp>'
+are reserved or `<samp><span class="samp">slot1</span></samp>' and unit `<samp><span class="samp">b1</span></samp>' are reserved.  In
+this case we could write
+
+<pre class="smallexample">     (absence_set "slot2" "slot0 b0, slot1 b1")
+</pre>
+ <p>All functional units mentioned in a set should belong to the same
+automaton.
+
+ <p>The last construction (`<samp><span class="samp">final_absence_set</span></samp>') is analogous to
+`<samp><span class="samp">absence_set</span></samp>' but checking is done on the result (state)
+reservation.  See comments for `<samp><span class="samp">final_presence_set</span></samp>'.
+
+ <p><a name="index-automata_005foption-3815"></a><a name="index-deterministic-finite-state-automaton-3816"></a><a name="index-nondeterministic-finite-state-automaton-3817"></a><a name="index-finite-state-automaton-minimization-3818"></a>You can control the generator of the pipeline hazard recognizer with
+the following construction.
+
+<pre class="smallexample">     (automata_option <var>options</var>)
+</pre>
+ <p><var>options</var> is a string giving options which affect the generated
+code.  Currently there are the following options:
+
+     <ul>
+<li><dfn>no-minimization</dfn> makes no minimization of the automaton.  This is
+only worth to do when we are debugging the description and need to
+look more accurately at reservations of states.
+
+     <li><dfn>time</dfn> means printing time statistics about the generation of
+automata.
+
+     <li><dfn>stats</dfn> means printing statistics about the generated automata
+such as the number of DFA states, NDFA states and arcs.
+
+     <li><dfn>v</dfn> means a generation of the file describing the result automata. 
+The file has suffix `<samp><span class="samp">.dfa</span></samp>' and can be used for the description
+verification and debugging.
+
+     <li><dfn>w</dfn> means a generation of warning instead of error for
+non-critical errors.
+
+     <li><dfn>no-comb-vect</dfn> prevents the automaton generator from generating
+two data structures and comparing them for space efficiency.  Using
+a comb vector to represent transitions may be better, but it can be
+very expensive to construct.  This option is useful if the build
+process spends an unacceptably long time in genautomata.
+
+     <li><dfn>ndfa</dfn> makes nondeterministic finite state automata.  This affects
+the treatment of operator `<samp><span class="samp">|</span></samp>' in the regular expressions.  The
+usual treatment of the operator is to try the first alternative and,
+if the reservation is not possible, the second alternative.  The
+nondeterministic treatment means trying all alternatives, some of them
+may be rejected by reservations in the subsequent insns.
+
+     <li><dfn>collapse-ndfa</dfn> modifies the behaviour of the generator when
+producing an automaton.  An additional state transition to collapse a
+nondeterministic <acronym>NDFA</acronym> state to a deterministic <acronym>DFA</acronym>
+state is generated.  It can be triggered by passing <code>const0_rtx</code> to
+state_transition.  In such an automaton, cycle advance transitions are
+available only for these collapsed states.  This option is useful for
+ports that want to use the <code>ndfa</code> option, but also want to use
+<code>define_query_cpu_unit</code> to assign units to insns issued in a cycle.
+
+     <li><dfn>progress</dfn> means output of a progress bar showing how many states
+were generated so far for automaton being processed.  This is useful
+during debugging a <acronym>DFA</acronym> description.  If you see too many
+generated states, you could interrupt the generator of the pipeline
+hazard recognizer and try to figure out a reason for generation of the
+huge automaton. 
+</ul>
+
+ <p>As an example, consider a superscalar <acronym>RISC</acronym> machine which can
+issue three insns (two integer insns and one floating point insn) on
+the cycle but can finish only two insns.  To describe this, we define
+the following functional units.
+
+<pre class="smallexample">     (define_cpu_unit "i0_pipeline, i1_pipeline, f_pipeline")
+     (define_cpu_unit "port0, port1")
+</pre>
+ <p>All simple integer insns can be executed in any integer pipeline and
+their result is ready in two cycles.  The simple integer insns are
+issued into the first pipeline unless it is reserved, otherwise they
+are issued into the second pipeline.  Integer division and
+multiplication insns can be executed only in the second integer
+pipeline and their results are ready correspondingly in 8 and 4
+cycles.  The integer division is not pipelined, i.e. the subsequent
+integer division insn can not be issued until the current division
+insn finished.  Floating point insns are fully pipelined and their
+results are ready in 3 cycles.  Where the result of a floating point
+insn is used by an integer insn, an additional delay of one cycle is
+incurred.  To describe all of this we could specify
+
+<pre class="smallexample">     (define_cpu_unit "div")
+     
+     (define_insn_reservation "simple" 2 (eq_attr "type" "int")
+                              "(i0_pipeline | i1_pipeline), (port0 | port1)")
+     
+     (define_insn_reservation "mult" 4 (eq_attr "type" "mult")
+                              "i1_pipeline, nothing*2, (port0 | port1)")
+     
+     (define_insn_reservation "div" 8 (eq_attr "type" "div")
+                              "i1_pipeline, div*7, div + (port0 | port1)")
+     
+     (define_insn_reservation "float" 3 (eq_attr "type" "float")
+                              "f_pipeline, nothing, (port0 | port1))
+     
+     (define_bypass 4 "float" "simple,mult,div")
+</pre>
+ <p>To simplify the description we could describe the following reservation
+
+<pre class="smallexample">     (define_reservation "finish" "port0|port1")
+</pre>
+ <p>and use it in all <code>define_insn_reservation</code> as in the following
+construction
+
+<pre class="smallexample">     (define_insn_reservation "simple" 2 (eq_attr "type" "int")
+                              "(i0_pipeline | i1_pipeline), finish")
+</pre>
+ <div class="footnote">
+<hr>
+<h4>Footnotes</h4><p class="footnote"><small>[<a name="fn-1" href="#fnd-1">1</a>]</small> However, the size of the automaton depends on
+processor complexity.  To limit this effect, machine descriptions
+can split orthogonal parts of the machine description among several
+automata: but then, since each of these must be stepped independently,
+this does cause a small decrease in the algorithm's performance.</p>
+
+ <p><hr></div>
+
+ </body></html>
+

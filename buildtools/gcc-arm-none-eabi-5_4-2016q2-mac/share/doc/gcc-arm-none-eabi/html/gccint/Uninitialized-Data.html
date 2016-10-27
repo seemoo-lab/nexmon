@@ -1,0 +1,161 @@
+<html lang="en">
+<head>
+<title>Uninitialized Data - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Assembler-Format.html#Assembler-Format" title="Assembler Format">
+<link rel="prev" href="Data-Output.html#Data-Output" title="Data Output">
+<link rel="next" href="Label-Output.html#Label-Output" title="Label Output">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Uninitialized-Data"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Label-Output.html#Label-Output">Label Output</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Data-Output.html#Data-Output">Data Output</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Assembler-Format.html#Assembler-Format">Assembler Format</a>
+<hr>
+</div>
+
+<h4 class="subsection">17.20.3 Output of Uninitialized Variables</h4>
+
+<p>Each of the macros in this section is used to do the whole job of
+outputting a single uninitialized variable.
+
+<div class="defun">
+&mdash; Macro: <b>ASM_OUTPUT_COMMON</b> (<var>stream, name, size, rounded</var>)<var><a name="index-ASM_005fOUTPUT_005fCOMMON-4608"></a></var><br>
+<blockquote><p>A C statement (sans semicolon) to output to the stdio stream
+<var>stream</var> the assembler definition of a common-label named
+<var>name</var> whose size is <var>size</var> bytes.  The variable <var>rounded</var>
+is the size rounded up to whatever alignment the caller wants.  It is
+possible that <var>size</var> may be zero, for instance if a struct with no
+other member than a zero-length array is defined.  In this case, the
+backend must output a symbol definition that allocates at least one
+byte, both so that the address of the resulting object does not compare
+equal to any other, and because some object formats cannot even express
+the concept of a zero-sized common symbol, as that is how they represent
+an ordinary undefined external.
+
+      <p>Use the expression <code>assemble_name (</code><var>stream</var><code>, </code><var>name</var><code>)</code> to
+output the name itself; before and after that, output the additional
+assembler syntax for defining the name, and a newline.
+
+      <p>This macro controls how the assembler definitions of uninitialized
+common global variables are output. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_OUTPUT_ALIGNED_COMMON</b> (<var>stream, name, size, alignment</var>)<var><a name="index-ASM_005fOUTPUT_005fALIGNED_005fCOMMON-4609"></a></var><br>
+<blockquote><p>Like <code>ASM_OUTPUT_COMMON</code> except takes the required alignment as a
+separate, explicit argument.  If you define this macro, it is used in
+place of <code>ASM_OUTPUT_COMMON</code>, and gives you more flexibility in
+handling the required alignment of the variable.  The alignment is specified
+as the number of bits. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_OUTPUT_ALIGNED_DECL_COMMON</b> (<var>stream, decl, name, size, alignment</var>)<var><a name="index-ASM_005fOUTPUT_005fALIGNED_005fDECL_005fCOMMON-4610"></a></var><br>
+<blockquote><p>Like <code>ASM_OUTPUT_ALIGNED_COMMON</code> except that <var>decl</var> of the
+variable to be output, if there is one, or <code>NULL_TREE</code> if there
+is no corresponding variable.  If you define this macro, GCC will use it
+in place of both <code>ASM_OUTPUT_COMMON</code> and
+<code>ASM_OUTPUT_ALIGNED_COMMON</code>.  Define this macro when you need to see
+the variable's decl in order to chose what to output. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_OUTPUT_ALIGNED_BSS</b> (<var>stream, decl, name, size, alignment</var>)<var><a name="index-ASM_005fOUTPUT_005fALIGNED_005fBSS-4611"></a></var><br>
+<blockquote><p>A C statement (sans semicolon) to output to the stdio stream
+<var>stream</var> the assembler definition of uninitialized global <var>decl</var> named
+<var>name</var> whose size is <var>size</var> bytes.  The variable <var>alignment</var>
+is the alignment specified as the number of bits.
+
+      <p>Try to use function <code>asm_output_aligned_bss</code> defined in file
+<samp><span class="file">varasm.c</span></samp> when defining this macro.  If unable, use the expression
+<code>assemble_name (</code><var>stream</var><code>, </code><var>name</var><code>)</code> to output the name itself;
+before and after that, output the additional assembler syntax for defining
+the name, and a newline.
+
+      <p>There are two ways of handling global BSS.  One is to define this macro. 
+The other is to have <code>TARGET_ASM_SELECT_SECTION</code> return a
+switchable BSS section (see <a href="TARGET_005fHAVE_005fSWITCHABLE_005fBSS_005fSECTIONS.html#TARGET_005fHAVE_005fSWITCHABLE_005fBSS_005fSECTIONS">TARGET_HAVE_SWITCHABLE_BSS_SECTIONS</a>). 
+You do not need to do both.
+
+      <p>Some languages do not have <code>common</code> data, and require a
+non-common form of global BSS in order to handle uninitialized globals
+efficiently.  C++ is one example of this.  However, if the target does
+not support global BSS, the front end may choose to make globals
+common in order to save space in the object file. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_OUTPUT_LOCAL</b> (<var>stream, name, size, rounded</var>)<var><a name="index-ASM_005fOUTPUT_005fLOCAL-4612"></a></var><br>
+<blockquote><p>A C statement (sans semicolon) to output to the stdio stream
+<var>stream</var> the assembler definition of a local-common-label named
+<var>name</var> whose size is <var>size</var> bytes.  The variable <var>rounded</var>
+is the size rounded up to whatever alignment the caller wants.
+
+      <p>Use the expression <code>assemble_name (</code><var>stream</var><code>, </code><var>name</var><code>)</code> to
+output the name itself; before and after that, output the additional
+assembler syntax for defining the name, and a newline.
+
+      <p>This macro controls how the assembler definitions of uninitialized
+static variables are output. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_OUTPUT_ALIGNED_LOCAL</b> (<var>stream, name, size, alignment</var>)<var><a name="index-ASM_005fOUTPUT_005fALIGNED_005fLOCAL-4613"></a></var><br>
+<blockquote><p>Like <code>ASM_OUTPUT_LOCAL</code> except takes the required alignment as a
+separate, explicit argument.  If you define this macro, it is used in
+place of <code>ASM_OUTPUT_LOCAL</code>, and gives you more flexibility in
+handling the required alignment of the variable.  The alignment is specified
+as the number of bits. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_OUTPUT_ALIGNED_DECL_LOCAL</b> (<var>stream, decl, name, size, alignment</var>)<var><a name="index-ASM_005fOUTPUT_005fALIGNED_005fDECL_005fLOCAL-4614"></a></var><br>
+<blockquote><p>Like <code>ASM_OUTPUT_ALIGNED_DECL</code> except that <var>decl</var> of the
+variable to be output, if there is one, or <code>NULL_TREE</code> if there
+is no corresponding variable.  If you define this macro, GCC will use it
+in place of both <code>ASM_OUTPUT_DECL</code> and
+<code>ASM_OUTPUT_ALIGNED_DECL</code>.  Define this macro when you need to see
+the variable's decl in order to chose what to output. 
+</p></blockquote></div>
+
+ </body></html>
+

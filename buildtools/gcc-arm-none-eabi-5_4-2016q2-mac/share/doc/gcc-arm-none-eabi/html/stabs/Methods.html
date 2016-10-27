@@ -1,0 +1,105 @@
+<html lang="en">
+<head>
+<title>Methods - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Cplusplus.html#Cplusplus" title="Cplusplus">
+<link rel="prev" href="Class-Instance.html#Class-Instance" title="Class Instance">
+<link rel="next" href="Method-Type-Descriptor.html#Method-Type-Descriptor" title="Method Type Descriptor">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Methods"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Method-Type-Descriptor.html#Method-Type-Descriptor">Method Type Descriptor</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Class-Instance.html#Class-Instance">Class Instance</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Cplusplus.html#Cplusplus">Cplusplus</a>
+<hr>
+</div>
+
+<h3 class="section">8.6 Method Definition</h3>
+
+<p>The class definition shown above declares Ameth.  The C<tt>++</tt> source below
+defines Ameth:
+
+<pre class="example">     int
+     baseA::Ameth(int in, char other)
+     {
+             return in;
+     };
+</pre>
+   <p>This method definition yields three stabs following the code of the
+method.  One stab describes the method itself and following two describe
+its parameters.  Although there is only one formal argument all methods
+have an implicit argument which is the <code>this</code> pointer.  The <code>this</code>
+pointer is a pointer to the object on which the method was called.  Note
+that the method name is mangled to encode the class name and argument
+types.  Name mangling is described in the <span class="sc">arm</span> (<cite>The Annotated
+C++ Reference Manual</cite>, by Ellis and Stroustrup, <span class="sc">isbn</span>
+0-201-51459-1); <samp><span class="file">gpcompare.texi</span></samp> in Cygnus GCC distributions
+describes the differences between GNU mangling and <span class="sc">arm</span>
+mangling. 
+<!-- FIXME: Use @xref, especially if this is generally installed in the -->
+<!-- info tree. -->
+<!-- FIXME: This information should be in a net release, either of GCC or -->
+<!-- GDB.  But gpcompare.texi doesn't seem to be in the FSF GCC. -->
+
+<pre class="example">     .stabs "name:symbol_descriptor(global function)return_type(int)",
+             N_FUN, NIL, NIL, code_addr_of_method_start
+     
+     .stabs "Ameth__5baseAic:F1",36,0,0,_Ameth__5baseAic
+</pre>
+   <p>Here is the stab for the <code>this</code> pointer implicit argument.  The
+name of the <code>this</code> pointer is always <code>this</code>.  Type 19, the
+<code>this</code> pointer is defined as a pointer to type 20, <code>baseA</code>,
+but a stab defining <code>baseA</code> has not yet been emitted.  Since the
+compiler knows it will be emitted shortly, here it just outputs a cross
+reference to the undefined symbol, by prefixing the symbol name with
+`<samp><span class="samp">xs</span></samp>'.
+
+<pre class="example">     .stabs "name:sym_desc(register param)type_def(19)=
+             type_desc(ptr to)type_ref(baseA)=
+             type_desc(cross-reference to)baseA:",N_RSYM,NIL,NIL,register_number
+     
+     .stabs "this:P19=*20=xsbaseA:",64,0,0,8
+</pre>
+   <p>The stab for the explicit integer argument looks just like a parameter
+to a C function.  The last field of the stab is the offset from the
+argument pointer, which in most systems is the same as the frame
+pointer.
+
+<pre class="example">     .stabs "name:sym_desc(value parameter)type_ref(int)",
+             N_PSYM,NIL,NIL,offset_from_arg_ptr
+     
+     .stabs "in:p1",160,0,0,72
+</pre>
+   <p>&lt;&lt; The examples that follow are based on A1.C &gt;&gt;
+
+   </body></html>
+

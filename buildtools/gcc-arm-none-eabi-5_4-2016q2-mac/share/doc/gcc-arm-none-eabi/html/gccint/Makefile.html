@@ -1,0 +1,218 @@
+<html lang="en">
+<head>
+<title>Makefile - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="gcc-Directory.html#gcc-Directory" title="gcc Directory">
+<link rel="prev" href="Build.html#Build" title="Build">
+<link rel="next" href="Library-Files.html#Library-Files" title="Library Files">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Makefile"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Library-Files.html#Library-Files">Library Files</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Build.html#Build">Build</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="gcc-Directory.html#gcc-Directory">gcc Directory</a>
+<hr>
+</div>
+
+<h4 class="subsection">6.3.4 Makefile Targets</h4>
+
+<p><a name="index-makefile-targets-1664"></a><a name="index-targets_002c-makefile-1665"></a>
+These targets are available from the `<samp><span class="samp">gcc</span></samp>' directory:
+
+     <dl>
+<dt><code>all</code><dd>This is the default target.  Depending on what your build/host/target
+configuration is, it coordinates all the things that need to be built.
+
+     <br><dt><code>doc</code><dd>Produce info-formatted documentation and man pages.  Essentially it
+calls `<samp><span class="samp">make man</span></samp>' and `<samp><span class="samp">make info</span></samp>'.
+
+     <br><dt><code>dvi</code><dd>Produce DVI-formatted documentation.
+
+     <br><dt><code>pdf</code><dd>Produce PDF-formatted documentation.
+
+     <br><dt><code>html</code><dd>Produce HTML-formatted documentation.
+
+     <br><dt><code>man</code><dd>Generate man pages.
+
+     <br><dt><code>info</code><dd>Generate info-formatted pages.
+
+     <br><dt><code>mostlyclean</code><dd>Delete the files made while building the compiler.
+
+     <br><dt><code>clean</code><dd>That, and all the other files built by `<samp><span class="samp">make all</span></samp>'.
+
+     <br><dt><code>distclean</code><dd>That, and all the files created by <samp><span class="command">configure</span></samp>.
+
+     <br><dt><code>maintainer-clean</code><dd>Distclean plus any file that can be generated from other files.  Note
+that additional tools may be required beyond what is normally needed to
+build GCC.
+
+     <br><dt><code>srcextra</code><dd>Generates files in the source directory that are not version-controlled but
+should go into a release tarball.
+
+     <br><dt><code>srcinfo</code><dt><code>srcman</code><dd>Copies the info-formatted and manpage documentation into the source
+directory usually for the purpose of generating a release tarball.
+
+     <br><dt><code>install</code><dd>Installs GCC.
+
+     <br><dt><code>uninstall</code><dd>Deletes installed files, though this is not supported.
+
+     <br><dt><code>check</code><dd>Run the testsuite.  This creates a <samp><span class="file">testsuite</span></samp> subdirectory that
+has various <samp><span class="file">.sum</span></samp> and <samp><span class="file">.log</span></samp> files containing the results of
+the testing.  You can run subsets with, for example, `<samp><span class="samp">make check-gcc</span></samp>'. 
+You can specify specific tests by setting <samp><span class="env">RUNTESTFLAGS</span></samp> to be the name
+of the <samp><span class="file">.exp</span></samp> file, optionally followed by (for some tests) an equals
+and a file wildcard, like:
+
+     <pre class="smallexample">          make check-gcc RUNTESTFLAGS="execute.exp=19980413-*"
+     </pre>
+     <p>Note that running the testsuite may require additional tools be
+installed, such as Tcl or DejaGnu. 
+</dl>
+
+ <p>The toplevel tree from which you start GCC compilation is not
+the GCC directory, but rather a complex Makefile that coordinates
+the various steps of the build, including bootstrapping the compiler
+and using the new compiler to build target libraries.
+
+ <p>When GCC is configured for a native configuration, the default action
+for <samp><span class="command">make</span></samp> is to do a full three-stage bootstrap.  This means
+that GCC is built three times&mdash;once with the native compiler, once with
+the native-built compiler it just built, and once with the compiler it
+built the second time.  In theory, the last two should produce the same
+results, which `<samp><span class="samp">make compare</span></samp>' can check.  Each stage is configured
+separately and compiled into a separate directory, to minimize problems
+due to ABI incompatibilities between the native compiler and GCC.
+
+ <p>If you do a change, rebuilding will also start from the first stage
+and &ldquo;bubble&rdquo; up the change through the three stages.  Each stage
+is taken from its build directory (if it had been built previously),
+rebuilt, and copied to its subdirectory.  This will allow you to, for
+example, continue a bootstrap after fixing a bug which causes the
+stage2 build to crash.  It does not provide as good coverage of the
+compiler as bootstrapping from scratch, but it ensures that the new
+code is syntactically correct (e.g., that you did not use GCC extensions
+by mistake), and avoids spurious bootstrap comparison
+failures<a rel="footnote" href="#fn-1" name="fnd-1"><sup>1</sup></a>.
+
+ <p>Other targets available from the top level include:
+
+     <dl>
+<dt><code>bootstrap-lean</code><dd>Like <code>bootstrap</code>, except that the various stages are removed once
+they're no longer needed.  This saves disk space.
+
+     <br><dt><code>bootstrap2</code><dt><code>bootstrap2-lean</code><dd>Performs only the first two stages of bootstrap.  Unlike a three-stage
+bootstrap, this does not perform a comparison to test that the compiler
+is running properly.  Note that the disk space required by a &ldquo;lean&rdquo;
+bootstrap is approximately independent of the number of stages.
+
+     <br><dt><code>stage</code><var>N</var><code>-bubble (</code><var>N</var><code> = 1...4, profile, feedback)</code><dd>Rebuild all the stages up to <var>N</var>, with the appropriate flags,
+&ldquo;bubbling&rdquo; the changes as described above.
+
+     <br><dt><code>all-stage</code><var>N</var><code> (</code><var>N</var><code> = 1...4, profile, feedback)</code><dd>Assuming that stage <var>N</var> has already been built, rebuild it with the
+appropriate flags.  This is rarely needed.
+
+     <br><dt><code>cleanstrap</code><dd>Remove everything (`<samp><span class="samp">make clean</span></samp>') and rebuilds (`<samp><span class="samp">make bootstrap</span></samp>').
+
+     <br><dt><code>compare</code><dd>Compares the results of stages 2 and 3.  This ensures that the compiler
+is running properly, since it should produce the same object files
+regardless of how it itself was compiled.
+
+     <br><dt><code>profiledbootstrap</code><dd>Builds a compiler with profiling feedback information.  In this case,
+the second and third stages are named `<samp><span class="samp">profile</span></samp>' and `<samp><span class="samp">feedback</span></samp>',
+respectively.  For more information, see
+<a href="../gccinstall/Building.html#Building">Building with profile feedback</a>.
+
+     <br><dt><code>restrap</code><dd>Restart a bootstrap, so that everything that was not built with
+the system compiler is rebuilt.
+
+     <br><dt><code>stage</code><var>N</var><code>-start (</code><var>N</var><code> = 1...4, profile, feedback)</code><dd>For each package that is bootstrapped, rename directories so that,
+for example, <samp><span class="file">gcc</span></samp> points to the stage<var>N</var> GCC, compiled
+with the stage<var>N-1</var> GCC<a rel="footnote" href="#fn-2" name="fnd-2"><sup>2</sup></a>.
+
+     <p>You will invoke this target if you need to test or debug the
+stage<var>N</var> GCC.  If you only need to execute GCC (but you need
+not run `<samp><span class="samp">make</span></samp>' either to rebuild it or to run test suites),
+you should be able to work directly in the <samp><span class="file">stage</span><var>N</var><span class="file">-gcc</span></samp>
+directory.  This makes it easier to debug multiple stages in
+parallel.
+
+     <br><dt><code>stage</code><dd>For each package that is bootstrapped, relocate its build directory
+to indicate its stage.  For example, if the <samp><span class="file">gcc</span></samp> directory
+points to the stage2 GCC, after invoking this target it will be
+renamed to <samp><span class="file">stage2-gcc</span></samp>.
+
+ </dl>
+
+ <p>If you wish to use non-default GCC flags when compiling the stage2 and
+stage3 compilers, set <code>BOOT_CFLAGS</code> on the command line when doing
+`<samp><span class="samp">make</span></samp>'.
+
+ <p>Usually, the first stage only builds the languages that the compiler
+is written in: typically, C and maybe Ada.  If you are debugging a
+miscompilation of a different stage2 front-end (for example, of the
+Fortran front-end), you may want to have front-ends for other languages
+in the first stage as well.  To do so, set <code>STAGE1_LANGUAGES</code>
+on the command line when doing `<samp><span class="samp">make</span></samp>'.
+
+ <p>For example, in the aforementioned scenario of debugging a Fortran
+front-end miscompilation caused by the stage1 compiler, you may need a
+command like
+
+<pre class="example">     make stage2-bubble STAGE1_LANGUAGES=c,fortran
+</pre>
+ <p>Alternatively, you can use per-language targets to build and test
+languages that are not enabled by default in stage1.  For example,
+<samp><span class="command">make f951</span></samp> will build a Fortran compiler even in the stage1
+build directory.
+
+ <div class="footnote">
+<hr>
+<h4>Footnotes</h4><p class="footnote"><small>[<a name="fn-1" href="#fnd-1">1</a>]</small> Except if the compiler was buggy and miscompiled
+some of the files that were not modified.  In this case, it's best
+to use <samp><span class="command">make restrap</span></samp>.</p>
+
+ <p class="footnote"><small>[<a name="fn-2" href="#fnd-2">2</a>]</small> Customarily, the system compiler
+is also termed the <samp><span class="file">stage0</span></samp> GCC.</p>
+
+ <p><hr></div>
+
+ </body></html>
+

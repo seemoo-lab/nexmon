@@ -1,0 +1,100 @@
+<html lang="en">
+<head>
+<title>Label Attributes - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="C-Extensions.html#C-Extensions" title="C Extensions">
+<link rel="prev" href="Function-Attributes.html#Function-Attributes" title="Function Attributes">
+<link rel="next" href="Attribute-Syntax.html#Attribute-Syntax" title="Attribute Syntax">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Label-Attributes"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Attribute-Syntax.html#Attribute-Syntax">Attribute Syntax</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Function-Attributes.html#Function-Attributes">Function Attributes</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="C-Extensions.html#C-Extensions">C Extensions</a>
+<hr>
+</div>
+
+<h3 class="section">6.32 Label Attributes</h3>
+
+<p><a name="index-Label-Attributes-3307"></a>
+GCC allows attributes to be set on C labels.  See <a href="Attribute-Syntax.html#Attribute-Syntax">Attribute Syntax</a>, for
+details of the exact syntax for using attributes.  Other attributes are
+available for functions (see <a href="Function-Attributes.html#Function-Attributes">Function Attributes</a>), variables
+(see <a href="Variable-Attributes.html#Variable-Attributes">Variable Attributes</a>) and for types (see <a href="Type-Attributes.html#Type-Attributes">Type Attributes</a>).
+
+ <p>This example uses the <code>cold</code> label attribute to indicate the
+<code>ErrorHandling</code> branch is unlikely to be taken and that the
+<code>ErrorHandling</code> label is unused:
+
+<pre class="smallexample">     
+        asm goto ("some asm" : : : : NoError);
+     
+     /* This branch (the fall-through from the asm) is less commonly used */
+     ErrorHandling:
+        __attribute__((cold, unused)); /* Semi-colon is required here */
+        printf("error\n");
+        return 0;
+     
+     NoError:
+        printf("no error\n");
+        return 1;
+</pre>
+     <dl>
+<dt><code>unused</code><dd><a name="index-g_t_0040code_007bunused_007d-label-attribute-3308"></a>This feature is intended for program-generated code that may contain
+unused labels, but which is compiled with <samp><span class="option">-Wall</span></samp>.  It is
+not normally appropriate to use in it human-written code, though it
+could be useful in cases where the code that jumps to the label is
+contained within an <code>#ifdef</code> conditional.
+
+     <br><dt><code>hot</code><dd><a name="index-g_t_0040code_007bhot_007d-label-attribute-3309"></a>The <code>hot</code> attribute on a label is used to inform the compiler that
+the path following the label is more likely than paths that are not so
+annotated.  This attribute is used in cases where <code>__builtin_expect</code>
+cannot be used, for instance with computed goto or <code>asm goto</code>.
+
+     <br><dt><code>cold</code><dd><a name="index-g_t_0040code_007bcold_007d-label-attribute-3310"></a>The <code>cold</code> attribute on labels is used to inform the compiler that
+the path following the label is unlikely to be executed.  This attribute
+is used in cases where <code>__builtin_expect</code> cannot be used, for instance
+with computed goto or <code>asm goto</code>.
+
+ </dl>
+
+ </body></html>
+

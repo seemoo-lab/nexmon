@@ -1,0 +1,89 @@
+<html lang="en">
+<head>
+<title>Portability - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Contributing.html#Contributing" title="Contributing">
+<link rel="next" href="Interface.html#Interface" title="Interface">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Portability"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Interface.html#Interface">Interface</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Contributing.html#Contributing">Contributing</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">2 GCC and Portability</h2>
+
+<p><a name="index-portability-2"></a><a name="index-GCC-and-portability-3"></a>
+GCC itself aims to be portable to any machine where <code>int</code> is at least
+a 32-bit type.  It aims to target machines with a flat (non-segmented) byte
+addressed data address space (the code address space can be separate). 
+Target ABIs may have 8, 16, 32 or 64-bit <code>int</code> type.  <code>char</code>
+can be wider than 8 bits.
+
+ <p>GCC gets most of the information about the target machine from a machine
+description which gives an algebraic formula for each of the machine's
+instructions.  This is a very clean way to describe the target.  But when
+the compiler needs information that is difficult to express in this
+fashion, ad-hoc parameters have been defined for machine descriptions. 
+The purpose of portability is to reduce the total work needed on the
+compiler; it was not of interest for its own sake.
+
+ <p><a name="index-endianness-4"></a><a name="index-autoincrement-addressing_002c-availability-5"></a><a name="index-abort-6"></a>GCC does not contain machine dependent code, but it does contain code
+that depends on machine parameters such as endianness (whether the most
+significant byte has the highest or lowest address of the bytes in a word)
+and the availability of autoincrement addressing.  In the RTL-generation
+pass, it is often necessary to have multiple strategies for generating code
+for a particular kind of syntax tree, strategies that are usable for different
+combinations of parameters.  Often, not all possible cases have been
+addressed, but only the common ones or only the ones that have been
+encountered.  As a result, a new target may require additional
+strategies.  You will know
+if this happens because the compiler will call <code>abort</code>.  Fortunately,
+the new strategies can be added in a machine-independent fashion, and will
+affect only the target machines that need them.
+
+<!-- Copyright (C) 1988-2015 Free Software Foundation, Inc. -->
+<!-- This is part of the GCC manual. -->
+<!-- For copying conditions, see the file gcc.texi. -->
+</body></html>
+

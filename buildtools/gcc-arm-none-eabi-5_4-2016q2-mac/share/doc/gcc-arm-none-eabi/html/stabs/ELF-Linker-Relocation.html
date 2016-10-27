@@ -1,0 +1,100 @@
+<html lang="en">
+<head>
+<title>ELF Linker Relocation - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stab-Sections.html#Stab-Sections" title="Stab Sections">
+<link rel="prev" href="Stab-Section-Basics.html#Stab-Section-Basics" title="Stab Section Basics">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="ELF-Linker-Relocation"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Stab-Section-Basics.html#Stab-Section-Basics">Stab Section Basics</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stab-Sections.html#Stab-Sections">Stab Sections</a>
+<hr>
+</div>
+
+<h3 class="appendixsec">F.2 Having the Linker Relocate Stabs in ELF</h3>
+
+<p>This section describes some Sun hacks for Stabs in ELF; it does not
+apply to COFF or SOM.  While <span class="sc">gdb</span> no longer supports this hack
+for Sun Stabs in ELF, this section is kept to document the issue.
+
+   <p>To keep linking fast, you don't want the linker to have to relocate very
+many stabs.  Making sure this is done for <code>N_SLINE</code>,
+<code>N_RBRAC</code>, and <code>N_LBRAC</code> stabs is the most important thing
+(see the descriptions of those stabs for more information).  But Sun's
+stabs in ELF has taken this further, to make all addresses in the
+<code>n_value</code> field (functions and static variables) relative to the
+source file.  For the <code>N_SO</code> symbol itself, Sun simply omits the
+address.  To find the address of each section corresponding to a given
+source file, the compiler puts out symbols giving the address of each
+section for a given source file.  Since these are ELF (not stab)
+symbols, the linker relocates them correctly without having to touch the
+stabs section.  They are named <code>Bbss.bss</code> for the bss section,
+<code>Ddata.data</code> for the data section, and <code>Drodata.rodata</code> for
+the rodata section.  For the text section, there is no such symbol (but
+there should be, see below).  For an example of how these symbols work,
+See <a href="Stab-Section-Transformations.html#Stab-Section-Transformations">Stab Section Transformations</a>.  GCC does not provide these symbols;
+it instead relies on the stabs getting relocated.  Thus addresses which
+would normally be relative to <code>Bbss.bss</code>, etc., are already
+relocated.  The Sun linker provided with Solaris 2.2 and earlier
+relocates stabs using normal ELF relocation information, as it would do
+for any section.  Sun has been threatening to kludge their linker to not
+do this (to speed up linking), even though the correct way to avoid
+having the linker do these relocations is to have the compiler no longer
+output relocatable values.  Last I heard they had been talked out of the
+linker kludge.  See Sun point patch 101052-01 and Sun bug 1142109.  With
+the Sun compiler this affects `<samp><span class="samp">S</span></samp>' symbol descriptor stabs
+(see <a href="Statics.html#Statics">Statics</a>) and functions (see <a href="Procedures.html#Procedures">Procedures</a>).  In the latter
+case, to adopt the clean solution (making the value of the stab relative
+to the start of the compilation unit), it would be necessary to invent a
+<code>Ttext.text</code> symbol, analogous to the <code>Bbss.bss</code>, etc.,
+symbols.  I recommend this rather than using a zero value and getting
+the address from the ELF symbols.
+
+   <p>Finding the correct <code>Bbss.bss</code>, etc., symbol is difficult, because
+the linker simply concatenates the <code>.stab</code> sections from each
+<samp><span class="file">.o</span></samp> file without including any information about which part of a
+<code>.stab</code> section comes from which <samp><span class="file">.o</span></samp> file.  The way GDB use to
+do this is to look for an ELF <code>STT_FILE</code> symbol which has the same
+name as the last component of the file name from the <code>N_SO</code> symbol
+in the stabs (for example, if the file name is <samp><span class="file">../../gdb/main.c</span></samp>,
+it looks for an ELF <code>STT_FILE</code> symbol named <code>main.c</code>).  This
+loses if different files have the same name (they could be in different
+directories, a library could have been copied from one system to
+another, etc.).  It would be much cleaner to have the <code>Bbss.bss</code>
+symbols in the stabs themselves.  Having the linker relocate them there
+is no more work than having the linker relocate ELF symbols, and it
+solves the problem of having to associate the ELF and stab symbols. 
+However, no one has yet designed or implemented such a scheme.
+
+   </body></html>
+

@@ -1,0 +1,206 @@
+<html lang="en">
+<head>
+<title>typedef asymbol - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Symbols.html#Symbols" title="Symbols">
+<link rel="prev" href="Mini-Symbols.html#Mini-Symbols" title="Mini Symbols">
+<link rel="next" href="symbol-handling-functions.html#symbol-handling-functions" title="symbol handling functions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="typedef-asymbol"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="symbol-handling-functions.html#symbol-handling-functions">symbol handling functions</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Mini-Symbols.html#Mini-Symbols">Mini Symbols</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Symbols.html#Symbols">Symbols</a>
+<hr>
+</div>
+
+<h4 class="subsection">2.7.4 typedef asymbol</h4>
+
+<p>An <code>asymbol</code> has the form:
+
+<pre class="example">     
+     typedef struct bfd_symbol
+     {
+       /* A pointer to the BFD which owns the symbol. This information
+          is necessary so that a back end can work out what additional
+          information (invisible to the application writer) is carried
+          with the symbol.
+     
+          This field is *almost* redundant, since you can use section-&gt;owner
+          instead, except that some symbols point to the global sections
+          bfd_{abs,com,und}_section.  This could be fixed by making
+          these globals be per-bfd (or per-target-flavor).  FIXME.  */
+       struct bfd *the_bfd; /* Use bfd_asymbol_bfd(sym) to access this field.  */
+     
+       /* The text of the symbol. The name is left alone, and not copied; the
+          application may not alter it.  */
+       const char *name;
+     
+       /* The value of the symbol.  This really should be a union of a
+          numeric value with a pointer, since some flags indicate that
+          a pointer to another symbol is stored here.  */
+       symvalue value;
+     
+       /* Attributes of a symbol.  */
+     #define BSF_NO_FLAGS           0x00
+     
+       /* The symbol has local scope; <code>static</code> in <code>C</code>. The value
+          is the offset into the section of the data.  */
+     #define BSF_LOCAL              (1 &lt;&lt; 0)
+     
+       /* The symbol has global scope; initialized data in <code>C</code>. The
+          value is the offset into the section of the data.  */
+     #define BSF_GLOBAL             (1 &lt;&lt; 1)
+     
+       /* The symbol has global scope and is exported. The value is
+          the offset into the section of the data.  */
+     #define BSF_EXPORT     BSF_GLOBAL /* No real difference.  */
+     
+       /* A normal C symbol would be one of:
+          <code>BSF_LOCAL</code>, <code>BSF_COMMON</code>,  <code>BSF_UNDEFINED</code> or
+          <code>BSF_GLOBAL</code>.  */
+     
+       /* The symbol is a debugging record. The value has an arbitrary
+          meaning, unless BSF_DEBUGGING_RELOC is also set.  */
+     #define BSF_DEBUGGING          (1 &lt;&lt; 2)
+     
+       /* The symbol denotes a function entry point.  Used in ELF,
+          perhaps others someday.  */
+     #define BSF_FUNCTION           (1 &lt;&lt; 3)
+     
+       /* Used by the linker.  */
+     #define BSF_KEEP               (1 &lt;&lt; 5)
+     #define BSF_KEEP_G             (1 &lt;&lt; 6)
+     
+       /* A weak global symbol, overridable without warnings by
+          a regular global symbol of the same name.  */
+     #define BSF_WEAK               (1 &lt;&lt; 7)
+     
+       /* This symbol was created to point to a section, e.g. ELF's
+          STT_SECTION symbols.  */
+     #define BSF_SECTION_SYM        (1 &lt;&lt; 8)
+     
+       /* The symbol used to be a common symbol, but now it is
+          allocated.  */
+     #define BSF_OLD_COMMON         (1 &lt;&lt; 9)
+     
+       /* In some files the type of a symbol sometimes alters its
+          location in an output file - ie in coff a <code>ISFCN</code> symbol
+          which is also <code>C_EXT</code> symbol appears where it was
+          declared and not at the end of a section.  This bit is set
+          by the target BFD part to convey this information.  */
+     #define BSF_NOT_AT_END         (1 &lt;&lt; 10)
+     
+       /* Signal that the symbol is the label of constructor section.  */
+     #define BSF_CONSTRUCTOR        (1 &lt;&lt; 11)
+     
+       /* Signal that the symbol is a warning symbol.  The name is a
+          warning.  The name of the next symbol is the one to warn about;
+          if a reference is made to a symbol with the same name as the next
+          symbol, a warning is issued by the linker.  */
+     #define BSF_WARNING            (1 &lt;&lt; 12)
+     
+       /* Signal that the symbol is indirect.  This symbol is an indirect
+          pointer to the symbol with the same name as the next symbol.  */
+     #define BSF_INDIRECT           (1 &lt;&lt; 13)
+     
+       /* BSF_FILE marks symbols that contain a file name.  This is used
+          for ELF STT_FILE symbols.  */
+     #define BSF_FILE               (1 &lt;&lt; 14)
+     
+       /* Symbol is from dynamic linking information.  */
+     #define BSF_DYNAMIC            (1 &lt;&lt; 15)
+     
+       /* The symbol denotes a data object.  Used in ELF, and perhaps
+          others someday.  */
+     #define BSF_OBJECT             (1 &lt;&lt; 16)
+     
+       /* This symbol is a debugging symbol.  The value is the offset
+          into the section of the data.  BSF_DEBUGGING should be set
+          as well.  */
+     #define BSF_DEBUGGING_RELOC    (1 &lt;&lt; 17)
+     
+       /* This symbol is thread local.  Used in ELF.  */
+     #define BSF_THREAD_LOCAL       (1 &lt;&lt; 18)
+     
+       /* This symbol represents a complex relocation expression,
+          with the expression tree serialized in the symbol name.  */
+     #define BSF_RELC               (1 &lt;&lt; 19)
+     
+       /* This symbol represents a signed complex relocation expression,
+          with the expression tree serialized in the symbol name.  */
+     #define BSF_SRELC              (1 &lt;&lt; 20)
+     
+       /* This symbol was created by bfd_get_synthetic_symtab.  */
+     #define BSF_SYNTHETIC          (1 &lt;&lt; 21)
+     
+       /* This symbol is an indirect code object.  Unrelated to BSF_INDIRECT.
+          The dynamic linker will compute the value of this symbol by
+          calling the function that it points to.  BSF_FUNCTION must
+          also be also set.  */
+     #define BSF_GNU_INDIRECT_FUNCTION (1 &lt;&lt; 22)
+       /* This symbol is a globally unique data object.  The dynamic linker
+          will make sure that in the entire process there is just one symbol
+          with this name and type in use.  BSF_OBJECT must also be set.  */
+     #define BSF_GNU_UNIQUE         (1 &lt;&lt; 23)
+     
+       flagword flags;
+     
+       /* A pointer to the section to which this symbol is
+          relative.  This will always be non NULL, there are special
+          sections for undefined and absolute symbols.  */
+       struct bfd_section *section;
+     
+       /* Back end special data.  */
+       union
+         {
+           void *p;
+           bfd_vma i;
+         }
+       udata;
+     }
+     asymbol;
+     
+</pre>
+   </body></html>
+

@@ -1,0 +1,711 @@
+<html lang="en">
+<head>
+<title>Storage Layout - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Macros.html#Target-Macros" title="Target Macros">
+<link rel="prev" href="Per_002dFunction-Data.html#Per_002dFunction-Data" title="Per-Function Data">
+<link rel="next" href="Type-Layout.html#Type-Layout" title="Type Layout">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Storage-Layout"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Type-Layout.html#Type-Layout">Type Layout</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Per_002dFunction-Data.html#Per_002dFunction-Data">Per-Function Data</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Macros.html#Target-Macros">Target Macros</a>
+<hr>
+</div>
+
+<h3 class="section">17.5 Storage Layout</h3>
+
+<p><a name="index-storage-layout-3924"></a>
+Note that the definitions of the macros in this table which are sizes or
+alignments measured in bits do not need to be constant.  They can be C
+expressions that refer to static variables, such as the <code>target_flags</code>. 
+See <a href="Run_002dtime-Target.html#Run_002dtime-Target">Run-time Target</a>.
+
+<div class="defun">
+&mdash; Macro: <b>BITS_BIG_ENDIAN</b><var><a name="index-BITS_005fBIG_005fENDIAN-3925"></a></var><br>
+<blockquote><p>Define this macro to have the value 1 if the most significant bit in a
+byte has the lowest number; otherwise define it to have the value zero. 
+This means that bit-field instructions count from the most significant
+bit.  If the machine has no bit-field instructions, then this must still
+be defined, but it doesn't matter which value it is defined to.  This
+macro need not be a constant.
+
+      <p>This macro does not affect the way structure fields are packed into
+bytes or words; that is controlled by <code>BYTES_BIG_ENDIAN</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>BYTES_BIG_ENDIAN</b><var><a name="index-BYTES_005fBIG_005fENDIAN-3926"></a></var><br>
+<blockquote><p>Define this macro to have the value 1 if the most significant byte in a
+word has the lowest number.  This macro need not be a constant. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>WORDS_BIG_ENDIAN</b><var><a name="index-WORDS_005fBIG_005fENDIAN-3927"></a></var><br>
+<blockquote><p>Define this macro to have the value 1 if, in a multiword object, the
+most significant word has the lowest number.  This applies to both
+memory locations and registers; see <code>REG_WORDS_BIG_ENDIAN</code> if the
+order of words in memory is not the same as the order in registers.  This
+macro need not be a constant. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>REG_WORDS_BIG_ENDIAN</b><var><a name="index-REG_005fWORDS_005fBIG_005fENDIAN-3928"></a></var><br>
+<blockquote><p>On some machines, the order of words in a multiword object differs between
+registers in memory.  In such a situation, define this macro to describe
+the order of words in a register.  The macro <code>WORDS_BIG_ENDIAN</code> controls
+the order of words in memory. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>FLOAT_WORDS_BIG_ENDIAN</b><var><a name="index-FLOAT_005fWORDS_005fBIG_005fENDIAN-3929"></a></var><br>
+<blockquote><p>Define this macro to have the value 1 if <code>DFmode</code>, <code>XFmode</code> or
+<code>TFmode</code> floating point numbers are stored in memory with the word
+containing the sign bit at the lowest address; otherwise define it to
+have the value 0.  This macro need not be a constant.
+
+      <p>You need not define this macro if the ordering is the same as for
+multi-word integers. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>BITS_PER_WORD</b><var><a name="index-BITS_005fPER_005fWORD-3930"></a></var><br>
+<blockquote><p>Number of bits in a word.  If you do not define this macro, the default
+is <code>BITS_PER_UNIT * UNITS_PER_WORD</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>MAX_BITS_PER_WORD</b><var><a name="index-MAX_005fBITS_005fPER_005fWORD-3931"></a></var><br>
+<blockquote><p>Maximum number of bits in a word.  If this is undefined, the default is
+<code>BITS_PER_WORD</code>.  Otherwise, it is the constant value that is the
+largest value that <code>BITS_PER_WORD</code> can have at run-time. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>UNITS_PER_WORD</b><var><a name="index-UNITS_005fPER_005fWORD-3932"></a></var><br>
+<blockquote><p>Number of storage units in a word; normally the size of a general-purpose
+register, a power of two from 1 or 8. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>MIN_UNITS_PER_WORD</b><var><a name="index-MIN_005fUNITS_005fPER_005fWORD-3933"></a></var><br>
+<blockquote><p>Minimum number of units in a word.  If this is undefined, the default is
+<code>UNITS_PER_WORD</code>.  Otherwise, it is the constant value that is the
+smallest value that <code>UNITS_PER_WORD</code> can have at run-time. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>POINTER_SIZE</b><var><a name="index-POINTER_005fSIZE-3934"></a></var><br>
+<blockquote><p>Width of a pointer, in bits.  You must specify a value no wider than the
+width of <code>Pmode</code>.  If it is not equal to the width of <code>Pmode</code>,
+you must define <code>POINTERS_EXTEND_UNSIGNED</code>.  If you do not specify
+a value the default is <code>BITS_PER_WORD</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>POINTERS_EXTEND_UNSIGNED</b><var><a name="index-POINTERS_005fEXTEND_005fUNSIGNED-3935"></a></var><br>
+<blockquote><p>A C expression that determines how pointers should be extended from
+<code>ptr_mode</code> to either <code>Pmode</code> or <code>word_mode</code>.  It is
+greater than zero if pointers should be zero-extended, zero if they
+should be sign-extended, and negative if some other sort of conversion
+is needed.  In the last case, the extension is done by the target's
+<code>ptr_extend</code> instruction.
+
+      <p>You need not define this macro if the <code>ptr_mode</code>, <code>Pmode</code>
+and <code>word_mode</code> are all the same width. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>PROMOTE_MODE</b> (<var>m, unsignedp, type</var>)<var><a name="index-PROMOTE_005fMODE-3936"></a></var><br>
+<blockquote><p>A macro to update <var>m</var> and <var>unsignedp</var> when an object whose type
+is <var>type</var> and which has the specified mode and signedness is to be
+stored in a register.  This macro is only called when <var>type</var> is a
+scalar type.
+
+      <p>On most RISC machines, which only have operations that operate on a full
+register, define this macro to set <var>m</var> to <code>word_mode</code> if
+<var>m</var> is an integer mode narrower than <code>BITS_PER_WORD</code>.  In most
+cases, only integer modes should be widened because wider-precision
+floating-point operations are usually more expensive than their narrower
+counterparts.
+
+      <p>For most machines, the macro definition does not change <var>unsignedp</var>. 
+However, some machines, have instructions that preferentially handle
+either signed or unsigned quantities of certain modes.  For example, on
+the DEC Alpha, 32-bit loads from memory and 32-bit add instructions
+sign-extend the result to 64 bits.  On such machines, set
+<var>unsignedp</var> according to which kind of extension is more efficient.
+
+      <p>Do not define this macro if it would never modify <var>m</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: machine_mode <b>TARGET_PROMOTE_FUNCTION_MODE</b> (<var>const_tree type, machine_mode mode, int *punsignedp, const_tree funtype, int for_return</var>)<var><a name="index-TARGET_005fPROMOTE_005fFUNCTION_005fMODE-3937"></a></var><br>
+<blockquote><p>Like <code>PROMOTE_MODE</code>, but it is applied to outgoing function arguments or
+function return values.  The target hook should return the new mode
+and possibly change <code>*</code><var>punsignedp</var> if the promotion should
+change signedness.  This function is called only for scalar <em>or
+pointer</em> types.
+
+      <p><var>for_return</var> allows to distinguish the promotion of arguments and
+return values.  If it is <code>1</code>, a return value is being promoted and
+<code>TARGET_FUNCTION_VALUE</code> must perform the same promotions done here. 
+If it is <code>2</code>, the returned mode should be that of the register in
+which an incoming parameter is copied, or the outgoing result is computed;
+then the hook should return the same mode as <code>promote_mode</code>, though
+the signedness may be different.
+
+      <p><var>type</var> can be NULL when promoting function arguments of libcalls.
+
+      <p>The default is to not promote arguments and return values.  You can
+also define the hook to <code>default_promote_function_mode_always_promote</code>
+if you would like to apply the same rules given by <code>PROMOTE_MODE</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>PARM_BOUNDARY</b><var><a name="index-PARM_005fBOUNDARY-3938"></a></var><br>
+<blockquote><p>Normal alignment required for function parameters on the stack, in
+bits.  All stack parameters receive at least this much alignment
+regardless of data type.  On most machines, this is the same as the
+size of an integer. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>STACK_BOUNDARY</b><var><a name="index-STACK_005fBOUNDARY-3939"></a></var><br>
+<blockquote><p>Define this macro to the minimum alignment enforced by hardware for the
+stack pointer on this machine.  The definition is a C expression for the
+desired alignment (measured in bits).  This value is used as a default
+if <code>PREFERRED_STACK_BOUNDARY</code> is not defined.  On most machines,
+this should be the same as <code>PARM_BOUNDARY</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>PREFERRED_STACK_BOUNDARY</b><var><a name="index-PREFERRED_005fSTACK_005fBOUNDARY-3940"></a></var><br>
+<blockquote><p>Define this macro if you wish to preserve a certain alignment for the
+stack pointer, greater than what the hardware enforces.  The definition
+is a C expression for the desired alignment (measured in bits).  This
+macro must evaluate to a value equal to or larger than
+<code>STACK_BOUNDARY</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>INCOMING_STACK_BOUNDARY</b><var><a name="index-INCOMING_005fSTACK_005fBOUNDARY-3941"></a></var><br>
+<blockquote><p>Define this macro if the incoming stack boundary may be different
+from <code>PREFERRED_STACK_BOUNDARY</code>.  This macro must evaluate
+to a value equal to or larger than <code>STACK_BOUNDARY</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>FUNCTION_BOUNDARY</b><var><a name="index-FUNCTION_005fBOUNDARY-3942"></a></var><br>
+<blockquote><p>Alignment required for a function entry point, in bits. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>BIGGEST_ALIGNMENT</b><var><a name="index-BIGGEST_005fALIGNMENT-3943"></a></var><br>
+<blockquote><p>Biggest alignment that any data type can require on this machine, in
+bits.  Note that this is not the biggest alignment that is supported,
+just the biggest alignment that, when violated, may cause a fault. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: HOST_WIDE_INT <b>TARGET_ABSOLUTE_BIGGEST_ALIGNMENT</b><var><a name="index-TARGET_005fABSOLUTE_005fBIGGEST_005fALIGNMENT-3944"></a></var><br>
+<blockquote><p>If defined, this target hook specifies the absolute biggest alignment
+that a type or variable can have on this machine, otherwise,
+<code>BIGGEST_ALIGNMENT</code> is used. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>MALLOC_ABI_ALIGNMENT</b><var><a name="index-MALLOC_005fABI_005fALIGNMENT-3945"></a></var><br>
+<blockquote><p>Alignment, in bits, a C conformant malloc implementation has to
+provide.  If not defined, the default value is <code>BITS_PER_WORD</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ATTRIBUTE_ALIGNED_VALUE</b><var><a name="index-ATTRIBUTE_005fALIGNED_005fVALUE-3946"></a></var><br>
+<blockquote><p>Alignment used by the <code>__attribute__ ((aligned))</code> construct.  If
+not defined, the default value is <code>BIGGEST_ALIGNMENT</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>MINIMUM_ATOMIC_ALIGNMENT</b><var><a name="index-MINIMUM_005fATOMIC_005fALIGNMENT-3947"></a></var><br>
+<blockquote><p>If defined, the smallest alignment, in bits, that can be given to an
+object that can be referenced in one operation, without disturbing any
+nearby object.  Normally, this is <code>BITS_PER_UNIT</code>, but may be larger
+on machines that don't have byte or half-word store operations. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>BIGGEST_FIELD_ALIGNMENT</b><var><a name="index-BIGGEST_005fFIELD_005fALIGNMENT-3948"></a></var><br>
+<blockquote><p>Biggest alignment that any structure or union field can require on this
+machine, in bits.  If defined, this overrides <code>BIGGEST_ALIGNMENT</code> for
+structure and union fields only, unless the field alignment has been set
+by the <code>__attribute__ ((aligned (</code><var>n</var><code>)))</code> construct. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ADJUST_FIELD_ALIGN</b> (<var>field, computed</var>)<var><a name="index-ADJUST_005fFIELD_005fALIGN-3949"></a></var><br>
+<blockquote><p>An expression for the alignment of a structure field <var>field</var> if the
+alignment computed in the usual way (including applying of
+<code>BIGGEST_ALIGNMENT</code> and <code>BIGGEST_FIELD_ALIGNMENT</code> to the
+alignment) is <var>computed</var>.  It overrides alignment only if the
+field alignment has not been set by the
+<code>__attribute__ ((aligned (</code><var>n</var><code>)))</code> construct. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>MAX_STACK_ALIGNMENT</b><var><a name="index-MAX_005fSTACK_005fALIGNMENT-3950"></a></var><br>
+<blockquote><p>Biggest stack alignment guaranteed by the backend.  Use this macro
+to specify the maximum alignment of a variable on stack.
+
+      <p>If not defined, the default value is <code>STACK_BOUNDARY</code>.
+
+     <!-- FIXME: The default should be @code{PREFERRED_STACK_BOUNDARY}. -->
+<!-- But the fix for PR 32893 indicates that we can only guarantee -->
+<!-- maximum stack alignment on stack up to @code{STACK_BOUNDARY}, not -->
+<!-- @code{PREFERRED_STACK_BOUNDARY}, if stack alignment isn't supported. -->
+</blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>MAX_OFILE_ALIGNMENT</b><var><a name="index-MAX_005fOFILE_005fALIGNMENT-3951"></a></var><br>
+<blockquote><p>Biggest alignment supported by the object file format of this machine. 
+Use this macro to limit the alignment which can be specified using the
+<code>__attribute__ ((aligned (</code><var>n</var><code>)))</code> construct.  If not defined,
+the default value is <code>BIGGEST_ALIGNMENT</code>.
+
+      <p>On systems that use ELF, the default (in <samp><span class="file">config/elfos.h</span></samp>) is
+the largest supported 32-bit ELF section alignment representable on
+a 32-bit host e.g. `<samp><span class="samp">(((uint64_t) 1 &lt;&lt; 28) * 8)</span></samp>'. 
+On 32-bit ELF the largest supported section alignment in bits is
+`<samp><span class="samp">(0x80000000 * 8)</span></samp>', but this is not representable on 32-bit hosts. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DATA_ALIGNMENT</b> (<var>type, basic-align</var>)<var><a name="index-DATA_005fALIGNMENT-3952"></a></var><br>
+<blockquote><p>If defined, a C expression to compute the alignment for a variable in
+the static store.  <var>type</var> is the data type, and <var>basic-align</var> is
+the alignment that the object would ordinarily have.  The value of this
+macro is used instead of that alignment to align the object.
+
+      <p>If this macro is not defined, then <var>basic-align</var> is used.
+
+      <p><a name="index-strcpy-3953"></a>One use of this macro is to increase alignment of medium-size data to
+make it all fit in fewer cache lines.  Another is to cause character
+arrays to be word-aligned so that <code>strcpy</code> calls that copy
+constants to character arrays can be done inline. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DATA_ABI_ALIGNMENT</b> (<var>type, basic-align</var>)<var><a name="index-DATA_005fABI_005fALIGNMENT-3954"></a></var><br>
+<blockquote><p>Similar to <code>DATA_ALIGNMENT</code>, but for the cases where the ABI mandates
+some alignment increase, instead of optimization only purposes.  E.g. AMD x86-64 psABI says that variables with array type larger than 15 bytes
+must be aligned to 16 byte boundaries.
+
+      <p>If this macro is not defined, then <var>basic-align</var> is used. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>CONSTANT_ALIGNMENT</b> (<var>constant, basic-align</var>)<var><a name="index-CONSTANT_005fALIGNMENT-3955"></a></var><br>
+<blockquote><p>If defined, a C expression to compute the alignment given to a constant
+that is being placed in memory.  <var>constant</var> is the constant and
+<var>basic-align</var> is the alignment that the object would ordinarily
+have.  The value of this macro is used instead of that alignment to
+align the object.
+
+      <p>If this macro is not defined, then <var>basic-align</var> is used.
+
+      <p>The typical use of this macro is to increase alignment for string
+constants to be word aligned so that <code>strcpy</code> calls that copy
+constants can be done inline. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>LOCAL_ALIGNMENT</b> (<var>type, basic-align</var>)<var><a name="index-LOCAL_005fALIGNMENT-3956"></a></var><br>
+<blockquote><p>If defined, a C expression to compute the alignment for a variable in
+the local store.  <var>type</var> is the data type, and <var>basic-align</var> is
+the alignment that the object would ordinarily have.  The value of this
+macro is used instead of that alignment to align the object.
+
+      <p>If this macro is not defined, then <var>basic-align</var> is used.
+
+      <p>One use of this macro is to increase alignment of medium-size data to
+make it all fit in fewer cache lines.
+
+      <p>If the value of this macro has a type, it should be an unsigned type. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: HOST_WIDE_INT <b>TARGET_VECTOR_ALIGNMENT</b> (<var>const_tree type</var>)<var><a name="index-TARGET_005fVECTOR_005fALIGNMENT-3957"></a></var><br>
+<blockquote><p>This hook can be used to define the alignment for a vector of type
+<var>type</var>, in order to comply with a platform ABI.  The default is to
+require natural alignment for vector types.  The alignment returned by
+this hook must be a power-of-two multiple of the default alignment of
+the vector element type. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>STACK_SLOT_ALIGNMENT</b> (<var>type, mode, basic-align</var>)<var><a name="index-STACK_005fSLOT_005fALIGNMENT-3958"></a></var><br>
+<blockquote><p>If defined, a C expression to compute the alignment for stack slot. 
+<var>type</var> is the data type, <var>mode</var> is the widest mode available,
+and <var>basic-align</var> is the alignment that the slot would ordinarily
+have.  The value of this macro is used instead of that alignment to
+align the slot.
+
+      <p>If this macro is not defined, then <var>basic-align</var> is used when
+<var>type</var> is <code>NULL</code>.  Otherwise, <code>LOCAL_ALIGNMENT</code> will
+be used.
+
+      <p>This macro is to set alignment of stack slot to the maximum alignment
+of all possible modes which the slot may have.
+
+      <p>If the value of this macro has a type, it should be an unsigned type. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>LOCAL_DECL_ALIGNMENT</b> (<var>decl</var>)<var><a name="index-LOCAL_005fDECL_005fALIGNMENT-3959"></a></var><br>
+<blockquote><p>If defined, a C expression to compute the alignment for a local
+variable <var>decl</var>.
+
+      <p>If this macro is not defined, then
+<code>LOCAL_ALIGNMENT (TREE_TYPE (</code><var>decl</var><code>), DECL_ALIGN (</code><var>decl</var><code>))</code>
+is used.
+
+      <p>One use of this macro is to increase alignment of medium-size data to
+make it all fit in fewer cache lines.
+
+      <p>If the value of this macro has a type, it should be an unsigned type. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>MINIMUM_ALIGNMENT</b> (<var>exp, mode, align</var>)<var><a name="index-MINIMUM_005fALIGNMENT-3960"></a></var><br>
+<blockquote><p>If defined, a C expression to compute the minimum required alignment
+for dynamic stack realignment purposes for <var>exp</var> (a type or decl),
+<var>mode</var>, assuming normal alignment <var>align</var>.
+
+      <p>If this macro is not defined, then <var>align</var> will be used. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>EMPTY_FIELD_BOUNDARY</b><var><a name="index-EMPTY_005fFIELD_005fBOUNDARY-3961"></a></var><br>
+<blockquote><p>Alignment in bits to be given to a structure bit-field that follows an
+empty field such as <code>int : 0;</code>.
+
+      <p>If <code>PCC_BITFIELD_TYPE_MATTERS</code> is true, it overrides this macro. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>STRUCTURE_SIZE_BOUNDARY</b><var><a name="index-STRUCTURE_005fSIZE_005fBOUNDARY-3962"></a></var><br>
+<blockquote><p>Number of bits which any structure or union's size must be a multiple of. 
+Each structure or union's size is rounded up to a multiple of this.
+
+      <p>If you do not define this macro, the default is the same as
+<code>BITS_PER_UNIT</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>STRICT_ALIGNMENT</b><var><a name="index-STRICT_005fALIGNMENT-3963"></a></var><br>
+<blockquote><p>Define this macro to be the value 1 if instructions will fail to work
+if given data not on the nominal alignment.  If instructions will merely
+go slower in that case, define this macro as 0. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>PCC_BITFIELD_TYPE_MATTERS</b><var><a name="index-PCC_005fBITFIELD_005fTYPE_005fMATTERS-3964"></a></var><br>
+<blockquote><p>Define this if you wish to imitate the way many other C compilers handle
+alignment of bit-fields and the structures that contain them.
+
+      <p>The behavior is that the type written for a named bit-field (<code>int</code>,
+<code>short</code>, or other integer type) imposes an alignment for the entire
+structure, as if the structure really did contain an ordinary field of
+that type.  In addition, the bit-field is placed within the structure so
+that it would fit within such a field, not crossing a boundary for it.
+
+      <p>Thus, on most machines, a named bit-field whose type is written as
+<code>int</code> would not cross a four-byte boundary, and would force
+four-byte alignment for the whole structure.  (The alignment used may
+not be four bytes; it is controlled by the other alignment parameters.)
+
+      <p>An unnamed bit-field will not affect the alignment of the containing
+structure.
+
+      <p>If the macro is defined, its definition should be a C expression;
+a nonzero value for the expression enables this behavior.
+
+      <p>Note that if this macro is not defined, or its value is zero, some
+bit-fields may cross more than one alignment boundary.  The compiler can
+support such references if there are `<samp><span class="samp">insv</span></samp>', `<samp><span class="samp">extv</span></samp>', and
+`<samp><span class="samp">extzv</span></samp>' insns that can directly reference memory.
+
+      <p>The other known way of making bit-fields work is to define
+<code>STRUCTURE_SIZE_BOUNDARY</code> as large as <code>BIGGEST_ALIGNMENT</code>. 
+Then every structure can be accessed with fullwords.
+
+      <p>Unless the machine has bit-field instructions or you define
+<code>STRUCTURE_SIZE_BOUNDARY</code> that way, you must define
+<code>PCC_BITFIELD_TYPE_MATTERS</code> to have a nonzero value.
+
+      <p>If your aim is to make GCC use the same conventions for laying out
+bit-fields as are used by another compiler, here is how to investigate
+what the other compiler does.  Compile and run this program:
+
+     <pre class="smallexample">          struct foo1
+          {
+            char x;
+            char :0;
+            char y;
+          };
+          
+          struct foo2
+          {
+            char x;
+            int :0;
+            char y;
+          };
+          
+          main ()
+          {
+            printf ("Size of foo1 is %d\n",
+                    sizeof (struct foo1));
+            printf ("Size of foo2 is %d\n",
+                    sizeof (struct foo2));
+            exit (0);
+          }
+     </pre>
+      <p>If this prints 2 and 5, then the compiler's behavior is what you would
+get from <code>PCC_BITFIELD_TYPE_MATTERS</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>BITFIELD_NBYTES_LIMITED</b><var><a name="index-BITFIELD_005fNBYTES_005fLIMITED-3965"></a></var><br>
+<blockquote><p>Like <code>PCC_BITFIELD_TYPE_MATTERS</code> except that its effect is limited
+to aligning a bit-field within the structure. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_ALIGN_ANON_BITFIELD</b> (<var>void</var>)<var><a name="index-TARGET_005fALIGN_005fANON_005fBITFIELD-3966"></a></var><br>
+<blockquote><p>When <code>PCC_BITFIELD_TYPE_MATTERS</code> is true this hook will determine
+whether unnamed bitfields affect the alignment of the containing
+structure.  The hook should return true if the structure should inherit
+the alignment requirements of an unnamed bitfield's type. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_NARROW_VOLATILE_BITFIELD</b> (<var>void</var>)<var><a name="index-TARGET_005fNARROW_005fVOLATILE_005fBITFIELD-3967"></a></var><br>
+<blockquote><p>This target hook should return <code>true</code> if accesses to volatile bitfields
+should use the narrowest mode possible.  It should return <code>false</code> if
+these accesses should use the bitfield container type.
+
+      <p>The default is <code>false</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_MEMBER_TYPE_FORCES_BLK</b> (<var>const_tree field, machine_mode mode</var>)<var><a name="index-TARGET_005fMEMBER_005fTYPE_005fFORCES_005fBLK-3968"></a></var><br>
+<blockquote><p>Return true if a structure, union or array containing <var>field</var> should
+be accessed using <code>BLKMODE</code>.
+
+      <p>If <var>field</var> is the only field in the structure, <var>mode</var> is its
+mode, otherwise <var>mode</var> is VOIDmode.  <var>mode</var> is provided in the
+case where structures of one field would require the structure's mode to
+retain the field's mode.
+
+      <p>Normally, this is not needed. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ROUND_TYPE_ALIGN</b> (<var>type, computed, specified</var>)<var><a name="index-ROUND_005fTYPE_005fALIGN-3969"></a></var><br>
+<blockquote><p>Define this macro as an expression for the alignment of a type (given
+by <var>type</var> as a tree node) if the alignment computed in the usual
+way is <var>computed</var> and the alignment explicitly specified was
+<var>specified</var>.
+
+      <p>The default is to use <var>specified</var> if it is larger; otherwise, use
+the smaller of <var>computed</var> and <code>BIGGEST_ALIGNMENT</code>
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>MAX_FIXED_MODE_SIZE</b><var><a name="index-MAX_005fFIXED_005fMODE_005fSIZE-3970"></a></var><br>
+<blockquote><p>An integer expression for the size in bits of the largest integer
+machine mode that should actually be used.  All integer machine modes of
+this size or smaller can be used for structures and unions with the
+appropriate sizes.  If this macro is undefined, <code>GET_MODE_BITSIZE
+(DImode)</code> is assumed. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>STACK_SAVEAREA_MODE</b> (<var>save_level</var>)<var><a name="index-STACK_005fSAVEAREA_005fMODE-3971"></a></var><br>
+<blockquote><p>If defined, an expression of type <code>machine_mode</code> that
+specifies the mode of the save area operand of a
+<code>save_stack_</code><var>level</var> named pattern (see <a href="Standard-Names.html#Standard-Names">Standard Names</a>). 
+<var>save_level</var> is one of <code>SAVE_BLOCK</code>, <code>SAVE_FUNCTION</code>, or
+<code>SAVE_NONLOCAL</code> and selects which of the three named patterns is
+having its mode specified.
+
+      <p>You need not define this macro if it always returns <code>Pmode</code>.  You
+would most commonly define this macro if the
+<code>save_stack_</code><var>level</var> patterns need to support both a 32- and a
+64-bit mode. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>STACK_SIZE_MODE</b><var><a name="index-STACK_005fSIZE_005fMODE-3972"></a></var><br>
+<blockquote><p>If defined, an expression of type <code>machine_mode</code> that
+specifies the mode of the size increment operand of an
+<code>allocate_stack</code> named pattern (see <a href="Standard-Names.html#Standard-Names">Standard Names</a>).
+
+      <p>You need not define this macro if it always returns <code>word_mode</code>. 
+You would most commonly define this macro if the <code>allocate_stack</code>
+pattern needs to support both a 32- and a 64-bit mode. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: machine_mode <b>TARGET_LIBGCC_CMP_RETURN_MODE</b> (<var>void</var>)<var><a name="index-TARGET_005fLIBGCC_005fCMP_005fRETURN_005fMODE-3973"></a></var><br>
+<blockquote><p>This target hook should return the mode to be used for the return value
+of compare instructions expanded to libgcc calls.  If not defined
+<code>word_mode</code> is returned which is the right choice for a majority of
+targets. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: machine_mode <b>TARGET_LIBGCC_SHIFT_COUNT_MODE</b> (<var>void</var>)<var><a name="index-TARGET_005fLIBGCC_005fSHIFT_005fCOUNT_005fMODE-3974"></a></var><br>
+<blockquote><p>This target hook should return the mode to be used for the shift count operand
+of shift instructions expanded to libgcc calls.  If not defined
+<code>word_mode</code> is returned which is the right choice for a majority of
+targets. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: machine_mode <b>TARGET_UNWIND_WORD_MODE</b> (<var>void</var>)<var><a name="index-TARGET_005fUNWIND_005fWORD_005fMODE-3975"></a></var><br>
+<blockquote><p>Return machine mode to be used for <code>_Unwind_Word</code> type. 
+The default is to use <code>word_mode</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_MS_BITFIELD_LAYOUT_P</b> (<var>const_tree record_type</var>)<var><a name="index-TARGET_005fMS_005fBITFIELD_005fLAYOUT_005fP-3976"></a></var><br>
+<blockquote><p>This target hook returns <code>true</code> if bit-fields in the given
+<var>record_type</var> are to be laid out following the rules of Microsoft
+Visual C/C++, namely: (i) a bit-field won't share the same storage
+unit with the previous bit-field if their underlying types have
+different sizes, and the bit-field will be aligned to the highest
+alignment of the underlying types of itself and of the previous
+bit-field; (ii) a zero-sized bit-field will affect the alignment of
+the whole enclosing structure, even if it is unnamed; except that
+(iii) a zero-sized bit-field will be disregarded unless it follows
+another bit-field of nonzero size.  If this hook returns <code>true</code>,
+other macros that control bit-field layout are ignored.
+
+      <p>When a bit-field is inserted into a packed record, the whole size
+of the underlying type is used by one or more same-size adjacent
+bit-fields (that is, if its long:3, 32 bits is used in the record,
+and any additional adjacent long bit-fields are packed into the same
+chunk of 32 bits.  However, if the size changes, a new field of that
+size is allocated).  In an unpacked record, this is the same as using
+alignment, but not equivalent when packing.
+
+      <p>If both MS bit-fields and `<samp><span class="samp">__attribute__((packed))</span></samp>' are used,
+the latter will take precedence.  If `<samp><span class="samp">__attribute__((packed))</span></samp>' is
+used on a single field when MS bit-fields are in use, it will take
+precedence for that field, but the alignment of the rest of the structure
+may affect its placement. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_DECIMAL_FLOAT_SUPPORTED_P</b> (<var>void</var>)<var><a name="index-TARGET_005fDECIMAL_005fFLOAT_005fSUPPORTED_005fP-3977"></a></var><br>
+<blockquote><p>Returns true if the target supports decimal floating point. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_FIXED_POINT_SUPPORTED_P</b> (<var>void</var>)<var><a name="index-TARGET_005fFIXED_005fPOINT_005fSUPPORTED_005fP-3978"></a></var><br>
+<blockquote><p>Returns true if the target supports fixed-point arithmetic. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_EXPAND_TO_RTL_HOOK</b> (<var>void</var>)<var><a name="index-TARGET_005fEXPAND_005fTO_005fRTL_005fHOOK-3979"></a></var><br>
+<blockquote><p>This hook is called just before expansion into rtl, allowing the target
+to perform additional initializations or analysis before the expansion. 
+For example, the rs6000 port uses it to allocate a scratch stack slot
+for use in copying SDmode values between memory and floating point
+registers whenever the function being expanded has any SDmode
+usage. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_INSTANTIATE_DECLS</b> (<var>void</var>)<var><a name="index-TARGET_005fINSTANTIATE_005fDECLS-3980"></a></var><br>
+<blockquote><p>This hook allows the backend to perform additional instantiations on rtl
+that are not actually in any insns yet, but will be later. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: const char * <b>TARGET_MANGLE_TYPE</b> (<var>const_tree type</var>)<var><a name="index-TARGET_005fMANGLE_005fTYPE-3981"></a></var><br>
+<blockquote><p>If your target defines any fundamental types, or any types your target
+uses should be mangled differently from the default, define this hook
+to return the appropriate encoding for these types as part of a C++
+mangled name.  The <var>type</var> argument is the tree structure representing
+the type to be mangled.  The hook may be applied to trees which are
+not target-specific fundamental types; it should return <code>NULL</code>
+for all such types, as well as arguments it does not recognize.  If the
+return value is not <code>NULL</code>, it must point to a statically-allocated
+string constant.
+
+      <p>Target-specific fundamental types might be new fundamental types or
+qualified versions of ordinary fundamental types.  Encode new
+fundamental types as `<samp><span class="samp">u&nbsp;</span><var>n</var><span class="samp">&nbsp;</span><var>name</var><span class="samp"><!-- /@w --></span></samp>', where <var>name</var>
+is the name used for the type in source code, and <var>n</var> is the
+length of <var>name</var> in decimal.  Encode qualified versions of
+ordinary types as `<samp><span class="samp">U&nbsp;</span><var>n</var><span class="samp">&nbsp;</span><var>name</var><span class="samp">&nbsp;</span><var>code</var><span class="samp"><!-- /@w --></span></samp>', where
+<var>name</var> is the name used for the type qualifier in source code,
+<var>n</var> is the length of <var>name</var> as above, and <var>code</var> is the
+code used to represent the unqualified version of this type.  (See
+<code>write_builtin_type</code> in <samp><span class="file">cp/mangle.c</span></samp> for the list of
+codes.)  In both cases the spaces are for clarity; do not include any
+spaces in your string.
+
+      <p>This hook is applied to types prior to typedef resolution.  If the mangled
+name for a particular type depends only on that type's main variant, you
+can perform typedef resolution yourself using <code>TYPE_MAIN_VARIANT</code>
+before mangling.
+
+      <p>The default version of this hook always returns <code>NULL</code>, which is
+appropriate for a target that does not define any new fundamental
+types. 
+</p></blockquote></div>
+
+ </body></html>
+

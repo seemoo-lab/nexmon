@@ -1,0 +1,95 @@
+<html lang="en">
+<head>
+<title>profopt Testing - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Testsuites.html#Testsuites" title="Testsuites">
+<link rel="prev" href="gcov-Testing.html#gcov-Testing" title="gcov Testing">
+<link rel="next" href="compat-Testing.html#compat-Testing" title="compat Testing">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="profopt-Testing"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="compat-Testing.html#compat-Testing">compat Testing</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="gcov-Testing.html#gcov-Testing">gcov Testing</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Testsuites.html#Testsuites">Testsuites</a>
+<hr>
+</div>
+
+<h3 class="section">7.8 Support for testing profile-directed optimizations</h3>
+
+<p>The file <samp><span class="file">profopt.exp</span></samp> provides language-independent support for
+checking correct execution of a test built with profile-directed
+optimization.  This testing requires that a test program be built and
+executed twice.  The first time it is compiled to generate profile
+data, and the second time it is compiled to use the data that was
+generated during the first execution.  The second execution is to
+verify that the test produces the expected results.
+
+ <p>To check that the optimization actually generated better code, a
+test can be built and run a third time with normal optimizations to
+verify that the performance is better with the profile-directed
+optimizations.  <samp><span class="file">profopt.exp</span></samp> has the beginnings of this kind
+of support.
+
+ <p><samp><span class="file">profopt.exp</span></samp> provides generic support for profile-directed
+optimizations.  Each set of tests that uses it provides information
+about a specific optimization:
+
+     <dl>
+<dt><code>tool</code><dd>tool being tested, e.g., <samp><span class="command">gcc</span></samp>
+
+     <br><dt><code>profile_option</code><dd>options used to generate profile data
+
+     <br><dt><code>feedback_option</code><dd>options used to optimize using that profile data
+
+     <br><dt><code>prof_ext</code><dd>suffix of profile data files
+
+     <br><dt><code>PROFOPT_OPTIONS</code><dd>list of options with which to run each test, similar to the lists for
+torture tests
+
+     <br><dt><code>{ dg-final-generate { </code><var>local-directive</var><code> } }</code><dd>This directive is similar to <code>dg-final</code>, but the
+<var>local-directive</var> is run after the generation of profile data.
+
+     <br><dt><code>{ dg-final-use { </code><var>local-directive</var><code> } }</code><dd>The <var>local-directive</var> is run after the profile data have been
+used. 
+</dl>
+
+ </body></html>
+

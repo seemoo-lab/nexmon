@@ -1,0 +1,85 @@
+<html lang="en">
+<head>
+<title>Expanded Reference - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Type-Descriptors.html#Type-Descriptors" title="Type Descriptors">
+<link rel="next" href="Questions.html#Questions" title="Questions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Expanded-Reference"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Questions.html#Questions">Questions</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Type-Descriptors.html#Type-Descriptors">Type Descriptors</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="appendix">Appendix D Expanded Reference by Stab Type</h2>
+
+<!-- FIXME: This appendix should go away; see N_PSYM or N_SO for an example. -->
+<p>For a full list of stab types, and cross-references to where they are
+described, see <a href="Stab-Types.html#Stab-Types">Stab Types</a>.  This appendix just covers certain
+stabs which are not yet described in the main body of this document;
+eventually the information will all be in one place.
+
+   <p>Format of an entry:
+
+   <p>The first line is the symbol type (see <samp><span class="file">include/aout/stab.def</span></samp>).
+
+   <p>The second line describes the language constructs the symbol type
+represents.
+
+   <p>The third line is the stab format with the significant stab fields
+named and the rest NIL.
+
+   <p>Subsequent lines expand upon the meaning and possible values for each
+significant stab field.
+
+   <p>Finally, any further information.
+
+<ul class="menu">
+<li><a accesskey="1" href="N_005fPC.html#N_005fPC">N_PC</a>: 			Pascal global symbol
+<li><a accesskey="2" href="N_005fNSYMS.html#N_005fNSYMS">N_NSYMS</a>: 			Number of symbols
+<li><a accesskey="3" href="N_005fNOMAP.html#N_005fNOMAP">N_NOMAP</a>: 			No DST map
+<li><a accesskey="4" href="N_005fM2C.html#N_005fM2C">N_M2C</a>: 			Modula-2 compilation unit
+<li><a accesskey="5" href="N_005fBROWS.html#N_005fBROWS">N_BROWS</a>: 			Path to .cb file for Sun source code browser
+<li><a accesskey="6" href="N_005fDEFD.html#N_005fDEFD">N_DEFD</a>: 			GNU Modula2 definition module dependency
+<li><a accesskey="7" href="N_005fEHDECL.html#N_005fEHDECL">N_EHDECL</a>: 			GNU C++ exception variable
+<li><a accesskey="8" href="N_005fMOD2.html#N_005fMOD2">N_MOD2</a>: 			Modula2 information "for imc"
+<li><a accesskey="9" href="N_005fCATCH.html#N_005fCATCH">N_CATCH</a>: 			GNU C++ "catch" clause
+<li><a href="N_005fSSYM.html#N_005fSSYM">N_SSYM</a>: 			Structure or union element
+<li><a href="N_005fSCOPE.html#N_005fSCOPE">N_SCOPE</a>: 			Modula2 scope information (Sun only)
+<li><a href="Gould.html#Gould">Gould</a>: 			non-base register symbols used on Gould systems
+<li><a href="N_005fLENG.html#N_005fLENG">N_LENG</a>: 			Length of preceding entry
+</ul>
+
+   </body></html>
+

@@ -1,0 +1,115 @@
+<html lang="en">
+<head>
+<title>Statement and operand traversals - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="GIMPLE.html#GIMPLE" title="GIMPLE">
+<link rel="prev" href="Adding-a-new-GIMPLE-statement-code.html#Adding-a-new-GIMPLE-statement-code" title="Adding a new GIMPLE statement code">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Statement-and-operand-traversals"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Adding-a-new-GIMPLE-statement-code.html#Adding-a-new-GIMPLE-statement-code">Adding a new GIMPLE statement code</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="GIMPLE.html#GIMPLE">GIMPLE</a>
+<hr>
+</div>
+
+<h3 class="section">11.12 Statement and operand traversals</h3>
+
+<p><a name="index-Statement-and-operand-traversals-2501"></a>
+There are two functions available for walking statements and
+sequences: <code>walk_gimple_stmt</code> and <code>walk_gimple_seq</code>,
+accordingly, and a third function for walking the operands in a
+statement: <code>walk_gimple_op</code>.
+
+<div class="defun">
+&mdash; GIMPLE function: tree <b>walk_gimple_stmt</b> (<var>gimple_stmt_iterator *gsi, walk_stmt_fn callback_stmt, walk_tree_fn callback_op, struct walk_stmt_info *wi</var>)<var><a name="index-walk_005fgimple_005fstmt-2502"></a></var><br>
+<blockquote><p>This function is used to walk the current statement in <code>GSI</code>,
+optionally using traversal state stored in <code>WI</code>.  If <code>WI</code> is <code>NULL</code>, no
+state is kept during the traversal.
+
+      <p>The callback <code>CALLBACK_STMT</code> is called.  If <code>CALLBACK_STMT</code> returns
+true, it means that the callback function has handled all the
+operands of the statement and it is not necessary to walk its
+operands.
+
+      <p>If <code>CALLBACK_STMT</code> is <code>NULL</code> or it returns false, <code>CALLBACK_OP</code> is
+called on each operand of the statement via <code>walk_gimple_op</code>.  If
+<code>walk_gimple_op</code> returns non-<code>NULL</code> for any operand, the remaining
+operands are not scanned.
+
+      <p>The return value is that returned by the last call to
+<code>walk_gimple_op</code>, or <code>NULL_TREE</code> if no <code>CALLBACK_OP</code> is specified. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree <b>walk_gimple_op</b> (<var>gimple stmt, walk_tree_fn callback_op, struct walk_stmt_info *wi</var>)<var><a name="index-walk_005fgimple_005fop-2503"></a></var><br>
+<blockquote><p>Use this function to walk the operands of statement <code>STMT</code>.  Every
+operand is walked via <code>walk_tree</code> with optional state information
+in <code>WI</code>.
+
+      <p><code>CALLBACK_OP</code> is called on each operand of <code>STMT</code> via <code>walk_tree</code>. 
+Additional parameters to <code>walk_tree</code> must be stored in <code>WI</code>.  For
+each operand <code>OP</code>, <code>walk_tree</code> is called as:
+
+     <pre class="smallexample">          walk_tree (&amp;<code>OP</code>, <code>CALLBACK_OP</code>, <code>WI</code>, <code>PSET</code>)
+     </pre>
+      <p>If <code>CALLBACK_OP</code> returns non-<code>NULL</code> for an operand, the remaining
+operands are not scanned.  The return value is that returned by
+the last call to <code>walk_tree</code>, or <code>NULL_TREE</code> if no <code>CALLBACK_OP</code> is
+specified. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree <b>walk_gimple_seq</b> (<var>gimple_seq seq, walk_stmt_fn callback_stmt, walk_tree_fn callback_op, struct walk_stmt_info *wi</var>)<var><a name="index-walk_005fgimple_005fseq-2504"></a></var><br>
+<blockquote><p>This function walks all the statements in the sequence <code>SEQ</code>
+calling <code>walk_gimple_stmt</code> on each one.  <code>WI</code> is as in
+<code>walk_gimple_stmt</code>.  If <code>walk_gimple_stmt</code> returns non-<code>NULL</code>, the walk
+is stopped and the value returned.  Otherwise, all the statements
+are walked and <code>NULL_TREE</code> returned. 
+</p></blockquote></div>
+
+<!-- Copyright (C) 2004-2015 Free Software Foundation, Inc. -->
+<!-- This is part of the GCC manual. -->
+<!-- For copying conditions, see the file gcc.texi. -->
+<!--  -->
+<!-- Tree SSA -->
+<!--  -->
+</body></html>
+

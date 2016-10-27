@@ -1,0 +1,81 @@
+<html lang="en">
+<head>
+<title>Basic Cplusplus Types - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Cplusplus.html#Cplusplus" title="Cplusplus">
+<link rel="prev" href="Nested-Symbols.html#Nested-Symbols" title="Nested Symbols">
+<link rel="next" href="Simple-Classes.html#Simple-Classes" title="Simple Classes">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Basic-Cplusplus-Types"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Simple-Classes.html#Simple-Classes">Simple Classes</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Nested-Symbols.html#Nested-Symbols">Nested Symbols</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Cplusplus.html#Cplusplus">Cplusplus</a>
+<hr>
+</div>
+
+<h3 class="section">8.3 Basic Types For C<tt>++</tt></h3>
+
+<p>&lt;&lt; the examples that follow are based on a01.C &gt;&gt;
+
+   <p>C<tt>++</tt> adds two more builtin types to the set defined for C.  These are
+the unknown type and the vtable record type.  The unknown type, type
+16, is defined in terms of itself like the void type.
+
+   <p>The vtable record type, type 17, is defined as a structure type and
+then as a structure tag.  The structure has four fields: delta, index,
+pfn, and delta2.  pfn is the function pointer.
+
+   <p>&lt;&lt; In boilerplate $vtbl_ptr_type, what are the fields delta,
+index, and delta2 used for? &gt;&gt;
+
+   <p>This basic type is present in all C<tt>++</tt> programs even if there are no
+virtual methods defined.
+
+<pre class="display">     .stabs "struct_name:sym_desc(type)type_def(17)=type_desc(struct)struct_bytes(8)
+             elem_name(delta):type_ref(short int),bit_offset(0),field_bits(16);
+             elem_name(index):type_ref(short int),bit_offset(16),field_bits(16);
+             elem_name(pfn):type_def(18)=type_desc(ptr to)type_ref(void),
+                                         bit_offset(32),field_bits(32);
+             elem_name(delta2):type_def(short int);bit_offset(32),field_bits(16);;"
+             N_LSYM, NIL, NIL
+</pre>
+   <pre class="smallexample">     .stabs "$vtbl_ptr_type:t17=s8
+             delta:6,0,16;index:6,16,16;pfn:18=*15,32,32;delta2:6,32,16;;"
+             ,128,0,0,0
+</pre>
+   <pre class="display">     .stabs "name:sym_dec(struct tag)type_ref($vtbl_ptr_type)",N_LSYM,NIL,NIL,NIL
+</pre>
+   <pre class="example">     .stabs "$vtbl_ptr_type:T17",128,0,0,0
+</pre>
+   </body></html>
+

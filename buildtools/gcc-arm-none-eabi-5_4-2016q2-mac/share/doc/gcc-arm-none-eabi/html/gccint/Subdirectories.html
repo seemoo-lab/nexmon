@@ -1,0 +1,97 @@
+<html lang="en">
+<head>
+<title>Subdirectories - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="gcc-Directory.html#gcc-Directory" title="gcc Directory">
+<link rel="next" href="Configuration.html#Configuration" title="Configuration">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Subdirectories"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Configuration.html#Configuration">Configuration</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="gcc-Directory.html#gcc-Directory">gcc Directory</a>
+<hr>
+</div>
+
+<h4 class="subsection">6.3.1 Subdirectories of <samp><span class="file">gcc</span></samp></h4>
+
+<p>The <samp><span class="file">gcc</span></samp> directory contains the following subdirectories:
+
+     <dl>
+<dt><samp><var>language</var></samp><dd>Subdirectories for various languages.  Directories containing a file
+<samp><span class="file">config-lang.in</span></samp> are language subdirectories.  The contents of
+the subdirectories <samp><span class="file">c</span></samp> (for C), <samp><span class="file">cp</span></samp> (for C++),
+<samp><span class="file">objc</span></samp> (for Objective-C), <samp><span class="file">objcp</span></samp> (for Objective-C++),
+and <samp><span class="file">lto</span></samp> (for LTO) are documented in this
+manual (see <a href="Passes.html#Passes">Passes and Files of the Compiler</a>);
+those for other languages are not.  See <a href="Front-End.html#Front-End">Anatomy of a Language Front End</a>, for details of the files in these
+directories.
+
+     <br><dt><samp><span class="file">common</span></samp><dd>Source files shared between the compiler drivers (such as
+<samp><span class="command">gcc</span></samp>) and the compilers proper (such as <samp><span class="file">cc1</span></samp>).  If an
+architecture defines target hooks shared between those places, it also
+has a subdirectory in <samp><span class="file">common/config</span></samp>.  See <a href="Target-Structure.html#Target-Structure">Target Structure</a>.
+
+     <br><dt><samp><span class="file">config</span></samp><dd>Configuration files for supported architectures and operating
+systems.  See <a href="Back-End.html#Back-End">Anatomy of a Target Back End</a>, for
+details of the files in this directory.
+
+     <br><dt><samp><span class="file">doc</span></samp><dd>Texinfo documentation for GCC, together with automatically generated
+man pages and support for converting the installation manual to
+HTML.  See <a href="Documentation.html#Documentation">Documentation</a>.
+
+     <br><dt><samp><span class="file">ginclude</span></samp><dd>System headers installed by GCC, mainly those required by the C
+standard of freestanding implementations.  See <a href="Headers.html#Headers">Headers Installed by GCC</a>, for details of when these and other headers are
+installed.
+
+     <br><dt><samp><span class="file">po</span></samp><dd>Message catalogs with translations of messages produced by GCC into
+various languages, <samp><var>language</var><span class="file">.po</span></samp>.  This directory also
+contains <samp><span class="file">gcc.pot</span></samp>, the template for these message catalogues,
+<samp><span class="file">exgettext</span></samp>, a wrapper around <samp><span class="command">gettext</span></samp> to extract the
+messages from the GCC sources and create <samp><span class="file">gcc.pot</span></samp>, which is run
+by `<samp><span class="samp">make gcc.pot</span></samp>', and <samp><span class="file">EXCLUDES</span></samp>, a list of files from
+which messages should not be extracted.
+
+     <br><dt><samp><span class="file">testsuite</span></samp><dd>The GCC testsuites (except for those for runtime libraries). 
+See <a href="Testsuites.html#Testsuites">Testsuites</a>. 
+</dl>
+
+ </body></html>
+

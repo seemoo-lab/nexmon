@@ -1,0 +1,74 @@
+<html lang="en">
+<head>
+<title>Line Numbers - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Program-Structure.html#Program-Structure" title="Program Structure">
+<link rel="prev" href="Include-Files.html#Include-Files" title="Include Files">
+<link rel="next" href="Procedures.html#Procedures" title="Procedures">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Line-Numbers"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Procedures.html#Procedures">Procedures</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Include-Files.html#Include-Files">Include Files</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Program-Structure.html#Program-Structure">Program Structure</a>
+<hr>
+</div>
+
+<h3 class="section">2.4 Line Numbers</h3>
+
+<p><a name="index-N_005fSLINE-10"></a>An <code>N_SLINE</code> symbol represents the start of a source line.  The
+desc field contains the line number and the value contains the code
+address for the start of that source line.  On most machines the address
+is absolute; for stabs in sections (see <a href="Stab-Sections.html#Stab-Sections">Stab Sections</a>), it is
+relative to the function in which the <code>N_SLINE</code> symbol occurs.
+
+   <p><a name="index-N_005fDSLINE-11"></a><a name="index-N_005fBSLINE-12"></a>GNU documents <code>N_DSLINE</code> and <code>N_BSLINE</code> symbols for line
+numbers in the data or bss segments, respectively.  They are identical
+to <code>N_SLINE</code> but are relocated differently by the linker.  They
+were intended to be used to describe the source location of a variable
+declaration, but I believe that GCC2 actually puts the line number in
+the desc field of the stab for the variable itself.  GDB has been
+ignoring these symbols (unless they contain a string field) since
+at least GDB 3.5.
+
+   <p>For single source lines that generate discontiguous code, such as flow
+of control statements, there may be more than one line number entry for
+the same source line.  In this case there is a line number entry at the
+start of each code range, each with the same line number.
+
+   <p>XCOFF does not use stabs for line numbers.  Instead, it uses COFF line
+numbers (which are outside the scope of this document).  Standard COFF
+line numbers cannot deal with include files, but in XCOFF this is fixed
+with the <code>C_BINCL</code> method of marking include files (see <a href="Include-Files.html#Include-Files">Include Files</a>).
+
+   </body></html>
+

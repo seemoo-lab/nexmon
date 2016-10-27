@@ -1,0 +1,250 @@
+<html lang="en">
+<head>
+<title>Index Section Format - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Trace-File-Format.html#Trace-File-Format" title="Trace File Format">
+<link rel="next" href="Man-Pages.html#Man-Pages" title="Man Pages">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Index-Section-Format"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Man-Pages.html#Man-Pages">Man Pages</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Trace-File-Format.html#Trace-File-Format">Trace File Format</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="appendix">Appendix J <code>.gdb_index</code> section format</h2>
+
+<p><a name="index-g_t_002egdb_005findex-section-format-3529"></a><a name="index-index-section-format-3530"></a>
+This section documents the index section that is created by <code>save
+gdb-index</code> (see <a href="Index-Files.html#Index-Files">Index Files</a>).  The index section is
+DWARF-specific; some knowledge of DWARF is assumed in this
+description.
+
+   <p>The mapped index file format is designed to be directly
+<code>mmap</code>able on any architecture.  In most cases, a datum is
+represented using a little-endian 32-bit integer value, called an
+<code>offset_type</code>.  Big endian machines must byte-swap the values
+before using them.  Exceptions to this rule are noted.  The data is
+laid out such that alignment is always respected.
+
+   <p>A mapped index consists of several areas, laid out in order.
+
+     <ol type=1 start=1>
+<li>The file header.  This is a sequence of values, of <code>offset_type</code>
+unless otherwise noted:
+
+          <ol type=1 start=1>
+<li>The version number, currently 8.  Versions 1, 2 and 3 are obsolete. 
+Version 4 uses a different hashing function from versions 5 and 6. 
+Version 6 includes symbols for inlined functions, whereas versions 4
+and 5 do not.  Version 7 adds attributes to the CU indices in the
+symbol table.  Version 8 specifies that symbols from DWARF type units
+(`<samp><span class="samp">DW_TAG_type_unit</span></samp>') refer to the type unit's symbol table and not the
+compilation unit (`<samp><span class="samp">DW_TAG_comp_unit</span></samp>') using the type.
+
+          <p><span class="sc">gdb</span> will only read version 4, 5, or 6 indices
+by specifying <code>set use-deprecated-index-sections on</code>. 
+GDB has a workaround for potentially broken version 7 indices so it is
+currently not flagged as deprecated.
+
+          <li>The offset, from the start of the file, of the CU list.
+
+          <li>The offset, from the start of the file, of the types CU list.  Note
+that this area can be empty, in which case this offset will be equal
+to the next offset.
+
+          <li>The offset, from the start of the file, of the address area.
+
+          <li>The offset, from the start of the file, of the symbol table.
+
+          <li>The offset, from the start of the file, of the constant pool.
+          </ol>
+
+     <li>The CU list.  This is a sequence of pairs of 64-bit little-endian
+values, sorted by the CU offset.  The first element in each pair is
+the offset of a CU in the <code>.debug_info</code> section.  The second
+element in each pair is the length of that CU.  References to a CU
+elsewhere in the map are done using a CU index, which is just the
+0-based index into this table.  Note that if there are type CUs, then
+conceptually CUs and type CUs form a single list for the purposes of
+CU indices.
+
+     <li>The types CU list.  This is a sequence of triplets of 64-bit
+little-endian values.  In a triplet, the first value is the CU offset,
+the second value is the type offset in the CU, and the third value is
+the type signature.  The types CU list is not sorted.
+
+     <li>The address area.  The address area consists of a sequence of address
+entries.  Each address entry has three elements:
+
+          <ol type=1 start=1>
+<li>The low address.  This is a 64-bit little-endian value.
+
+          <li>The high address.  This is a 64-bit little-endian value.  Like
+<code>DW_AT_high_pc</code>, the value is one byte beyond the end.
+
+          <li>The CU index.  This is an <code>offset_type</code> value.
+          </ol>
+
+     <li>The symbol table.  This is an open-addressed hash table.  The size of
+the hash table is always a power of 2.
+
+     <p>Each slot in the hash table consists of a pair of <code>offset_type</code>
+values.  The first value is the offset of the symbol's name in the
+constant pool.  The second value is the offset of the CU vector in the
+constant pool.
+
+     <p>If both values are 0, then this slot in the hash table is empty.  This
+is ok because while 0 is a valid constant pool index, it cannot be a
+valid index for both a string and a CU vector.
+
+     <p>The hash value for a table entry is computed by applying an
+iterative hash function to the symbol's name.  Starting with an
+initial value of <code>r = 0</code>, each (unsigned) character `<samp><span class="samp">c</span></samp>' in
+the string is incorporated into the hash using the formula depending on the
+index version:
+
+          <dl>
+<dt>Version 4<dd>The formula is <code>r = r * 67 + c - 113</code>.
+
+          <br><dt>Versions 5 to 7<dd>The formula is <code>r = r * 67 + tolower (c) - 113</code>. 
+</dl>
+
+     <p>The terminating `<samp><span class="samp">\0</span></samp>' is not incorporated into the hash.
+
+     <p>The step size used in the hash table is computed via
+<code>((hash * 17) &amp; (size - 1)) | 1</code>, where `<samp><span class="samp">hash</span></samp>' is the hash
+value, and `<samp><span class="samp">size</span></samp>' is the size of the hash table.  The step size
+is used to find the next candidate slot when handling a hash
+collision.
+
+     <p>The names of C<tt>++</tt> symbols in the hash table are canonicalized.  We
+don't currently have a simple description of the canonicalization
+algorithm; if you intend to create new index sections, you must read
+the code.
+
+     <li>The constant pool.  This is simply a bunch of bytes.  It is organized
+so that alignment is correct: CU vectors are stored first, followed by
+strings.
+
+     <p>A CU vector in the constant pool is a sequence of <code>offset_type</code>
+values.  The first value is the number of CU indices in the vector. 
+Each subsequent value is the index and symbol attributes of a CU in
+the CU list.  This element in the hash table is used to indicate which
+CUs define the symbol and how the symbol is used. 
+See below for the format of each CU index+attributes entry.
+
+     <p>A string in the constant pool is zero-terminated.
+        </ol>
+
+   <p>Attributes were added to CU index values in <code>.gdb_index</code> version 7. 
+If a symbol has multiple uses within a CU then there is one
+CU index+attributes value for each use.
+
+   <p>The format of each CU index+attributes entry is as follows
+(bit 0 = LSB):
+
+     <dl>
+<dt>Bits 0-23<dd>This is the index of the CU in the CU list. 
+<br><dt>Bits 24-27<dd>These bits are reserved for future purposes and must be zero. 
+<br><dt>Bits 28-30<dd>The kind of the symbol in the CU.
+
+          <dl>
+<dt>0<dd>This value is reserved and should not be used. 
+By reserving zero the full <code>offset_type</code> value is backwards compatible
+with previous versions of the index. 
+<br><dt>1<dd>The symbol is a type. 
+<br><dt>2<dd>The symbol is a variable or an enum value. 
+<br><dt>3<dd>The symbol is a function. 
+<br><dt>4<dd>Any other kind of symbol. 
+<br><dt>5,6,7<dd>These values are reserved. 
+</dl>
+
+     <br><dt>Bit 31<dd>This bit is zero if the value is global and one if it is static.
+
+     <p>The determination of whether a symbol is global or static is complicated. 
+The authorative reference is the file <samp><span class="file">dwarf2read.c</span></samp> in
+<span class="sc">gdb</span> sources.
+
+   </dl>
+
+   <p>This pseudo-code describes the computation of a symbol's kind and
+global/static attributes in the index.
+
+<pre class="smallexample">     is_external = get_attribute (die, DW_AT_external);
+     language = get_attribute (cu_die, DW_AT_language);
+     switch (die-&gt;tag)
+       {
+       case DW_TAG_typedef:
+       case DW_TAG_base_type:
+       case DW_TAG_subrange_type:
+         kind = TYPE;
+         is_static = 1;
+         break;
+       case DW_TAG_enumerator:
+         kind = VARIABLE;
+         is_static = (language != CPLUS &amp;&amp; language != JAVA);
+         break;
+       case DW_TAG_subprogram:
+         kind = FUNCTION;
+         is_static = ! (is_external || language == ADA);
+         break;
+       case DW_TAG_constant:
+         kind = VARIABLE;
+         is_static = ! is_external;
+         break;
+       case DW_TAG_variable:
+         kind = VARIABLE;
+         is_static = ! is_external;
+         break;
+       case DW_TAG_namespace:
+         kind = TYPE;
+         is_static = 0;
+         break;
+       case DW_TAG_class_type:
+       case DW_TAG_interface_type:
+       case DW_TAG_structure_type:
+       case DW_TAG_union_type:
+       case DW_TAG_enumeration_type:
+         kind = TYPE;
+         is_static = (language != CPLUS &amp;&amp; language != JAVA);
+         break;
+       default:
+         assert (0);
+       }
+</pre>
+   </body></html>
+

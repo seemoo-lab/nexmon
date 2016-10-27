@@ -1,0 +1,81 @@
+<html lang="en">
+<head>
+<title>Auto-loading verbose mode - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Auto_002dloading.html#Auto_002dloading" title="Auto-loading">
+<link rel="prev" href="Auto_002dloading-safe-path.html#Auto_002dloading-safe-path" title="Auto-loading safe path">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Auto-loading-verbose-mode"></a>
+<a name="Auto_002dloading-verbose-mode"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Auto_002dloading-safe-path.html#Auto_002dloading-safe-path">Auto-loading safe path</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Auto_002dloading.html#Auto_002dloading">Auto-loading</a>
+<hr>
+</div>
+
+<h4 class="subsection">22.7.4 Displaying files tried for auto-load</h4>
+
+<p><a name="index-auto_002dloading-verbose-mode-1695"></a>
+For better visibility of all the file locations where you can place scripts to
+be auto-loaded with inferior &mdash; or to protect yourself against accidental
+execution of untrusted scripts &mdash; <span class="sc">gdb</span> provides a feature for printing
+all the files attempted to be loaded.  Both existing and non-existing files may
+be printed.
+
+   <p>For example the list of directories from which it is safe to auto-load files
+(see <a href="Auto_002dloading-safe-path.html#Auto_002dloading-safe-path">Auto-loading safe path</a>) applies also to canonicalized filenames which
+may not be too obvious while setting it up.
+
+<pre class="smallexample">     (gdb) set debug auto-load on
+     (gdb) file ~/src/t/true
+     auto-load: Loading canned sequences of commands script "/tmp/true-gdb.gdb"
+                for objfile "/tmp/true".
+     auto-load: Updating directories of "/usr:/opt".
+     auto-load: Using directory "/usr".
+     auto-load: Using directory "/opt".
+     warning: File "/tmp/true-gdb.gdb" auto-loading has been declined
+              by your `auto-load safe-path' set to "/usr:/opt".
+</pre>
+     <dl>
+<a name="set-debug-auto_002dload"></a>
+<a name="index-set-debug-auto_002dload-1696"></a><dt><code>set debug auto-load [on|off]</code><dd>Set whether to print the filenames attempted to be auto-loaded.
+
+     <p><a name="show-debug-auto_002dload"></a>
+<a name="index-show-debug-auto_002dload-1697"></a><br><dt><code>show debug auto-load</code><dd>Show whether printing of the filenames attempted to be auto-loaded is turned
+on or off. 
+</dl>
+
+   </body></html>
+

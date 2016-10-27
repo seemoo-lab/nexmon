@@ -1,0 +1,87 @@
+<html lang="en">
+<head>
+<title>TILE-Gx Built-in Functions - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Builtins.html#Target-Builtins" title="Target Builtins">
+<link rel="prev" href="TI-C6X-Built_002din-Functions.html#TI-C6X-Built_002din-Functions" title="TI C6X Built-in Functions">
+<link rel="next" href="TILEPro-Built_002din-Functions.html#TILEPro-Built_002din-Functions" title="TILEPro Built-in Functions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="TILE-Gx-Built-in-Functions"></a>
+<a name="TILE_002dGx-Built_002din-Functions"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="TILEPro-Built_002din-Functions.html#TILEPro-Built_002din-Functions">TILEPro Built-in Functions</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="TI-C6X-Built_002din-Functions.html#TI-C6X-Built_002din-Functions">TI C6X Built-in Functions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Builtins.html#Target-Builtins">Target Builtins</a>
+<hr>
+</div>
+
+<h4 class="subsection">6.58.28 TILE-Gx Built-in Functions</h4>
+
+<p>GCC provides intrinsics to access every instruction of the TILE-Gx
+processor.  The intrinsics are of the form:
+
+<pre class="smallexample">     
+     unsigned long long __insn_<var>op</var> (...)
+     
+</pre>
+ <p>Where <var>op</var> is the name of the instruction.  Refer to the ISA manual
+for the complete list of instructions.
+
+ <p>GCC also provides intrinsics to directly access the network registers. 
+The intrinsics are:
+
+<pre class="smallexample">     
+     unsigned long long __tile_idn0_receive (void)
+     unsigned long long __tile_idn1_receive (void)
+     unsigned long long __tile_udn0_receive (void)
+     unsigned long long __tile_udn1_receive (void)
+     unsigned long long __tile_udn2_receive (void)
+     unsigned long long __tile_udn3_receive (void)
+     void __tile_idn_send (unsigned long long)
+     void __tile_udn_send (unsigned long long)
+     
+</pre>
+ <p>The intrinsic <code>void __tile_network_barrier (void)</code> is used to
+guarantee that no network operations before it are reordered with
+those after it.
+
+ </body></html>
+

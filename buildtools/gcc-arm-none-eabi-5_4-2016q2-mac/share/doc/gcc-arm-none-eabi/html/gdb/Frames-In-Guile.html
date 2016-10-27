@@ -1,0 +1,237 @@
+<html lang="en">
+<head>
+<title>Frames In Guile - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Guile-API.html#Guile-API" title="Guile API">
+<link rel="prev" href="Objfiles-In-Guile.html#Objfiles-In-Guile" title="Objfiles In Guile">
+<link rel="next" href="Blocks-In-Guile.html#Blocks-In-Guile" title="Blocks In Guile">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Frames-In-Guile"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Blocks-In-Guile.html#Blocks-In-Guile">Blocks In Guile</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Objfiles-In-Guile.html#Objfiles-In-Guile">Objfiles In Guile</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Guile-API.html#Guile-API">Guile API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.3.3.15 Accessing inferior stack frames from Guile.</h5>
+
+<p><a name="index-frames-in-guile-2572"></a>When the debugged program stops, <span class="sc">gdb</span> is able to analyze its call
+stack (see <a href="Frames.html#Frames">Stack frames</a>).  The <code>&lt;gdb:frame&gt;</code> class
+represents a frame in the stack.  A <code>&lt;gdb:frame&gt;</code> object is only valid
+while its corresponding frame exists in the inferior's stack.  If you try
+to use an invalid frame object, <span class="sc">gdb</span> will throw a
+<code>gdb:invalid-object</code> exception (see <a href="Guile-Exception-Handling.html#Guile-Exception-Handling">Guile Exception Handling</a>).
+
+   <p>Two <code>&lt;gdb:frame&gt;</code> objects can be compared for equality with the
+<code>equal?</code> function, like:
+
+<pre class="smallexample">     (gdb) guile (equal? (newest-frame) (selected-frame))
+     #t
+</pre>
+   <p>The following frame-related procedures are provided by the
+<code>(gdb)</code> module:
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>frame?</b><var> object<a name="index-frame_003f-2573"></a></var><br>
+<blockquote><p>Return <code>#t</code> if <var>object</var> is a <code>&lt;gdb:frame&gt;</code> object. 
+Otherwise return <code>#f</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>frame-valid?</b><var> frame<a name="index-frame_002dvalid_003f-2574"></a></var><br>
+<blockquote><p>Returns <code>#t</code> if <var>frame</var> is valid, <code>#f</code> if not. 
+A frame object can become invalid if the frame it refers to doesn't
+exist anymore in the inferior.  All <code>&lt;gdb:frame&gt;</code> procedures will throw
+an exception if the frame is invalid at the time the procedure is called. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>frame-name</b><var> frame<a name="index-frame_002dname-2575"></a></var><br>
+<blockquote><p>Return the function name of <var>frame</var>, or <code>#f</code> if it can't be
+obtained. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>frame-arch</b><var> frame<a name="index-frame_002darch-2576"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:architecture&gt;</code> object corresponding to <var>frame</var>'s
+architecture.  See <a href="Architectures-In-Guile.html#Architectures-In-Guile">Architectures In Guile</a>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>frame-type</b><var> frame<a name="index-frame_002dtype-2577"></a></var><br>
+<blockquote><p>Return the type of <var>frame</var>.  The value can be one of:
+
+          <dl>
+<dt><code>NORMAL_FRAME</code><dd>An ordinary stack frame.
+
+          <br><dt><code>DUMMY_FRAME</code><dd>A fake stack frame that was created by <span class="sc">gdb</span> when performing an
+inferior function call.
+
+          <br><dt><code>INLINE_FRAME</code><dd>A frame representing an inlined function.  The function was inlined
+into a <code>NORMAL_FRAME</code> that is older than this one.
+
+          <br><dt><code>TAILCALL_FRAME</code><dd>A frame representing a tail call.  See <a href="Tail-Call-Frames.html#Tail-Call-Frames">Tail Call Frames</a>.
+
+          <br><dt><code>SIGTRAMP_FRAME</code><dd>A signal trampoline frame.  This is the frame created by the OS when
+it calls into a signal handler.
+
+          <br><dt><code>ARCH_FRAME</code><dd>A fake stack frame representing a cross-architecture call.
+
+          <br><dt><code>SENTINEL_FRAME</code><dd>This is like <code>NORMAL_FRAME</code>, but it is only used for the
+newest frame. 
+</dl>
+        </p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>frame-unwind-stop-reason</b><var> frame<a name="index-frame_002dunwind_002dstop_002dreason-2578"></a></var><br>
+<blockquote><p>Return an integer representing the reason why it's not possible to find
+more frames toward the outermost frame.  Use
+<code>unwind-stop-reason-string</code> to convert the value returned by this
+function to a string. The value can be one of:
+
+          <dl>
+<dt><code>FRAME_UNWIND_NO_REASON</code><dd>No particular reason (older frames should be available).
+
+          <br><dt><code>FRAME_UNWIND_NULL_ID</code><dd>The previous frame's analyzer returns an invalid result.
+
+          <br><dt><code>FRAME_UNWIND_OUTERMOST</code><dd>This frame is the outermost.
+
+          <br><dt><code>FRAME_UNWIND_UNAVAILABLE</code><dd>Cannot unwind further, because that would require knowing the
+values of registers or memory that have not been collected.
+
+          <br><dt><code>FRAME_UNWIND_INNER_ID</code><dd>This frame ID looks like it ought to belong to a NEXT frame,
+but we got it for a PREV frame.  Normally, this is a sign of
+unwinder failure.  It could also indicate stack corruption.
+
+          <br><dt><code>FRAME_UNWIND_SAME_ID</code><dd>This frame has the same ID as the previous one.  That means
+that unwinding further would almost certainly give us another
+frame with exactly the same ID, so break the chain.  Normally,
+this is a sign of unwinder failure.  It could also indicate
+stack corruption.
+
+          <br><dt><code>FRAME_UNWIND_NO_SAVED_PC</code><dd>The frame unwinder did not find any saved PC, but we needed
+one to unwind further.
+
+          <br><dt><code>FRAME_UNWIND_MEMORY_ERROR</code><dd>The frame unwinder caused an error while trying to access memory.
+
+          <br><dt><code>FRAME_UNWIND_FIRST_ERROR</code><dd>Any stop reason greater or equal to this value indicates some kind
+of error.  This special value facilitates writing code that tests
+for errors in unwinding in a way that will work correctly even if
+the list of the other values is modified in future <span class="sc">gdb</span>
+versions.  Using it, you could write:
+
+          <pre class="smallexample">               (define reason (frame-unwind-stop-readon (selected-frame)))
+               (define reason-str (unwind-stop-reason-string reason))
+               (if (&gt;= reason FRAME_UNWIND_FIRST_ERROR)
+                   (format #t "An error occured: ~s\n" reason-str))
+          </pre>
+          </dl>
+        </p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>frame-pc</b><var> frame<a name="index-frame_002dpc-2579"></a></var><br>
+<blockquote><p>Return the frame's resume address. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>frame-block</b><var> frame<a name="index-frame_002dblock-2580"></a></var><br>
+<blockquote><p>Return the frame's code block as a <code>&lt;gdb:block&gt;</code> object. 
+See <a href="Blocks-In-Guile.html#Blocks-In-Guile">Blocks In Guile</a>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>frame-function</b><var> frame<a name="index-frame_002dfunction-2581"></a></var><br>
+<blockquote><p>Return the symbol for the function corresponding to this frame
+as a <code>&lt;gdb:symbol&gt;</code> object, or <code>#f</code> if there isn't one. 
+See <a href="Symbols-In-Guile.html#Symbols-In-Guile">Symbols In Guile</a>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>frame-older</b><var> frame<a name="index-frame_002dolder-2582"></a></var><br>
+<blockquote><p>Return the frame that called <var>frame</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>frame-newer</b><var> frame<a name="index-frame_002dnewer-2583"></a></var><br>
+<blockquote><p>Return the frame called by <var>frame</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>frame-sal</b><var> frame<a name="index-frame_002dsal-2584"></a></var><br>
+<blockquote><p>Return the frame's <code>&lt;gdb:sal&gt;</code> (symtab and line) object. 
+See <a href="Symbol-Tables-In-Guile.html#Symbol-Tables-In-Guile">Symbol Tables In Guile</a>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>frame-read-register</b><var> frame register<a name="index-frame_002dread_002dregister-2585"></a></var><br>
+<blockquote><p>Return the value of <var>register</var> in <var>frame</var>.  <var>register</var>
+should be a string, like `<samp><span class="samp">pc</span></samp>'. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>frame-read-var</b><var> frame variable </var><span class="roman">[</span><var>#:block block</var><span class="roman">]</span><var><a name="index-frame_002dread_002dvar-2586"></a></var><br>
+<blockquote><p>Return the value of <var>variable</var> in <var>frame</var>.  If the optional
+argument <var>block</var> is provided, search for the variable from that
+block; otherwise start at the frame's current block (which is
+determined by the frame's current program counter).  The
+<var>variable</var> must be given as a string or a <code>&lt;gdb:symbol&gt;</code>
+object, and <var>block</var> must be a <code>&lt;gdb:block&gt;</code> object. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>frame-select</b><var> frame<a name="index-frame_002dselect-2587"></a></var><br>
+<blockquote><p>Set <var>frame</var> to be the selected frame.  See <a href="Stack.html#Stack">Examining the Stack</a>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>selected-frame</b><var><a name="index-selected_002dframe-2588"></a></var><br>
+<blockquote><p>Return the selected frame object.  See <a href="Selection.html#Selection">Selecting a Frame</a>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>newest-frame</b><var><a name="index-newest_002dframe-2589"></a></var><br>
+<blockquote><p>Return the newest frame object for the selected thread. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>unwind-stop-reason-string</b><var> reason<a name="index-unwind_002dstop_002dreason_002dstring-2590"></a></var><br>
+<blockquote><p>Return a string explaining the reason why <span class="sc">gdb</span> stopped unwinding
+frames, as expressed by the given <var>reason</var> code (an integer, see the
+<code>frame-unwind-stop-reason</code> procedure above in this section). 
+</p></blockquote></div>
+
+   </body></html>
+

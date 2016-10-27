@@ -1,0 +1,216 @@
+<html lang="en">
+<head>
+<title>Parameters In Guile - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Guile-API.html#Guile-API" title="Guile API">
+<link rel="prev" href="Commands-In-Guile.html#Commands-In-Guile" title="Commands In Guile">
+<link rel="next" href="Progspaces-In-Guile.html#Progspaces-In-Guile" title="Progspaces In Guile">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Parameters-In-Guile"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Progspaces-In-Guile.html#Progspaces-In-Guile">Progspaces In Guile</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Commands-In-Guile.html#Commands-In-Guile">Commands In Guile</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Guile-API.html#Guile-API">Guile API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.3.3.12 Parameters In Guile</h5>
+
+<p><a name="index-parameters-in-guile-2533"></a><a name="index-guile-parameters-2534"></a><a name="index-Parameter-2535"></a>You can implement new <span class="sc">gdb</span> <dfn>parameters</dfn> using Guile
+<a rel="footnote" href="#fn-1" name="fnd-1"><sup>1</sup></a>.
+
+   <p>There are many parameters that already exist and can be set in
+<span class="sc">gdb</span>.  Two examples are: <code>set follow-fork</code> and
+<code>set charset</code>.  Setting these parameters influences certain
+behavior in <span class="sc">gdb</span>.  Similarly, you can define parameters that
+can be used to influence behavior in custom Guile scripts and commands.
+
+   <p>A new parameter is defined with the <code>make-parameter</code> Guile function,
+and added to <span class="sc">gdb</span> with the <code>register-parameter!</code> Guile function. 
+This two-step approach is taken to separate out the side-effect of adding
+the parameter to <span class="sc">gdb</span> from <code>make-parameter</code>.
+
+   <p>Parameters are exposed to the user via the <code>set</code> and
+<code>show</code> commands.  See <a href="Help.html#Help">Help</a>.
+
+<!-- TODO line length -->
+<div class="defun">
+&mdash; Scheme Procedure: <b>(</b><var>make-parameter name </var><span class="roman">[</span><var>#:command-class command-class</var><span class="roman">]</span> <span class="roman">[</span><var>#:parameter-type parameter-type</var>] <span class="roman">[</span><var>#:enum-list enum-list</var><span class="roman">]</span> <span class="roman">[</span><var>#:set-func set-func</var>] <span class="roman">[</span><var>#:show-func show-func</var>] <span class="roman">[</span><var>#:doc doc</var>] <span class="roman">[</span><var>#:set-doc set-doc</var>] <span class="roman">[</span><var>#:show-doc show-doc</var>] <span class="roman">[</span><var>#:initial-value initial-value</var>])<var><a name="index-g_t_0028-2536"></a></var><br>
+<blockquote>
+<p>The argument <var>name</var> is the name of the new parameter.  If <var>name</var>
+consists of multiple words, then the initial words are looked for as prefix
+parameters.  An example of this can be illustrated with the
+<code>set print</code> set of parameters.  If <var>name</var> is
+<code>print foo</code>, then <code>print</code> will be searched as the prefix
+parameter.  In this case the parameter can subsequently be accessed in
+<span class="sc">gdb</span> as <code>set print foo</code>. 
+If <var>name</var> consists of multiple words, and no prefix parameter group
+can be found, an exception is raised.
+
+        <p>The result is the <code>&lt;gdb:parameter&gt;</code> object representing the parameter. 
+The parameter is not usable until it has been registered with <span class="sc">gdb</span>
+with <code>register-parameter!</code>.
+
+        <p>The rest of the arguments are optional.
+
+        <p>The argument <var>command-class</var> should be one of the `<samp><span class="samp">COMMAND_</span></samp>' constants
+(see <a href="Commands-In-Guile.html#Commands-In-Guile">Commands In Guile</a>).  This argument tells <span class="sc">gdb</span> how to
+categorize the new parameter in the help system. 
+The default is <code>COMMAND_NONE</code>.
+
+        <p>The argument <var>parameter-type</var> should be one of the `<samp><span class="samp">PARAM_</span></samp>' constants
+defined below.  This argument tells <span class="sc">gdb</span> the type of the new
+parameter; this information is used for input validation and
+completion.  The default is <code>PARAM_BOOLEAN</code>.
+
+        <p>If <var>parameter-type</var> is <code>PARAM_ENUM</code>, then
+<var>enum-list</var> must be a list of strings.  These strings
+represent the possible values for the parameter.
+
+        <p>If <var>parameter-type</var> is not <code>PARAM_ENUM</code>, then the presence
+of <var>enum-list</var> will cause an exception to be thrown.
+
+        <p>The argument <var>set-func</var> is a function of one argument: <var>self</var> which
+is the <code>&lt;gdb:parameter&gt;</code> object representing the parameter. 
+<span class="sc">gdb</span> will call this function when a <var>parameter</var>'s value has
+been changed via the <code>set</code> API (for example, <kbd>set foo off</kbd>). 
+The value of the parameter has already been set to the new value. 
+This function must return a string to be displayed to the user. 
+<span class="sc">gdb</span> will add a trailing newline if the string is non-empty. 
+<span class="sc">gdb</span> generally doesn't print anything when a parameter is set,
+thus typically this function should return `<samp><span class="samp">""</span></samp>'. 
+A non-empty string result should typically be used for displaying warnings
+and errors.
+
+        <p>The argument <var>show-func</var> is a function of two arguments: <var>self</var> which
+is the <code>&lt;gdb:parameter&gt;</code> object representing the parameter, and
+<var>svalue</var> which is the string representation of the current value. 
+<span class="sc">gdb</span> will call this function when a <var>parameter</var>'s
+<code>show</code> API has been invoked (for example, <kbd>show foo</kbd>). 
+This function must return a string, and will be displayed to the user. 
+<span class="sc">gdb</span> will add a trailing newline.
+
+        <p>The argument <var>doc</var> is the help text for the new parameter. 
+If there is no documentation string, a default value is used.
+
+        <p>The argument <var>set-doc</var> is the help text for this parameter's
+<code>set</code> command.
+
+        <p>The argument <var>show-doc</var> is the help text for this parameter's
+<code>show</code> command.
+
+        <p>The argument <var>initial-value</var> specifies the initial value of the parameter. 
+If it is a function, it takes one parameter, the <code>&lt;gdb:parameter&gt;</code>
+object and its result is used as the initial value of the parameter. 
+The initial value must be valid for the parameter type,
+otherwise an exception is thrown. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>register-parameter!</b><var> parameter<a name="index-register_002dparameter_0021-2537"></a></var><br>
+<blockquote><p>Add <var>parameter</var>, a <code>&lt;gdb:parameter&gt;</code> object, to <span class="sc">gdb</span>'s
+list of parameters. 
+It is an error to register a parameter more than once. 
+The result is unspecified. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>parameter?</b><var> object<a name="index-parameter_003f-2538"></a></var><br>
+<blockquote><p>Return <code>#t</code> if <var>object</var> is a <code>&lt;gdb:parameter&gt;</code> object. 
+Otherwise return <code>#f</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>parameter-value</b><var> parameter<a name="index-parameter_002dvalue-2539"></a></var><br>
+<blockquote><p>Return the value of <var>parameter</var> which may either be
+a <code>&lt;gdb:parameter&gt;</code> object or a string naming the parameter. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>set-parameter-value!</b><var> parameter new-value<a name="index-set_002dparameter_002dvalue_0021-2540"></a></var><br>
+<blockquote><p>Assign <var>parameter</var> the value of <var>new-value</var>. 
+The argument <var>parameter</var> must be an object of type <code>&lt;gdb:parameter&gt;</code>. 
+<span class="sc">gdb</span> does validation when assignments are made. 
+</p></blockquote></div>
+
+   <p>When a new parameter is defined, its type must be specified.  The
+available types are represented by constants defined in the <code>gdb</code>
+module:
+
+     <dl>
+<dt><code>PARAM_BOOLEAN</code><a name="index-PARAM_005fBOOLEAN-2541"></a><dd>The value is a plain boolean.  The Guile boolean values, <code>#t</code>
+and <code>#f</code> are the only valid values.
+
+     <br><dt><code>PARAM_AUTO_BOOLEAN</code><a name="index-PARAM_005fAUTO_005fBOOLEAN-2542"></a><dd>The value has three possible states: true, false, and `<samp><span class="samp">auto</span></samp>'.  In
+Guile, true and false are represented using boolean constants, and
+`<samp><span class="samp">auto</span></samp>' is represented using <code>#:auto</code>.
+
+     <br><dt><code>PARAM_UINTEGER</code><a name="index-PARAM_005fUINTEGER-2543"></a><dd>The value is an unsigned integer.  The value of 0 should be
+interpreted to mean &ldquo;unlimited&rdquo;.
+
+     <br><dt><code>PARAM_ZINTEGER</code><a name="index-PARAM_005fZINTEGER-2544"></a><dd>The value is an integer.
+
+     <br><dt><code>PARAM_ZUINTEGER</code><a name="index-PARAM_005fZUINTEGER-2545"></a><dd>The value is an unsigned integer.
+
+     <br><dt><code>PARAM_ZUINTEGER_UNLIMITED</code><a name="index-PARAM_005fZUINTEGER_005fUNLIMITED-2546"></a><dd>The value is an integer in the range `<samp><span class="samp">[0, INT_MAX]</span></samp>'. 
+A value of `<samp><span class="samp">-1</span></samp>' means &ldquo;unlimited&rdquo;, and other negative
+numbers are not allowed.
+
+     <br><dt><code>PARAM_STRING</code><a name="index-PARAM_005fSTRING-2547"></a><dd>The value is a string.  When the user modifies the string, any escape
+sequences, such as `<samp><span class="samp">\t</span></samp>', `<samp><span class="samp">\f</span></samp>', and octal escapes, are
+translated into corresponding characters and encoded into the current
+host charset.
+
+     <br><dt><code>PARAM_STRING_NOESCAPE</code><a name="index-PARAM_005fSTRING_005fNOESCAPE-2548"></a><dd>The value is a string.  When the user modifies the string, escapes are
+passed through untranslated.
+
+     <br><dt><code>PARAM_OPTIONAL_FILENAME</code><a name="index-PARAM_005fOPTIONAL_005fFILENAME-2549"></a><dd>The value is a either a filename (a string), or <code>#f</code>.
+
+     <br><dt><code>PARAM_FILENAME</code><a name="index-PARAM_005fFILENAME-2550"></a><dd>The value is a filename.  This is just like
+<code>PARAM_STRING_NOESCAPE</code>, but uses file names for completion.
+
+     <br><dt><code>PARAM_ENUM</code><a name="index-PARAM_005fENUM-2551"></a><dd>The value is a string, which must be one of a collection of string
+constants provided when the parameter is created. 
+</dl>
+
+   <div class="footnote">
+<hr>
+<h4>Footnotes</h4><p class="footnote"><small>[<a name="fn-1" href="#fnd-1">1</a>]</small> Note that <span class="sc">gdb</span> parameters must not be confused with
+Guile’s parameter objects (see <a href="../guile/Parameters.html#Parameters">Parameters</a>).</p>
+
+   <p><hr></div>
+
+   </body></html>
+

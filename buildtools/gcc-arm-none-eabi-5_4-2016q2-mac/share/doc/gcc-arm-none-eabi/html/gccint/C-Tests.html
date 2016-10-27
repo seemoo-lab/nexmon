@@ -1,0 +1,138 @@
+<html lang="en">
+<head>
+<title>C Tests - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Testsuites.html#Testsuites" title="Testsuites">
+<link rel="prev" href="Ada-Tests.html#Ada-Tests" title="Ada Tests">
+<link rel="next" href="libgcj-Tests.html#libgcj-Tests" title="libgcj Tests">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="C-Tests"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="libgcj-Tests.html#libgcj-Tests">libgcj Tests</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Ada-Tests.html#Ada-Tests">Ada Tests</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Testsuites.html#Testsuites">Testsuites</a>
+<hr>
+</div>
+
+<h3 class="section">7.4 C Language Testsuites</h3>
+
+<p>GCC contains the following C language testsuites, in the
+<samp><span class="file">gcc/testsuite</span></samp> directory:
+
+     <dl>
+<dt><samp><span class="file">gcc.dg</span></samp><dd>This contains tests of particular features of the C compiler, using the
+more modern `<samp><span class="samp">dg</span></samp>' harness.  Correctness tests for various compiler
+features should go here if possible.
+
+     <p>Magic comments determine whether the file
+is preprocessed, compiled, linked or run.  In these tests, error and warning
+message texts are compared against expected texts or regular expressions
+given in comments.  These tests are run with the options `<samp><span class="samp">-ansi -pedantic</span></samp>'
+unless other options are given in the test.  Except as noted below they
+are not run with multiple optimization options. 
+<br><dt><samp><span class="file">gcc.dg/compat</span></samp><dd>This subdirectory contains tests for binary compatibility using
+<samp><span class="file">lib/compat.exp</span></samp>, which in turn uses the language-independent support
+(see <a href="compat-Testing.html#compat-Testing">Support for testing binary compatibility</a>). 
+<br><dt><samp><span class="file">gcc.dg/cpp</span></samp><dd>This subdirectory contains tests of the preprocessor. 
+<br><dt><samp><span class="file">gcc.dg/debug</span></samp><dd>This subdirectory contains tests for debug formats.  Tests in this
+subdirectory are run for each debug format that the compiler supports. 
+<br><dt><samp><span class="file">gcc.dg/format</span></samp><dd>This subdirectory contains tests of the <samp><span class="option">-Wformat</span></samp> format
+checking.  Tests in this directory are run with and without
+<samp><span class="option">-DWIDE</span></samp>. 
+<br><dt><samp><span class="file">gcc.dg/noncompile</span></samp><dd>This subdirectory contains tests of code that should not compile and
+does not need any special compilation options.  They are run with
+multiple optimization options, since sometimes invalid code crashes
+the compiler with optimization. 
+<br><dt><samp><span class="file">gcc.dg/special</span></samp><dd>FIXME: describe this.
+
+     <br><dt><samp><span class="file">gcc.c-torture</span></samp><dd>This contains particular code fragments which have historically broken easily. 
+These tests are run with multiple optimization options, so tests for features
+which only break at some optimization levels belong here.  This also contains
+tests to check that certain optimizations occur.  It might be worthwhile to
+separate the correctness tests cleanly from the code quality tests, but
+it hasn't been done yet.
+
+     <br><dt><samp><span class="file">gcc.c-torture/compat</span></samp><dd>FIXME: describe this.
+
+     <p>This directory should probably not be used for new tests. 
+<br><dt><samp><span class="file">gcc.c-torture/compile</span></samp><dd>This testsuite contains test cases that should compile, but do not
+need to link or run.  These test cases are compiled with several
+different combinations of optimization options.  All warnings are
+disabled for these test cases, so this directory is not suitable if
+you wish to test for the presence or absence of compiler warnings. 
+While special options can be set, and tests disabled on specific
+platforms, by the use of <samp><span class="file">.x</span></samp> files, mostly these test cases
+should not contain platform dependencies.  FIXME: discuss how defines
+such as <code>NO_LABEL_VALUES</code> and <code>STACK_SIZE</code> are used. 
+<br><dt><samp><span class="file">gcc.c-torture/execute</span></samp><dd>This testsuite contains test cases that should compile, link and run;
+otherwise the same comments as for <samp><span class="file">gcc.c-torture/compile</span></samp> apply. 
+<br><dt><samp><span class="file">gcc.c-torture/execute/ieee</span></samp><dd>This contains tests which are specific to IEEE floating point. 
+<br><dt><samp><span class="file">gcc.c-torture/unsorted</span></samp><dd>FIXME: describe this.
+
+     <p>This directory should probably not be used for new tests. 
+<br><dt><samp><span class="file">gcc.misc-tests</span></samp><dd>This directory contains C tests that require special handling.  Some
+of these tests have individual expect files, and others share
+special-purpose expect files:
+
+          <dl>
+<dt><samp><code>bprob*.c</code></samp><dd>Test <samp><span class="option">-fbranch-probabilities</span></samp> using
+<samp><span class="file">gcc.misc-tests/bprob.exp</span></samp>, which
+in turn uses the generic, language-independent framework
+(see <a href="profopt-Testing.html#profopt-Testing">Support for testing profile-directed optimizations</a>).
+
+          <br><dt><samp><code>gcov*.c</code></samp><dd>Test <samp><span class="command">gcov</span></samp> output using <samp><span class="file">gcov.exp</span></samp>, which in turn uses the
+language-independent support (see <a href="gcov-Testing.html#gcov-Testing">Support for testing gcov</a>).
+
+          <br><dt><samp><code>i386-pf-*.c</code></samp><dd>Test i386-specific support for data prefetch using <samp><span class="file">i386-prefetch.exp</span></samp>. 
+</dl>
+
+     <br><dt><samp><span class="file">gcc.test-framework</span></samp><dd>
+          <dl>
+<dt><samp><code>dg-*.c</code></samp><dd>Test the testsuite itself using <samp><span class="file">gcc.test-framework/test-framework.exp</span></samp>. 
+</dl>
+
+ </dl>
+
+ <p>FIXME: merge in <samp><span class="file">testsuite/README.gcc</span></samp> and discuss the format of
+test cases and magic comments more.
+
+ </body></html>
+

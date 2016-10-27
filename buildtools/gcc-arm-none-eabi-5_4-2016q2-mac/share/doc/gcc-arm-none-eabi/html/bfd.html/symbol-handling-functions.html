@@ -1,0 +1,251 @@
+<html lang="en">
+<head>
+<title>symbol handling functions - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Symbols.html#Symbols" title="Symbols">
+<link rel="prev" href="typedef-asymbol.html#typedef-asymbol" title="typedef asymbol">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="symbol-handling-functions"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="typedef-asymbol.html#typedef-asymbol">typedef asymbol</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Symbols.html#Symbols">Symbols</a>
+<hr>
+</div>
+
+<h4 class="subsection">2.7.5 Symbol handling functions</h4>
+
+<p><a name="index-bfd_005fget_005fsymtab_005fupper_005fbound-65"></a>
+
+<h5 class="subsubsection">2.7.5.1 <code>bfd_get_symtab_upper_bound</code></h5>
+
+<p><strong>Description</strong><br>
+Return the number of bytes required to store a vector of pointers
+to <code>asymbols</code> for all the symbols in the BFD <var>abfd</var>,
+including a terminal NULL pointer. If there are no symbols in
+the BFD, then return 0.  If an error occurs, return -1.
+<pre class="example">     #define bfd_get_symtab_upper_bound(abfd) \
+          BFD_SEND (abfd, _bfd_get_symtab_upper_bound, (abfd))
+     
+</pre>
+   <p><a name="index-bfd_005fis_005flocal_005flabel-66"></a>
+
+<h5 class="subsubsection">2.7.5.2 <code>bfd_is_local_label</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     bfd_boolean bfd_is_local_label (bfd *abfd, asymbol *sym);
+</pre>
+   <p><strong>Description</strong><br>
+Return TRUE if the given symbol <var>sym</var> in the BFD <var>abfd</var> is
+a compiler generated local label, else return FALSE.
+
+   <p><a name="index-bfd_005fis_005flocal_005flabel_005fname-67"></a>
+
+<h5 class="subsubsection">2.7.5.3 <code>bfd_is_local_label_name</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     bfd_boolean bfd_is_local_label_name (bfd *abfd, const char *name);
+</pre>
+   <p><strong>Description</strong><br>
+Return TRUE if a symbol with the name <var>name</var> in the BFD
+<var>abfd</var> is a compiler generated local label, else return
+FALSE.  This just checks whether the name has the form of a
+local label.
+<pre class="example">     #define bfd_is_local_label_name(abfd, name) \
+       BFD_SEND (abfd, _bfd_is_local_label_name, (abfd, name))
+     
+</pre>
+   <p><a name="index-bfd_005fis_005ftarget_005fspecial_005fsymbol-68"></a>
+
+<h5 class="subsubsection">2.7.5.4 <code>bfd_is_target_special_symbol</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     bfd_boolean bfd_is_target_special_symbol (bfd *abfd, asymbol *sym);
+</pre>
+   <p><strong>Description</strong><br>
+Return TRUE iff a symbol <var>sym</var> in the BFD <var>abfd</var> is something
+special to the particular target represented by the BFD.  Such symbols
+should normally not be mentioned to the user.
+<pre class="example">     #define bfd_is_target_special_symbol(abfd, sym) \
+       BFD_SEND (abfd, _bfd_is_target_special_symbol, (abfd, sym))
+     
+</pre>
+   <p><a name="index-bfd_005fcanonicalize_005fsymtab-69"></a>
+
+<h5 class="subsubsection">2.7.5.5 <code>bfd_canonicalize_symtab</code></h5>
+
+<p><strong>Description</strong><br>
+Read the symbols from the BFD <var>abfd</var>, and fills in
+the vector <var>location</var> with pointers to the symbols and
+a trailing NULL. 
+Return the actual number of symbol pointers, not
+including the NULL.
+<pre class="example">     #define bfd_canonicalize_symtab(abfd, location) \
+       BFD_SEND (abfd, _bfd_canonicalize_symtab, (abfd, location))
+     
+</pre>
+   <p><a name="index-bfd_005fset_005fsymtab-70"></a>
+
+<h5 class="subsubsection">2.7.5.6 <code>bfd_set_symtab</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     bfd_boolean bfd_set_symtab
+        (bfd *abfd, asymbol **location, unsigned int count);
+</pre>
+   <p><strong>Description</strong><br>
+Arrange that when the output BFD <var>abfd</var> is closed,
+the table <var>location</var> of <var>count</var> pointers to symbols
+will be written.
+
+   <p><a name="index-bfd_005fprint_005fsymbol_005fvandf-71"></a>
+
+<h5 class="subsubsection">2.7.5.7 <code>bfd_print_symbol_vandf</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     void bfd_print_symbol_vandf (bfd *abfd, void *file, asymbol *symbol);
+</pre>
+   <p><strong>Description</strong><br>
+Print the value and flags of the <var>symbol</var> supplied to the
+stream <var>file</var>.
+
+   <p><a name="index-bfd_005fmake_005fempty_005fsymbol-72"></a>
+
+<h5 class="subsubsection">2.7.5.8 <code>bfd_make_empty_symbol</code></h5>
+
+<p><strong>Description</strong><br>
+Create a new <code>asymbol</code> structure for the BFD <var>abfd</var>
+and return a pointer to it.
+
+   <p>This routine is necessary because each back end has private
+information surrounding the <code>asymbol</code>. Building your own
+<code>asymbol</code> and pointing to it will not create the private
+information, and will cause problems later on.
+<pre class="example">     #define bfd_make_empty_symbol(abfd) \
+       BFD_SEND (abfd, _bfd_make_empty_symbol, (abfd))
+     
+</pre>
+   <p><a name="index-g_t_005fbfd_005fgeneric_005fmake_005fempty_005fsymbol-73"></a>
+
+<h5 class="subsubsection">2.7.5.9 <code>_bfd_generic_make_empty_symbol</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     asymbol *_bfd_generic_make_empty_symbol (bfd *);
+</pre>
+   <p><strong>Description</strong><br>
+Create a new <code>asymbol</code> structure for the BFD <var>abfd</var>
+and return a pointer to it.  Used by core file routines,
+binary back-end and anywhere else where no private info
+is needed.
+
+   <p><a name="index-bfd_005fmake_005fdebug_005fsymbol-74"></a>
+
+<h5 class="subsubsection">2.7.5.10 <code>bfd_make_debug_symbol</code></h5>
+
+<p><strong>Description</strong><br>
+Create a new <code>asymbol</code> structure for the BFD <var>abfd</var>,
+to be used as a debugging symbol.  Further details of its use have
+yet to be worked out.
+<pre class="example">     #define bfd_make_debug_symbol(abfd,ptr,size) \
+       BFD_SEND (abfd, _bfd_make_debug_symbol, (abfd, ptr, size))
+     
+</pre>
+   <p><a name="index-bfd_005fdecode_005fsymclass-75"></a>
+
+<h5 class="subsubsection">2.7.5.11 <code>bfd_decode_symclass</code></h5>
+
+<p><strong>Description</strong><br>
+Return a character corresponding to the symbol
+class of <var>symbol</var>, or '?' for an unknown class.
+
+   <p><strong>Synopsis</strong>
+<pre class="example">     int bfd_decode_symclass (asymbol *symbol);
+</pre>
+   <p><a name="index-bfd_005fis_005fundefined_005fsymclass-76"></a>
+
+<h5 class="subsubsection">2.7.5.12 <code>bfd_is_undefined_symclass</code></h5>
+
+<p><strong>Description</strong><br>
+Returns non-zero if the class symbol returned by
+bfd_decode_symclass represents an undefined symbol. 
+Returns zero otherwise.
+
+   <p><strong>Synopsis</strong>
+<pre class="example">     bfd_boolean bfd_is_undefined_symclass (int symclass);
+</pre>
+   <p><a name="index-bfd_005fsymbol_005finfo-77"></a>
+
+<h5 class="subsubsection">2.7.5.13 <code>bfd_symbol_info</code></h5>
+
+<p><strong>Description</strong><br>
+Fill in the basic info about symbol that nm needs. 
+Additional info may be added by the back-ends after
+calling this function.
+
+   <p><strong>Synopsis</strong>
+<pre class="example">     void bfd_symbol_info (asymbol *symbol, symbol_info *ret);
+</pre>
+   <p><a name="index-bfd_005fcopy_005fprivate_005fsymbol_005fdata-78"></a>
+
+<h5 class="subsubsection">2.7.5.14 <code>bfd_copy_private_symbol_data</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     bfd_boolean bfd_copy_private_symbol_data
+        (bfd *ibfd, asymbol *isym, bfd *obfd, asymbol *osym);
+</pre>
+   <p><strong>Description</strong><br>
+Copy private symbol information from <var>isym</var> in the BFD
+<var>ibfd</var> to the symbol <var>osym</var> in the BFD <var>obfd</var>. 
+Return <code>TRUE</code> on success, <code>FALSE</code> on error.  Possible error
+returns are:
+
+     <ul>
+<li><code>bfd_error_no_memory</code> -
+Not enough memory exists to create private data for <var>osec</var>. 
+</ul>
+
+<pre class="example">     #define bfd_copy_private_symbol_data(ibfd, isymbol, obfd, osymbol) \
+       BFD_SEND (obfd, _bfd_copy_private_symbol_data, \
+                 (ibfd, isymbol, obfd, osymbol))
+     
+</pre>
+   </body></html>
+

@@ -1,0 +1,187 @@
+<html lang="en">
+<head>
+<title>Writing a Guile Pretty-Printer - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Guile-API.html#Guile-API" title="Guile API">
+<link rel="prev" href="Selecting-Guile-Pretty_002dPrinters.html#Selecting-Guile-Pretty_002dPrinters" title="Selecting Guile Pretty-Printers">
+<link rel="next" href="Commands-In-Guile.html#Commands-In-Guile" title="Commands In Guile">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Writing-a-Guile-Pretty-Printer"></a>
+<a name="Writing-a-Guile-Pretty_002dPrinter"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Commands-In-Guile.html#Commands-In-Guile">Commands In Guile</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Selecting-Guile-Pretty_002dPrinters.html#Selecting-Guile-Pretty_002dPrinters">Selecting Guile Pretty-Printers</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Guile-API.html#Guile-API">Guile API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.3.3.10 Writing a Guile Pretty-Printer</h5>
+
+<p><a name="index-writing-a-Guile-pretty_002dprinter-2503"></a>
+A pretty-printer consists of two basic parts: a lookup function to determine
+if the type is supported, and the printer itself.
+
+   <p>Here is an example showing how a <code>std::string</code> printer might be
+written.  See <a href="Guile-Pretty-Printing-API.html#Guile-Pretty-Printing-API">Guile Pretty Printing API</a>, for details.
+
+<pre class="smallexample">     (define (make-my-string-printer value)
+       "Print a my::string string"
+       (make-pretty-printer-worker
+        "string"
+        (lambda (printer)
+          (value-field value "_data"))
+        #f))
+</pre>
+   <p>And here is an example showing how a lookup function for the printer
+example above might be written.
+
+<pre class="smallexample">     (define (str-lookup-function pretty-printer value)
+       (let ((tag (type-tag (value-type value))))
+         (and tag
+              (string-prefix? "std::string&lt;" tag)
+              (make-my-string-printer value))))
+</pre>
+   <p>Then to register this printer in the global printer list:
+
+<pre class="smallexample">     (append-pretty-printer!
+      (make-pretty-printer "my-string" str-lookup-function))
+</pre>
+   <p>The example lookup function extracts the value's type, and attempts to
+match it to a type that it can pretty-print.  If it is a type the
+printer can pretty-print, it will return a &lt;gdb:pretty-printer-worker&gt; object. 
+If not, it returns <code>#f</code>.
+
+   <p>We recommend that you put your core pretty-printers into a Guile
+package.  If your pretty-printers are for use with a library, we
+further recommend embedding a version number into the package name. 
+This practice will enable <span class="sc">gdb</span> to load multiple versions of
+your pretty-printers at the same time, because they will have
+different names.
+
+   <p>You should write auto-loaded code (see <a href="Guile-Auto_002dloading.html#Guile-Auto_002dloading">Guile Auto-loading</a>) such that it
+can be evaluated multiple times without changing its meaning.  An
+ideal auto-load file will consist solely of <code>import</code>s of your
+printer modules, followed by a call to a register pretty-printers with
+the current objfile.
+
+   <p>Taken as a whole, this approach will scale nicely to multiple
+inferiors, each potentially using a different library version. 
+Embedding a version number in the Guile package name will ensure that
+<span class="sc">gdb</span> is able to load both sets of printers simultaneously. 
+Then, because the search for pretty-printers is done by objfile, and
+because your auto-loaded code took care to register your library's
+printers with a specific objfile, <span class="sc">gdb</span> will find the correct
+printers for the specific version of the library used by each
+inferior.
+
+   <p>To continue the <code>my::string</code> example,
+this code might appear in <code>(my-project my-library v1)</code>:
+
+<pre class="smallexample">     (use-modules (gdb))
+     (define (register-printers objfile)
+       (append-objfile-pretty-printer!
+        (make-pretty-printer "my-string" str-lookup-function)))
+</pre>
+   <p class="noindent">And then the corresponding contents of the auto-load file would be:
+
+<pre class="smallexample">     (use-modules (gdb) (my-project my-library v1))
+     (register-printers (current-objfile))
+</pre>
+   <p>The previous example illustrates a basic pretty-printer. 
+There are a few things that can be improved on. 
+The printer only handles one type, whereas a library typically has
+several types.  One could install a lookup function for each desired type
+in the library, but one could also have a single lookup function recognize
+several types.  The latter is the conventional way this is handled. 
+If a pretty-printer can handle multiple data types, then its
+<dfn>subprinters</dfn> are the printers for the individual data types.
+
+   <p>The <code>(gdb printing)</code> module provides a formal way of solving this
+problem (see <a href="Guile-Printing-Module.html#Guile-Printing-Module">Guile Printing Module</a>). 
+Here is another example that handles multiple types.
+
+   <p>These are the types we are going to pretty-print:
+
+<pre class="smallexample">     struct foo { int a, b; };
+     struct bar { struct foo x, y; };
+</pre>
+   <p>Here are the printers:
+
+<pre class="smallexample">     (define (make-foo-printer value)
+       "Print a foo object"
+       (make-pretty-printer-worker
+        "foo"
+        (lambda (printer)
+          (format #f "a=&lt;~a&gt; b=&lt;~a&gt;"
+                  (value-field value "a") (value-field value "a")))
+        #f))
+     
+     (define (make-bar-printer value)
+       "Print a bar object"
+       (make-pretty-printer-worker
+        "foo"
+        (lambda (printer)
+          (format #f "x=&lt;~a&gt; y=&lt;~a&gt;"
+                  (value-field value "x") (value-field value "y")))
+        #f))
+</pre>
+   <p>This example doesn't need a lookup function, that is handled by the
+<code>(gdb printing)</code> module.  Instead a function is provided to build up
+the object that handles the lookup.
+
+<pre class="smallexample">     (use-modules (gdb printing))
+     
+     (define (build-pretty-printer)
+       (let ((pp (make-pretty-printer-collection "my-library")))
+         (pp-collection-add-tag-printer "foo" make-foo-printer)
+         (pp-collection-add-tag-printer "bar" make-bar-printer)
+         pp))
+</pre>
+   <p>And here is the autoload support:
+
+<pre class="smallexample">     (use-modules (gdb) (my-library))
+     (append-objfile-pretty-printer! (current-objfile) (build-pretty-printer))
+</pre>
+   <p>Finally, when this printer is loaded into <span class="sc">gdb</span>, here is the
+corresponding output of `<samp><span class="samp">info pretty-printer</span></samp>':
+
+<pre class="smallexample">     (gdb) info pretty-printer
+     my_library.so:
+       my-library
+         foo
+         bar
+</pre>
+   </body></html>
+

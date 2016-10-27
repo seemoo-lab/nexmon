@@ -1,0 +1,86 @@
+<html lang="en">
+<head>
+<title>Add Options - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Test-Directives.html#Test-Directives" title="Test Directives">
+<link rel="prev" href="Effective_002dTarget-Keywords.html#Effective_002dTarget-Keywords" title="Effective-Target Keywords">
+<link rel="next" href="Require-Support.html#Require-Support" title="Require Support">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Add-Options"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Require-Support.html#Require-Support">Require Support</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Effective_002dTarget-Keywords.html#Effective_002dTarget-Keywords">Effective-Target Keywords</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Test-Directives.html#Test-Directives">Test Directives</a>
+<hr>
+</div>
+
+<h4 class="subsection">7.2.4 Features for <code>dg-add-options</code></h4>
+
+<p>The supported values of <var>feature</var> for directive <code>dg-add-options</code>
+are:
+
+     <dl>
+<dt><code>arm_neon</code><dd>NEON support.  Only ARM targets support this feature, and only then
+in certain modes; see the <a href="arm_005fneon_005fok.html#arm_005fneon_005fok">arm_neon_ok effective target keyword</a>.
+
+     <br><dt><code>arm_neon_fp16</code><dd>NEON and half-precision floating point support.  Only ARM targets
+support this feature, and only then in certain modes; see
+the <a href="arm_005fneon_005fok.html#arm_005fneon_005fok">arm_neon_fp16_ok effective target keyword</a>.
+
+     <br><dt><code>arm_vfp3</code><dd>arm vfp3 floating point support; see
+the <a href="arm_005fvfp3_005fok.html#arm_005fvfp3_005fok">arm_vfp3_ok effective target keyword</a>.
+
+     <br><dt><code>bind_pic_locally</code><dd>Add the target-specific flags needed to enable functions to bind
+locally when using pic/PIC passes in the testsuite.
+
+     <br><dt><code>c99_runtime</code><dd>Add the target-specific flags needed to access the C99 runtime.
+
+     <br><dt><code>ieee</code><dd>Add the target-specific flags needed to enable full IEEE
+compliance mode.
+
+     <br><dt><code>mips16_attribute</code><dd><code>mips16</code> function attributes. 
+Only MIPS targets support this feature, and only then in certain modes.
+
+     <br><dt><code>tls</code><dd>Add the target-specific flags needed to use thread-local storage. 
+</dl>
+
+ </body></html>
+

@@ -1,0 +1,238 @@
+<html lang="en">
+<head>
+<title>Architectures In Guile - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Guile-API.html#Guile-API" title="Guile API">
+<link rel="prev" href="Lazy-Strings-In-Guile.html#Lazy-Strings-In-Guile" title="Lazy Strings In Guile">
+<link rel="next" href="Disassembly-In-Guile.html#Disassembly-In-Guile" title="Disassembly In Guile">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Architectures-In-Guile"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Disassembly-In-Guile.html#Disassembly-In-Guile">Disassembly In Guile</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Lazy-Strings-In-Guile.html#Lazy-Strings-In-Guile">Lazy Strings In Guile</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Guile-API.html#Guile-API">Guile API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.3.3.21 Guile representation of architectures</h5>
+
+<p><a name="index-guile-architectures-2710"></a><a name="index-g_t_003cgdb_003aarch_003e-2711"></a>
+<span class="sc">gdb</span> uses architecture specific parameters and artifacts in a
+number of its various computations.  An architecture is represented
+by an instance of the <code>&lt;gdb:arch&gt;</code> class.
+
+   <p>The following architecture-related procedures are provided by the
+<code>(gdb)</code> module:
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch?</b><var> object<a name="index-arch_003f-2712"></a></var><br>
+<blockquote><p>Return <code>#t</code> if <var>object</var> is an object of type <code>&lt;gdb:arch&gt;</code>. 
+Otherwise return <code>#f</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>current-arch</b><var><a name="index-current_002darch-2713"></a></var><br>
+<blockquote><p>Return the current architecture as a <code>&lt;gdb:arch&gt;</code> object. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-name</b><var> arch<a name="index-arch_002dname-2714"></a></var><br>
+<blockquote><p>Return the name (string value) of <code>&lt;gdb:arch&gt;</code> <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-charset</b><var> arch<a name="index-arch_002dcharset-2715"></a></var><br>
+<blockquote><p>Return name of target character set of <code>&lt;gdb:arch&gt;</code> <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-wide-charset</b><var><a name="index-arch_002dwide_002dcharset-2716"></a></var><br>
+<blockquote><p>Return name of target wide character set of <code>&lt;gdb:arch&gt;</code> <var>arch</var>. 
+</p></blockquote></div>
+
+   <p>Each architecture provides a set of predefined types, obtained by
+the following functions.
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-void-type</b><var> arch<a name="index-arch_002dvoid_002dtype-2717"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>void</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-char-type</b><var> arch<a name="index-arch_002dchar_002dtype-2718"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>char</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-short-type</b><var> arch<a name="index-arch_002dshort_002dtype-2719"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>short</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-int-type</b><var> arch<a name="index-arch_002dint_002dtype-2720"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for an <code>int</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-long-type</b><var> arch<a name="index-arch_002dlong_002dtype-2721"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>long</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-schar-type</b><var> arch<a name="index-arch_002dschar_002dtype-2722"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>signed char</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-uchar-type</b><var> arch<a name="index-arch_002duchar_002dtype-2723"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for an <code>unsigned char</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-ushort-type</b><var> arch<a name="index-arch_002dushort_002dtype-2724"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for an <code>unsigned short</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-uint-type</b><var> arch<a name="index-arch_002duint_002dtype-2725"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for an <code>unsigned int</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-ulong-type</b><var> arch<a name="index-arch_002dulong_002dtype-2726"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for an <code>unsigned long</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-float-type</b><var> arch<a name="index-arch_002dfloat_002dtype-2727"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>float</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-double-type</b><var> arch<a name="index-arch_002ddouble_002dtype-2728"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>double</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-longdouble-type</b><var> arch<a name="index-arch_002dlongdouble_002dtype-2729"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>long double</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-bool-type</b><var> arch<a name="index-arch_002dbool_002dtype-2730"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>bool</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-longlong-type</b><var> arch<a name="index-arch_002dlonglong_002dtype-2731"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>long long</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-ulonglong-type</b><var> arch<a name="index-arch_002dulonglong_002dtype-2732"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for an <code>unsigned long long</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-int8-type</b><var> arch<a name="index-arch_002dint8_002dtype-2733"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for an <code>int8</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-uint8-type</b><var> arch<a name="index-arch_002duint8_002dtype-2734"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>uint8</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-int16-type</b><var> arch<a name="index-arch_002dint16_002dtype-2735"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for an <code>int16</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-uint16-type</b><var> arch<a name="index-arch_002duint16_002dtype-2736"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>uint16</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-int32-type</b><var> arch<a name="index-arch_002dint32_002dtype-2737"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for an <code>int32</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-uint32-type</b><var> arch<a name="index-arch_002duint32_002dtype-2738"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>uint32</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-int64-type</b><var> arch<a name="index-arch_002dint64_002dtype-2739"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for an <code>int64</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>arch-uint64-type</b><var> arch<a name="index-arch_002duint64_002dtype-2740"></a></var><br>
+<blockquote><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>uint64</code> type
+of architecture <var>arch</var>. 
+</p></blockquote></div>
+
+   <p>Example:
+
+<pre class="smallexample">     (gdb) guile (type-name (arch-uchar-type (current-arch)))
+     "unsigned char"
+</pre>
+   </body></html>
+

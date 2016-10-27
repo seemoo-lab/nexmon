@@ -1,0 +1,184 @@
+<html lang="en">
+<head>
+<title>Register Basics - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Registers.html#Registers" title="Registers">
+<link rel="next" href="Allocation-Order.html#Allocation-Order" title="Allocation Order">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Register-Basics"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Allocation-Order.html#Allocation-Order">Allocation Order</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Registers.html#Registers">Registers</a>
+<hr>
+</div>
+
+<h4 class="subsection">17.7.1 Basic Characteristics of Registers</h4>
+
+<!-- prevent bad page break with this line -->
+<p>Registers have various characteristics.
+
+<div class="defun">
+&mdash; Macro: <b>FIRST_PSEUDO_REGISTER</b><var><a name="index-FIRST_005fPSEUDO_005fREGISTER-4045"></a></var><br>
+<blockquote><p>Number of hardware registers known to the compiler.  They receive
+numbers 0 through <code>FIRST_PSEUDO_REGISTER-1</code>; thus, the first
+pseudo register's number really is assigned the number
+<code>FIRST_PSEUDO_REGISTER</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>FIXED_REGISTERS</b><var><a name="index-FIXED_005fREGISTERS-4046"></a></var><br>
+<blockquote><p><a name="index-fixed-register-4047"></a>An initializer that says which registers are used for fixed purposes
+all throughout the compiled code and are therefore not available for
+general allocation.  These would include the stack pointer, the frame
+pointer (except on machines where that can be used as a general
+register when no frame pointer is needed), the program counter on
+machines where that is considered one of the addressable registers,
+and any other numbered register with a standard use.
+
+      <p>This information is expressed as a sequence of numbers, separated by
+commas and surrounded by braces.  The <var>n</var>th number is 1 if
+register <var>n</var> is fixed, 0 otherwise.
+
+      <p>The table initialized from this macro, and the table initialized by
+the following one, may be overridden at run time either automatically,
+by the actions of the macro <code>CONDITIONAL_REGISTER_USAGE</code>, or by
+the user with the command options <samp><span class="option">-ffixed-</span><var>reg</var></samp>,
+<samp><span class="option">-fcall-used-</span><var>reg</var></samp> and <samp><span class="option">-fcall-saved-</span><var>reg</var></samp>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>CALL_USED_REGISTERS</b><var><a name="index-CALL_005fUSED_005fREGISTERS-4048"></a></var><br>
+<blockquote><p><a name="index-call_002dused-register-4049"></a><a name="index-call_002dclobbered-register-4050"></a><a name="index-call_002dsaved-register-4051"></a>Like <code>FIXED_REGISTERS</code> but has 1 for each register that is
+clobbered (in general) by function calls as well as for fixed
+registers.  This macro therefore identifies the registers that are not
+available for general allocation of values that must live across
+function calls.
+
+      <p>If a register has 0 in <code>CALL_USED_REGISTERS</code>, the compiler
+automatically saves it on function entry and restores it on function
+exit, if the register is used within the function. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>CALL_REALLY_USED_REGISTERS</b><var><a name="index-CALL_005fREALLY_005fUSED_005fREGISTERS-4052"></a></var><br>
+<blockquote><p><a name="index-call_002dused-register-4053"></a><a name="index-call_002dclobbered-register-4054"></a><a name="index-call_002dsaved-register-4055"></a>Like <code>CALL_USED_REGISTERS</code> except this macro doesn't require
+that the entire set of <code>FIXED_REGISTERS</code> be included. 
+(<code>CALL_USED_REGISTERS</code> must be a superset of <code>FIXED_REGISTERS</code>). 
+This macro is optional.  If not specified, it defaults to the value
+of <code>CALL_USED_REGISTERS</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>HARD_REGNO_CALL_PART_CLOBBERED</b> (<var>regno, mode</var>)<var><a name="index-HARD_005fREGNO_005fCALL_005fPART_005fCLOBBERED-4056"></a></var><br>
+<blockquote><p><a name="index-call_002dused-register-4057"></a><a name="index-call_002dclobbered-register-4058"></a><a name="index-call_002dsaved-register-4059"></a>A C expression that is nonzero if it is not permissible to store a
+value of mode <var>mode</var> in hard register number <var>regno</var> across a
+call without some part of it being clobbered.  For most machines this
+macro need not be defined.  It is only required for machines that do not
+preserve the entire contents of a register across a call. 
+</p></blockquote></div>
+
+ <p><a name="index-fixed_005fregs-4060"></a><a name="index-call_005fused_005fregs-4061"></a><a name="index-global_005fregs-4062"></a><a name="index-reg_005fnames-4063"></a><a name="index-reg_005fclass_005fcontents-4064"></a>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_CONDITIONAL_REGISTER_USAGE</b> (<var>void</var>)<var><a name="index-TARGET_005fCONDITIONAL_005fREGISTER_005fUSAGE-4065"></a></var><br>
+<blockquote><p>This hook may conditionally modify five variables
+<code>fixed_regs</code>, <code>call_used_regs</code>, <code>global_regs</code>,
+<code>reg_names</code>, and <code>reg_class_contents</code>, to take into account
+any dependence of these register sets on target flags.  The first three
+of these are of type <code>char []</code> (interpreted as Boolean vectors). 
+<code>global_regs</code> is a <code>const char *[]</code>, and
+<code>reg_class_contents</code> is a <code>HARD_REG_SET</code>.  Before the macro is
+called, <code>fixed_regs</code>, <code>call_used_regs</code>,
+<code>reg_class_contents</code>, and <code>reg_names</code> have been initialized
+from <code>FIXED_REGISTERS</code>, <code>CALL_USED_REGISTERS</code>,
+<code>REG_CLASS_CONTENTS</code>, and <code>REGISTER_NAMES</code>, respectively. 
+<code>global_regs</code> has been cleared, and any <samp><span class="option">-ffixed-</span><var>reg</var></samp>,
+<samp><span class="option">-fcall-used-</span><var>reg</var></samp> and <samp><span class="option">-fcall-saved-</span><var>reg</var></samp>
+command options have been applied.
+
+      <p><a name="index-disabling-certain-registers-4066"></a><a name="index-controlling-register-usage-4067"></a>If the usage of an entire class of registers depends on the target
+flags, you may indicate this to GCC by using this macro to modify
+<code>fixed_regs</code> and <code>call_used_regs</code> to 1 for each of the
+registers in the classes which should not be used by GCC.  Also make
+<code>define_register_constraint</code>s return <code>NO_REGS</code> for constraints
+that shouldn't be used.
+
+      <p>(However, if this class is not included in <code>GENERAL_REGS</code> and all
+of the insn patterns whose constraints permit this class are
+controlled by target switches, then GCC will automatically avoid using
+these registers when the target switches are opposed to them.) 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>INCOMING_REGNO</b> (<var>out</var>)<var><a name="index-INCOMING_005fREGNO-4068"></a></var><br>
+<blockquote><p>Define this macro if the target machine has register windows.  This C
+expression returns the register number as seen by the called function
+corresponding to the register number <var>out</var> as seen by the calling
+function.  Return <var>out</var> if register number <var>out</var> is not an
+outbound register. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>OUTGOING_REGNO</b> (<var>in</var>)<var><a name="index-OUTGOING_005fREGNO-4069"></a></var><br>
+<blockquote><p>Define this macro if the target machine has register windows.  This C
+expression returns the register number as seen by the calling function
+corresponding to the register number <var>in</var> as seen by the called
+function.  Return <var>in</var> if register number <var>in</var> is not an inbound
+register. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>LOCAL_REGNO</b> (<var>regno</var>)<var><a name="index-LOCAL_005fREGNO-4070"></a></var><br>
+<blockquote><p>Define this macro if the target machine has register windows.  This C
+expression returns true if the register is call-saved but is in the
+register window.  Unlike most call-saved registers, such registers
+need not be explicitly restored on function exit or during non-local
+gotos. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>PC_REGNUM</b><var><a name="index-PC_005fREGNUM-4071"></a></var><br>
+<blockquote><p>If the program counter has a register number, define this as that
+register number.  Otherwise, do not define it. 
+</p></blockquote></div>
+
+ </body></html>
+

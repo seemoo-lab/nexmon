@@ -1,0 +1,82 @@
+<html lang="en">
+<head>
+<title>Operands - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="GIMPLE.html#GIMPLE" title="GIMPLE">
+<link rel="prev" href="Temporaries.html#Temporaries" title="Temporaries">
+<link rel="next" href="Manipulating-GIMPLE-statements.html#Manipulating-GIMPLE-statements" title="Manipulating GIMPLE statements">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Operands"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Manipulating-GIMPLE-statements.html#Manipulating-GIMPLE-statements">Manipulating GIMPLE statements</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Temporaries.html#Temporaries">Temporaries</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="GIMPLE.html#GIMPLE">GIMPLE</a>
+<hr>
+</div>
+
+<h3 class="section">11.6 Operands</h3>
+
+<p><a name="index-Operands-2140"></a>
+In general, expressions in GIMPLE consist of an operation and the
+appropriate number of simple operands; these operands must either be a
+GIMPLE rvalue (<code>is_gimple_val</code>), i.e. a constant or a register
+variable.  More complex operands are factored out into temporaries, so
+that
+<pre class="smallexample">     a = b + c + d
+</pre>
+ <p>becomes
+<pre class="smallexample">     T1 = b + c;
+     a = T1 + d;
+</pre>
+ <p>The same rule holds for arguments to a <code>GIMPLE_CALL</code>.
+
+ <p>The target of an assignment is usually a variable, but can also be a
+<code>MEM_REF</code> or a compound lvalue as described below.
+
+<ul class="menu">
+<li><a accesskey="1" href="Compound-Expressions.html#Compound-Expressions">Compound Expressions</a>
+<li><a accesskey="2" href="Compound-Lvalues.html#Compound-Lvalues">Compound Lvalues</a>
+<li><a accesskey="3" href="Conditional-Expressions.html#Conditional-Expressions">Conditional Expressions</a>
+<li><a accesskey="4" href="Logical-Operators.html#Logical-Operators">Logical Operators</a>
+</ul>
+
+ </body></html>
+

@@ -1,0 +1,105 @@
+<html lang="en">
+<head>
+<title>Target Macros - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Machine-Desc.html#Machine-Desc" title="Machine Desc">
+<link rel="next" href="Host-Config.html#Host-Config" title="Host Config">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Target-Macros"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Host-Config.html#Host-Config">Host Config</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Machine-Desc.html#Machine-Desc">Machine Desc</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">17 Target Description Macros and Functions</h2>
+
+<p><a name="index-machine-description-macros-3850"></a><a name="index-target-description-macros-3851"></a><a name="index-macros_002c-target-description-3852"></a><a name="index-g_t_0040file_007btm_002eh_007d-macros-3853"></a>
+In addition to the file <samp><var>machine</var><span class="file">.md</span></samp>, a machine description
+includes a C header file conventionally given the name
+<samp><var>machine</var><span class="file">.h</span></samp> and a C source file named <samp><var>machine</var><span class="file">.c</span></samp>. 
+The header file defines numerous macros that convey the information
+about the target machine that does not fit into the scheme of the
+<samp><span class="file">.md</span></samp> file.  The file <samp><span class="file">tm.h</span></samp> should be a link to
+<samp><var>machine</var><span class="file">.h</span></samp>.  The header file <samp><span class="file">config.h</span></samp> includes
+<samp><span class="file">tm.h</span></samp> and most compiler source files include <samp><span class="file">config.h</span></samp>.  The
+source file defines a variable <code>targetm</code>, which is a structure
+containing pointers to functions and data relating to the target
+machine.  <samp><var>machine</var><span class="file">.c</span></samp> should also contain their definitions,
+if they are not defined elsewhere in GCC, and other functions called
+through the macros defined in the <samp><span class="file">.h</span></samp> file.
+
+<ul class="menu">
+<li><a accesskey="1" href="Target-Structure.html#Target-Structure">Target Structure</a>:     The <code>targetm</code> variable. 
+<li><a accesskey="2" href="Driver.html#Driver">Driver</a>:               Controlling how the driver runs the compilation passes. 
+<li><a accesskey="3" href="Run_002dtime-Target.html#Run_002dtime-Target">Run-time Target</a>:      Defining `<samp><span class="samp">-m</span></samp>' options like <samp><span class="option">-m68000</span></samp> and <samp><span class="option">-m68020</span></samp>. 
+<li><a accesskey="4" href="Per_002dFunction-Data.html#Per_002dFunction-Data">Per-Function Data</a>:    Defining data structures for per-function information. 
+<li><a accesskey="5" href="Storage-Layout.html#Storage-Layout">Storage Layout</a>:       Defining sizes and alignments of data. 
+<li><a accesskey="6" href="Type-Layout.html#Type-Layout">Type Layout</a>:          Defining sizes and properties of basic user data types. 
+<li><a accesskey="7" href="Registers.html#Registers">Registers</a>:            Naming and describing the hardware registers. 
+<li><a accesskey="8" href="Register-Classes.html#Register-Classes">Register Classes</a>:     Defining the classes of hardware registers. 
+<li><a accesskey="9" href="Stack-and-Calling.html#Stack-and-Calling">Stack and Calling</a>:    Defining which way the stack grows and by how much. 
+<li><a href="Varargs.html#Varargs">Varargs</a>:              Defining the varargs macros. 
+<li><a href="Trampolines.html#Trampolines">Trampolines</a>:          Code set up at run time to enter a nested function. 
+<li><a href="Library-Calls.html#Library-Calls">Library Calls</a>:        Controlling how library routines are implicitly called. 
+<li><a href="Addressing-Modes.html#Addressing-Modes">Addressing Modes</a>:     Defining addressing modes valid for memory operands. 
+<li><a href="Anchored-Addresses.html#Anchored-Addresses">Anchored Addresses</a>:   Defining how <samp><span class="option">-fsection-anchors</span></samp> should work. 
+<li><a href="Condition-Code.html#Condition-Code">Condition Code</a>:       Defining how insns update the condition code. 
+<li><a href="Costs.html#Costs">Costs</a>:                Defining relative costs of different operations. 
+<li><a href="Scheduling.html#Scheduling">Scheduling</a>:           Adjusting the behavior of the instruction scheduler. 
+<li><a href="Sections.html#Sections">Sections</a>:             Dividing storage into text, data, and other sections. 
+<li><a href="PIC.html#PIC">PIC</a>:                  Macros for position independent code. 
+<li><a href="Assembler-Format.html#Assembler-Format">Assembler Format</a>:     Defining how to write insns and pseudo-ops to output. 
+<li><a href="Debugging-Info.html#Debugging-Info">Debugging Info</a>:       Defining the format of debugging output. 
+<li><a href="Floating-Point.html#Floating-Point">Floating Point</a>:       Handling floating point for cross-compilers. 
+<li><a href="Mode-Switching.html#Mode-Switching">Mode Switching</a>:       Insertion of mode-switching instructions. 
+<li><a href="Target-Attributes.html#Target-Attributes">Target Attributes</a>:    Defining target-specific uses of <code>__attribute__</code>. 
+<li><a href="Emulated-TLS.html#Emulated-TLS">Emulated TLS</a>:         Emulated TLS support. 
+<li><a href="MIPS-Coprocessors.html#MIPS-Coprocessors">MIPS Coprocessors</a>:    MIPS coprocessor support and how to customize it. 
+<li><a href="PCH-Target.html#PCH-Target">PCH Target</a>:           Validity checking for precompiled headers. 
+<li><a href="C_002b_002b-ABI.html#C_002b_002b-ABI">C++ ABI</a>:              Controlling C++ ABI changes. 
+<li><a href="Named-Address-Spaces.html#Named-Address-Spaces">Named Address Spaces</a>:  Adding support for named address spaces
+<li><a href="Misc.html#Misc">Misc</a>:                 Everything else. 
+</ul>
+
+ </body></html>
+

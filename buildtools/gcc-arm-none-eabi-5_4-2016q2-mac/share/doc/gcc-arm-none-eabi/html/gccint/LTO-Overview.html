@@ -1,0 +1,175 @@
+<html lang="en">
+<head>
+<title>LTO Overview - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="LTO.html#LTO" title="LTO">
+<link rel="next" href="LTO-object-file-layout.html#LTO-object-file-layout" title="LTO object file layout">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="LTO-Overview"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="LTO-object-file-layout.html#LTO-object-file-layout">LTO object file layout</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="LTO.html#LTO">LTO</a>
+<hr>
+</div>
+
+<h3 class="section">24.1 Design Overview</h3>
+
+<p>Link time optimization is implemented as a GCC front end for a
+bytecode representation of GIMPLE that is emitted in special sections
+of <code>.o</code> files.  Currently, LTO support is enabled in most
+ELF-based systems, as well as darwin, cygwin and mingw systems.
+
+ <p>Since GIMPLE bytecode is saved alongside final object code, object
+files generated with LTO support are larger than regular object files. 
+This &ldquo;fat&rdquo; object format makes it easy to integrate LTO into
+existing build systems, as one can, for instance, produce archives of
+the files.  Additionally, one might be able to ship one set of fat
+objects which could be used both for development and the production of
+optimized builds.  A, perhaps surprising, side effect of this feature
+is that any mistake in the toolchain that leads to LTO information not
+being used (e.g. an older <code>libtool</code> calling <code>ld</code> directly). 
+This is both an advantage, as the system is more robust, and a
+disadvantage, as the user is not informed that the optimization has
+been disabled.
+
+ <p>The current implementation only produces &ldquo;fat&rdquo; objects, effectively
+doubling compilation time and increasing file sizes up to 5x the
+original size.  This hides the problem that some tools, such as
+<code>ar</code> and <code>nm</code>, need to understand symbol tables of LTO
+sections.  These tools were extended to use the plugin infrastructure,
+and with these problems solved, GCC will also support &ldquo;slim&rdquo; objects
+consisting of the intermediate code alone.
+
+ <p>At the highest level, LTO splits the compiler in two.  The first half
+(the &ldquo;writer&rdquo;) produces a streaming representation of all the
+internal data structures needed to optimize and generate code.  This
+includes declarations, types, the callgraph and the GIMPLE representation
+of function bodies.
+
+ <p>When <samp><span class="option">-flto</span></samp> is given during compilation of a source file, the
+pass manager executes all the passes in <code>all_lto_gen_passes</code>. 
+Currently, this phase is composed of two IPA passes:
+
+     <ul>
+<li><code>pass_ipa_lto_gimple_out</code>
+This pass executes the function <code>lto_output</code> in
+<samp><span class="file">lto-streamer-out.c</span></samp>, which traverses the call graph encoding
+every reachable declaration, type and function.  This generates a
+memory representation of all the file sections described below.
+
+     <li><code>pass_ipa_lto_finish_out</code>
+This pass executes the function <code>produce_asm_for_decls</code> in
+<samp><span class="file">lto-streamer-out.c</span></samp>, which takes the memory image built in the
+previous pass and encodes it in the corresponding ELF file sections. 
+</ul>
+
+ <p>The second half of LTO support is the &ldquo;reader&rdquo;.  This is implemented
+as the GCC front end <samp><span class="file">lto1</span></samp> in <samp><span class="file">lto/lto.c</span></samp>.  When
+<samp><span class="file">collect2</span></samp> detects a link set of <code>.o</code>/<code>.a</code> files with
+LTO information and the <samp><span class="option">-flto</span></samp> is enabled, it invokes
+<samp><span class="file">lto1</span></samp> which reads the set of files and aggregates them into a
+single translation unit for optimization.  The main entry point for
+the reader is <samp><span class="file">lto/lto.c</span></samp>:<code>lto_main</code>.
+
+<h4 class="subsection">24.1.1 LTO modes of operation</h4>
+
+<p>One of the main goals of the GCC link-time infrastructure was to allow
+effective compilation of large programs.  For this reason GCC implements two
+link-time compilation modes.
+
+     <ol type=1 start=1>
+<li><em>LTO mode</em>, in which the whole program is read into the
+compiler at link-time and optimized in a similar way as if it
+were a single source-level compilation unit.
+
+     <li><em>WHOPR or partitioned mode</em>, designed to utilize multiple
+CPUs and/or a distributed compilation environment to quickly link
+large applications.  WHOPR stands for WHOle Program optimizeR (not to
+be confused with the semantics of <samp><span class="option">-fwhole-program</span></samp>).  It
+partitions the aggregated callgraph from many different <code>.o</code>
+files and distributes the compilation of the sub-graphs to different
+CPUs.
+
+     <p>Note that distributed compilation is not implemented yet, but since
+the parallelism is facilitated via generating a <code>Makefile</code>, it
+would be easy to implement.
+      </ol>
+
+ <p>WHOPR splits LTO into three main stages:
+     <ol type=1 start=1>
+<li>Local generation (LGEN)
+This stage executes in parallel.  Every file in the program is compiled
+into the intermediate language and packaged together with the local
+call-graph and summary information.  This stage is the same for both
+the LTO and WHOPR compilation mode.
+
+     <li>Whole Program Analysis (WPA)
+WPA is performed sequentially.  The global call-graph is generated, and
+a global analysis procedure makes transformation decisions.  The global
+call-graph is partitioned to facilitate parallel optimization during
+phase 3.  The results of the WPA stage are stored into new object files
+which contain the partitions of program expressed in the intermediate
+language and the optimization decisions.
+
+     <li>Local transformations (LTRANS)
+This stage executes in parallel.  All the decisions made during phase 2
+are implemented locally in each partitioned object file, and the final
+object code is generated.  Optimizations which cannot be decided
+efficiently during the phase 2 may be performed on the local
+call-graph partitions.
+      </ol>
+
+ <p>WHOPR can be seen as an extension of the usual LTO mode of
+compilation.  In LTO, WPA and LTRANS are executed within a single
+execution of the compiler, after the whole program has been read into
+memory.
+
+ <p>When compiling in WHOPR mode, the callgraph is partitioned during
+the WPA stage.  The whole program is split into a given number of
+partitions of roughly the same size.  The compiler tries to
+minimize the number of references which cross partition boundaries. 
+The main advantage of WHOPR is to allow the parallel execution of
+LTRANS stages, which are the most time-consuming part of the
+compilation process.  Additionally, it avoids the need to load the
+whole program into memory.
+
+ </body></html>
+

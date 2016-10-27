@@ -1,0 +1,71 @@
+<html lang="en">
+<head>
+<title>HIDDEN - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Assignments.html#Assignments" title="Assignments">
+<link rel="prev" href="Simple-Assignments.html#Simple-Assignments" title="Simple Assignments">
+<link rel="next" href="PROVIDE.html#PROVIDE" title="PROVIDE">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the GNU linker LD
+(GNU Binutils)
+version 2.26.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled ``GNU Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="HIDDEN"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="PROVIDE.html#PROVIDE">PROVIDE</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Simple-Assignments.html#Simple-Assignments">Simple Assignments</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Assignments.html#Assignments">Assignments</a>
+<hr>
+</div>
+
+<h4 class="subsection">3.5.2 HIDDEN</h4>
+
+<p><a name="index-HIDDEN-420"></a>For ELF targeted ports, define a symbol that will be hidden and won't be
+exported.  The syntax is <code>HIDDEN(</code><var>symbol</var><code> = </code><var>expression</var><code>)</code>.
+
+   <p>Here is the example from <a href="Simple-Assignments.html#Simple-Assignments">Simple Assignments</a>, rewritten to use
+<code>HIDDEN</code>:
+
+<pre class="smallexample">     HIDDEN(floating_point = 0);
+     SECTIONS
+     {
+       .text :
+         {
+           *(.text)
+           HIDDEN(_etext = .);
+         }
+       HIDDEN(_bdata = (. + 3) &amp; ~ 3);
+       .data : { *(.data) }
+     }
+</pre>
+   <p class="noindent">In this case none of the three symbols will be visible outside this module.
+
+   </body></html>
+

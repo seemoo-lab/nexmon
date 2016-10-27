@@ -1,0 +1,93 @@
+<html lang="en">
+<head>
+<title>RTL - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Tree-SSA.html#Tree-SSA" title="Tree SSA">
+<link rel="next" href="Control-Flow.html#Control-Flow" title="Control Flow">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="RTL"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Control-Flow.html#Control-Flow">Control Flow</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Tree-SSA.html#Tree-SSA">Tree SSA</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">13 RTL Representation</h2>
+
+<p><a name="index-RTL-representation-2534"></a><a name="index-representation-of-RTL-2535"></a><a name="index-Register-Transfer-Language-_0028RTL_0029-2536"></a>
+The last part of the compiler work is done on a low-level intermediate
+representation called Register Transfer Language.  In this language, the
+instructions to be output are described, pretty much one by one, in an
+algebraic form that describes what the instruction does.
+
+ <p>RTL is inspired by Lisp lists.  It has both an internal form, made up of
+structures that point at other structures, and a textual form that is used
+in the machine description and in printed debugging dumps.  The textual
+form uses nested parentheses to indicate the pointers in the internal form.
+
+<ul class="menu">
+<li><a accesskey="1" href="RTL-Objects.html#RTL-Objects">RTL Objects</a>:        Expressions vs vectors vs strings vs integers. 
+<li><a accesskey="2" href="RTL-Classes.html#RTL-Classes">RTL Classes</a>:        Categories of RTL expression objects, and their structure. 
+<li><a accesskey="3" href="Accessors.html#Accessors">Accessors</a>:          Macros to access expression operands or vector elts. 
+<li><a accesskey="4" href="Special-Accessors.html#Special-Accessors">Special Accessors</a>:  Macros to access specific annotations on RTL. 
+<li><a accesskey="5" href="Flags.html#Flags">Flags</a>:              Other flags in an RTL expression. 
+<li><a accesskey="6" href="Machine-Modes.html#Machine-Modes">Machine Modes</a>:      Describing the size and format of a datum. 
+<li><a accesskey="7" href="Constants.html#Constants">Constants</a>:          Expressions with constant values. 
+<li><a accesskey="8" href="Regs-and-Memory.html#Regs-and-Memory">Regs and Memory</a>:    Expressions representing register contents or memory. 
+<li><a accesskey="9" href="Arithmetic.html#Arithmetic">Arithmetic</a>:         Expressions representing arithmetic on other expressions. 
+<li><a href="Comparisons.html#Comparisons">Comparisons</a>:        Expressions representing comparison of expressions. 
+<li><a href="Bit_002dFields.html#Bit_002dFields">Bit-Fields</a>:         Expressions representing bit-fields in memory or reg. 
+<li><a href="Vector-Operations.html#Vector-Operations">Vector Operations</a>:  Expressions involving vector datatypes. 
+<li><a href="Conversions.html#Conversions">Conversions</a>:        Extending, truncating, floating or fixing. 
+<li><a href="RTL-Declarations.html#RTL-Declarations">RTL Declarations</a>:   Declaring volatility, constancy, etc. 
+<li><a href="Side-Effects.html#Side-Effects">Side Effects</a>:       Expressions for storing in registers, etc. 
+<li><a href="Incdec.html#Incdec">Incdec</a>:             Embedded side-effects for autoincrement addressing. 
+<li><a href="Assembler.html#Assembler">Assembler</a>:          Representing <code>asm</code> with operands. 
+<li><a href="Debug-Information.html#Debug-Information">Debug Information</a>:  Expressions representing debugging information. 
+<li><a href="Insns.html#Insns">Insns</a>:              Expression types for entire insns. 
+<li><a href="Calls.html#Calls">Calls</a>:              RTL representation of function call insns. 
+<li><a href="Sharing.html#Sharing">Sharing</a>:            Some expressions are unique; others *must* be copied. 
+<li><a href="Reading-RTL.html#Reading-RTL">Reading RTL</a>:        Reading textual RTL from a file. 
+</ul>
+
+ </body></html>
+

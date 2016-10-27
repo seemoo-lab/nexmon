@@ -1,0 +1,69 @@
+<html lang="en">
+<head>
+<title>psignal - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Signals.html#Signals" title="Signals">
+<link rel="next" href="raise.html#raise" title="raise">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="psignal"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="raise.html#raise">raise</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Signals.html#Signals">Signals</a>
+<hr>
+</div>
+
+<h3 class="section">7.1 <code>psignal</code>&mdash;print a signal message on standard error</h3>
+
+<p><a name="index-psignal-474"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;stdio.h&gt;
+     void psignal(int <var>signal</var>, const char *<var>prefix</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+Use <code>psignal</code> to print (on standard error) a signal message
+corresponding to the value of the signal number <var>signal</var>. 
+Unless you use <code>NULL</code> as the value of the argument <var>prefix</var>, the
+signal message will begin with the string at <var>prefix</var>, followed by a
+colon and a space (<code>: </code>). The remainder of the signal message is one
+of the strings described for <code>strsignal</code>.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+<code>psignal</code> returns no result.
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+POSIX.1-2008 requires <code>psignal</code>, but the strings issued vary from one
+implementation to another.
+
+   <p>Supporting OS subroutines required: <code>close</code>, <code>fstat</code>, <code>isatty</code>,
+<code>lseek</code>, <code>read</code>, <code>sbrk</code>, <code>write</code>.
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

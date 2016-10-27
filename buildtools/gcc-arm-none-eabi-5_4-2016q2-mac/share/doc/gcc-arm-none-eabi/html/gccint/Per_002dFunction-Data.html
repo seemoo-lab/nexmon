@@ -1,0 +1,113 @@
+<html lang="en">
+<head>
+<title>Per-Function Data - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Macros.html#Target-Macros" title="Target Macros">
+<link rel="prev" href="Run_002dtime-Target.html#Run_002dtime-Target" title="Run-time Target">
+<link rel="next" href="Storage-Layout.html#Storage-Layout" title="Storage Layout">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Per-Function-Data"></a>
+<a name="Per_002dFunction-Data"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Storage-Layout.html#Storage-Layout">Storage Layout</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Run_002dtime-Target.html#Run_002dtime-Target">Run-time Target</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Macros.html#Target-Macros">Target Macros</a>
+<hr>
+</div>
+
+<h3 class="section">17.4 Defining data structures for per-function information.</h3>
+
+<p><a name="index-per_002dfunction-data-3920"></a><a name="index-data-structures-3921"></a>
+If the target needs to store information on a per-function basis, GCC
+provides a macro and a couple of variables to allow this.  Note, just
+using statics to store the information is a bad idea, since GCC supports
+nested functions, so you can be halfway through encoding one function
+when another one comes along.
+
+ <p>GCC defines a data structure called <code>struct function</code> which
+contains all of the data specific to an individual function.  This
+structure contains a field called <code>machine</code> whose type is
+<code>struct machine_function *</code>, which can be used by targets to point
+to their own specific data.
+
+ <p>If a target needs per-function specific data it should define the type
+<code>struct machine_function</code> and also the macro <code>INIT_EXPANDERS</code>. 
+This macro should be used to initialize the function pointer
+<code>init_machine_status</code>.  This pointer is explained below.
+
+ <p>One typical use of per-function, target specific data is to create an
+RTX to hold the register containing the function's return address.  This
+RTX can then be used to implement the <code>__builtin_return_address</code>
+function, for level 0.
+
+ <p>Note&mdash;earlier implementations of GCC used a single data area to hold
+all of the per-function information.  Thus when processing of a nested
+function began the old per-function data had to be pushed onto a
+stack, and when the processing was finished, it had to be popped off the
+stack.  GCC used to provide function pointers called
+<code>save_machine_status</code> and <code>restore_machine_status</code> to handle
+the saving and restoring of the target specific information.  Since the
+single data area approach is no longer used, these pointers are no
+longer supported.
+
+<div class="defun">
+&mdash; Macro: <b>INIT_EXPANDERS</b><var><a name="index-INIT_005fEXPANDERS-3922"></a></var><br>
+<blockquote><p>Macro called to initialize any target specific information.  This macro
+is called once per function, before generation of any RTL has begun. 
+The intention of this macro is to allow the initialization of the
+function pointer <code>init_machine_status</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Variable: void (*)(struct function *) <b>init_machine_status</b><var><a name="index-init_005fmachine_005fstatus-3923"></a></var><br>
+<blockquote><p>If this function pointer is non-<code>NULL</code> it will be called once per
+function, before function compilation starts, in order to allow the
+target to perform any target specific initialization of the
+<code>struct function</code> structure.  It is intended that this would be
+used to initialize the <code>machine</code> of that structure.
+
+      <p><code>struct machine_function</code> structures are expected to be freed by GC. 
+Generally, any memory that they reference must be allocated by using
+GC allocation, including the structure itself. 
+</p></blockquote></div>
+
+ </body></html>
+

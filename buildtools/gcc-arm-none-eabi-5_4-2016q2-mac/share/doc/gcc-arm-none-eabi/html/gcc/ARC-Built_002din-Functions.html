@@ -1,0 +1,252 @@
+<html lang="en">
+<head>
+<title>ARC Built-in Functions - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Builtins.html#Target-Builtins" title="Target Builtins">
+<link rel="prev" href="Altera-Nios-II-Built_002din-Functions.html#Altera-Nios-II-Built_002din-Functions" title="Altera Nios II Built-in Functions">
+<link rel="next" href="ARC-SIMD-Built_002din-Functions.html#ARC-SIMD-Built_002din-Functions" title="ARC SIMD Built-in Functions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="ARC-Built-in-Functions"></a>
+<a name="ARC-Built_002din-Functions"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="ARC-SIMD-Built_002din-Functions.html#ARC-SIMD-Built_002din-Functions">ARC SIMD Built-in Functions</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Altera-Nios-II-Built_002din-Functions.html#Altera-Nios-II-Built_002din-Functions">Altera Nios II Built-in Functions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Builtins.html#Target-Builtins">Target Builtins</a>
+<hr>
+</div>
+
+<h4 class="subsection">6.58.4 ARC Built-in Functions</h4>
+
+<p>The following built-in functions are provided for ARC targets.  The
+built-ins generate the corresponding assembly instructions.  In the
+examples given below, the generated code often requires an operand or
+result to be in a register.  Where necessary further code will be
+generated to ensure this is true, but for brevity this is not
+described in each case.
+
+ <p><em>Note:</em> Using a built-in to generate an instruction not supported
+by a target may cause problems. At present the compiler is not
+guaranteed to detect such misuse, and as a result an internal compiler
+error may be generated.
+
+<div class="defun">
+&mdash; Built-in Function: int <b>__builtin_arc_aligned</b> (<var>void *val, int alignval</var>)<var><a name="index-g_t_005f_005fbuiltin_005farc_005faligned-4078"></a></var><br>
+<blockquote><p>Return 1 if <var>val</var> is known to have the byte alignment given
+by <var>alignval</var>, otherwise return 0. 
+Note that this is different from
+     <pre class="smallexample">          __alignof__(*(char *)<var>val</var>) &gt;= alignval
+     </pre>
+      <p>because __alignof__ sees only the type of the dereference, whereas
+__builtin_arc_align uses alignment information from the pointer
+as well as from the pointed-to type. 
+The information available will depend on optimization level. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_arc_brk</b> (<var>void</var>)<var><a name="index-g_t_005f_005fbuiltin_005farc_005fbrk-4079"></a></var><br>
+<blockquote><p>Generates
+     <pre class="example">          brk
+     </pre>
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: unsigned int <b>__builtin_arc_core_read</b> (<var>unsigned int regno</var>)<var><a name="index-g_t_005f_005fbuiltin_005farc_005fcore_005fread-4080"></a></var><br>
+<blockquote><p>The operand is the number of a register to be read.  Generates:
+     <pre class="example">          mov  <var>dest</var>, r<var>regno</var>
+     </pre>
+      <p>where the value in <var>dest</var> will be the result returned from the
+built-in. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_arc_core_write</b> (<var>unsigned int regno, unsigned int val</var>)<var><a name="index-g_t_005f_005fbuiltin_005farc_005fcore_005fwrite-4081"></a></var><br>
+<blockquote><p>The first operand is the number of a register to be written, the
+second operand is a compile time constant to write into that
+register.  Generates:
+     <pre class="example">          mov  r<var>regno</var>, <var>val</var>
+     </pre>
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: int <b>__builtin_arc_divaw</b> (<var>int a, int b</var>)<var><a name="index-g_t_005f_005fbuiltin_005farc_005fdivaw-4082"></a></var><br>
+<blockquote><p>Only available if either <samp><span class="option">-mcpu=ARC700</span></samp> or <samp><span class="option">-meA</span></samp> is set. 
+Generates:
+     <pre class="example">          divaw  <var>dest</var>, <var>a</var>, <var>b</var>
+     </pre>
+      <p>where the value in <var>dest</var> will be the result returned from the
+built-in. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_arc_flag</b> (<var>unsigned int a</var>)<var><a name="index-g_t_005f_005fbuiltin_005farc_005fflag-4083"></a></var><br>
+<blockquote><p>Generates
+     <pre class="example">          flag  <var>a</var>
+     </pre>
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: unsigned int <b>__builtin_arc_lr</b> (<var>unsigned int auxr</var>)<var><a name="index-g_t_005f_005fbuiltin_005farc_005flr-4084"></a></var><br>
+<blockquote><p>The operand, <var>auxv</var>, is the address of an auxiliary register and
+must be a compile time constant.  Generates:
+     <pre class="example">          lr  <var>dest</var>, [<var>auxr</var>]
+     </pre>
+      <p>Where the value in <var>dest</var> will be the result returned from the
+built-in. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_arc_mul64</b> (<var>int a, int b</var>)<var><a name="index-g_t_005f_005fbuiltin_005farc_005fmul64-4085"></a></var><br>
+<blockquote><p>Only available with <samp><span class="option">-mmul64</span></samp>.  Generates:
+     <pre class="example">          mul64  <var>a</var>, <var>b</var>
+     </pre>
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_arc_mulu64</b> (<var>unsigned int a, unsigned int b</var>)<var><a name="index-g_t_005f_005fbuiltin_005farc_005fmulu64-4086"></a></var><br>
+<blockquote><p>Only available with <samp><span class="option">-mmul64</span></samp>.  Generates:
+     <pre class="example">          mulu64  <var>a</var>, <var>b</var>
+     </pre>
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_arc_nop</b> (<var>void</var>)<var><a name="index-g_t_005f_005fbuiltin_005farc_005fnop-4087"></a></var><br>
+<blockquote><p>Generates:
+     <pre class="example">          nop
+     </pre>
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: int <b>__builtin_arc_norm</b> (<var>int src</var>)<var><a name="index-g_t_005f_005fbuiltin_005farc_005fnorm-4088"></a></var><br>
+<blockquote><p>Only valid if the `<samp><span class="samp">norm</span></samp>' instruction is available through the
+<samp><span class="option">-mnorm</span></samp> option or by default with <samp><span class="option">-mcpu=ARC700</span></samp>. 
+Generates:
+     <pre class="example">          norm  <var>dest</var>, <var>src</var>
+     </pre>
+      <p>Where the value in <var>dest</var> will be the result returned from the
+built-in. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: short int <b>__builtin_arc_normw</b> (<var>short int src</var>)<var><a name="index-g_t_005f_005fbuiltin_005farc_005fnormw-4089"></a></var><br>
+<blockquote><p>Only valid if the `<samp><span class="samp">normw</span></samp>' instruction is available through the
+<samp><span class="option">-mnorm</span></samp> option or by default with <samp><span class="option">-mcpu=ARC700</span></samp>. 
+Generates:
+     <pre class="example">          normw  <var>dest</var>, <var>src</var>
+     </pre>
+      <p>Where the value in <var>dest</var> will be the result returned from the
+built-in. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_arc_rtie</b> (<var>void</var>)<var><a name="index-g_t_005f_005fbuiltin_005farc_005frtie-4090"></a></var><br>
+<blockquote><p>Generates:
+     <pre class="example">          rtie
+     </pre>
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_arc_sleep</b> (<var>int a<a name="index-g_t_005f_005fbuiltin_005farc_005fsleep-4091"></a></var><br>
+<blockquote><p>Generates:
+     <pre class="example">          sleep  <var>a</var>
+     </pre>
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_arc_sr</b> (<var>unsigned int auxr, unsigned int val</var>)<var><a name="index-g_t_005f_005fbuiltin_005farc_005fsr-4092"></a></var><br>
+<blockquote><p>The first argument, <var>auxv</var>, is the address of an auxiliary
+register, the second argument, <var>val</var>, is a compile time constant
+to be written to the register.  Generates:
+     <pre class="example">          sr  <var>auxr</var>, [<var>val</var>]
+     </pre>
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: int <b>__builtin_arc_swap</b> (<var>int src</var>)<var><a name="index-g_t_005f_005fbuiltin_005farc_005fswap-4093"></a></var><br>
+<blockquote><p>Only valid with <samp><span class="option">-mswap</span></samp>.  Generates:
+     <pre class="example">          swap  <var>dest</var>, <var>src</var>
+     </pre>
+      <p>Where the value in <var>dest</var> will be the result returned from the
+built-in. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_arc_swi</b> (<var>void</var>)<var><a name="index-g_t_005f_005fbuiltin_005farc_005fswi-4094"></a></var><br>
+<blockquote><p>Generates:
+     <pre class="example">          swi
+     </pre>
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_arc_sync</b> (<var>void</var>)<var><a name="index-g_t_005f_005fbuiltin_005farc_005fsync-4095"></a></var><br>
+<blockquote><p>Only available with <samp><span class="option">-mcpu=ARC700</span></samp>.  Generates:
+     <pre class="example">          sync
+     </pre>
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_arc_trap_s</b> (<var>unsigned int c</var>)<var><a name="index-g_t_005f_005fbuiltin_005farc_005ftrap_005fs-4096"></a></var><br>
+<blockquote><p>Only available with <samp><span class="option">-mcpu=ARC700</span></samp>.  Generates:
+     <pre class="example">          trap_s  <var>c</var>
+     </pre>
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_arc_unimp_s</b> (<var>void</var>)<var><a name="index-g_t_005f_005fbuiltin_005farc_005funimp_005fs-4097"></a></var><br>
+<blockquote><p>Only available with <samp><span class="option">-mcpu=ARC700</span></samp>.  Generates:
+     <pre class="example">          unimp_s
+     </pre>
+      </blockquote></div>
+
+ <p>The instructions generated by the following builtins are not
+considered as candidates for scheduling.  They are not moved around by
+the compiler during scheduling, and thus can be expected to appear
+where they are put in the C code:
+<pre class="example">     __builtin_arc_brk()
+     __builtin_arc_core_read()
+     __builtin_arc_core_write()
+     __builtin_arc_flag()
+     __builtin_arc_lr()
+     __builtin_arc_sleep()
+     __builtin_arc_sr()
+     __builtin_arc_swi()
+</pre>
+ </body></html>
+

@@ -1,0 +1,81 @@
+<html lang="en">
+<head>
+<title>Invoking the garbage collector - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Type-Information.html#Type-Information" title="Type Information">
+<link rel="prev" href="Files.html#Files" title="Files">
+<link rel="next" href="Troubleshooting.html#Troubleshooting" title="Troubleshooting">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Invoking-the-garbage-collector"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Troubleshooting.html#Troubleshooting">Troubleshooting</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Files.html#Files">Files</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Type-Information.html#Type-Information">Type Information</a>
+<hr>
+</div>
+
+<h3 class="section">22.6 How to invoke the garbage collector</h3>
+
+<p><a name="index-garbage-collector_002c-invocation-5099"></a><a name="index-ggc_005fcollect-5100"></a>
+The GCC garbage collector GGC is only invoked explicitly. In contrast
+with many other garbage collectors, it is not implicitly invoked by
+allocation routines when a lot of memory has been consumed. So the
+only way to have GGC reclaim storage is to call the <code>ggc_collect</code>
+function explicitly.  This call is an expensive operation, as it may
+have to scan the entire heap.  Beware that local variables (on the GCC
+call stack) are not followed by such an invocation (as many other
+garbage collectors do): you should reference all your data from static
+or external <code>GTY</code>-ed variables, and it is advised to call
+<code>ggc_collect</code> with a shallow call stack.  The GGC is an exact mark
+and sweep garbage collector (so it does not scan the call stack for
+pointers).  In practice GCC passes don't often call <code>ggc_collect</code>
+themselves, because it is called by the pass manager between passes.
+
+ <p>At the time of the <code>ggc_collect</code> call all pointers in the GC-marked
+structures must be valid or <code>NULL</code>.  In practice this means that
+there should not be uninitialized pointer fields in the structures even
+if your code never reads or writes those fields at a particular
+instance.  One way to ensure this is to use cleared versions of
+allocators unless all the fields are initialized manually immediately
+after allocation.
+
+ </body></html>
+

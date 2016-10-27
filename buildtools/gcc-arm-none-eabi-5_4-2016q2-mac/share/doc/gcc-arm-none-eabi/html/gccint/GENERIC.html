@@ -1,0 +1,97 @@
+<html lang="en">
+<head>
+<title>GENERIC - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Passes.html#Passes" title="Passes">
+<link rel="next" href="GIMPLE.html#GIMPLE" title="GIMPLE">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="GENERIC"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="GIMPLE.html#GIMPLE">GIMPLE</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Passes.html#Passes">Passes</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">10 GENERIC</h2>
+
+<p><a name="index-GENERIC-1712"></a>
+The purpose of GENERIC is simply to provide a
+language-independent way of representing an entire function in
+trees.  To this end, it was necessary to add a few new tree codes
+to the back end, but almost everything was already there.  If you
+can express it with the codes in <code>gcc/tree.def</code>, it's
+GENERIC.
+
+ <p>Early on, there was a great deal of debate about how to think
+about statements in a tree IL.  In GENERIC, a statement is
+defined as any expression whose value, if any, is ignored.  A
+statement will always have <code>TREE_SIDE_EFFECTS</code> set (or it
+will be discarded), but a non-statement expression may also have
+side effects.  A <code>CALL_EXPR</code>, for instance.
+
+ <p>It would be possible for some local optimizations to work on the
+GENERIC form of a function; indeed, the adapted tree inliner
+works fine on GENERIC, but the current compiler performs inlining
+after lowering to GIMPLE (a restricted form described in the next
+section). Indeed, currently the frontends perform this lowering
+before handing off to <code>tree_rest_of_compilation</code>, but this
+seems inelegant.
+
+<ul class="menu">
+<li><a accesskey="1" href="Deficiencies.html#Deficiencies">Deficiencies</a>:                 Topics net yet covered in this document. 
+<li><a accesskey="2" href="Tree-overview.html#Tree-overview">Tree overview</a>:                All about <code>tree</code>s. 
+<li><a accesskey="3" href="Types.html#Types">Types</a>:                        Fundamental and aggregate types. 
+<li><a accesskey="4" href="Declarations.html#Declarations">Declarations</a>:                 Type declarations and variables. 
+<li><a accesskey="5" href="Attributes.html#Attributes">Attributes</a>:                   Declaration and type attributes. 
+<li><a accesskey="6" href="Expression-trees.html#Expression-trees">Expressions</a>:             Operating on data. 
+<li><a accesskey="7" href="Statements.html#Statements">Statements</a>:                   Control flow and related trees. 
+<li><a accesskey="8" href="Functions.html#Functions">Functions</a>:            	Function bodies, linkage, and other aspects. 
+<li><a accesskey="9" href="Language_002ddependent-trees.html#Language_002ddependent-trees">Language-dependent trees</a>:     Topics and trees specific to language front ends. 
+<li><a href="C-and-C_002b_002b-Trees.html#C-and-C_002b_002b-Trees">C and C++ Trees</a>:      	Trees specific to C and C++. 
+<li><a href="Java-Trees.html#Java-Trees">Java Trees</a>:  	                Trees specific to Java. 
+</ul>
+
+<!--  -->
+<!-- Deficiencies -->
+<!--  -->
+</body></html>
+

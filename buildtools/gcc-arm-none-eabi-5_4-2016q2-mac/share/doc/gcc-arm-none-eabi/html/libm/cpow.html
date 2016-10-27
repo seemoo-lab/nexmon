@@ -1,0 +1,68 @@
+<html lang="en">
+<head>
+<title>cpow - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Complex.html#Complex" title="Complex">
+<link rel="prev" href="conj.html#conj" title="conj">
+<link rel="next" href="cproj.html#cproj" title="cproj">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="cpow"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="cproj.html#cproj">cproj</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="conj.html#conj">conj</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Complex.html#Complex">Complex</a>
+<hr>
+</div>
+
+<h3 class="section">2.16 <code>cpow</code>, <code>cpowf</code>&mdash;complex power</h3>
+
+<p><a name="index-cpow-190"></a><a name="index-cpowf-191"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;complex.h&gt;
+     double complex cpow(double complex <var>x</var>, double complex <var>y</var>);
+     float complex cpowf(float complex <var>x</var>, float complex <var>y</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+The cpow functions compute the complex power function x^y
+power, with a branch cut for the first parameter along the
+negative real axis.
+
+   <p><code>cpowf</code> is identical to <code>cpow</code>, except that it performs
+its calculations on <code>floats complex</code>.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+The cpow functions return the complex power function value.
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+<code>cpow</code> and <code>cpowf</code> are ISO C99
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

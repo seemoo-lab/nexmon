@@ -1,0 +1,105 @@
+<html lang="en">
+<head>
+<title>In-Process Agent - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="JIT-Interface.html#JIT-Interface" title="JIT Interface">
+<link rel="next" href="GDB-Bugs.html#GDB-Bugs" title="GDB Bugs">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="In-Process-Agent"></a>
+<a name="In_002dProcess-Agent"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="GDB-Bugs.html#GDB-Bugs">GDB Bugs</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="JIT-Interface.html#JIT-Interface">JIT Interface</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">30 In-Process Agent</h2>
+
+<p><a name="index-debugging-agent-3049"></a>The traditional debugging model is conceptually low-speed, but works fine,
+because most bugs can be reproduced in debugging-mode execution.  However,
+as multi-core or many-core processors are becoming mainstream, and
+multi-threaded programs become more and more popular, there should be more
+and more bugs that only manifest themselves at normal-mode execution, for
+example, thread races, because debugger's interference with the program's
+timing may conceal the bugs.  On the other hand, in some applications,
+it is not feasible for the debugger to interrupt the program's execution
+long enough for the developer to learn anything helpful about its behavior. 
+If the program's correctness depends on its real-time behavior, delays
+introduced by a debugger might cause the program to fail, even when the
+code itself is correct.  It is useful to be able to observe the program's
+behavior without interrupting it.
+
+   <p>Therefore, traditional debugging model is too intrusive to reproduce
+some bugs.  In order to reduce the interference with the program, we can
+reduce the number of operations performed by debugger.  The
+<dfn>In-Process Agent</dfn>, a shared library, is running within the same
+process with inferior, and is able to perform some debugging operations
+itself.  As a result, debugger is only involved when necessary, and
+performance of debugging can be improved accordingly.  Note that
+interference with program can be reduced but can't be removed completely,
+because the in-process agent will still stop or slow down the program.
+
+   <p>The in-process agent can interpret and execute Agent Expressions
+(see <a href="Agent-Expressions.html#Agent-Expressions">Agent Expressions</a>) during performing debugging operations.  The
+agent expressions can be used for different purposes, such as collecting
+data in tracepoints, and condition evaluation in breakpoints.
+
+   <p><a name="Control-Agent"></a>
+You can control whether the in-process agent is used as an aid for
+debugging with the following commands:
+
+     
+<a name="index-set-agent-on-3050"></a>
+<dl><dt><code>set agent on</code><dd>Causes the in-process agent to perform some operations on behalf of the
+debugger.  Just which operations requested by the user will be done
+by the in-process agent depends on the its capabilities.  For example,
+if you request to evaluate breakpoint conditions in the in-process agent,
+and the in-process agent has such capability as well, then breakpoint
+conditions will be evaluated in the in-process agent.
+
+     <p><a name="index-set-agent-off-3051"></a><br><dt><code>set agent off</code><dd>Disables execution of debugging operations by the in-process agent.  All
+of the operations will be performed by <span class="sc">gdb</span>.
+
+     <p><a name="index-show-agent-3052"></a><br><dt><code>show agent</code><dd>Display the current setting of execution of debugging operations by
+the in-process agent. 
+</dl>
+
+<ul class="menu">
+<li><a accesskey="1" href="In_002dProcess-Agent-Protocol.html#In_002dProcess-Agent-Protocol">In-Process Agent Protocol</a>
+</ul>
+
+   </body></html>
+

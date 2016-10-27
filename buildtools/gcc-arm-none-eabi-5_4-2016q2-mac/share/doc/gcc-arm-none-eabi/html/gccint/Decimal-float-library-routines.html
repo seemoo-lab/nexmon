@@ -1,0 +1,379 @@
+<html lang="en">
+<head>
+<title>Decimal float library routines - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Libgcc.html#Libgcc" title="Libgcc">
+<link rel="prev" href="Soft-float-library-routines.html#Soft-float-library-routines" title="Soft float library routines">
+<link rel="next" href="Fixed_002dpoint-fractional-library-routines.html#Fixed_002dpoint-fractional-library-routines" title="Fixed-point fractional library routines">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Decimal-float-library-routines"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Fixed_002dpoint-fractional-library-routines.html#Fixed_002dpoint-fractional-library-routines">Fixed-point fractional library routines</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Soft-float-library-routines.html#Soft-float-library-routines">Soft float library routines</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Libgcc.html#Libgcc">Libgcc</a>
+<hr>
+</div>
+
+<h3 class="section">4.3 Routines for decimal floating point emulation</h3>
+
+<p><a name="index-decimal-float-library-193"></a><a name="index-IEEE-754_002d2008-194"></a>
+The software decimal floating point library implements IEEE 754-2008
+decimal floating point arithmetic and is only activated on selected
+targets.
+
+ <p>The software decimal floating point library supports either DPD
+(Densely Packed Decimal) or BID (Binary Integer Decimal) encoding
+as selected at configure time.
+
+<h4 class="subsection">4.3.1 Arithmetic functions</h4>
+
+<div class="defun">
+&mdash; Runtime Function: _Decimal32 <b>__dpd_addsd3</b> (<var>_Decimal32 a, _Decimal32 b</var>)<var><a name="index-g_t_005f_005fdpd_005faddsd3-195"></a></var><br>
+&mdash; Runtime Function: _Decimal32 <b>__bid_addsd3</b> (<var>_Decimal32 a, _Decimal32 b</var>)<var><a name="index-g_t_005f_005fbid_005faddsd3-196"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__dpd_adddd3</b> (<var>_Decimal64 a, _Decimal64 b</var>)<var><a name="index-g_t_005f_005fdpd_005fadddd3-197"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__bid_adddd3</b> (<var>_Decimal64 a, _Decimal64 b</var>)<var><a name="index-g_t_005f_005fbid_005fadddd3-198"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__dpd_addtd3</b> (<var>_Decimal128 a, _Decimal128 b</var>)<var><a name="index-g_t_005f_005fdpd_005faddtd3-199"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__bid_addtd3</b> (<var>_Decimal128 a, _Decimal128 b</var>)<var><a name="index-g_t_005f_005fbid_005faddtd3-200"></a></var><br>
+<blockquote><p>These functions return the sum of <var>a</var> and <var>b</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: _Decimal32 <b>__dpd_subsd3</b> (<var>_Decimal32 a, _Decimal32 b</var>)<var><a name="index-g_t_005f_005fdpd_005fsubsd3-201"></a></var><br>
+&mdash; Runtime Function: _Decimal32 <b>__bid_subsd3</b> (<var>_Decimal32 a, _Decimal32 b</var>)<var><a name="index-g_t_005f_005fbid_005fsubsd3-202"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__dpd_subdd3</b> (<var>_Decimal64 a, _Decimal64 b</var>)<var><a name="index-g_t_005f_005fdpd_005fsubdd3-203"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__bid_subdd3</b> (<var>_Decimal64 a, _Decimal64 b</var>)<var><a name="index-g_t_005f_005fbid_005fsubdd3-204"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__dpd_subtd3</b> (<var>_Decimal128 a, _Decimal128 b</var>)<var><a name="index-g_t_005f_005fdpd_005fsubtd3-205"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__bid_subtd3</b> (<var>_Decimal128 a, _Decimal128 b</var>)<var><a name="index-g_t_005f_005fbid_005fsubtd3-206"></a></var><br>
+<blockquote><p>These functions return the difference between <var>b</var> and <var>a</var>;
+that is, <var>a</var>&nbsp;-&nbsp;<var>b</var><!-- /@w -->. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: _Decimal32 <b>__dpd_mulsd3</b> (<var>_Decimal32 a, _Decimal32 b</var>)<var><a name="index-g_t_005f_005fdpd_005fmulsd3-207"></a></var><br>
+&mdash; Runtime Function: _Decimal32 <b>__bid_mulsd3</b> (<var>_Decimal32 a, _Decimal32 b</var>)<var><a name="index-g_t_005f_005fbid_005fmulsd3-208"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__dpd_muldd3</b> (<var>_Decimal64 a, _Decimal64 b</var>)<var><a name="index-g_t_005f_005fdpd_005fmuldd3-209"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__bid_muldd3</b> (<var>_Decimal64 a, _Decimal64 b</var>)<var><a name="index-g_t_005f_005fbid_005fmuldd3-210"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__dpd_multd3</b> (<var>_Decimal128 a, _Decimal128 b</var>)<var><a name="index-g_t_005f_005fdpd_005fmultd3-211"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__bid_multd3</b> (<var>_Decimal128 a, _Decimal128 b</var>)<var><a name="index-g_t_005f_005fbid_005fmultd3-212"></a></var><br>
+<blockquote><p>These functions return the product of <var>a</var> and <var>b</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: _Decimal32 <b>__dpd_divsd3</b> (<var>_Decimal32 a, _Decimal32 b</var>)<var><a name="index-g_t_005f_005fdpd_005fdivsd3-213"></a></var><br>
+&mdash; Runtime Function: _Decimal32 <b>__bid_divsd3</b> (<var>_Decimal32 a, _Decimal32 b</var>)<var><a name="index-g_t_005f_005fbid_005fdivsd3-214"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__dpd_divdd3</b> (<var>_Decimal64 a, _Decimal64 b</var>)<var><a name="index-g_t_005f_005fdpd_005fdivdd3-215"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__bid_divdd3</b> (<var>_Decimal64 a, _Decimal64 b</var>)<var><a name="index-g_t_005f_005fbid_005fdivdd3-216"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__dpd_divtd3</b> (<var>_Decimal128 a, _Decimal128 b</var>)<var><a name="index-g_t_005f_005fdpd_005fdivtd3-217"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__bid_divtd3</b> (<var>_Decimal128 a, _Decimal128 b</var>)<var><a name="index-g_t_005f_005fbid_005fdivtd3-218"></a></var><br>
+<blockquote><p>These functions return the quotient of <var>a</var> and <var>b</var>; that is,
+<var>a</var>&nbsp;/&nbsp;<var>b</var><!-- /@w -->. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: _Decimal32 <b>__dpd_negsd2</b> (<var>_Decimal32 a</var>)<var><a name="index-g_t_005f_005fdpd_005fnegsd2-219"></a></var><br>
+&mdash; Runtime Function: _Decimal32 <b>__bid_negsd2</b> (<var>_Decimal32 a</var>)<var><a name="index-g_t_005f_005fbid_005fnegsd2-220"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__dpd_negdd2</b> (<var>_Decimal64 a</var>)<var><a name="index-g_t_005f_005fdpd_005fnegdd2-221"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__bid_negdd2</b> (<var>_Decimal64 a</var>)<var><a name="index-g_t_005f_005fbid_005fnegdd2-222"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__dpd_negtd2</b> (<var>_Decimal128 a</var>)<var><a name="index-g_t_005f_005fdpd_005fnegtd2-223"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__bid_negtd2</b> (<var>_Decimal128 a</var>)<var><a name="index-g_t_005f_005fbid_005fnegtd2-224"></a></var><br>
+<blockquote><p>These functions return the negation of <var>a</var>.  They simply flip the
+sign bit, so they can produce negative zero and negative NaN. 
+</p></blockquote></div>
+
+<h4 class="subsection">4.3.2 Conversion functions</h4>
+
+<div class="defun">
+&mdash; Runtime Function: _Decimal64 <b>__dpd_extendsddd2</b> (<var>_Decimal32 a</var>)<var><a name="index-g_t_005f_005fdpd_005fextendsddd2-225"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__bid_extendsddd2</b> (<var>_Decimal32 a</var>)<var><a name="index-g_t_005f_005fbid_005fextendsddd2-226"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__dpd_extendsdtd2</b> (<var>_Decimal32 a</var>)<var><a name="index-g_t_005f_005fdpd_005fextendsdtd2-227"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__bid_extendsdtd2</b> (<var>_Decimal32 a</var>)<var><a name="index-g_t_005f_005fbid_005fextendsdtd2-228"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__dpd_extendddtd2</b> (<var>_Decimal64 a</var>)<var><a name="index-g_t_005f_005fdpd_005fextendddtd2-229"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__bid_extendddtd2</b> (<var>_Decimal64 a</var>)<var><a name="index-g_t_005f_005fbid_005fextendddtd2-230"></a></var><br>
+&mdash; Runtime Function: _Decimal32 <b>__dpd_truncddsd2</b> (<var>_Decimal64 a</var>)<var><a name="index-g_t_005f_005fdpd_005ftruncddsd2-231"></a></var><br>
+&mdash; Runtime Function: _Decimal32 <b>__bid_truncddsd2</b> (<var>_Decimal64 a</var>)<var><a name="index-g_t_005f_005fbid_005ftruncddsd2-232"></a></var><br>
+&mdash; Runtime Function: _Decimal32 <b>__dpd_trunctdsd2</b> (<var>_Decimal128 a</var>)<var><a name="index-g_t_005f_005fdpd_005ftrunctdsd2-233"></a></var><br>
+&mdash; Runtime Function: _Decimal32 <b>__bid_trunctdsd2</b> (<var>_Decimal128 a</var>)<var><a name="index-g_t_005f_005fbid_005ftrunctdsd2-234"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__dpd_trunctddd2</b> (<var>_Decimal128 a</var>)<var><a name="index-g_t_005f_005fdpd_005ftrunctddd2-235"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__bid_trunctddd2</b> (<var>_Decimal128 a</var>)<var><a name="index-g_t_005f_005fbid_005ftrunctddd2-236"></a></var><br>
+<blockquote><p>These functions convert the value <var>a</var> from one decimal floating type
+to another. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: _Decimal64 <b>__dpd_extendsfdd</b> (<var>float a</var>)<var><a name="index-g_t_005f_005fdpd_005fextendsfdd-237"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__bid_extendsfdd</b> (<var>float a</var>)<var><a name="index-g_t_005f_005fbid_005fextendsfdd-238"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__dpd_extendsftd</b> (<var>float a</var>)<var><a name="index-g_t_005f_005fdpd_005fextendsftd-239"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__bid_extendsftd</b> (<var>float a</var>)<var><a name="index-g_t_005f_005fbid_005fextendsftd-240"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__dpd_extenddftd</b> (<var>double a</var>)<var><a name="index-g_t_005f_005fdpd_005fextenddftd-241"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__bid_extenddftd</b> (<var>double a</var>)<var><a name="index-g_t_005f_005fbid_005fextenddftd-242"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__dpd_extendxftd</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005fdpd_005fextendxftd-243"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__bid_extendxftd</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005fbid_005fextendxftd-244"></a></var><br>
+&mdash; Runtime Function: _Decimal32 <b>__dpd_truncdfsd</b> (<var>double a</var>)<var><a name="index-g_t_005f_005fdpd_005ftruncdfsd-245"></a></var><br>
+&mdash; Runtime Function: _Decimal32 <b>__bid_truncdfsd</b> (<var>double a</var>)<var><a name="index-g_t_005f_005fbid_005ftruncdfsd-246"></a></var><br>
+&mdash; Runtime Function: _Decimal32 <b>__dpd_truncxfsd</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005fdpd_005ftruncxfsd-247"></a></var><br>
+&mdash; Runtime Function: _Decimal32 <b>__bid_truncxfsd</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005fbid_005ftruncxfsd-248"></a></var><br>
+&mdash; Runtime Function: _Decimal32 <b>__dpd_trunctfsd</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005fdpd_005ftrunctfsd-249"></a></var><br>
+&mdash; Runtime Function: _Decimal32 <b>__bid_trunctfsd</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005fbid_005ftrunctfsd-250"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__dpd_truncxfdd</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005fdpd_005ftruncxfdd-251"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__bid_truncxfdd</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005fbid_005ftruncxfdd-252"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__dpd_trunctfdd</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005fdpd_005ftrunctfdd-253"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__bid_trunctfdd</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005fbid_005ftrunctfdd-254"></a></var><br>
+<blockquote><p>These functions convert the value of <var>a</var> from a binary floating type
+to a decimal floating type of a different size. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: float <b>__dpd_truncddsf</b> (<var>_Decimal64 a</var>)<var><a name="index-g_t_005f_005fdpd_005ftruncddsf-255"></a></var><br>
+&mdash; Runtime Function: float <b>__bid_truncddsf</b> (<var>_Decimal64 a</var>)<var><a name="index-g_t_005f_005fbid_005ftruncddsf-256"></a></var><br>
+&mdash; Runtime Function: float <b>__dpd_trunctdsf</b> (<var>_Decimal128 a</var>)<var><a name="index-g_t_005f_005fdpd_005ftrunctdsf-257"></a></var><br>
+&mdash; Runtime Function: float <b>__bid_trunctdsf</b> (<var>_Decimal128 a</var>)<var><a name="index-g_t_005f_005fbid_005ftrunctdsf-258"></a></var><br>
+&mdash; Runtime Function: double <b>__dpd_extendsddf</b> (<var>_Decimal32 a</var>)<var><a name="index-g_t_005f_005fdpd_005fextendsddf-259"></a></var><br>
+&mdash; Runtime Function: double <b>__bid_extendsddf</b> (<var>_Decimal32 a</var>)<var><a name="index-g_t_005f_005fbid_005fextendsddf-260"></a></var><br>
+&mdash; Runtime Function: double <b>__dpd_trunctddf</b> (<var>_Decimal128 a</var>)<var><a name="index-g_t_005f_005fdpd_005ftrunctddf-261"></a></var><br>
+&mdash; Runtime Function: double <b>__bid_trunctddf</b> (<var>_Decimal128 a</var>)<var><a name="index-g_t_005f_005fbid_005ftrunctddf-262"></a></var><br>
+&mdash; Runtime Function: long double <b>__dpd_extendsdxf</b> (<var>_Decimal32 a</var>)<var><a name="index-g_t_005f_005fdpd_005fextendsdxf-263"></a></var><br>
+&mdash; Runtime Function: long double <b>__bid_extendsdxf</b> (<var>_Decimal32 a</var>)<var><a name="index-g_t_005f_005fbid_005fextendsdxf-264"></a></var><br>
+&mdash; Runtime Function: long double <b>__dpd_extendddxf</b> (<var>_Decimal64 a</var>)<var><a name="index-g_t_005f_005fdpd_005fextendddxf-265"></a></var><br>
+&mdash; Runtime Function: long double <b>__bid_extendddxf</b> (<var>_Decimal64 a</var>)<var><a name="index-g_t_005f_005fbid_005fextendddxf-266"></a></var><br>
+&mdash; Runtime Function: long double <b>__dpd_trunctdxf</b> (<var>_Decimal128 a</var>)<var><a name="index-g_t_005f_005fdpd_005ftrunctdxf-267"></a></var><br>
+&mdash; Runtime Function: long double <b>__bid_trunctdxf</b> (<var>_Decimal128 a</var>)<var><a name="index-g_t_005f_005fbid_005ftrunctdxf-268"></a></var><br>
+&mdash; Runtime Function: long double <b>__dpd_extendsdtf</b> (<var>_Decimal32 a</var>)<var><a name="index-g_t_005f_005fdpd_005fextendsdtf-269"></a></var><br>
+&mdash; Runtime Function: long double <b>__bid_extendsdtf</b> (<var>_Decimal32 a</var>)<var><a name="index-g_t_005f_005fbid_005fextendsdtf-270"></a></var><br>
+&mdash; Runtime Function: long double <b>__dpd_extendddtf</b> (<var>_Decimal64 a</var>)<var><a name="index-g_t_005f_005fdpd_005fextendddtf-271"></a></var><br>
+&mdash; Runtime Function: long double <b>__bid_extendddtf</b> (<var>_Decimal64 a</var>)<var><a name="index-g_t_005f_005fbid_005fextendddtf-272"></a></var><br>
+<blockquote><p>These functions convert the value of <var>a</var> from a decimal floating type
+to a binary floating type of a different size. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: _Decimal32 <b>__dpd_extendsfsd</b> (<var>float a</var>)<var><a name="index-g_t_005f_005fdpd_005fextendsfsd-273"></a></var><br>
+&mdash; Runtime Function: _Decimal32 <b>__bid_extendsfsd</b> (<var>float a</var>)<var><a name="index-g_t_005f_005fbid_005fextendsfsd-274"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__dpd_extenddfdd</b> (<var>double a</var>)<var><a name="index-g_t_005f_005fdpd_005fextenddfdd-275"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__bid_extenddfdd</b> (<var>double a</var>)<var><a name="index-g_t_005f_005fbid_005fextenddfdd-276"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__dpd_extendtftd</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005fdpd_005fextendtftd-277"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__bid_extendtftd</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005fbid_005fextendtftd-278"></a></var><br>
+&mdash; Runtime Function: float <b>__dpd_truncsdsf</b> (<var>_Decimal32 a</var>)<var><a name="index-g_t_005f_005fdpd_005ftruncsdsf-279"></a></var><br>
+&mdash; Runtime Function: float <b>__bid_truncsdsf</b> (<var>_Decimal32 a</var>)<var><a name="index-g_t_005f_005fbid_005ftruncsdsf-280"></a></var><br>
+&mdash; Runtime Function: double <b>__dpd_truncdddf</b> (<var>_Decimal64 a</var>)<var><a name="index-g_t_005f_005fdpd_005ftruncdddf-281"></a></var><br>
+&mdash; Runtime Function: double <b>__bid_truncdddf</b> (<var>_Decimal64 a</var>)<var><a name="index-g_t_005f_005fbid_005ftruncdddf-282"></a></var><br>
+&mdash; Runtime Function: long double <b>__dpd_trunctdtf</b> (<var>_Decimal128 a</var>)<var><a name="index-g_t_005f_005fdpd_005ftrunctdtf-283"></a></var><br>
+&mdash; Runtime Function: long double <b>__bid_trunctdtf</b> (<var>_Decimal128 a</var>)<var><a name="index-g_t_005f_005fbid_005ftrunctdtf-284"></a></var><br>
+<blockquote><p>These functions convert the value of <var>a</var> between decimal and
+binary floating types of the same size. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__dpd_fixsdsi</b> (<var>_Decimal32 a</var>)<var><a name="index-g_t_005f_005fdpd_005ffixsdsi-285"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_fixsdsi</b> (<var>_Decimal32 a</var>)<var><a name="index-g_t_005f_005fbid_005ffixsdsi-286"></a></var><br>
+&mdash; Runtime Function: int <b>__dpd_fixddsi</b> (<var>_Decimal64 a</var>)<var><a name="index-g_t_005f_005fdpd_005ffixddsi-287"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_fixddsi</b> (<var>_Decimal64 a</var>)<var><a name="index-g_t_005f_005fbid_005ffixddsi-288"></a></var><br>
+&mdash; Runtime Function: int <b>__dpd_fixtdsi</b> (<var>_Decimal128 a</var>)<var><a name="index-g_t_005f_005fdpd_005ffixtdsi-289"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_fixtdsi</b> (<var>_Decimal128 a</var>)<var><a name="index-g_t_005f_005fbid_005ffixtdsi-290"></a></var><br>
+<blockquote><p>These functions convert <var>a</var> to a signed integer. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: long <b>__dpd_fixsddi</b> (<var>_Decimal32 a</var>)<var><a name="index-g_t_005f_005fdpd_005ffixsddi-291"></a></var><br>
+&mdash; Runtime Function: long <b>__bid_fixsddi</b> (<var>_Decimal32 a</var>)<var><a name="index-g_t_005f_005fbid_005ffixsddi-292"></a></var><br>
+&mdash; Runtime Function: long <b>__dpd_fixdddi</b> (<var>_Decimal64 a</var>)<var><a name="index-g_t_005f_005fdpd_005ffixdddi-293"></a></var><br>
+&mdash; Runtime Function: long <b>__bid_fixdddi</b> (<var>_Decimal64 a</var>)<var><a name="index-g_t_005f_005fbid_005ffixdddi-294"></a></var><br>
+&mdash; Runtime Function: long <b>__dpd_fixtddi</b> (<var>_Decimal128 a</var>)<var><a name="index-g_t_005f_005fdpd_005ffixtddi-295"></a></var><br>
+&mdash; Runtime Function: long <b>__bid_fixtddi</b> (<var>_Decimal128 a</var>)<var><a name="index-g_t_005f_005fbid_005ffixtddi-296"></a></var><br>
+<blockquote><p>These functions convert <var>a</var> to a signed long. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: unsigned int <b>__dpd_fixunssdsi</b> (<var>_Decimal32 a</var>)<var><a name="index-g_t_005f_005fdpd_005ffixunssdsi-297"></a></var><br>
+&mdash; Runtime Function: unsigned int <b>__bid_fixunssdsi</b> (<var>_Decimal32 a</var>)<var><a name="index-g_t_005f_005fbid_005ffixunssdsi-298"></a></var><br>
+&mdash; Runtime Function: unsigned int <b>__dpd_fixunsddsi</b> (<var>_Decimal64 a</var>)<var><a name="index-g_t_005f_005fdpd_005ffixunsddsi-299"></a></var><br>
+&mdash; Runtime Function: unsigned int <b>__bid_fixunsddsi</b> (<var>_Decimal64 a</var>)<var><a name="index-g_t_005f_005fbid_005ffixunsddsi-300"></a></var><br>
+&mdash; Runtime Function: unsigned int <b>__dpd_fixunstdsi</b> (<var>_Decimal128 a</var>)<var><a name="index-g_t_005f_005fdpd_005ffixunstdsi-301"></a></var><br>
+&mdash; Runtime Function: unsigned int <b>__bid_fixunstdsi</b> (<var>_Decimal128 a</var>)<var><a name="index-g_t_005f_005fbid_005ffixunstdsi-302"></a></var><br>
+<blockquote><p>These functions convert <var>a</var> to an unsigned integer.  Negative values all become zero. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: unsigned long <b>__dpd_fixunssddi</b> (<var>_Decimal32 a</var>)<var><a name="index-g_t_005f_005fdpd_005ffixunssddi-303"></a></var><br>
+&mdash; Runtime Function: unsigned long <b>__bid_fixunssddi</b> (<var>_Decimal32 a</var>)<var><a name="index-g_t_005f_005fbid_005ffixunssddi-304"></a></var><br>
+&mdash; Runtime Function: unsigned long <b>__dpd_fixunsdddi</b> (<var>_Decimal64 a</var>)<var><a name="index-g_t_005f_005fdpd_005ffixunsdddi-305"></a></var><br>
+&mdash; Runtime Function: unsigned long <b>__bid_fixunsdddi</b> (<var>_Decimal64 a</var>)<var><a name="index-g_t_005f_005fbid_005ffixunsdddi-306"></a></var><br>
+&mdash; Runtime Function: unsigned long <b>__dpd_fixunstddi</b> (<var>_Decimal128 a</var>)<var><a name="index-g_t_005f_005fdpd_005ffixunstddi-307"></a></var><br>
+&mdash; Runtime Function: unsigned long <b>__bid_fixunstddi</b> (<var>_Decimal128 a</var>)<var><a name="index-g_t_005f_005fbid_005ffixunstddi-308"></a></var><br>
+<blockquote><p>These functions convert <var>a</var> to an unsigned long.  Negative values
+all become zero. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: _Decimal32 <b>__dpd_floatsisd</b> (<var>int i</var>)<var><a name="index-g_t_005f_005fdpd_005ffloatsisd-309"></a></var><br>
+&mdash; Runtime Function: _Decimal32 <b>__bid_floatsisd</b> (<var>int i</var>)<var><a name="index-g_t_005f_005fbid_005ffloatsisd-310"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__dpd_floatsidd</b> (<var>int i</var>)<var><a name="index-g_t_005f_005fdpd_005ffloatsidd-311"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__bid_floatsidd</b> (<var>int i</var>)<var><a name="index-g_t_005f_005fbid_005ffloatsidd-312"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__dpd_floatsitd</b> (<var>int i</var>)<var><a name="index-g_t_005f_005fdpd_005ffloatsitd-313"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__bid_floatsitd</b> (<var>int i</var>)<var><a name="index-g_t_005f_005fbid_005ffloatsitd-314"></a></var><br>
+<blockquote><p>These functions convert <var>i</var>, a signed integer, to decimal floating point. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: _Decimal32 <b>__dpd_floatdisd</b> (<var>long i</var>)<var><a name="index-g_t_005f_005fdpd_005ffloatdisd-315"></a></var><br>
+&mdash; Runtime Function: _Decimal32 <b>__bid_floatdisd</b> (<var>long i</var>)<var><a name="index-g_t_005f_005fbid_005ffloatdisd-316"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__dpd_floatdidd</b> (<var>long i</var>)<var><a name="index-g_t_005f_005fdpd_005ffloatdidd-317"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__bid_floatdidd</b> (<var>long i</var>)<var><a name="index-g_t_005f_005fbid_005ffloatdidd-318"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__dpd_floatditd</b> (<var>long i</var>)<var><a name="index-g_t_005f_005fdpd_005ffloatditd-319"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__bid_floatditd</b> (<var>long i</var>)<var><a name="index-g_t_005f_005fbid_005ffloatditd-320"></a></var><br>
+<blockquote><p>These functions convert <var>i</var>, a signed long, to decimal floating point. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: _Decimal32 <b>__dpd_floatunssisd</b> (<var>unsigned int i</var>)<var><a name="index-g_t_005f_005fdpd_005ffloatunssisd-321"></a></var><br>
+&mdash; Runtime Function: _Decimal32 <b>__bid_floatunssisd</b> (<var>unsigned int i</var>)<var><a name="index-g_t_005f_005fbid_005ffloatunssisd-322"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__dpd_floatunssidd</b> (<var>unsigned int i</var>)<var><a name="index-g_t_005f_005fdpd_005ffloatunssidd-323"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__bid_floatunssidd</b> (<var>unsigned int i</var>)<var><a name="index-g_t_005f_005fbid_005ffloatunssidd-324"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__dpd_floatunssitd</b> (<var>unsigned int i</var>)<var><a name="index-g_t_005f_005fdpd_005ffloatunssitd-325"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__bid_floatunssitd</b> (<var>unsigned int i</var>)<var><a name="index-g_t_005f_005fbid_005ffloatunssitd-326"></a></var><br>
+<blockquote><p>These functions convert <var>i</var>, an unsigned integer, to decimal floating point. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: _Decimal32 <b>__dpd_floatunsdisd</b> (<var>unsigned long i</var>)<var><a name="index-g_t_005f_005fdpd_005ffloatunsdisd-327"></a></var><br>
+&mdash; Runtime Function: _Decimal32 <b>__bid_floatunsdisd</b> (<var>unsigned long i</var>)<var><a name="index-g_t_005f_005fbid_005ffloatunsdisd-328"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__dpd_floatunsdidd</b> (<var>unsigned long i</var>)<var><a name="index-g_t_005f_005fdpd_005ffloatunsdidd-329"></a></var><br>
+&mdash; Runtime Function: _Decimal64 <b>__bid_floatunsdidd</b> (<var>unsigned long i</var>)<var><a name="index-g_t_005f_005fbid_005ffloatunsdidd-330"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__dpd_floatunsditd</b> (<var>unsigned long i</var>)<var><a name="index-g_t_005f_005fdpd_005ffloatunsditd-331"></a></var><br>
+&mdash; Runtime Function: _Decimal128 <b>__bid_floatunsditd</b> (<var>unsigned long i</var>)<var><a name="index-g_t_005f_005fbid_005ffloatunsditd-332"></a></var><br>
+<blockquote><p>These functions convert <var>i</var>, an unsigned long, to decimal floating point. 
+</p></blockquote></div>
+
+<h4 class="subsection">4.3.3 Comparison functions</h4>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__dpd_unordsd2</b> (<var>_Decimal32 a, _Decimal32 b</var>)<var><a name="index-g_t_005f_005fdpd_005funordsd2-333"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_unordsd2</b> (<var>_Decimal32 a, _Decimal32 b</var>)<var><a name="index-g_t_005f_005fbid_005funordsd2-334"></a></var><br>
+&mdash; Runtime Function: int <b>__dpd_unorddd2</b> (<var>_Decimal64 a, _Decimal64 b</var>)<var><a name="index-g_t_005f_005fdpd_005funorddd2-335"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_unorddd2</b> (<var>_Decimal64 a, _Decimal64 b</var>)<var><a name="index-g_t_005f_005fbid_005funorddd2-336"></a></var><br>
+&mdash; Runtime Function: int <b>__dpd_unordtd2</b> (<var>_Decimal128 a, _Decimal128 b</var>)<var><a name="index-g_t_005f_005fdpd_005funordtd2-337"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_unordtd2</b> (<var>_Decimal128 a, _Decimal128 b</var>)<var><a name="index-g_t_005f_005fbid_005funordtd2-338"></a></var><br>
+<blockquote><p>These functions return a nonzero value if either argument is NaN, otherwise 0. 
+</p></blockquote></div>
+
+ <p>There is also a complete group of higher level functions which
+correspond directly to comparison operators.  They implement the ISO C
+semantics for floating-point comparisons, taking NaN into account. 
+Pay careful attention to the return values defined for each set. 
+Under the hood, all of these routines are implemented as
+
+<pre class="smallexample">       if (__bid_unord<var>X</var>d2 (a, b))
+         return <var>E</var>;
+       return __bid_cmp<var>X</var>d2 (a, b);
+</pre>
+ <p class="noindent">where <var>E</var> is a constant chosen to give the proper behavior for
+NaN.  Thus, the meaning of the return value is different for each set. 
+Do not rely on this implementation; only the semantics documented
+below are guaranteed.
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__dpd_eqsd2</b> (<var>_Decimal32 a, _Decimal32 b</var>)<var><a name="index-g_t_005f_005fdpd_005feqsd2-339"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_eqsd2</b> (<var>_Decimal32 a, _Decimal32 b</var>)<var><a name="index-g_t_005f_005fbid_005feqsd2-340"></a></var><br>
+&mdash; Runtime Function: int <b>__dpd_eqdd2</b> (<var>_Decimal64 a, _Decimal64 b</var>)<var><a name="index-g_t_005f_005fdpd_005feqdd2-341"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_eqdd2</b> (<var>_Decimal64 a, _Decimal64 b</var>)<var><a name="index-g_t_005f_005fbid_005feqdd2-342"></a></var><br>
+&mdash; Runtime Function: int <b>__dpd_eqtd2</b> (<var>_Decimal128 a, _Decimal128 b</var>)<var><a name="index-g_t_005f_005fdpd_005feqtd2-343"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_eqtd2</b> (<var>_Decimal128 a, _Decimal128 b</var>)<var><a name="index-g_t_005f_005fbid_005feqtd2-344"></a></var><br>
+<blockquote><p>These functions return zero if neither argument is NaN, and <var>a</var> and
+<var>b</var> are equal. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__dpd_nesd2</b> (<var>_Decimal32 a, _Decimal32 b</var>)<var><a name="index-g_t_005f_005fdpd_005fnesd2-345"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_nesd2</b> (<var>_Decimal32 a, _Decimal32 b</var>)<var><a name="index-g_t_005f_005fbid_005fnesd2-346"></a></var><br>
+&mdash; Runtime Function: int <b>__dpd_nedd2</b> (<var>_Decimal64 a, _Decimal64 b</var>)<var><a name="index-g_t_005f_005fdpd_005fnedd2-347"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_nedd2</b> (<var>_Decimal64 a, _Decimal64 b</var>)<var><a name="index-g_t_005f_005fbid_005fnedd2-348"></a></var><br>
+&mdash; Runtime Function: int <b>__dpd_netd2</b> (<var>_Decimal128 a, _Decimal128 b</var>)<var><a name="index-g_t_005f_005fdpd_005fnetd2-349"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_netd2</b> (<var>_Decimal128 a, _Decimal128 b</var>)<var><a name="index-g_t_005f_005fbid_005fnetd2-350"></a></var><br>
+<blockquote><p>These functions return a nonzero value if either argument is NaN, or
+if <var>a</var> and <var>b</var> are unequal. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__dpd_gesd2</b> (<var>_Decimal32 a, _Decimal32 b</var>)<var><a name="index-g_t_005f_005fdpd_005fgesd2-351"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_gesd2</b> (<var>_Decimal32 a, _Decimal32 b</var>)<var><a name="index-g_t_005f_005fbid_005fgesd2-352"></a></var><br>
+&mdash; Runtime Function: int <b>__dpd_gedd2</b> (<var>_Decimal64 a, _Decimal64 b</var>)<var><a name="index-g_t_005f_005fdpd_005fgedd2-353"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_gedd2</b> (<var>_Decimal64 a, _Decimal64 b</var>)<var><a name="index-g_t_005f_005fbid_005fgedd2-354"></a></var><br>
+&mdash; Runtime Function: int <b>__dpd_getd2</b> (<var>_Decimal128 a, _Decimal128 b</var>)<var><a name="index-g_t_005f_005fdpd_005fgetd2-355"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_getd2</b> (<var>_Decimal128 a, _Decimal128 b</var>)<var><a name="index-g_t_005f_005fbid_005fgetd2-356"></a></var><br>
+<blockquote><p>These functions return a value greater than or equal to zero if
+neither argument is NaN, and <var>a</var> is greater than or equal to
+<var>b</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__dpd_ltsd2</b> (<var>_Decimal32 a, _Decimal32 b</var>)<var><a name="index-g_t_005f_005fdpd_005fltsd2-357"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_ltsd2</b> (<var>_Decimal32 a, _Decimal32 b</var>)<var><a name="index-g_t_005f_005fbid_005fltsd2-358"></a></var><br>
+&mdash; Runtime Function: int <b>__dpd_ltdd2</b> (<var>_Decimal64 a, _Decimal64 b</var>)<var><a name="index-g_t_005f_005fdpd_005fltdd2-359"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_ltdd2</b> (<var>_Decimal64 a, _Decimal64 b</var>)<var><a name="index-g_t_005f_005fbid_005fltdd2-360"></a></var><br>
+&mdash; Runtime Function: int <b>__dpd_lttd2</b> (<var>_Decimal128 a, _Decimal128 b</var>)<var><a name="index-g_t_005f_005fdpd_005flttd2-361"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_lttd2</b> (<var>_Decimal128 a, _Decimal128 b</var>)<var><a name="index-g_t_005f_005fbid_005flttd2-362"></a></var><br>
+<blockquote><p>These functions return a value less than zero if neither argument is
+NaN, and <var>a</var> is strictly less than <var>b</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__dpd_lesd2</b> (<var>_Decimal32 a, _Decimal32 b</var>)<var><a name="index-g_t_005f_005fdpd_005flesd2-363"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_lesd2</b> (<var>_Decimal32 a, _Decimal32 b</var>)<var><a name="index-g_t_005f_005fbid_005flesd2-364"></a></var><br>
+&mdash; Runtime Function: int <b>__dpd_ledd2</b> (<var>_Decimal64 a, _Decimal64 b</var>)<var><a name="index-g_t_005f_005fdpd_005fledd2-365"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_ledd2</b> (<var>_Decimal64 a, _Decimal64 b</var>)<var><a name="index-g_t_005f_005fbid_005fledd2-366"></a></var><br>
+&mdash; Runtime Function: int <b>__dpd_letd2</b> (<var>_Decimal128 a, _Decimal128 b</var>)<var><a name="index-g_t_005f_005fdpd_005fletd2-367"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_letd2</b> (<var>_Decimal128 a, _Decimal128 b</var>)<var><a name="index-g_t_005f_005fbid_005fletd2-368"></a></var><br>
+<blockquote><p>These functions return a value less than or equal to zero if neither
+argument is NaN, and <var>a</var> is less than or equal to <var>b</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__dpd_gtsd2</b> (<var>_Decimal32 a, _Decimal32 b</var>)<var><a name="index-g_t_005f_005fdpd_005fgtsd2-369"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_gtsd2</b> (<var>_Decimal32 a, _Decimal32 b</var>)<var><a name="index-g_t_005f_005fbid_005fgtsd2-370"></a></var><br>
+&mdash; Runtime Function: int <b>__dpd_gtdd2</b> (<var>_Decimal64 a, _Decimal64 b</var>)<var><a name="index-g_t_005f_005fdpd_005fgtdd2-371"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_gtdd2</b> (<var>_Decimal64 a, _Decimal64 b</var>)<var><a name="index-g_t_005f_005fbid_005fgtdd2-372"></a></var><br>
+&mdash; Runtime Function: int <b>__dpd_gttd2</b> (<var>_Decimal128 a, _Decimal128 b</var>)<var><a name="index-g_t_005f_005fdpd_005fgttd2-373"></a></var><br>
+&mdash; Runtime Function: int <b>__bid_gttd2</b> (<var>_Decimal128 a, _Decimal128 b</var>)<var><a name="index-g_t_005f_005fbid_005fgttd2-374"></a></var><br>
+<blockquote><p>These functions return a value greater than zero if neither argument
+is NaN, and <var>a</var> is strictly greater than <var>b</var>. 
+</p></blockquote></div>
+
+ </body></html>
+

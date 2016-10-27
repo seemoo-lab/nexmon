@@ -1,0 +1,92 @@
+<html lang="en">
+<head>
+<title>Differing file formats - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Adding-Symbols-to-the-Hash-Table.html#Adding-Symbols-to-the-Hash-Table" title="Adding Symbols to the Hash Table">
+<link rel="prev" href="Adding-Symbols-to-the-Hash-Table.html#Adding-Symbols-to-the-Hash-Table" title="Adding Symbols to the Hash Table">
+<link rel="next" href="Adding-symbols-from-an-object-file.html#Adding-symbols-from-an-object-file" title="Adding symbols from an object file">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Differing-file-formats"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Adding-symbols-from-an-object-file.html#Adding-symbols-from-an-object-file">Adding symbols from an object file</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Adding-Symbols-to-the-Hash-Table.html#Adding-Symbols-to-the-Hash-Table">Adding Symbols to the Hash Table</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Adding-Symbols-to-the-Hash-Table.html#Adding-Symbols-to-the-Hash-Table">Adding Symbols to the Hash Table</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">2.17.2.1 Differing file formats</h5>
+
+<p>Normally all the files involved in a link will be of the same
+format, but it is also possible to link together different
+format object files, and the back end must support that.  The
+<code>_bfd_link_add_symbols</code> entry point is called via the target
+vector of the file to be added.  This has an important
+consequence: the function may not assume that the hash table
+is the type created by the corresponding
+<code>_bfd_link_hash_table_create</code> vector.  All the
+<code>_bfd_link_add_symbols</code> function can assume about the hash
+table is that it is derived from <code>struct
+bfd_link_hash_table</code>.
+
+   <p>Sometimes the <code>_bfd_link_add_symbols</code> function must store
+some information in the hash table entry to be used by the
+<code>_bfd_final_link</code> function.  In such a case the output bfd
+xvec must be checked to make sure that the hash table was
+created by an object file of the same format.
+
+   <p>The <code>_bfd_final_link</code> routine must be prepared to handle a
+hash entry without any extra information added by the
+<code>_bfd_link_add_symbols</code> function.  A hash entry without
+extra information will also occur when the linker script
+directs the linker to create a symbol.  Note that, regardless
+of how a hash table entry is added, all the fields will be
+initialized to some sort of null value by the hash table entry
+initialization function.
+
+   <p>See <code>ecoff_link_add_externals</code> for an example of how to
+check the output bfd before saving information (in this
+case, the ECOFF external symbol debugging information) in a
+hash table entry.
+
+   </body></html>
+

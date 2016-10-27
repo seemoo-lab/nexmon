@@ -1,0 +1,91 @@
+<html lang="en">
+<head>
+<title>Reading Symbols - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Symbols.html#Symbols" title="Symbols">
+<link rel="prev" href="Symbols.html#Symbols" title="Symbols">
+<link rel="next" href="Writing-Symbols.html#Writing-Symbols" title="Writing Symbols">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Reading-Symbols"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Writing-Symbols.html#Writing-Symbols">Writing Symbols</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Symbols.html#Symbols">Symbols</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Symbols.html#Symbols">Symbols</a>
+<hr>
+</div>
+
+<h4 class="subsection">2.7.1 Reading symbols</h4>
+
+<p>There are two stages to reading a symbol table from a BFD:
+allocating storage, and the actual reading process. This is an
+excerpt from an application which reads the symbol table:
+
+<pre class="example">              long storage_needed;
+              asymbol **symbol_table;
+              long number_of_symbols;
+              long i;
+     
+              storage_needed = bfd_get_symtab_upper_bound (abfd);
+     
+              if (storage_needed &lt; 0)
+                FAIL
+     
+              if (storage_needed == 0)
+                return;
+     
+              symbol_table = xmalloc (storage_needed);
+                ...
+              number_of_symbols =
+                 bfd_canonicalize_symtab (abfd, symbol_table);
+     
+              if (number_of_symbols &lt; 0)
+                FAIL
+     
+              for (i = 0; i &lt; number_of_symbols; i++)
+                process_symbol (symbol_table[i]);
+</pre>
+   <p>All storage for the symbols themselves is in an objalloc
+connected to the BFD; it is freed when the BFD is closed.
+
+   </body></html>
+

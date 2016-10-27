@@ -1,0 +1,179 @@
+<html lang="en">
+<head>
+<title>S/390 System z Built-in Functions - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Builtins.html#Target-Builtins" title="Target Builtins">
+<link rel="prev" href="RX-Built_002din-Functions.html#RX-Built_002din-Functions" title="RX Built-in Functions">
+<link rel="next" href="SH-Built_002din-Functions.html#SH-Built_002din-Functions" title="SH Built-in Functions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="S%2f390-System-z-Built-in-Functions"></a>
+<a name="S_002f390-System-z-Built_002din-Functions"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="SH-Built_002din-Functions.html#SH-Built_002din-Functions">SH Built-in Functions</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="RX-Built_002din-Functions.html#RX-Built_002din-Functions">RX Built-in Functions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Builtins.html#Target-Builtins">Target Builtins</a>
+<hr>
+</div>
+
+<h4 class="subsection">6.58.23 S/390 System z Built-in Functions</h4>
+
+<div class="defun">
+&mdash; Built-in Function: int <b>__builtin_tbegin</b> (<var>void*</var>)<var><a name="index-g_t_005f_005fbuiltin_005ftbegin-4127"></a></var><br>
+<blockquote><p>Generates the <code>tbegin</code> machine instruction starting a
+non-constraint hardware transaction.  If the parameter is non-NULL the
+memory area is used to store the transaction diagnostic buffer and
+will be passed as first operand to <code>tbegin</code>.  This buffer can be
+defined using the <code>struct __htm_tdb</code> C struct defined in
+<code>htmintrin.h</code> and must reside on a double-word boundary.  The
+second tbegin operand is set to <code>0xff0c</code>. This enables
+save/restore of all GPRs and disables aborts for FPR and AR
+manipulations inside the transaction body.  The condition code set by
+the tbegin instruction is returned as integer value.  The tbegin
+instruction by definition overwrites the content of all FPRs.  The
+compiler will generate code which saves and restores the FPRs.  For
+soft-float code it is recommended to used the <code>*_nofloat</code>
+variant.  In order to prevent a TDB from being written it is required
+to pass an constant zero value as parameter.  Passing the zero value
+through a variable is not sufficient.  Although modifications of
+access registers inside the transaction will not trigger an
+transaction abort it is not supported to actually modify them.  Access
+registers do not get saved when entering a transaction. They will have
+undefined state when reaching the abort code. 
+</p></blockquote></div>
+
+ <p>Macros for the possible return codes of tbegin are defined in the
+<code>htmintrin.h</code> header file:
+
+     <dl>
+<dt><code>_HTM_TBEGIN_STARTED</code><dd><code>tbegin</code> has been executed as part of normal processing.  The
+transaction body is supposed to be executed. 
+<br><dt><code>_HTM_TBEGIN_INDETERMINATE</code><dd>The transaction was aborted due to an indeterminate condition which
+might be persistent. 
+<br><dt><code>_HTM_TBEGIN_TRANSIENT</code><dd>The transaction aborted due to a transient failure.  The transaction
+should be re-executed in that case. 
+<br><dt><code>_HTM_TBEGIN_PERSISTENT</code><dd>The transaction aborted due to a persistent failure.  Re-execution
+under same circumstances will not be productive. 
+</dl>
+
+<div class="defun">
+&mdash; Macro: <b>_HTM_FIRST_USER_ABORT_CODE</b><var><a name="index-g_t_005fHTM_005fFIRST_005fUSER_005fABORT_005fCODE-4128"></a></var><br>
+<blockquote><p>The <code>_HTM_FIRST_USER_ABORT_CODE</code> defined in <code>htmintrin.h</code>
+specifies the first abort code which can be used for
+<code>__builtin_tabort</code>.  Values below this threshold are reserved for
+machine use. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Data type: <b>struct __htm_tdb</b><var><a name="index-struct-_005f_005fhtm_005ftdb-4129"></a></var><br>
+<blockquote><p>The <code>struct __htm_tdb</code> defined in <code>htmintrin.h</code> describes
+the structure of the transaction diagnostic block as specified in the
+Principles of Operation manual chapter 5-91. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: int <b>__builtin_tbegin_nofloat</b> (<var>void*</var>)<var><a name="index-g_t_005f_005fbuiltin_005ftbegin_005fnofloat-4130"></a></var><br>
+<blockquote><p>Same as <code>__builtin_tbegin</code> but without FPR saves and restores. 
+Using this variant in code making use of FPRs will leave the FPRs in
+undefined state when entering the transaction abort handler code. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: int <b>__builtin_tbegin_retry</b> (<var>void*, int</var>)<var><a name="index-g_t_005f_005fbuiltin_005ftbegin_005fretry-4131"></a></var><br>
+<blockquote><p>In addition to <code>__builtin_tbegin</code> a loop for transient failures
+is generated.  If tbegin returns a condition code of 2 the transaction
+will be retried as often as specified in the second argument.  The
+perform processor assist instruction is used to tell the CPU about the
+number of fails so far. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: int <b>__builtin_tbegin_retry_nofloat</b> (<var>void*, int</var>)<var><a name="index-g_t_005f_005fbuiltin_005ftbegin_005fretry_005fnofloat-4132"></a></var><br>
+<blockquote><p>Same as <code>__builtin_tbegin_retry</code> but without FPR saves and
+restores.  Using this variant in code making use of FPRs will leave
+the FPRs in undefined state when entering the transaction abort
+handler code. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_tbeginc</b> (<var>void</var>)<var><a name="index-g_t_005f_005fbuiltin_005ftbeginc-4133"></a></var><br>
+<blockquote><p>Generates the <code>tbeginc</code> machine instruction starting a constraint
+hardware transaction.  The second operand is set to <code>0xff08</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: int <b>__builtin_tend</b> (<var>void</var>)<var><a name="index-g_t_005f_005fbuiltin_005ftend-4134"></a></var><br>
+<blockquote><p>Generates the <code>tend</code> machine instruction finishing a transaction
+and making the changes visible to other threads.  The condition code
+generated by tend is returned as integer value. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_tabort</b> (<var>int</var>)<var><a name="index-g_t_005f_005fbuiltin_005ftabort-4135"></a></var><br>
+<blockquote><p>Generates the <code>tabort</code> machine instruction with the specified
+abort code.  Abort codes from 0 through 255 are reserved and will
+result in an error message. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_tx_assist</b> (<var>int</var>)<var><a name="index-g_t_005f_005fbuiltin_005ftx_005fassist-4136"></a></var><br>
+<blockquote><p>Generates the <code>ppa rX,rY,1</code> machine instruction.  Where the
+integer parameter is loaded into rX and a value of zero is loaded into
+rY.  The integer parameter specifies the number of times the
+transaction repeatedly aborted. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: int <b>__builtin_tx_nesting_depth</b> (<var>void</var>)<var><a name="index-g_t_005f_005fbuiltin_005ftx_005fnesting_005fdepth-4137"></a></var><br>
+<blockquote><p>Generates the <code>etnd</code> machine instruction.  The current nesting
+depth is returned as integer value.  For a nesting depth of 0 the code
+is not executed as part of an transaction. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin_non_tx_store</b> (<var>uint64_t *, uint64_t</var>)<var><a name="index-g_t_005f_005fbuiltin_005fnon_005ftx_005fstore-4138"></a></var><br>
+<blockquote>
+<p>Generates the <code>ntstg</code> machine instruction.  The second argument
+is written to the first arguments location.  The store operation will
+not be rolled-back in case of an transaction abort. 
+</p></blockquote></div>
+
+ </body></html>
+

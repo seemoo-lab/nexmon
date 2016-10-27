@@ -1,0 +1,85 @@
+<html lang="en">
+<head>
+<title>Constraints - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Machine-Desc.html#Machine-Desc" title="Machine Desc">
+<link rel="prev" href="Predicates.html#Predicates" title="Predicates">
+<link rel="next" href="Standard-Names.html#Standard-Names" title="Standard Names">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Constraints"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Standard-Names.html#Standard-Names">Standard Names</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Predicates.html#Predicates">Predicates</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Machine-Desc.html#Machine-Desc">Machine Desc</a>
+<hr>
+</div>
+
+<h3 class="section">16.8 Operand Constraints</h3>
+
+<p><a name="index-operand-constraints-3304"></a><a name="index-constraints-3305"></a>
+Each <code>match_operand</code> in an instruction pattern can specify
+constraints for the operands allowed.  The constraints allow you to
+fine-tune matching within the set of operands allowed by the
+predicate.
+
+ <p>Constraints can say whether
+an operand may be in a register, and which kinds of register; whether the
+operand can be a memory reference, and which kinds of address; whether the
+operand may be an immediate constant, and which possible values it may
+have.  Constraints can also require two operands to match. 
+Side-effects aren't allowed in operands of inline <code>asm</code>, unless
+`<samp><span class="samp">&lt;</span></samp>' or `<samp><span class="samp">&gt;</span></samp>' constraints are used, because there is no guarantee
+that the side-effects will happen exactly once in an instruction that can update
+the addressing register.
+
+<ul class="menu">
+<li><a accesskey="1" href="Simple-Constraints.html#Simple-Constraints">Simple Constraints</a>:   Basic use of constraints. 
+<li><a accesskey="2" href="Multi_002dAlternative.html#Multi_002dAlternative">Multi-Alternative</a>:    When an insn has two alternative constraint-patterns. 
+<li><a accesskey="3" href="Class-Preferences.html#Class-Preferences">Class Preferences</a>:    Constraints guide which hard register to put things in. 
+<li><a accesskey="4" href="Modifiers.html#Modifiers">Modifiers</a>:            More precise control over effects of constraints. 
+<li><a accesskey="5" href="Machine-Constraints.html#Machine-Constraints">Machine Constraints</a>:  Existing constraints for some particular machines. 
+<li><a accesskey="6" href="Disable-Insn-Alternatives.html#Disable-Insn-Alternatives">Disable Insn Alternatives</a>:  Disable insn alternatives using attributes. 
+<li><a accesskey="7" href="Define-Constraints.html#Define-Constraints">Define Constraints</a>:   How to define machine-specific constraints. 
+<li><a accesskey="8" href="C-Constraint-Interface.html#C-Constraint-Interface">C Constraint Interface</a>:  How to test constraints from C code. 
+</ul>
+
+ </body></html>
+

@@ -1,0 +1,294 @@
+<html lang="en">
+<head>
+<title>Nios II Options - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Submodel-Options.html#Submodel-Options" title="Submodel Options">
+<link rel="prev" href="NDS32-Options.html#NDS32-Options" title="NDS32 Options">
+<link rel="next" href="Nvidia-PTX-Options.html#Nvidia-PTX-Options" title="Nvidia PTX Options">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Nios-II-Options"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Nvidia-PTX-Options.html#Nvidia-PTX-Options">Nvidia PTX Options</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="NDS32-Options.html#NDS32-Options">NDS32 Options</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Submodel-Options.html#Submodel-Options">Submodel Options</a>
+<hr>
+</div>
+
+<h4 class="subsection">3.17.31 Nios II Options</h4>
+
+<p><a name="index-Nios-II-options-2132"></a><a name="index-Altera-Nios-II-options-2133"></a>
+These are the options defined for the Altera Nios II processor.
+
+     <dl>
+<dt><code>-G </code><var>num</var><dd><a name="index-G-2134"></a><a name="index-smaller-data-references-2135"></a>Put global and static objects less than or equal to <var>num</var> bytes
+into the small data or BSS sections instead of the normal data or BSS
+sections.  The default value of <var>num</var> is 8.
+
+     <br><dt><code>-mgpopt=</code><var>option</var><br><dt><code>-mgpopt</code><dt><code>-mno-gpopt</code><dd><a name="index-mgpopt-2136"></a><a name="index-mno_002dgpopt-2137"></a>Generate (do not generate) GP-relative accesses.  The following
+<var>option</var> names are recognized:
+
+          <dl>
+<dt>`<samp><span class="samp">none</span></samp>'<dd>Do not generate GP-relative accesses.
+
+          <br><dt>`<samp><span class="samp">local</span></samp>'<dd>Generate GP-relative accesses for small data objects that are not
+external or weak.  Also use GP-relative addressing for objects that
+have been explicitly placed in a small data section via a <code>section</code>
+attribute.
+
+          <br><dt>`<samp><span class="samp">global</span></samp>'<dd>As for `<samp><span class="samp">local</span></samp>', but also generate GP-relative accesses for
+small data objects that are external or weak.  If you use this option,
+you must ensure that all parts of your program (including libraries) are
+compiled with the same <samp><span class="option">-G</span></samp> setting.
+
+          <br><dt>`<samp><span class="samp">data</span></samp>'<dd>Generate GP-relative accesses for all data objects in the program.  If you
+use this option, the entire data and BSS segments
+of your program must fit in 64K of memory and you must use an appropriate
+linker script to allocate them within the addressible range of the
+global pointer.
+
+          <br><dt>`<samp><span class="samp">all</span></samp>'<dd>Generate GP-relative addresses for function pointers as well as data
+pointers.  If you use this option, the entire text, data, and BSS segments
+of your program must fit in 64K of memory and you must use an appropriate
+linker script to allocate them within the addressible range of the
+global pointer.
+
+     </dl>
+
+     <p><samp><span class="option">-mgpopt</span></samp> is equivalent to <samp><span class="option">-mgpopt=local</span></samp>, and
+<samp><span class="option">-mno-gpopt</span></samp> is equivalent to <samp><span class="option">-mgpopt=none</span></samp>.
+
+     <p>The default is <samp><span class="option">-mgpopt</span></samp> except when <samp><span class="option">-fpic</span></samp> or
+<samp><span class="option">-fPIC</span></samp> is specified to generate position-independent code. 
+Note that the Nios II ABI does not permit GP-relative accesses from
+shared libraries.
+
+     <p>You may need to specify <samp><span class="option">-mno-gpopt</span></samp> explicitly when building
+programs that include large amounts of small data, including large
+GOT data sections.  In this case, the 16-bit offset for GP-relative
+addressing may not be large enough to allow access to the entire
+small data section.
+
+     <br><dt><code>-mel</code><dt><code>-meb</code><dd><a name="index-mel-2138"></a><a name="index-meb-2139"></a>Generate little-endian (default) or big-endian (experimental) code,
+respectively.
+
+     <br><dt><code>-mbypass-cache</code><dt><code>-mno-bypass-cache</code><dd><a name="index-mno_002dbypass_002dcache-2140"></a><a name="index-mbypass_002dcache-2141"></a>Force all load and store instructions to always bypass cache by
+using I/O variants of the instructions. The default is not to
+bypass the cache.
+
+     <br><dt><code>-mno-cache-volatile</code><dt><code>-mcache-volatile</code><dd><a name="index-mcache_002dvolatile-2142"></a><a name="index-mno_002dcache_002dvolatile-2143"></a>Volatile memory access bypass the cache using the I/O variants of
+the load and store instructions. The default is not to bypass the cache.
+
+     <br><dt><code>-mno-fast-sw-div</code><dt><code>-mfast-sw-div</code><dd><a name="index-mno_002dfast_002dsw_002ddiv-2144"></a><a name="index-mfast_002dsw_002ddiv-2145"></a>Do not use table-based fast divide for small numbers. The default
+is to use the fast divide at <samp><span class="option">-O3</span></samp> and above.
+
+     <br><dt><code>-mno-hw-mul</code><dt><code>-mhw-mul</code><dt><code>-mno-hw-mulx</code><dt><code>-mhw-mulx</code><dt><code>-mno-hw-div</code><dt><code>-mhw-div</code><dd><a name="index-mno_002dhw_002dmul-2146"></a><a name="index-mhw_002dmul-2147"></a><a name="index-mno_002dhw_002dmulx-2148"></a><a name="index-mhw_002dmulx-2149"></a><a name="index-mno_002dhw_002ddiv-2150"></a><a name="index-mhw_002ddiv-2151"></a>Enable or disable emitting <code>mul</code>, <code>mulx</code> and <code>div</code> family of
+instructions by the compiler. The default is to emit <code>mul</code>
+and not emit <code>div</code> and <code>mulx</code>.
+
+     <br><dt><code>-mcustom-</code><var>insn</var><code>=</code><var>N</var><dt><code>-mno-custom-</code><var>insn</var><dd><a name="index-mcustom_002d_0040var_007binsn_007d-2152"></a><a name="index-mno_002dcustom_002d_0040var_007binsn_007d-2153"></a>Each <samp><span class="option">-mcustom-</span><var>insn</var><span class="option">=</span><var>N</var></samp> option enables use of a
+custom instruction with encoding <var>N</var> when generating code that uses
+<var>insn</var>.  For example, <samp><span class="option">-mcustom-fadds=253</span></samp> generates custom
+instruction 253 for single-precision floating-point add operations instead
+of the default behavior of using a library call.
+
+     <p>The following values of <var>insn</var> are supported.  Except as otherwise
+noted, floating-point operations are expected to be implemented with
+normal IEEE 754 semantics and correspond directly to the C operators or the
+equivalent GCC built-in functions (see <a href="Other-Builtins.html#Other-Builtins">Other Builtins</a>).
+
+     <p>Single-precision floating point:
+          <dl>
+<dt>`<samp><span class="samp">fadds</span></samp>', `<samp><span class="samp">fsubs</span></samp>', `<samp><span class="samp">fdivs</span></samp>', `<samp><span class="samp">fmuls</span></samp>'<dd>Binary arithmetic operations.
+
+          <br><dt>`<samp><span class="samp">fnegs</span></samp>'<dd>Unary negation.
+
+          <br><dt>`<samp><span class="samp">fabss</span></samp>'<dd>Unary absolute value.
+
+          <br><dt>`<samp><span class="samp">fcmpeqs</span></samp>', `<samp><span class="samp">fcmpges</span></samp>', `<samp><span class="samp">fcmpgts</span></samp>', `<samp><span class="samp">fcmples</span></samp>', `<samp><span class="samp">fcmplts</span></samp>', `<samp><span class="samp">fcmpnes</span></samp>'<dd>Comparison operations.
+
+          <br><dt>`<samp><span class="samp">fmins</span></samp>', `<samp><span class="samp">fmaxs</span></samp>'<dd>Floating-point minimum and maximum.  These instructions are only
+generated if <samp><span class="option">-ffinite-math-only</span></samp> is specified.
+
+          <br><dt>`<samp><span class="samp">fsqrts</span></samp>'<dd>Unary square root operation.
+
+          <br><dt>`<samp><span class="samp">fcoss</span></samp>', `<samp><span class="samp">fsins</span></samp>', `<samp><span class="samp">ftans</span></samp>', `<samp><span class="samp">fatans</span></samp>', `<samp><span class="samp">fexps</span></samp>', `<samp><span class="samp">flogs</span></samp>'<dd>Floating-point trigonometric and exponential functions.  These instructions
+are only generated if <samp><span class="option">-funsafe-math-optimizations</span></samp> is also specified.
+
+     </dl>
+
+     <p>Double-precision floating point:
+          <dl>
+<dt>`<samp><span class="samp">faddd</span></samp>', `<samp><span class="samp">fsubd</span></samp>', `<samp><span class="samp">fdivd</span></samp>', `<samp><span class="samp">fmuld</span></samp>'<dd>Binary arithmetic operations.
+
+          <br><dt>`<samp><span class="samp">fnegd</span></samp>'<dd>Unary negation.
+
+          <br><dt>`<samp><span class="samp">fabsd</span></samp>'<dd>Unary absolute value.
+
+          <br><dt>`<samp><span class="samp">fcmpeqd</span></samp>', `<samp><span class="samp">fcmpged</span></samp>', `<samp><span class="samp">fcmpgtd</span></samp>', `<samp><span class="samp">fcmpled</span></samp>', `<samp><span class="samp">fcmpltd</span></samp>', `<samp><span class="samp">fcmpned</span></samp>'<dd>Comparison operations.
+
+          <br><dt>`<samp><span class="samp">fmind</span></samp>', `<samp><span class="samp">fmaxd</span></samp>'<dd>Double-precision minimum and maximum.  These instructions are only
+generated if <samp><span class="option">-ffinite-math-only</span></samp> is specified.
+
+          <br><dt>`<samp><span class="samp">fsqrtd</span></samp>'<dd>Unary square root operation.
+
+          <br><dt>`<samp><span class="samp">fcosd</span></samp>', `<samp><span class="samp">fsind</span></samp>', `<samp><span class="samp">ftand</span></samp>', `<samp><span class="samp">fatand</span></samp>', `<samp><span class="samp">fexpd</span></samp>', `<samp><span class="samp">flogd</span></samp>'<dd>Double-precision trigonometric and exponential functions.  These instructions
+are only generated if <samp><span class="option">-funsafe-math-optimizations</span></samp> is also specified.
+
+     </dl>
+
+     <p>Conversions:
+          <dl>
+<dt>`<samp><span class="samp">fextsd</span></samp>'<dd>Conversion from single precision to double precision.
+
+          <br><dt>`<samp><span class="samp">ftruncds</span></samp>'<dd>Conversion from double precision to single precision.
+
+          <br><dt>`<samp><span class="samp">fixsi</span></samp>', `<samp><span class="samp">fixsu</span></samp>', `<samp><span class="samp">fixdi</span></samp>', `<samp><span class="samp">fixdu</span></samp>'<dd>Conversion from floating point to signed or unsigned integer types, with
+truncation towards zero.
+
+          <br><dt>`<samp><span class="samp">round</span></samp>'<dd>Conversion from single-precision floating point to signed integer,
+rounding to the nearest integer and ties away from zero. 
+This corresponds to the <code>__builtin_lroundf</code> function when
+<samp><span class="option">-fno-math-errno</span></samp> is used.
+
+          <br><dt>`<samp><span class="samp">floatis</span></samp>', `<samp><span class="samp">floatus</span></samp>', `<samp><span class="samp">floatid</span></samp>', `<samp><span class="samp">floatud</span></samp>'<dd>Conversion from signed or unsigned integer types to floating-point types.
+
+     </dl>
+
+     <p>In addition, all of the following transfer instructions for internal
+registers X and Y must be provided to use any of the double-precision
+floating-point instructions.  Custom instructions taking two
+double-precision source operands expect the first operand in the
+64-bit register X.  The other operand (or only operand of a unary
+operation) is given to the custom arithmetic instruction with the
+least significant half in source register <var>src1</var> and the most
+significant half in <var>src2</var>.  A custom instruction that returns a
+double-precision result returns the most significant 32 bits in the
+destination register and the other half in 32-bit register Y. 
+GCC automatically generates the necessary code sequences to write
+register X and/or read register Y when double-precision floating-point
+instructions are used.
+
+          <dl>
+<dt>`<samp><span class="samp">fwrx</span></samp>'<dd>Write <var>src1</var> into the least significant half of X and <var>src2</var> into
+the most significant half of X.
+
+          <br><dt>`<samp><span class="samp">fwry</span></samp>'<dd>Write <var>src1</var> into Y.
+
+          <br><dt>`<samp><span class="samp">frdxhi</span></samp>', `<samp><span class="samp">frdxlo</span></samp>'<dd>Read the most or least (respectively) significant half of X and store it in
+<var>dest</var>.
+
+          <br><dt>`<samp><span class="samp">frdy</span></samp>'<dd>Read the value of Y and store it into <var>dest</var>. 
+</dl>
+
+     <p>Note that you can gain more local control over generation of Nios II custom
+instructions by using the <code>target("custom-</code><var>insn</var><code>=</code><var>N</var><code>")</code>
+and <code>target("no-custom-</code><var>insn</var><code>")</code> function attributes
+(see <a href="Function-Attributes.html#Function-Attributes">Function Attributes</a>)
+or pragmas (see <a href="Function-Specific-Option-Pragmas.html#Function-Specific-Option-Pragmas">Function Specific Option Pragmas</a>).
+
+     <br><dt><code>-mcustom-fpu-cfg=</code><var>name</var><dd><a name="index-mcustom_002dfpu_002dcfg-2154"></a>
+This option enables a predefined, named set of custom instruction encodings
+(see <samp><span class="option">-mcustom-</span><var>insn</var></samp> above). 
+Currently, the following sets are defined:
+
+     <p><samp><span class="option">-mcustom-fpu-cfg=60-1</span></samp> is equivalent to:
+     <pre class="smallexample">          -mcustom-fmuls=252 
+          -mcustom-fadds=253 
+          -mcustom-fsubs=254 
+          -fsingle-precision-constant
+     </pre>
+     <p><samp><span class="option">-mcustom-fpu-cfg=60-2</span></samp> is equivalent to:
+     <pre class="smallexample">          -mcustom-fmuls=252 
+          -mcustom-fadds=253 
+          -mcustom-fsubs=254 
+          -mcustom-fdivs=255 
+          -fsingle-precision-constant
+     </pre>
+     <p><samp><span class="option">-mcustom-fpu-cfg=72-3</span></samp> is equivalent to:
+     <pre class="smallexample">          -mcustom-floatus=243 
+          -mcustom-fixsi=244 
+          -mcustom-floatis=245 
+          -mcustom-fcmpgts=246 
+          -mcustom-fcmples=249 
+          -mcustom-fcmpeqs=250 
+          -mcustom-fcmpnes=251 
+          -mcustom-fmuls=252 
+          -mcustom-fadds=253 
+          -mcustom-fsubs=254 
+          -mcustom-fdivs=255 
+          -fsingle-precision-constant
+     </pre>
+     <p>Custom instruction assignments given by individual
+<samp><span class="option">-mcustom-</span><var>insn</var><span class="option">=</span></samp> options override those given by
+<samp><span class="option">-mcustom-fpu-cfg=</span></samp>, regardless of the
+order of the options on the command line.
+
+     <p>Note that you can gain more local control over selection of a FPU
+configuration by using the <code>target("custom-fpu-cfg=</code><var>name</var><code>")</code>
+function attribute (see <a href="Function-Attributes.html#Function-Attributes">Function Attributes</a>)
+or pragma (see <a href="Function-Specific-Option-Pragmas.html#Function-Specific-Option-Pragmas">Function Specific Option Pragmas</a>).
+
+ </dl>
+
+ <p>These additional `<samp><span class="samp">-m</span></samp>' options are available for the Altera Nios II
+ELF (bare-metal) target:
+
+     <dl>
+<dt><code>-mhal</code><dd><a name="index-mhal-2155"></a>Link with HAL BSP.  This suppresses linking with the GCC-provided C runtime
+startup and termination code, and is typically used in conjunction with
+<samp><span class="option">-msys-crt0=</span></samp> to specify the location of the alternate startup code
+provided by the HAL BSP.
+
+     <br><dt><code>-msmallc</code><dd><a name="index-msmallc-2156"></a>Link with a limited version of the C library, <samp><span class="option">-lsmallc</span></samp>, rather than
+Newlib.
+
+     <br><dt><code>-msys-crt0=</code><var>startfile</var><dd><a name="index-msys_002dcrt0-2157"></a><var>startfile</var> is the file name of the startfile (crt0) to use
+when linking.  This option is only useful in conjunction with <samp><span class="option">-mhal</span></samp>.
+
+     <br><dt><code>-msys-lib=</code><var>systemlib</var><dd><a name="index-msys_002dlib-2158"></a><var>systemlib</var> is the library name of the library that provides
+low-level system calls required by the C library,
+e.g. <code>read</code> and <code>write</code>. 
+This option is typically used to link with a library provided by a HAL BSP.
+
+ </dl>
+
+ </body></html>
+

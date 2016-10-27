@@ -1,0 +1,89 @@
+<html lang="en">
+<head>
+<title>Control Flow - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="RTL.html#RTL" title="RTL">
+<link rel="next" href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation" title="Loop Analysis and Representation">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Control-Flow"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation">Loop Analysis and Representation</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="RTL.html#RTL">RTL</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">14 Control Flow Graph</h2>
+
+<p><a name="index-CFG_002c-Control-Flow-Graph-3152"></a><a name="index-basic_002dblock_002eh-3153"></a>
+A control flow graph (CFG) is a data structure built on top of the
+intermediate code representation (the RTL or <code>GIMPLE</code> instruction
+stream) abstracting the control flow behavior of a function that is
+being compiled.  The CFG is a directed graph where the vertices
+represent basic blocks and edges represent possible transfer of
+control flow from one basic block to another.  The data structures
+used to represent the control flow graph are defined in
+<samp><span class="file">basic-block.h</span></samp>.
+
+ <p>In GCC, the representation of control flow is maintained throughout
+the compilation process, from constructing the CFG early in
+<code>pass_build_cfg</code> to <code>pass_free_cfg</code> (see <samp><span class="file">passes.def</span></samp>). 
+The CFG takes various different modes and may undergo extensive
+manipulations, but the graph is always valid between its construction
+and its release.  This way, transfer of information such as data flow,
+a measured profile, or the loop tree, can be propagated through the
+passes pipeline, and even from <code>GIMPLE</code> to <code>RTL</code>.
+
+ <p>Often the CFG may be better viewed as integral part of instruction
+chain, than structure built on the top of it.  Updating the compiler's
+intermediate representation for instructions can not be easily done
+without proper maintenance of the CFG simultaneously.
+
+<ul class="menu">
+<li><a accesskey="1" href="Basic-Blocks.html#Basic-Blocks">Basic Blocks</a>:            The definition and representation of basic blocks. 
+<li><a accesskey="2" href="Edges.html#Edges">Edges</a>:                   Types of edges and their representation. 
+<li><a accesskey="3" href="Profile-information.html#Profile-information">Profile information</a>:     Representation of frequencies and probabilities. 
+<li><a accesskey="4" href="Maintaining-the-CFG.html#Maintaining-the-CFG">Maintaining the CFG</a>:     Keeping the control flow graph and up to date. 
+<li><a accesskey="5" href="Liveness-information.html#Liveness-information">Liveness information</a>:    Using and maintaining liveness information. 
+</ul>
+
+ </body></html>
+

@@ -1,0 +1,224 @@
+<html lang="en">
+<head>
+<title>SDB and DWARF - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Debugging-Info.html#Debugging-Info" title="Debugging Info">
+<link rel="prev" href="File-Names-and-DBX.html#File-Names-and-DBX" title="File Names and DBX">
+<link rel="next" href="VMS-Debug.html#VMS-Debug" title="VMS Debug">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="SDB-and-DWARF"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="VMS-Debug.html#VMS-Debug">VMS Debug</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="File-Names-and-DBX.html#File-Names-and-DBX">File Names and DBX</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Debugging-Info.html#Debugging-Info">Debugging Info</a>
+<hr>
+</div>
+
+<h4 class="subsection">17.21.5 Macros for SDB and DWARF Output</h4>
+
+<!-- prevent bad page break with this line -->
+<p>Here are macros for SDB and DWARF output.
+
+<div class="defun">
+&mdash; Macro: <b>SDB_DEBUGGING_INFO</b><var><a name="index-SDB_005fDEBUGGING_005fINFO-4781"></a></var><br>
+<blockquote><p>Define this macro if GCC should produce COFF-style debugging output
+for SDB in response to the <samp><span class="option">-g</span></samp> option. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DWARF2_DEBUGGING_INFO</b><var><a name="index-DWARF2_005fDEBUGGING_005fINFO-4782"></a></var><br>
+<blockquote><p>Define this macro if GCC should produce dwarf version 2 format
+debugging output in response to the <samp><span class="option">-g</span></samp> option.
+
+     <div class="defun">
+&mdash; Target Hook: int <b>TARGET_DWARF_CALLING_CONVENTION</b> (<var>const_tree function</var>)<var><a name="index-TARGET_005fDWARF_005fCALLING_005fCONVENTION-4783"></a></var><br>
+<blockquote><p>Define this to enable the dwarf attribute <code>DW_AT_calling_convention</code> to
+be emitted for each function.  Instead of an integer return the enum
+value for the <code>DW_CC_</code> tag. 
+</p></blockquote></div>
+
+      <p>To support optional call frame debugging information, you must also
+define <code>INCOMING_RETURN_ADDR_RTX</code> and either set
+<code>RTX_FRAME_RELATED_P</code> on the prologue insns if you use RTL for the
+prologue, or call <code>dwarf2out_def_cfa</code> and <code>dwarf2out_reg_save</code>
+as appropriate from <code>TARGET_ASM_FUNCTION_PROLOGUE</code> if you don't. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DWARF2_FRAME_INFO</b><var><a name="index-DWARF2_005fFRAME_005fINFO-4784"></a></var><br>
+<blockquote><p>Define this macro to a nonzero value if GCC should always output
+Dwarf 2 frame information.  If <code>TARGET_EXCEPT_UNWIND_INFO</code>
+(see <a href="Exception-Region-Output.html#Exception-Region-Output">Exception Region Output</a>) returns <code>UI_DWARF2</code>, and
+exceptions are enabled, GCC will output this information not matter
+how you define <code>DWARF2_FRAME_INFO</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: enum unwind_info_type <b>TARGET_DEBUG_UNWIND_INFO</b> (<var>void</var>)<var><a name="index-TARGET_005fDEBUG_005fUNWIND_005fINFO-4785"></a></var><br>
+<blockquote><p>This hook defines the mechanism that will be used for describing frame
+unwind information to the debugger.  Normally the hook will return
+<code>UI_DWARF2</code> if DWARF 2 debug information is enabled, and
+return <code>UI_NONE</code> otherwise.
+
+      <p>A target may return <code>UI_DWARF2</code> even when DWARF 2 debug information
+is disabled in order to always output DWARF 2 frame information.
+
+      <p>A target may return <code>UI_TARGET</code> if it has ABI specified unwind tables. 
+This will suppress generation of the normal debug frame unwind information. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DWARF2_ASM_LINE_DEBUG_INFO</b><var><a name="index-DWARF2_005fASM_005fLINE_005fDEBUG_005fINFO-4786"></a></var><br>
+<blockquote><p>Define this macro to be a nonzero value if the assembler can generate Dwarf 2
+line debug info sections.  This will result in much more compact line number
+tables, and hence is desirable if it works. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_WANT_DEBUG_PUB_SECTIONS</b><var><a name="index-TARGET_005fWANT_005fDEBUG_005fPUB_005fSECTIONS-4787"></a></var><br>
+<blockquote><p>True if the <code>.debug_pubtypes</code> and <code>.debug_pubnames</code> sections should be emitted.  These sections are not used on most platforms, and in particular GDB does not use them. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_FORCE_AT_COMP_DIR</b><var><a name="index-TARGET_005fFORCE_005fAT_005fCOMP_005fDIR-4788"></a></var><br>
+<blockquote><p>True if the <code>DW_AT_comp_dir</code> attribute should be emitted for each  compilation unit.  This attribute is required for the darwin linker  to emit debug information. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_DELAY_SCHED2</b><var><a name="index-TARGET_005fDELAY_005fSCHED2-4789"></a></var><br>
+<blockquote><p>True if sched2 is not to be run at its normal place. 
+This usually means it will be run as part of machine-specific reorg. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_DELAY_VARTRACK</b><var><a name="index-TARGET_005fDELAY_005fVARTRACK-4790"></a></var><br>
+<blockquote><p>True if vartrack is not to be run at its normal place. 
+This usually means it will be run as part of machine-specific reorg. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_NO_REGISTER_ALLOCATION</b><var><a name="index-TARGET_005fNO_005fREGISTER_005fALLOCATION-4791"></a></var><br>
+<blockquote><p>True if register allocation and the passes
+following it should not be run.  Usually true only for virtual assembler
+targets. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_OUTPUT_DWARF_DELTA</b> (<var>stream, size, label1, label2</var>)<var><a name="index-ASM_005fOUTPUT_005fDWARF_005fDELTA-4792"></a></var><br>
+<blockquote><p>A C statement to issue assembly directives that create a difference
+<var>lab1</var> minus <var>lab2</var>, using an integer of the given <var>size</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_OUTPUT_DWARF_VMS_DELTA</b> (<var>stream, size, label1, label2</var>)<var><a name="index-ASM_005fOUTPUT_005fDWARF_005fVMS_005fDELTA-4793"></a></var><br>
+<blockquote><p>A C statement to issue assembly directives that create a difference
+between the two given labels in system defined units, e.g. instruction
+slots on IA64 VMS, using an integer of the given size. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_OUTPUT_DWARF_OFFSET</b> (<var>stream, size, label, section</var>)<var><a name="index-ASM_005fOUTPUT_005fDWARF_005fOFFSET-4794"></a></var><br>
+<blockquote><p>A C statement to issue assembly directives that create a
+section-relative reference to the given <var>label</var>, using an integer of the
+given <var>size</var>.  The label is known to be defined in the given <var>section</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_OUTPUT_DWARF_PCREL</b> (<var>stream, size, label</var>)<var><a name="index-ASM_005fOUTPUT_005fDWARF_005fPCREL-4795"></a></var><br>
+<blockquote><p>A C statement to issue assembly directives that create a self-relative
+reference to the given <var>label</var>, using an integer of the given <var>size</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_OUTPUT_DWARF_TABLE_REF</b> (<var>label</var>)<var><a name="index-ASM_005fOUTPUT_005fDWARF_005fTABLE_005fREF-4796"></a></var><br>
+<blockquote><p>A C statement to issue assembly directives that create a reference to
+the DWARF table identifier <var>label</var> from the current section.  This
+is used on some systems to avoid garbage collecting a DWARF table which
+is referenced by a function. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_ASM_OUTPUT_DWARF_DTPREL</b> (<var>FILE *file, int size, rtx x</var>)<var><a name="index-TARGET_005fASM_005fOUTPUT_005fDWARF_005fDTPREL-4797"></a></var><br>
+<blockquote><p>If defined, this target hook is a function which outputs a DTP-relative
+reference to the given TLS symbol of the specified size. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>PUT_SDB_</b><var><small class="dots">...</small><a name="index-PUT_005fSDB_005f-4798"></a></var><br>
+<blockquote><p>Define these macros to override the assembler syntax for the special
+SDB assembler directives.  See <samp><span class="file">sdbout.c</span></samp> for a list of these
+macros and their arguments.  If the standard syntax is used, you need
+not define them yourself. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>SDB_DELIM</b><var><a name="index-SDB_005fDELIM-4799"></a></var><br>
+<blockquote><p>Some assemblers do not support a semicolon as a delimiter, even between
+SDB assembler directives.  In that case, define this macro to be the
+delimiter to use (usually `<samp><span class="samp">\n</span></samp>').  It is not necessary to define
+a new set of <code>PUT_SDB_</code><var>op</var> macros if this is the only change
+required. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>SDB_ALLOW_UNKNOWN_REFERENCES</b><var><a name="index-SDB_005fALLOW_005fUNKNOWN_005fREFERENCES-4800"></a></var><br>
+<blockquote><p>Define this macro to allow references to unknown structure,
+union, or enumeration tags to be emitted.  Standard COFF does not
+allow handling of unknown references, MIPS ECOFF has support for
+it. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>SDB_ALLOW_FORWARD_REFERENCES</b><var><a name="index-SDB_005fALLOW_005fFORWARD_005fREFERENCES-4801"></a></var><br>
+<blockquote><p>Define this macro to allow references to structure, union, or
+enumeration tags that have not yet been seen to be handled.  Some
+assemblers choke if forward tags are used, while some require it. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>SDB_OUTPUT_SOURCE_LINE</b> (<var>stream, line</var>)<var><a name="index-SDB_005fOUTPUT_005fSOURCE_005fLINE-4802"></a></var><br>
+<blockquote><p>A C statement to output SDB debugging information before code for line
+number <var>line</var> of the current source file to the stdio stream
+<var>stream</var>.  The default is to emit an <code>.ln</code> directive. 
+</p></blockquote></div>
+
+ </body></html>
+

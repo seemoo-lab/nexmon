@@ -1,0 +1,103 @@
+<html lang="en">
+<head>
+<title>Target Structure - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Macros.html#Target-Macros" title="Target Macros">
+<link rel="next" href="Driver.html#Driver" title="Driver">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Target-Structure"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Driver.html#Driver">Driver</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Macros.html#Target-Macros">Target Macros</a>
+<hr>
+</div>
+
+<h3 class="section">17.1 The Global <code>targetm</code> Variable</h3>
+
+<p><a name="index-target-hooks-3854"></a><a name="index-target-functions-3855"></a>
+
+<div class="defun">
+&mdash; Variable: struct gcc_target <b>targetm</b><var><a name="index-targetm-3856"></a></var><br>
+<blockquote><p>The target <samp><span class="file">.c</span></samp> file must define the global <code>targetm</code> variable
+which contains pointers to functions and data relating to the target
+machine.  The variable is declared in <samp><span class="file">target.h</span></samp>;
+<samp><span class="file">target-def.h</span></samp> defines the macro <code>TARGET_INITIALIZER</code> which is
+used to initialize the variable, and macros for the default initializers
+for elements of the structure.  The <samp><span class="file">.c</span></samp> file should override those
+macros for which the default definition is inappropriate.  For example:
+     <pre class="smallexample">          #include "target.h"
+          #include "target-def.h"
+          
+          /* <span class="roman">Initialize the GCC target structure.</span>  */
+          
+          #undef TARGET_COMP_TYPE_ATTRIBUTES
+          #define TARGET_COMP_TYPE_ATTRIBUTES <var>machine</var>_comp_type_attributes
+          
+          struct gcc_target targetm = TARGET_INITIALIZER;
+     </pre>
+      </blockquote></div>
+
+ <p>Where a macro should be defined in the <samp><span class="file">.c</span></samp> file in this manner to
+form part of the <code>targetm</code> structure, it is documented below as a
+&ldquo;Target Hook&rdquo; with a prototype.  Many macros will change in future
+from being defined in the <samp><span class="file">.h</span></samp> file to being part of the
+<code>targetm</code> structure.
+
+ <p>Similarly, there is a <code>targetcm</code> variable for hooks that are
+specific to front ends for C-family languages, documented as &ldquo;C
+Target Hook&rdquo;.  This is declared in <samp><span class="file">c-family/c-target.h</span></samp>, the
+initializer <code>TARGETCM_INITIALIZER</code> in
+<samp><span class="file">c-family/c-target-def.h</span></samp>.  If targets initialize <code>targetcm</code>
+themselves, they should set <code>target_has_targetcm=yes</code> in
+<samp><span class="file">config.gcc</span></samp>; otherwise a default definition is used.
+
+ <p>Similarly, there is a <code>targetm_common</code> variable for hooks that
+are shared between the compiler driver and the compilers proper,
+documented as &ldquo;Common Target Hook&rdquo;.  This is declared in
+<samp><span class="file">common/common-target.h</span></samp>, the initializer
+<code>TARGETM_COMMON_INITIALIZER</code> in
+<samp><span class="file">common/common-target-def.h</span></samp>.  If targets initialize
+<code>targetm_common</code> themselves, they should set
+<code>target_has_targetm_common=yes</code> in <samp><span class="file">config.gcc</span></samp>; otherwise a
+default definition is used.
+
+ </body></html>
+

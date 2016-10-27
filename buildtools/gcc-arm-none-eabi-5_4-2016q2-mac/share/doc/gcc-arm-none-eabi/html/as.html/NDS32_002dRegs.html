@@ -1,0 +1,71 @@
+<html lang="en">
+<head>
+<title>NDS32-Regs - Using as</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using as">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="NDS32-Syntax.html#NDS32-Syntax" title="NDS32 Syntax">
+<link rel="prev" href="NDS32_002dChars.html#NDS32_002dChars" title="NDS32-Chars">
+<link rel="next" href="NDS32_002dOps.html#NDS32_002dOps" title="NDS32-Ops">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled ``GNU Free Documentation License''.
+
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="NDS32-Regs"></a>
+<a name="NDS32_002dRegs"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="NDS32_002dOps.html#NDS32_002dOps">NDS32-Ops</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="NDS32_002dChars.html#NDS32_002dChars">NDS32-Chars</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="NDS32-Syntax.html#NDS32-Syntax">NDS32 Syntax</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">9.30.2.2 Register Names</h5>
+
+     <dl>
+<dt><code>General purpose registers (GPR)</code><dd>There are 32 32-bit general purpose registers $r0 to $r31.
+
+     <br><dt><code>Accumulators d0 and d1</code><dd>64-bit accumulators: $d0.hi, $d0.lo, $d1.hi, and $d1.lo.
+
+     <br><dt><code>Assembler reserved register $ta</code><dd>Register $ta ($r15) is reserved for assembler using.
+
+     <br><dt><code>Operating system reserved registers $p0 and $p1</code><dd>Registers $p0 ($r26) and $p1 ($r27) are used by operating system as scratch
+registers.
+
+     <br><dt><code>Frame pointer $fp</code><dd>Register $r28 is regarded as the frame pointer.
+
+     <br><dt><code>Global pointer</code><dd>Register $r29 is regarded as the global pointer.
+
+     <br><dt><code>Link pointer</code><dd>Register $r30 is regarded as the link pointer.
+
+     <br><dt><code>Stack pointer</code><dd>Register $r31 is regarded as the stack pointer. 
+</dl>
+
+   </body></html>
+

@@ -1,0 +1,74 @@
+<html lang="en">
+<head>
+<title>Ravenscar Profile - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Ada.html#Ada" title="Ada">
+<link rel="prev" href="Ada-Tasks-and-Core-Files.html#Ada-Tasks-and-Core-Files" title="Ada Tasks and Core Files">
+<link rel="next" href="Ada-Glitches.html#Ada-Glitches" title="Ada Glitches">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Ravenscar-Profile"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Ada-Glitches.html#Ada-Glitches">Ada Glitches</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Ada-Tasks-and-Core-Files.html#Ada-Tasks-and-Core-Files">Ada Tasks and Core Files</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Ada.html#Ada">Ada</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">15.4.9.8 Tasking Support when using the Ravenscar Profile</h5>
+
+<p><a name="index-Ravenscar-Profile-1028"></a>
+The <dfn>Ravenscar Profile</dfn> is a subset of the Ada tasking features,
+specifically designed for systems with safety-critical real-time
+requirements.
+
+     
+<a name="index-set-ravenscar-task_002dswitching-on-1029"></a>
+<a name="index-task-switching-with-program-using-Ravenscar-Profile-1030"></a>
+<dl><dt><code>set ravenscar task-switching on</code><dd>Allows task switching when debugging a program that uses the Ravenscar
+Profile.  This is the default.
+
+     <p><a name="index-set-ravenscar-task_002dswitching-off-1031"></a><br><dt><code>set ravenscar task-switching off</code><dd>Turn off task switching when debugging a program that uses the Ravenscar
+Profile.  This is mostly intended to disable the code that adds support
+for the Ravenscar Profile, in case a bug in either <span class="sc">gdb</span> or in
+the Ravenscar runtime is preventing <span class="sc">gdb</span> from working properly. 
+To be effective, this command should be run before the program is started.
+
+     <p><a name="index-show-ravenscar-task_002dswitching-1032"></a><br><dt><code>show ravenscar task-switching</code><dd>Show whether it is possible to switch from task to task in a program
+using the Ravenscar Profile.
+
+   </dl>
+
+   </body></html>
+

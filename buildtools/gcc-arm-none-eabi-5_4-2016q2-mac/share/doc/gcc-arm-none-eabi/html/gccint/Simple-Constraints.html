@@ -1,0 +1,318 @@
+<html lang="en">
+<head>
+<title>Simple Constraints - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Constraints.html#Constraints" title="Constraints">
+<link rel="next" href="Multi_002dAlternative.html#Multi_002dAlternative" title="Multi-Alternative">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Simple-Constraints"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Multi_002dAlternative.html#Multi_002dAlternative">Multi-Alternative</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Constraints.html#Constraints">Constraints</a>
+<hr>
+</div>
+
+<h4 class="subsection">16.8.1 Simple Constraints</h4>
+
+<p><a name="index-simple-constraints-3306"></a>
+The simplest kind of constraint is a string full of letters, each of
+which describes one kind of operand that is permitted.  Here are
+the letters that are allowed:
+
+     <dl>
+<dt>whitespace<dd>Whitespace characters are ignored and can be inserted at any position
+except the first.  This enables each alternative for different operands to
+be visually aligned in the machine description even if they have different
+number of constraints and modifiers.
+
+     <p><a name="index-g_t_0040samp_007bm_007d-in-constraint-3307"></a><a name="index-memory-references-in-constraints-3308"></a><br><dt>`<samp><span class="samp">m</span></samp>'<dd>A memory operand is allowed, with any kind of address that the machine
+supports in general. 
+Note that the letter used for the general memory constraint can be
+re-defined by a back end using the <code>TARGET_MEM_CONSTRAINT</code> macro.
+
+     <p><a name="index-offsettable-address-3309"></a><a name="index-g_t_0040samp_007bo_007d-in-constraint-3310"></a><br><dt>`<samp><span class="samp">o</span></samp>'<dd>A memory operand is allowed, but only if the address is
+<dfn>offsettable</dfn>.  This means that adding a small integer (actually,
+the width in bytes of the operand, as determined by its machine mode)
+may be added to the address and the result is also a valid memory
+address.
+
+     <p><a name="index-autoincrement_002fdecrement-addressing-3311"></a>For example, an address which is constant is offsettable; so is an
+address that is the sum of a register and a constant (as long as a
+slightly larger constant is also within the range of address-offsets
+supported by the machine); but an autoincrement or autodecrement
+address is not offsettable.  More complicated indirect/indexed
+addresses may or may not be offsettable depending on the other
+addressing modes that the machine supports.
+
+     <p>Note that in an output operand which can be matched by another
+operand, the constraint letter `<samp><span class="samp">o</span></samp>' is valid only when accompanied
+by both `<samp><span class="samp">&lt;</span></samp>' (if the target machine has predecrement addressing)
+and `<samp><span class="samp">&gt;</span></samp>' (if the target machine has preincrement addressing).
+
+     <p><a name="index-g_t_0040samp_007bV_007d-in-constraint-3312"></a><br><dt>`<samp><span class="samp">V</span></samp>'<dd>A memory operand that is not offsettable.  In other words, anything that
+would fit the `<samp><span class="samp">m</span></samp>' constraint but not the `<samp><span class="samp">o</span></samp>' constraint.
+
+     <p><a name="index-g_t_0040samp_007b_003c_007d-in-constraint-3313"></a><br><dt>`<samp><span class="samp">&lt;</span></samp>'<dd>A memory operand with autodecrement addressing (either predecrement or
+postdecrement) is allowed.  In inline <code>asm</code> this constraint is only
+allowed if the operand is used exactly once in an instruction that can
+handle the side-effects.  Not using an operand with `<samp><span class="samp">&lt;</span></samp>' in constraint
+string in the inline <code>asm</code> pattern at all or using it in multiple
+instructions isn't valid, because the side-effects wouldn't be performed
+or would be performed more than once.  Furthermore, on some targets
+the operand with `<samp><span class="samp">&lt;</span></samp>' in constraint string must be accompanied by
+special instruction suffixes like <code>%U0</code> instruction suffix on PowerPC
+or <code>%P0</code> on IA-64.
+
+     <p><a name="index-g_t_0040samp_007b_003e_007d-in-constraint-3314"></a><br><dt>`<samp><span class="samp">&gt;</span></samp>'<dd>A memory operand with autoincrement addressing (either preincrement or
+postincrement) is allowed.  In inline <code>asm</code> the same restrictions
+as for `<samp><span class="samp">&lt;</span></samp>' apply.
+
+     <p><a name="index-g_t_0040samp_007br_007d-in-constraint-3315"></a><a name="index-registers-in-constraints-3316"></a><br><dt>`<samp><span class="samp">r</span></samp>'<dd>A register operand is allowed provided that it is in a general
+register.
+
+     <p><a name="index-constants-in-constraints-3317"></a><a name="index-g_t_0040samp_007bi_007d-in-constraint-3318"></a><br><dt>`<samp><span class="samp">i</span></samp>'<dd>An immediate integer operand (one with constant value) is allowed. 
+This includes symbolic constants whose values will be known only at
+assembly time or later.
+
+     <p><a name="index-g_t_0040samp_007bn_007d-in-constraint-3319"></a><br><dt>`<samp><span class="samp">n</span></samp>'<dd>An immediate integer operand with a known numeric value is allowed. 
+Many systems cannot support assembly-time constants for operands less
+than a word wide.  Constraints for these operands should use `<samp><span class="samp">n</span></samp>'
+rather than `<samp><span class="samp">i</span></samp>'.
+
+     <p><a name="index-g_t_0040samp_007bI_007d-in-constraint-3320"></a><br><dt>`<samp><span class="samp">I</span></samp>', `<samp><span class="samp">J</span></samp>', `<samp><span class="samp">K</span></samp>', <small class="dots">...</small> `<samp><span class="samp">P</span></samp>'<dd>Other letters in the range `<samp><span class="samp">I</span></samp>' through `<samp><span class="samp">P</span></samp>' may be defined in
+a machine-dependent fashion to permit immediate integer operands with
+explicit integer values in specified ranges.  For example, on the
+68000, `<samp><span class="samp">I</span></samp>' is defined to stand for the range of values 1 to 8. 
+This is the range permitted as a shift count in the shift
+instructions.
+
+     <p><a name="index-g_t_0040samp_007bE_007d-in-constraint-3321"></a><br><dt>`<samp><span class="samp">E</span></samp>'<dd>An immediate floating operand (expression code <code>const_double</code>) is
+allowed, but only if the target floating point format is the same as
+that of the host machine (on which the compiler is running).
+
+     <p><a name="index-g_t_0040samp_007bF_007d-in-constraint-3322"></a><br><dt>`<samp><span class="samp">F</span></samp>'<dd>An immediate floating operand (expression code <code>const_double</code> or
+<code>const_vector</code>) is allowed.
+
+     <p><a name="index-g_t_0040samp_007bG_007d-in-constraint-3323"></a><a name="index-g_t_0040samp_007bH_007d-in-constraint-3324"></a><br><dt>`<samp><span class="samp">G</span></samp>', `<samp><span class="samp">H</span></samp>'<dd>`<samp><span class="samp">G</span></samp>' and `<samp><span class="samp">H</span></samp>' may be defined in a machine-dependent fashion to
+permit immediate floating operands in particular ranges of values.
+
+     <p><a name="index-g_t_0040samp_007bs_007d-in-constraint-3325"></a><br><dt>`<samp><span class="samp">s</span></samp>'<dd>An immediate integer operand whose value is not an explicit integer is
+allowed.
+
+     <p>This might appear strange; if an insn allows a constant operand with a
+value not known at compile time, it certainly must allow any known
+value.  So why use `<samp><span class="samp">s</span></samp>' instead of `<samp><span class="samp">i</span></samp>'?  Sometimes it allows
+better code to be generated.
+
+     <p>For example, on the 68000 in a fullword instruction it is possible to
+use an immediate operand; but if the immediate value is between &minus;128
+and 127, better code results from loading the value into a register and
+using the register.  This is because the load into the register can be
+done with a `<samp><span class="samp">moveq</span></samp>' instruction.  We arrange for this to happen
+by defining the letter `<samp><span class="samp">K</span></samp>' to mean &ldquo;any integer outside the
+range &minus;128 to 127&rdquo;, and then specifying `<samp><span class="samp">Ks</span></samp>' in the operand
+constraints.
+
+     <p><a name="index-g_t_0040samp_007bg_007d-in-constraint-3326"></a><br><dt>`<samp><span class="samp">g</span></samp>'<dd>Any register, memory or immediate integer operand is allowed, except for
+registers that are not general registers.
+
+     <p><a name="index-g_t_0040samp_007bX_007d-in-constraint-3327"></a><br><dt>`<samp><span class="samp">X</span></samp>'<dd>Any operand whatsoever is allowed, even if it does not satisfy
+<code>general_operand</code>.  This is normally used in the constraint of
+a <code>match_scratch</code> when certain alternatives will not actually
+require a scratch register.
+
+     <p><a name="index-g_t_0040samp_007b0_007d-in-constraint-3328"></a><a name="index-digits-in-constraint-3329"></a><br><dt>`<samp><span class="samp">0</span></samp>', `<samp><span class="samp">1</span></samp>', `<samp><span class="samp">2</span></samp>', <small class="dots">...</small> `<samp><span class="samp">9</span></samp>'<dd>An operand that matches the specified operand number is allowed.  If a
+digit is used together with letters within the same alternative, the
+digit should come last.
+
+     <p>This number is allowed to be more than a single digit.  If multiple
+digits are encountered consecutively, they are interpreted as a single
+decimal integer.  There is scant chance for ambiguity, since to-date
+it has never been desirable that `<samp><span class="samp">10</span></samp>' be interpreted as matching
+either operand 1 <em>or</em> operand 0.  Should this be desired, one
+can use multiple alternatives instead.
+
+     <p><a name="index-matching-constraint-3330"></a><a name="index-constraint_002c-matching-3331"></a>This is called a <dfn>matching constraint</dfn> and what it really means is
+that the assembler has only a single operand that fills two roles
+considered separate in the RTL insn.  For example, an add insn has two
+input operands and one output operand in the RTL, but on most CISC
+machines an add instruction really has only two operands, one of them an
+input-output operand:
+
+     <pre class="smallexample">          addl #35,r12
+     </pre>
+     <p>Matching constraints are used in these circumstances. 
+More precisely, the two operands that match must include one input-only
+operand and one output-only operand.  Moreover, the digit must be a
+smaller number than the number of the operand that uses it in the
+constraint.
+
+     <p>For operands to match in a particular case usually means that they
+are identical-looking RTL expressions.  But in a few special cases
+specific kinds of dissimilarity are allowed.  For example, <code>*x</code>
+as an input operand will match <code>*x++</code> as an output operand. 
+For proper results in such cases, the output template should always
+use the output-operand's number when printing the operand.
+
+     <p><a name="index-load-address-instruction-3332"></a><a name="index-push-address-instruction-3333"></a><a name="index-address-constraints-3334"></a><a name="index-g_t_0040samp_007bp_007d-in-constraint-3335"></a><br><dt>`<samp><span class="samp">p</span></samp>'<dd>An operand that is a valid memory address is allowed.  This is
+for &ldquo;load address&rdquo; and &ldquo;push address&rdquo; instructions.
+
+     <p><a name="index-address_005foperand-3336"></a>`<samp><span class="samp">p</span></samp>' in the constraint must be accompanied by <code>address_operand</code>
+as the predicate in the <code>match_operand</code>.  This predicate interprets
+the mode specified in the <code>match_operand</code> as the mode of the memory
+reference for which the address would be valid.
+
+     <p><a name="index-other-register-constraints-3337"></a><a name="index-extensible-constraints-3338"></a><br><dt><var>other-letters</var><dd>Other letters can be defined in machine-dependent fashion to stand for
+particular classes of registers or other arbitrary operand types. 
+`<samp><span class="samp">d</span></samp>', `<samp><span class="samp">a</span></samp>' and `<samp><span class="samp">f</span></samp>' are defined on the 68000/68020 to stand
+for data, address and floating point registers. 
+</dl>
+
+ <p>In order to have valid assembler code, each operand must satisfy
+its constraint.  But a failure to do so does not prevent the pattern
+from applying to an insn.  Instead, it directs the compiler to modify
+the code so that the constraint will be satisfied.  Usually this is
+done by copying an operand into a register.
+
+ <p>Contrast, therefore, the two instruction patterns that follow:
+
+<pre class="smallexample">     (define_insn ""
+       [(set (match_operand:SI 0 "general_operand" "=r")
+             (plus:SI (match_dup 0)
+                      (match_operand:SI 1 "general_operand" "r")))]
+       ""
+       "...")
+</pre>
+ <p class="noindent">which has two operands, one of which must appear in two places, and
+
+<pre class="smallexample">     (define_insn ""
+       [(set (match_operand:SI 0 "general_operand" "=r")
+             (plus:SI (match_operand:SI 1 "general_operand" "0")
+                      (match_operand:SI 2 "general_operand" "r")))]
+       ""
+       "...")
+</pre>
+ <p class="noindent">which has three operands, two of which are required by a constraint to be
+identical.  If we are considering an insn of the form
+
+<pre class="smallexample">     (insn <var>n</var> <var>prev</var> <var>next</var>
+       (set (reg:SI 3)
+            (plus:SI (reg:SI 6) (reg:SI 109)))
+       ...)
+</pre>
+ <p class="noindent">the first pattern would not apply at all, because this insn does not
+contain two identical subexpressions in the right place.  The pattern would
+say, &ldquo;That does not look like an add instruction; try other patterns&rdquo;. 
+The second pattern would say, &ldquo;Yes, that's an add instruction, but there
+is something wrong with it&rdquo;.  It would direct the reload pass of the
+compiler to generate additional insns to make the constraint true.  The
+results might look like this:
+
+<pre class="smallexample">     (insn <var>n2</var> <var>prev</var> <var>n</var>
+       (set (reg:SI 3) (reg:SI 6))
+       ...)
+     
+     (insn <var>n</var> <var>n2</var> <var>next</var>
+       (set (reg:SI 3)
+            (plus:SI (reg:SI 3) (reg:SI 109)))
+       ...)
+</pre>
+ <p>It is up to you to make sure that each operand, in each pattern, has
+constraints that can handle any RTL expression that could be present for
+that operand.  (When multiple alternatives are in use, each pattern must,
+for each possible combination of operand expressions, have at least one
+alternative which can handle that combination of operands.)  The
+constraints don't need to <em>allow</em> any possible operand&mdash;when this is
+the case, they do not constrain&mdash;but they must at least point the way to
+reloading any possible operand so that it will fit.
+
+     <ul>
+<li>If the constraint accepts whatever operands the predicate permits,
+there is no problem: reloading is never necessary for this operand.
+
+     <p>For example, an operand whose constraints permit everything except
+registers is safe provided its predicate rejects registers.
+
+     <p>An operand whose predicate accepts only constant values is safe
+provided its constraints include the letter `<samp><span class="samp">i</span></samp>'.  If any possible
+constant value is accepted, then nothing less than `<samp><span class="samp">i</span></samp>' will do;
+if the predicate is more selective, then the constraints may also be
+more selective.
+
+     <li>Any operand expression can be reloaded by copying it into a register. 
+So if an operand's constraints allow some kind of register, it is
+certain to be safe.  It need not permit all classes of registers; the
+compiler knows how to copy a register into another register of the
+proper class in order to make an instruction valid.
+
+     <p><a name="index-nonoffsettable-memory-reference-3339"></a><a name="index-memory-reference_002c-nonoffsettable-3340"></a><li>A nonoffsettable memory reference can be reloaded by copying the
+address into a register.  So if the constraint uses the letter
+`<samp><span class="samp">o</span></samp>', all memory references are taken care of.
+
+     <li>A constant operand can be reloaded by allocating space in memory to
+hold it as preinitialized data.  Then the memory reference can be used
+in place of the constant.  So if the constraint uses the letters
+`<samp><span class="samp">o</span></samp>' or `<samp><span class="samp">m</span></samp>', constant operands are not a problem.
+
+     <li>If the constraint permits a constant and a pseudo register used in an insn
+was not allocated to a hard register and is equivalent to a constant,
+the register will be replaced with the constant.  If the predicate does
+not permit a constant and the insn is re-recognized for some reason, the
+compiler will crash.  Thus the predicate must always recognize any
+objects allowed by the constraint. 
+</ul>
+
+ <p>If the operand's predicate can recognize registers, but the constraint does
+not permit them, it can make the compiler crash.  When this operand happens
+to be a register, the reload pass will be stymied, because it does not know
+how to copy a register temporarily into memory.
+
+ <p>If the predicate accepts a unary operator, the constraint applies to the
+operand.  For example, the MIPS processor at ISA level 3 supports an
+instruction which adds two registers in <code>SImode</code> to produce a
+<code>DImode</code> result, but only if the registers are correctly sign
+extended.  This predicate for the input operands accepts a
+<code>sign_extend</code> of an <code>SImode</code> register.  Write the constraint
+to indicate the type of register that is required for the operand of the
+<code>sign_extend</code>.
+
+ </body></html>
+

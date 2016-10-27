@@ -1,0 +1,353 @@
+<html lang="en">
+<head>
+<title>Soft float library routines - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Libgcc.html#Libgcc" title="Libgcc">
+<link rel="prev" href="Integer-library-routines.html#Integer-library-routines" title="Integer library routines">
+<link rel="next" href="Decimal-float-library-routines.html#Decimal-float-library-routines" title="Decimal float library routines">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Soft-float-library-routines"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Decimal-float-library-routines.html#Decimal-float-library-routines">Decimal float library routines</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Integer-library-routines.html#Integer-library-routines">Integer library routines</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Libgcc.html#Libgcc">Libgcc</a>
+<hr>
+</div>
+
+<h3 class="section">4.2 Routines for floating point emulation</h3>
+
+<p><a name="index-soft-float-library-75"></a><a name="index-arithmetic-library-76"></a><a name="index-math-library-77"></a><a name="index-msoft_002dfloat-78"></a>
+The software floating point library is used on machines which do not
+have hardware support for floating point.  It is also used whenever
+<samp><span class="option">-msoft-float</span></samp> is used to disable generation of floating point
+instructions.  (Not all targets support this switch.)
+
+ <p>For compatibility with other compilers, the floating point emulation
+routines can be renamed with the <code>DECLARE_LIBRARY_RENAMES</code> macro
+(see <a href="Library-Calls.html#Library-Calls">Library Calls</a>).  In this section, the default names are used.
+
+ <p>Presently the library does not support <code>XFmode</code>, which is used
+for <code>long double</code> on some architectures.
+
+<h4 class="subsection">4.2.1 Arithmetic functions</h4>
+
+<div class="defun">
+&mdash; Runtime Function: float <b>__addsf3</b> (<var>float a, float b</var>)<var><a name="index-g_t_005f_005faddsf3-79"></a></var><br>
+&mdash; Runtime Function: double <b>__adddf3</b> (<var>double a, double b</var>)<var><a name="index-g_t_005f_005fadddf3-80"></a></var><br>
+&mdash; Runtime Function: long double <b>__addtf3</b> (<var>long double a, long double b</var>)<var><a name="index-g_t_005f_005faddtf3-81"></a></var><br>
+&mdash; Runtime Function: long double <b>__addxf3</b> (<var>long double a, long double b</var>)<var><a name="index-g_t_005f_005faddxf3-82"></a></var><br>
+<blockquote><p>These functions return the sum of <var>a</var> and <var>b</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: float <b>__subsf3</b> (<var>float a, float b</var>)<var><a name="index-g_t_005f_005fsubsf3-83"></a></var><br>
+&mdash; Runtime Function: double <b>__subdf3</b> (<var>double a, double b</var>)<var><a name="index-g_t_005f_005fsubdf3-84"></a></var><br>
+&mdash; Runtime Function: long double <b>__subtf3</b> (<var>long double a, long double b</var>)<var><a name="index-g_t_005f_005fsubtf3-85"></a></var><br>
+&mdash; Runtime Function: long double <b>__subxf3</b> (<var>long double a, long double b</var>)<var><a name="index-g_t_005f_005fsubxf3-86"></a></var><br>
+<blockquote><p>These functions return the difference between <var>b</var> and <var>a</var>;
+that is, <var>a</var>&nbsp;-&nbsp;<var>b</var><!-- /@w -->. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: float <b>__mulsf3</b> (<var>float a, float b</var>)<var><a name="index-g_t_005f_005fmulsf3-87"></a></var><br>
+&mdash; Runtime Function: double <b>__muldf3</b> (<var>double a, double b</var>)<var><a name="index-g_t_005f_005fmuldf3-88"></a></var><br>
+&mdash; Runtime Function: long double <b>__multf3</b> (<var>long double a, long double b</var>)<var><a name="index-g_t_005f_005fmultf3-89"></a></var><br>
+&mdash; Runtime Function: long double <b>__mulxf3</b> (<var>long double a, long double b</var>)<var><a name="index-g_t_005f_005fmulxf3-90"></a></var><br>
+<blockquote><p>These functions return the product of <var>a</var> and <var>b</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: float <b>__divsf3</b> (<var>float a, float b</var>)<var><a name="index-g_t_005f_005fdivsf3-91"></a></var><br>
+&mdash; Runtime Function: double <b>__divdf3</b> (<var>double a, double b</var>)<var><a name="index-g_t_005f_005fdivdf3-92"></a></var><br>
+&mdash; Runtime Function: long double <b>__divtf3</b> (<var>long double a, long double b</var>)<var><a name="index-g_t_005f_005fdivtf3-93"></a></var><br>
+&mdash; Runtime Function: long double <b>__divxf3</b> (<var>long double a, long double b</var>)<var><a name="index-g_t_005f_005fdivxf3-94"></a></var><br>
+<blockquote><p>These functions return the quotient of <var>a</var> and <var>b</var>; that is,
+<var>a</var>&nbsp;/&nbsp;<var>b</var><!-- /@w -->. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: float <b>__negsf2</b> (<var>float a</var>)<var><a name="index-g_t_005f_005fnegsf2-95"></a></var><br>
+&mdash; Runtime Function: double <b>__negdf2</b> (<var>double a</var>)<var><a name="index-g_t_005f_005fnegdf2-96"></a></var><br>
+&mdash; Runtime Function: long double <b>__negtf2</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005fnegtf2-97"></a></var><br>
+&mdash; Runtime Function: long double <b>__negxf2</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005fnegxf2-98"></a></var><br>
+<blockquote><p>These functions return the negation of <var>a</var>.  They simply flip the
+sign bit, so they can produce negative zero and negative NaN. 
+</p></blockquote></div>
+
+<h4 class="subsection">4.2.2 Conversion functions</h4>
+
+<div class="defun">
+&mdash; Runtime Function: double <b>__extendsfdf2</b> (<var>float a</var>)<var><a name="index-g_t_005f_005fextendsfdf2-99"></a></var><br>
+&mdash; Runtime Function: long double <b>__extendsftf2</b> (<var>float a</var>)<var><a name="index-g_t_005f_005fextendsftf2-100"></a></var><br>
+&mdash; Runtime Function: long double <b>__extendsfxf2</b> (<var>float a</var>)<var><a name="index-g_t_005f_005fextendsfxf2-101"></a></var><br>
+&mdash; Runtime Function: long double <b>__extenddftf2</b> (<var>double a</var>)<var><a name="index-g_t_005f_005fextenddftf2-102"></a></var><br>
+&mdash; Runtime Function: long double <b>__extenddfxf2</b> (<var>double a</var>)<var><a name="index-g_t_005f_005fextenddfxf2-103"></a></var><br>
+<blockquote><p>These functions extend <var>a</var> to the wider mode of their return
+type. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: double <b>__truncxfdf2</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005ftruncxfdf2-104"></a></var><br>
+&mdash; Runtime Function: double <b>__trunctfdf2</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005ftrunctfdf2-105"></a></var><br>
+&mdash; Runtime Function: float <b>__truncxfsf2</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005ftruncxfsf2-106"></a></var><br>
+&mdash; Runtime Function: float <b>__trunctfsf2</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005ftrunctfsf2-107"></a></var><br>
+&mdash; Runtime Function: float <b>__truncdfsf2</b> (<var>double a</var>)<var><a name="index-g_t_005f_005ftruncdfsf2-108"></a></var><br>
+<blockquote><p>These functions truncate <var>a</var> to the narrower mode of their return
+type, rounding toward zero. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__fixsfsi</b> (<var>float a</var>)<var><a name="index-g_t_005f_005ffixsfsi-109"></a></var><br>
+&mdash; Runtime Function: int <b>__fixdfsi</b> (<var>double a</var>)<var><a name="index-g_t_005f_005ffixdfsi-110"></a></var><br>
+&mdash; Runtime Function: int <b>__fixtfsi</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005ffixtfsi-111"></a></var><br>
+&mdash; Runtime Function: int <b>__fixxfsi</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005ffixxfsi-112"></a></var><br>
+<blockquote><p>These functions convert <var>a</var> to a signed integer, rounding toward zero. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: long <b>__fixsfdi</b> (<var>float a</var>)<var><a name="index-g_t_005f_005ffixsfdi-113"></a></var><br>
+&mdash; Runtime Function: long <b>__fixdfdi</b> (<var>double a</var>)<var><a name="index-g_t_005f_005ffixdfdi-114"></a></var><br>
+&mdash; Runtime Function: long <b>__fixtfdi</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005ffixtfdi-115"></a></var><br>
+&mdash; Runtime Function: long <b>__fixxfdi</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005ffixxfdi-116"></a></var><br>
+<blockquote><p>These functions convert <var>a</var> to a signed long, rounding toward zero. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: long long <b>__fixsfti</b> (<var>float a</var>)<var><a name="index-g_t_005f_005ffixsfti-117"></a></var><br>
+&mdash; Runtime Function: long long <b>__fixdfti</b> (<var>double a</var>)<var><a name="index-g_t_005f_005ffixdfti-118"></a></var><br>
+&mdash; Runtime Function: long long <b>__fixtfti</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005ffixtfti-119"></a></var><br>
+&mdash; Runtime Function: long long <b>__fixxfti</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005ffixxfti-120"></a></var><br>
+<blockquote><p>These functions convert <var>a</var> to a signed long long, rounding toward zero. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: unsigned int <b>__fixunssfsi</b> (<var>float a</var>)<var><a name="index-g_t_005f_005ffixunssfsi-121"></a></var><br>
+&mdash; Runtime Function: unsigned int <b>__fixunsdfsi</b> (<var>double a</var>)<var><a name="index-g_t_005f_005ffixunsdfsi-122"></a></var><br>
+&mdash; Runtime Function: unsigned int <b>__fixunstfsi</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005ffixunstfsi-123"></a></var><br>
+&mdash; Runtime Function: unsigned int <b>__fixunsxfsi</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005ffixunsxfsi-124"></a></var><br>
+<blockquote><p>These functions convert <var>a</var> to an unsigned integer, rounding
+toward zero.  Negative values all become zero. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: unsigned long <b>__fixunssfdi</b> (<var>float a</var>)<var><a name="index-g_t_005f_005ffixunssfdi-125"></a></var><br>
+&mdash; Runtime Function: unsigned long <b>__fixunsdfdi</b> (<var>double a</var>)<var><a name="index-g_t_005f_005ffixunsdfdi-126"></a></var><br>
+&mdash; Runtime Function: unsigned long <b>__fixunstfdi</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005ffixunstfdi-127"></a></var><br>
+&mdash; Runtime Function: unsigned long <b>__fixunsxfdi</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005ffixunsxfdi-128"></a></var><br>
+<blockquote><p>These functions convert <var>a</var> to an unsigned long, rounding
+toward zero.  Negative values all become zero. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: unsigned long long <b>__fixunssfti</b> (<var>float a</var>)<var><a name="index-g_t_005f_005ffixunssfti-129"></a></var><br>
+&mdash; Runtime Function: unsigned long long <b>__fixunsdfti</b> (<var>double a</var>)<var><a name="index-g_t_005f_005ffixunsdfti-130"></a></var><br>
+&mdash; Runtime Function: unsigned long long <b>__fixunstfti</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005ffixunstfti-131"></a></var><br>
+&mdash; Runtime Function: unsigned long long <b>__fixunsxfti</b> (<var>long double a</var>)<var><a name="index-g_t_005f_005ffixunsxfti-132"></a></var><br>
+<blockquote><p>These functions convert <var>a</var> to an unsigned long long, rounding
+toward zero.  Negative values all become zero. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: float <b>__floatsisf</b> (<var>int i</var>)<var><a name="index-g_t_005f_005ffloatsisf-133"></a></var><br>
+&mdash; Runtime Function: double <b>__floatsidf</b> (<var>int i</var>)<var><a name="index-g_t_005f_005ffloatsidf-134"></a></var><br>
+&mdash; Runtime Function: long double <b>__floatsitf</b> (<var>int i</var>)<var><a name="index-g_t_005f_005ffloatsitf-135"></a></var><br>
+&mdash; Runtime Function: long double <b>__floatsixf</b> (<var>int i</var>)<var><a name="index-g_t_005f_005ffloatsixf-136"></a></var><br>
+<blockquote><p>These functions convert <var>i</var>, a signed integer, to floating point. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: float <b>__floatdisf</b> (<var>long i</var>)<var><a name="index-g_t_005f_005ffloatdisf-137"></a></var><br>
+&mdash; Runtime Function: double <b>__floatdidf</b> (<var>long i</var>)<var><a name="index-g_t_005f_005ffloatdidf-138"></a></var><br>
+&mdash; Runtime Function: long double <b>__floatditf</b> (<var>long i</var>)<var><a name="index-g_t_005f_005ffloatditf-139"></a></var><br>
+&mdash; Runtime Function: long double <b>__floatdixf</b> (<var>long i</var>)<var><a name="index-g_t_005f_005ffloatdixf-140"></a></var><br>
+<blockquote><p>These functions convert <var>i</var>, a signed long, to floating point. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: float <b>__floattisf</b> (<var>long long i</var>)<var><a name="index-g_t_005f_005ffloattisf-141"></a></var><br>
+&mdash; Runtime Function: double <b>__floattidf</b> (<var>long long i</var>)<var><a name="index-g_t_005f_005ffloattidf-142"></a></var><br>
+&mdash; Runtime Function: long double <b>__floattitf</b> (<var>long long i</var>)<var><a name="index-g_t_005f_005ffloattitf-143"></a></var><br>
+&mdash; Runtime Function: long double <b>__floattixf</b> (<var>long long i</var>)<var><a name="index-g_t_005f_005ffloattixf-144"></a></var><br>
+<blockquote><p>These functions convert <var>i</var>, a signed long long, to floating point. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: float <b>__floatunsisf</b> (<var>unsigned int i</var>)<var><a name="index-g_t_005f_005ffloatunsisf-145"></a></var><br>
+&mdash; Runtime Function: double <b>__floatunsidf</b> (<var>unsigned int i</var>)<var><a name="index-g_t_005f_005ffloatunsidf-146"></a></var><br>
+&mdash; Runtime Function: long double <b>__floatunsitf</b> (<var>unsigned int i</var>)<var><a name="index-g_t_005f_005ffloatunsitf-147"></a></var><br>
+&mdash; Runtime Function: long double <b>__floatunsixf</b> (<var>unsigned int i</var>)<var><a name="index-g_t_005f_005ffloatunsixf-148"></a></var><br>
+<blockquote><p>These functions convert <var>i</var>, an unsigned integer, to floating point. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: float <b>__floatundisf</b> (<var>unsigned long i</var>)<var><a name="index-g_t_005f_005ffloatundisf-149"></a></var><br>
+&mdash; Runtime Function: double <b>__floatundidf</b> (<var>unsigned long i</var>)<var><a name="index-g_t_005f_005ffloatundidf-150"></a></var><br>
+&mdash; Runtime Function: long double <b>__floatunditf</b> (<var>unsigned long i</var>)<var><a name="index-g_t_005f_005ffloatunditf-151"></a></var><br>
+&mdash; Runtime Function: long double <b>__floatundixf</b> (<var>unsigned long i</var>)<var><a name="index-g_t_005f_005ffloatundixf-152"></a></var><br>
+<blockquote><p>These functions convert <var>i</var>, an unsigned long, to floating point. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: float <b>__floatuntisf</b> (<var>unsigned long long i</var>)<var><a name="index-g_t_005f_005ffloatuntisf-153"></a></var><br>
+&mdash; Runtime Function: double <b>__floatuntidf</b> (<var>unsigned long long i</var>)<var><a name="index-g_t_005f_005ffloatuntidf-154"></a></var><br>
+&mdash; Runtime Function: long double <b>__floatuntitf</b> (<var>unsigned long long i</var>)<var><a name="index-g_t_005f_005ffloatuntitf-155"></a></var><br>
+&mdash; Runtime Function: long double <b>__floatuntixf</b> (<var>unsigned long long i</var>)<var><a name="index-g_t_005f_005ffloatuntixf-156"></a></var><br>
+<blockquote><p>These functions convert <var>i</var>, an unsigned long long, to floating point. 
+</p></blockquote></div>
+
+<h4 class="subsection">4.2.3 Comparison functions</h4>
+
+<p>There are two sets of basic comparison functions.
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__cmpsf2</b> (<var>float a, float b</var>)<var><a name="index-g_t_005f_005fcmpsf2-157"></a></var><br>
+&mdash; Runtime Function: int <b>__cmpdf2</b> (<var>double a, double b</var>)<var><a name="index-g_t_005f_005fcmpdf2-158"></a></var><br>
+&mdash; Runtime Function: int <b>__cmptf2</b> (<var>long double a, long double b</var>)<var><a name="index-g_t_005f_005fcmptf2-159"></a></var><br>
+<blockquote><p>These functions calculate a &lt;=&gt; b.  That is, if <var>a</var> is less
+than <var>b</var>, they return &minus;1; if <var>a</var> is greater than <var>b</var>, they
+return 1; and if <var>a</var> and <var>b</var> are equal they return 0.  If
+either argument is NaN they return 1, but you should not rely on this;
+if NaN is a possibility, use one of the higher-level comparison
+functions. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__unordsf2</b> (<var>float a, float b</var>)<var><a name="index-g_t_005f_005funordsf2-160"></a></var><br>
+&mdash; Runtime Function: int <b>__unorddf2</b> (<var>double a, double b</var>)<var><a name="index-g_t_005f_005funorddf2-161"></a></var><br>
+&mdash; Runtime Function: int <b>__unordtf2</b> (<var>long double a, long double b</var>)<var><a name="index-g_t_005f_005funordtf2-162"></a></var><br>
+<blockquote><p>These functions return a nonzero value if either argument is NaN, otherwise 0. 
+</p></blockquote></div>
+
+ <p>There is also a complete group of higher level functions which
+correspond directly to comparison operators.  They implement the ISO C
+semantics for floating-point comparisons, taking NaN into account. 
+Pay careful attention to the return values defined for each set. 
+Under the hood, all of these routines are implemented as
+
+<pre class="smallexample">       if (__unord<var>X</var>f2 (a, b))
+         return <var>E</var>;
+       return __cmp<var>X</var>f2 (a, b);
+</pre>
+ <p class="noindent">where <var>E</var> is a constant chosen to give the proper behavior for
+NaN.  Thus, the meaning of the return value is different for each set. 
+Do not rely on this implementation; only the semantics documented
+below are guaranteed.
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__eqsf2</b> (<var>float a, float b</var>)<var><a name="index-g_t_005f_005feqsf2-163"></a></var><br>
+&mdash; Runtime Function: int <b>__eqdf2</b> (<var>double a, double b</var>)<var><a name="index-g_t_005f_005feqdf2-164"></a></var><br>
+&mdash; Runtime Function: int <b>__eqtf2</b> (<var>long double a, long double b</var>)<var><a name="index-g_t_005f_005feqtf2-165"></a></var><br>
+<blockquote><p>These functions return zero if neither argument is NaN, and <var>a</var> and
+<var>b</var> are equal. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__nesf2</b> (<var>float a, float b</var>)<var><a name="index-g_t_005f_005fnesf2-166"></a></var><br>
+&mdash; Runtime Function: int <b>__nedf2</b> (<var>double a, double b</var>)<var><a name="index-g_t_005f_005fnedf2-167"></a></var><br>
+&mdash; Runtime Function: int <b>__netf2</b> (<var>long double a, long double b</var>)<var><a name="index-g_t_005f_005fnetf2-168"></a></var><br>
+<blockquote><p>These functions return a nonzero value if either argument is NaN, or
+if <var>a</var> and <var>b</var> are unequal. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__gesf2</b> (<var>float a, float b</var>)<var><a name="index-g_t_005f_005fgesf2-169"></a></var><br>
+&mdash; Runtime Function: int <b>__gedf2</b> (<var>double a, double b</var>)<var><a name="index-g_t_005f_005fgedf2-170"></a></var><br>
+&mdash; Runtime Function: int <b>__getf2</b> (<var>long double a, long double b</var>)<var><a name="index-g_t_005f_005fgetf2-171"></a></var><br>
+<blockquote><p>These functions return a value greater than or equal to zero if
+neither argument is NaN, and <var>a</var> is greater than or equal to
+<var>b</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__ltsf2</b> (<var>float a, float b</var>)<var><a name="index-g_t_005f_005fltsf2-172"></a></var><br>
+&mdash; Runtime Function: int <b>__ltdf2</b> (<var>double a, double b</var>)<var><a name="index-g_t_005f_005fltdf2-173"></a></var><br>
+&mdash; Runtime Function: int <b>__lttf2</b> (<var>long double a, long double b</var>)<var><a name="index-g_t_005f_005flttf2-174"></a></var><br>
+<blockquote><p>These functions return a value less than zero if neither argument is
+NaN, and <var>a</var> is strictly less than <var>b</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__lesf2</b> (<var>float a, float b</var>)<var><a name="index-g_t_005f_005flesf2-175"></a></var><br>
+&mdash; Runtime Function: int <b>__ledf2</b> (<var>double a, double b</var>)<var><a name="index-g_t_005f_005fledf2-176"></a></var><br>
+&mdash; Runtime Function: int <b>__letf2</b> (<var>long double a, long double b</var>)<var><a name="index-g_t_005f_005fletf2-177"></a></var><br>
+<blockquote><p>These functions return a value less than or equal to zero if neither
+argument is NaN, and <var>a</var> is less than or equal to <var>b</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: int <b>__gtsf2</b> (<var>float a, float b</var>)<var><a name="index-g_t_005f_005fgtsf2-178"></a></var><br>
+&mdash; Runtime Function: int <b>__gtdf2</b> (<var>double a, double b</var>)<var><a name="index-g_t_005f_005fgtdf2-179"></a></var><br>
+&mdash; Runtime Function: int <b>__gttf2</b> (<var>long double a, long double b</var>)<var><a name="index-g_t_005f_005fgttf2-180"></a></var><br>
+<blockquote><p>These functions return a value greater than zero if neither argument
+is NaN, and <var>a</var> is strictly greater than <var>b</var>. 
+</p></blockquote></div>
+
+<h4 class="subsection">4.2.4 Other floating-point functions</h4>
+
+<div class="defun">
+&mdash; Runtime Function: float <b>__powisf2</b> (<var>float a, int b</var>)<var><a name="index-g_t_005f_005fpowisf2-181"></a></var><br>
+&mdash; Runtime Function: double <b>__powidf2</b> (<var>double a, int b</var>)<var><a name="index-g_t_005f_005fpowidf2-182"></a></var><br>
+&mdash; Runtime Function: long double <b>__powitf2</b> (<var>long double a, int b</var>)<var><a name="index-g_t_005f_005fpowitf2-183"></a></var><br>
+&mdash; Runtime Function: long double <b>__powixf2</b> (<var>long double a, int b</var>)<var><a name="index-g_t_005f_005fpowixf2-184"></a></var><br>
+<blockquote><p>These functions convert raise <var>a</var> to the power <var>b</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: complex float <b>__mulsc3</b> (<var>float a, float b, float c, float d</var>)<var><a name="index-g_t_005f_005fmulsc3-185"></a></var><br>
+&mdash; Runtime Function: complex double <b>__muldc3</b> (<var>double a, double b, double c, double d</var>)<var><a name="index-g_t_005f_005fmuldc3-186"></a></var><br>
+&mdash; Runtime Function: complex long double <b>__multc3</b> (<var>long double a, long double b, long double c, long double d</var>)<var><a name="index-g_t_005f_005fmultc3-187"></a></var><br>
+&mdash; Runtime Function: complex long double <b>__mulxc3</b> (<var>long double a, long double b, long double c, long double d</var>)<var><a name="index-g_t_005f_005fmulxc3-188"></a></var><br>
+<blockquote><p>These functions return the product of <var>a</var> + i<var>b</var> and
+<var>c</var> + i<var>d</var>, following the rules of C99 Annex G. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Runtime Function: complex float <b>__divsc3</b> (<var>float a, float b, float c, float d</var>)<var><a name="index-g_t_005f_005fdivsc3-189"></a></var><br>
+&mdash; Runtime Function: complex double <b>__divdc3</b> (<var>double a, double b, double c, double d</var>)<var><a name="index-g_t_005f_005fdivdc3-190"></a></var><br>
+&mdash; Runtime Function: complex long double <b>__divtc3</b> (<var>long double a, long double b, long double c, long double d</var>)<var><a name="index-g_t_005f_005fdivtc3-191"></a></var><br>
+&mdash; Runtime Function: complex long double <b>__divxc3</b> (<var>long double a, long double b, long double c, long double d</var>)<var><a name="index-g_t_005f_005fdivxc3-192"></a></var><br>
+<blockquote><p>These functions return the quotient of <var>a</var> + i<var>b</var> and
+<var>c</var> + i<var>d</var> (i.e., (<var>a</var> + i<var>b</var>) / (<var>c</var>
++ i<var>d</var>)), following the rules of C99 Annex G. 
+</p></blockquote></div>
+
+ </body></html>
+

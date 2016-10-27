@@ -1,0 +1,77 @@
+<html lang="en">
+<head>
+<title>System Config - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Configuration.html#Configuration" title="Configuration">
+<link rel="prev" href="Config-Fragments.html#Config-Fragments" title="Config Fragments">
+<link rel="next" href="Configuration-Files.html#Configuration-Files" title="Configuration Files">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="System-Config"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Configuration-Files.html#Configuration-Files">Configuration Files</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Config-Fragments.html#Config-Fragments">Config Fragments</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Configuration.html#Configuration">Configuration</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">6.3.2.2 The <samp><span class="file">config.build</span></samp>; <samp><span class="file">config.host</span></samp>; and <samp><span class="file">config.gcc</span></samp> Files</h5>
+
+<p>The <samp><span class="file">config.build</span></samp> file contains specific rules for particular systems
+which GCC is built on.  This should be used as rarely as possible, as the
+behavior of the build system can always be detected by autoconf.
+
+ <p>The <samp><span class="file">config.host</span></samp> file contains specific rules for particular systems
+which GCC will run on.  This is rarely needed.
+
+ <p>The <samp><span class="file">config.gcc</span></samp> file contains specific rules for particular systems
+which GCC will generate code for.  This is usually needed.
+
+ <p>Each file has a list of the shell variables it sets, with descriptions, at the
+top of the file.
+
+ <p>FIXME: document the contents of these files, and what variables should
+be set to control build, host and target configuration.
+
+<!-- Copyright (C) 1988-2015 Free Software Foundation, Inc. -->
+<!-- This is part of the GCC manual. -->
+<!-- For copying conditions, see the file gcc.texi. -->
+</body></html>
+

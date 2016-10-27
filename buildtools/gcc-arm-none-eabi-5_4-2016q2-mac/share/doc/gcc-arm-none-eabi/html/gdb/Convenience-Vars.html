@@ -1,0 +1,202 @@
+<html lang="en">
+<head>
+<title>Convenience Vars - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Data.html#Data" title="Data">
+<link rel="prev" href="Value-History.html#Value-History" title="Value History">
+<link rel="next" href="Convenience-Funs.html#Convenience-Funs" title="Convenience Funs">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Convenience-Vars"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Convenience-Funs.html#Convenience-Funs">Convenience Funs</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Value-History.html#Value-History">Value History</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Data.html#Data">Data</a>
+<hr>
+</div>
+
+<h3 class="section">10.11 Convenience Variables</h3>
+
+<p><a name="index-convenience-variables-678"></a><a name="index-user_002ddefined-variables-679"></a><span class="sc">gdb</span> provides <dfn>convenience variables</dfn> that you can use within
+<span class="sc">gdb</span> to hold on to a value and refer to it later.  These variables
+exist entirely within <span class="sc">gdb</span>; they are not part of your program, and
+setting a convenience variable has no direct effect on further execution
+of your program.  That is why you can use them freely.
+
+   <p>Convenience variables are prefixed with `<samp><span class="samp">$</span></samp>'.  Any name preceded by
+`<samp><span class="samp">$</span></samp>' can be used for a convenience variable, unless it is one of
+the predefined machine-specific register names (see <a href="Registers.html#Registers">Registers</a>). 
+(Value history references, in contrast, are <em>numbers</em> preceded
+by `<samp><span class="samp">$</span></samp>'.  See <a href="Value-History.html#Value-History">Value History</a>.)
+
+   <p>You can save a value in a convenience variable with an assignment
+expression, just as you would set a variable in your program. 
+For example:
+
+<pre class="smallexample">     set $foo = *object_ptr
+</pre>
+   <p class="noindent">would save in <code>$foo</code> the value contained in the object pointed to by
+<code>object_ptr</code>.
+
+   <p>Using a convenience variable for the first time creates it, but its
+value is <code>void</code> until you assign a new value.  You can alter the
+value with another assignment at any time.
+
+   <p>Convenience variables have no fixed types.  You can assign a convenience
+variable any type of value, including structures and arrays, even if
+that variable already has a value of a different type.  The convenience
+variable, when used as an expression, has the type of its current value.
+
+     
+<a name="index-show-convenience-680"></a>
+<a name="index-show-all-user-variables-and-functions-681"></a>
+<dl><dt><code>show convenience</code><dd>Print a list of convenience variables used so far, and their values,
+as well as a list of the convenience functions. 
+Abbreviated <code>show conv</code>.
+
+     <p><a name="index-init_002dif_002dundefined-682"></a><a name="index-convenience-variables_002c-initializing-683"></a><br><dt><code>init-if-undefined $</code><var>variable</var><code> = </code><var>expression</var><dd>Set a convenience variable if it has not already been set.  This is useful
+for user-defined commands that keep some state.  It is similar, in concept,
+to using local static variables with initializers in C (except that
+convenience variables are global).  It can also be used to allow users to
+override default values used in a command script.
+
+     <p>If the variable is already defined then the expression is not evaluated so
+any side-effects do not occur. 
+</dl>
+
+   <p>One of the ways to use a convenience variable is as a counter to be
+incremented or a pointer to be advanced.  For example, to print
+a field from successive elements of an array of structures:
+
+<pre class="smallexample">     set $i = 0
+     print bar[$i++]-&gt;contents
+</pre>
+   <p class="noindent">Repeat that command by typing &lt;RET&gt;.
+
+   <p>Some convenience variables are created automatically by <span class="sc">gdb</span> and given
+values likely to be useful.
+
+     
+<a name="index-g_t_0024_005f_0040r_007b_002c-convenience-variable_007d-684"></a>
+<dl><dt><code>$_</code><dd>The variable <code>$_</code> is automatically set by the <code>x</code> command to
+the last address examined (see <a href="Memory.html#Memory">Examining Memory</a>).  Other
+commands which provide a default address for <code>x</code> to examine also
+set <code>$_</code> to that address; these commands include <code>info line</code>
+and <code>info breakpoint</code>.  The type of <code>$_</code> is <code>void *</code>
+except when set by the <code>x</code> command, in which case it is a pointer
+to the type of <code>$__</code>.
+
+     <p><a name="index-g_t_0024_005f_005f_0040r_007b_002c-convenience-variable_007d-685"></a><br><dt><code>$__</code><dd>The variable <code>$__</code> is automatically set by the <code>x</code> command
+to the value found in the last address examined.  Its type is chosen
+to match the format in which the data was printed.
+
+     <br><dt><code>$_exitcode</code><dd><a name="index-g_t_0024_005fexitcode_0040r_007b_002c-convenience-variable_007d-686"></a>When the program being debugged terminates normally, <span class="sc">gdb</span>
+automatically sets this variable to the exit code of the program, and
+resets <code>$_exitsignal</code> to <code>void</code>.
+
+     <br><dt><code>$_exitsignal</code><dd><a name="index-g_t_0024_005fexitsignal_0040r_007b_002c-convenience-variable_007d-687"></a>When the program being debugged dies due to an uncaught signal,
+<span class="sc">gdb</span> automatically sets this variable to that signal's number,
+and resets <code>$_exitcode</code> to <code>void</code>.
+
+     <p>To distinguish between whether the program being debugged has exited
+(i.e., <code>$_exitcode</code> is not <code>void</code>) or signalled (i.e.,
+<code>$_exitsignal</code> is not <code>void</code>), the convenience function
+<code>$_isvoid</code> can be used (see <a href="Convenience-Funs.html#Convenience-Funs">Convenience Functions</a>).  For example, considering the following source code:
+
+     <pre class="smallexample">          #include &lt;signal.h&gt;
+          
+          int
+          main (int argc, char *argv[])
+          {
+            raise (SIGALRM);
+            return 0;
+          }
+     </pre>
+     <p>A valid way of telling whether the program being debugged has exited
+or signalled would be:
+
+     <pre class="smallexample">          (gdb) define has_exited_or_signalled
+          Type commands for definition of ``has_exited_or_signalled''.
+          End with a line saying just ``end''.
+          &gt;if $_isvoid ($_exitsignal)
+           &gt;echo The program has exited\n
+           &gt;else
+           &gt;echo The program has signalled\n
+           &gt;end
+          &gt;end
+          (gdb) run
+          Starting program:
+          
+          Program terminated with signal SIGALRM, Alarm clock.
+          The program no longer exists.
+          (gdb) has_exited_or_signalled
+          The program has signalled
+     </pre>
+     <p>As can be seen, <span class="sc">gdb</span> correctly informs that the program being
+debugged has signalled, since it calls <code>raise</code> and raises a
+<code>SIGALRM</code> signal.  If the program being debugged had not called
+<code>raise</code>, then <span class="sc">gdb</span> would report a normal exit:
+
+     <pre class="smallexample">          (gdb) has_exited_or_signalled
+          The program has exited
+     </pre>
+     <br><dt><code>$_exception</code><dd>The variable <code>$_exception</code> is set to the exception object being
+thrown at an exception-related catchpoint.  See <a href="Set-Catchpoints.html#Set-Catchpoints">Set Catchpoints</a>.
+
+     <br><dt><code>$_probe_argc</code><dt><code>$_probe_arg0...$_probe_arg11</code><dd>Arguments to a static probe.  See <a href="Static-Probe-Points.html#Static-Probe-Points">Static Probe Points</a>.
+
+     <br><dt><code>$_sdata</code><dd><a name="index-g_t_0024_005fsdata_0040r_007b_002c-inspect_002c-convenience-variable_007d-688"></a>The variable <code>$_sdata</code> contains extra collected static tracepoint
+data.  See <a href="Tracepoint-Actions.html#Tracepoint-Actions">Tracepoint Action Lists</a>.  Note that
+<code>$_sdata</code> could be empty, if not inspecting a trace buffer, or
+if extra static tracepoint data has not been collected.
+
+     <br><dt><code>$_siginfo</code><dd><a name="index-g_t_0024_005fsiginfo_0040r_007b_002c-convenience-variable_007d-689"></a>The variable <code>$_siginfo</code> contains extra signal information
+(see <a href="extra-signal-information.html#extra-signal-information">extra signal information</a>).  Note that <code>$_siginfo</code>
+could be empty, if the application has not yet received any signals. 
+For example, it will be empty before you execute the <code>run</code> command.
+
+     <br><dt><code>$_tlb</code><dd><a name="index-g_t_0024_005ftlb_0040r_007b_002c-convenience-variable_007d-690"></a>The variable <code>$_tlb</code> is automatically set when debugging
+applications running on MS-Windows in native mode or connected to
+gdbserver that supports the <code>qGetTIBAddr</code> request. 
+See <a href="General-Query-Packets.html#General-Query-Packets">General Query Packets</a>. 
+This variable contains the address of the thread information block.
+
+   </dl>
+
+   <p>On HP-UX systems, if you refer to a function or variable name that
+begins with a dollar sign, <span class="sc">gdb</span> searches for a user or system
+name first, before it searches for a convenience variable.
+
+   </body></html>
+

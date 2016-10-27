@@ -1,0 +1,108 @@
+<html lang="en">
+<head>
+<title>Targets - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="BFD-front-end.html#BFD-front-end" title="BFD front end">
+<link rel="prev" href="Core-Files.html#Core-Files" title="Core Files">
+<link rel="next" href="Architectures.html#Architectures" title="Architectures">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Targets"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Architectures.html#Architectures">Architectures</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Core-Files.html#Core-Files">Core Files</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="BFD-front-end.html#BFD-front-end">BFD front end</a>
+<hr>
+</div>
+
+<h3 class="section">2.12 Targets</h3>
+
+<p><strong>Description</strong><br>
+Each port of BFD to a different machine requires the creation
+of a target back end. All the back end provides to the root
+part of BFD is a structure containing pointers to functions
+which perform certain low level operations on files. BFD
+translates the applications's requests through a pointer into
+calls to the back end routines.
+
+   <p>When a file is opened with <code>bfd_openr</code>, its format and
+target are unknown. BFD uses various mechanisms to determine
+how to interpret the file. The operations performed are:
+
+     <ul>
+<li>Create a BFD by calling the internal routine
+<code>_bfd_new_bfd</code>, then call <code>bfd_find_target</code> with the
+target string supplied to <code>bfd_openr</code> and the new BFD pointer.
+
+     <li>If a null target string was provided to <code>bfd_find_target</code>,
+look up the environment variable <code>GNUTARGET</code> and use
+that as the target string.
+
+     <li>If the target string is still <code>NULL</code>, or the target string is
+<code>default</code>, then use the first item in the target vector
+as the target type, and set <code>target_defaulted</code> in the BFD to
+cause <code>bfd_check_format</code> to loop through all the targets. 
+See <a href="bfd_005ftarget.html#bfd_005ftarget">bfd_target</a>.  See <a href="Formats.html#Formats">Formats</a>.
+
+     <li>Otherwise, inspect the elements in the target vector
+one by one, until a match on target name is found. When found,
+use it.
+
+     <li>Otherwise return the error <code>bfd_error_invalid_target</code> to
+<code>bfd_openr</code>.
+
+     <li><code>bfd_openr</code> attempts to open the file using
+<code>bfd_open_file</code>, and returns the BFD. 
+</ul>
+   Once the BFD has been opened and the target selected, the file
+format may be determined. This is done by calling
+<code>bfd_check_format</code> on the BFD with a suggested format. 
+If <code>target_defaulted</code> has been set, each possible target
+type is tried to see if it recognizes the specified format. 
+<code>bfd_check_format</code> returns <code>TRUE</code> when the caller guesses right.
+
+<ul class="menu">
+<li><a accesskey="1" href="bfd_005ftarget.html#bfd_005ftarget">bfd_target</a>
+</ul>
+
+   </body></html>
+

@@ -1,0 +1,125 @@
+<html lang="en">
+<head>
+<title>Test Idioms - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Testsuites.html#Testsuites" title="Testsuites">
+<link rel="next" href="Test-Directives.html#Test-Directives" title="Test Directives">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Test-Idioms"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Test-Directives.html#Test-Directives">Test Directives</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Testsuites.html#Testsuites">Testsuites</a>
+<hr>
+</div>
+
+<h3 class="section">7.1 Idioms Used in Testsuite Code</h3>
+
+<p>In general, C testcases have a trailing <samp><span class="file">-</span><var>n</var><span class="file">.c</span></samp>, starting
+with <samp><span class="file">-1.c</span></samp>, in case other testcases with similar names are added
+later.  If the test is a test of some well-defined feature, it should
+have a name referring to that feature such as
+<samp><var>feature</var><span class="file">-1.c</span></samp>.  If it does not test a well-defined feature
+but just happens to exercise a bug somewhere in the compiler, and a
+bug report has been filed for this bug in the GCC bug database,
+<samp><span class="file">pr</span><var>bug-number</var><span class="file">-1.c</span></samp> is the appropriate form of name. 
+Otherwise (for miscellaneous bugs not filed in the GCC bug database),
+and previously more generally, test cases are named after the date on
+which they were added.  This allows people to tell at a glance whether
+a test failure is because of a recently found bug that has not yet
+been fixed, or whether it may be a regression, but does not give any
+other information about the bug or where discussion of it may be
+found.  Some other language testsuites follow similar conventions.
+
+ <p>In the <samp><span class="file">gcc.dg</span></samp> testsuite, it is often necessary to test that an
+error is indeed a hard error and not just a warning&mdash;for example,
+where it is a constraint violation in the C standard, which must
+become an error with <samp><span class="option">-pedantic-errors</span></samp>.  The following idiom,
+where the first line shown is line <var>line</var> of the file and the line
+that generates the error, is used for this:
+
+<pre class="smallexample">     /* { dg-bogus "warning" "warning in place of error" } */
+     /* { dg-error "<var>regexp</var>" "<var>message</var>" { target *-*-* } <var>line</var> } */
+</pre>
+ <p>It may be necessary to check that an expression is an integer constant
+expression and has a certain value.  To check that <var>E</var> has
+value <var>V</var>, an idiom similar to the following is used:
+
+<pre class="smallexample">     char x[((E) == (V) ? 1 : -1)];
+</pre>
+ <p>In <samp><span class="file">gcc.dg</span></samp> tests, <code>__typeof__</code> is sometimes used to make
+assertions about the types of expressions.  See, for example,
+<samp><span class="file">gcc.dg/c99-condexpr-1.c</span></samp>.  The more subtle uses depend on the
+exact rules for the types of conditional expressions in the C
+standard; see, for example, <samp><span class="file">gcc.dg/c99-intconst-1.c</span></samp>.
+
+ <p>It is useful to be able to test that optimizations are being made
+properly.  This cannot be done in all cases, but it can be done where
+the optimization will lead to code being optimized away (for example,
+where flow analysis or alias analysis should show that certain code
+cannot be called) or to functions not being called because they have
+been expanded as built-in functions.  Such tests go in
+<samp><span class="file">gcc.c-torture/execute</span></samp>.  Where code should be optimized away, a
+call to a nonexistent function such as <code>link_failure ()</code> may be
+inserted; a definition
+
+<pre class="smallexample">     #ifndef __OPTIMIZE__
+     void
+     link_failure (void)
+     {
+       abort ();
+     }
+     #endif
+</pre>
+ <p class="noindent">will also be needed so that linking still succeeds when the test is
+run without optimization.  When all calls to a built-in function
+should have been optimized and no calls to the non-built-in version of
+the function should remain, that function may be defined as
+<code>static</code> to call <code>abort ()</code> (although redeclaring a function
+as static may not work on all targets).
+
+ <p>All testcases must be portable.  Target-specific testcases must have
+appropriate code to avoid causing failures on unsupported systems;
+unfortunately, the mechanisms for this differ by directory.
+
+ <p>FIXME: discuss non-C testsuites here.
+
+ </body></html>
+

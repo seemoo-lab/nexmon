@@ -1,0 +1,117 @@
+<html lang="en">
+<head>
+<title>Integer Overflow Builtins - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="C-Extensions.html#C-Extensions" title="C Extensions">
+<link rel="prev" href="_005f_005fatomic-Builtins.html#g_t_005f_005fatomic-Builtins" title="__atomic Builtins">
+<link rel="next" href="x86-specific-memory-model-extensions-for-transactional-memory.html#x86-specific-memory-model-extensions-for-transactional-memory" title="x86 specific memory model extensions for transactional memory">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Integer-Overflow-Builtins"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="x86-specific-memory-model-extensions-for-transactional-memory.html#x86-specific-memory-model-extensions-for-transactional-memory">x86 specific memory model extensions for transactional memory</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="_005f_005fatomic-Builtins.html#g_t_005f_005fatomic-Builtins">__atomic Builtins</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="C-Extensions.html#C-Extensions">C Extensions</a>
+<hr>
+</div>
+
+<h3 class="section">6.52 Built-in Functions to Perform Arithmetic with Overflow Checking</h3>
+
+<p>The following built-in functions allow performing simple arithmetic operations
+together with checking whether the operations overflowed.
+
+<div class="defun">
+&mdash; Built-in Function: bool <b>__builtin_add_overflow</b> (<var>type1 a, type2 b, type3 *res</var>)<var><a name="index-g_t_005f_005fbuiltin_005fadd_005foverflow-3559"></a></var><br>
+&mdash; Built-in Function: bool <b>__builtin_sadd_overflow</b> (<var>int a, int b, int *res</var>)<var><a name="index-g_t_005f_005fbuiltin_005fsadd_005foverflow-3560"></a></var><br>
+&mdash; Built-in Function: bool <b>__builtin_saddl_overflow</b> (<var>long int a, long int b, long int *res</var>)<var><a name="index-g_t_005f_005fbuiltin_005fsaddl_005foverflow-3561"></a></var><br>
+&mdash; Built-in Function: bool <b>__builtin_saddll_overflow</b> (<var>long long int a, long long int b, long int *res</var>)<var><a name="index-g_t_005f_005fbuiltin_005fsaddll_005foverflow-3562"></a></var><br>
+&mdash; Built-in Function: bool <b>__builtin_uadd_overflow</b> (<var>unsigned int a, unsigned int b, unsigned int *res</var>)<var><a name="index-g_t_005f_005fbuiltin_005fuadd_005foverflow-3563"></a></var><br>
+&mdash; Built-in Function: bool <b>__builtin_uaddl_overflow</b> (<var>unsigned long int a, unsigned long int b, unsigned long int *res</var>)<var><a name="index-g_t_005f_005fbuiltin_005fuaddl_005foverflow-3564"></a></var><br>
+&mdash; Built-in Function: bool <b>__builtin_uaddll_overflow</b> (<var>unsigned long long int a, unsigned long long int b, unsigned long int *res</var>)<var><a name="index-g_t_005f_005fbuiltin_005fuaddll_005foverflow-3565"></a></var><br>
+<blockquote>
+<p>These built-in functions promote the first two operands into infinite precision signed
+type and perform addition on those promoted operands.  The result is then
+cast to the type the third pointer argument points to and stored there. 
+If the stored result is equal to the infinite precision result, the built-in
+functions return false, otherwise they return true.  As the addition is
+performed in infinite signed precision, these built-in functions have fully defined
+behavior for all argument values.
+
+      <p>The first built-in function allows arbitrary integral types for operands and
+the result type must be pointer to some integer type, the rest of the built-in
+functions have explicit integer types.
+
+      <p>The compiler will attempt to use hardware instructions to implement
+these built-in functions where possible, like conditional jump on overflow
+after addition, conditional jump on carry etc.
+
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: bool <b>__builtin_sub_overflow</b> (<var>type1 a, type2 b, type3 *res</var>)<var><a name="index-g_t_005f_005fbuiltin_005fsub_005foverflow-3566"></a></var><br>
+&mdash; Built-in Function: bool <b>__builtin_ssub_overflow</b> (<var>int a, int b, int *res</var>)<var><a name="index-g_t_005f_005fbuiltin_005fssub_005foverflow-3567"></a></var><br>
+&mdash; Built-in Function: bool <b>__builtin_ssubl_overflow</b> (<var>long int a, long int b, long int *res</var>)<var><a name="index-g_t_005f_005fbuiltin_005fssubl_005foverflow-3568"></a></var><br>
+&mdash; Built-in Function: bool <b>__builtin_ssubll_overflow</b> (<var>long long int a, long long int b, long int *res</var>)<var><a name="index-g_t_005f_005fbuiltin_005fssubll_005foverflow-3569"></a></var><br>
+&mdash; Built-in Function: bool <b>__builtin_usub_overflow</b> (<var>unsigned int a, unsigned int b, unsigned int *res</var>)<var><a name="index-g_t_005f_005fbuiltin_005fusub_005foverflow-3570"></a></var><br>
+&mdash; Built-in Function: bool <b>__builtin_usubl_overflow</b> (<var>unsigned long int a, unsigned long int b, unsigned long int *res</var>)<var><a name="index-g_t_005f_005fbuiltin_005fusubl_005foverflow-3571"></a></var><br>
+&mdash; Built-in Function: bool <b>__builtin_usubll_overflow</b> (<var>unsigned long long int a, unsigned long long int b, unsigned long int *res</var>)<var><a name="index-g_t_005f_005fbuiltin_005fusubll_005foverflow-3572"></a></var><br>
+<blockquote>
+<p>These built-in functions are similar to the add overflow checking built-in
+functions above, except they perform subtraction, subtract the second argument
+from the first one, instead of addition.
+
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: bool <b>__builtin_mul_overflow</b> (<var>type1 a, type2 b, type3 *res</var>)<var><a name="index-g_t_005f_005fbuiltin_005fmul_005foverflow-3573"></a></var><br>
+&mdash; Built-in Function: bool <b>__builtin_smul_overflow</b> (<var>int a, int b, int *res</var>)<var><a name="index-g_t_005f_005fbuiltin_005fsmul_005foverflow-3574"></a></var><br>
+&mdash; Built-in Function: bool <b>__builtin_smull_overflow</b> (<var>long int a, long int b, long int *res</var>)<var><a name="index-g_t_005f_005fbuiltin_005fsmull_005foverflow-3575"></a></var><br>
+&mdash; Built-in Function: bool <b>__builtin_smulll_overflow</b> (<var>long long int a, long long int b, long int *res</var>)<var><a name="index-g_t_005f_005fbuiltin_005fsmulll_005foverflow-3576"></a></var><br>
+&mdash; Built-in Function: bool <b>__builtin_umul_overflow</b> (<var>unsigned int a, unsigned int b, unsigned int *res</var>)<var><a name="index-g_t_005f_005fbuiltin_005fumul_005foverflow-3577"></a></var><br>
+&mdash; Built-in Function: bool <b>__builtin_umull_overflow</b> (<var>unsigned long int a, unsigned long int b, unsigned long int *res</var>)<var><a name="index-g_t_005f_005fbuiltin_005fumull_005foverflow-3578"></a></var><br>
+&mdash; Built-in Function: bool <b>__builtin_umulll_overflow</b> (<var>unsigned long long int a, unsigned long long int b, unsigned long int *res</var>)<var><a name="index-g_t_005f_005fbuiltin_005fumulll_005foverflow-3579"></a></var><br>
+<blockquote>
+<p>These built-in functions are similar to the add overflow checking built-in
+functions above, except they perform multiplication, instead of addition.
+
+      </blockquote></div>
+
+ </body></html>
+

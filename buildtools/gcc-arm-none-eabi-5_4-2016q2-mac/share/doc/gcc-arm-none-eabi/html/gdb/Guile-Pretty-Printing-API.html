@@ -1,0 +1,189 @@
+<html lang="en">
+<head>
+<title>Guile Pretty Printing API - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Guile-API.html#Guile-API" title="Guile API">
+<link rel="prev" href="Types-In-Guile.html#Types-In-Guile" title="Types In Guile">
+<link rel="next" href="Selecting-Guile-Pretty_002dPrinters.html#Selecting-Guile-Pretty_002dPrinters" title="Selecting Guile Pretty-Printers">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Guile-Pretty-Printing-API"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Selecting-Guile-Pretty_002dPrinters.html#Selecting-Guile-Pretty_002dPrinters">Selecting Guile Pretty-Printers</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Types-In-Guile.html#Types-In-Guile">Types In Guile</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Guile-API.html#Guile-API">Guile API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.3.3.8 Guile Pretty Printing API</h5>
+
+<p><a name="index-guile-pretty-printing-api-2493"></a>
+An example output is provided (see <a href="Pretty-Printing.html#Pretty-Printing">Pretty Printing</a>).
+
+   <p>A pretty-printer is represented by an object of type &lt;gdb:pretty-printer&gt;. 
+Pretty-printer objects are created with <code>make-pretty-printer</code>.
+
+   <p>The following pretty-printer-related procedures are provided by the
+<code>(gdb)</code> module:
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>make-pretty-printer</b><var> name lookup-function<a name="index-make_002dpretty_002dprinter-2494"></a></var><br>
+<blockquote><p>Return a <code>&lt;gdb:pretty-printer&gt;</code> object named <var>name</var>.
+
+        <p><var>lookup-function</var> is a function of one parameter: the value to
+be printed.  If the value is handled by this pretty-printer, then
+<var>lookup-function</var> returns an object of type
+&lt;gdb:pretty-printer-worker&gt; to perform the actual pretty-printing. 
+Otherwise <var>lookup-function</var> returns <code>#f</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>pretty-printer?</b><var> object<a name="index-pretty_002dprinter_003f-2495"></a></var><br>
+<blockquote><p>Return <code>#t</code> if <var>object</var> is a <code>&lt;gdb:pretty-printer&gt;</code> object. 
+Otherwise return <code>#f</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>pretty-printer-enabled?</b><var> pretty-printer<a name="index-pretty_002dprinter_002denabled_003f-2496"></a></var><br>
+<blockquote><p>Return <code>#t</code> if <var>pretty-printer</var> is enabled. 
+Otherwise return <code>#f</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>set-pretty-printer-enabled!</b><var> pretty-printer flag<a name="index-set_002dpretty_002dprinter_002denabled_0021-2497"></a></var><br>
+<blockquote><p>Set the enabled flag of <var>pretty-printer</var> to <var>flag</var>. 
+The value returned is unspecified. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>pretty-printers</b><var><a name="index-pretty_002dprinters-2498"></a></var><br>
+<blockquote><p>Return the list of global pretty-printers. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>set-pretty-printers!</b><var> pretty-printers<a name="index-set_002dpretty_002dprinters_0021-2499"></a></var><br>
+<blockquote><p>Set the list of global pretty-printers to <var>pretty-printers</var>. 
+The value returned is unspecified. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>make-pretty-printer-worker</b><var> display-hint to-string children<a name="index-make_002dpretty_002dprinter_002dworker-2500"></a></var><br>
+<blockquote><p>Return an object of type <code>&lt;gdb:pretty-printer-worker&gt;</code>.
+
+        <p>This function takes three parameters:
+
+          <dl>
+<dt>`<samp><span class="samp">display-hint</span></samp>'<dd><var>display-hint</var> provides a hint to <span class="sc">gdb</span> or <span class="sc">gdb</span>
+front end via MI to change the formatting of the value being printed. 
+The value must be a string or <code>#f</code> (meaning there is no hint). 
+Several values for <var>display-hint</var>
+are predefined by <span class="sc">gdb</span>:
+
+               <dl>
+<dt>`<samp><span class="samp">array</span></samp>'<dd>Indicate that the object being printed is &ldquo;array-like&rdquo;.  The CLI
+uses this to respect parameters such as <code>set print elements</code> and
+<code>set print array</code>.
+
+               <br><dt>`<samp><span class="samp">map</span></samp>'<dd>Indicate that the object being printed is &ldquo;map-like&rdquo;, and that the
+children of this value can be assumed to alternate between keys and
+values.
+
+               <br><dt>`<samp><span class="samp">string</span></samp>'<dd>Indicate that the object being printed is &ldquo;string-like&rdquo;.  If the
+printer's <code>to-string</code> function returns a Guile string of some
+kind, then <span class="sc">gdb</span> will call its internal language-specific
+string-printing function to format the string.  For the CLI this means
+adding quotation marks, possibly escaping some characters, respecting
+<code>set print elements</code>, and the like. 
+</dl>
+
+          <br><dt>`<samp><span class="samp">to-string</span></samp>'<dd><var>to-string</var> is either a function of one parameter, the
+<code>&lt;gdb:pretty-printer-worker&gt;</code> object, or <code>#f</code>.
+
+          <p>When printing from the CLI, if the <code>to-string</code> method exists,
+then <span class="sc">gdb</span> will prepend its result to the values returned by
+<code>children</code>.  Exactly how this formatting is done is dependent on
+the display hint, and may change as more hints are added.  Also,
+depending on the print settings (see <a href="Print-Settings.html#Print-Settings">Print Settings</a>), the CLI may
+print just the result of <code>to-string</code> in a stack trace, omitting
+the result of <code>children</code>.
+
+          <p>If this method returns a string, it is printed verbatim.
+
+          <p>Otherwise, if this method returns an instance of <code>&lt;gdb:value&gt;</code>,
+then <span class="sc">gdb</span> prints this value.  This may result in a call to
+another pretty-printer.
+
+          <p>If instead the method returns a Guile value which is convertible to a
+<code>&lt;gdb:value&gt;</code>, then <span class="sc">gdb</span> performs the conversion and prints
+the resulting value.  Again, this may result in a call to another
+pretty-printer.  Guile scalars (integers, floats, and booleans) and
+strings are convertible to <code>&lt;gdb:value&gt;</code>; other types are not.
+
+          <p>Finally, if this method returns <code>#f</code> then no further operations
+are peformed in this method and nothing is printed.
+
+          <p>If the result is not one of these types, an exception is raised.
+
+          <p><var>to-string</var> may also be <code>#f</code> in which case it is left to
+<var>children</var> to print the value.
+
+          <br><dt>`<samp><span class="samp">children</span></samp>'<dd><var>children</var> is either a function of one parameter, the
+<code>&lt;gdb:pretty-printer-worker&gt;</code> object, or <code>#f</code>.
+
+          <p><span class="sc">gdb</span> will call this function on a pretty-printer to compute the
+children of the pretty-printer's value.
+
+          <p>This function must return a &lt;gdb:iterator&gt; object. 
+Each item returned by the iterator must be a tuple holding
+two elements.  The first element is the &ldquo;name&rdquo; of the child; the
+second element is the child's value.  The value can be any Guile
+object which is convertible to a <span class="sc">gdb</span> value.
+
+          <p>If <var>children</var> is <code>#f</code>, <span class="sc">gdb</span> will act
+as though the value has no children. 
+</dl>
+        </p></blockquote></div>
+
+   <p><span class="sc">gdb</span> provides a function which can be used to look up the
+default pretty-printer for a <code>&lt;gdb:value&gt;</code>:
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>default-visualizer</b><var> value<a name="index-default_002dvisualizer-2501"></a></var><br>
+<blockquote><p>This function takes a <code>&lt;gdb:value&gt;</code> object as an argument.  If a
+pretty-printer for this value exists, then it is returned.  If no such
+printer exists, then this returns <code>#f</code>. 
+</p></blockquote></div>
+
+   </body></html>
+

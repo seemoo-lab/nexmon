@@ -1,0 +1,77 @@
+<html lang="en">
+<head>
+<title>Pattern Ordering - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Machine-Desc.html#Machine-Desc" title="Machine Desc">
+<link rel="prev" href="Standard-Names.html#Standard-Names" title="Standard Names">
+<link rel="next" href="Dependent-Patterns.html#Dependent-Patterns" title="Dependent Patterns">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Pattern-Ordering"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Dependent-Patterns.html#Dependent-Patterns">Dependent Patterns</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Standard-Names.html#Standard-Names">Standard Names</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Machine-Desc.html#Machine-Desc">Machine Desc</a>
+<hr>
+</div>
+
+<h3 class="section">16.10 When the Order of Patterns Matters</h3>
+
+<p><a name="index-Pattern-Ordering-3671"></a><a name="index-Ordering-of-Patterns-3672"></a>
+Sometimes an insn can match more than one instruction pattern.  Then the
+pattern that appears first in the machine description is the one used. 
+Therefore, more specific patterns (patterns that will match fewer things)
+and faster instructions (those that will produce better code when they
+do match) should usually go first in the description.
+
+ <p>In some cases the effect of ordering the patterns can be used to hide
+a pattern when it is not valid.  For example, the 68000 has an
+instruction for converting a fullword to floating point and another
+for converting a byte to floating point.  An instruction converting
+an integer to floating point could match either one.  We put the
+pattern to convert the fullword first to make sure that one will
+be used rather than the other.  (Otherwise a large integer might
+be generated as a single-byte immediate quantity, which would not work.) 
+Instead of using this pattern ordering it would be possible to make the
+pattern for convert-a-byte smart enough to deal properly with any
+constant value.
+
+ </body></html>
+

@@ -1,0 +1,83 @@
+<html lang="en">
+<head>
+<title>GDB/MI Result Records - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="GDB_002fMI-Output-Records.html#GDB_002fMI-Output-Records" title="GDB/MI Output Records">
+<link rel="next" href="GDB_002fMI-Stream-Records.html#GDB_002fMI-Stream-Records" title="GDB/MI Stream Records">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="GDB%2fMI-Result-Records"></a>
+<a name="GDB_002fMI-Result-Records"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="GDB_002fMI-Stream-Records.html#GDB_002fMI-Stream-Records">GDB/MI Stream Records</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="GDB_002fMI-Output-Records.html#GDB_002fMI-Output-Records">GDB/MI Output Records</a>
+<hr>
+</div>
+
+<h4 class="subsection">27.5.1 <span class="sc">gdb/mi</span> Result Records</h4>
+
+<p><a name="index-result-records-in-_0040sc_007bgdb_002fmi_007d-2860"></a><a name="index-g_t_0040sc_007bgdb_002fmi_007d_002c-result-records-2861"></a>In addition to a number of out-of-band notifications, the response to a
+<span class="sc">gdb/mi</span> command includes one of the following result indications:
+
+     
+<a name="index-g_t_005edone-2862"></a>
+<dl><dt><code>"^done" [ "," </code><var>results</var><code> ]</code><dd>The synchronous operation was successful, <var>results</var> are the return
+values.
+
+     <br><dt><code>"^running"</code><dd><a name="index-g_t_005erunning-2863"></a>This result record is equivalent to `<samp><span class="samp">^done</span></samp>'.  Historically, it
+was output instead of `<samp><span class="samp">^done</span></samp>' if the command has resumed the
+target.  This behaviour is maintained for backward compatibility, but
+all frontends should treat `<samp><span class="samp">^done</span></samp>' and `<samp><span class="samp">^running</span></samp>'
+identically and rely on the `<samp><span class="samp">*running</span></samp>' output record to determine
+which threads are resumed.
+
+     <br><dt><code>"^connected"</code><dd><a name="index-g_t_005econnected-2864"></a><span class="sc">gdb</span> has connected to a remote target.
+
+     <br><dt><code>"^error" "," "msg=" </code><var>c-string</var><code> [ "," "code=" </code><var>c-string</var><code> ]</code><dd><a name="index-g_t_005eerror-2865"></a>The operation failed.  The <code>msg=</code><var>c-string</var> variable contains
+the corresponding error message.
+
+     <p>If present, the <code>code=</code><var>c-string</var> variable provides an error
+code on which consumers can rely on to detect the corresponding
+error condition.  At present, only one error code is defined:
+
+          <dl>
+<dt>`<samp><span class="samp">"undefined-command"</span></samp>'<dd>Indicates that the command causing the error does not exist. 
+</dl>
+
+     <br><dt><code>"^exit"</code><dd><a name="index-g_t_005eexit-2866"></a><span class="sc">gdb</span> has terminated.
+
+   </dl>
+
+   </body></html>
+

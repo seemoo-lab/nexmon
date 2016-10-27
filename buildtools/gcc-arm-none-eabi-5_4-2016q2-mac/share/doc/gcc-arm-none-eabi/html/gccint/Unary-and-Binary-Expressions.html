@@ -1,0 +1,405 @@
+<html lang="en">
+<head>
+<title>Unary and Binary Expressions - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Expression-trees.html#Expression-trees" title="Expression trees">
+<link rel="prev" href="Storage-References.html#Storage-References" title="Storage References">
+<link rel="next" href="Vectors.html#Vectors" title="Vectors">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Unary-and-Binary-Expressions"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Vectors.html#Vectors">Vectors</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Storage-References.html#Storage-References">Storage References</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Expression-trees.html#Expression-trees">Expression trees</a>
+<hr>
+</div>
+
+<h4 class="subsection">10.6.3 Unary and Binary Expressions</h4>
+
+<p><a name="index-NEGATE_005fEXPR-1848"></a><a name="index-ABS_005fEXPR-1849"></a><a name="index-BIT_005fNOT_005fEXPR-1850"></a><a name="index-TRUTH_005fNOT_005fEXPR-1851"></a><a name="index-PREDECREMENT_005fEXPR-1852"></a><a name="index-PREINCREMENT_005fEXPR-1853"></a><a name="index-POSTDECREMENT_005fEXPR-1854"></a><a name="index-POSTINCREMENT_005fEXPR-1855"></a><a name="index-FIX_005fTRUNC_005fEXPR-1856"></a><a name="index-FLOAT_005fEXPR-1857"></a><a name="index-COMPLEX_005fEXPR-1858"></a><a name="index-CONJ_005fEXPR-1859"></a><a name="index-REALPART_005fEXPR-1860"></a><a name="index-IMAGPART_005fEXPR-1861"></a><a name="index-NON_005fLVALUE_005fEXPR-1862"></a><a name="index-NOP_005fEXPR-1863"></a><a name="index-CONVERT_005fEXPR-1864"></a><a name="index-FIXED_005fCONVERT_005fEXPR-1865"></a><a name="index-THROW_005fEXPR-1866"></a><a name="index-LSHIFT_005fEXPR-1867"></a><a name="index-RSHIFT_005fEXPR-1868"></a><a name="index-BIT_005fIOR_005fEXPR-1869"></a><a name="index-BIT_005fXOR_005fEXPR-1870"></a><a name="index-BIT_005fAND_005fEXPR-1871"></a><a name="index-TRUTH_005fANDIF_005fEXPR-1872"></a><a name="index-TRUTH_005fORIF_005fEXPR-1873"></a><a name="index-TRUTH_005fAND_005fEXPR-1874"></a><a name="index-TRUTH_005fOR_005fEXPR-1875"></a><a name="index-TRUTH_005fXOR_005fEXPR-1876"></a><a name="index-POINTER_005fPLUS_005fEXPR-1877"></a><a name="index-PLUS_005fEXPR-1878"></a><a name="index-MINUS_005fEXPR-1879"></a><a name="index-MULT_005fEXPR-1880"></a><a name="index-MULT_005fHIGHPART_005fEXPR-1881"></a><a name="index-RDIV_005fEXPR-1882"></a><a name="index-TRUNC_005fDIV_005fEXPR-1883"></a><a name="index-FLOOR_005fDIV_005fEXPR-1884"></a><a name="index-CEIL_005fDIV_005fEXPR-1885"></a><a name="index-ROUND_005fDIV_005fEXPR-1886"></a><a name="index-TRUNC_005fMOD_005fEXPR-1887"></a><a name="index-FLOOR_005fMOD_005fEXPR-1888"></a><a name="index-CEIL_005fMOD_005fEXPR-1889"></a><a name="index-ROUND_005fMOD_005fEXPR-1890"></a><a name="index-EXACT_005fDIV_005fEXPR-1891"></a><a name="index-LT_005fEXPR-1892"></a><a name="index-LE_005fEXPR-1893"></a><a name="index-GT_005fEXPR-1894"></a><a name="index-GE_005fEXPR-1895"></a><a name="index-EQ_005fEXPR-1896"></a><a name="index-NE_005fEXPR-1897"></a><a name="index-ORDERED_005fEXPR-1898"></a><a name="index-UNORDERED_005fEXPR-1899"></a><a name="index-UNLT_005fEXPR-1900"></a><a name="index-UNLE_005fEXPR-1901"></a><a name="index-UNGT_005fEXPR-1902"></a><a name="index-UNGE_005fEXPR-1903"></a><a name="index-UNEQ_005fEXPR-1904"></a><a name="index-LTGT_005fEXPR-1905"></a><a name="index-MODIFY_005fEXPR-1906"></a><a name="index-INIT_005fEXPR-1907"></a><a name="index-COMPOUND_005fEXPR-1908"></a><a name="index-COND_005fEXPR-1909"></a><a name="index-CALL_005fEXPR-1910"></a><a name="index-STMT_005fEXPR-1911"></a><a name="index-BIND_005fEXPR-1912"></a><a name="index-LOOP_005fEXPR-1913"></a><a name="index-EXIT_005fEXPR-1914"></a><a name="index-CLEANUP_005fPOINT_005fEXPR-1915"></a><a name="index-CONSTRUCTOR-1916"></a><a name="index-COMPOUND_005fLITERAL_005fEXPR-1917"></a><a name="index-SAVE_005fEXPR-1918"></a><a name="index-TARGET_005fEXPR-1919"></a><a name="index-VA_005fARG_005fEXPR-1920"></a><a name="index-ANNOTATE_005fEXPR-1921"></a>
+     <dl>
+<dt><code>NEGATE_EXPR</code><dd>These nodes represent unary negation of the single operand, for both
+integer and floating-point types.  The type of negation can be
+determined by looking at the type of the expression.
+
+     <p>The behavior of this operation on signed arithmetic overflow is
+controlled by the <code>flag_wrapv</code> and <code>flag_trapv</code> variables.
+
+     <br><dt><code>ABS_EXPR</code><dd>These nodes represent the absolute value of the single operand, for
+both integer and floating-point types.  This is typically used to
+implement the <code>abs</code>, <code>labs</code> and <code>llabs</code> builtins for
+integer types, and the <code>fabs</code>, <code>fabsf</code> and <code>fabsl</code>
+builtins for floating point types.  The type of abs operation can
+be determined by looking at the type of the expression.
+
+     <p>This node is not used for complex types.  To represent the modulus
+or complex abs of a complex value, use the <code>BUILT_IN_CABS</code>,
+<code>BUILT_IN_CABSF</code> or <code>BUILT_IN_CABSL</code> builtins, as used
+to implement the C99 <code>cabs</code>, <code>cabsf</code> and <code>cabsl</code>
+built-in functions.
+
+     <br><dt><code>BIT_NOT_EXPR</code><dd>These nodes represent bitwise complement, and will always have integral
+type.  The only operand is the value to be complemented.
+
+     <br><dt><code>TRUTH_NOT_EXPR</code><dd>These nodes represent logical negation, and will always have integral
+(or boolean) type.  The operand is the value being negated.  The type
+of the operand and that of the result are always of <code>BOOLEAN_TYPE</code>
+or <code>INTEGER_TYPE</code>.
+
+     <br><dt><code>PREDECREMENT_EXPR</code><dt><code>PREINCREMENT_EXPR</code><dt><code>POSTDECREMENT_EXPR</code><dt><code>POSTINCREMENT_EXPR</code><dd>These nodes represent increment and decrement expressions.  The value of
+the single operand is computed, and the operand incremented or
+decremented.  In the case of <code>PREDECREMENT_EXPR</code> and
+<code>PREINCREMENT_EXPR</code>, the value of the expression is the value
+resulting after the increment or decrement; in the case of
+<code>POSTDECREMENT_EXPR</code> and <code>POSTINCREMENT_EXPR</code> is the value
+before the increment or decrement occurs.  The type of the operand, like
+that of the result, will be either integral, boolean, or floating-point.
+
+     <br><dt><code>FIX_TRUNC_EXPR</code><dd>These nodes represent conversion of a floating-point value to an
+integer.  The single operand will have a floating-point type, while
+the complete expression will have an integral (or boolean) type.  The
+operand is rounded towards zero.
+
+     <br><dt><code>FLOAT_EXPR</code><dd>These nodes represent conversion of an integral (or boolean) value to a
+floating-point value.  The single operand will have integral type, while
+the complete expression will have a floating-point type.
+
+     <p>FIXME: How is the operand supposed to be rounded?  Is this dependent on
+<samp><span class="option">-mieee</span></samp>?
+
+     <br><dt><code>COMPLEX_EXPR</code><dd>These nodes are used to represent complex numbers constructed from two
+expressions of the same (integer or real) type.  The first operand is the
+real part and the second operand is the imaginary part.
+
+     <br><dt><code>CONJ_EXPR</code><dd>These nodes represent the conjugate of their operand.
+
+     <br><dt><code>REALPART_EXPR</code><dt><code>IMAGPART_EXPR</code><dd>These nodes represent respectively the real and the imaginary parts
+of complex numbers (their sole argument).
+
+     <br><dt><code>NON_LVALUE_EXPR</code><dd>These nodes indicate that their one and only operand is not an lvalue. 
+A back end can treat these identically to the single operand.
+
+     <br><dt><code>NOP_EXPR</code><dd>These nodes are used to represent conversions that do not require any
+code-generation.  For example, conversion of a <code>char*</code> to an
+<code>int*</code> does not require any code be generated; such a conversion is
+represented by a <code>NOP_EXPR</code>.  The single operand is the expression
+to be converted.  The conversion from a pointer to a reference is also
+represented with a <code>NOP_EXPR</code>.
+
+     <br><dt><code>CONVERT_EXPR</code><dd>These nodes are similar to <code>NOP_EXPR</code>s, but are used in those
+situations where code may need to be generated.  For example, if an
+<code>int*</code> is converted to an <code>int</code> code may need to be generated
+on some platforms.  These nodes are never used for C++-specific
+conversions, like conversions between pointers to different classes in
+an inheritance hierarchy.  Any adjustments that need to be made in such
+cases are always indicated explicitly.  Similarly, a user-defined
+conversion is never represented by a <code>CONVERT_EXPR</code>; instead, the
+function calls are made explicit.
+
+     <br><dt><code>FIXED_CONVERT_EXPR</code><dd>These nodes are used to represent conversions that involve fixed-point
+values.  For example, from a fixed-point value to another fixed-point value,
+from an integer to a fixed-point value, from a fixed-point value to an
+integer, from a floating-point value to a fixed-point value, or from
+a fixed-point value to a floating-point value.
+
+     <br><dt><code>LSHIFT_EXPR</code><dt><code>RSHIFT_EXPR</code><dd>These nodes represent left and right shifts, respectively.  The first
+operand is the value to shift; it will always be of integral type.  The
+second operand is an expression for the number of bits by which to
+shift.  Right shift should be treated as arithmetic, i.e., the
+high-order bits should be zero-filled when the expression has unsigned
+type and filled with the sign bit when the expression has signed type. 
+Note that the result is undefined if the second operand is larger
+than or equal to the first operand's type size. Unlike most nodes, these
+can have a vector as first operand and a scalar as second operand.
+
+     <br><dt><code>BIT_IOR_EXPR</code><dt><code>BIT_XOR_EXPR</code><dt><code>BIT_AND_EXPR</code><dd>These nodes represent bitwise inclusive or, bitwise exclusive or, and
+bitwise and, respectively.  Both operands will always have integral
+type.
+
+     <br><dt><code>TRUTH_ANDIF_EXPR</code><dt><code>TRUTH_ORIF_EXPR</code><dd>These nodes represent logical &ldquo;and&rdquo; and logical &ldquo;or&rdquo;, respectively. 
+These operators are not strict; i.e., the second operand is evaluated
+only if the value of the expression is not determined by evaluation of
+the first operand.  The type of the operands and that of the result are
+always of <code>BOOLEAN_TYPE</code> or <code>INTEGER_TYPE</code>.
+
+     <br><dt><code>TRUTH_AND_EXPR</code><dt><code>TRUTH_OR_EXPR</code><dt><code>TRUTH_XOR_EXPR</code><dd>These nodes represent logical and, logical or, and logical exclusive or. 
+They are strict; both arguments are always evaluated.  There are no
+corresponding operators in C or C++, but the front end will sometimes
+generate these expressions anyhow, if it can tell that strictness does
+not matter.  The type of the operands and that of the result are
+always of <code>BOOLEAN_TYPE</code> or <code>INTEGER_TYPE</code>.
+
+     <br><dt><code>POINTER_PLUS_EXPR</code><dd>This node represents pointer arithmetic.  The first operand is always
+a pointer/reference type.  The second operand is always an unsigned
+integer type compatible with sizetype.  This is the only binary
+arithmetic operand that can operate on pointer types.
+
+     <br><dt><code>PLUS_EXPR</code><dt><code>MINUS_EXPR</code><dt><code>MULT_EXPR</code><dd>These nodes represent various binary arithmetic operations. 
+Respectively, these operations are addition, subtraction (of the second
+operand from the first) and multiplication.  Their operands may have
+either integral or floating type, but there will never be case in which
+one operand is of floating type and the other is of integral type.
+
+     <p>The behavior of these operations on signed arithmetic overflow is
+controlled by the <code>flag_wrapv</code> and <code>flag_trapv</code> variables.
+
+     <br><dt><code>MULT_HIGHPART_EXPR</code><dd>This node represents the &ldquo;high-part&rdquo; of a widening multiplication. 
+For an integral type with <var>b</var> bits of precision, the result is
+the most significant <var>b</var> bits of the full 2<var>b</var> product.
+
+     <br><dt><code>RDIV_EXPR</code><dd>This node represents a floating point division operation.
+
+     <br><dt><code>TRUNC_DIV_EXPR</code><dt><code>FLOOR_DIV_EXPR</code><dt><code>CEIL_DIV_EXPR</code><dt><code>ROUND_DIV_EXPR</code><dd>These nodes represent integer division operations that return an integer
+result.  <code>TRUNC_DIV_EXPR</code> rounds towards zero, <code>FLOOR_DIV_EXPR</code>
+rounds towards negative infinity, <code>CEIL_DIV_EXPR</code> rounds towards
+positive infinity and <code>ROUND_DIV_EXPR</code> rounds to the closest integer. 
+Integer division in C and C++ is truncating, i.e. <code>TRUNC_DIV_EXPR</code>.
+
+     <p>The behavior of these operations on signed arithmetic overflow, when
+dividing the minimum signed integer by minus one, is controlled by the
+<code>flag_wrapv</code> and <code>flag_trapv</code> variables.
+
+     <br><dt><code>TRUNC_MOD_EXPR</code><dt><code>FLOOR_MOD_EXPR</code><dt><code>CEIL_MOD_EXPR</code><dt><code>ROUND_MOD_EXPR</code><dd>These nodes represent the integer remainder or modulus operation. 
+The integer modulus of two operands <code>a</code> and <code>b</code> is
+defined as <code>a - (a/b)*b</code> where the division calculated using
+the corresponding division operator.  Hence for <code>TRUNC_MOD_EXPR</code>
+this definition assumes division using truncation towards zero, i.e. 
+<code>TRUNC_DIV_EXPR</code>.  Integer remainder in C and C++ uses truncating
+division, i.e. <code>TRUNC_MOD_EXPR</code>.
+
+     <br><dt><code>EXACT_DIV_EXPR</code><dd>The <code>EXACT_DIV_EXPR</code> code is used to represent integer divisions where
+the numerator is known to be an exact multiple of the denominator.  This
+allows the backend to choose between the faster of <code>TRUNC_DIV_EXPR</code>,
+<code>CEIL_DIV_EXPR</code> and <code>FLOOR_DIV_EXPR</code> for the current target.
+
+     <br><dt><code>LT_EXPR</code><dt><code>LE_EXPR</code><dt><code>GT_EXPR</code><dt><code>GE_EXPR</code><dt><code>EQ_EXPR</code><dt><code>NE_EXPR</code><dd>These nodes represent the less than, less than or equal to, greater
+than, greater than or equal to, equal, and not equal comparison
+operators.  The first and second operands will either be both of integral
+type, both of floating type or both of vector type.  The result type of
+these expressions will always be of integral, boolean or signed integral
+vector type.  These operations return the result type's zero value for
+false, the result type's one value for true, and a vector whose elements
+are zero (false) or minus one (true) for vectors.
+
+     <p>For floating point comparisons, if we honor IEEE NaNs and either operand
+is NaN, then <code>NE_EXPR</code> always returns true and the remaining operators
+always return false.  On some targets, comparisons against an IEEE NaN,
+other than equality and inequality, may generate a floating point exception.
+
+     <br><dt><code>ORDERED_EXPR</code><dt><code>UNORDERED_EXPR</code><dd>These nodes represent non-trapping ordered and unordered comparison
+operators.  These operations take two floating point operands and
+determine whether they are ordered or unordered relative to each other. 
+If either operand is an IEEE NaN, their comparison is defined to be
+unordered, otherwise the comparison is defined to be ordered.  The
+result type of these expressions will always be of integral or boolean
+type.  These operations return the result type's zero value for false,
+and the result type's one value for true.
+
+     <br><dt><code>UNLT_EXPR</code><dt><code>UNLE_EXPR</code><dt><code>UNGT_EXPR</code><dt><code>UNGE_EXPR</code><dt><code>UNEQ_EXPR</code><dt><code>LTGT_EXPR</code><dd>These nodes represent the unordered comparison operators. 
+These operations take two floating point operands and determine whether
+the operands are unordered or are less than, less than or equal to,
+greater than, greater than or equal to, or equal respectively.  For
+example, <code>UNLT_EXPR</code> returns true if either operand is an IEEE
+NaN or the first operand is less than the second.  With the possible
+exception of <code>LTGT_EXPR</code>, all of these operations are guaranteed
+not to generate a floating point exception.  The result
+type of these expressions will always be of integral or boolean type. 
+These operations return the result type's zero value for false,
+and the result type's one value for true.
+
+     <br><dt><code>MODIFY_EXPR</code><dd>These nodes represent assignment.  The left-hand side is the first
+operand; the right-hand side is the second operand.  The left-hand side
+will be a <code>VAR_DECL</code>, <code>INDIRECT_REF</code>, <code>COMPONENT_REF</code>, or
+other lvalue.
+
+     <p>These nodes are used to represent not only assignment with `<samp><span class="samp">=</span></samp>' but
+also compound assignments (like `<samp><span class="samp">+=</span></samp>'), by reduction to `<samp><span class="samp">=</span></samp>'
+assignment.  In other words, the representation for `<samp><span class="samp">i += 3</span></samp>' looks
+just like that for `<samp><span class="samp">i = i + 3</span></samp>'.
+
+     <br><dt><code>INIT_EXPR</code><dd>These nodes are just like <code>MODIFY_EXPR</code>, but are used only when a
+variable is initialized, rather than assigned to subsequently.  This
+means that we can assume that the target of the initialization is not
+used in computing its own value; any reference to the lhs in computing
+the rhs is undefined.
+
+     <br><dt><code>COMPOUND_EXPR</code><dd>These nodes represent comma-expressions.  The first operand is an
+expression whose value is computed and thrown away prior to the
+evaluation of the second operand.  The value of the entire expression is
+the value of the second operand.
+
+     <br><dt><code>COND_EXPR</code><dd>These nodes represent <code>?:</code> expressions.  The first operand
+is of boolean or integral type.  If it evaluates to a nonzero value,
+the second operand should be evaluated, and returned as the value of the
+expression.  Otherwise, the third operand is evaluated, and returned as
+the value of the expression.
+
+     <p>The second operand must have the same type as the entire expression,
+unless it unconditionally throws an exception or calls a noreturn
+function, in which case it should have void type.  The same constraints
+apply to the third operand.  This allows array bounds checks to be
+represented conveniently as <code>(i &gt;= 0 &amp;&amp; i &lt; 10) ? i : abort()</code>.
+
+     <p>As a GNU extension, the C language front-ends allow the second
+operand of the <code>?:</code> operator may be omitted in the source. 
+For example, <code>x ? : 3</code> is equivalent to <code>x ? x : 3</code>,
+assuming that <code>x</code> is an expression without side-effects. 
+In the tree representation, however, the second operand is always
+present, possibly protected by <code>SAVE_EXPR</code> if the first
+argument does cause side-effects.
+
+     <br><dt><code>CALL_EXPR</code><dd>These nodes are used to represent calls to functions, including
+non-static member functions.  <code>CALL_EXPR</code>s are implemented as
+expression nodes with a variable number of operands.  Rather than using
+<code>TREE_OPERAND</code> to extract them, it is preferable to use the
+specialized accessor macros and functions that operate specifically on
+<code>CALL_EXPR</code> nodes.
+
+     <p><code>CALL_EXPR_FN</code> returns a pointer to the
+function to call; it is always an expression whose type is a
+<code>POINTER_TYPE</code>.
+
+     <p>The number of arguments to the call is returned by <code>call_expr_nargs</code>,
+while the arguments themselves can be accessed with the <code>CALL_EXPR_ARG</code>
+macro.  The arguments are zero-indexed and numbered left-to-right. 
+You can iterate over the arguments using <code>FOR_EACH_CALL_EXPR_ARG</code>, as in:
+
+     <pre class="smallexample">          tree call, arg;
+          call_expr_arg_iterator iter;
+          FOR_EACH_CALL_EXPR_ARG (arg, iter, call)
+            /* arg is bound to successive arguments of call.  */
+            ...;
+     </pre>
+     <p>For non-static
+member functions, there will be an operand corresponding to the
+<code>this</code> pointer.  There will always be expressions corresponding to
+all of the arguments, even if the function is declared with default
+arguments and some arguments are not explicitly provided at the call
+sites.
+
+     <p><code>CALL_EXPR</code>s also have a <code>CALL_EXPR_STATIC_CHAIN</code> operand that
+is used to implement nested functions.  This operand is otherwise null.
+
+     <br><dt><code>CLEANUP_POINT_EXPR</code><dd>These nodes represent full-expressions.  The single operand is an
+expression to evaluate.  Any destructor calls engendered by the creation
+of temporaries during the evaluation of that expression should be
+performed immediately after the expression is evaluated.
+
+     <br><dt><code>CONSTRUCTOR</code><dd>These nodes represent the brace-enclosed initializers for a structure or an
+array.  They contain a sequence of component values made out of a vector of
+constructor_elt, which is a (<code>INDEX</code>, <code>VALUE</code>) pair.
+
+     <p>If the <code>TREE_TYPE</code> of the <code>CONSTRUCTOR</code> is a <code>RECORD_TYPE</code>,
+<code>UNION_TYPE</code> or <code>QUAL_UNION_TYPE</code> then the <code>INDEX</code> of each
+node in the sequence will be a <code>FIELD_DECL</code> and the <code>VALUE</code> will
+be the expression used to initialize that field.
+
+     <p>If the <code>TREE_TYPE</code> of the <code>CONSTRUCTOR</code> is an <code>ARRAY_TYPE</code>,
+then the <code>INDEX</code> of each node in the sequence will be an
+<code>INTEGER_CST</code> or a <code>RANGE_EXPR</code> of two <code>INTEGER_CST</code>s. 
+A single <code>INTEGER_CST</code> indicates which element of the array is being
+assigned to.  A <code>RANGE_EXPR</code> indicates an inclusive range of elements
+to initialize.  In both cases the <code>VALUE</code> is the corresponding
+initializer.  It is re-evaluated for each element of a
+<code>RANGE_EXPR</code>.  If the <code>INDEX</code> is <code>NULL_TREE</code>, then
+the initializer is for the next available array element.
+
+     <p>In the front end, you should not depend on the fields appearing in any
+particular order.  However, in the middle end, fields must appear in
+declaration order.  You should not assume that all fields will be
+represented.  Unrepresented fields will be cleared (zeroed), unless the
+CONSTRUCTOR_NO_CLEARING flag is set, in which case their value becomes
+undefined.
+
+     <br><dt><code>COMPOUND_LITERAL_EXPR</code><dd><a name="index-COMPOUND_005fLITERAL_005fEXPR_005fDECL_005fEXPR-1922"></a><a name="index-COMPOUND_005fLITERAL_005fEXPR_005fDECL-1923"></a>These nodes represent ISO C99 compound literals.  The
+<code>COMPOUND_LITERAL_EXPR_DECL_EXPR</code> is a <code>DECL_EXPR</code>
+containing an anonymous <code>VAR_DECL</code> for
+the unnamed object represented by the compound literal; the
+<code>DECL_INITIAL</code> of that <code>VAR_DECL</code> is a <code>CONSTRUCTOR</code>
+representing the brace-enclosed list of initializers in the compound
+literal.  That anonymous <code>VAR_DECL</code> can also be accessed directly
+by the <code>COMPOUND_LITERAL_EXPR_DECL</code> macro.
+
+     <br><dt><code>SAVE_EXPR</code><dd>
+A <code>SAVE_EXPR</code> represents an expression (possibly involving
+side-effects) that is used more than once.  The side-effects should
+occur only the first time the expression is evaluated.  Subsequent uses
+should just reuse the computed value.  The first operand to the
+<code>SAVE_EXPR</code> is the expression to evaluate.  The side-effects should
+be executed where the <code>SAVE_EXPR</code> is first encountered in a
+depth-first preorder traversal of the expression tree.
+
+     <br><dt><code>TARGET_EXPR</code><dd>A <code>TARGET_EXPR</code> represents a temporary object.  The first operand
+is a <code>VAR_DECL</code> for the temporary variable.  The second operand is
+the initializer for the temporary.  The initializer is evaluated and,
+if non-void, copied (bitwise) into the temporary.  If the initializer
+is void, that means that it will perform the initialization itself.
+
+     <p>Often, a <code>TARGET_EXPR</code> occurs on the right-hand side of an
+assignment, or as the second operand to a comma-expression which is
+itself the right-hand side of an assignment, etc.  In this case, we say
+that the <code>TARGET_EXPR</code> is &ldquo;normal&rdquo;; otherwise, we say it is
+&ldquo;orphaned&rdquo;.  For a normal <code>TARGET_EXPR</code> the temporary variable
+should be treated as an alias for the left-hand side of the assignment,
+rather than as a new temporary variable.
+
+     <p>The third operand to the <code>TARGET_EXPR</code>, if present, is a
+cleanup-expression (i.e., destructor call) for the temporary.  If this
+expression is orphaned, then this expression must be executed when the
+statement containing this expression is complete.  These cleanups must
+always be executed in the order opposite to that in which they were
+encountered.  Note that if a temporary is created on one branch of a
+conditional operator (i.e., in the second or third operand to a
+<code>COND_EXPR</code>), the cleanup must be run only if that branch is
+actually executed.
+
+     <br><dt><code>VA_ARG_EXPR</code><dd>This node is used to implement support for the C/C++ variable argument-list
+mechanism.  It represents expressions like <code>va_arg (ap, type)</code>. 
+Its <code>TREE_TYPE</code> yields the tree representation for <code>type</code> and
+its sole argument yields the representation for <code>ap</code>.
+
+     <br><dt><code>ANNOTATE_EXPR</code><dd>This node is used to attach markers to an expression. The first operand
+is the annotated expression, the second is an <code>INTEGER_CST</code> with
+a value from <code>enum annot_expr_kind</code>. 
+</dl>
+
+ </body></html>
+

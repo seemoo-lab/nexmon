@@ -1,0 +1,127 @@
+<html lang="en">
+<head>
+<title>File Caching - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="BFD-front-end.html#BFD-front-end" title="BFD front end">
+<link rel="prev" href="Internal.html#Internal" title="Internal">
+<link rel="next" href="Linker-Functions.html#Linker-Functions" title="Linker Functions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="File-Caching"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Linker-Functions.html#Linker-Functions">Linker Functions</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Internal.html#Internal">Internal</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="BFD-front-end.html#BFD-front-end">BFD front end</a>
+<hr>
+</div>
+
+<h3 class="section">2.16 File caching</h3>
+
+<p>The file caching mechanism is embedded within BFD and allows
+the application to open as many BFDs as it wants without
+regard to the underlying operating system's file descriptor
+limit (often as low as 20 open files).  The module in
+<code>cache.c</code> maintains a least recently used list of
+<code>bfd_cache_max_open</code> files, and exports the name
+<code>bfd_cache_lookup</code>, which runs around and makes sure that
+the required BFD is open. If not, then it chooses a file to
+close, closes it and opens the one wanted, returning its file
+handle.
+
+<h4 class="subsection">2.16.1 Caching functions</h4>
+
+<p><a name="index-bfd_005fcache_005finit-2237"></a>
+
+<h5 class="subsubsection">2.16.1.1 <code>bfd_cache_init</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     bfd_boolean bfd_cache_init (bfd *abfd);
+</pre>
+   <p><strong>Description</strong><br>
+Add a newly opened BFD to the cache.
+
+   <p><a name="index-bfd_005fcache_005fclose-2238"></a>
+
+<h5 class="subsubsection">2.16.1.2 <code>bfd_cache_close</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     bfd_boolean bfd_cache_close (bfd *abfd);
+</pre>
+   <p><strong>Description</strong><br>
+Remove the BFD <var>abfd</var> from the cache. If the attached file is open,
+then close it too.
+
+   <p><strong>Returns</strong><br>
+<code>FALSE</code> is returned if closing the file fails, <code>TRUE</code> is
+returned if all is well.
+
+   <p><a name="index-bfd_005fcache_005fclose_005fall-2239"></a>
+
+<h5 class="subsubsection">2.16.1.3 <code>bfd_cache_close_all</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     bfd_boolean bfd_cache_close_all (void);
+</pre>
+   <p><strong>Description</strong><br>
+Remove all BFDs from the cache. If the attached file is open,
+then close it too.
+
+   <p><strong>Returns</strong><br>
+<code>FALSE</code> is returned if closing one of the file fails, <code>TRUE</code> is
+returned if all is well.
+
+   <p><a name="index-bfd_005fopen_005ffile-2240"></a>
+
+<h5 class="subsubsection">2.16.1.4 <code>bfd_open_file</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     FILE* bfd_open_file (bfd *abfd);
+</pre>
+   <p><strong>Description</strong><br>
+Call the OS to open a file for <var>abfd</var>.  Return the <code>FILE *</code>
+(possibly <code>NULL</code>) that results from this operation.  Set up the
+BFD so that future accesses know the file is open. If the <code>FILE *</code>
+returned is <code>NULL</code>, then it won't have been put in the
+cache, so it won't have to be removed from it.
+
+   </body></html>
+

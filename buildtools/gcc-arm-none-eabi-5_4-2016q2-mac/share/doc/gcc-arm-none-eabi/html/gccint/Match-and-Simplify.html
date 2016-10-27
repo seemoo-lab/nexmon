@@ -1,0 +1,81 @@
+<html lang="en">
+<head>
+<title>Match and Simplify - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="LTO.html#LTO" title="LTO">
+<link rel="next" href="Funding.html#Funding" title="Funding">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Match-and-Simplify"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Funding.html#Funding">Funding</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="LTO.html#LTO">LTO</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">25 Match and Simplify</h2>
+
+<p><a name="index-Match-and-Simplify-5111"></a>
+The GIMPLE and GENERIC pattern matching project match-and-simplify
+tries to address several issues.
+
+     <ol type=1 start=1>
+<li>unify expression simplifications currently spread and duplicated
+    over separate files like fold-const.c, gimple-fold.c and builtins.c
+<li>allow for a cheap way to implement building and simplifying
+    non-trivial GIMPLE expressions, avoiding the need to go through
+    building and simplifying GENERIC via fold_buildN and then
+    gimplifying via force_gimple_operand
+      </ol>
+
+ <p>To address these the project introduces a simple domain specific language
+to write expression simplifications from which code targeting GIMPLE
+and GENERIC is auto-generated.  The GENERIC variant follows the
+fold_buildN API while for the GIMPLE variant and to address 2) new
+APIs are introduced.
+
+<ul class="menu">
+<li><a accesskey="1" href="GIMPLE-API.html#GIMPLE-API">GIMPLE API</a>
+<li><a accesskey="2" href="The-Language.html#The-Language">The Language</a>
+</ul>
+
+ </body></html>
+

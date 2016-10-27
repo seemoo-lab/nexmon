@@ -1,0 +1,132 @@
+<html lang="en">
+<head>
+<title>PowerPC Built-in Functions - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Builtins.html#Target-Builtins" title="Target Builtins">
+<link rel="prev" href="picoChip-Built_002din-Functions.html#picoChip-Built_002din-Functions" title="picoChip Built-in Functions">
+<link rel="next" href="PowerPC-AltiVec_002fVSX-Built_002din-Functions.html#PowerPC-AltiVec_002fVSX-Built_002din-Functions" title="PowerPC AltiVec/VSX Built-in Functions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="PowerPC-Built-in-Functions"></a>
+<a name="PowerPC-Built_002din-Functions"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="PowerPC-AltiVec_002fVSX-Built_002din-Functions.html#PowerPC-AltiVec_002fVSX-Built_002din-Functions">PowerPC AltiVec/VSX Built-in Functions</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="picoChip-Built_002din-Functions.html#picoChip-Built_002din-Functions">picoChip Built-in Functions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Builtins.html#Target-Builtins">Target Builtins</a>
+<hr>
+</div>
+
+<h4 class="subsection">6.58.19 PowerPC Built-in Functions</h4>
+
+<p>These built-in functions are available for the PowerPC family of
+processors:
+<pre class="smallexample">     float __builtin_recipdivf (float, float);
+     float __builtin_rsqrtf (float);
+     double __builtin_recipdiv (double, double);
+     double __builtin_rsqrt (double);
+     uint64_t __builtin_ppc_get_timebase ();
+     unsigned long __builtin_ppc_mftb ();
+     double __builtin_unpack_longdouble (long double, int);
+     long double __builtin_pack_longdouble (double, double);
+</pre>
+ <p>The <code>vec_rsqrt</code>, <code>__builtin_rsqrt</code>, and
+<code>__builtin_rsqrtf</code> functions generate multiple instructions to
+implement the reciprocal sqrt functionality using reciprocal sqrt
+estimate instructions.
+
+ <p>The <code>__builtin_recipdiv</code>, and <code>__builtin_recipdivf</code>
+functions generate multiple instructions to implement division using
+the reciprocal estimate instructions.
+
+ <p>The <code>__builtin_ppc_get_timebase</code> and <code>__builtin_ppc_mftb</code>
+functions generate instructions to read the Time Base Register.  The
+<code>__builtin_ppc_get_timebase</code> function may generate multiple
+instructions and always returns the 64 bits of the Time Base Register. 
+The <code>__builtin_ppc_mftb</code> function always generates one instruction and
+returns the Time Base Register value as an unsigned long, throwing away
+the most significant word on 32-bit environments.
+
+ <p>The following built-in functions are available for the PowerPC family
+of processors, starting with ISA 2.06 or later (<samp><span class="option">-mcpu=power7</span></samp>
+or <samp><span class="option">-mpopcntd</span></samp>):
+<pre class="smallexample">     long __builtin_bpermd (long, long);
+     int __builtin_divwe (int, int);
+     int __builtin_divweo (int, int);
+     unsigned int __builtin_divweu (unsigned int, unsigned int);
+     unsigned int __builtin_divweuo (unsigned int, unsigned int);
+     long __builtin_divde (long, long);
+     long __builtin_divdeo (long, long);
+     unsigned long __builtin_divdeu (unsigned long, unsigned long);
+     unsigned long __builtin_divdeuo (unsigned long, unsigned long);
+     unsigned int cdtbcd (unsigned int);
+     unsigned int cbcdtd (unsigned int);
+     unsigned int addg6s (unsigned int, unsigned int);
+</pre>
+ <p>The <code>__builtin_divde</code>, <code>__builtin_divdeo</code>,
+<code>__builtin_divdeu</code>, <code>__builtin_divdeou</code> functions require a
+64-bit environment support ISA 2.06 or later.
+
+ <p>The following built-in functions are available for the PowerPC family
+of processors when hardware decimal floating point
+(<samp><span class="option">-mhard-dfp</span></samp>) is available:
+<pre class="smallexample">     _Decimal64 __builtin_dxex (_Decimal64);
+     _Decimal128 __builtin_dxexq (_Decimal128);
+     _Decimal64 __builtin_ddedpd (int, _Decimal64);
+     _Decimal128 __builtin_ddedpdq (int, _Decimal128);
+     _Decimal64 __builtin_denbcd (int, _Decimal64);
+     _Decimal128 __builtin_denbcdq (int, _Decimal128);
+     _Decimal64 __builtin_diex (_Decimal64, _Decimal64);
+     _Decimal128 _builtin_diexq (_Decimal128, _Decimal128);
+     _Decimal64 __builtin_dscli (_Decimal64, int);
+     _Decimal128 __builtin_dscliq (_Decimal128, int);
+     _Decimal64 __builtin_dscri (_Decimal64, int);
+     _Decimal128 __builtin_dscriq (_Decimal128, int);
+     unsigned long long __builtin_unpack_dec128 (_Decimal128, int);
+     _Decimal128 __builtin_pack_dec128 (unsigned long long, unsigned long long);
+</pre>
+ <p>The following built-in functions are available for the PowerPC family
+of processors when the Vector Scalar (vsx) instruction set is
+available:
+<pre class="smallexample">     unsigned long long __builtin_unpack_vector_int128 (vector __int128_t, int);
+     vector __int128_t __builtin_pack_vector_int128 (unsigned long long,
+                                                     unsigned long long);
+</pre>
+ </body></html>
+

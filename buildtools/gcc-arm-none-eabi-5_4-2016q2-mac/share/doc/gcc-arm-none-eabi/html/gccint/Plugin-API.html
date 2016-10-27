@@ -1,0 +1,239 @@
+<html lang="en">
+<head>
+<title>Plugin API - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Plugins.html#Plugins" title="Plugins">
+<link rel="prev" href="Plugins-loading.html#Plugins-loading" title="Plugins loading">
+<link rel="next" href="Plugins-pass.html#Plugins-pass" title="Plugins pass">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Plugin-API"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Plugins-pass.html#Plugins-pass">Plugins pass</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Plugins-loading.html#Plugins-loading">Plugins loading</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Plugins.html#Plugins">Plugins</a>
+<hr>
+</div>
+
+<h3 class="section">23.2 Plugin API</h3>
+
+<p>Plugins are activated by the compiler at specific events as defined in
+<samp><span class="file">gcc-plugin.h</span></samp>.  For each event of interest, the plugin should
+call <code>register_callback</code> specifying the name of the event and
+address of the callback function that will handle that event.
+
+ <p>The header <samp><span class="file">gcc-plugin.h</span></samp> must be the first gcc header to be included.
+
+<h4 class="subsection">23.2.1 Plugin license check</h4>
+
+<p>Every plugin should define the global symbol <code>plugin_is_GPL_compatible</code>
+to assert that it has been licensed under a GPL-compatible license. 
+If this symbol does not exist, the compiler will emit a fatal error
+and exit with the error message:
+
+<pre class="smallexample">     fatal error: plugin <var>name</var> is not licensed under a GPL-compatible license
+     <var>name</var>: undefined symbol: plugin_is_GPL_compatible
+     compilation terminated
+</pre>
+ <p>The declared type of the symbol should be int, to match a forward declaration
+in <samp><span class="file">gcc-plugin.h</span></samp> that suppresses C++ mangling.  It does not need to be in
+any allocated section, though.  The compiler merely asserts that
+the symbol exists in the global scope.  Something like this is enough:
+
+<pre class="smallexample">     int plugin_is_GPL_compatible;
+</pre>
+ <h4 class="subsection">23.2.2 Plugin initialization</h4>
+
+<p>Every plugin should export a function called <code>plugin_init</code> that
+is called right after the plugin is loaded. This function is
+responsible for registering all the callbacks required by the plugin
+and do any other required initialization.
+
+ <p>This function is called from <code>compile_file</code> right before invoking
+the parser.  The arguments to <code>plugin_init</code> are:
+
+     <ul>
+<li><code>plugin_info</code>: Plugin invocation information. 
+<li><code>version</code>: GCC version. 
+</ul>
+
+ <p>The <code>plugin_info</code> struct is defined as follows:
+
+<pre class="smallexample">     struct plugin_name_args
+     {
+       char *base_name;              /* Short name of the plugin
+                                        (filename without .so suffix). */
+       const char *full_name;        /* Path to the plugin as specified with
+                                        -fplugin=. */
+       int argc;                     /* Number of arguments specified with
+                                        -fplugin-arg-.... */
+       struct plugin_argument *argv; /* Array of ARGC key-value pairs. */
+       const char *version;          /* Version string provided by plugin. */
+       const char *help;             /* Help string provided by plugin. */
+     }
+</pre>
+ <p>If initialization fails, <code>plugin_init</code> must return a non-zero
+value.  Otherwise, it should return 0.
+
+ <p>The version of the GCC compiler loading the plugin is described by the
+following structure:
+
+<pre class="smallexample">     struct plugin_gcc_version
+     {
+       const char *basever;
+       const char *datestamp;
+       const char *devphase;
+       const char *revision;
+       const char *configuration_arguments;
+     };
+</pre>
+ <p>The function <code>plugin_default_version_check</code> takes two pointers to
+such structure and compare them field by field. It can be used by the
+plugin's <code>plugin_init</code> function.
+
+ <p>The version of GCC used to compile the plugin can be found in the symbol
+<code>gcc_version</code> defined in the header <samp><span class="file">plugin-version.h</span></samp>. The
+recommended version check to perform looks like
+
+<pre class="smallexample">     #include "plugin-version.h"
+     ...
+     
+     int
+     plugin_init (struct plugin_name_args *plugin_info,
+                  struct plugin_gcc_version *version)
+     {
+       if (!plugin_default_version_check (version, &amp;gcc_version))
+         return 1;
+     
+     }
+</pre>
+ <p>but you can also check the individual fields if you want a less strict check.
+
+<h4 class="subsection">23.2.3 Plugin callbacks</h4>
+
+<p>Callback functions have the following prototype:
+
+<pre class="smallexample">     /* The prototype for a plugin callback function.
+          gcc_data  - event-specific data provided by GCC
+          user_data - plugin-specific data provided by the plug-in.  */
+     typedef void (*plugin_callback_func)(void *gcc_data, void *user_data);
+</pre>
+ <p>Callbacks can be invoked at the following pre-determined events:
+
+<pre class="smallexample">     enum plugin_event
+     {
+       PLUGIN_PASS_MANAGER_SETUP,    /* To hook into pass manager.  */
+       PLUGIN_FINISH_TYPE,           /* After finishing parsing a type.  */
+       PLUGIN_FINISH_DECL,           /* After finishing parsing a declaration. */
+       PLUGIN_FINISH_UNIT,           /* Useful for summary processing.  */
+       PLUGIN_PRE_GENERICIZE,        /* Allows to see low level AST in C and C++ frontends.  */
+       PLUGIN_FINISH,                /* Called before GCC exits.  */
+       PLUGIN_INFO,                  /* Information about the plugin. */
+       PLUGIN_GGC_START,             /* Called at start of GCC Garbage Collection. */
+       PLUGIN_GGC_MARKING,           /* Extend the GGC marking. */
+       PLUGIN_GGC_END,               /* Called at end of GGC. */
+       PLUGIN_REGISTER_GGC_ROOTS,    /* Register an extra GGC root table. */
+       PLUGIN_ATTRIBUTES,            /* Called during attribute registration */
+       PLUGIN_START_UNIT,            /* Called before processing a translation unit.  */
+       PLUGIN_PRAGMAS,               /* Called during pragma registration. */
+       /* Called before first pass from all_passes.  */
+       PLUGIN_ALL_PASSES_START,
+       /* Called after last pass from all_passes.  */
+       PLUGIN_ALL_PASSES_END,
+       /* Called before first ipa pass.  */
+       PLUGIN_ALL_IPA_PASSES_START,
+       /* Called after last ipa pass.  */
+       PLUGIN_ALL_IPA_PASSES_END,
+       /* Allows to override pass gate decision for current_pass.  */
+       PLUGIN_OVERRIDE_GATE,
+       /* Called before executing a pass.  */
+       PLUGIN_PASS_EXECUTION,
+       /* Called before executing subpasses of a GIMPLE_PASS in
+          execute_ipa_pass_list.  */
+       PLUGIN_EARLY_GIMPLE_PASSES_START,
+       /* Called after executing subpasses of a GIMPLE_PASS in
+          execute_ipa_pass_list.  */
+       PLUGIN_EARLY_GIMPLE_PASSES_END,
+       /* Called when a pass is first instantiated.  */
+       PLUGIN_NEW_PASS,
+     /* Called when a file is #include-d or given via the #line directive.
+        This could happen many times.  The event data is the included file path,
+        as a const char* pointer.  */
+       PLUGIN_INCLUDE_FILE,
+     
+       PLUGIN_EVENT_FIRST_DYNAMIC    /* Dummy event used for indexing callback
+                                        array.  */
+     };
+</pre>
+ <p>In addition, plugins can also look up the enumerator of a named event,
+and / or generate new events dynamically, by calling the function
+<code>get_named_event_id</code>.
+
+ <p>To register a callback, the plugin calls <code>register_callback</code> with
+the arguments:
+
+     <ul>
+<li><code>char *name</code>: Plugin name. 
+<li><code>int event</code>: The event code. 
+<li><code>plugin_callback_func callback</code>: The function that handles <code>event</code>. 
+<li><code>void *user_data</code>: Pointer to plugin-specific data. 
+</ul>
+
+ <p>For the <i>PLUGIN_PASS_MANAGER_SETUP</i>, <i>PLUGIN_INFO</i>, and
+<i>PLUGIN_REGISTER_GGC_ROOTS</i> pseudo-events the <code>callback</code> should be null,
+and the <code>user_data</code> is specific.
+
+ <p>When the <i>PLUGIN_PRAGMAS</i> event is triggered (with a null pointer as
+data from GCC), plugins may register their own pragmas.  Notice that
+pragmas are not available from <samp><span class="file">lto1</span></samp>, so plugins used with
+<code>-flto</code> option to GCC during link-time optimization cannot use
+pragmas and do not even see functions like <code>c_register_pragma</code> or
+<code>pragma_lex</code>.
+
+ <p>The <i>PLUGIN_INCLUDE_FILE</i> event, with a <code>const char*</code> file path as
+GCC data, is triggered for processing of <code>#include</code> or
+<code>#line</code> directives.
+
+ <p>The <i>PLUGIN_FINISH</i> event is the last time that plugins can call GCC
+functions, notably emit diagnostics with <code>warning</code>, <code>error</code>
+etc.
+
+ </body></html>
+

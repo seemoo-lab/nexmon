@@ -1,0 +1,178 @@
+<html lang="en">
+<head>
+<title>Alignment Output - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Assembler-Format.html#Assembler-Format" title="Assembler Format">
+<link rel="prev" href="Exception-Region-Output.html#Exception-Region-Output" title="Exception Region Output">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Alignment-Output"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Exception-Region-Output.html#Exception-Region-Output">Exception Region Output</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Assembler-Format.html#Assembler-Format">Assembler Format</a>
+<hr>
+</div>
+
+<h4 class="subsection">17.20.10 Assembler Commands for Alignment</h4>
+
+<!-- prevent bad page break with this line -->
+<p>This describes commands for alignment.
+
+<div class="defun">
+&mdash; Macro: <b>JUMP_ALIGN</b> (<var>label</var>)<var><a name="index-JUMP_005fALIGN-4737"></a></var><br>
+<blockquote><p>The alignment (log base 2) to put in front of <var>label</var>, which is
+a common destination of jumps and has no fallthru incoming edge.
+
+      <p>This macro need not be defined if you don't want any special alignment
+to be done at such a time.  Most machine descriptions do not currently
+define the macro.
+
+      <p>Unless it's necessary to inspect the <var>label</var> parameter, it is better
+to set the variable <var>align_jumps</var> in the target's
+<code>TARGET_OPTION_OVERRIDE</code>.  Otherwise, you should try to honor the user's
+selection in <var>align_jumps</var> in a <code>JUMP_ALIGN</code> implementation. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: int <b>TARGET_ASM_JUMP_ALIGN_MAX_SKIP</b> (<var>rtx_insn *label</var>)<var><a name="index-TARGET_005fASM_005fJUMP_005fALIGN_005fMAX_005fSKIP-4738"></a></var><br>
+<blockquote><p>The maximum number of bytes to skip before <var>label</var> when applying
+<code>JUMP_ALIGN</code>.  This works only if
+<code>ASM_OUTPUT_MAX_SKIP_ALIGN</code> is defined. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>LABEL_ALIGN_AFTER_BARRIER</b> (<var>label</var>)<var><a name="index-LABEL_005fALIGN_005fAFTER_005fBARRIER-4739"></a></var><br>
+<blockquote><p>The alignment (log base 2) to put in front of <var>label</var>, which follows
+a <code>BARRIER</code>.
+
+      <p>This macro need not be defined if you don't want any special alignment
+to be done at such a time.  Most machine descriptions do not currently
+define the macro. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: int <b>TARGET_ASM_LABEL_ALIGN_AFTER_BARRIER_MAX_SKIP</b> (<var>rtx_insn *label</var>)<var><a name="index-TARGET_005fASM_005fLABEL_005fALIGN_005fAFTER_005fBARRIER_005fMAX_005fSKIP-4740"></a></var><br>
+<blockquote><p>The maximum number of bytes to skip before <var>label</var> when applying
+<code>LABEL_ALIGN_AFTER_BARRIER</code>.  This works only if
+<code>ASM_OUTPUT_MAX_SKIP_ALIGN</code> is defined. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>LOOP_ALIGN</b> (<var>label</var>)<var><a name="index-LOOP_005fALIGN-4741"></a></var><br>
+<blockquote><p>The alignment (log base 2) to put in front of <var>label</var> that heads
+a frequently executed basic block (usually the header of a loop).
+
+      <p>This macro need not be defined if you don't want any special alignment
+to be done at such a time.  Most machine descriptions do not currently
+define the macro.
+
+      <p>Unless it's necessary to inspect the <var>label</var> parameter, it is better
+to set the variable <code>align_loops</code> in the target's
+<code>TARGET_OPTION_OVERRIDE</code>.  Otherwise, you should try to honor the user's
+selection in <code>align_loops</code> in a <code>LOOP_ALIGN</code> implementation. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: int <b>TARGET_ASM_LOOP_ALIGN_MAX_SKIP</b> (<var>rtx_insn *label</var>)<var><a name="index-TARGET_005fASM_005fLOOP_005fALIGN_005fMAX_005fSKIP-4742"></a></var><br>
+<blockquote><p>The maximum number of bytes to skip when applying <code>LOOP_ALIGN</code> to
+<var>label</var>.  This works only if <code>ASM_OUTPUT_MAX_SKIP_ALIGN</code> is
+defined. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>LABEL_ALIGN</b> (<var>label</var>)<var><a name="index-LABEL_005fALIGN-4743"></a></var><br>
+<blockquote><p>The alignment (log base 2) to put in front of <var>label</var>. 
+If <code>LABEL_ALIGN_AFTER_BARRIER</code> / <code>LOOP_ALIGN</code> specify a different alignment,
+the maximum of the specified values is used.
+
+      <p>Unless it's necessary to inspect the <var>label</var> parameter, it is better
+to set the variable <code>align_labels</code> in the target's
+<code>TARGET_OPTION_OVERRIDE</code>.  Otherwise, you should try to honor the user's
+selection in <code>align_labels</code> in a <code>LABEL_ALIGN</code> implementation. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: int <b>TARGET_ASM_LABEL_ALIGN_MAX_SKIP</b> (<var>rtx_insn *label</var>)<var><a name="index-TARGET_005fASM_005fLABEL_005fALIGN_005fMAX_005fSKIP-4744"></a></var><br>
+<blockquote><p>The maximum number of bytes to skip when applying <code>LABEL_ALIGN</code>
+to <var>label</var>.  This works only if <code>ASM_OUTPUT_MAX_SKIP_ALIGN</code>
+is defined. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_OUTPUT_SKIP</b> (<var>stream, nbytes</var>)<var><a name="index-ASM_005fOUTPUT_005fSKIP-4745"></a></var><br>
+<blockquote><p>A C statement to output to the stdio stream <var>stream</var> an assembler
+instruction to advance the location counter by <var>nbytes</var> bytes. 
+Those bytes should be zero when loaded.  <var>nbytes</var> will be a C
+expression of type <code>unsigned HOST_WIDE_INT</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_NO_SKIP_IN_TEXT</b><var><a name="index-ASM_005fNO_005fSKIP_005fIN_005fTEXT-4746"></a></var><br>
+<blockquote><p>Define this macro if <code>ASM_OUTPUT_SKIP</code> should not be used in the
+text section because it fails to put zeros in the bytes that are skipped. 
+This is true on many Unix systems, where the pseudo&ndash;op to skip bytes
+produces no-op instructions rather than zeros when used in the text
+section. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_OUTPUT_ALIGN</b> (<var>stream, power</var>)<var><a name="index-ASM_005fOUTPUT_005fALIGN-4747"></a></var><br>
+<blockquote><p>A C statement to output to the stdio stream <var>stream</var> an assembler
+command to advance the location counter to a multiple of 2 to the
+<var>power</var> bytes.  <var>power</var> will be a C expression of type <code>int</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_OUTPUT_ALIGN_WITH_NOP</b> (<var>stream, power</var>)<var><a name="index-ASM_005fOUTPUT_005fALIGN_005fWITH_005fNOP-4748"></a></var><br>
+<blockquote><p>Like <code>ASM_OUTPUT_ALIGN</code>, except that the &ldquo;nop&rdquo; instruction is used
+for padding, if necessary. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>ASM_OUTPUT_MAX_SKIP_ALIGN</b> (<var>stream, power, max_skip</var>)<var><a name="index-ASM_005fOUTPUT_005fMAX_005fSKIP_005fALIGN-4749"></a></var><br>
+<blockquote><p>A C statement to output to the stdio stream <var>stream</var> an assembler
+command to advance the location counter to a multiple of 2 to the
+<var>power</var> bytes, but only if <var>max_skip</var> or fewer bytes are needed to
+satisfy the alignment request.  <var>power</var> and <var>max_skip</var> will be
+a C expression of type <code>int</code>. 
+</p></blockquote></div>
+
+ </body></html>
+

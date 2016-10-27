@@ -1,0 +1,118 @@
+<html lang="en">
+<head>
+<title>@code{GIMPLE_BIND} - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Tuple-specific-accessors.html#Tuple-specific-accessors" title="Tuple specific accessors">
+<link rel="prev" href="_0040code_007bGIMPLE_005fASSIGN_007d.html#g_t_0040code_007bGIMPLE_005fASSIGN_007d" title="@code{GIMPLE_ASSIGN}">
+<link rel="next" href="_0040code_007bGIMPLE_005fCALL_007d.html#g_t_0040code_007bGIMPLE_005fCALL_007d" title="@code{GIMPLE_CALL}">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="%3ccode%3eGIMPLE_BIND%3c%2fcode%3e"></a>
+<a name="g_t_003ccode_003eGIMPLE_005fBIND_003c_002fcode_003e"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="_003ccode_003eGIMPLE_005fCALL_003c_002fcode_003e.html#g_t_003ccode_003eGIMPLE_005fCALL_003c_002fcode_003e">&lt;code&gt;GIMPLE_CALL&lt;/code&gt;</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="_003ccode_003eGIMPLE_005fASSIGN_003c_002fcode_003e.html#g_t_003ccode_003eGIMPLE_005fASSIGN_003c_002fcode_003e">&lt;code&gt;GIMPLE_ASSIGN&lt;/code&gt;</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Tuple-specific-accessors.html#Tuple-specific-accessors">Tuple specific accessors</a>
+<hr>
+</div>
+
+<h4 class="subsection">11.8.3 <code>GIMPLE_BIND</code></h4>
+
+<p><a name="index-g_t_0040code_007bGIMPLE_005fBIND_007d-2238"></a>
+
+<div class="defun">
+&mdash; GIMPLE function: gbind <b>*gimple_build_bind</b> (<var>tree vars, gimple_seq body</var>)<var><a name="index-g_t_002agimple_005fbuild_005fbind-2239"></a></var><br>
+<blockquote><p>Build a <code>GIMPLE_BIND</code> statement with a list of variables in <code>VARS</code>
+and a body of statements in sequence <code>BODY</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree <b>gimple_bind_vars</b> (<var>const gbind *g</var>)<var><a name="index-gimple_005fbind_005fvars-2240"></a></var><br>
+<blockquote><p>Return the variables declared in the <code>GIMPLE_BIND</code> statement <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_bind_set_vars</b> (<var>gbind *g, tree vars</var>)<var><a name="index-gimple_005fbind_005fset_005fvars-2241"></a></var><br>
+<blockquote><p>Set <code>VARS</code> to be the set of variables declared in the <code>GIMPLE_BIND</code>
+statement <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_bind_append_vars</b> (<var>gbind *g, tree vars</var>)<var><a name="index-gimple_005fbind_005fappend_005fvars-2242"></a></var><br>
+<blockquote><p>Append <code>VARS</code> to the set of variables declared in the <code>GIMPLE_BIND</code>
+statement <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: gimple_seq <b>gimple_bind_body</b> (<var>gbind *g</var>)<var><a name="index-gimple_005fbind_005fbody-2243"></a></var><br>
+<blockquote><p>Return the GIMPLE sequence contained in the <code>GIMPLE_BIND</code> statement
+<code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_bind_set_body</b> (<var>gbind *g, gimple_seq seq</var>)<var><a name="index-gimple_005fbind_005fset_005fbody-2244"></a></var><br>
+<blockquote><p>Set <code>SEQ</code> to be sequence contained in the <code>GIMPLE_BIND</code> statement <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_bind_add_stmt</b> (<var>gbind *gs, gimple stmt</var>)<var><a name="index-gimple_005fbind_005fadd_005fstmt-2245"></a></var><br>
+<blockquote><p>Append a statement to the end of a <code>GIMPLE_BIND</code>'s body. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_bind_add_seq</b> (<var>gbind *gs, gimple_seq seq</var>)<var><a name="index-gimple_005fbind_005fadd_005fseq-2246"></a></var><br>
+<blockquote><p>Append a sequence of statements to the end of a <code>GIMPLE_BIND</code>'s
+body. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree <b>gimple_bind_block</b> (<var>const gbind *g</var>)<var><a name="index-gimple_005fbind_005fblock-2247"></a></var><br>
+<blockquote><p>Return the <code>TREE_BLOCK</code> node associated with <code>GIMPLE_BIND</code> statement
+<code>G</code>. This is analogous to the <code>BIND_EXPR_BLOCK</code> field in trees. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_bind_set_block</b> (<var>gbind *g, tree block</var>)<var><a name="index-gimple_005fbind_005fset_005fblock-2248"></a></var><br>
+<blockquote><p>Set <code>BLOCK</code> to be the <code>TREE_BLOCK</code> node associated with <code>GIMPLE_BIND</code>
+statement <code>G</code>. 
+</p></blockquote></div>
+
+ </body></html>
+

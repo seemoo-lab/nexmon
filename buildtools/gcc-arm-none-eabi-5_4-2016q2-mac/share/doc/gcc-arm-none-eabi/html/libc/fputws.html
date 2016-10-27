@@ -1,0 +1,90 @@
+<html lang="en">
+<head>
+<title>fputws - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Stdio.html#Stdio" title="Stdio">
+<link rel="prev" href="fputwc.html#fputwc" title="fputwc">
+<link rel="next" href="fread.html#fread" title="fread">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="fputws"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="fread.html#fread">fread</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="fputwc.html#fputwc">fputwc</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Stdio.html#Stdio">Stdio</a>
+<hr>
+</div>
+
+<h3 class="section">4.23 <code>fputws</code>, <code>fputws_unlocked</code>&mdash;write a wide character string in a file or stream</h3>
+
+<p><a name="index-fputws-222"></a><a name="index-fputws_005funlocked-223"></a><a name="index-g_t_005ffputws_005fr-224"></a><a name="index-g_t_005ffputws_005funlocked_005fr-225"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;wchar.h&gt;
+     int fputws(const wchar_t *__restrict <var>ws</var>, FILE *__restrict <var>fp</var>);
+     
+     #define _GNU_SOURCE
+     #include &lt;wchar.h&gt;
+     int fputws_unlocked(const wchar_t *__restrict <var>ws</var>, FILE *__restrict <var>fp</var>);
+     
+     #include &lt;wchar.h&gt;
+     int _fputws_r(struct _reent *<var>ptr</var>, const wchar_t *<var>ws</var>,
+         FILE *<var>fp</var>);
+     
+     #include &lt;wchar.h&gt;
+     int _fputws_unlocked_r(struct _reent *<var>ptr</var>, const wchar_t *<var>ws</var>,
+         FILE *<var>fp</var>);
+     
+</pre>
+   <p><strong>Description</strong><br>
+<code>fputws</code> writes the wide character string at <var>ws</var> (but without the
+trailing null) to the file or stream identified by <var>fp</var>.
+
+   <p><code>fputws_unlocked</code> is a non-thread-safe version of <code>fputws</code>. 
+<code>fputws_unlocked</code> may only safely be used within a scope
+protected by flockfile() (or ftrylockfile()) and funlockfile().  This
+function may safely be used in a multi-threaded program if and only
+if they are called while the invoking thread owns the (FILE *)
+object, as is the case after a successful call to the flockfile() or
+ftrylockfile() functions.  If threads are disabled, then
+<code>fputws_unlocked</code> is equivalent to <code>fputws</code>.
+
+   <p><code>_fputws_r</code> and <code>_fputws_unlocked_r</code> are simply reentrant versions of the
+above that take an additional reentrant struct pointer argument: <var>ptr</var>.
+
+   <pre class="sp">
+
+</pre>
+<strong>Returns</strong><br>
+If successful, the result is a non-negative integer; otherwise, the result
+is <code>-1</code> to indicate an error.
+
+   <pre class="sp">
+
+</pre>
+<strong>Portability</strong><br>
+<code>fputws</code> is required by C99 and POSIX.1-2001.
+
+   <p><code>fputws_unlocked</code> is a GNU extension.
+
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

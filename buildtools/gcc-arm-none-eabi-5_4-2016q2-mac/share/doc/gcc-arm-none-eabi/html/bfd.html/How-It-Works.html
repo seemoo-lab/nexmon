@@ -1,0 +1,101 @@
+<html lang="en">
+<head>
+<title>How It Works - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Overview.html#Overview" title="Overview">
+<link rel="prev" href="History.html#History" title="History">
+<link rel="next" href="What-BFD-Version-2-Can-Do.html#What-BFD-Version-2-Can-Do" title="What BFD Version 2 Can Do">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="How-It-Works"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="What-BFD-Version-2-Can-Do.html#What-BFD-Version-2-Can-Do">What BFD Version 2 Can Do</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="History.html#History">History</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Overview.html#Overview">Overview</a>
+<hr>
+</div>
+
+<h3 class="section">1.2 How To Use BFD</h3>
+
+<p>To use the library, include <samp><span class="file">bfd.h</span></samp> and link with <samp><span class="file">libbfd.a</span></samp>.
+
+   <p>BFD provides a common interface to the parts of an object file
+for a calling application.
+
+   <p>When an application successfully opens a target file (object, archive, or
+whatever), a pointer to an internal structure is returned. This pointer
+points to a structure called <code>bfd</code>, described in
+<samp><span class="file">bfd.h</span></samp>.  Our convention is to call this pointer a BFD, and
+instances of it within code <code>abfd</code>.  All operations on
+the target object file are applied as methods to the BFD.  The mapping is
+defined within <code>bfd.h</code> in a set of macros, all beginning
+with `<samp><span class="samp">bfd_</span></samp>' to reduce namespace pollution.
+
+   <p>For example, this sequence does what you would probably expect:
+return the number of sections in an object file attached to a BFD
+<code>abfd</code>.
+
+<pre class="example">     <!-- @cartouche -->
+     #include "bfd.h"
+     
+     unsigned int number_of_sections (abfd)
+     bfd *abfd;
+     {
+       return bfd_count_sections (abfd);
+     }
+     <!-- @end cartouche -->
+</pre>
+   <p>The abstraction used within BFD is that an object file has:
+
+     <ul>
+<li>a header,
+<li>a number of sections containing raw data (see <a href="Sections.html#Sections">Sections</a>),
+<li>a set of relocations (see <a href="Relocations.html#Relocations">Relocations</a>), and
+<li>some symbol information (see <a href="Symbols.html#Symbols">Symbols</a>). 
+</ul>
+   Also, BFDs opened for archives have the additional attribute of an index
+and contain subordinate BFDs. This approach is fine for a.out and coff,
+but loses efficiency when applied to formats such as S-records and
+IEEE-695.
+
+   </body></html>
+

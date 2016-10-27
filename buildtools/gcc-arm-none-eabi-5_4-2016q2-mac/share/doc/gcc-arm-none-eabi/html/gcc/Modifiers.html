@@ -1,0 +1,130 @@
+<html lang="en">
+<head>
+<title>Modifiers - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Constraints.html#Constraints" title="Constraints">
+<link rel="prev" href="Multi_002dAlternative.html#Multi_002dAlternative" title="Multi-Alternative">
+<link rel="next" href="Machine-Constraints.html#Machine-Constraints" title="Machine Constraints">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Modifiers"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Machine-Constraints.html#Machine-Constraints">Machine Constraints</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Multi_002dAlternative.html#Multi_002dAlternative">Multi-Alternative</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Constraints.html#Constraints">Constraints</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">6.43.3.3 Constraint Modifier Characters</h5>
+
+<p><a name="index-modifiers-in-constraints-3475"></a><a name="index-constraint-modifier-characters-3476"></a>
+<!-- prevent bad page break with this line -->
+Here are constraint modifier characters.
+
+     
+<a name="index-g_t_0040samp_007b_003d_007d-in-constraint-3477"></a>
+<dl><dt>`<samp><span class="samp">=</span></samp>'<dd>Means that this operand is written to by this instruction:
+the previous value is discarded and replaced by new data.
+
+     <p><a name="index-g_t_0040samp_007b_002b_007d-in-constraint-3478"></a><br><dt>`<samp><span class="samp">+</span></samp>'<dd>Means that this operand is both read and written by the instruction.
+
+     <p>When the compiler fixes up the operands to satisfy the constraints,
+it needs to know which operands are read by the instruction and
+which are written by it.  `<samp><span class="samp">=</span></samp>' identifies an operand which is only
+written; `<samp><span class="samp">+</span></samp>' identifies an operand that is both read and written; all
+other operands are assumed to only be read.
+
+     <p>If you specify `<samp><span class="samp">=</span></samp>' or `<samp><span class="samp">+</span></samp>' in a constraint, you put it in the
+first character of the constraint string.
+
+     <p><a name="index-g_t_0040samp_007b_0026_007d-in-constraint-3479"></a><a name="index-earlyclobber-operand-3480"></a><br><dt>`<samp><span class="samp">&amp;</span></samp>'<dd>Means (in a particular alternative) that this operand is an
+<dfn>earlyclobber</dfn> operand, which is written before the instruction is
+finished using the input operands.  Therefore, this operand may not lie
+in a register that is read by the instruction or as part of any memory
+address.
+
+     <p>`<samp><span class="samp">&amp;</span></samp>' applies only to the alternative in which it is written.  In
+constraints with multiple alternatives, sometimes one alternative
+requires `<samp><span class="samp">&amp;</span></samp>' while others do not.  See, for example, the
+`<samp><span class="samp">movdf</span></samp>' insn of the 68000.
+
+     <p>A operand which is read by the instruction can be tied to an earlyclobber
+operand if its only use as an input occurs before the early result is
+written.  Adding alternatives of this form often allows GCC to produce
+better code when only some of the read operands can be affected by the
+earlyclobber. See, for example, the `<samp><span class="samp">mulsi3</span></samp>' insn of the ARM.
+
+     <p>Furthermore, if the <dfn>earlyclobber</dfn> operand is also a read/write
+operand, then that operand is written only after it's used.
+
+     <p>`<samp><span class="samp">&amp;</span></samp>' does not obviate the need to write `<samp><span class="samp">=</span></samp>' or `<samp><span class="samp">+</span></samp>'.  As
+<dfn>earlyclobber</dfn> operands are always written, a read-only
+<dfn>earlyclobber</dfn> operand is ill-formed and will be rejected by the
+compiler.
+
+     <p><a name="index-g_t_0040samp_007b_0025_007d-in-constraint-3481"></a><br><dt>`<samp><span class="samp">%</span></samp>'<dd>Declares the instruction to be commutative for this operand and the
+following operand.  This means that the compiler may interchange the
+two operands if that is the cheapest way to make all operands fit the
+constraints.  `<samp><span class="samp">%</span></samp>' applies to all alternatives and must appear as
+the first character in the constraint.  Only read-only operands can use
+`<samp><span class="samp">%</span></samp>'.
+
+     <p>GCC can only handle one commutative pair in an asm; if you use more,
+the compiler may fail.  Note that you need not use the modifier if
+the two alternatives are strictly identical; this would only waste
+time in the reload pass.  The modifier is not operational after
+register allocation, so the result of <code>define_peephole2</code>
+and <code>define_split</code>s performed after reload cannot rely on
+`<samp><span class="samp">%</span></samp>' to make the intended insn match.
+
+     <p><a name="index-g_t_0040samp_007b_0023_007d-in-constraint-3482"></a><br><dt>`<samp><span class="samp">#</span></samp>'<dd>Says that all following characters, up to the next comma, are to be
+ignored as a constraint.  They are significant only for choosing
+register preferences.
+
+     <p><a name="index-g_t_0040samp_007b_002a_007d-in-constraint-3483"></a><br><dt>`<samp><span class="samp">*</span></samp>'<dd>Says that the following character should be ignored when choosing
+register preferences.  `<samp><span class="samp">*</span></samp>' has no effect on the meaning of the
+constraint as a constraint, and no effect on reloading.  For LRA
+`<samp><span class="samp">*</span></samp>' additionally disparages slightly the alternative if the
+following character matches the operand.
+
+ </dl>
+
+ </body></html>
+

@@ -1,0 +1,80 @@
+<html lang="en">
+<head>
+<title>Dump files and streams - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Optimization-info.html#Optimization-info" title="Optimization info">
+<link rel="prev" href="Optimization-groups.html#Optimization-groups" title="Optimization groups">
+<link rel="next" href="Dump-output-verbosity.html#Dump-output-verbosity" title="Dump output verbosity">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Dump-files-and-streams"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Dump-output-verbosity.html#Dump-output-verbosity">Dump output verbosity</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Optimization-groups.html#Optimization-groups">Optimization groups</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Optimization-info.html#Optimization-info">Optimization info</a>
+<hr>
+</div>
+
+<h4 class="subsection">9.7.3 Dump files and streams</h4>
+
+<p><a name="index-optimization-info-file-names-1704"></a>
+There are two separate output streams available for outputting
+optimization information from passes. Note that both these streams
+accept <code>stderr</code> and <code>stdout</code> as valid streams and thus it is
+possible to dump output to standard output or error. This is specially
+handy for outputting all available information in a single file by
+redirecting <code>stderr</code>.
+
+     <dl>
+<dt><code>pstream</code><dd>This stream is for pass-specific dump output. For example,
+<samp><span class="option">-fdump-tree-vect=foo.v</span></samp> dumps tree vectorization pass output
+into the given file name <samp><span class="file">foo.v</span></samp>. If the file name is not provided,
+the default file name is based on the source file and pass number. Note
+that one could also use special file names <code>stdout</code> and
+<code>stderr</code> for dumping to standard output and standard error
+respectively.
+
+     <br><dt><code>alt_stream</code><dd>This steam is used for printing optimization specific output in
+response to the <samp><span class="option">-fopt-info</span></samp>. Again a file name can be given. If
+the file name is not given, it defaults to <code>stderr</code>. 
+</dl>
+
+ </body></html>
+

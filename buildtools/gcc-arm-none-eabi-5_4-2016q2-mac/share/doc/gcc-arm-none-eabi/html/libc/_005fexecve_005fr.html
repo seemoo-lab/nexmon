@@ -1,0 +1,57 @@
+<html lang="en">
+<head>
+<title>_execve_r - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Reentrant-Syscalls.html#Reentrant-Syscalls" title="Reentrant Syscalls">
+<link rel="prev" href="_005fclose_005fr.html#g_t_005fclose_005fr" title="_close_r">
+<link rel="next" href="_005ffork_005fr.html#g_t_005ffork_005fr" title="_fork_r">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="_execve_r"></a>
+<a name="g_t_005fexecve_005fr"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="_005ffork_005fr.html#g_t_005ffork_005fr">_fork_r</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="_005fclose_005fr.html#g_t_005fclose_005fr">_close_r</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Reentrant-Syscalls.html#Reentrant-Syscalls">Reentrant Syscalls</a>
+<hr>
+</div>
+
+<h4 class="subsection">12.2.2 <code>_execve_r</code>&mdash;Reentrant version of execve</h4>
+
+<p><a name="index-g_t_005fexecve_005fr-537"></a><strong>Synopsis</strong>
+<pre class="example">     #include &lt;reent.h&gt;
+     int _execve_r(struct _reent *<var>ptr</var>, const char *<var>name</var>,
+         char *const <var>argv</var>[], char *const <var>env</var>[]);
+     
+</pre>
+   <p><strong>Description</strong><br>
+This is a reentrant version of <code>execve</code>.  It
+takes a pointer to the global data block, which holds
+<code>errno</code>.
+
+   <pre class="sp">
+
+</pre>
+   <pre class="sp">
+
+</pre>
+
+   </body></html>
+

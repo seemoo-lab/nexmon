@@ -1,0 +1,115 @@
+<html lang="en">
+<head>
+<title>gcov Testing - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Testsuites.html#Testsuites" title="Testsuites">
+<link rel="prev" href="LTO-Testing.html#LTO-Testing" title="LTO Testing">
+<link rel="next" href="profopt-Testing.html#profopt-Testing" title="profopt Testing">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="gcov-Testing"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="profopt-Testing.html#profopt-Testing">profopt Testing</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="LTO-Testing.html#LTO-Testing">LTO Testing</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Testsuites.html#Testsuites">Testsuites</a>
+<hr>
+</div>
+
+<h3 class="section">7.7 Support for testing <samp><span class="command">gcov</span></samp></h3>
+
+<p>Language-independent support for testing <samp><span class="command">gcov</span></samp>, and for checking
+that branch profiling produces expected values, is provided by the
+expect file <samp><span class="file">lib/gcov.exp</span></samp>.  <samp><span class="command">gcov</span></samp> tests also rely on procedures
+in <samp><span class="file">lib/gcc-dg.exp</span></samp> to compile and run the test program.  A typical
+<samp><span class="command">gcov</span></samp> test contains the following DejaGnu commands within comments:
+
+<pre class="smallexample">     { dg-options "-fprofile-arcs -ftest-coverage" }
+     { dg-do run { target native } }
+     { dg-final { run-gcov sourcefile } }
+</pre>
+ <p>Checks of <samp><span class="command">gcov</span></samp> output can include line counts, branch percentages,
+and call return percentages.  All of these checks are requested via
+commands that appear in comments in the test's source file. 
+Commands to check line counts are processed by default. 
+Commands to check branch percentages and call return percentages are
+processed if the <samp><span class="command">run-gcov</span></samp> command has arguments <code>branches</code>
+or <code>calls</code>, respectively.  For example, the following specifies
+checking both, as well as passing <samp><span class="option">-b</span></samp> to <samp><span class="command">gcov</span></samp>:
+
+<pre class="smallexample">     { dg-final { run-gcov branches calls { -b sourcefile } } }
+</pre>
+ <p>A line count command appears within a comment on the source line
+that is expected to get the specified count and has the form
+<code>count(</code><var>cnt</var><code>)</code>.  A test should only check line counts for
+lines that will get the same count for any architecture.
+
+ <p>Commands to check branch percentages (<code>branch</code>) and call
+return percentages (<code>returns</code>) are very similar to each other. 
+A beginning command appears on or before the first of a range of
+lines that will report the percentage, and the ending command
+follows that range of lines.  The beginning command can include a
+list of percentages, all of which are expected to be found within
+the range.  A range is terminated by the next command of the same
+kind.  A command <code>branch(end)</code> or <code>returns(end)</code> marks
+the end of a range without starting a new one.  For example:
+
+<pre class="smallexample">     if (i &gt; 10 &amp;&amp; j &gt; i &amp;&amp; j &lt; 20)  /* <span class="roman">branch(27 50 75)</span> */
+                                     /* <span class="roman">branch(end)</span> */
+       foo (i, j);
+</pre>
+ <p>For a call return percentage, the value specified is the
+percentage of calls reported to return.  For a branch percentage,
+the value is either the expected percentage or 100 minus that
+value, since the direction of a branch can differ depending on the
+target or the optimization level.
+
+ <p>Not all branches and calls need to be checked.  A test should not
+check for branches that might be optimized away or replaced with
+predicated instructions.  Don't check for calls inserted by the
+compiler or ones that might be inlined or optimized away.
+
+ <p>A single test can check for combinations of line counts, branch
+percentages, and call return percentages.  The command to check a
+line count must appear on the line that will report that count, but
+commands to check branch percentages and call return percentages can
+bracket the lines that report them.
+
+ </body></html>
+

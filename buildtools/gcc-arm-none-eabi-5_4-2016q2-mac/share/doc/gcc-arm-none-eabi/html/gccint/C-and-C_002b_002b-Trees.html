@@ -1,0 +1,109 @@
+<html lang="en">
+<head>
+<title>C and C++ Trees - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="GENERIC.html#GENERIC" title="GENERIC">
+<link rel="prev" href="Language_002ddependent-trees.html#Language_002ddependent-trees" title="Language-dependent trees">
+<link rel="next" href="Java-Trees.html#Java-Trees" title="Java Trees">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="C-and-C++-Trees"></a>
+<a name="C-and-C_002b_002b-Trees"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Java-Trees.html#Java-Trees">Java Trees</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Language_002ddependent-trees.html#Language_002ddependent-trees">Language-dependent trees</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="GENERIC.html#GENERIC">GENERIC</a>
+<hr>
+</div>
+
+<h3 class="section">10.10 C and C++ Trees</h3>
+
+<p>This section documents the internal representation used by GCC to
+represent C and C++ source programs.  When presented with a C or C++
+source program, GCC parses the program, performs semantic analysis
+(including the generation of error messages), and then produces the
+internal representation described here.  This representation contains a
+complete representation for the entire translation unit provided as
+input to the front end.  This representation is then typically processed
+by a code-generator in order to produce machine code, but could also be
+used in the creation of source browsers, intelligent editors, automatic
+documentation generators, interpreters, and any other programs needing
+the ability to process C or C++ code.
+
+ <p>This section explains the internal representation.  In particular, it
+documents the internal representation for C and C++ source
+constructs, and the macros, functions, and variables that can be used to
+access these constructs.  The C++ representation is largely a superset
+of the representation used in the C front end.  There is only one
+construct used in C that does not appear in the C++ front end and that
+is the GNU &ldquo;nested function&rdquo; extension.  Many of the macros documented
+here do not apply in C because the corresponding language constructs do
+not appear in C.
+
+ <p>The C and C++ front ends generate a mix of GENERIC trees and ones
+specific to C and C++.  These language-specific trees are higher-level
+constructs than the ones in GENERIC to make the parser's job easier. 
+This section describes those trees that aren't part of GENERIC as well
+as aspects of GENERIC trees that are treated in a language-specific
+manner.
+
+ <p>If you are developing a &ldquo;back end&rdquo;, be it is a code-generator or some
+other tool, that uses this representation, you may occasionally find
+that you need to ask questions not easily answered by the functions and
+macros available here.  If that situation occurs, it is quite likely
+that GCC already supports the functionality you desire, but that the
+interface is simply not documented here.  In that case, you should ask
+the GCC maintainers (via mail to <a href="mailto:gcc@gcc.gnu.org">gcc@gcc.gnu.org</a>) about
+documenting the functionality you require.  Similarly, if you find
+yourself writing functions that do not deal directly with your back end,
+but instead might be useful to other people using the GCC front end, you
+should submit your patches for inclusion in GCC.
+
+<ul class="menu">
+<li><a accesskey="1" href="Types-for-C_002b_002b.html#Types-for-C_002b_002b">Types for C++</a>:                Fundamental and aggregate types. 
+<li><a accesskey="2" href="Namespaces.html#Namespaces">Namespaces</a>:                   Namespaces. 
+<li><a accesskey="3" href="Classes.html#Classes">Classes</a>:                      Classes. 
+<li><a accesskey="4" href="Functions-for-C_002b_002b.html#Functions-for-C_002b_002b">Functions for C++</a>:            Overloading and accessors for C++. 
+<li><a accesskey="5" href="Statements-for-C_002b_002b.html#Statements-for-C_002b_002b">Statements for C++</a>:           Statements specific to C and C++. 
+<li><a accesskey="6" href="C_002b_002b-Expressions.html#C_002b_002b-Expressions">C++ Expressions</a>:     From <code>typeid</code> to <code>throw</code>. 
+</ul>
+
+ </body></html>
+

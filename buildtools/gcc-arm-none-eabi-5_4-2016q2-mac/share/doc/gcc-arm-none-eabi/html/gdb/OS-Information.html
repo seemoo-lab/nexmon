@@ -1,0 +1,171 @@
+<html lang="en">
+<head>
+<title>OS Information - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Data.html#Data" title="Data">
+<link rel="prev" href="Vector-Unit.html#Vector-Unit" title="Vector Unit">
+<link rel="next" href="Memory-Region-Attributes.html#Memory-Region-Attributes" title="Memory Region Attributes">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="OS-Information"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Memory-Region-Attributes.html#Memory-Region-Attributes">Memory Region Attributes</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Vector-Unit.html#Vector-Unit">Vector Unit</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Data.html#Data">Data</a>
+<hr>
+</div>
+
+<h3 class="section">10.16 Operating System Auxiliary Information</h3>
+
+<p><a name="index-OS-information-722"></a>
+<span class="sc">gdb</span> provides interfaces to useful OS facilities that can help
+you debug your program.
+
+   <p><a name="index-auxiliary-vector-723"></a><a name="index-vector_002c-auxiliary-724"></a>Some operating systems supply an <dfn>auxiliary vector</dfn> to programs at
+startup.  This is akin to the arguments and environment that you
+specify for a program, but contains a system-dependent variety of
+binary values that tell system libraries important details about the
+hardware, operating system, and process.  Each value's purpose is
+identified by an integer tag; the meanings are well-known but system-specific. 
+Depending on the configuration and operating system facilities,
+<span class="sc">gdb</span> may be able to show you this information.  For remote
+targets, this functionality may further depend on the remote stub's
+support of the `<samp><span class="samp">qXfer:auxv:read</span></samp>' packet, see
+<a href="qXfer-auxiliary-vector-read.html#qXfer-auxiliary-vector-read">qXfer auxiliary vector read</a>.
+
+     
+<a name="index-info-auxv-725"></a>
+<dl><dt><code>info auxv</code><dd>Display the auxiliary vector of the inferior, which can be either a
+live process or a core dump file.  <span class="sc">gdb</span> prints each tag value
+numerically, and also shows names and text descriptions for recognized
+tags.  Some values in the vector are numbers, some bit masks, and some
+pointers to strings or other data.  <span class="sc">gdb</span> displays each value in the
+most appropriate form for a recognized tag, and in hexadecimal for
+an unrecognized tag. 
+</dl>
+
+   <p>On some targets, <span class="sc">gdb</span> can access operating system-specific
+information and show it to you.  The types of information available
+will differ depending on the type of operating system running on the
+target.  The mechanism used to fetch the data is described in
+<a href="Operating-System-Information.html#Operating-System-Information">Operating System Information</a>.  For remote targets, this
+functionality depends on the remote stub's support of the
+`<samp><span class="samp">qXfer:osdata:read</span></samp>' packet, see <a href="qXfer-osdata-read.html#qXfer-osdata-read">qXfer osdata read</a>.
+
+     
+<a name="index-info-os-726"></a>
+<dl><dt><code>info os </code><var>infotype</var><dd>
+Display OS information of the requested type.
+
+     <p>On <span class="sc">gnu</span>/Linux, the following values of <var>infotype</var> are valid:
+
+     <p><a name="linux-info-os-infotypes"></a>
+          
+<a name="index-info-os-cpus-727"></a>
+<dl><dt><code>cpus</code><dd>Display the list of all CPUs/cores. For each CPU/core, <span class="sc">gdb</span> prints
+the available fields from /proc/cpuinfo. For each supported architecture
+different fields are available. Two common entries are processor which gives
+CPU number and bogomips; a system constant that is calculated during
+kernel initialization.
+
+          <p><a name="index-info-os-files-728"></a><br><dt><code>files</code><dd>Display the list of open file descriptors on the target.  For each
+file descriptor, <span class="sc">gdb</span> prints the identifier of the process
+owning the descriptor, the command of the owning process, the value
+of the descriptor, and the target of the descriptor.
+
+          <p><a name="index-info-os-modules-729"></a><br><dt><code>modules</code><dd>Display the list of all loaded kernel modules on the target.  For each
+module, <span class="sc">gdb</span> prints the module name, the size of the module in
+bytes, the number of times the module is used, the dependencies of the
+module, the status of the module, and the address of the loaded module
+in memory.
+
+          <p><a name="index-info-os-msg-730"></a><br><dt><code>msg</code><dd>Display the list of all System V message queues on the target.  For each
+message queue, <span class="sc">gdb</span> prints the message queue key, the message
+queue identifier, the access permissions, the current number of bytes
+on the queue, the current number of messages on the queue, the processes
+that last sent and received a message on the queue, the user and group
+of the owner and creator of the message queue, the times at which a
+message was last sent and received on the queue, and the time at which
+the message queue was last changed.
+
+          <p><a name="index-info-os-processes-731"></a><br><dt><code>processes</code><dd>Display the list of processes on the target.  For each process,
+<span class="sc">gdb</span> prints the process identifier, the name of the user, the
+command corresponding to the process, and the list of processor cores
+that the process is currently running on.  (To understand what these
+properties mean, for this and the following info types, please consult
+the general <span class="sc">gnu</span>/Linux documentation.)
+
+          <p><a name="index-info-os-procgroups-732"></a><br><dt><code>procgroups</code><dd>Display the list of process groups on the target.  For each process,
+<span class="sc">gdb</span> prints the identifier of the process group that it belongs
+to, the command corresponding to the process group leader, the process
+identifier, and the command line of the process.  The list is sorted
+first by the process group identifier, then by the process identifier,
+so that processes belonging to the same process group are grouped together
+and the process group leader is listed first.
+
+          <p><a name="index-info-os-semaphores-733"></a><br><dt><code>semaphores</code><dd>Display the list of all System V semaphore sets on the target.  For each
+semaphore set, <span class="sc">gdb</span> prints the semaphore set key, the semaphore
+set identifier, the access permissions, the number of semaphores in the
+set, the user and group of the owner and creator of the semaphore set,
+and the times at which the semaphore set was operated upon and changed.
+
+          <p><a name="index-info-os-shm-734"></a><br><dt><code>shm</code><dd>Display the list of all System V shared-memory regions on the target. 
+For each shared-memory region, <span class="sc">gdb</span> prints the region key,
+the shared-memory identifier, the access permissions, the size of the
+region, the process that created the region, the process that last
+attached to or detached from the region, the current number of live
+attaches to the region, and the times at which the region was last
+attached to, detach from, and changed.
+
+          <p><a name="index-info-os-sockets-735"></a><br><dt><code>sockets</code><dd>Display the list of Internet-domain sockets on the target.  For each
+socket, <span class="sc">gdb</span> prints the address and port of the local and
+remote endpoints, the current state of the connection, the creator of
+the socket, the IP address family of the socket, and the type of the
+connection.
+
+          <p><a name="index-info-os-threads-736"></a><br><dt><code>threads</code><dd>Display the list of threads running on the target.  For each thread,
+<span class="sc">gdb</span> prints the identifier of the process that the thread
+belongs to, the command of the process, the thread identifier, and the
+processor core that it is currently running on.  The main thread of a
+process is not listed. 
+</dl>
+
+     <br><dt><code>info os</code><dd>If <var>infotype</var> is omitted, then list the possible values for
+<var>infotype</var> and the kind of OS information available for each
+<var>infotype</var>.  If the target does not return a list of possible
+types, this command will report an error. 
+</dl>
+
+   </body></html>
+

@@ -1,0 +1,182 @@
+<html lang="en">
+<head>
+<title>Tail Call Frames - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Optimized-Code.html#Optimized-Code" title="Optimized Code">
+<link rel="prev" href="Inline-Functions.html#Inline-Functions" title="Inline Functions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Tail-Call-Frames"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Inline-Functions.html#Inline-Functions">Inline Functions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Optimized-Code.html#Optimized-Code">Optimized Code</a>
+<hr>
+</div>
+
+<h3 class="section">11.2 Tail Call Frames</h3>
+
+<p><a name="index-tail-call-frames_002c-debugging-788"></a>
+Function <code>B</code> can call function <code>C</code> in its very last statement.  In
+unoptimized compilation the call of <code>C</code> is immediately followed by return
+instruction at the end of <code>B</code> code.  Optimizing compiler may replace the
+call and return in function <code>B</code> into one jump to function <code>C</code>
+instead.  Such use of a jump instruction is called <dfn>tail call</dfn>.
+
+   <p>During execution of function <code>C</code>, there will be no indication in the
+function call stack frames that it was tail-called from <code>B</code>.  If function
+<code>A</code> regularly calls function <code>B</code> which tail-calls function <code>C</code>,
+then <span class="sc">gdb</span> will see <code>A</code> as the caller of <code>C</code>.  However, in
+some cases <span class="sc">gdb</span> can determine that <code>C</code> was tail-called from
+<code>B</code>, and it will then create fictitious call frame for that, with the
+return address set up as if <code>B</code> called <code>C</code> normally.
+
+   <p>This functionality is currently supported only by DWARF 2 debugging format and
+the compiler has to produce `<samp><span class="samp">DW_TAG_GNU_call_site</span></samp>' tags.  With
+<span class="sc">gcc</span>, you need to specify <samp><span class="option">-O -g</span></samp> during compilation, to get
+this information.
+
+   <p><kbd>info frame</kbd> command (see <a href="Frame-Info.html#Frame-Info">Frame Info</a>) will indicate the tail call frame
+kind by text <code>tail call frame</code> such as in this sample <span class="sc">gdb</span> output:
+
+<pre class="smallexample">     (gdb) x/i $pc - 2
+        0x40066b &lt;b(int, double)+11&gt;: jmp 0x400640 &lt;c(int, double)&gt;
+     (gdb) info frame
+     Stack level 1, frame at 0x7fffffffda30:
+      rip = 0x40066d in b (amd64-entry-value.cc:59); saved rip 0x4004c5
+      tail call frame, caller of frame at 0x7fffffffda30
+      source language c++.
+      Arglist at unknown address.
+      Locals at unknown address, Previous frame's sp is 0x7fffffffda30
+</pre>
+   <p>The detection of all the possible code path executions can find them ambiguous. 
+There is no execution history stored (possible <a href="Reverse-Execution.html#Reverse-Execution">Reverse Execution</a> is never
+used for this purpose) and the last known caller could have reached the known
+callee by multiple different jump sequences.  In such case <span class="sc">gdb</span> still
+tries to show at least all the unambiguous top tail callers and all the
+unambiguous bottom tail calees, if any.
+
+     <dl>
+<a name="set-debug-entry_002dvalues"></a>
+<dt><code>set debug entry-values</code><dd><a name="index-set-debug-entry_002dvalues-789"></a>When set to on, enables printing of analysis messages for both frame argument
+values at function entry and tail calls.  It will show all the possible valid
+tail calls code paths it has considered.  It will also print the intersection
+of them with the final unambiguous (possibly partial or even empty) code path
+result.
+
+     <br><dt><code>show debug entry-values</code><dd><a name="index-show-debug-entry_002dvalues-790"></a>Show the current state of analysis messages printing for both frame argument
+values at function entry and tail calls. 
+</dl>
+
+   <p>The analysis messages for tail calls can for example show why the virtual tail
+call frame for function <code>c</code> has not been recognized (due to the indirect
+reference by variable <code>x</code>):
+
+<pre class="smallexample">     static void __attribute__((noinline, noclone)) c (void);
+     void (*x) (void) = c;
+     static void __attribute__((noinline, noclone)) a (void) { x++; }
+     static void __attribute__((noinline, noclone)) c (void) { a (); }
+     int main (void) { x (); return 0; }
+     
+     Breakpoint 1, DW_OP_GNU_entry_value resolving cannot find
+     DW_TAG_GNU_call_site 0x40039a in main
+     a () at t.c:3
+     3	static void __attribute__((noinline, noclone)) a (void) { x++; }
+     (gdb) bt
+     #0  a () at t.c:3
+     #1  0x000000000040039a in main () at t.c:5
+</pre>
+   <p>Another possibility is an ambiguous virtual tail call frames resolution:
+
+<pre class="smallexample">     int i;
+     static void __attribute__((noinline, noclone)) f (void) { i++; }
+     static void __attribute__((noinline, noclone)) e (void) { f (); }
+     static void __attribute__((noinline, noclone)) d (void) { f (); }
+     static void __attribute__((noinline, noclone)) c (void) { d (); }
+     static void __attribute__((noinline, noclone)) b (void)
+     { if (i) c (); else e (); }
+     static void __attribute__((noinline, noclone)) a (void) { b (); }
+     int main (void) { a (); return 0; }
+     
+     tailcall: initial: 0x4004d2(a) 0x4004ce(b) 0x4004b2(c) 0x4004a2(d)
+     tailcall: compare: 0x4004d2(a) 0x4004cc(b) 0x400492(e)
+     tailcall: reduced: 0x4004d2(a) |
+     (gdb) bt
+     #0  f () at t.c:2
+     #1  0x00000000004004d2 in a () at t.c:8
+     #2  0x0000000000400395 in main () at t.c:9
+</pre>
+   <!-- Convert CALLSEQ#A to CALLSEQ#B depending on HAVE_MAKEINFO_CLICK. -->
+<p>Frames #0 and #2 are real, #1 is a virtual tail call frame. 
+The code can have possible execution paths <code>main-&gt;a-&gt;b-&gt;c-&gt;d-&gt;f</code> or
+<code>main-&gt;a-&gt;b-&gt;e-&gt;f</code>, <span class="sc">gdb</span> cannot find which one from the inferior state.
+
+   <p><code>initial:</code> state shows some random possible calling sequence <span class="sc">gdb</span>
+has found.  It then finds another possible calling sequcen - that one is
+prefixed by <code>compare:</code>.  The non-ambiguous intersection of these two is
+printed as the <code>reduced:</code> calling sequence.  That one could have many
+futher <code>compare:</code> and <code>reduced:</code> statements as long as there remain
+any non-ambiguous sequence entries.
+
+   <p>For the frame of function <code>b</code> in both cases there are different possible
+<code>$pc</code> values (<code>0x4004cc</code> or <code>0x4004ce</code>), therefore this frame is
+also ambigous.  The only non-ambiguous frame is the one for function <code>a</code>,
+therefore this one is displayed to the user while the ambiguous frames are
+omitted.
+
+   <p>There can be also reasons why printing of frame argument values at function
+entry may fail:
+
+<pre class="smallexample">     int v;
+     static void __attribute__((noinline, noclone)) c (int i) { v++; }
+     static void __attribute__((noinline, noclone)) a (int i);
+     static void __attribute__((noinline, noclone)) b (int i) { a (i); }
+     static void __attribute__((noinline, noclone)) a (int i)
+     { if (i) b (i - 1); else c (0); }
+     int main (void) { a (5); return 0; }
+     
+     (gdb) bt
+     #0  c (i=i@entry=0) at t.c:2
+     #1  0x0000000000400428 in a (DW_OP_GNU_entry_value resolving has found
+     function "a" at 0x400420 can call itself via tail calls
+     i=&lt;optimized out&gt;) at t.c:6
+     #2  0x000000000040036e in main () at t.c:7
+</pre>
+   <p><span class="sc">gdb</span> cannot find out from the inferior state if and how many times did
+function <code>a</code> call itself (via function <code>b</code>) as these calls would be
+tail calls.  Such tail calls would modify thue <code>i</code> variable, therefore
+<span class="sc">gdb</span> cannot be sure the value it knows would be right - <span class="sc">gdb</span>
+prints <code>&lt;optimized out&gt;</code> instead.
+
+   </body></html>
+

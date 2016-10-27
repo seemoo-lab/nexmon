@@ -1,0 +1,128 @@
+<html lang="en">
+<head>
+<title>Progspaces In Guile - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Guile-API.html#Guile-API" title="Guile API">
+<link rel="prev" href="Parameters-In-Guile.html#Parameters-In-Guile" title="Parameters In Guile">
+<link rel="next" href="Objfiles-In-Guile.html#Objfiles-In-Guile" title="Objfiles In Guile">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Progspaces-In-Guile"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Objfiles-In-Guile.html#Objfiles-In-Guile">Objfiles In Guile</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Parameters-In-Guile.html#Parameters-In-Guile">Parameters In Guile</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Guile-API.html#Guile-API">Guile API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.3.3.13 Program Spaces In Guile</h5>
+
+<p><a name="index-progspaces-in-guile-2552"></a><a name="index-g_t_003cgdb_003aprogspace_003e-2553"></a>A program space, or <dfn>progspace</dfn>, represents a symbolic view
+of an address space. 
+It consists of all of the objfiles of the program. 
+See <a href="Objfiles-In-Guile.html#Objfiles-In-Guile">Objfiles In Guile</a>. 
+See <a href="Inferiors-and-Programs.html#Inferiors-and-Programs">program spaces</a>, for more details
+about program spaces.
+
+   <p>Each progspace is represented by an instance of the <code>&lt;gdb:progspace&gt;</code>
+smob.  See <a href="GDB-Scheme-Data-Types.html#GDB-Scheme-Data-Types">GDB Scheme Data Types</a>.
+
+   <p>The following progspace-related functions are available in the
+<code>(gdb)</code> module:
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>progspace?</b><var> object<a name="index-progspace_003f-2554"></a></var><br>
+<blockquote><p>Return <code>#t</code> if <var>object</var> is a <code>&lt;gdb:progspace&gt;</code> object. 
+Otherwise return <code>#f</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>progspace-valid?</b><var> progspace<a name="index-progspace_002dvalid_003f-2555"></a></var><br>
+<blockquote><p>Return <code>#t</code> if <var>progspace</var> is valid, <code>#f</code> if not. 
+A <code>&lt;gdb:progspace&gt;</code> object can become invalid
+if the program it refers to is not loaded in <span class="sc">gdb</span> any longer. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>current-progspace</b><var><a name="index-current_002dprogspace-2556"></a></var><br>
+<blockquote><p>This function returns the program space of the currently selected inferior. 
+There is always a current progspace, this never returns <code>#f</code>. 
+See <a href="Inferiors-and-Programs.html#Inferiors-and-Programs">Inferiors and Programs</a>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>progspaces</b><var><a name="index-progspaces-2557"></a></var><br>
+<blockquote><p>Return a list of all the progspaces currently known to <span class="sc">gdb</span>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>progspace-filename</b><var> progspace<a name="index-progspace_002dfilename-2558"></a></var><br>
+<blockquote><p>Return the absolute file name of <var>progspace</var> as a string. 
+This is the name of the file passed as the argument to the <code>file</code>
+or <code>symbol-file</code> commands. 
+If the program space does not have an associated file name,
+then <code>#f</code> is returned.  This occurs, for example, when <span class="sc">gdb</span>
+is started without a program to debug.
+
+        <p>A <code>gdb:invalid-object-error</code> exception is thrown if <var>progspace</var>
+is invalid. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>progspace-objfiles</b><var> progspace<a name="index-progspace_002dobjfiles-2559"></a></var><br>
+<blockquote><p>Return the list of objfiles of <var>progspace</var>. 
+The order of objfiles in the result is arbitrary. 
+Each element is an object of type <code>&lt;gdb:objfile&gt;</code>. 
+See <a href="Objfiles-In-Guile.html#Objfiles-In-Guile">Objfiles In Guile</a>.
+
+        <p>A <code>gdb:invalid-object-error</code> exception is thrown if <var>progspace</var>
+is invalid. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>progspace-pretty-printers</b><var> progspace<a name="index-progspace_002dpretty_002dprinters-2560"></a></var><br>
+<blockquote><p>Return the list of pretty-printers of <var>progspace</var>. 
+Each element is an object of type <code>&lt;gdb:pretty-printer&gt;</code>. 
+See <a href="Guile-Pretty-Printing-API.html#Guile-Pretty-Printing-API">Guile Pretty Printing API</a>, for more information. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Scheme Procedure: <b>set-progspace-pretty-printers!</b><var> progspace printer-list<a name="index-set_002dprogspace_002dpretty_002dprinters_0021-2561"></a></var><br>
+<blockquote><p>Set the list of registered <code>&lt;gdb:pretty-printer&gt;</code> objects for
+<var>progspace</var> to <var>printer-list</var>. 
+See <a href="Guile-Pretty-Printing-API.html#Guile-Pretty-Printing-API">Guile Pretty Printing API</a>, for more information. 
+</p></blockquote></div>
+
+   </body></html>
+

@@ -1,0 +1,263 @@
+<html lang="en">
+<head>
+<title>aout - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="BFD-back-ends.html#BFD-back-ends" title="BFD back ends">
+<link rel="prev" href="What-to-Put-Where.html#What-to-Put-Where" title="What to Put Where">
+<link rel="next" href="coff.html#coff" title="coff">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="aout"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="coff.html#coff">coff</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="What-to-Put-Where.html#What-to-Put-Where">What to Put Where</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="BFD-back-ends.html#BFD-back-ends">BFD back ends</a>
+<hr>
+</div>
+
+<h3 class="section">3.2 a.out backends</h3>
+
+<p><strong>Description</strong><br>
+BFD supports a number of different flavours of a.out format,
+though the major differences are only the sizes of the
+structures on disk, and the shape of the relocation
+information.
+
+   <p>The support is split into a basic support file <samp><span class="file">aoutx.h</span></samp>
+and other files which derive functions from the base. One
+derivation file is <samp><span class="file">aoutf1.h</span></samp> (for a.out flavour 1), and
+adds to the basic a.out functions support for sun3, sun4, 386
+and 29k a.out files, to create a target jump vector for a
+specific target.
+
+   <p>This information is further split out into more specific files
+for each machine, including <samp><span class="file">sunos.c</span></samp> for sun3 and sun4,
+<samp><span class="file">newsos3.c</span></samp> for the Sony NEWS, and <samp><span class="file">demo64.c</span></samp> for a
+demonstration of a 64 bit a.out format.
+
+   <p>The base file <samp><span class="file">aoutx.h</span></samp> defines general mechanisms for
+reading and writing records to and from disk and various
+other methods which BFD requires. It is included by
+<samp><span class="file">aout32.c</span></samp> and <samp><span class="file">aout64.c</span></samp> to form the names
+<code>aout_32_swap_exec_header_in</code>, <code>aout_64_swap_exec_header_in</code>, etc.
+
+   <p>As an example, this is what goes on to make the back end for a
+sun4, from <samp><span class="file">aout32.c</span></samp>:
+
+<pre class="example">            #define ARCH_SIZE 32
+            #include "aoutx.h"
+</pre>
+   <p>Which exports names:
+
+<pre class="example">            ...
+            aout_32_canonicalize_reloc
+            aout_32_find_nearest_line
+            aout_32_get_lineno
+            aout_32_get_reloc_upper_bound
+            ...
+</pre>
+   <p>from <samp><span class="file">sunos.c</span></samp>:
+
+<pre class="example">            #define TARGET_NAME "a.out-sunos-big"
+            #define VECNAME    sparc_aout_sunos_be_vec
+            #include "aoutf1.h"
+</pre>
+   <p>requires all the names from <samp><span class="file">aout32.c</span></samp>, and produces the jump vector
+
+<pre class="example">            sparc_aout_sunos_be_vec
+</pre>
+   <p>The file <samp><span class="file">host-aout.c</span></samp> is a special case.  It is for a large set
+of hosts that use &ldquo;more or less standard&rdquo; a.out files, and
+for which cross-debugging is not interesting.  It uses the
+standard 32-bit a.out support routines, but determines the
+file offsets and addresses of the text, data, and BSS
+sections, the machine architecture and machine type, and the
+entry point address, in a host-dependent manner.  Once these
+values have been determined, generic code is used to handle
+the  object file.
+
+   <p>When porting it to run on a new system, you must supply:
+
+<pre class="example">             HOST_PAGE_SIZE
+             HOST_SEGMENT_SIZE
+             HOST_MACHINE_ARCH       (optional)
+             HOST_MACHINE_MACHINE    (optional)
+             HOST_TEXT_START_ADDR
+             HOST_STACK_END_ADDR
+</pre>
+   <p>in the file <samp><span class="file">../include/sys/h-</span><var>XXX</var><span class="file">.h</span></samp> (for your host).  These
+values, plus the structures and macros defined in <samp><span class="file">a.out.h</span></samp> on
+your host system, will produce a BFD target that will access
+ordinary a.out files on your host. To configure a new machine
+to use <samp><span class="file">host-aout.c</span></samp>, specify:
+
+<pre class="example">            TDEFAULTS = -DDEFAULT_VECTOR=host_aout_big_vec
+            TDEPFILES= host-aout.o trad-core.o
+</pre>
+   <p>in the <samp><span class="file">config/</span><var>XXX</var><span class="file">.mt</span></samp> file, and modify <samp><span class="file">configure.ac</span></samp>
+to use the
+<samp><var>XXX</var><span class="file">.mt</span></samp> file (by setting "<code>bfd_target=XXX</code>") when your
+configuration is selected.
+
+<h4 class="subsection">3.2.1 Relocations</h4>
+
+<p><strong>Description</strong><br>
+The file <samp><span class="file">aoutx.h</span></samp> provides for both the <em>standard</em>
+and <em>extended</em> forms of a.out relocation records.
+
+   <p>The standard records contain only an
+address, a symbol index, and a type field. The extended records
+(used on 29ks and sparcs) also have a full integer for an
+addend.
+
+<h4 class="subsection">3.2.2 Internal entry points</h4>
+
+<p><strong>Description</strong><br>
+<samp><span class="file">aoutx.h</span></samp> exports several routines for accessing the
+contents of an a.out file, which are gathered and exported in
+turn by various format specific files (eg sunos.c).
+
+   <p><a name="index-aout_005f_0040var_007bsize_007d_005fswap_005fexec_005fheader_005fin-2266"></a>
+
+<h5 class="subsubsection">3.2.2.1 <code>aout_</code><var>size</var><code>_swap_exec_header_in</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     void aout_<var>size</var>_swap_exec_header_in,
+        (bfd *abfd,
+         struct external_exec *bytes,
+         struct internal_exec *execp);
+</pre>
+   <p><strong>Description</strong><br>
+Swap the information in an executable header <var>raw_bytes</var> taken
+from a raw byte stream memory image into the internal exec header
+structure <var>execp</var>.
+
+   <p><a name="index-aout_005f_0040var_007bsize_007d_005fswap_005fexec_005fheader_005fout-2267"></a>
+
+<h5 class="subsubsection">3.2.2.2 <code>aout_</code><var>size</var><code>_swap_exec_header_out</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     void aout_<var>size</var>_swap_exec_header_out
+        (bfd *abfd,
+         struct internal_exec *execp,
+         struct external_exec *raw_bytes);
+</pre>
+   <p><strong>Description</strong><br>
+Swap the information in an internal exec header structure
+<var>execp</var> into the buffer <var>raw_bytes</var> ready for writing to disk.
+
+   <p><a name="index-aout_005f_0040var_007bsize_007d_005fsome_005faout_005fobject_005fp-2268"></a>
+
+<h5 class="subsubsection">3.2.2.3 <code>aout_</code><var>size</var><code>_some_aout_object_p</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     const bfd_target *aout_<var>size</var>_some_aout_object_p
+        (bfd *abfd,
+         struct internal_exec *execp,
+         const bfd_target *(*callback_to_real_object_p) (bfd *));
+</pre>
+   <p><strong>Description</strong><br>
+Some a.out variant thinks that the file open in <var>abfd</var>
+checking is an a.out file.  Do some more checking, and set up
+for access if it really is.  Call back to the calling
+environment's "finish up" function just before returning, to
+handle any last-minute setup.
+
+   <p><a name="index-aout_005f_0040var_007bsize_007d_005fmkobject-2269"></a>
+
+<h5 class="subsubsection">3.2.2.4 <code>aout_</code><var>size</var><code>_mkobject</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     bfd_boolean aout_<var>size</var>_mkobject, (bfd *abfd);
+</pre>
+   <p><strong>Description</strong><br>
+Initialize BFD <var>abfd</var> for use with a.out files.
+
+   <p><a name="index-aout_005f_0040var_007bsize_007d_005fmachine_005ftype-2270"></a>
+
+<h5 class="subsubsection">3.2.2.5 <code>aout_</code><var>size</var><code>_machine_type</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     enum machine_type  aout_<var>size</var>_machine_type
+        (enum bfd_architecture arch,
+         unsigned long machine,
+         bfd_boolean *unknown);
+</pre>
+   <p><strong>Description</strong><br>
+Keep track of machine architecture and machine type for
+a.out's. Return the <code>machine_type</code> for a particular
+architecture and machine, or <code>M_UNKNOWN</code> if that exact architecture
+and machine can't be represented in a.out format.
+
+   <p>If the architecture is understood, machine type 0 (default)
+is always understood.
+
+   <p><a name="index-aout_005f_0040var_007bsize_007d_005fset_005farch_005fmach-2271"></a>
+
+<h5 class="subsubsection">3.2.2.6 <code>aout_</code><var>size</var><code>_set_arch_mach</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     bfd_boolean aout_<var>size</var>_set_arch_mach,
+        (bfd *,
+         enum bfd_architecture arch,
+         unsigned long machine);
+</pre>
+   <p><strong>Description</strong><br>
+Set the architecture and the machine of the BFD <var>abfd</var> to the
+values <var>arch</var> and <var>machine</var>.  Verify that <var>abfd</var>'s format
+can support the architecture required.
+
+   <p><a name="index-aout_005f_0040var_007bsize_007d_005fnew_005fsection_005fhook-2272"></a>
+
+<h5 class="subsubsection">3.2.2.7 <code>aout_</code><var>size</var><code>_new_section_hook</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     bfd_boolean aout_<var>size</var>_new_section_hook,
+        (bfd *abfd,
+         asection *newsect);
+</pre>
+   <p><strong>Description</strong><br>
+Called by the BFD in response to a <code>bfd_make_section</code>
+request.
+
+   </body></html>
+

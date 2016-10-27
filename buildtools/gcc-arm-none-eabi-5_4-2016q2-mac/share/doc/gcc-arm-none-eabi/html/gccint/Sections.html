@@ -1,0 +1,438 @@
+<html lang="en">
+<head>
+<title>Sections - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Target-Macros.html#Target-Macros" title="Target Macros">
+<link rel="prev" href="Scheduling.html#Scheduling" title="Scheduling">
+<link rel="next" href="PIC.html#PIC" title="PIC">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Sections"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="PIC.html#PIC">PIC</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Scheduling.html#Scheduling">Scheduling</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Target-Macros.html#Target-Macros">Target Macros</a>
+<hr>
+</div>
+
+<h3 class="section">17.18 Dividing the Output into Sections (Texts, Data, <small class="dots">...</small>)</h3>
+
+<!-- the above section title is WAY too long.  maybe cut the part between -->
+<!-- the (...)?  -mew 10feb93 -->
+<p>An object file is divided into sections containing different types of
+data.  In the most common case, there are three sections: the <dfn>text
+section</dfn>, which holds instructions and read-only data; the <dfn>data
+section</dfn>, which holds initialized writable data; and the <dfn>bss
+section</dfn>, which holds uninitialized data.  Some systems have other kinds
+of sections.
+
+ <p><samp><span class="file">varasm.c</span></samp> provides several well-known sections, such as
+<code>text_section</code>, <code>data_section</code> and <code>bss_section</code>. 
+The normal way of controlling a <var>foo</var><code>_section</code> variable
+is to define the associated <var>FOO</var><code>_SECTION_ASM_OP</code> macro,
+as described below.  The macros are only read once, when <samp><span class="file">varasm.c</span></samp>
+initializes itself, so their values must be run-time constants. 
+They may however depend on command-line flags.
+
+ <p><em>Note:</em> Some run-time files, such <samp><span class="file">crtstuff.c</span></samp>, also make
+use of the <var>FOO</var><code>_SECTION_ASM_OP</code> macros, and expect them
+to be string literals.
+
+ <p>Some assemblers require a different string to be written every time a
+section is selected.  If your assembler falls into this category, you
+should define the <code>TARGET_ASM_INIT_SECTIONS</code> hook and use
+<code>get_unnamed_section</code> to set up the sections.
+
+ <p>You must always create a <code>text_section</code>, either by defining
+<code>TEXT_SECTION_ASM_OP</code> or by initializing <code>text_section</code>
+in <code>TARGET_ASM_INIT_SECTIONS</code>.  The same is true of
+<code>data_section</code> and <code>DATA_SECTION_ASM_OP</code>.  If you do not
+create a distinct <code>readonly_data_section</code>, the default is to
+reuse <code>text_section</code>.
+
+ <p>All the other <samp><span class="file">varasm.c</span></samp> sections are optional, and are null
+if the target does not provide them.
+
+<div class="defun">
+&mdash; Macro: <b>TEXT_SECTION_ASM_OP</b><var><a name="index-TEXT_005fSECTION_005fASM_005fOP-4514"></a></var><br>
+<blockquote><p>A C expression whose value is a string, including spacing, containing the
+assembler operation that should precede instructions and read-only data. 
+Normally <code>"\t.text"</code> is right. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>HOT_TEXT_SECTION_NAME</b><var><a name="index-HOT_005fTEXT_005fSECTION_005fNAME-4515"></a></var><br>
+<blockquote><p>If defined, a C string constant for the name of the section containing most
+frequently executed functions of the program.  If not defined, GCC will provide
+a default definition if the target supports named sections. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>UNLIKELY_EXECUTED_TEXT_SECTION_NAME</b><var><a name="index-UNLIKELY_005fEXECUTED_005fTEXT_005fSECTION_005fNAME-4516"></a></var><br>
+<blockquote><p>If defined, a C string constant for the name of the section containing unlikely
+executed functions in the program. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>DATA_SECTION_ASM_OP</b><var><a name="index-DATA_005fSECTION_005fASM_005fOP-4517"></a></var><br>
+<blockquote><p>A C expression whose value is a string, including spacing, containing the
+assembler operation to identify the following data as writable initialized
+data.  Normally <code>"\t.data"</code> is right. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>SDATA_SECTION_ASM_OP</b><var><a name="index-SDATA_005fSECTION_005fASM_005fOP-4518"></a></var><br>
+<blockquote><p>If defined, a C expression whose value is a string, including spacing,
+containing the assembler operation to identify the following data as
+initialized, writable small data. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>READONLY_DATA_SECTION_ASM_OP</b><var><a name="index-READONLY_005fDATA_005fSECTION_005fASM_005fOP-4519"></a></var><br>
+<blockquote><p>A C expression whose value is a string, including spacing, containing the
+assembler operation to identify the following data as read-only initialized
+data. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>BSS_SECTION_ASM_OP</b><var><a name="index-BSS_005fSECTION_005fASM_005fOP-4520"></a></var><br>
+<blockquote><p>If defined, a C expression whose value is a string, including spacing,
+containing the assembler operation to identify the following data as
+uninitialized global data.  If not defined, and
+<code>ASM_OUTPUT_ALIGNED_BSS</code> not defined,
+uninitialized global data will be output in the data section if
+<samp><span class="option">-fno-common</span></samp> is passed, otherwise <code>ASM_OUTPUT_COMMON</code> will be
+used. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>SBSS_SECTION_ASM_OP</b><var><a name="index-SBSS_005fSECTION_005fASM_005fOP-4521"></a></var><br>
+<blockquote><p>If defined, a C expression whose value is a string, including spacing,
+containing the assembler operation to identify the following data as
+uninitialized, writable small data. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>TLS_COMMON_ASM_OP</b><var><a name="index-TLS_005fCOMMON_005fASM_005fOP-4522"></a></var><br>
+<blockquote><p>If defined, a C expression whose value is a string containing the
+assembler operation to identify the following data as thread-local
+common data.  The default is <code>".tls_common"</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>TLS_SECTION_ASM_FLAG</b><var><a name="index-TLS_005fSECTION_005fASM_005fFLAG-4523"></a></var><br>
+<blockquote><p>If defined, a C expression whose value is a character constant
+containing the flag used to mark a section as a TLS section.  The
+default is <code>'T'</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>INIT_SECTION_ASM_OP</b><var><a name="index-INIT_005fSECTION_005fASM_005fOP-4524"></a></var><br>
+<blockquote><p>If defined, a C expression whose value is a string, including spacing,
+containing the assembler operation to identify the following data as
+initialization code.  If not defined, GCC will assume such a section does
+not exist.  This section has no corresponding <code>init_section</code>
+variable; it is used entirely in runtime code. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>FINI_SECTION_ASM_OP</b><var><a name="index-FINI_005fSECTION_005fASM_005fOP-4525"></a></var><br>
+<blockquote><p>If defined, a C expression whose value is a string, including spacing,
+containing the assembler operation to identify the following data as
+finalization code.  If not defined, GCC will assume such a section does
+not exist.  This section has no corresponding <code>fini_section</code>
+variable; it is used entirely in runtime code. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>INIT_ARRAY_SECTION_ASM_OP</b><var><a name="index-INIT_005fARRAY_005fSECTION_005fASM_005fOP-4526"></a></var><br>
+<blockquote><p>If defined, a C expression whose value is a string, including spacing,
+containing the assembler operation to identify the following data as
+part of the <code>.init_array</code> (or equivalent) section.  If not
+defined, GCC will assume such a section does not exist.  Do not define
+both this macro and <code>INIT_SECTION_ASM_OP</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>FINI_ARRAY_SECTION_ASM_OP</b><var><a name="index-FINI_005fARRAY_005fSECTION_005fASM_005fOP-4527"></a></var><br>
+<blockquote><p>If defined, a C expression whose value is a string, including spacing,
+containing the assembler operation to identify the following data as
+part of the <code>.fini_array</code> (or equivalent) section.  If not
+defined, GCC will assume such a section does not exist.  Do not define
+both this macro and <code>FINI_SECTION_ASM_OP</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>CRT_CALL_STATIC_FUNCTION</b> (<var>section_op, function</var>)<var><a name="index-CRT_005fCALL_005fSTATIC_005fFUNCTION-4528"></a></var><br>
+<blockquote><p>If defined, an ASM statement that switches to a different section
+via <var>section_op</var>, calls <var>function</var>, and switches back to
+the text section.  This is used in <samp><span class="file">crtstuff.c</span></samp> if
+<code>INIT_SECTION_ASM_OP</code> or <code>FINI_SECTION_ASM_OP</code> to calls
+to initialization and finalization functions from the init and fini
+sections.  By default, this macro uses a simple function call.  Some
+ports need hand-crafted assembly code to avoid dependencies on
+registers initialized in the function prologue or to ensure that
+constant pools don't end up too far way in the text section. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>TARGET_LIBGCC_SDATA_SECTION</b><var><a name="index-TARGET_005fLIBGCC_005fSDATA_005fSECTION-4529"></a></var><br>
+<blockquote><p>If defined, a string which names the section into which small
+variables defined in crtstuff and libgcc should go.  This is useful
+when the target has options for optimizing access to small data, and
+you want the crtstuff and libgcc routines to be conservative in what
+they expect of your application yet liberal in what your application
+expects.  For example, for targets with a <code>.sdata</code> section (like
+MIPS), you could compile crtstuff with <code>-G 0</code> so that it doesn't
+require small data support from your application, but use this macro
+to put small data into <code>.sdata</code> so that your application can
+access these variables whether it uses small data or not. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>FORCE_CODE_SECTION_ALIGN</b><var><a name="index-FORCE_005fCODE_005fSECTION_005fALIGN-4530"></a></var><br>
+<blockquote><p>If defined, an ASM statement that aligns a code section to some
+arbitrary boundary.  This is used to force all fragments of the
+<code>.init</code> and <code>.fini</code> sections to have to same alignment
+and thus prevent the linker from having to add any padding. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>JUMP_TABLES_IN_TEXT_SECTION</b><var><a name="index-JUMP_005fTABLES_005fIN_005fTEXT_005fSECTION-4531"></a></var><br>
+<blockquote><p>Define this macro to be an expression with a nonzero value if jump
+tables (for <code>tablejump</code> insns) should be output in the text
+section, along with the assembler instructions.  Otherwise, the
+readonly data section is used.
+
+      <p>This macro is irrelevant if there is no separate readonly data section. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_ASM_INIT_SECTIONS</b> (<var>void</var>)<var><a name="index-TARGET_005fASM_005fINIT_005fSECTIONS-4532"></a></var><br>
+<blockquote><p>Define this hook if you need to do something special to set up the
+<samp><span class="file">varasm.c</span></samp> sections, or if your target has some special sections
+of its own that you need to create.
+
+      <p>GCC calls this hook after processing the command line, but before writing
+any assembly code, and before calling any of the section-returning hooks
+described below. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: int <b>TARGET_ASM_RELOC_RW_MASK</b> (<var>void</var>)<var><a name="index-TARGET_005fASM_005fRELOC_005fRW_005fMASK-4533"></a></var><br>
+<blockquote><p>Return a mask describing how relocations should be treated when
+selecting sections.  Bit 1 should be set if global relocations
+should be placed in a read-write section; bit 0 should be set if
+local relocations should be placed in a read-write section.
+
+      <p>The default version of this function returns 3 when <samp><span class="option">-fpic</span></samp>
+is in effect, and 0 otherwise.  The hook is typically redefined
+when the target cannot support (some kinds of) dynamic relocations
+in read-only sections even in executables. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: section * <b>TARGET_ASM_SELECT_SECTION</b> (<var>tree exp, int reloc, unsigned HOST_WIDE_INT align</var>)<var><a name="index-TARGET_005fASM_005fSELECT_005fSECTION-4534"></a></var><br>
+<blockquote><p>Return the section into which <var>exp</var> should be placed.  You can
+assume that <var>exp</var> is either a <code>VAR_DECL</code> node or a constant of
+some sort.  <var>reloc</var> indicates whether the initial value of <var>exp</var>
+requires link-time relocations.  Bit 0 is set when variable contains
+local relocations only, while bit 1 is set for global relocations. 
+<var>align</var> is the constant alignment in bits.
+
+      <p>The default version of this function takes care of putting read-only
+variables in <code>readonly_data_section</code>.
+
+      <p>See also <var>USE_SELECT_SECTION_FOR_FUNCTIONS</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Macro: <b>USE_SELECT_SECTION_FOR_FUNCTIONS</b><var><a name="index-USE_005fSELECT_005fSECTION_005fFOR_005fFUNCTIONS-4535"></a></var><br>
+<blockquote><p>Define this macro if you wish TARGET_ASM_SELECT_SECTION to be called
+for <code>FUNCTION_DECL</code>s as well as for variables and constants.
+
+      <p>In the case of a <code>FUNCTION_DECL</code>, <var>reloc</var> will be zero if the
+function has been determined to be likely to be called, and nonzero if
+it is unlikely to be called. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_ASM_UNIQUE_SECTION</b> (<var>tree decl, int reloc</var>)<var><a name="index-TARGET_005fASM_005fUNIQUE_005fSECTION-4536"></a></var><br>
+<blockquote><p>Build up a unique section name, expressed as a <code>STRING_CST</code> node,
+and assign it to `<samp><span class="samp">DECL_SECTION_NAME (</span><var>decl</var><span class="samp">)</span></samp>'. 
+As with <code>TARGET_ASM_SELECT_SECTION</code>, <var>reloc</var> indicates whether
+the initial value of <var>exp</var> requires link-time relocations.
+
+      <p>The default version of this function appends the symbol name to the
+ELF section name that would normally be used for the symbol.  For
+example, the function <code>foo</code> would be placed in <code>.text.foo</code>. 
+Whatever the actual target object format, this is often good enough. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: section * <b>TARGET_ASM_FUNCTION_RODATA_SECTION</b> (<var>tree decl</var>)<var><a name="index-TARGET_005fASM_005fFUNCTION_005fRODATA_005fSECTION-4537"></a></var><br>
+<blockquote><p>Return the readonly data section associated with
+`<samp><span class="samp">DECL_SECTION_NAME (</span><var>decl</var><span class="samp">)</span></samp>'. 
+The default version of this function selects <code>.gnu.linkonce.r.name</code> if
+the function's section is <code>.gnu.linkonce.t.name</code>, <code>.rodata.name</code>
+if function is in <code>.text.name</code>, and the normal readonly-data section
+otherwise. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: const char * <b>TARGET_ASM_MERGEABLE_RODATA_PREFIX</b><var><a name="index-TARGET_005fASM_005fMERGEABLE_005fRODATA_005fPREFIX-4538"></a></var><br>
+<blockquote><p>Usually, the compiler uses the prefix <code>".rodata"</code> to construct
+section names for mergeable constant data.  Define this macro to override
+the string if a different section name should be used. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: section * <b>TARGET_ASM_TM_CLONE_TABLE_SECTION</b> (<var>void</var>)<var><a name="index-TARGET_005fASM_005fTM_005fCLONE_005fTABLE_005fSECTION-4539"></a></var><br>
+<blockquote><p>Return the section that should be used for transactional memory clone  tables. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: section * <b>TARGET_ASM_SELECT_RTX_SECTION</b> (<var>machine_mode mode, rtx x, unsigned HOST_WIDE_INT align</var>)<var><a name="index-TARGET_005fASM_005fSELECT_005fRTX_005fSECTION-4540"></a></var><br>
+<blockquote><p>Return the section into which a constant <var>x</var>, of mode <var>mode</var>,
+should be placed.  You can assume that <var>x</var> is some kind of
+constant in RTL.  The argument <var>mode</var> is redundant except in the
+case of a <code>const_int</code> rtx.  <var>align</var> is the constant alignment
+in bits.
+
+      <p>The default version of this function takes care of putting symbolic
+constants in <code>flag_pic</code> mode in <code>data_section</code> and everything
+else in <code>readonly_data_section</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: tree <b>TARGET_MANGLE_DECL_ASSEMBLER_NAME</b> (<var>tree decl, tree id</var>)<var><a name="index-TARGET_005fMANGLE_005fDECL_005fASSEMBLER_005fNAME-4541"></a></var><br>
+<blockquote><p>Define this hook if you need to postprocess the assembler name generated
+by target-independent code.  The <var>id</var> provided to this hook will be
+the computed name (e.g., the macro <code>DECL_NAME</code> of the <var>decl</var> in C,
+or the mangled name of the <var>decl</var> in C++).  The return value of the
+hook is an <code>IDENTIFIER_NODE</code> for the appropriate mangled name on
+your target system.  The default implementation of this hook just
+returns the <var>id</var> provided. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: void <b>TARGET_ENCODE_SECTION_INFO</b> (<var>tree decl, rtx rtl, int new_decl_p</var>)<var><a name="index-TARGET_005fENCODE_005fSECTION_005fINFO-4542"></a></var><br>
+<blockquote><p>Define this hook if references to a symbol or a constant must be
+treated differently depending on something about the variable or
+function named by the symbol (such as what section it is in).
+
+      <p>The hook is executed immediately after rtl has been created for
+<var>decl</var>, which may be a variable or function declaration or
+an entry in the constant pool.  In either case, <var>rtl</var> is the
+rtl in question.  Do <em>not</em> use <code>DECL_RTL (</code><var>decl</var><code>)</code>
+in this hook; that field may not have been initialized yet.
+
+      <p>In the case of a constant, it is safe to assume that the rtl is
+a <code>mem</code> whose address is a <code>symbol_ref</code>.  Most decls
+will also have this form, but that is not guaranteed.  Global
+register variables, for instance, will have a <code>reg</code> for their
+rtl.  (Normally the right thing to do with such unusual rtl is
+leave it alone.)
+
+      <p>The <var>new_decl_p</var> argument will be true if this is the first time
+that <code>TARGET_ENCODE_SECTION_INFO</code> has been invoked on this decl.  It will
+be false for subsequent invocations, which will happen for duplicate
+declarations.  Whether or not anything must be done for the duplicate
+declaration depends on whether the hook examines <code>DECL_ATTRIBUTES</code>. 
+<var>new_decl_p</var> is always true when the hook is called for a constant.
+
+      <p><a name="index-g_t_0040code_007bSYMBOL_005fREF_005fFLAG_007d_002c-in-_0040code_007bTARGET_005fENCODE_005fSECTION_005fINFO_007d-4543"></a>The usual thing for this hook to do is to record flags in the
+<code>symbol_ref</code>, using <code>SYMBOL_REF_FLAG</code> or <code>SYMBOL_REF_FLAGS</code>. 
+Historically, the name string was modified if it was necessary to
+encode more than one bit of information, but this practice is now
+discouraged; use <code>SYMBOL_REF_FLAGS</code>.
+
+      <p>The default definition of this hook, <code>default_encode_section_info</code>
+in <samp><span class="file">varasm.c</span></samp>, sets a number of commonly-useful bits in
+<code>SYMBOL_REF_FLAGS</code>.  Check whether the default does what you need
+before overriding it. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: const char * <b>TARGET_STRIP_NAME_ENCODING</b> (<var>const char *name</var>)<var><a name="index-TARGET_005fSTRIP_005fNAME_005fENCODING-4544"></a></var><br>
+<blockquote><p>Decode <var>name</var> and return the real name part, sans
+the characters that <code>TARGET_ENCODE_SECTION_INFO</code>
+may have added. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_IN_SMALL_DATA_P</b> (<var>const_tree exp</var>)<var><a name="index-TARGET_005fIN_005fSMALL_005fDATA_005fP-4545"></a></var><br>
+<blockquote><p>Returns true if <var>exp</var> should be placed into a &ldquo;small data&rdquo; section. 
+The default version of this hook always returns false. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_HAVE_SRODATA_SECTION</b><var><a name="index-TARGET_005fHAVE_005fSRODATA_005fSECTION-4546"></a></var><br>
+<blockquote><p>Contains the value true if the target places read-only
+&ldquo;small data&rdquo; into a separate section.  The default value is false. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_PROFILE_BEFORE_PROLOGUE</b> (<var>void</var>)<var><a name="index-TARGET_005fPROFILE_005fBEFORE_005fPROLOGUE-4547"></a></var><br>
+<blockquote><p>It returns true if target wants profile code emitted before prologue.
+
+      <p>The default version of this hook use the target macro
+<code>PROFILE_BEFORE_PROLOGUE</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_BINDS_LOCAL_P</b> (<var>const_tree exp</var>)<var><a name="index-TARGET_005fBINDS_005fLOCAL_005fP-4548"></a></var><br>
+<blockquote><p>Returns true if <var>exp</var> names an object for which name resolution
+rules must resolve to the current &ldquo;module&rdquo; (dynamic shared library
+or executable image).
+
+      <p>The default version of this hook implements the name resolution rules
+for ELF, which has a looser model of global name binding than other
+currently supported object file formats. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Target Hook: bool <b>TARGET_HAVE_TLS</b><var><a name="index-TARGET_005fHAVE_005fTLS-4549"></a></var><br>
+<blockquote><p>Contains the value true if the target supports thread-local storage. 
+The default value is false. 
+</p></blockquote></div>
+
+ </body></html>
+

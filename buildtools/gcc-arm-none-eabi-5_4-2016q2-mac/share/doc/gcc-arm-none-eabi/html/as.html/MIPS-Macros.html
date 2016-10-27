@@ -1,0 +1,107 @@
+<html lang="en">
+<head>
+<title>MIPS Macros - Using as</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using as">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="MIPS_002dDependent.html#MIPS_002dDependent" title="MIPS-Dependent">
+<link rel="prev" href="MIPS-Options.html#MIPS-Options" title="MIPS Options">
+<link rel="next" href="MIPS-Symbol-Sizes.html#MIPS-Symbol-Sizes" title="MIPS Symbol Sizes">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled ``GNU Free Documentation License''.
+
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="MIPS-Macros"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="MIPS-Symbol-Sizes.html#MIPS-Symbol-Sizes">MIPS Symbol Sizes</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="MIPS-Options.html#MIPS-Options">MIPS Options</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="MIPS_002dDependent.html#MIPS_002dDependent">MIPS-Dependent</a>
+<hr>
+</div>
+
+<h4 class="subsection">9.27.2 High-level assembly macros</h4>
+
+<p>MIPS assemblers have traditionally provided a wider range of
+instructions than the MIPS architecture itself.  These extra
+instructions are usually referred to as &ldquo;macro&rdquo; instructions
+<a rel="footnote" href="#fn-1" name="fnd-1"><sup>1</sup></a>.
+
+   <p>Some MIPS macro instructions extend an underlying architectural instruction
+while others are entirely new.  An example of the former type is <code>and</code>,
+which allows the third operand to be either a register or an arbitrary
+immediate value.  Examples of the latter type include <code>bgt</code>, which
+branches to the third operand when the first operand is greater than
+the second operand, and <code>ulh</code>, which implements an unaligned
+2-byte load.
+
+   <p>One of the most common extensions provided by macros is to expand
+memory offsets to the full address range (32 or 64 bits) and to allow
+symbolic offsets such as `<samp><span class="samp">my_data + 4</span></samp>' to be used in place of
+integer constants.  For example, the architectural instruction
+<code>lbu</code> allows only a signed 16-bit offset, whereas the macro
+<code>lbu</code> allows code such as `<samp><span class="samp">lbu $4,array+32769($5)</span></samp>'. 
+The implementation of these symbolic offsets depends on several factors,
+such as whether the assembler is generating SVR4-style PIC (selected by
+<samp><span class="option">-KPIC</span></samp>, see <a href="MIPS-Options.html#MIPS-Options">Assembler options</a>), the size of symbols
+(see <a href="MIPS-Symbol-Sizes.html#MIPS-Symbol-Sizes">Directives to override the size of symbols</a>),
+and the small data limit (see <a href="MIPS-Small-Data.html#MIPS-Small-Data">Controlling the use of small data accesses</a>).
+
+   <p><a name="index-g_t_0040code_007b_002eset-macro_007d-1488"></a><a name="index-g_t_0040code_007b_002eset-nomacro_007d-1489"></a>Sometimes it is undesirable to have one assembly instruction expand
+to several machine instructions.  The directive <code>.set nomacro</code>
+tells the assembler to warn when this happens.  <code>.set macro</code>
+restores the default behavior.
+
+   <p><a name="index-g_t_0040code_007bat_007d-register_002c-MIPS-1490"></a><a name="index-g_t_0040code_007b_002eset-at_003d_0040var_007breg_007d_007d-1491"></a>Some macro instructions need a temporary register to store intermediate
+results.  This register is usually <code>$1</code>, also known as <code>$at</code>,
+but it can be changed to any core register <var>reg</var> using
+<code>.set at=</code><var>reg</var>.  Note that <code>$at</code> always refers
+to <code>$1</code> regardless of which register is being used as the
+temporary register.
+
+   <p><a name="index-g_t_0040code_007b_002eset-at_007d-1492"></a><a name="index-g_t_0040code_007b_002eset-noat_007d-1493"></a>Implicit uses of the temporary register in macros could interfere with
+explicit uses in the assembly code.  The assembler therefore warns
+whenever it sees an explicit use of the temporary register.  The directive
+<code>.set noat</code> silences this warning while <code>.set at</code> restores
+the default behavior.  It is safe to use <code>.set noat</code> while
+<code>.set nomacro</code> is in effect since single-instruction macros
+never need a temporary register.
+
+   <p>Note that while the <span class="sc">gnu</span> assembler provides these macros for compatibility,
+it does not make any attempt to optimize them with the surrounding code.
+
+   <div class="footnote">
+<hr>
+<h4>Footnotes</h4><p class="footnote"><small>[<a name="fn-1" href="#fnd-1">1</a>]</small> The term &ldquo;macro&rdquo; is somewhat overloaded here, since
+these macros have no relation to those defined by <code>.macro</code>,
+see <a href="Macro.html#Macro"><code>.macro</code></a>.</p>
+
+   <p><hr></div>
+
+   </body></html>
+

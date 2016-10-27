@@ -1,0 +1,153 @@
+<html lang="en">
+<head>
+<title>Frame Annotations - GDB's Obsolete Annotations</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GDB's Obsolete Annotations">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Value-Annotations.html#Value-Annotations" title="Value Annotations">
+<link rel="next" href="Displays.html#Displays" title="Displays">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1994-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Frame-Annotations"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Displays.html#Displays">Displays</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Value-Annotations.html#Value-Annotations">Value Annotations</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">6 Frames</h2>
+
+<p><em>Value Annotations have been removed.  </em><span class="sc">gdb/mi</span><em> instead provides
+a number of frame commands.</em>
+
+   <p><em>Frame annotations are no longer available.  The </em><span class="sc">gdb/mi</span><em>
+provides `<samp></em><span class="samp">-stack-list-arguments</span><em></samp>', `<samp></em><span class="samp">-stack-list-locals</span><em></samp>', and
+`<samp></em><span class="samp">-stack-list-frames</span><em></samp>' commands.</em>
+
+   <p><a name="index-annotations-for-frames-21"></a>Whenever <span class="sc">gdb</span> prints a frame, it annotates it.  For example, this applies
+to frames printed when <span class="sc">gdb</span> stops, output from commands such as
+<code>backtrace</code> or <code>up</code>, etc.
+
+   <p><a name="index-frame_002dbegin-22"></a>The frame annotation begins with
+
+<pre class="smallexample">     ^Z^Zframe-begin <var>level</var> <var>address</var>
+     <var>level-string</var>
+</pre>
+   <p class="noindent">where <var>level</var> is the number of the frame (0 is the innermost frame,
+and other frames have positive numbers), <var>address</var> is the address of
+the code executing in that frame, and <var>level-string</var> is a string
+designed to convey the level to the user.  <var>address</var> is in the form
+`<samp><span class="samp">0x</span></samp>' followed by one or more lowercase hex digits (note that this
+does not depend on the language).  The frame ends with
+
+   <p><a name="index-frame_002dend-23"></a>
+<pre class="smallexample">     ^Z^Zframe-end
+</pre>
+   <p>Between these annotations is the main body of the frame, which can
+consist of
+
+     <ul>
+<li><a name="index-function_002dcall-24"></a>
+     <pre class="smallexample">          ^Z^Zfunction-call
+          <var>function-call-string</var>
+     </pre>
+     <p>where <var>function-call-string</var> is text designed to convey to the user
+that this frame is associated with a function call made by <span class="sc">gdb</span> to a
+function in the program being debugged.
+
+     <li><a name="index-signal_002dhandler_002dcaller-25"></a>
+     <pre class="smallexample">          ^Z^Zsignal-handler-caller
+          <var>signal-handler-caller-string</var>
+     </pre>
+     <p>where <var>signal-handler-caller-string</var> is text designed to convey to
+the user that this frame is associated with whatever mechanism is used
+by this operating system to call a signal handler (it is the frame which
+calls the signal handler, not the frame for the signal handler itself).
+
+     <li>A normal frame.
+
+     <p><a name="index-frame_002daddress-26"></a><a name="index-frame_002daddress_002dend-27"></a>This can optionally (depending on whether this is thought of as
+interesting information for the user to see) begin with
+
+     <pre class="smallexample">          ^Z^Zframe-address
+          <var>address</var>
+          ^Z^Zframe-address-end
+          <var>separator-string</var>
+     </pre>
+     <p>where <var>address</var> is the address executing in the frame (the same
+address as in the <code>frame-begin</code> annotation, but printed in a form
+which is intended for user consumption&mdash;in particular, the syntax varies
+depending on the language), and <var>separator-string</var> is a string
+intended to separate this address from what follows for the user's
+benefit.
+
+     <p><a name="index-frame_002dfunction_002dname-28"></a><a name="index-frame_002dargs-29"></a>Then comes
+
+     <pre class="smallexample">          ^Z^Zframe-function-name
+          <var>function-name</var>
+          ^Z^Zframe-args
+          <var>arguments</var>
+     </pre>
+     <p>where <var>function-name</var> is the name of the function executing in the
+frame, or `<samp><span class="samp">??</span></samp>' if not known, and <var>arguments</var> are the arguments
+to the frame, with parentheses around them (each argument is annotated
+individually as well, see <a href="Value-Annotations.html#Value-Annotations">Value Annotations</a>).
+
+     <p><a name="index-frame_002dsource_002dbegin-30"></a><a name="index-frame_002dsource_002dfile-31"></a><a name="index-frame_002dsource_002dfile_002dend-32"></a><a name="index-frame_002dsource_002dline-33"></a><a name="index-frame_002dsource_002dend-34"></a>If source information is available, a reference to it is then printed:
+
+     <pre class="smallexample">          ^Z^Zframe-source-begin
+          <var>source-intro-string</var>
+          ^Z^Zframe-source-file
+          <var>filename</var>
+          ^Z^Zframe-source-file-end
+          :
+          ^Z^Zframe-source-line
+          <var>line-number</var>
+          ^Z^Zframe-source-end
+     </pre>
+     <p>where <var>source-intro-string</var> separates for the user's benefit the
+reference from the text which precedes it, <var>filename</var> is the name of
+the source file, and <var>line-number</var> is the line number within that
+file (the first line is line 1).
+
+     <p><a name="index-frame_002dwhere-35"></a>If <span class="sc">gdb</span> prints some information about where the frame is from (which
+library, which load segment, etc.; currently only done on the RS/6000),
+it is annotated with
+
+     <pre class="smallexample">          ^Z^Zframe-where
+          <var>information</var>
+     </pre>
+     <p>Then, if source is to actually be displayed for this frame (for example,
+this is not true for output from the <code>backtrace</code> command), then a
+<code>source</code> annotation (see <a href="Source-Annotations.html#Source-Annotations">Source Annotations</a>) is displayed.  Unlike
+most annotations, this is output instead of the normal text which would be
+output, not in addition. 
+</ul>
+
+   </body></html>
+

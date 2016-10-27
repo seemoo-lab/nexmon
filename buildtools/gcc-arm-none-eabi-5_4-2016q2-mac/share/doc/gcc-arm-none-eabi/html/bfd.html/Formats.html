@@ -1,0 +1,163 @@
+<html lang="en">
+<head>
+<title>Formats - Untitled</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Untitled">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="BFD-front-end.html#BFD-front-end" title="BFD front end">
+<link rel="prev" href="Archives.html#Archives" title="Archives">
+<link rel="next" href="Relocations.html#Relocations" title="Relocations">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the BFD library.
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``GNU General Public License'' and ``Funding
+Free Software'', the Front-Cover texts being (a) (see below), and with
+the Back-Cover Texts being (b) (see below).  A copy of the license is
+included in the section entitled ``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Formats"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Relocations.html#Relocations">Relocations</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Archives.html#Archives">Archives</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="BFD-front-end.html#BFD-front-end">BFD front end</a>
+<hr>
+</div>
+
+<h3 class="section">2.9 File formats</h3>
+
+<p>A format is a BFD concept of high level file contents type. The
+formats supported by BFD are:
+
+     <ul>
+<li><code>bfd_object</code>
+</ul>
+   The BFD may contain data, symbols, relocations and debug info.
+
+     <ul>
+<li><code>bfd_archive</code>
+</ul>
+   The BFD contains other BFDs and an optional index.
+
+     <ul>
+<li><code>bfd_core</code>
+</ul>
+   The BFD contains the result of an executable core dump.
+
+<h4 class="subsection">2.9.1 File format functions</h4>
+
+<p><a name="index-bfd_005fcheck_005fformat-82"></a>
+
+<h5 class="subsubsection">2.9.1.1 <code>bfd_check_format</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     bfd_boolean bfd_check_format (bfd *abfd, bfd_format format);
+</pre>
+   <p><strong>Description</strong><br>
+Verify if the file attached to the BFD <var>abfd</var> is compatible
+with the format <var>format</var> (i.e., one of <code>bfd_object</code>,
+<code>bfd_archive</code> or <code>bfd_core</code>).
+
+   <p>If the BFD has been set to a specific target before the
+call, only the named target and format combination is
+checked. If the target has not been set, or has been set to
+<code>default</code>, then all the known target backends is
+interrogated to determine a match.  If the default target
+matches, it is used.  If not, exactly one target must recognize
+the file, or an error results.
+
+   <p>The function returns <code>TRUE</code> on success, otherwise <code>FALSE</code>
+with one of the following error codes:
+
+     <ul>
+<li><code>bfd_error_invalid_operation</code> -
+if <code>format</code> is not one of <code>bfd_object</code>, <code>bfd_archive</code> or
+<code>bfd_core</code>.
+
+     <li><code>bfd_error_system_call</code> -
+if an error occured during a read - even some file mismatches
+can cause bfd_error_system_calls.
+
+     <li><code>file_not_recognised</code> -
+none of the backends recognised the file format.
+
+     <li><code>bfd_error_file_ambiguously_recognized</code> -
+more than one backend recognised the file format. 
+</ul>
+
+   <p><a name="index-bfd_005fcheck_005fformat_005fmatches-83"></a>
+
+<h5 class="subsubsection">2.9.1.2 <code>bfd_check_format_matches</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     bfd_boolean bfd_check_format_matches
+        (bfd *abfd, bfd_format format, char ***matching);
+</pre>
+   <p><strong>Description</strong><br>
+Like <code>bfd_check_format</code>, except when it returns FALSE with
+<code>bfd_errno</code> set to <code>bfd_error_file_ambiguously_recognized</code>.  In that
+case, if <var>matching</var> is not NULL, it will be filled in with
+a NULL-terminated list of the names of the formats that matched,
+allocated with <code>malloc</code>. 
+Then the user may choose a format and try again.
+
+   <p>When done with the list that <var>matching</var> points to, the caller
+should free it.
+
+   <p><a name="index-bfd_005fset_005fformat-84"></a>
+
+<h5 class="subsubsection">2.9.1.3 <code>bfd_set_format</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     bfd_boolean bfd_set_format (bfd *abfd, bfd_format format);
+</pre>
+   <p><strong>Description</strong><br>
+This function sets the file format of the BFD <var>abfd</var> to the
+format <var>format</var>. If the target set in the BFD does not
+support the format requested, the format is invalid, or the BFD
+is not open for writing, then an error occurs.
+
+   <p><a name="index-bfd_005fformat_005fstring-85"></a>
+
+<h5 class="subsubsection">2.9.1.4 <code>bfd_format_string</code></h5>
+
+<p><strong>Synopsis</strong>
+<pre class="example">     const char *bfd_format_string (bfd_format format);
+</pre>
+   <p><strong>Description</strong><br>
+Return a pointer to a const string
+<code>invalid</code>, <code>object</code>, <code>archive</code>, <code>core</code>, or <code>unknown</code>,
+depending upon the value of <var>format</var>.
+
+   </body></html>
+

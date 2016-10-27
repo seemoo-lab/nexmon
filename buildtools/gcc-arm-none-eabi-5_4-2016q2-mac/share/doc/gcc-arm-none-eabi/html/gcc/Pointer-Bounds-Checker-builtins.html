@@ -1,0 +1,219 @@
+<html lang="en">
+<head>
+<title>Pointer Bounds Checker builtins - Using the GNU Compiler Collection (GCC)</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using the GNU Compiler Collection (GCC)">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="C-Extensions.html#C-Extensions" title="C Extensions">
+<link rel="prev" href="Object-Size-Checking.html#Object-Size-Checking" title="Object Size Checking">
+<link rel="next" href="Cilk-Plus-Builtins.html#Cilk-Plus-Builtins" title="Cilk Plus Builtins">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Pointer-Bounds-Checker-builtins"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Cilk-Plus-Builtins.html#Cilk-Plus-Builtins">Cilk Plus Builtins</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Object-Size-Checking.html#Object-Size-Checking">Object Size Checking</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="C-Extensions.html#C-Extensions">C Extensions</a>
+<hr>
+</div>
+
+<h3 class="section">6.55 Pointer Bounds Checker Built-in Functions</h3>
+
+<p><a name="index-Pointer-Bounds-Checker-builtins-3599"></a><a name="index-g_t_005f_005fbuiltin_005f_005f_005fbnd_005fset_005fptr_005fbounds-3600"></a><a name="index-g_t_005f_005fbuiltin_005f_005f_005fbnd_005fnarrow_005fptr_005fbounds-3601"></a><a name="index-g_t_005f_005fbuiltin_005f_005f_005fbnd_005fcopy_005fptr_005fbounds-3602"></a><a name="index-g_t_005f_005fbuiltin_005f_005f_005fbnd_005finit_005fptr_005fbounds-3603"></a><a name="index-g_t_005f_005fbuiltin_005f_005f_005fbnd_005fnull_005fptr_005fbounds-3604"></a><a name="index-g_t_005f_005fbuiltin_005f_005f_005fbnd_005fstore_005fptr_005fbounds-3605"></a><a name="index-g_t_005f_005fbuiltin_005f_005f_005fbnd_005fchk_005fptr_005flbounds-3606"></a><a name="index-g_t_005f_005fbuiltin_005f_005f_005fbnd_005fchk_005fptr_005fubounds-3607"></a><a name="index-g_t_005f_005fbuiltin_005f_005f_005fbnd_005fchk_005fptr_005fbounds-3608"></a><a name="index-g_t_005f_005fbuiltin_005f_005f_005fbnd_005fget_005fptr_005flbound-3609"></a><a name="index-g_t_005f_005fbuiltin_005f_005f_005fbnd_005fget_005fptr_005fubound-3610"></a>
+GCC provides a set of built-in functions to control Pointer Bounds Checker
+instrumentation.  Note that all Pointer Bounds Checker builtins can be used
+even if you compile with Pointer Bounds Checker off
+(<samp><span class="option">-fno-check-pointer-bounds</span></samp>). 
+The behavior may differ in such case as documented below.
+
+<div class="defun">
+&mdash; Built-in Function: void * <b>__builtin___bnd_set_ptr_bounds</b> (<var>const void *q, size_t size</var>)<var><a name="index-g_t_005f_005fbuiltin_005f_005f_005fbnd_005fset_005fptr_005fbounds-3611"></a></var><br>
+<blockquote>
+<p>This built-in function returns a new pointer with the value of <var>q</var>, and
+associate it with the bounds [<var>q</var>, <var>q</var>+<var>size</var>-1].  With Pointer
+Bounds Checker off, the built-in function just returns the first argument.
+
+     <pre class="smallexample">          extern void *__wrap_malloc (size_t n)
+          {
+            void *p = (void *)__real_malloc (n);
+            if (!p) return __builtin___bnd_null_ptr_bounds (p);
+            return __builtin___bnd_set_ptr_bounds (p, n);
+          }
+     </pre>
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void * <b>__builtin___bnd_narrow_ptr_bounds</b> (<var>const void *p, const void *q, size_t size</var>)<var><a name="index-g_t_005f_005fbuiltin_005f_005f_005fbnd_005fnarrow_005fptr_005fbounds-3612"></a></var><br>
+<blockquote>
+<p>This built-in function returns a new pointer with the value of <var>p</var>
+and associates it with the narrowed bounds formed by the intersection
+of bounds associated with <var>q</var> and the bounds
+[<var>p</var>, <var>p</var> + <var>size</var> - 1]. 
+With Pointer Bounds Checker off, the built-in function just returns the first
+argument.
+
+     <pre class="smallexample">          void init_objects (object *objs, size_t size)
+          {
+            size_t i;
+            /* Initialize objects one-by-one passing pointers with bounds of
+               an object, not the full array of objects.  */
+            for (i = 0; i &lt; size; i++)
+              init_object (__builtin___bnd_narrow_ptr_bounds (objs + i, objs,
+                                                              sizeof(object)));
+          }
+     </pre>
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void * <b>__builtin___bnd_copy_ptr_bounds</b> (<var>const void *q, const void *r</var>)<var><a name="index-g_t_005f_005fbuiltin_005f_005f_005fbnd_005fcopy_005fptr_005fbounds-3613"></a></var><br>
+<blockquote>
+<p>This built-in function returns a new pointer with the value of <var>q</var>,
+and associates it with the bounds already associated with pointer <var>r</var>. 
+With Pointer Bounds Checker off, the built-in function just returns the first
+argument.
+
+     <pre class="smallexample">          /* Here is a way to get pointer to object's field but
+             still with the full object's bounds.  */
+          int *field_ptr = __builtin___bnd_copy_ptr_bounds (&amp;objptr-&gt;int_field,
+                                                            objptr);
+     </pre>
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void * <b>__builtin___bnd_init_ptr_bounds</b> (<var>const void *q</var>)<var><a name="index-g_t_005f_005fbuiltin_005f_005f_005fbnd_005finit_005fptr_005fbounds-3614"></a></var><br>
+<blockquote>
+<p>This built-in function returns a new pointer with the value of <var>q</var>, and
+associates it with INIT (allowing full memory access) bounds. With Pointer
+Bounds Checker off, the built-in function just returns the first argument.
+
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void * <b>__builtin___bnd_null_ptr_bounds</b> (<var>const void *q</var>)<var><a name="index-g_t_005f_005fbuiltin_005f_005f_005fbnd_005fnull_005fptr_005fbounds-3615"></a></var><br>
+<blockquote>
+<p>This built-in function returns a new pointer with the value of <var>q</var>, and
+associates it with NULL (allowing no memory access) bounds. With Pointer
+Bounds Checker off, the built-in function just returns the first argument.
+
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin___bnd_store_ptr_bounds</b> (<var>const void **ptr_addr, const void *ptr_val</var>)<var><a name="index-g_t_005f_005fbuiltin_005f_005f_005fbnd_005fstore_005fptr_005fbounds-3616"></a></var><br>
+<blockquote>
+<p>This built-in function stores the bounds associated with pointer <var>ptr_val</var>
+and location <var>ptr_addr</var> into Bounds Table.  This can be useful to propagate
+bounds from legacy code without touching the associated pointer's memory when
+pointers are copied as integers.  With Pointer Bounds Checker off, the built-in
+function call is ignored.
+
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin___bnd_chk_ptr_lbounds</b> (<var>const void *q</var>)<var><a name="index-g_t_005f_005fbuiltin_005f_005f_005fbnd_005fchk_005fptr_005flbounds-3617"></a></var><br>
+<blockquote>
+<p>This built-in function checks if the pointer <var>q</var> is within the lower
+bound of its associated bounds.  With Pointer Bounds Checker off, the built-in
+function call is ignored.
+
+     <pre class="smallexample">          extern void *__wrap_memset (void *dst, int c, size_t len)
+          {
+            if (len &gt; 0)
+              {
+                __builtin___bnd_chk_ptr_lbounds (dst);
+                __builtin___bnd_chk_ptr_ubounds ((char *)dst + len - 1);
+                __real_memset (dst, c, len);
+              }
+            return dst;
+          }
+     </pre>
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin___bnd_chk_ptr_ubounds</b> (<var>const void *q</var>)<var><a name="index-g_t_005f_005fbuiltin_005f_005f_005fbnd_005fchk_005fptr_005fubounds-3618"></a></var><br>
+<blockquote>
+<p>This built-in function checks if the pointer <var>q</var> is within the upper
+bound of its associated bounds.  With Pointer Bounds Checker off, the built-in
+function call is ignored.
+
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: void <b>__builtin___bnd_chk_ptr_bounds</b> (<var>const void *q, size_t size</var>)<var><a name="index-g_t_005f_005fbuiltin_005f_005f_005fbnd_005fchk_005fptr_005fbounds-3619"></a></var><br>
+<blockquote>
+<p>This built-in function checks if [<var>q</var>, <var>q</var> + <var>size</var> - 1] is within
+the lower and upper bounds associated with <var>q</var>.  With Pointer Bounds Checker
+off, the built-in function call is ignored.
+
+     <pre class="smallexample">          extern void *__wrap_memcpy (void *dst, const void *src, size_t n)
+          {
+            if (n &gt; 0)
+              {
+                __bnd_chk_ptr_bounds (dst, n);
+                __bnd_chk_ptr_bounds (src, n);
+                __real_memcpy (dst, src, n);
+              }
+            return dst;
+          }
+     </pre>
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: const void * <b>__builtin___bnd_get_ptr_lbound</b> (<var>const void *q</var>)<var><a name="index-g_t_005f_005fbuiltin_005f_005f_005fbnd_005fget_005fptr_005flbound-3620"></a></var><br>
+<blockquote>
+<p>This built-in function returns the lower bound associated
+with the pointer <var>q</var>, as a pointer value. 
+This is useful for debugging using <code>printf</code>. 
+With Pointer Bounds Checker off, the built-in function returns 0.
+
+     <pre class="smallexample">          void *lb = __builtin___bnd_get_ptr_lbound (q);
+          void *ub = __builtin___bnd_get_ptr_ubound (q);
+          printf ("q = %p  lb(q) = %p  ub(q) = %p", q, lb, ub);
+     </pre>
+      </blockquote></div>
+
+<div class="defun">
+&mdash; Built-in Function: const void * <b>__builtin___bnd_get_ptr_ubound</b> (<var>const void *q</var>)<var><a name="index-g_t_005f_005fbuiltin_005f_005f_005fbnd_005fget_005fptr_005fubound-3621"></a></var><br>
+<blockquote>
+<p>This built-in function returns the upper bound (which is a pointer) associated
+with the pointer <var>q</var>.  With Pointer Bounds Checker off,
+the built-in function returns -1.
+
+      </blockquote></div>
+
+ </body></html>
+

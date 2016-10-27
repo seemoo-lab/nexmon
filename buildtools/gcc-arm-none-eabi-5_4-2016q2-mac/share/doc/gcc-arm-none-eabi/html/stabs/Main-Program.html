@@ -1,0 +1,55 @@
+<html lang="en">
+<head>
+<title>Main Program - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Program-Structure.html#Program-Structure" title="Program Structure">
+<link rel="next" href="Source-Files.html#Source-Files" title="Source Files">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Main-Program"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Source-Files.html#Source-Files">Source Files</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Program-Structure.html#Program-Structure">Program Structure</a>
+<hr>
+</div>
+
+<h3 class="section">2.1 Main Program</h3>
+
+<p><a name="index-N_005fMAIN-1"></a>Most languages allow the main program to have any name.  The
+<code>N_MAIN</code> stab type tells the debugger the name that is used in this
+program.  Only the string field is significant; it is the name of
+a function which is the main program.  Most C compilers do not use this
+stab (they expect the debugger to assume that the name is <code>main</code>),
+but some C compilers emit an <code>N_MAIN</code> stab for the <code>main</code>
+function.  I'm not sure how XCOFF handles this.
+
+   </body></html>
+

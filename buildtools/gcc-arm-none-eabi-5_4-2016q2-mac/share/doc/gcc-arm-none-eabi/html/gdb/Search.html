@@ -1,0 +1,72 @@
+<html lang="en">
+<head>
+<title>Search - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Source.html#Source" title="Source">
+<link rel="prev" href="Edit.html#Edit" title="Edit">
+<link rel="next" href="Source-Path.html#Source-Path" title="Source Path">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Search"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Source-Path.html#Source-Path">Source Path</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Edit.html#Edit">Edit</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Source.html#Source">Source</a>
+<hr>
+</div>
+
+<h3 class="section">9.4 Searching Source Files</h3>
+
+<p><a name="index-searching-source-files-530"></a>
+There are two commands for searching through the current source file for a
+regular expression.
+
+     
+<a name="index-search-531"></a>
+<a name="index-forward_002dsearch-532"></a>
+<a name="index-fo-_0040r_007b_0028_0040code_007bforward_002dsearch_007d_0029_007d-533"></a>
+<dl><dt><code>forward-search </code><var>regexp</var><dt><code>search </code><var>regexp</var><dd>The command `<samp><span class="samp">forward-search </span><var>regexp</var></samp>' checks each line,
+starting with the one following the last line listed, for a match for
+<var>regexp</var>.  It lists the line that is found.  You can use the
+synonym `<samp><span class="samp">search </span><var>regexp</var></samp>' or abbreviate the command name as
+<code>fo</code>.
+
+     <p><a name="index-reverse_002dsearch-534"></a><br><dt><code>reverse-search </code><var>regexp</var><dd>The command `<samp><span class="samp">reverse-search </span><var>regexp</var></samp>' checks each line, starting
+with the one before the last line listed and going backward, for a match
+for <var>regexp</var>.  It lists the line that is found.  You can abbreviate
+this command as <code>rev</code>. 
+</dl>
+
+   </body></html>
+

@@ -1,0 +1,55 @@
+<html lang="en">
+<head>
+<title>Conventions - The GNU C Preprocessor Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="The GNU C Preprocessor Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="index.html#Top" title="Top">
+<link rel="next" href="Lexer.html#Lexer" title="Lexer">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Conventions"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Lexer.html#Lexer">Lexer</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="index.html#Top">Top</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="unnumbered">Conventions</h2>
+
+<p><a name="index-interface-1"></a><a name="index-header-files-2"></a>
+cpplib has two interfaces&mdash;one is exposed internally only, and the
+other is for both internal and external use.
+
+   <p>The convention is that functions and types that are exposed to multiple
+files internally are prefixed with `<samp><span class="samp">_cpp_</span></samp>', and are to be found in
+the file <samp><span class="file">internal.h</span></samp>.  Functions and types exposed to external
+clients are in <samp><span class="file">cpplib.h</span></samp>, and prefixed with `<samp><span class="samp">cpp_</span></samp>'.  For
+historical reasons this is no longer quite true, but we should strive to
+stick to it.
+
+   <p>We are striving to reduce the information exposed in <samp><span class="file">cpplib.h</span></samp> to the
+bare minimum necessary, and then to keep it there.  This makes clear
+exactly what external clients are entitled to assume, and allows us to
+change internals in the future without worrying whether library clients
+are perhaps relying on some kind of undocumented implementation-specific
+behavior.
+
+   </body></html>
+

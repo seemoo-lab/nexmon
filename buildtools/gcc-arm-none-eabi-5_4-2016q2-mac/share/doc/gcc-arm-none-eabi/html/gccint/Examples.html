@@ -1,0 +1,94 @@
+<html lang="en">
+<head>
+<title>Examples - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Mode-Iterators.html#Mode-Iterators" title="Mode Iterators">
+<link rel="prev" href="Substitutions.html#Substitutions" title="Substitutions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Examples"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Substitutions.html#Substitutions">Substitutions</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Mode-Iterators.html#Mode-Iterators">Mode Iterators</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">16.23.1.3 Mode Iterator Examples</h5>
+
+<p>Here is an example from the MIPS port.  It defines the following
+modes and attributes (among others):
+
+<pre class="smallexample">     (define_mode_iterator GPR [SI (DI "TARGET_64BIT")])
+     (define_mode_attr d [(SI "") (DI "d")])
+</pre>
+ <p>and uses the following template to define both <code>subsi3</code>
+and <code>subdi3</code>:
+
+<pre class="smallexample">     (define_insn "sub&lt;mode&gt;3"
+       [(set (match_operand:GPR 0 "register_operand" "=d")
+             (minus:GPR (match_operand:GPR 1 "register_operand" "d")
+                        (match_operand:GPR 2 "register_operand" "d")))]
+       ""
+       "&lt;d&gt;subu\t%0,%1,%2"
+       [(set_attr "type" "arith")
+        (set_attr "mode" "&lt;MODE&gt;")])
+</pre>
+ <p>This is exactly equivalent to:
+
+<pre class="smallexample">     (define_insn "subsi3"
+       [(set (match_operand:SI 0 "register_operand" "=d")
+             (minus:SI (match_operand:SI 1 "register_operand" "d")
+                       (match_operand:SI 2 "register_operand" "d")))]
+       ""
+       "subu\t%0,%1,%2"
+       [(set_attr "type" "arith")
+        (set_attr "mode" "SI")])
+     
+     (define_insn "subdi3"
+       [(set (match_operand:DI 0 "register_operand" "=d")
+             (minus:DI (match_operand:DI 1 "register_operand" "d")
+                       (match_operand:DI 2 "register_operand" "d")))]
+       ""
+       "dsubu\t%0,%1,%2"
+       [(set_attr "type" "arith")
+        (set_attr "mode" "DI")])
+</pre>
+ </body></html>
+

@@ -1,0 +1,91 @@
+<html lang="en">
+<head>
+<title>Parameters - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Variables.html#Variables" title="Variables">
+<link rel="prev" href="Based-Variables.html#Based-Variables" title="Based Variables">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Parameters"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Based-Variables.html#Based-Variables">Based Variables</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Variables.html#Variables">Variables</a>
+<hr>
+</div>
+
+<h3 class="section">4.7 Parameters</h3>
+
+<p>Formal parameters to a function are represented by a stab (or sometimes
+two; see below) for each parameter.  The stabs are in the order in which
+the debugger should print the parameters (i.e., the order in which the
+parameters are declared in the source file).  The exact form of the stab
+depends on how the parameter is being passed.
+
+   <p><a name="index-N_005fPSYM-44"></a><a name="index-C_005fPSYM-45"></a>Parameters passed on the stack use the symbol descriptor `<samp><span class="samp">p</span></samp>' and
+the <code>N_PSYM</code> symbol type (or <code>C_PSYM</code> for XCOFF).  The value
+of the symbol is an offset used to locate the parameter on the stack;
+its exact meaning is machine-dependent, but on most machines it is an
+offset from the frame pointer.
+
+   <p>As a simple example, the code:
+
+<pre class="example">     main (argc, argv)
+          int argc;
+          char **argv;
+</pre>
+   <p>produces the stabs:
+
+<pre class="example">     .stabs "main:F1",36,0,0,_main                 # <span class="roman">36 is N_FUN</span>
+     .stabs "argc:p1",160,0,0,68                   # <span class="roman">160 is N_PSYM</span>
+     .stabs "argv:p20=*21=*2",160,0,0,72
+</pre>
+   <p>The type definition of <code>argv</code> is interesting because it contains
+several type definitions.  Type 21 is pointer to type 2 (char) and
+<code>argv</code> (type 20) is pointer to type 21.
+
+<!-- FIXME: figure out what these mean and describe them coherently. -->
+<p>The following symbol descriptors are also said to go with <code>N_PSYM</code>. 
+The value of the symbol is said to be an offset from the argument
+pointer (I'm not sure whether this is true or not).
+
+<pre class="example">     pP (&lt;&lt;??&gt;&gt;)
+     pF Fortran function parameter
+     X  (function result variable)
+</pre>
+   <ul class="menu">
+<li><a accesskey="1" href="Register-Parameters.html#Register-Parameters">Register Parameters</a>
+<li><a accesskey="2" href="Local-Variable-Parameters.html#Local-Variable-Parameters">Local Variable Parameters</a>
+<li><a accesskey="3" href="Reference-Parameters.html#Reference-Parameters">Reference Parameters</a>
+<li><a accesskey="4" href="Conformant-Arrays.html#Conformant-Arrays">Conformant Arrays</a>
+</ul>
+
+   </body></html>
+

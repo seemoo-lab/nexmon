@@ -1,0 +1,198 @@
+<html lang="en">
+<head>
+<title>Writing a Pretty-Printer - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Python-API.html#Python-API" title="Python API">
+<link rel="prev" href="Selecting-Pretty_002dPrinters.html#Selecting-Pretty_002dPrinters" title="Selecting Pretty-Printers">
+<link rel="next" href="Type-Printing-API.html#Type-Printing-API" title="Type Printing API">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Writing-a-Pretty-Printer"></a>
+<a name="Writing-a-Pretty_002dPrinter"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Type-Printing-API.html#Type-Printing-API">Type Printing API</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Selecting-Pretty_002dPrinters.html#Selecting-Pretty_002dPrinters">Selecting Pretty-Printers</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Python-API.html#Python-API">Python API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.2.2.7 Writing a Pretty-Printer</h5>
+
+<p><a name="index-writing-a-pretty_002dprinter-1968"></a>
+A pretty-printer consists of two parts: a lookup function to detect
+if the type is supported, and the printer itself.
+
+   <p>Here is an example showing how a <code>std::string</code> printer might be
+written.  See <a href="Pretty-Printing-API.html#Pretty-Printing-API">Pretty Printing API</a>, for details on the API this class
+must provide.
+
+<pre class="smallexample">     class StdStringPrinter(object):
+         "Print a std::string"
+     
+         def __init__(self, val):
+             self.val = val
+     
+         def to_string(self):
+             return self.val['_M_dataplus']['_M_p']
+     
+         def display_hint(self):
+             return 'string'
+</pre>
+   <p>And here is an example showing how a lookup function for the printer
+example above might be written.
+
+<pre class="smallexample">     def str_lookup_function(val):
+         lookup_tag = val.type.tag
+         if lookup_tag == None:
+             return None
+         regex = re.compile("^std::basic_string&lt;char,.*&gt;$")
+         if regex.match(lookup_tag):
+             return StdStringPrinter(val)
+         return None
+</pre>
+   <p>The example lookup function extracts the value's type, and attempts to
+match it to a type that it can pretty-print.  If it is a type the
+printer can pretty-print, it will return a printer object.  If not, it
+returns <code>None</code>.
+
+   <p>We recommend that you put your core pretty-printers into a Python
+package.  If your pretty-printers are for use with a library, we
+further recommend embedding a version number into the package name. 
+This practice will enable <span class="sc">gdb</span> to load multiple versions of
+your pretty-printers at the same time, because they will have
+different names.
+
+   <p>You should write auto-loaded code (see <a href="Python-Auto_002dloading.html#Python-Auto_002dloading">Python Auto-loading</a>) such that it
+can be evaluated multiple times without changing its meaning.  An
+ideal auto-load file will consist solely of <code>import</code>s of your
+printer modules, followed by a call to a register pretty-printers with
+the current objfile.
+
+   <p>Taken as a whole, this approach will scale nicely to multiple
+inferiors, each potentially using a different library version. 
+Embedding a version number in the Python package name will ensure that
+<span class="sc">gdb</span> is able to load both sets of printers simultaneously. 
+Then, because the search for pretty-printers is done by objfile, and
+because your auto-loaded code took care to register your library's
+printers with a specific objfile, <span class="sc">gdb</span> will find the correct
+printers for the specific version of the library used by each
+inferior.
+
+   <p>To continue the <code>std::string</code> example (see <a href="Pretty-Printing-API.html#Pretty-Printing-API">Pretty Printing API</a>),
+this code might appear in <code>gdb.libstdcxx.v6</code>:
+
+<pre class="smallexample">     def register_printers(objfile):
+         objfile.pretty_printers.append(str_lookup_function)
+</pre>
+   <p class="noindent">And then the corresponding contents of the auto-load file would be:
+
+<pre class="smallexample">     import gdb.libstdcxx.v6
+     gdb.libstdcxx.v6.register_printers(gdb.current_objfile())
+</pre>
+   <p>The previous example illustrates a basic pretty-printer. 
+There are a few things that can be improved on. 
+The printer doesn't have a name, making it hard to identify in a
+list of installed printers.  The lookup function has a name, but
+lookup functions can have arbitrary, even identical, names.
+
+   <p>Second, the printer only handles one type, whereas a library typically has
+several types.  One could install a lookup function for each desired type
+in the library, but one could also have a single lookup function recognize
+several types.  The latter is the conventional way this is handled. 
+If a pretty-printer can handle multiple data types, then its
+<dfn>subprinters</dfn> are the printers for the individual data types.
+
+   <p>The <code>gdb.printing</code> module provides a formal way of solving these
+problems (see <a href="gdb_002eprinting.html#gdb_002eprinting">gdb.printing</a>). 
+Here is another example that handles multiple types.
+
+   <p>These are the types we are going to pretty-print:
+
+<pre class="smallexample">     struct foo { int a, b; };
+     struct bar { struct foo x, y; };
+</pre>
+   <p>Here are the printers:
+
+<pre class="smallexample">     class fooPrinter:
+         """Print a foo object."""
+     
+         def __init__(self, val):
+             self.val = val
+     
+         def to_string(self):
+             return ("a=&lt;" + str(self.val["a"]) +
+                     "&gt; b=&lt;" + str(self.val["b"]) + "&gt;")
+     
+     class barPrinter:
+         """Print a bar object."""
+     
+         def __init__(self, val):
+             self.val = val
+     
+         def to_string(self):
+             return ("x=&lt;" + str(self.val["x"]) +
+                     "&gt; y=&lt;" + str(self.val["y"]) + "&gt;")
+</pre>
+   <p>This example doesn't need a lookup function, that is handled by the
+<code>gdb.printing</code> module.  Instead a function is provided to build up
+the object that handles the lookup.
+
+<pre class="smallexample">     import gdb.printing
+     
+     def build_pretty_printer():
+         pp = gdb.printing.RegexpCollectionPrettyPrinter(
+             "my_library")
+         pp.add_printer('foo', '^foo$', fooPrinter)
+         pp.add_printer('bar', '^bar$', barPrinter)
+         return pp
+</pre>
+   <p>And here is the autoload support:
+
+<pre class="smallexample">     import gdb.printing
+     import my_library
+     gdb.printing.register_pretty_printer(
+         gdb.current_objfile(),
+         my_library.build_pretty_printer())
+</pre>
+   <p>Finally, when this printer is loaded into <span class="sc">gdb</span>, here is the
+corresponding output of `<samp><span class="samp">info pretty-printer</span></samp>':
+
+<pre class="smallexample">     (gdb) info pretty-printer
+     my_library.so:
+       my_library
+         foo
+         bar
+</pre>
+   </body></html>
+

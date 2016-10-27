@@ -1,0 +1,95 @@
+<html lang="en">
+<head>
+<title>Man Page Generation - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Documentation.html#Documentation" title="Documentation">
+<link rel="prev" href="Texinfo-Manuals.html#Texinfo-Manuals" title="Texinfo Manuals">
+<link rel="next" href="Miscellaneous-Docs.html#Miscellaneous-Docs" title="Miscellaneous Docs">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Man-Page-Generation"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Miscellaneous-Docs.html#Miscellaneous-Docs">Miscellaneous Docs</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Texinfo-Manuals.html#Texinfo-Manuals">Texinfo Manuals</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Documentation.html#Documentation">Documentation</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">6.3.7.2 Man Page Generation</h5>
+
+<p>Because of user demand, in addition to full Texinfo manuals, man pages
+are provided which contain extracts from those manuals.  These man
+pages are generated from the Texinfo manuals using
+<samp><span class="file">contrib/texi2pod.pl</span></samp> and <samp><span class="command">pod2man</span></samp>.  (The man page for
+<samp><span class="command">g++</span></samp>, <samp><span class="file">cp/g++.1</span></samp>, just contains a `<samp><span class="samp">.so</span></samp>' reference
+to <samp><span class="file">gcc.1</span></samp>, but all the other man pages are generated from
+Texinfo manuals.)
+
+ <p>Because many systems may not have the necessary tools installed to
+generate the man pages, they are only generated if the
+<samp><span class="file">configure</span></samp> script detects that recent enough tools are
+installed, and the Makefiles allow generating man pages to fail
+without aborting the build.  Man pages are also included in release
+distributions.  They are generated in the source directory.
+
+ <p>Magic comments in Texinfo files starting `<samp><span class="samp">@c man</span></samp>' control what
+parts of a Texinfo file go into a man page.  Only a subset of Texinfo
+is supported by <samp><span class="file">texi2pod.pl</span></samp>, and it may be necessary to add
+support for more Texinfo features to this script when generating new
+man pages.  To improve the man page output, some special Texinfo
+macros are provided in <samp><span class="file">doc/include/gcc-common.texi</span></samp> which
+<samp><span class="file">texi2pod.pl</span></samp> understands:
+
+     <dl>
+<dt><code>@gcctabopt</code><dd>Use in the form `<samp><span class="samp">@table @gcctabopt</span></samp>' for tables of options,
+where for printed output the effect of `<samp><span class="samp">@code</span></samp>' is better than
+that of `<samp><span class="samp">@option</span></samp>' but for man page output a different effect is
+wanted. 
+<br><dt><code>@gccoptlist</code><dd>Use for summary lists of options in manuals. 
+<br><dt><code>@gol</code><dd>Use at the end of each line inside `<samp><span class="samp">@gccoptlist</span></samp>'.  This is
+necessary to avoid problems with differences in how the
+`<samp><span class="samp">@gccoptlist</span></samp>' macro is handled by different Texinfo formatters. 
+</dl>
+
+ <p>FIXME: describe the <samp><span class="file">texi2pod.pl</span></samp> input language and magic
+comments in more detail.
+
+ </body></html>
+

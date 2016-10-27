@@ -1,0 +1,183 @@
+<html lang="en">
+<head>
+<title>Loop representation - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation" title="Loop Analysis and Representation">
+<link rel="next" href="Loop-querying.html#Loop-querying" title="Loop querying">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Loop-representation"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Loop-querying.html#Loop-querying">Loop querying</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation">Loop Analysis and Representation</a>
+<hr>
+</div>
+
+<h3 class="section">15.1 Loop representation</h3>
+
+<p><a name="index-Loop-representation-3229"></a><a name="index-Loop-analysis-3230"></a>
+This chapter describes the representation of loops in GCC, and functions
+that can be used to build, modify and analyze this representation.  Most
+of the interfaces and data structures are declared in <samp><span class="file">cfgloop.h</span></samp>. 
+Loop structures are analyzed and this information disposed or updated
+at the discretion of individual passes.  Still most of the generic
+CFG manipulation routines are aware of loop structures and try to
+keep them up-to-date.  By this means an increasing part of the
+compilation pipeline is setup to maintain loop structure across
+passes to allow attaching meta information to individual loops
+for consumption by later passes.
+
+ <p>In general, a natural loop has one entry block (header) and possibly
+several back edges (latches) leading to the header from the inside of
+the loop.  Loops with several latches may appear if several loops share
+a single header, or if there is a branching in the middle of the loop. 
+The representation of loops in GCC however allows only loops with a
+single latch.  During loop analysis, headers of such loops are split and
+forwarder blocks are created in order to disambiguate their structures. 
+Heuristic based on profile information and structure of the induction
+variables in the loops is used to determine whether the latches
+correspond to sub-loops or to control flow in a single loop.  This means
+that the analysis sometimes changes the CFG, and if you run it in the
+middle of an optimization pass, you must be able to deal with the new
+blocks.  You may avoid CFG changes by passing
+<code>LOOPS_MAY_HAVE_MULTIPLE_LATCHES</code> flag to the loop discovery,
+note however that most other loop manipulation functions will not work
+correctly for loops with multiple latch edges (the functions that only
+query membership of blocks to loops and subloop relationships, or
+enumerate and test loop exits, can be expected to work).
+
+ <p>Body of the loop is the set of blocks that are dominated by its header,
+and reachable from its latch against the direction of edges in CFG.  The
+loops are organized in a containment hierarchy (tree) such that all the
+loops immediately contained inside loop L are the children of L in the
+tree.  This tree is represented by the <code>struct loops</code> structure. 
+The root of this tree is a fake loop that contains all blocks in the
+function.  Each of the loops is represented in a <code>struct loop</code>
+structure.  Each loop is assigned an index (<code>num</code> field of the
+<code>struct loop</code> structure), and the pointer to the loop is stored in
+the corresponding field of the <code>larray</code> vector in the loops
+structure.  The indices do not have to be continuous, there may be
+empty (<code>NULL</code>) entries in the <code>larray</code> created by deleting
+loops.  Also, there is no guarantee on the relative order of a loop
+and its subloops in the numbering.  The index of a loop never changes.
+
+ <p>The entries of the <code>larray</code> field should not be accessed directly. 
+The function <code>get_loop</code> returns the loop description for a loop with
+the given index.  <code>number_of_loops</code> function returns number of
+loops in the function.  To traverse all loops, use <code>FOR_EACH_LOOP</code>
+macro.  The <code>flags</code> argument of the macro is used to determine
+the direction of traversal and the set of loops visited.  Each loop is
+guaranteed to be visited exactly once, regardless of the changes to the
+loop tree, and the loops may be removed during the traversal.  The newly
+created loops are never traversed, if they need to be visited, this
+must be done separately after their creation.  The <code>FOR_EACH_LOOP</code>
+macro allocates temporary variables.  If the <code>FOR_EACH_LOOP</code> loop
+were ended using break or goto, they would not be released;
+<code>FOR_EACH_LOOP_BREAK</code> macro must be used instead.
+
+ <p>Each basic block contains the reference to the innermost loop it belongs
+to (<code>loop_father</code>).  For this reason, it is only possible to have
+one <code>struct loops</code> structure initialized at the same time for each
+CFG.  The global variable <code>current_loops</code> contains the
+<code>struct loops</code> structure.  Many of the loop manipulation functions
+assume that dominance information is up-to-date.
+
+ <p>The loops are analyzed through <code>loop_optimizer_init</code> function.  The
+argument of this function is a set of flags represented in an integer
+bitmask.  These flags specify what other properties of the loop
+structures should be calculated/enforced and preserved later:
+
+     <ul>
+<li><code>LOOPS_MAY_HAVE_MULTIPLE_LATCHES</code>: If this flag is set, no
+changes to CFG will be performed in the loop analysis, in particular,
+loops with multiple latch edges will not be disambiguated.  If a loop
+has multiple latches, its latch block is set to NULL.  Most of
+the loop manipulation functions will not work for loops in this shape. 
+No other flags that require CFG changes can be passed to
+loop_optimizer_init. 
+<li><code>LOOPS_HAVE_PREHEADERS</code>: Forwarder blocks are created in such
+a way that each loop has only one entry edge, and additionally, the
+source block of this entry edge has only one successor.  This creates a
+natural place where the code can be moved out of the loop, and ensures
+that the entry edge of the loop leads from its immediate super-loop. 
+<li><code>LOOPS_HAVE_SIMPLE_LATCHES</code>: Forwarder blocks are created to
+force the latch block of each loop to have only one successor.  This
+ensures that the latch of the loop does not belong to any of its
+sub-loops, and makes manipulation with the loops significantly easier. 
+Most of the loop manipulation functions assume that the loops are in
+this shape.  Note that with this flag, the &ldquo;normal&rdquo; loop without any
+control flow inside and with one exit consists of two basic blocks. 
+<li><code>LOOPS_HAVE_MARKED_IRREDUCIBLE_REGIONS</code>: Basic blocks and
+edges in the strongly connected components that are not natural loops
+(have more than one entry block) are marked with
+<code>BB_IRREDUCIBLE_LOOP</code> and <code>EDGE_IRREDUCIBLE_LOOP</code> flags.  The
+flag is not set for blocks and edges that belong to natural loops that
+are in such an irreducible region (but it is set for the entry and exit
+edges of such a loop, if they lead to/from this region). 
+<li><code>LOOPS_HAVE_RECORDED_EXITS</code>: The lists of exits are recorded
+and updated for each loop.  This makes some functions (e.g.,
+<code>get_loop_exit_edges</code>) more efficient.  Some functions (e.g.,
+<code>single_exit</code>) can be used only if the lists of exits are
+recorded. 
+</ul>
+
+ <p>These properties may also be computed/enforced later, using functions
+<code>create_preheaders</code>, <code>force_single_succ_latches</code>,
+<code>mark_irreducible_loops</code> and <code>record_loop_exits</code>. 
+The properties can be queried using <code>loops_state_satisfies_p</code>.
+
+ <p>The memory occupied by the loops structures should be freed with
+<code>loop_optimizer_finalize</code> function.  When loop structures are
+setup to be preserved across passes this function reduces the
+information to be kept up-to-date to a minimum (only
+<code>LOOPS_MAY_HAVE_MULTIPLE_LATCHES</code> set).
+
+ <p>The CFG manipulation functions in general do not update loop structures. 
+Specialized versions that additionally do so are provided for the most
+common tasks.  On GIMPLE, <code>cleanup_tree_cfg_loop</code> function can be
+used to cleanup CFG while updating the loops structures if
+<code>current_loops</code> is set.
+
+ <p>At the moment loop structure is preserved from the start of GIMPLE
+loop optimizations until the end of RTL loop optimizations.  During
+this time a loop can be tracked by its <code>struct loop</code> and number.
+
+ </body></html>
+

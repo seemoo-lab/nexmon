@@ -1,0 +1,144 @@
+<html lang="en">
+<head>
+<title>WHOPR - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="LTO.html#LTO" title="LTO">
+<link rel="prev" href="IPA.html#IPA" title="IPA">
+<link rel="next" href="Internal-flags.html#Internal-flags" title="Internal flags">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="WHOPR"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Internal-flags.html#Internal-flags">Internal flags</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="IPA.html#IPA">IPA</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="LTO.html#LTO">LTO</a>
+<hr>
+</div>
+
+<h3 class="section">24.4 Whole program assumptions, linker plugin and symbol visibilities</h3>
+
+<p>Link-time optimization gives relatively minor benefits when used
+alone.  The problem is that propagation of inter-procedural
+information does not work well across functions and variables
+that are called or referenced by other compilation units (such as
+from a dynamically linked library).  We say that such functions
+and variables are <em>externally visible</em>.
+
+ <p>To make the situation even more difficult, many applications
+organize themselves as a set of shared libraries, and the default
+ELF visibility rules allow one to overwrite any externally
+visible symbol with a different symbol at runtime.  This
+basically disables any optimizations across such functions and
+variables, because the compiler cannot be sure that the function
+body it is seeing is the same function body that will be used at
+runtime.  Any function or variable not declared <code>static</code> in
+the sources degrades the quality of inter-procedural
+optimization.
+
+ <p>To avoid this problem the compiler must assume that it sees the
+whole program when doing link-time optimization.  Strictly
+speaking, the whole program is rarely visible even at link-time. 
+Standard system libraries are usually linked dynamically or not
+provided with the link-time information.  In GCC, the whole
+program option (<samp><span class="option">-fwhole-program</span></samp>) asserts that every
+function and variable defined in the current compilation
+unit is static, except for function <code>main</code> (note: at
+link time, the current unit is the union of all objects compiled
+with LTO).  Since some functions and variables need to
+be referenced externally, for example by another DSO or from an
+assembler file, GCC also provides the function and variable
+attribute <code>externally_visible</code> which can be used to disable
+the effect of <samp><span class="option">-fwhole-program</span></samp> on a specific symbol.
+
+ <p>The whole program mode assumptions are slightly more complex in
+C++, where inline functions in headers are put into <em>COMDAT</em>
+sections.  COMDAT function and variables can be defined by
+multiple object files and their bodies are unified at link-time
+and dynamic link-time.  COMDAT functions are changed to local only
+when their address is not taken and thus un-sharing them with a
+library is not harmful.  COMDAT variables always remain externally
+visible, however for readonly variables it is assumed that their
+initializers cannot be overwritten by a different value.
+
+ <p>GCC provides the function and variable attribute
+<code>visibility</code> that can be used to specify the visibility of
+externally visible symbols (or alternatively an
+<samp><span class="option">-fdefault-visibility</span></samp> command line option).  ELF defines
+the <code>default</code>, <code>protected</code>, <code>hidden</code> and
+<code>internal</code> visibilities.
+
+ <p>The most commonly used is visibility is <code>hidden</code>.  It
+specifies that the symbol cannot be referenced from outside of
+the current shared library.  Unfortunately, this information
+cannot be used directly by the link-time optimization in the
+compiler since the whole shared library also might contain
+non-LTO objects and those are not visible to the compiler.
+
+ <p>GCC solves this problem using linker plugins.  A <em>linker
+plugin</em> is an interface to the linker that allows an external
+program to claim the ownership of a given object file.  The linker
+then performs the linking procedure by querying the plugin about
+the symbol table of the claimed objects and once the linking
+decisions are complete, the plugin is allowed to provide the
+final object file before the actual linking is made.  The linker
+plugin obtains the symbol resolution information which specifies
+which symbols provided by the claimed objects are bound from the
+rest of a binary being linked.
+
+ <p>Currently, the linker plugin  works only in combination
+with the Gold linker, but a GNU ld implementation is under
+development.
+
+ <p>GCC is designed to be independent of the rest of the toolchain
+and aims to support linkers without plugin support.  For this
+reason it does not use the linker plugin by default.  Instead,
+the object files are examined by <samp><span class="command">collect2</span></samp> before being
+passed to the linker and objects found to have LTO sections are
+passed to <samp><span class="command">lto1</span></samp> first.  This mode does not work for
+library archives.  The decision on what object files from the
+archive are needed depends on the actual linking and thus GCC
+would have to implement the linker itself.  The resolution
+information is missing too and thus GCC needs to make an educated
+guess based on <samp><span class="option">-fwhole-program</span></samp>.  Without the linker
+plugin GCC also assumes that symbols are declared <code>hidden</code>
+and not referred by non-LTO code by default.
+
+ </body></html>
+

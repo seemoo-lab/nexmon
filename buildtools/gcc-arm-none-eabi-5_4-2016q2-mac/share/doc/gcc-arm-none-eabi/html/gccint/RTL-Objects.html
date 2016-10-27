@@ -1,0 +1,126 @@
+<html lang="en">
+<head>
+<title>RTL Objects - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="RTL.html#RTL" title="RTL">
+<link rel="next" href="RTL-Classes.html#RTL-Classes" title="RTL Classes">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="RTL-Objects"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="RTL-Classes.html#RTL-Classes">RTL Classes</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="RTL.html#RTL">RTL</a>
+<hr>
+</div>
+
+<h3 class="section">13.1 RTL Object Types</h3>
+
+<p><a name="index-RTL-object-types-2537"></a>
+<a name="index-RTL-integers-2538"></a><a name="index-RTL-strings-2539"></a><a name="index-RTL-vectors-2540"></a><a name="index-RTL-expression-2541"></a><a name="index-RTX-_0028See-RTL_0029-2542"></a>RTL uses five kinds of objects: expressions, integers, wide integers,
+strings and vectors.  Expressions are the most important ones.  An RTL
+expression (&ldquo;RTX&rdquo;, for short) is a C structure, but it is usually
+referred to with a pointer; a type that is given the typedef name
+<code>rtx</code>.
+
+ <p>An integer is simply an <code>int</code>; their written form uses decimal
+digits.  A wide integer is an integral object whose type is
+<code>HOST_WIDE_INT</code>; their written form uses decimal digits.
+
+ <p>A string is a sequence of characters.  In core it is represented as a
+<code>char *</code> in usual C fashion, and it is written in C syntax as well. 
+However, strings in RTL may never be null.  If you write an empty string in
+a machine description, it is represented in core as a null pointer rather
+than as a pointer to a null character.  In certain contexts, these null
+pointers instead of strings are valid.  Within RTL code, strings are most
+commonly found inside <code>symbol_ref</code> expressions, but they appear in
+other contexts in the RTL expressions that make up machine descriptions.
+
+ <p>In a machine description, strings are normally written with double
+quotes, as you would in C.  However, strings in machine descriptions may
+extend over many lines, which is invalid C, and adjacent string
+constants are not concatenated as they are in C.  Any string constant
+may be surrounded with a single set of parentheses.  Sometimes this
+makes the machine description easier to read.
+
+ <p>There is also a special syntax for strings, which can be useful when C
+code is embedded in a machine description.  Wherever a string can
+appear, it is also valid to write a C-style brace block.  The entire
+brace block, including the outermost pair of braces, is considered to be
+the string constant.  Double quote characters inside the braces are not
+special.  Therefore, if you write string constants in the C code, you
+need not escape each quote character with a backslash.
+
+ <p>A vector contains an arbitrary number of pointers to expressions.  The
+number of elements in the vector is explicitly present in the vector. 
+The written form of a vector consists of square brackets
+(`<samp><span class="samp">[...]</span></samp>') surrounding the elements, in sequence and with
+whitespace separating them.  Vectors of length zero are not created;
+null pointers are used instead.
+
+ <p><a name="index-expression-codes-2543"></a><a name="index-codes_002c-RTL-expression-2544"></a><a name="index-GET_005fCODE-2545"></a><a name="index-PUT_005fCODE-2546"></a>Expressions are classified by <dfn>expression codes</dfn> (also called RTX
+codes).  The expression code is a name defined in <samp><span class="file">rtl.def</span></samp>, which is
+also (in uppercase) a C enumeration constant.  The possible expression
+codes and their meanings are machine-independent.  The code of an RTX can
+be extracted with the macro <code>GET_CODE (</code><var>x</var><code>)</code> and altered with
+<code>PUT_CODE (</code><var>x</var><code>, </code><var>newcode</var><code>)</code>.
+
+ <p>The expression code determines how many operands the expression contains,
+and what kinds of objects they are.  In RTL, unlike Lisp, you cannot tell
+by looking at an operand what kind of object it is.  Instead, you must know
+from its context&mdash;from the expression code of the containing expression. 
+For example, in an expression of code <code>subreg</code>, the first operand is
+to be regarded as an expression and the second operand as an integer.  In
+an expression of code <code>plus</code>, there are two operands, both of which
+are to be regarded as expressions.  In a <code>symbol_ref</code> expression,
+there is one operand, which is to be regarded as a string.
+
+ <p>Expressions are written as parentheses containing the name of the
+expression type, its flags and machine mode if any, and then the operands
+of the expression (separated by spaces).
+
+ <p>Expression code names in the `<samp><span class="samp">md</span></samp>' file are written in lowercase,
+but when they appear in C code they are written in uppercase.  In this
+manual, they are shown as follows: <code>const_int</code>.
+
+ <p><a name="index-g_t_0028nil_0029-2547"></a><a name="index-nil-2548"></a>In a few contexts a null pointer is valid where an expression is normally
+wanted.  The written form of this is <code>(nil)</code>.
+
+ </body></html>
+

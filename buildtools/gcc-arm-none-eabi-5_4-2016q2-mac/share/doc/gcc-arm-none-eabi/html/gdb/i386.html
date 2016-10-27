@@ -1,0 +1,117 @@
+<html lang="en">
+<head>
+<title>i386 - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Architectures.html#Architectures" title="Architectures">
+<link rel="prev" href="AArch64.html#AArch64" title="AArch64">
+<link rel="next" href="Alpha.html#Alpha" title="Alpha">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="i386"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Alpha.html#Alpha">Alpha</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="AArch64.html#AArch64">AArch64</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Architectures.html#Architectures">Architectures</a>
+<hr>
+</div>
+
+<h4 class="subsection">21.4.2 x86 Architecture-specific Issues</h4>
+
+     <dl>
+<dt><code>set struct-convention </code><var>mode</var><dd><a name="index-set-struct_002dconvention-1584"></a><a name="index-struct-return-convention-1585"></a><a name="index-struct_002funion-returned-in-registers-1586"></a>Set the convention used by the inferior to return <code>struct</code>s and
+<code>union</code>s from functions to <var>mode</var>.  Possible values of
+<var>mode</var> are <code>"pcc"</code>, <code>"reg"</code>, and <code>"default"</code> (the
+default).  <code>"default"</code> or <code>"pcc"</code> means that <code>struct</code>s
+are returned on the stack, while <code>"reg"</code> means that a
+<code>struct</code> or a <code>union</code> whose size is 1, 2, 4, or 8 bytes will
+be returned in a register.
+
+     <br><dt><code>show struct-convention</code><dd><a name="index-show-struct_002dconvention-1587"></a>Show the current setting of the convention to return <code>struct</code>s
+from functions. 
+</dl>
+
+<h5 class="subsubsection">21.4.2.1 Intel(R) <dfn>Memory Protection Extensions</dfn> (MPX).</h5>
+
+<p><a name="index-Intel_0028R_0029-Memory-Protection-Extensions-_0028MPX_0029_002e-1588"></a>
+Memory Protection Extension (MPX) adds the bound registers `<samp><span class="samp">BND0</span></samp>'
+<a rel="footnote" href="#fn-1" name="fnd-1"><sup>1</sup></a> through `<samp><span class="samp">BND3</span></samp>'.  Bound registers store a pair of 64-bit values
+which are the lower bound and upper bound.  Bounds are effective addresses or
+memory locations.  The upper bounds are architecturally represented in 1's
+complement form.  A bound having lower bound = 0, and upper bound = 0
+(1's complement of all bits set) will allow access to the entire address space.
+
+   <p>`<samp><span class="samp">BND0</span></samp>' through `<samp><span class="samp">BND3</span></samp>' are represented in <span class="sc">gdb</span> as `<samp><span class="samp">bnd0raw</span></samp>'
+through `<samp><span class="samp">bnd3raw</span></samp>'.  Pseudo registers `<samp><span class="samp">bnd0</span></samp>' through `<samp><span class="samp">bnd3</span></samp>'
+display the upper bound performing the complement of one operation on the
+upper bound value, i.e. when upper bound in `<samp><span class="samp">bnd0raw</span></samp>' is 0 in the
+<span class="sc">gdb</span> `<samp><span class="samp">bnd0</span></samp>' it will be <code>0xfff...</code>.  In this sense it
+can also be noted that the upper bounds are inclusive.
+
+   <p>As an example, assume that the register BND0 holds bounds for a pointer having
+access allowed for the range between 0x32 and 0x71.  The values present on
+bnd0raw and bnd registers are presented as follows:
+
+<pre class="smallexample">     	bnd0raw = {0x32, 0xffffffff8e}
+     	bnd0 = {lbound = 0x32, ubound = 0x71} : size 64
+</pre>
+   <p>This way the raw value can be accessed via bnd0raw<small class="dots">...</small>bnd3raw.  Any
+change on bnd0<small class="dots">...</small>bnd3 or bnd0raw<small class="dots">...</small>bnd3raw is reflect on its
+counterpart.  When the bnd0<small class="dots">...</small>bnd3 registers are displayed via
+Python, the display includes the memory size, in bits, accessible to
+the pointer.
+
+   <p>Bounds can also be stored in bounds tables, which are stored in
+application memory.  These tables store bounds for pointers by specifying
+the bounds pointer's value along with its bounds.  Evaluating and changing
+bounds located in bound tables is therefore interesting while investigating
+bugs on MPX context.  <span class="sc">gdb</span> provides commands for this purpose:
+
+     <dl>
+<dt><code>show mpx bound </code><var>pointer</var><dd><a name="index-show-mpx-bound-1589"></a>Display bounds of the given <var>pointer</var>.
+
+     <br><dt><code>set mpx bound </code><var>pointer</var><code>, </code><var>lbound</var><code>, </code><var>ubound</var><dd><a name="index-set-mpx-bound-1590"></a>Set the bounds of a pointer in the bound table. 
+This command takes three parameters: <var>pointer</var> is the pointers
+whose bounds are to be changed, <var>lbound</var> and <var>ubound</var> are new values
+for lower and upper bounds respectively. 
+</dl>
+
+   <div class="footnote">
+<hr>
+<h4>Footnotes</h4><p class="footnote"><small>[<a name="fn-1" href="#fnd-1">1</a>]</small> The register named with capital letters represent the architecture
+registers.</p>
+
+   <p><hr></div>
+
+   </body></html>
+

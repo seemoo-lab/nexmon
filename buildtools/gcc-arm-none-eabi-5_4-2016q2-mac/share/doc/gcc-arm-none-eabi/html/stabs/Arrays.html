@@ -1,0 +1,128 @@
+<html lang="en">
+<head>
+<title>Arrays - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Types.html#Types" title="Types">
+<link rel="prev" href="Subranges.html#Subranges" title="Subranges">
+<link rel="next" href="Strings.html#Strings" title="Strings">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Arrays"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Strings.html#Strings">Strings</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Subranges.html#Subranges">Subranges</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Types.html#Types">Types</a>
+<hr>
+</div>
+
+<h3 class="section">5.5 Array Types</h3>
+
+<p>Arrays use the `<samp><span class="samp">a</span></samp>' type descriptor.  Following the type descriptor
+is the type of the index and the type of the array elements.  If the
+index type is a range type, it ends in a semicolon; otherwise
+(for example, if it is a type reference), there does not
+appear to be any way to tell where the types are separated.  In an
+effort to clean up this mess, IBM documents the two types as being
+separated by a semicolon, and a range type as not ending in a semicolon
+(but this is not right for range types which are not array indexes,
+see <a href="Subranges.html#Subranges">Subranges</a>).  I think probably the best solution is to specify
+that a semicolon ends a range type, and that the index type and element
+type of an array are separated by a semicolon, but that if the index
+type is a range type, the extra semicolon can be omitted.  GDB (at least
+through version 4.9) doesn't support any kind of index type other than a
+range anyway; I'm not sure about dbx.
+
+   <p>It is well established, and widely used, that the type of the index,
+unlike most types found in the stabs, is merely a type definition, not
+type information (see <a href="String-Field.html#String-Field">String Field</a>) (that is, it need not start with
+`<samp><var>type-number</var><span class="samp">=</span></samp>' if it is defining a new type).  According to a
+comment in GDB, this is also true of the type of the array elements; it
+gives `<samp><span class="samp">ar1;1;10;ar1;1;10;4</span></samp>' as a legitimate way to express a two
+dimensional array.  According to AIX documentation, the element type
+must be type information.  GDB accepts either.
+
+   <p>The type of the index is often a range type, expressed as the type
+descriptor `<samp><span class="samp">r</span></samp>' and some parameters.  It defines the size of the
+array.  In the example below, the range `<samp><span class="samp">r1;0;2;</span></samp>' defines an index
+type which is a subrange of type 1 (integer), with a lower bound of 0
+and an upper bound of 2.  This defines the valid range of subscripts of
+a three-element C array.
+
+   <p>For example, the definition:
+
+<pre class="example">     char char_vec[3] = {'a','b','c'};
+</pre>
+   <p class="noindent">produces the output:
+
+<pre class="example">     .stabs "char_vec:G19=ar1;0;2;2",32,0,0,0
+          .global _char_vec
+          .align 4
+     _char_vec:
+          .byte 97
+          .byte 98
+          .byte 99
+</pre>
+   <p>If an array is <dfn>packed</dfn>, the elements are spaced more
+closely than normal, saving memory at the expense of speed.  For
+example, an array of 3-byte objects might, if unpacked, have each
+element aligned on a 4-byte boundary, but if packed, have no padding. 
+One way to specify that something is packed is with type attributes
+(see <a href="String-Field.html#String-Field">String Field</a>).  In the case of arrays, another is to use the
+`<samp><span class="samp">P</span></samp>' type descriptor instead of `<samp><span class="samp">a</span></samp>'.  Other than specifying a
+packed array, `<samp><span class="samp">P</span></samp>' is identical to `<samp><span class="samp">a</span></samp>'.
+
+<!-- FIXME-what is it?  A pointer? -->
+<p>An open array is represented by the `<samp><span class="samp">A</span></samp>' type descriptor followed by
+type information specifying the type of the array elements.
+
+<!-- FIXME: what is the format of this type?  A pointer to a vector of pointers? -->
+<p>An N-dimensional dynamic array is represented by
+
+<pre class="example">     D <var>dimensions</var> ; <var>type-information</var>
+</pre>
+   <!-- Does dimensions really have this meaning?  The AIX documentation -->
+<!-- doesn't say. -->
+<p><var>dimensions</var> is the number of dimensions; <var>type-information</var>
+specifies the type of the array elements.
+
+<!-- FIXME: what is the format of this type?  A pointer to some offsets in -->
+<!-- another array? -->
+<p>A subarray of an N-dimensional array is represented by
+
+<pre class="example">     E <var>dimensions</var> ; <var>type-information</var>
+</pre>
+   <!-- Does dimensions really have this meaning?  The AIX documentation -->
+<!-- doesn't say. -->
+<p><var>dimensions</var> is the number of dimensions; <var>type-information</var>
+specifies the type of the array elements.
+
+   </body></html>
+

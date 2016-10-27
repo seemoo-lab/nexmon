@@ -1,0 +1,85 @@
+<html lang="en">
+<head>
+<title>Stack Variables - STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Variables.html#Variables" title="Variables">
+<link rel="next" href="Global-Variables.html#Global-Variables" title="Global Variables">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Stack-Variables"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Global-Variables.html#Global-Variables">Global Variables</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Variables.html#Variables">Variables</a>
+<hr>
+</div>
+
+<h3 class="section">4.1 Automatic Variables Allocated on the Stack</h3>
+
+<p>If a variable's scope is local to a function and its lifetime is only as
+long as that function executes (C calls such variables
+<dfn>automatic</dfn>), it can be allocated in a register (see <a href="Register-Variables.html#Register-Variables">Register Variables</a>) or on the stack.
+
+   <p><a name="index-N_005fLSYM_002c-for-stack-variables-25"></a><a name="index-C_005fLSYM-26"></a>Each variable allocated on the stack has a stab with the symbol
+descriptor omitted.  Since type information should begin with a digit,
+`<samp><span class="samp">-</span></samp>', or `<samp><span class="samp">(</span></samp>', only those characters precluded from being used
+for symbol descriptors.  However, the Acorn RISC machine (ARM) is said
+to get this wrong: it puts out a mere type definition here, without the
+preceding `<samp><var>type-number</var><span class="samp">=</span></samp>'.  This is a bad idea; there is no
+guarantee that type descriptors are distinct from symbol descriptors. 
+Stabs for stack variables use the <code>N_LSYM</code> stab type, or
+<code>C_LSYM</code> for XCOFF.
+
+   <p>The value of the stab is the offset of the variable within the
+local variables.  On most machines this is an offset from the frame
+pointer and is negative.  The location of the stab specifies which block
+it is defined in; see <a href="Block-Structure.html#Block-Structure">Block Structure</a>.
+
+   <p>For example, the following C code:
+
+<pre class="example">     int
+     main ()
+     {
+       int x;
+     }
+</pre>
+   <p>produces the following stabs:
+
+<pre class="example">     .stabs "main:F1",36,0,0,_main   # <span class="roman">36 is N_FUN</span>
+     .stabs "x:1",128,0,0,-12        # <span class="roman">128 is N_LSYM</span>
+     .stabn 192,0,0,LBB2             # <span class="roman">192 is N_LBRAC</span>
+     .stabn 224,0,0,LBE2             # <span class="roman">224 is N_RBRAC</span>
+</pre>
+   <p>See <a href="Procedures.html#Procedures">Procedures</a> for more information on the <code>N_FUN</code> stab, and
+<a href="Block-Structure.html#Block-Structure">Block Structure</a> for more information on the <code>N_LBRAC</code> and
+<code>N_RBRAC</code> stabs.
+
+   </body></html>
+

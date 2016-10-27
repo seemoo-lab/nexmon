@@ -1,0 +1,88 @@
+<html lang="en">
+<head>
+<title>@code{GIMPLE_OMP_ATOMIC_LOAD} - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Tuple-specific-accessors.html#Tuple-specific-accessors" title="Tuple specific accessors">
+<link rel="prev" href="_0040code_007bGIMPLE_005fNOP_007d.html#g_t_0040code_007bGIMPLE_005fNOP_007d" title="@code{GIMPLE_NOP}">
+<link rel="next" href="_0040code_007bGIMPLE_005fOMP_005fATOMIC_005fSTORE_007d.html#g_t_0040code_007bGIMPLE_005fOMP_005fATOMIC_005fSTORE_007d" title="@code{GIMPLE_OMP_ATOMIC_STORE}">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="%3ccode%3eGIMPLE_OMP_ATOMIC_LOAD%3c%2fcode%3e"></a>
+<a name="g_t_003ccode_003eGIMPLE_005fOMP_005fATOMIC_005fLOAD_003c_002fcode_003e"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="_003ccode_003eGIMPLE_005fOMP_005fATOMIC_005fSTORE_003c_002fcode_003e.html#g_t_003ccode_003eGIMPLE_005fOMP_005fATOMIC_005fSTORE_003c_002fcode_003e">&lt;code&gt;GIMPLE_OMP_ATOMIC_STORE&lt;/code&gt;</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="_003ccode_003eGIMPLE_005fNOP_003c_002fcode_003e.html#g_t_003ccode_003eGIMPLE_005fNOP_003c_002fcode_003e">&lt;code&gt;GIMPLE_NOP&lt;/code&gt;</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Tuple-specific-accessors.html#Tuple-specific-accessors">Tuple specific accessors</a>
+<hr>
+</div>
+
+<h4 class="subsection">11.8.12 <code>GIMPLE_OMP_ATOMIC_LOAD</code></h4>
+
+<p><a name="index-g_t_0040code_007bGIMPLE_005fOMP_005fATOMIC_005fLOAD_007d-2323"></a>
+
+<div class="defun">
+&mdash; GIMPLE function: gomp_atomic_load <b>*gimple_build_omp_atomic_load</b> (<var> tree lhs, tree rhs</var>)<var><a name="index-g_t_002agimple_005fbuild_005fomp_005fatomic_005fload-2324"></a></var><br>
+<blockquote><p>Build a <code>GIMPLE_OMP_ATOMIC_LOAD</code> statement.  <code>LHS</code> is the left-hand
+side of the assignment.  <code>RHS</code> is the right-hand side of the
+assignment. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_omp_atomic_load_set_lhs</b> (<var> gomp_atomic_load *g, tree lhs</var>)<var><a name="index-gimple_005fomp_005fatomic_005fload_005fset_005flhs-2325"></a></var><br>
+<blockquote><p>Set the <code>LHS</code> of an atomic load. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree <b>gimple_omp_atomic_load_lhs</b> (<var> const gomp_atomic_load *g</var>)<var><a name="index-gimple_005fomp_005fatomic_005fload_005flhs-2326"></a></var><br>
+<blockquote><p>Get the <code>LHS</code> of an atomic load. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_omp_atomic_load_set_rhs</b> (<var> gomp_atomic_load *g, tree rhs</var>)<var><a name="index-gimple_005fomp_005fatomic_005fload_005fset_005frhs-2327"></a></var><br>
+<blockquote><p>Set the <code>RHS</code> of an atomic set. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree <b>gimple_omp_atomic_load_rhs</b> (<var> const gomp_atomic_load *g</var>)<var><a name="index-gimple_005fomp_005fatomic_005fload_005frhs-2328"></a></var><br>
+<blockquote><p>Get the <code>RHS</code> of an atomic set. 
+</p></blockquote></div>
+
+ </body></html>
+

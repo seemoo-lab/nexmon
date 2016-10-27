@@ -1,0 +1,117 @@
+<html lang="en">
+<head>
+<title>Cilk Plus Transformation - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Passes.html#Passes" title="Passes">
+<link rel="prev" href="Parsing-pass.html#Parsing-pass" title="Parsing pass">
+<link rel="next" href="Gimplification-pass.html#Gimplification-pass" title="Gimplification pass">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Cilk-Plus-Transformation"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Gimplification-pass.html#Gimplification-pass">Gimplification pass</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Parsing-pass.html#Parsing-pass">Parsing pass</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Passes.html#Passes">Passes</a>
+<hr>
+</div>
+
+<h3 class="section">9.2 Cilk Plus Transformation</h3>
+
+<p><a name="index-CILK_005fPLUS-1683"></a>
+If Cilk Plus generation (flag <samp><span class="option">-fcilkplus</span></samp>) is enabled, all the Cilk
+Plus code is transformed into equivalent C and C++ functions.  Majority of this
+transformation occurs toward the end of the parsing and right before the
+gimplification pass.
+
+ <p>These are the major components to the Cilk Plus language extension:
+     <ul>
+<li>Array Notations:
+During parsing phase, all the array notation specific information is stored in
+<code>ARRAY_NOTATION_REF</code> tree using the function
+<code>c_parser_array_notation</code>.  During the end of parsing, we check the entire
+function to see if there are any array notation specific code (using the
+function <code>contains_array_notation_expr</code>).  If this function returns
+true, then we expand them using either <code>expand_array_notation_exprs</code> or
+<code>build_array_notation_expr</code>.  For the cases where array notations are
+inside conditions, they are transformed using the function
+<code>fix_conditional_array_notations</code>.  The C language-specific routines are
+located in <samp><span class="file">c/c-array-notation.c</span></samp> and the equivalent C++ routines are in
+the file <samp><span class="file">cp/cp-array-notation.c</span></samp>.  Common routines such as functions to
+initialize built-in functions are stored in <samp><span class="file">array-notation-common.c</span></samp>.
+
+     <li>Cilk keywords:
+          <ul>
+<li><code>_Cilk_spawn</code>:
+The <code>_Cilk_spawn</code> keyword is parsed and the function it contains is marked
+as a spawning function.  The spawning function is called the spawner.  At
+the end of the parsing phase, appropriate built-in functions are
+added to the spawner that are defined in the Cilk runtime.  The appropriate
+locations of these functions, and the internal structures are detailed in
+<code>cilk_init_builtins</code> in the file <samp><span class="file">cilk-common.c</span></samp>.  The pointers to
+Cilk functions and fields of internal structures are described
+in <samp><span class="file">cilk.h</span></samp>.  The built-in functions are described in
+<samp><span class="file">cilk-builtins.def</span></samp>.
+
+          <p>During gimplification, a new "spawn-helper" function is created. 
+The spawned function is replaced with a spawn helper function in the spawner. 
+The spawned function-call is moved into the spawn helper.  The main function
+that does these transformations is <code>gimplify_cilk_spawn</code> in
+<samp><span class="file">c-family/cilk.c</span></samp>.  In the spawn-helper, the gimplification function
+<code>gimplify_call_expr</code>, inserts a function call <code>__cilkrts_detach</code>. 
+This function is expanded by <code>builtin_expand_cilk_detach</code> located in
+<samp><span class="file">c-family/cilk.c</span></samp>.
+
+          <li><code>_Cilk_sync</code>:
+<code>_Cilk_sync</code> is parsed like a keyword.  During gimplification,
+the function <code>gimplify_cilk_sync</code> in <samp><span class="file">c-family/cilk.c</span></samp>, will replace
+this keyword with a set of functions that are stored in the Cilk runtime. 
+One of the internal functions inserted during gimplification,
+<code>__cilkrts_pop_frame</code> must be expanded by the compiler and is
+done by <code>builtin_expand_cilk_pop_frame</code> in <samp><span class="file">cilk-common.c</span></samp>.
+
+     </ul>
+     </ul>
+
+ <p>Documentation about Cilk Plus and language specification is provided under the
+"Learn" section in <a href="http://www.cilkplus.org/">http://www.cilkplus.org/</a><!-- /@w -->.  It is worth mentioning
+that the current implementation follows ABI 1.1.
+
+ </body></html>
+

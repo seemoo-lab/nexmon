@@ -1,0 +1,95 @@
+<html lang="en">
+<head>
+<title>C++ Expressions - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="C-and-C_002b_002b-Trees.html#C-and-C_002b_002b-Trees" title="C and C++ Trees">
+<link rel="prev" href="Statements-for-C_002b_002b.html#Statements-for-C_002b_002b" title="Statements for C++">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="C++-Expressions"></a>
+<a name="C_002b_002b-Expressions"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Statements-for-C_002b_002b.html#Statements-for-C_002b_002b">Statements for C++</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="C-and-C_002b_002b-Trees.html#C-and-C_002b_002b-Trees">C and C++ Trees</a>
+<hr>
+</div>
+
+<h4 class="subsection">10.10.6 C++ Expressions</h4>
+
+<p>This section describes expressions specific to the C and C++ front
+ends.
+
+     <dl>
+<dt><code>TYPEID_EXPR</code><dd>
+Used to represent a <code>typeid</code> expression.
+
+     <br><dt><code>NEW_EXPR</code><dt><code>VEC_NEW_EXPR</code><dd>
+Used to represent a call to <code>new</code> and <code>new[]</code> respectively.
+
+     <br><dt><code>DELETE_EXPR</code><dt><code>VEC_DELETE_EXPR</code><dd>
+Used to represent a call to <code>delete</code> and <code>delete[]</code> respectively.
+
+     <br><dt><code>MEMBER_REF</code><dd>
+Represents a reference to a member of a class.
+
+     <br><dt><code>THROW_EXPR</code><dd>
+Represents an instance of <code>throw</code> in the program.  Operand 0,
+which is the expression to throw, may be <code>NULL_TREE</code>.
+
+     <br><dt><code>AGGR_INIT_EXPR</code><dd>An <code>AGGR_INIT_EXPR</code> represents the initialization as the return
+value of a function call, or as the result of a constructor.  An
+<code>AGGR_INIT_EXPR</code> will only appear as a full-expression, or as the
+second operand of a <code>TARGET_EXPR</code>.  <code>AGGR_INIT_EXPR</code>s have
+a representation similar to that of <code>CALL_EXPR</code>s.  You can use
+the <code>AGGR_INIT_EXPR_FN</code> and <code>AGGR_INIT_EXPR_ARG</code> macros to access
+the function to call and the arguments to pass.
+
+     <p>If <code>AGGR_INIT_VIA_CTOR_P</code> holds of the <code>AGGR_INIT_EXPR</code>, then
+the initialization is via a constructor call.  The address of the
+<code>AGGR_INIT_EXPR_SLOT</code> operand, which is always a <code>VAR_DECL</code>,
+is taken, and this value replaces the first argument in the argument
+list.
+
+     <p>In either case, the expression is void.
+
+ </dl>
+
+ </body></html>
+

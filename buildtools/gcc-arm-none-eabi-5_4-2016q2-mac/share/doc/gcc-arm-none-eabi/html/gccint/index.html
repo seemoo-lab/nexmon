@@ -1,0 +1,759 @@
+<html lang="en">
+<head>
+<title>GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="#Top">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+This file documents the internals of the GNU compilers.
+ <pre class="sp">
+
+</pre>
+Copyright &copy; 1988-2015 Free Software Foundation, Inc.
+
+ <p>Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being &ldquo;Funding Free Software&rdquo;, the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+&ldquo;GNU Free Documentation License&rdquo;.
+
+ <p>(a) The FSF's Front-Cover Text is:
+
+ <p>A GNU Manual
+
+ <p>(b) The FSF's Back-Cover Text is:
+
+ <p>You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.
+ <pre class="sp">
+
+</pre>
+
+<div class="shortcontents">
+<h2>Short Contents</h2>
+<ul>
+<li><a href="index.html#toc_Top">Introduction</a></li>
+<li><a href="index.html#toc_Contributing">1 Contributing to GCC Development</a></li>
+<li><a href="index.html#toc_Portability">2 GCC and Portability</a></li>
+<li><a href="index.html#toc_Interface">3 Interfacing to GCC Output</a></li>
+<li><a href="index.html#toc_Libgcc">4 The GCC low-level runtime library</a></li>
+<li><a href="index.html#toc_Languages">5 Language Front Ends in GCC</a></li>
+<li><a href="index.html#toc_Source-Tree">6 Source Tree Structure and Build System</a></li>
+<li><a href="index.html#toc_Testsuites">7 Testsuites</a></li>
+<li><a href="index.html#toc_Options">8 Option specification files</a></li>
+<li><a href="index.html#toc_Passes">9 Passes and Files of the Compiler</a></li>
+<li><a href="index.html#toc_GENERIC">10 GENERIC</a></li>
+<li><a href="index.html#toc_GIMPLE">11 GIMPLE</a></li>
+<li><a href="index.html#toc_Tree-SSA">12 Analysis and Optimization of GIMPLE tuples</a></li>
+<li><a href="index.html#toc_RTL">13 RTL Representation</a></li>
+<li><a href="index.html#toc_Control-Flow">14 Control Flow Graph</a></li>
+<li><a href="index.html#toc_Loop-Analysis-and-Representation">15 Analysis and Representation of Loops</a></li>
+<li><a href="index.html#toc_Machine-Desc">16 Machine Descriptions</a></li>
+<li><a href="index.html#toc_Target-Macros">17 Target Description Macros and Functions</a></li>
+<li><a href="index.html#toc_Host-Config">18 Host Configuration</a></li>
+<li><a href="index.html#toc_Fragments">19 Makefile Fragments</a></li>
+<li><a href="index.html#toc_Collect2">20 <code>collect2</code></a></li>
+<li><a href="index.html#toc_Header-Dirs">21 Standard Header File Directories</a></li>
+<li><a href="index.html#toc_Type-Information">22 Memory Management and Type Information</a></li>
+<li><a href="index.html#toc_Plugins">23 Plugins</a></li>
+<li><a href="index.html#toc_LTO">24 Link Time Optimization</a></li>
+<li><a href="index.html#toc_Match-and-Simplify">25 Match and Simplify</a></li>
+<li><a href="index.html#toc_Funding">Funding Free Software</a></li>
+<li><a href="index.html#toc_GNU-Project">The GNU Project and GNU/Linux</a></li>
+<li><a href="index.html#toc_Copying">GNU General Public License</a></li>
+<li><a href="index.html#toc_GNU-Free-Documentation-License">GNU Free Documentation License</a></li>
+<li><a href="index.html#toc_Contributors">Contributors to GCC</a></li>
+<li><a href="index.html#toc_Option-Index">Option Index</a></li>
+<li><a href="index.html#toc_Concept-Index">Concept Index</a></li>
+</ul>
+</div>
+
+
+
+ <div class="contents">
+<h2>Table of Contents</h2>
+<ul>
+<li><a name="toc_Top" href="index.html#Top">Introduction</a>
+<li><a name="toc_Contributing" href="Contributing.html#Contributing">1 Contributing to GCC Development</a>
+<li><a name="toc_Portability" href="Portability.html#Portability">2 GCC and Portability</a>
+<li><a name="toc_Interface" href="Interface.html#Interface">3 Interfacing to GCC Output</a>
+<li><a name="toc_Libgcc" href="Libgcc.html#Libgcc">4 The GCC low-level runtime library</a>
+<ul>
+<li><a href="Integer-library-routines.html#Integer-library-routines">4.1 Routines for integer arithmetic</a>
+<ul>
+<li><a href="Integer-library-routines.html#Integer-library-routines">4.1.1 Arithmetic functions</a>
+<li><a href="Integer-library-routines.html#Integer-library-routines">4.1.2 Comparison functions</a>
+<li><a href="Integer-library-routines.html#Integer-library-routines">4.1.3 Trapping arithmetic functions</a>
+<li><a href="Integer-library-routines.html#Integer-library-routines">4.1.4 Bit operations</a>
+</li></ul>
+<li><a href="Soft-float-library-routines.html#Soft-float-library-routines">4.2 Routines for floating point emulation</a>
+<ul>
+<li><a href="Soft-float-library-routines.html#Soft-float-library-routines">4.2.1 Arithmetic functions</a>
+<li><a href="Soft-float-library-routines.html#Soft-float-library-routines">4.2.2 Conversion functions</a>
+<li><a href="Soft-float-library-routines.html#Soft-float-library-routines">4.2.3 Comparison functions</a>
+<li><a href="Soft-float-library-routines.html#Soft-float-library-routines">4.2.4 Other floating-point functions</a>
+</li></ul>
+<li><a href="Decimal-float-library-routines.html#Decimal-float-library-routines">4.3 Routines for decimal floating point emulation</a>
+<ul>
+<li><a href="Decimal-float-library-routines.html#Decimal-float-library-routines">4.3.1 Arithmetic functions</a>
+<li><a href="Decimal-float-library-routines.html#Decimal-float-library-routines">4.3.2 Conversion functions</a>
+<li><a href="Decimal-float-library-routines.html#Decimal-float-library-routines">4.3.3 Comparison functions</a>
+</li></ul>
+<li><a href="Fixed_002dpoint-fractional-library-routines.html#Fixed_002dpoint-fractional-library-routines">4.4 Routines for fixed-point fractional emulation</a>
+<ul>
+<li><a href="Fixed_002dpoint-fractional-library-routines.html#Fixed_002dpoint-fractional-library-routines">4.4.1 Arithmetic functions</a>
+<li><a href="Fixed_002dpoint-fractional-library-routines.html#Fixed_002dpoint-fractional-library-routines">4.4.2 Comparison functions</a>
+<li><a href="Fixed_002dpoint-fractional-library-routines.html#Fixed_002dpoint-fractional-library-routines">4.4.3 Conversion functions</a>
+</li></ul>
+<li><a href="Exception-handling-routines.html#Exception-handling-routines">4.5 Language-independent routines for exception handling</a>
+<li><a href="Miscellaneous-routines.html#Miscellaneous-routines">4.6 Miscellaneous runtime library routines</a>
+<ul>
+<li><a href="Miscellaneous-routines.html#Miscellaneous-routines">4.6.1 Cache control functions</a>
+<li><a href="Miscellaneous-routines.html#Miscellaneous-routines">4.6.2 Split stack functions and variables</a>
+</li></ul>
+</li></ul>
+<li><a name="toc_Languages" href="Languages.html#Languages">5 Language Front Ends in GCC</a>
+<li><a name="toc_Source-Tree" href="Source-Tree.html#Source-Tree">6 Source Tree Structure and Build System</a>
+<ul>
+<li><a href="Configure-Terms.html#Configure-Terms">6.1 Configure Terms and History</a>
+<li><a href="Top-Level.html#Top-Level">6.2 Top Level Source Directory</a>
+<li><a href="gcc-Directory.html#gcc-Directory">6.3 The <samp><span class="file">gcc</span></samp> Subdirectory</a>
+<ul>
+<li><a href="Subdirectories.html#Subdirectories">6.3.1 Subdirectories of <samp><span class="file">gcc</span></samp></a>
+<li><a href="Configuration.html#Configuration">6.3.2 Configuration in the <samp><span class="file">gcc</span></samp> Directory</a>
+<ul>
+<li><a href="Config-Fragments.html#Config-Fragments">6.3.2.1 Scripts Used by <samp><span class="file">configure</span></samp></a>
+<li><a href="System-Config.html#System-Config">6.3.2.2 The <samp><span class="file">config.build</span></samp>; <samp><span class="file">config.host</span></samp>; and <samp><span class="file">config.gcc</span></samp> Files</a>
+<li><a href="Configuration-Files.html#Configuration-Files">6.3.2.3 Files Created by <code>configure</code></a>
+</li></ul>
+<li><a href="Build.html#Build">6.3.3 Build System in the <samp><span class="file">gcc</span></samp> Directory</a>
+<li><a href="Makefile.html#Makefile">6.3.4 Makefile Targets</a>
+<li><a href="Library-Files.html#Library-Files">6.3.5 Library Source Files and Headers under the <samp><span class="file">gcc</span></samp> Directory</a>
+<li><a href="Headers.html#Headers">6.3.6 Headers Installed by GCC</a>
+<li><a href="Documentation.html#Documentation">6.3.7 Building Documentation</a>
+<ul>
+<li><a href="Texinfo-Manuals.html#Texinfo-Manuals">6.3.7.1 Texinfo Manuals</a>
+<li><a href="Man-Page-Generation.html#Man-Page-Generation">6.3.7.2 Man Page Generation</a>
+<li><a href="Miscellaneous-Docs.html#Miscellaneous-Docs">6.3.7.3 Miscellaneous Documentation</a>
+</li></ul>
+<li><a href="Front-End.html#Front-End">6.3.8 Anatomy of a Language Front End</a>
+<ul>
+<li><a href="Front-End-Directory.html#Front-End-Directory">6.3.8.1 The Front End <samp><var>language</var></samp> Directory</a>
+<li><a href="Front-End-Config.html#Front-End-Config">6.3.8.2 The Front End <samp><span class="file">config-lang.in</span></samp> File</a>
+<li><a href="Front-End-Makefile.html#Front-End-Makefile">6.3.8.3 The Front End <samp><span class="file">Make-lang.in</span></samp> File</a>
+</li></ul>
+<li><a href="Back-End.html#Back-End">6.3.9 Anatomy of a Target Back End</a>
+</li></ul>
+</li></ul>
+<li><a name="toc_Testsuites" href="Testsuites.html#Testsuites">7 Testsuites</a>
+<ul>
+<li><a href="Test-Idioms.html#Test-Idioms">7.1 Idioms Used in Testsuite Code</a>
+<li><a href="Test-Directives.html#Test-Directives">7.2 Directives used within DejaGnu tests</a>
+<ul>
+<li><a href="Directives.html#Directives">7.2.1 Syntax and Descriptions of test directives</a>
+<ul>
+<li><a href="Directives.html#Directives">7.2.1.1 Specify how to build the test</a>
+<li><a href="Directives.html#Directives">7.2.1.2 Specify additional compiler options</a>
+<li><a href="Directives.html#Directives">7.2.1.3 Modify the test timeout value</a>
+<li><a href="Directives.html#Directives">7.2.1.4 Skip a test for some targets</a>
+<li><a href="Directives.html#Directives">7.2.1.5 Expect a test to fail for some targets</a>
+<li><a href="Directives.html#Directives">7.2.1.6 Expect the test executable to fail</a>
+<li><a href="Directives.html#Directives">7.2.1.7 Verify compiler messages</a>
+<li><a href="Directives.html#Directives">7.2.1.8 Verify output of the test executable</a>
+<li><a href="Directives.html#Directives">7.2.1.9 Specify additional files for a test</a>
+<li><a href="Directives.html#Directives">7.2.1.10 Add checks at the end of a test</a>
+</li></ul>
+<li><a href="Selectors.html#Selectors">7.2.2 Selecting targets to which a test applies</a>
+<li><a href="Effective_002dTarget-Keywords.html#Effective_002dTarget-Keywords">7.2.3 Keywords describing target attributes</a>
+<ul>
+<li><a href="Effective_002dTarget-Keywords.html#Effective_002dTarget-Keywords">7.2.3.1 Data type sizes</a>
+<li><a href="Effective_002dTarget-Keywords.html#Effective_002dTarget-Keywords">7.2.3.2 Fortran-specific attributes</a>
+<li><a href="Effective_002dTarget-Keywords.html#Effective_002dTarget-Keywords">7.2.3.3 Vector-specific attributes</a>
+<li><a href="Effective_002dTarget-Keywords.html#Effective_002dTarget-Keywords">7.2.3.4 Thread Local Storage attributes</a>
+<li><a href="Effective_002dTarget-Keywords.html#Effective_002dTarget-Keywords">7.2.3.5 Decimal floating point attributes</a>
+<li><a href="Effective_002dTarget-Keywords.html#Effective_002dTarget-Keywords">7.2.3.6 ARM-specific attributes</a>
+<li><a href="Effective_002dTarget-Keywords.html#Effective_002dTarget-Keywords">7.2.3.7 MIPS-specific attributes</a>
+<li><a href="Effective_002dTarget-Keywords.html#Effective_002dTarget-Keywords">7.2.3.8 PowerPC-specific attributes</a>
+<li><a href="Effective_002dTarget-Keywords.html#Effective_002dTarget-Keywords">7.2.3.9 Other hardware attributes</a>
+<li><a href="Effective_002dTarget-Keywords.html#Effective_002dTarget-Keywords">7.2.3.10 Environment attributes</a>
+<li><a href="Effective_002dTarget-Keywords.html#Effective_002dTarget-Keywords">7.2.3.11 Other attributes</a>
+<li><a href="Effective_002dTarget-Keywords.html#Effective_002dTarget-Keywords">7.2.3.12 Local to tests in <code>gcc.target/i386</code></a>
+<li><a href="Effective_002dTarget-Keywords.html#Effective_002dTarget-Keywords">7.2.3.13 Local to tests in <code>gcc.target/spu/ea</code></a>
+<li><a href="Effective_002dTarget-Keywords.html#Effective_002dTarget-Keywords">7.2.3.14 Local to tests in <code>gcc.test-framework</code></a>
+</li></ul>
+<li><a href="Add-Options.html#Add-Options">7.2.4 Features for <code>dg-add-options</code></a>
+<li><a href="Require-Support.html#Require-Support">7.2.5 Variants of <code>dg-require-</code><var>support</var></a>
+<li><a href="Final-Actions.html#Final-Actions">7.2.6 Commands for use in <code>dg-final</code></a>
+<ul>
+<li><a href="Final-Actions.html#Final-Actions">7.2.6.1 Scan a particular file</a>
+<li><a href="Final-Actions.html#Final-Actions">7.2.6.2 Scan the assembly output</a>
+<li><a href="Final-Actions.html#Final-Actions">7.2.6.3 Scan optimization dump files</a>
+<li><a href="Final-Actions.html#Final-Actions">7.2.6.4 Verify that an output files exists or not</a>
+<li><a href="Final-Actions.html#Final-Actions">7.2.6.5 Check for LTO tests</a>
+<li><a href="Final-Actions.html#Final-Actions">7.2.6.6 Checks for <samp><span class="command">gcov</span></samp> tests</a>
+<li><a href="Final-Actions.html#Final-Actions">7.2.6.7 Clean up generated test files</a>
+</li></ul>
+</li></ul>
+<li><a href="Ada-Tests.html#Ada-Tests">7.3 Ada Language Testsuites</a>
+<li><a href="C-Tests.html#C-Tests">7.4 C Language Testsuites</a>
+<li><a href="libgcj-Tests.html#libgcj-Tests">7.5 The Java library testsuites.</a>
+<li><a href="LTO-Testing.html#LTO-Testing">7.6 Support for testing link-time optimizations</a>
+<li><a href="gcov-Testing.html#gcov-Testing">7.7 Support for testing <samp><span class="command">gcov</span></samp></a>
+<li><a href="profopt-Testing.html#profopt-Testing">7.8 Support for testing profile-directed optimizations</a>
+<li><a href="compat-Testing.html#compat-Testing">7.9 Support for testing binary compatibility</a>
+<li><a href="Torture-Tests.html#Torture-Tests">7.10 Support for torture testing using multiple options</a>
+</li></ul>
+<li><a name="toc_Options" href="Options.html#Options">8 Option specification files</a>
+<ul>
+<li><a href="Option-file-format.html#Option-file-format">8.1 Option file format</a>
+<li><a href="Option-properties.html#Option-properties">8.2 Option properties</a>
+</li></ul>
+<li><a name="toc_Passes" href="Passes.html#Passes">9 Passes and Files of the Compiler</a>
+<ul>
+<li><a href="Parsing-pass.html#Parsing-pass">9.1 Parsing pass</a>
+<li><a href="Cilk-Plus-Transformation.html#Cilk-Plus-Transformation">9.2 Cilk Plus Transformation</a>
+<li><a href="Gimplification-pass.html#Gimplification-pass">9.3 Gimplification pass</a>
+<li><a href="Pass-manager.html#Pass-manager">9.4 Pass manager</a>
+<li><a href="Tree-SSA-passes.html#Tree-SSA-passes">9.5 Tree SSA passes</a>
+<li><a href="RTL-passes.html#RTL-passes">9.6 RTL passes</a>
+<li><a href="Optimization-info.html#Optimization-info">9.7 Optimization info</a>
+<ul>
+<li><a href="Dump-setup.html#Dump-setup">9.7.1 Dump setup</a>
+<li><a href="Optimization-groups.html#Optimization-groups">9.7.2 Optimization groups</a>
+<li><a href="Dump-files-and-streams.html#Dump-files-and-streams">9.7.3 Dump files and streams</a>
+<li><a href="Dump-output-verbosity.html#Dump-output-verbosity">9.7.4 Dump output verbosity</a>
+<li><a href="Dump-types.html#Dump-types">9.7.5 Dump types</a>
+<li><a href="Dump-examples.html#Dump-examples">9.7.6 Dump examples</a>
+</li></ul>
+</li></ul>
+<li><a name="toc_GENERIC" href="GENERIC.html#GENERIC">10 GENERIC</a>
+<ul>
+<li><a href="Deficiencies.html#Deficiencies">10.1 Deficiencies</a>
+<li><a href="Tree-overview.html#Tree-overview">10.2 Overview</a>
+<ul>
+<li><a href="Macros-and-Functions.html#Macros-and-Functions">10.2.1 Trees</a>
+<li><a href="Identifiers.html#Identifiers">10.2.2 Identifiers</a>
+<li><a href="Containers.html#Containers">10.2.3 Containers</a>
+</li></ul>
+<li><a href="Types.html#Types">10.3 Types</a>
+<li><a href="Declarations.html#Declarations">10.4 Declarations</a>
+<ul>
+<li><a href="Working-with-declarations.html#Working-with-declarations">10.4.1 Working with declarations</a>
+<li><a href="Internal-structure.html#Internal-structure">10.4.2 Internal structure</a>
+<ul>
+<li><a href="Current-structure-hierarchy.html#Current-structure-hierarchy">10.4.2.1 Current structure hierarchy</a>
+<li><a href="Adding-new-DECL-node-types.html#Adding-new-DECL-node-types">10.4.2.2 Adding new DECL node types</a>
+</li></ul>
+</li></ul>
+<li><a href="Attributes.html#Attributes">10.5 Attributes in trees</a>
+<li><a href="Expression-trees.html#Expression-trees">10.6 Expressions</a>
+<ul>
+<li><a href="Constant-expressions.html#Constant-expressions">10.6.1 Constant expressions</a>
+<li><a href="Storage-References.html#Storage-References">10.6.2 References to storage</a>
+<li><a href="Unary-and-Binary-Expressions.html#Unary-and-Binary-Expressions">10.6.3 Unary and Binary Expressions</a>
+<li><a href="Vectors.html#Vectors">10.6.4 Vectors</a>
+</li></ul>
+<li><a href="Statements.html#Statements">10.7 Statements</a>
+<ul>
+<li><a href="Basic-Statements.html#Basic-Statements">10.7.1 Basic Statements</a>
+<li><a href="Blocks.html#Blocks">10.7.2 Blocks</a>
+<li><a href="Statement-Sequences.html#Statement-Sequences">10.7.3 Statement Sequences</a>
+<li><a href="Empty-Statements.html#Empty-Statements">10.7.4 Empty Statements</a>
+<li><a href="Jumps.html#Jumps">10.7.5 Jumps</a>
+<li><a href="Cleanups.html#Cleanups">10.7.6 Cleanups</a>
+<li><a href="OpenMP.html#OpenMP">10.7.7 OpenMP</a>
+<li><a href="OpenACC.html#OpenACC">10.7.8 OpenACC</a>
+</li></ul>
+<li><a href="Functions.html#Functions">10.8 Functions</a>
+<ul>
+<li><a href="Function-Basics.html#Function-Basics">10.8.1 Function Basics</a>
+<li><a href="Function-Properties.html#Function-Properties">10.8.2 Function Properties</a>
+</li></ul>
+<li><a href="Language_002ddependent-trees.html#Language_002ddependent-trees">10.9 Language-dependent trees</a>
+<li><a href="C-and-C_002b_002b-Trees.html#C-and-C_002b_002b-Trees">10.10 C and C++ Trees</a>
+<ul>
+<li><a href="Types-for-C_002b_002b.html#Types-for-C_002b_002b">10.10.1 Types for C++</a>
+<li><a href="Namespaces.html#Namespaces">10.10.2 Namespaces</a>
+<li><a href="Classes.html#Classes">10.10.3 Classes</a>
+<li><a href="Functions-for-C_002b_002b.html#Functions-for-C_002b_002b">10.10.4 Functions for C++</a>
+<li><a href="Statements-for-C_002b_002b.html#Statements-for-C_002b_002b">10.10.5 Statements for C++</a>
+<ul>
+<li><a href="Statements-for-C_002b_002b.html#Statements-for-C_002b_002b">10.10.5.1 Statements</a>
+</li></ul>
+<li><a href="C_002b_002b-Expressions.html#C_002b_002b-Expressions">10.10.6 C++ Expressions</a>
+</li></ul>
+<li><a href="Java-Trees.html#Java-Trees">10.11 Java Trees</a>
+</li></ul>
+<li><a name="toc_GIMPLE" href="GIMPLE.html#GIMPLE">11 GIMPLE</a>
+<ul>
+<li><a href="Tuple-representation.html#Tuple-representation">11.1 Tuple representation</a>
+<ul>
+<li><a href="Tuple-representation.html#Tuple-representation">11.1.1 <code>gimple_statement_base</code> (gsbase)</a>
+<li><a href="Tuple-representation.html#Tuple-representation">11.1.2 <code>gimple_statement_with_ops</code></a>
+<li><a href="Tuple-representation.html#Tuple-representation">11.1.3 <code>gimple_statement_with_memory_ops</code></a>
+</li></ul>
+<li><a href="Class-hierarchy-of-GIMPLE-statements.html#Class-hierarchy-of-GIMPLE-statements">11.2 Class hierarchy of GIMPLE statements</a>
+<li><a href="GIMPLE-instruction-set.html#GIMPLE-instruction-set">11.3 GIMPLE instruction set</a>
+<li><a href="GIMPLE-Exception-Handling.html#GIMPLE-Exception-Handling">11.4 Exception Handling</a>
+<li><a href="Temporaries.html#Temporaries">11.5 Temporaries</a>
+<li><a href="Operands.html#Operands">11.6 Operands</a>
+<ul>
+<li><a href="Compound-Expressions.html#Compound-Expressions">11.6.1 Compound Expressions</a>
+<li><a href="Compound-Lvalues.html#Compound-Lvalues">11.6.2 Compound Lvalues</a>
+<li><a href="Conditional-Expressions.html#Conditional-Expressions">11.6.3 Conditional Expressions</a>
+<li><a href="Logical-Operators.html#Logical-Operators">11.6.4 Logical Operators</a>
+<li><a href="Logical-Operators.html#Logical-Operators">11.6.5 Manipulating operands</a>
+<li><a href="Logical-Operators.html#Logical-Operators">11.6.6 Operand vector allocation</a>
+<li><a href="Logical-Operators.html#Logical-Operators">11.6.7 Operand validation</a>
+<li><a href="Logical-Operators.html#Logical-Operators">11.6.8 Statement validation</a>
+</li></ul>
+<li><a href="Manipulating-GIMPLE-statements.html#Manipulating-GIMPLE-statements">11.7 Manipulating GIMPLE statements</a>
+<ul>
+<li><a href="Manipulating-GIMPLE-statements.html#Manipulating-GIMPLE-statements">11.7.1 Common accessors</a>
+</li></ul>
+<li><a href="Tuple-specific-accessors.html#Tuple-specific-accessors">11.8 Tuple specific accessors</a>
+<ul>
+<li><a href="_003ccode_003eGIMPLE_005fASM_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fASM_003c_002fcode_003e">11.8.1 <code>GIMPLE_ASM</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fASSIGN_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fASSIGN_003c_002fcode_003e">11.8.2 <code>GIMPLE_ASSIGN</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fBIND_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fBIND_003c_002fcode_003e">11.8.3 <code>GIMPLE_BIND</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fCALL_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fCALL_003c_002fcode_003e">11.8.4 <code>GIMPLE_CALL</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fCATCH_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fCATCH_003c_002fcode_003e">11.8.5 <code>GIMPLE_CATCH</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fCOND_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fCOND_003c_002fcode_003e">11.8.6 <code>GIMPLE_COND</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fDEBUG_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fDEBUG_003c_002fcode_003e">11.8.7 <code>GIMPLE_DEBUG</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fEH_005fFILTER_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fEH_005fFILTER_003c_002fcode_003e">11.8.8 <code>GIMPLE_EH_FILTER</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fLABEL_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fLABEL_003c_002fcode_003e">11.8.9 <code>GIMPLE_LABEL</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fGOTO_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fGOTO_003c_002fcode_003e">11.8.10 <code>GIMPLE_GOTO</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fNOP_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fNOP_003c_002fcode_003e">11.8.11 <code>GIMPLE_NOP</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fOMP_005fATOMIC_005fLOAD_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fOMP_005fATOMIC_005fLOAD_003c_002fcode_003e">11.8.12 <code>GIMPLE_OMP_ATOMIC_LOAD</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fOMP_005fATOMIC_005fSTORE_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fOMP_005fATOMIC_005fSTORE_003c_002fcode_003e">11.8.13 <code>GIMPLE_OMP_ATOMIC_STORE</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fOMP_005fCONTINUE_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fOMP_005fCONTINUE_003c_002fcode_003e">11.8.14 <code>GIMPLE_OMP_CONTINUE</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fOMP_005fCRITICAL_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fOMP_005fCRITICAL_003c_002fcode_003e">11.8.15 <code>GIMPLE_OMP_CRITICAL</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fOMP_005fFOR_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fOMP_005fFOR_003c_002fcode_003e">11.8.16 <code>GIMPLE_OMP_FOR</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fOMP_005fMASTER_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fOMP_005fMASTER_003c_002fcode_003e">11.8.17 <code>GIMPLE_OMP_MASTER</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fOMP_005fORDERED_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fOMP_005fORDERED_003c_002fcode_003e">11.8.18 <code>GIMPLE_OMP_ORDERED</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fOMP_005fPARALLEL_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fOMP_005fPARALLEL_003c_002fcode_003e">11.8.19 <code>GIMPLE_OMP_PARALLEL</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fOMP_005fRETURN_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fOMP_005fRETURN_003c_002fcode_003e">11.8.20 <code>GIMPLE_OMP_RETURN</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fOMP_005fSECTION_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fOMP_005fSECTION_003c_002fcode_003e">11.8.21 <code>GIMPLE_OMP_SECTION</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fOMP_005fSECTIONS_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fOMP_005fSECTIONS_003c_002fcode_003e">11.8.22 <code>GIMPLE_OMP_SECTIONS</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fOMP_005fSINGLE_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fOMP_005fSINGLE_003c_002fcode_003e">11.8.23 <code>GIMPLE_OMP_SINGLE</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fPHI_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fPHI_003c_002fcode_003e">11.8.24 <code>GIMPLE_PHI</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fRESX_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fRESX_003c_002fcode_003e">11.8.25 <code>GIMPLE_RESX</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fRETURN_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fRETURN_003c_002fcode_003e">11.8.26 <code>GIMPLE_RETURN</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fSWITCH_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fSWITCH_003c_002fcode_003e">11.8.27 <code>GIMPLE_SWITCH</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fTRY_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fTRY_003c_002fcode_003e">11.8.28 <code>GIMPLE_TRY</code></a>
+<li><a href="_003ccode_003eGIMPLE_005fWITH_005fCLEANUP_005fEXPR_003c_002fcode_003e.html#_003ccode_003eGIMPLE_005fWITH_005fCLEANUP_005fEXPR_003c_002fcode_003e">11.8.29 <code>GIMPLE_WITH_CLEANUP_EXPR</code></a>
+</li></ul>
+<li><a href="GIMPLE-sequences.html#GIMPLE-sequences">11.9 GIMPLE sequences</a>
+<li><a href="Sequence-iterators.html#Sequence-iterators">11.10 Sequence iterators</a>
+<li><a href="Adding-a-new-GIMPLE-statement-code.html#Adding-a-new-GIMPLE-statement-code">11.11 Adding a new GIMPLE statement code</a>
+<li><a href="Statement-and-operand-traversals.html#Statement-and-operand-traversals">11.12 Statement and operand traversals</a>
+</li></ul>
+<li><a name="toc_Tree-SSA" href="Tree-SSA.html#Tree-SSA">12 Analysis and Optimization of GIMPLE tuples</a>
+<ul>
+<li><a href="Annotations.html#Annotations">12.1 Annotations</a>
+<li><a href="SSA-Operands.html#SSA-Operands">12.2 SSA Operands</a>
+<ul>
+<li><a href="SSA-Operands.html#SSA-Operands">12.2.1 Operand Iterators And Access Routines</a>
+<li><a href="SSA-Operands.html#SSA-Operands">12.2.2 Immediate Uses</a>
+</li></ul>
+<li><a href="SSA.html#SSA">12.3 Static Single Assignment</a>
+<ul>
+<li><a href="SSA.html#SSA">12.3.1 Preserving the SSA form</a>
+<li><a href="SSA.html#SSA">12.3.2 Preserving the virtual SSA form</a>
+<li><a href="SSA.html#SSA">12.3.3 Examining <code>SSA_NAME</code> nodes</a>
+<li><a href="SSA.html#SSA">12.3.4 Walking the dominator tree</a>
+</li></ul>
+<li><a href="Alias-analysis.html#Alias-analysis">12.4 Alias analysis</a>
+<li><a href="Memory-model.html#Memory-model">12.5 Memory model</a>
+</li></ul>
+<li><a name="toc_RTL" href="RTL.html#RTL">13 RTL Representation</a>
+<ul>
+<li><a href="RTL-Objects.html#RTL-Objects">13.1 RTL Object Types</a>
+<li><a href="RTL-Classes.html#RTL-Classes">13.2 RTL Classes and Formats</a>
+<li><a href="Accessors.html#Accessors">13.3 Access to Operands</a>
+<li><a href="Special-Accessors.html#Special-Accessors">13.4 Access to Special Operands</a>
+<li><a href="Flags.html#Flags">13.5 Flags in an RTL Expression</a>
+<li><a href="Machine-Modes.html#Machine-Modes">13.6 Machine Modes</a>
+<li><a href="Constants.html#Constants">13.7 Constant Expression Types</a>
+<li><a href="Regs-and-Memory.html#Regs-and-Memory">13.8 Registers and Memory</a>
+<li><a href="Arithmetic.html#Arithmetic">13.9 RTL Expressions for Arithmetic</a>
+<li><a href="Comparisons.html#Comparisons">13.10 Comparison Operations</a>
+<li><a href="Bit_002dFields.html#Bit_002dFields">13.11 Bit-Fields</a>
+<li><a href="Vector-Operations.html#Vector-Operations">13.12 Vector Operations</a>
+<li><a href="Conversions.html#Conversions">13.13 Conversions</a>
+<li><a href="RTL-Declarations.html#RTL-Declarations">13.14 Declarations</a>
+<li><a href="Side-Effects.html#Side-Effects">13.15 Side Effect Expressions</a>
+<li><a href="Incdec.html#Incdec">13.16 Embedded Side-Effects on Addresses</a>
+<li><a href="Assembler.html#Assembler">13.17 Assembler Instructions as Expressions</a>
+<li><a href="Debug-Information.html#Debug-Information">13.18 Variable Location Debug Information in RTL</a>
+<li><a href="Insns.html#Insns">13.19 Insns</a>
+<li><a href="Calls.html#Calls">13.20 RTL Representation of Function-Call Insns</a>
+<li><a href="Sharing.html#Sharing">13.21 Structure Sharing Assumptions</a>
+<li><a href="Reading-RTL.html#Reading-RTL">13.22 Reading RTL</a>
+</li></ul>
+<li><a name="toc_Control-Flow" href="Control-Flow.html#Control-Flow">14 Control Flow Graph</a>
+<ul>
+<li><a href="Basic-Blocks.html#Basic-Blocks">14.1 Basic Blocks</a>
+<li><a href="Edges.html#Edges">14.2 Edges</a>
+<li><a href="Profile-information.html#Profile-information">14.3 Profile information</a>
+<li><a href="Maintaining-the-CFG.html#Maintaining-the-CFG">14.4 Maintaining the CFG</a>
+<li><a href="Liveness-information.html#Liveness-information">14.5 Liveness information</a>
+</li></ul>
+<li><a name="toc_Loop-Analysis-and-Representation" href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation">15 Analysis and Representation of Loops</a>
+<ul>
+<li><a href="Loop-representation.html#Loop-representation">15.1 Loop representation</a>
+<li><a href="Loop-querying.html#Loop-querying">15.2 Loop querying</a>
+<li><a href="Loop-manipulation.html#Loop-manipulation">15.3 Loop manipulation</a>
+<li><a href="LCSSA.html#LCSSA">15.4 Loop-closed SSA form</a>
+<li><a href="Scalar-evolutions.html#Scalar-evolutions">15.5 Scalar evolutions</a>
+<li><a href="loop_002div.html#loop_002div">15.6 IV analysis on RTL</a>
+<li><a href="Number-of-iterations.html#Number-of-iterations">15.7 Number of iterations analysis</a>
+<li><a href="Dependency-analysis.html#Dependency-analysis">15.8 Data Dependency Analysis</a>
+<li><a href="Omega.html#Omega">15.9 Omega a solver for linear programming problems</a>
+</li></ul>
+<li><a name="toc_Machine-Desc" href="Machine-Desc.html#Machine-Desc">16 Machine Descriptions</a>
+<ul>
+<li><a href="Overview.html#Overview">16.1 Overview of How the Machine Description is Used</a>
+<li><a href="Patterns.html#Patterns">16.2 Everything about Instruction Patterns</a>
+<li><a href="Example.html#Example">16.3 Example of <code>define_insn</code></a>
+<li><a href="RTL-Template.html#RTL-Template">16.4 RTL Template</a>
+<li><a href="Output-Template.html#Output-Template">16.5 Output Templates and Operand Substitution</a>
+<li><a href="Output-Statement.html#Output-Statement">16.6 C Statements for Assembler Output</a>
+<li><a href="Predicates.html#Predicates">16.7 Predicates</a>
+<ul>
+<li><a href="Machine_002dIndependent-Predicates.html#Machine_002dIndependent-Predicates">16.7.1 Machine-Independent Predicates</a>
+<li><a href="Defining-Predicates.html#Defining-Predicates">16.7.2 Defining Machine-Specific Predicates</a>
+</li></ul>
+<li><a href="Constraints.html#Constraints">16.8 Operand Constraints</a>
+<ul>
+<li><a href="Simple-Constraints.html#Simple-Constraints">16.8.1 Simple Constraints</a>
+<li><a href="Multi_002dAlternative.html#Multi_002dAlternative">16.8.2 Multiple Alternative Constraints</a>
+<li><a href="Class-Preferences.html#Class-Preferences">16.8.3 Register Class Preferences</a>
+<li><a href="Modifiers.html#Modifiers">16.8.4 Constraint Modifier Characters</a>
+<li><a href="Machine-Constraints.html#Machine-Constraints">16.8.5 Constraints for Particular Machines</a>
+<li><a href="Disable-Insn-Alternatives.html#Disable-Insn-Alternatives">16.8.6 Disable insn alternatives using the <code>enabled</code> attribute</a>
+<li><a href="Define-Constraints.html#Define-Constraints">16.8.7 Defining Machine-Specific Constraints</a>
+<li><a href="C-Constraint-Interface.html#C-Constraint-Interface">16.8.8 Testing constraints from C</a>
+</li></ul>
+<li><a href="Standard-Names.html#Standard-Names">16.9 Standard Pattern Names For Generation</a>
+<li><a href="Pattern-Ordering.html#Pattern-Ordering">16.10 When the Order of Patterns Matters</a>
+<li><a href="Dependent-Patterns.html#Dependent-Patterns">16.11 Interdependence of Patterns</a>
+<li><a href="Jump-Patterns.html#Jump-Patterns">16.12 Defining Jump Instruction Patterns</a>
+<li><a href="Looping-Patterns.html#Looping-Patterns">16.13 Defining Looping Instruction Patterns</a>
+<li><a href="Insn-Canonicalizations.html#Insn-Canonicalizations">16.14 Canonicalization of Instructions</a>
+<li><a href="Expander-Definitions.html#Expander-Definitions">16.15 Defining RTL Sequences for Code Generation</a>
+<li><a href="Insn-Splitting.html#Insn-Splitting">16.16 Defining How to Split Instructions</a>
+<li><a href="Including-Patterns.html#Including-Patterns">16.17 Including Patterns in Machine Descriptions.</a>
+<ul>
+<li><a href="Including-Patterns.html#Including-Patterns">16.17.1 RTL Generation Tool Options for Directory Search</a>
+</li></ul>
+<li><a href="Peephole-Definitions.html#Peephole-Definitions">16.18 Machine-Specific Peephole Optimizers</a>
+<ul>
+<li><a href="define_005fpeephole.html#define_005fpeephole">16.18.1 RTL to Text Peephole Optimizers</a>
+<li><a href="define_005fpeephole2.html#define_005fpeephole2">16.18.2 RTL to RTL Peephole Optimizers</a>
+</li></ul>
+<li><a href="Insn-Attributes.html#Insn-Attributes">16.19 Instruction Attributes</a>
+<ul>
+<li><a href="Defining-Attributes.html#Defining-Attributes">16.19.1 Defining Attributes and their Values</a>
+<li><a href="Expressions.html#Expressions">16.19.2 Attribute Expressions</a>
+<li><a href="Tagging-Insns.html#Tagging-Insns">16.19.3 Assigning Attribute Values to Insns</a>
+<li><a href="Attr-Example.html#Attr-Example">16.19.4 Example of Attribute Specifications</a>
+<li><a href="Insn-Lengths.html#Insn-Lengths">16.19.5 Computing the Length of an Insn</a>
+<li><a href="Constant-Attributes.html#Constant-Attributes">16.19.6 Constant Attributes</a>
+<li><a href="Mnemonic-Attribute.html#Mnemonic-Attribute">16.19.7 Mnemonic Attribute</a>
+<li><a href="Delay-Slots.html#Delay-Slots">16.19.8 Delay Slot Scheduling</a>
+<li><a href="Processor-pipeline-description.html#Processor-pipeline-description">16.19.9 Specifying processor pipeline description</a>
+</li></ul>
+<li><a href="Conditional-Execution.html#Conditional-Execution">16.20 Conditional Execution</a>
+<li><a href="Define-Subst.html#Define-Subst">16.21 RTL Templates Transformations</a>
+<ul>
+<li><a href="Define-Subst-Example.html#Define-Subst-Example">16.21.1 <code>define_subst</code> Example</a>
+<li><a href="Define-Subst-Pattern-Matching.html#Define-Subst-Pattern-Matching">16.21.2 Pattern Matching in <code>define_subst</code></a>
+<li><a href="Define-Subst-Output-Template.html#Define-Subst-Output-Template">16.21.3 Generation of output template in <code>define_subst</code></a>
+</li></ul>
+<li><a href="Constant-Definitions.html#Constant-Definitions">16.22 Constant Definitions</a>
+<li><a href="Iterators.html#Iterators">16.23 Iterators</a>
+<ul>
+<li><a href="Mode-Iterators.html#Mode-Iterators">16.23.1 Mode Iterators</a>
+<ul>
+<li><a href="Defining-Mode-Iterators.html#Defining-Mode-Iterators">16.23.1.1 Defining Mode Iterators</a>
+<li><a href="Substitutions.html#Substitutions">16.23.1.2 Substitution in Mode Iterators</a>
+<li><a href="Examples.html#Examples">16.23.1.3 Mode Iterator Examples</a>
+</li></ul>
+<li><a href="Code-Iterators.html#Code-Iterators">16.23.2 Code Iterators</a>
+<li><a href="Int-Iterators.html#Int-Iterators">16.23.3 Int Iterators</a>
+<li><a href="Subst-Iterators.html#Subst-Iterators">16.23.4 Subst Iterators</a>
+</li></ul>
+</li></ul>
+<li><a name="toc_Target-Macros" href="Target-Macros.html#Target-Macros">17 Target Description Macros and Functions</a>
+<ul>
+<li><a href="Target-Structure.html#Target-Structure">17.1 The Global <code>targetm</code> Variable</a>
+<li><a href="Driver.html#Driver">17.2 Controlling the Compilation Driver, <samp><span class="file">gcc</span></samp></a>
+<li><a href="Run_002dtime-Target.html#Run_002dtime-Target">17.3 Run-time Target Specification</a>
+<li><a href="Per_002dFunction-Data.html#Per_002dFunction-Data">17.4 Defining data structures for per-function information.</a>
+<li><a href="Storage-Layout.html#Storage-Layout">17.5 Storage Layout</a>
+<li><a href="Type-Layout.html#Type-Layout">17.6 Layout of Source Language Data Types</a>
+<li><a href="Registers.html#Registers">17.7 Register Usage</a>
+<ul>
+<li><a href="Register-Basics.html#Register-Basics">17.7.1 Basic Characteristics of Registers</a>
+<li><a href="Allocation-Order.html#Allocation-Order">17.7.2 Order of Allocation of Registers</a>
+<li><a href="Values-in-Registers.html#Values-in-Registers">17.7.3 How Values Fit in Registers</a>
+<li><a href="Leaf-Functions.html#Leaf-Functions">17.7.4 Handling Leaf Functions</a>
+<li><a href="Stack-Registers.html#Stack-Registers">17.7.5 Registers That Form a Stack</a>
+</li></ul>
+<li><a href="Register-Classes.html#Register-Classes">17.8 Register Classes</a>
+<li><a href="Stack-and-Calling.html#Stack-and-Calling">17.9 Stack Layout and Calling Conventions</a>
+<ul>
+<li><a href="Frame-Layout.html#Frame-Layout">17.9.1 Basic Stack Layout</a>
+<li><a href="Exception-Handling.html#Exception-Handling">17.9.2 Exception Handling Support</a>
+<li><a href="Stack-Checking.html#Stack-Checking">17.9.3 Specifying How Stack Checking is Done</a>
+<li><a href="Frame-Registers.html#Frame-Registers">17.9.4 Registers That Address the Stack Frame</a>
+<li><a href="Elimination.html#Elimination">17.9.5 Eliminating Frame Pointer and Arg Pointer</a>
+<li><a href="Stack-Arguments.html#Stack-Arguments">17.9.6 Passing Function Arguments on the Stack</a>
+<li><a href="Register-Arguments.html#Register-Arguments">17.9.7 Passing Arguments in Registers</a>
+<li><a href="Scalar-Return.html#Scalar-Return">17.9.8 How Scalar Function Values Are Returned</a>
+<li><a href="Aggregate-Return.html#Aggregate-Return">17.9.9 How Large Values Are Returned</a>
+<li><a href="Caller-Saves.html#Caller-Saves">17.9.10 Caller-Saves Register Allocation</a>
+<li><a href="Function-Entry.html#Function-Entry">17.9.11 Function Entry and Exit</a>
+<li><a href="Profiling.html#Profiling">17.9.12 Generating Code for Profiling</a>
+<li><a href="Tail-Calls.html#Tail-Calls">17.9.13 Permitting tail calls</a>
+<li><a href="Stack-Smashing-Protection.html#Stack-Smashing-Protection">17.9.14 Stack smashing protection</a>
+<li><a href="Miscellaneous-Register-Hooks.html#Miscellaneous-Register-Hooks">17.9.15 Miscellaneous register hooks</a>
+</li></ul>
+<li><a href="Varargs.html#Varargs">17.10 Implementing the Varargs Macros</a>
+<li><a href="Trampolines.html#Trampolines">17.11 Trampolines for Nested Functions</a>
+<li><a href="Library-Calls.html#Library-Calls">17.12 Implicit Calls to Library Routines</a>
+<li><a href="Addressing-Modes.html#Addressing-Modes">17.13 Addressing Modes</a>
+<li><a href="Anchored-Addresses.html#Anchored-Addresses">17.14 Anchored Addresses</a>
+<li><a href="Condition-Code.html#Condition-Code">17.15 Condition Code Status</a>
+<ul>
+<li><a href="CC0-Condition-Codes.html#CC0-Condition-Codes">17.15.1 Representation of condition codes using <code>(cc0)</code></a>
+<li><a href="MODE_005fCC-Condition-Codes.html#MODE_005fCC-Condition-Codes">17.15.2 Representation of condition codes using registers</a>
+</li></ul>
+<li><a href="Costs.html#Costs">17.16 Describing Relative Costs of Operations</a>
+<li><a href="Scheduling.html#Scheduling">17.17 Adjusting the Instruction Scheduler</a>
+<li><a href="Sections.html#Sections">17.18 Dividing the Output into Sections (Texts, Data, <small class="dots">...</small>)</a>
+<li><a href="PIC.html#PIC">17.19 Position Independent Code</a>
+<li><a href="Assembler-Format.html#Assembler-Format">17.20 Defining the Output Assembler Language</a>
+<ul>
+<li><a href="File-Framework.html#File-Framework">17.20.1 The Overall Framework of an Assembler File</a>
+<li><a href="Data-Output.html#Data-Output">17.20.2 Output of Data</a>
+<li><a href="Uninitialized-Data.html#Uninitialized-Data">17.20.3 Output of Uninitialized Variables</a>
+<li><a href="Label-Output.html#Label-Output">17.20.4 Output and Generation of Labels</a>
+<li><a href="Initialization.html#Initialization">17.20.5 How Initialization Functions Are Handled</a>
+<li><a href="Macros-for-Initialization.html#Macros-for-Initialization">17.20.6 Macros Controlling Initialization Routines</a>
+<li><a href="Instruction-Output.html#Instruction-Output">17.20.7 Output of Assembler Instructions</a>
+<li><a href="Dispatch-Tables.html#Dispatch-Tables">17.20.8 Output of Dispatch Tables</a>
+<li><a href="Exception-Region-Output.html#Exception-Region-Output">17.20.9 Assembler Commands for Exception Regions</a>
+<li><a href="Alignment-Output.html#Alignment-Output">17.20.10 Assembler Commands for Alignment</a>
+</li></ul>
+<li><a href="Debugging-Info.html#Debugging-Info">17.21 Controlling Debugging Information Format</a>
+<ul>
+<li><a href="All-Debuggers.html#All-Debuggers">17.21.1 Macros Affecting All Debugging Formats</a>
+<li><a href="DBX-Options.html#DBX-Options">17.21.2 Specific Options for DBX Output</a>
+<li><a href="DBX-Hooks.html#DBX-Hooks">17.21.3 Open-Ended Hooks for DBX Format</a>
+<li><a href="File-Names-and-DBX.html#File-Names-and-DBX">17.21.4 File Names in DBX Format</a>
+<li><a href="SDB-and-DWARF.html#SDB-and-DWARF">17.21.5 Macros for SDB and DWARF Output</a>
+<li><a href="VMS-Debug.html#VMS-Debug">17.21.6 Macros for VMS Debug Format</a>
+</li></ul>
+<li><a href="Floating-Point.html#Floating-Point">17.22 Cross Compilation and Floating Point</a>
+<li><a href="Mode-Switching.html#Mode-Switching">17.23 Mode Switching Instructions</a>
+<li><a href="Target-Attributes.html#Target-Attributes">17.24 Defining target-specific uses of <code>__attribute__</code></a>
+<li><a href="Emulated-TLS.html#Emulated-TLS">17.25 Emulating TLS</a>
+<li><a href="MIPS-Coprocessors.html#MIPS-Coprocessors">17.26 Defining coprocessor specifics for MIPS targets.</a>
+<li><a href="PCH-Target.html#PCH-Target">17.27 Parameters for Precompiled Header Validity Checking</a>
+<li><a href="C_002b_002b-ABI.html#C_002b_002b-ABI">17.28 C++ ABI parameters</a>
+<li><a href="Named-Address-Spaces.html#Named-Address-Spaces">17.29 Adding support for named address spaces</a>
+<li><a href="Misc.html#Misc">17.30 Miscellaneous Parameters</a>
+</li></ul>
+<li><a name="toc_Host-Config" href="Host-Config.html#Host-Config">18 Host Configuration</a>
+<ul>
+<li><a href="Host-Common.html#Host-Common">18.1 Host Common</a>
+<li><a href="Filesystem.html#Filesystem">18.2 Host Filesystem</a>
+<li><a href="Host-Misc.html#Host-Misc">18.3 Host Misc</a>
+</li></ul>
+<li><a name="toc_Fragments" href="Fragments.html#Fragments">19 Makefile Fragments</a>
+<ul>
+<li><a href="Target-Fragment.html#Target-Fragment">19.1 Target Makefile Fragments</a>
+<li><a href="Host-Fragment.html#Host-Fragment">19.2 Host Makefile Fragments</a>
+</li></ul>
+<li><a name="toc_Collect2" href="Collect2.html#Collect2">20 <code>collect2</code></a>
+<li><a name="toc_Header-Dirs" href="Header-Dirs.html#Header-Dirs">21 Standard Header File Directories</a>
+<li><a name="toc_Type-Information" href="Type-Information.html#Type-Information">22 Memory Management and Type Information</a>
+<ul>
+<li><a href="GTY-Options.html#GTY-Options">22.1 The Inside of a <code>GTY(())</code></a>
+<li><a href="Inheritance-and-GTY.html#Inheritance-and-GTY">22.2 Support for inheritance</a>
+<li><a href="User-GC.html#User-GC">22.3 Support for user-provided GC marking routines</a>
+<ul>
+<li><a href="User-GC.html#User-GC">22.3.1 User-provided marking routines for template types</a>
+</li></ul>
+<li><a href="GGC-Roots.html#GGC-Roots">22.4 Marking Roots for the Garbage Collector</a>
+<li><a href="Files.html#Files">22.5 Source Files Containing Type Information</a>
+<li><a href="Invoking-the-garbage-collector.html#Invoking-the-garbage-collector">22.6 How to invoke the garbage collector</a>
+<li><a href="Troubleshooting.html#Troubleshooting">22.7 Troubleshooting the garbage collector</a>
+</li></ul>
+<li><a name="toc_Plugins" href="Plugins.html#Plugins">23 Plugins</a>
+<ul>
+<li><a href="Plugins-loading.html#Plugins-loading">23.1 Loading Plugins</a>
+<li><a href="Plugin-API.html#Plugin-API">23.2 Plugin API</a>
+<ul>
+<li><a href="Plugin-API.html#Plugin-API">23.2.1 Plugin license check</a>
+<li><a href="Plugin-API.html#Plugin-API">23.2.2 Plugin initialization</a>
+<li><a href="Plugin-API.html#Plugin-API">23.2.3 Plugin callbacks</a>
+</li></ul>
+<li><a href="Plugins-pass.html#Plugins-pass">23.3 Interacting with the pass manager</a>
+<li><a href="Plugins-GC.html#Plugins-GC">23.4 Interacting with the GCC Garbage Collector</a>
+<li><a href="Plugins-description.html#Plugins-description">23.5 Giving information about a plugin</a>
+<li><a href="Plugins-attr.html#Plugins-attr">23.6 Registering custom attributes or pragmas</a>
+<li><a href="Plugins-recording.html#Plugins-recording">23.7 Recording information about pass execution</a>
+<li><a href="Plugins-gate.html#Plugins-gate">23.8 Controlling which passes are being run</a>
+<li><a href="Plugins-tracking.html#Plugins-tracking">23.9 Keeping track of available passes</a>
+<li><a href="Plugins-building.html#Plugins-building">23.10 Building GCC plugins</a>
+</li></ul>
+<li><a name="toc_LTO" href="LTO.html#LTO">24 Link Time Optimization</a>
+<ul>
+<li><a href="LTO-Overview.html#LTO-Overview">24.1 Design Overview</a>
+<ul>
+<li><a href="LTO-Overview.html#LTO-Overview">24.1.1 LTO modes of operation</a>
+</li></ul>
+<li><a href="LTO-object-file-layout.html#LTO-object-file-layout">24.2 LTO file sections</a>
+<li><a href="IPA.html#IPA">24.3 Using summary information in IPA passes</a>
+<ul>
+<li><a href="IPA.html#IPA">24.3.1 Virtual clones</a>
+<li><a href="IPA.html#IPA">24.3.2 IPA references</a>
+<li><a href="IPA.html#IPA">24.3.3 Jump functions</a>
+</li></ul>
+<li><a href="WHOPR.html#WHOPR">24.4 Whole program assumptions, linker plugin and symbol visibilities</a>
+<li><a href="Internal-flags.html#Internal-flags">24.5 Internal flags controlling <code>lto1</code></a>
+</li></ul>
+<li><a name="toc_Match-and-Simplify" href="Match-and-Simplify.html#Match-and-Simplify">25 Match and Simplify</a>
+<ul>
+<li><a href="GIMPLE-API.html#GIMPLE-API">25.1 GIMPLE API</a>
+<li><a href="The-Language.html#The-Language">25.2 The Language</a>
+</li></ul>
+<li><a name="toc_Funding" href="Funding.html#Funding">Funding Free Software</a>
+<li><a name="toc_GNU-Project" href="GNU-Project.html#GNU-Project">The GNU Project and GNU/Linux</a>
+<li><a name="toc_Copying" href="Copying.html#Copying">GNU General Public License</a>
+<li><a name="toc_GNU-Free-Documentation-License" href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License">GNU Free Documentation License</a>
+<ul>
+<li><a href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License">ADDENDUM: How to use this License for your documents</a>
+</li></ul>
+<li><a name="toc_Contributors" href="Contributors.html#Contributors">Contributors to GCC</a>
+<li><a name="toc_Option-Index" href="Option-Index.html#Option-Index">Option Index</a>
+<li><a name="toc_Concept-Index" href="Concept-Index.html#Concept-Index">Concept Index</a>
+</li></ul>
+</div>
+
+<div class="node">
+<p>
+<a name="Top"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Contributing.html#Contributing">Contributing</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="../index.html#DIR">(DIR)</a>
+<hr>
+</div>
+
+<h2 class="unnumbered">Introduction</h2>
+
+<p><a name="index-introduction-1"></a>
+This manual documents the internals of the GNU compilers, including
+how to port them to new targets and some information about how to
+write front ends for new languages.  It corresponds to the compilers
+(GNU Tools for ARM Embedded Processors)
+version 5.4.1.  The use of the GNU compilers is documented in a
+separate manual.  See <a href="../gcc/index.html#Top">Introduction</a>.
+
+ <p>This manual is mainly a reference manual rather than a tutorial.  It
+discusses how to contribute to GCC (see <a href="Contributing.html#Contributing">Contributing</a>), the
+characteristics of the machines supported by GCC as hosts and targets
+(see <a href="Portability.html#Portability">Portability</a>), how GCC relates to the ABIs on such systems
+(see <a href="Interface.html#Interface">Interface</a>), and the characteristics of the languages for
+which GCC front ends are written (see <a href="Languages.html#Languages">Languages</a>).  It then
+describes the GCC source tree structure and build system, some of the
+interfaces to GCC front ends, and how support for a target system is
+implemented in GCC.
+
+ <p>Additional tutorial information is linked to from
+<a href="http://gcc.gnu.org/readings.html">http://gcc.gnu.org/readings.html</a>.
+
+<ul class="menu">
+<li><a accesskey="1" href="Contributing.html#Contributing">Contributing</a>:     How to contribute to testing and developing GCC. 
+<li><a accesskey="2" href="Portability.html#Portability">Portability</a>:      Goals of GCC's portability features. 
+<li><a accesskey="3" href="Interface.html#Interface">Interface</a>:        Function-call interface of GCC output. 
+<li><a accesskey="4" href="Libgcc.html#Libgcc">Libgcc</a>:           Low-level runtime library used by GCC. 
+<li><a accesskey="5" href="Languages.html#Languages">Languages</a>:        Languages for which GCC front ends are written. 
+<li><a accesskey="6" href="Source-Tree.html#Source-Tree">Source Tree</a>:      GCC source tree structure and build system. 
+<li><a accesskey="7" href="Testsuites.html#Testsuites">Testsuites</a>:       GCC testsuites. 
+<li><a accesskey="8" href="Options.html#Options">Options</a>:          Option specification files. 
+<li><a accesskey="9" href="Passes.html#Passes">Passes</a>:           Order of passes, what they do, and what each file is for. 
+<li><a href="GENERIC.html#GENERIC">GENERIC</a>:          Language-independent representation generated by Front Ends
+<li><a href="GIMPLE.html#GIMPLE">GIMPLE</a>:           Tuple representation used by Tree SSA optimizers
+<li><a href="Tree-SSA.html#Tree-SSA">Tree SSA</a>:         Analysis and optimization of GIMPLE
+<li><a href="RTL.html#RTL">RTL</a>:              Machine-dependent low-level intermediate representation. 
+<li><a href="Control-Flow.html#Control-Flow">Control Flow</a>:     Maintaining and manipulating the control flow graph. 
+<li><a href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation">Loop Analysis and Representation</a>:  Analysis and representation of loops
+<li><a href="Machine-Desc.html#Machine-Desc">Machine Desc</a>:     How to write machine description instruction patterns. 
+<li><a href="Target-Macros.html#Target-Macros">Target Macros</a>:    How to write the machine description C macros and functions. 
+<li><a href="Host-Config.html#Host-Config">Host Config</a>:      Writing the <samp><span class="file">xm-</span><var>machine</var><span class="file">.h</span></samp> file. 
+<li><a href="Fragments.html#Fragments">Fragments</a>:        Writing the <samp><span class="file">t-</span><var>target</var></samp> and <samp><span class="file">x-</span><var>host</var></samp> files. 
+<li><a href="Collect2.html#Collect2">Collect2</a>:         How <code>collect2</code> works; how it finds <code>ld</code>. 
+<li><a href="Header-Dirs.html#Header-Dirs">Header Dirs</a>:      Understanding the standard header file directories. 
+<li><a href="Type-Information.html#Type-Information">Type Information</a>:  GCC's memory management; generating type information. 
+<li><a href="Plugins.html#Plugins">Plugins</a>:          Extending the compiler with plugins. 
+<li><a href="LTO.html#LTO">LTO</a>:              Using Link-Time Optimization.
+
+<li><a href="Match-and-Simplify.html#Match-and-Simplify">Match and Simplify</a>:  How to write expression simplification patterns for GIMPLE and GENERIC
+<li><a href="Funding.html#Funding">Funding</a>:          How to help assure funding for free software. 
+<li><a href="GNU-Project.html#GNU-Project">GNU Project</a>:      The GNU Project and GNU/Linux.
+
+<li><a href="Copying.html#Copying">Copying</a>:          GNU General Public License says
+                    how you can copy and share GCC. 
+<li><a href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License">GNU Free Documentation License</a>:  How you can copy and share this manual. 
+<li><a href="Contributors.html#Contributors">Contributors</a>:     People who have contributed to GCC.
+
+<li><a href="Option-Index.html#Option-Index">Option Index</a>:     Index to command line options. 
+<li><a href="Concept-Index.html#Concept-Index">Concept Index</a>:    Index of concepts and symbol names. 
+</ul>
+
+<!-- Copyright (C) 1988-2015 Free Software Foundation, Inc. -->
+<!-- This is part of the GCC manual. -->
+<!-- For copying conditions, see the file gcc.texi. -->
+</body></html>
+

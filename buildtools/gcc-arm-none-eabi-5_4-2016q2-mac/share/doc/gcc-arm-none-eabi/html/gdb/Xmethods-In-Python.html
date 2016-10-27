@@ -1,0 +1,101 @@
+<html lang="en">
+<head>
+<title>Xmethods In Python - Debugging with GDB</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Debugging with GDB">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Python-API.html#Python-API" title="Python API">
+<link rel="prev" href="Unwinding-Frames-in-Python.html#Unwinding-Frames-in-Python" title="Unwinding Frames in Python">
+<link rel="next" href="Xmethod-API.html#Xmethod-API" title="Xmethod API">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Free Software'' and ``Free Software Needs
+Free Documentation'', with the Front-Cover Texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: ``You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom.''
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Xmethods-In-Python"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Xmethod-API.html#Xmethod-API">Xmethod API</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Unwinding-Frames-in-Python.html#Unwinding-Frames-in-Python">Unwinding Frames in Python</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Python-API.html#Python-API">Python API</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">23.2.2.13 Xmethods In Python</h5>
+
+<p><a name="index-xmethods-in-Python-1995"></a>
+<dfn>Xmethods</dfn> are additional methods or replacements for existing
+methods of a C<tt>++</tt> class.  This feature is useful for those cases
+where a method defined in C<tt>++</tt> source code could be inlined or
+optimized out by the compiler, making it unavailable to <span class="sc">gdb</span>. 
+For such cases, one can define an xmethod to serve as a replacement
+for the method defined in the C<tt>++</tt> source code.  <span class="sc">gdb</span> will
+then invoke the xmethod, instead of the C<tt>++</tt> method, to
+evaluate expressions.  One can also use xmethods when debugging
+with core files.  Moreover, when debugging live programs, invoking an
+xmethod need not involve running the inferior (which can potentially
+perturb its state).  Hence, even if the C<tt>++</tt> method is available, it
+is better to use its replacement xmethod if one is defined.
+
+   <p>The xmethods feature in Python is available via the concepts of an
+<dfn>xmethod matcher</dfn> and an <dfn>xmethod worker</dfn>.  To
+implement an xmethod, one has to implement a matcher and a
+corresponding worker for it (more than one worker can be
+implemented, each catering to a different overloaded instance of the
+method).  Internally, <span class="sc">gdb</span> invokes the <code>match</code> method of a
+matcher to match the class type and method name.  On a match, the
+<code>match</code> method returns a list of matching <em>worker</em> objects. 
+Each worker object typically corresponds to an overloaded instance of
+the xmethod.  They implement a <code>get_arg_types</code> method which
+returns a sequence of types corresponding to the arguments the xmethod
+requires.  <span class="sc">gdb</span> uses this sequence of types to perform
+overload resolution and picks a winning xmethod worker.  A winner
+is also selected from among the methods <span class="sc">gdb</span> finds in the
+C<tt>++</tt> source code.  Next, the winning xmethod worker and the
+winning C<tt>++</tt> method are compared to select an overall winner.  In
+case of a tie between a xmethod worker and a C<tt>++</tt> method, the
+xmethod worker is selected as the winner.  That is, if a winning
+xmethod worker is found to be equivalent to the winning C<tt>++</tt>
+method, then the xmethod worker is treated as a replacement for
+the C<tt>++</tt> method.  <span class="sc">gdb</span> uses the overall winner to invoke the
+method.  If the winning xmethod worker is the overall winner, then
+the corresponding xmethod is invoked via the <code>__call__</code> method
+of the worker object.
+
+   <p>If one wants to implement an xmethod as a replacement for an
+existing C<tt>++</tt> method, then they have to implement an equivalent
+xmethod which has exactly the same name and takes arguments of
+exactly the same type as the C<tt>++</tt> method.  If the user wants to
+invoke the C<tt>++</tt> method even though a replacement xmethod is
+available for that method, then they can disable the xmethod.
+
+   <p>See <a href="Xmethod-API.html#Xmethod-API">Xmethod API</a>, for API to implement xmethods in Python. 
+See <a href="Writing-an-Xmethod.html#Writing-an-Xmethod">Writing an Xmethod</a>, for implementing xmethods in Python.
+
+   </body></html>
+

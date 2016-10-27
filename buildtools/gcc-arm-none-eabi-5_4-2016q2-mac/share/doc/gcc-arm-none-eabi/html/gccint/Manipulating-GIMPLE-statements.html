@@ -1,0 +1,269 @@
+<html lang="en">
+<head>
+<title>Manipulating GIMPLE statements - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="GIMPLE.html#GIMPLE" title="GIMPLE">
+<link rel="prev" href="Operands.html#Operands" title="Operands">
+<link rel="next" href="Tuple-specific-accessors.html#Tuple-specific-accessors" title="Tuple specific accessors">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Manipulating-GIMPLE-statements"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Tuple-specific-accessors.html#Tuple-specific-accessors">Tuple specific accessors</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Operands.html#Operands">Operands</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="GIMPLE.html#GIMPLE">GIMPLE</a>
+<hr>
+</div>
+
+<h3 class="section">11.7 Manipulating GIMPLE statements</h3>
+
+<p><a name="index-Manipulating-GIMPLE-statements-2163"></a>
+This section documents all the functions available to handle each
+of the GIMPLE instructions.
+
+<h4 class="subsection">11.7.1 Common accessors</h4>
+
+<p>The following are common accessors for gimple statements.
+
+<div class="defun">
+&mdash; GIMPLE function: enum gimple_code <b>gimple_code</b> (<var>gimple g</var>)<var><a name="index-gimple_005fcode-2164"></a></var><br>
+<blockquote><p>Return the code for statement <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: basic_block <b>gimple_bb</b> (<var>gimple g</var>)<var><a name="index-gimple_005fbb-2165"></a></var><br>
+<blockquote><p>Return the basic block to which statement <code>G</code> belongs to. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree <b>gimple_block</b> (<var>gimple g</var>)<var><a name="index-gimple_005fblock-2166"></a></var><br>
+<blockquote><p>Return the lexical scope block holding statement <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree <b>gimple_expr_type</b> (<var>gimple stmt</var>)<var><a name="index-gimple_005fexpr_005ftype-2167"></a></var><br>
+<blockquote><p>Return the type of the main expression computed by <code>STMT</code>. Return
+<code>void_type_node</code> if <code>STMT</code> computes nothing. This will only return
+something meaningful for <code>GIMPLE_ASSIGN</code>, <code>GIMPLE_COND</code> and
+<code>GIMPLE_CALL</code>.  For all other tuple codes, it will return
+<code>void_type_node</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: enum tree_code <b>gimple_expr_code</b> (<var>gimple stmt</var>)<var><a name="index-gimple_005fexpr_005fcode-2168"></a></var><br>
+<blockquote><p>Return the tree code for the expression computed by <code>STMT</code>.  This
+is only meaningful for <code>GIMPLE_CALL</code>, <code>GIMPLE_ASSIGN</code> and
+<code>GIMPLE_COND</code>.  If <code>STMT</code> is <code>GIMPLE_CALL</code>, it will return <code>CALL_EXPR</code>. 
+For <code>GIMPLE_COND</code>, it returns the code of the comparison predicate. 
+For <code>GIMPLE_ASSIGN</code> it returns the code of the operation performed
+by the <code>RHS</code> of the assignment. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_set_block</b> (<var>gimple g, tree block</var>)<var><a name="index-gimple_005fset_005fblock-2169"></a></var><br>
+<blockquote><p>Set the lexical scope block of <code>G</code> to <code>BLOCK</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: location_t <b>gimple_locus</b> (<var>gimple g</var>)<var><a name="index-gimple_005flocus-2170"></a></var><br>
+<blockquote><p>Return locus information for statement <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_set_locus</b> (<var>gimple g, location_t locus</var>)<var><a name="index-gimple_005fset_005flocus-2171"></a></var><br>
+<blockquote><p>Set locus information for statement <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>gimple_locus_empty_p</b> (<var>gimple g</var>)<var><a name="index-gimple_005flocus_005fempty_005fp-2172"></a></var><br>
+<blockquote><p>Return true if <code>G</code> does not have locus information. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>gimple_no_warning_p</b> (<var>gimple stmt</var>)<var><a name="index-gimple_005fno_005fwarning_005fp-2173"></a></var><br>
+<blockquote><p>Return true if no warnings should be emitted for statement <code>STMT</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_set_visited</b> (<var>gimple stmt, bool visited_p</var>)<var><a name="index-gimple_005fset_005fvisited-2174"></a></var><br>
+<blockquote><p>Set the visited status on statement <code>STMT</code> to <code>VISITED_P</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>gimple_visited_p</b> (<var>gimple stmt</var>)<var><a name="index-gimple_005fvisited_005fp-2175"></a></var><br>
+<blockquote><p>Return the visited status on statement <code>STMT</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_set_plf</b> (<var>gimple stmt, enum plf_mask plf, bool val_p</var>)<var><a name="index-gimple_005fset_005fplf-2176"></a></var><br>
+<blockquote><p>Set pass local flag <code>PLF</code> on statement <code>STMT</code> to <code>VAL_P</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: unsigned int <b>gimple_plf</b> (<var>gimple stmt, enum plf_mask plf</var>)<var><a name="index-gimple_005fplf-2177"></a></var><br>
+<blockquote><p>Return the value of pass local flag <code>PLF</code> on statement <code>STMT</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>gimple_has_ops</b> (<var>gimple g</var>)<var><a name="index-gimple_005fhas_005fops-2178"></a></var><br>
+<blockquote><p>Return true if statement <code>G</code> has register or memory operands. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>gimple_has_mem_ops</b> (<var>gimple g</var>)<var><a name="index-gimple_005fhas_005fmem_005fops-2179"></a></var><br>
+<blockquote><p>Return true if statement <code>G</code> has memory operands. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: unsigned <b>gimple_num_ops</b> (<var>gimple g</var>)<var><a name="index-gimple_005fnum_005fops-2180"></a></var><br>
+<blockquote><p>Return the number of operands for statement <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree * <b>gimple_ops</b> (<var>gimple g</var>)<var><a name="index-gimple_005fops-2181"></a></var><br>
+<blockquote><p>Return the array of operands for statement <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree <b>gimple_op</b> (<var>gimple g, unsigned i</var>)<var><a name="index-gimple_005fop-2182"></a></var><br>
+<blockquote><p>Return operand <code>I</code> for statement <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: tree * <b>gimple_op_ptr</b> (<var>gimple g, unsigned i</var>)<var><a name="index-gimple_005fop_005fptr-2183"></a></var><br>
+<blockquote><p>Return a pointer to operand <code>I</code> for statement <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_set_op</b> (<var>gimple g, unsigned i, tree op</var>)<var><a name="index-gimple_005fset_005fop-2184"></a></var><br>
+<blockquote><p>Set operand <code>I</code> of statement <code>G</code> to <code>OP</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bitmap <b>gimple_addresses_taken</b> (<var>gimple stmt</var>)<var><a name="index-gimple_005faddresses_005ftaken-2185"></a></var><br>
+<blockquote><p>Return the set of symbols that have had their address taken by
+<code>STMT</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: struct def_optype_d * <b>gimple_def_ops</b> (<var>gimple g</var>)<var><a name="index-gimple_005fdef_005fops-2186"></a></var><br>
+<blockquote><p>Return the set of <code>DEF</code> operands for statement <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_set_def_ops</b> (<var>gimple g, struct def_optype_d *def</var>)<var><a name="index-gimple_005fset_005fdef_005fops-2187"></a></var><br>
+<blockquote><p>Set <code>DEF</code> to be the set of <code>DEF</code> operands for statement <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: struct use_optype_d * <b>gimple_use_ops</b> (<var>gimple g</var>)<var><a name="index-gimple_005fuse_005fops-2188"></a></var><br>
+<blockquote><p>Return the set of <code>USE</code> operands for statement <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_set_use_ops</b> (<var>gimple g, struct use_optype_d *use</var>)<var><a name="index-gimple_005fset_005fuse_005fops-2189"></a></var><br>
+<blockquote><p>Set <code>USE</code> to be the set of <code>USE</code> operands for statement <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: struct voptype_d * <b>gimple_vuse_ops</b> (<var>gimple g</var>)<var><a name="index-gimple_005fvuse_005fops-2190"></a></var><br>
+<blockquote><p>Return the set of <code>VUSE</code> operands for statement <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_set_vuse_ops</b> (<var>gimple g, struct voptype_d *ops</var>)<var><a name="index-gimple_005fset_005fvuse_005fops-2191"></a></var><br>
+<blockquote><p>Set <code>OPS</code> to be the set of <code>VUSE</code> operands for statement <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: struct voptype_d * <b>gimple_vdef_ops</b> (<var>gimple g</var>)<var><a name="index-gimple_005fvdef_005fops-2192"></a></var><br>
+<blockquote><p>Return the set of <code>VDEF</code> operands for statement <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_set_vdef_ops</b> (<var>gimple g, struct voptype_d *ops</var>)<var><a name="index-gimple_005fset_005fvdef_005fops-2193"></a></var><br>
+<blockquote><p>Set <code>OPS</code> to be the set of <code>VDEF</code> operands for statement <code>G</code>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bitmap <b>gimple_loaded_syms</b> (<var>gimple g</var>)<var><a name="index-gimple_005floaded_005fsyms-2194"></a></var><br>
+<blockquote><p>Return the set of symbols loaded by statement <code>G</code>.  Each element of
+the set is the <code>DECL_UID</code> of the corresponding symbol. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bitmap <b>gimple_stored_syms</b> (<var>gimple g</var>)<var><a name="index-gimple_005fstored_005fsyms-2195"></a></var><br>
+<blockquote><p>Return the set of symbols stored by statement <code>G</code>.  Each element of
+the set is the <code>DECL_UID</code> of the corresponding symbol. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>gimple_modified_p</b> (<var>gimple g</var>)<var><a name="index-gimple_005fmodified_005fp-2196"></a></var><br>
+<blockquote><p>Return true if statement <code>G</code> has operands and the modified field
+has been set. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: bool <b>gimple_has_volatile_ops</b> (<var>gimple stmt</var>)<var><a name="index-gimple_005fhas_005fvolatile_005fops-2197"></a></var><br>
+<blockquote><p>Return true if statement <code>STMT</code> contains volatile operands. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>gimple_set_has_volatile_ops</b> (<var>gimple stmt, bool volatilep</var>)<var><a name="index-gimple_005fset_005fhas_005fvolatile_005fops-2198"></a></var><br>
+<blockquote><p>Return true if statement <code>STMT</code> contains volatile operands. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>update_stmt</b> (<var>gimple s</var>)<var><a name="index-update_005fstmt-2199"></a></var><br>
+<blockquote><p>Mark statement <code>S</code> as modified, and update it. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: void <b>update_stmt_if_modified</b> (<var>gimple s</var>)<var><a name="index-update_005fstmt_005fif_005fmodified-2200"></a></var><br>
+<blockquote><p>Update statement <code>S</code> if it has been marked modified. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; GIMPLE function: gimple <b>gimple_copy</b> (<var>gimple stmt</var>)<var><a name="index-gimple_005fcopy-2201"></a></var><br>
+<blockquote><p>Return a deep copy of statement <code>STMT</code>. 
+</p></blockquote></div>
+
+ </body></html>
+

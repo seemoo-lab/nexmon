@@ -1,0 +1,73 @@
+<html lang="en">
+<head>
+<title>M68K-Chars - Using as</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="Using as">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="M68K_002dopcodes.html#M68K_002dopcodes" title="M68K-opcodes">
+<link rel="prev" href="M68K_002dBranch.html#M68K_002dBranch" title="M68K-Branch">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled ``GNU Free Documentation License''.
+
+-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="M68K-Chars"></a>
+<a name="M68K_002dChars"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="M68K_002dBranch.html#M68K_002dBranch">M68K-Branch</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="M68K_002dopcodes.html#M68K_002dopcodes">M68K-opcodes</a>
+<hr>
+</div>
+
+<h5 class="subsubsection">9.23.6.2 Special Characters</h5>
+
+<p><a name="index-special-characters_002c-M680x0-1384"></a>
+<a name="index-M680x0-line-comment-character-1385"></a><a name="index-line-comment-character_002c-M680x0-1386"></a><a name="index-comments_002c-M680x0-1387"></a>Line comments are introduced by the `<samp><span class="samp">|</span></samp>' character appearing
+anywhere on a line, unless the <samp><span class="option">--bitwise-or</span></samp> command line option
+has been specified.
+
+   <p>An asterisk (`<samp><span class="samp">*</span></samp>') as the first character on a line marks the
+start of a line comment as well.
+
+   <p><a name="index-M680x0-immediate-character-1388"></a><a name="index-immediate-character_002c-M680x0-1389"></a>
+A hash character (`<samp><span class="samp">#</span></samp>') as the first character on a line also
+marks the start of a line comment, but in this case it could also be a
+logical line number directive (see <a href="Comments.html#Comments">Comments</a>) or a preprocessor
+control command (see <a href="Preprocessing.html#Preprocessing">Preprocessing</a>).  If the hash character
+appears elsewhere on a line it is used to introduce an immediate
+value.  (This is for compatibility with Sun's assembler).
+
+   <p><a name="index-M680x0-line-separator-1390"></a><a name="index-line-separator_002c-M680x0-1391"></a>
+Multiple statements on the same line can appear if they are separated
+by the `<samp><span class="samp">;</span></samp>' character.
+
+<!-- Copyright (C) 1991-2015 Free Software Foundation, Inc. -->
+<!-- This is part of the GAS manual. -->
+<!-- For copying conditions, see the file as.texinfo. -->
+</body></html>
+

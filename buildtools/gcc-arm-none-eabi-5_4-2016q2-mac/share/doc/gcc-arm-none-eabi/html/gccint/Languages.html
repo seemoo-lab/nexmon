@@ -1,0 +1,90 @@
+<html lang="en">
+<head>
+<title>Languages - GNU Compiler Collection (GCC) Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GNU Compiler Collection (GCC) Internals">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Libgcc.html#Libgcc" title="Libgcc">
+<link rel="next" href="Source-Tree.html#Source-Tree" title="Source Tree">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1988-2015 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being ``Funding Free Software'', the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
+(a) The FSF's Front-Cover Text is:
+
+     A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+     You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Languages"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Source-Tree.html#Source-Tree">Source Tree</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Libgcc.html#Libgcc">Libgcc</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">5 Language Front Ends in GCC</h2>
+
+<p>The interface to front ends for languages in GCC, and in particular
+the <code>tree</code> structure (see <a href="GENERIC.html#GENERIC">GENERIC</a>), was initially designed for
+C, and many aspects of it are still somewhat biased towards C and
+C-like languages.  It is, however, reasonably well suited to other
+procedural languages, and front ends for many such languages have been
+written for GCC.
+
+ <p>Writing a compiler as a front end for GCC, rather than compiling
+directly to assembler or generating C code which is then compiled by
+GCC, has several advantages:
+
+     <ul>
+<li>GCC front ends benefit from the support for many different
+target machines already present in GCC. 
+<li>GCC front ends benefit from all the optimizations in GCC.  Some
+of these, such as alias analysis, may work better when GCC is
+compiling directly from source code then when it is compiling from
+generated C code. 
+<li>Better debugging information is generated when compiling
+directly from source code than when going via intermediate generated C
+code. 
+</ul>
+
+ <p>Because of the advantages of writing a compiler as a GCC front end,
+GCC front ends have also been created for languages very different
+from those for which GCC was designed, such as the declarative
+logic/functional language Mercury.  For these reasons, it may also be
+useful to implement compilers created for specialized purposes (for
+example, as part of a research project) as GCC front ends.
+
+<!-- Copyright (C) 2002-2015 Free Software Foundation, Inc. -->
+<!-- This is part of the GCC manual. -->
+<!-- For copying conditions, see the file gcc.texi. -->
+</body></html>
+

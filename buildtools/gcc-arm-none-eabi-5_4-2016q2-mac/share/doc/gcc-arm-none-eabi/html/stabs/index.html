@@ -1,0 +1,205 @@
+<html lang="en">
+<head>
+<title>STABS</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="STABS">
+<meta name="generator" content="makeinfo 4.8">
+<link title="Top" rel="start" href="#Top">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1992-2015 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License".-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+This document describes the stabs debugging symbol tables.
+
+   <p>Copyright &copy; 1992-2015 Free Software Foundation, Inc. 
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+   <p>Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled &ldquo;GNU
+Free Documentation License&rdquo;.
+
+<div class="node">
+<p>
+<a name="Top"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Overview.html#Overview">Overview</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="../index.html#dir">(dir)</a>
+<hr>
+</div>
+
+<h2 class="unnumbered">The "stabs" representation of debugging information</h2>
+
+<p>This document describes the stabs debugging format.
+
+<ul class="menu">
+<li><a accesskey="1" href="Overview.html#Overview">Overview</a>: 			Overview of stabs
+<li><a accesskey="2" href="Program-Structure.html#Program-Structure">Program Structure</a>: 		Encoding of the structure of the program
+<li><a accesskey="3" href="Constants.html#Constants">Constants</a>: 			Constants
+<li><a accesskey="4" href="Variables.html#Variables">Variables</a>
+<li><a accesskey="5" href="Types.html#Types">Types</a>: 			Type definitions
+<li><a accesskey="6" href="Macro-define-and-undefine.html#Macro-define-and-undefine">Macro define and undefine</a>: 	Representation of #define and #undef
+<li><a accesskey="7" href="Symbol-Tables.html#Symbol-Tables">Symbol Tables</a>: 		Symbol information in symbol tables
+<li><a accesskey="8" href="Cplusplus.html#Cplusplus">Cplusplus</a>: 			Stabs specific to C++
+<li><a accesskey="9" href="Stab-Types.html#Stab-Types">Stab Types</a>: 			Symbol types in a.out files
+<li><a href="Symbol-Descriptors.html#Symbol-Descriptors">Symbol Descriptors</a>: 		Table of symbol descriptors
+<li><a href="Type-Descriptors.html#Type-Descriptors">Type Descriptors</a>: 		Table of type descriptors
+<li><a href="Expanded-Reference.html#Expanded-Reference">Expanded Reference</a>: 		Reference information by stab type
+<li><a href="Questions.html#Questions">Questions</a>: 			Questions and anomalies
+<li><a href="Stab-Sections.html#Stab-Sections">Stab Sections</a>: 		In some object file formats, stabs are
+                                in sections. 
+<li><a href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License">GNU Free Documentation License</a>:   The license for this documentation
+<li><a href="Symbol-Types-Index.html#Symbol-Types-Index">Symbol Types Index</a>:           Index of symbolic stab symbol type names. 
+</ul>
+
+<div class="contents">
+<h2>Table of Contents</h2>
+<ul>
+<li><a name="toc_Top" href="index.html#Top">The "stabs" representation of debugging information</a>
+<li><a name="toc_Overview" href="Overview.html#Overview">1 Overview of Stabs</a>
+<ul>
+<li><a href="Flow.html#Flow">1.1 Overview of Debugging Information Flow</a>
+<li><a href="Stabs-Format.html#Stabs-Format">1.2 Overview of Stab Format</a>
+<li><a href="String-Field.html#String-Field">1.3 The String Field</a>
+<li><a href="C-Example.html#C-Example">1.4 A Simple Example in C Source</a>
+<li><a href="Assembly-Code.html#Assembly-Code">1.5 The Simple Example at the Assembly Level</a>
+</li></ul>
+<li><a name="toc_Program-Structure" href="Program-Structure.html#Program-Structure">2 Encoding the Structure of the Program</a>
+<ul>
+<li><a href="Main-Program.html#Main-Program">2.1 Main Program</a>
+<li><a href="Source-Files.html#Source-Files">2.2 Paths and Names of the Source Files</a>
+<li><a href="Include-Files.html#Include-Files">2.3 Names of Include Files</a>
+<li><a href="Line-Numbers.html#Line-Numbers">2.4 Line Numbers</a>
+<li><a href="Procedures.html#Procedures">2.5 Procedures</a>
+<li><a href="Nested-Procedures.html#Nested-Procedures">2.6 Nested Procedures</a>
+<li><a href="Block-Structure.html#Block-Structure">2.7 Block Structure</a>
+<li><a href="Alternate-Entry-Points.html#Alternate-Entry-Points">2.8 Alternate Entry Points</a>
+</li></ul>
+<li><a name="toc_Constants" href="Constants.html#Constants">3 Constants</a>
+<li><a name="toc_Variables" href="Variables.html#Variables">4 Variables</a>
+<ul>
+<li><a href="Stack-Variables.html#Stack-Variables">4.1 Automatic Variables Allocated on the Stack</a>
+<li><a href="Global-Variables.html#Global-Variables">4.2 Global Variables</a>
+<li><a href="Register-Variables.html#Register-Variables">4.3 Register Variables</a>
+<li><a href="Common-Blocks.html#Common-Blocks">4.4 Common Blocks</a>
+<li><a href="Statics.html#Statics">4.5 Static Variables</a>
+<li><a href="Based-Variables.html#Based-Variables">4.6 Fortran Based Variables</a>
+<li><a href="Parameters.html#Parameters">4.7 Parameters</a>
+<ul>
+<li><a href="Register-Parameters.html#Register-Parameters">4.7.1 Passing Parameters in Registers</a>
+<li><a href="Local-Variable-Parameters.html#Local-Variable-Parameters">4.7.2 Storing Parameters as Local Variables</a>
+<li><a href="Reference-Parameters.html#Reference-Parameters">4.7.3 Passing Parameters by Reference</a>
+<li><a href="Conformant-Arrays.html#Conformant-Arrays">4.7.4 Passing Conformant Array Parameters</a>
+</li></ul>
+</li></ul>
+<li><a name="toc_Types" href="Types.html#Types">5 Defining Types</a>
+<ul>
+<li><a href="Builtin-Types.html#Builtin-Types">5.1 Builtin Types</a>
+<ul>
+<li><a href="Traditional-Builtin-Types.html#Traditional-Builtin-Types">5.1.1 Traditional Builtin Types</a>
+<ul>
+<li><a href="Traditional-Integer-Types.html#Traditional-Integer-Types">5.1.1.1 Traditional Integer Types</a>
+<li><a href="Traditional-Other-Types.html#Traditional-Other-Types">5.1.1.2 Traditional Other Types</a>
+</li></ul>
+<li><a href="Builtin-Type-Descriptors.html#Builtin-Type-Descriptors">5.1.2 Defining Builtin Types Using Builtin Type Descriptors</a>
+<li><a href="Negative-Type-Numbers.html#Negative-Type-Numbers">5.1.3 Negative Type Numbers</a>
+</li></ul>
+<li><a href="Miscellaneous-Types.html#Miscellaneous-Types">5.2 Miscellaneous Types</a>
+<li><a href="Cross_002dReferences.html#Cross_002dReferences">5.3 Cross-References to Other Types</a>
+<li><a href="Subranges.html#Subranges">5.4 Subrange Types</a>
+<li><a href="Arrays.html#Arrays">5.5 Array Types</a>
+<li><a href="Strings.html#Strings">5.6 Strings</a>
+<li><a href="Enumerations.html#Enumerations">5.7 Enumerations</a>
+<li><a href="Structures.html#Structures">5.8 Structures</a>
+<li><a href="Typedefs.html#Typedefs">5.9 Giving a Type a Name</a>
+<li><a href="Unions.html#Unions">5.10 Unions</a>
+<li><a href="Function-Types.html#Function-Types">5.11 Function Types</a>
+</li></ul>
+<li><a name="toc_Macro-define-and-undefine" href="Macro-define-and-undefine.html#Macro-define-and-undefine">6 Representation of #define and #undef</a>
+<li><a name="toc_Symbol-Tables" href="Symbol-Tables.html#Symbol-Tables">7 Symbol Information in Symbol Tables</a>
+<ul>
+<li><a href="Symbol-Table-Format.html#Symbol-Table-Format">7.1 Symbol Table Format</a>
+<li><a href="Transformations-On-Symbol-Tables.html#Transformations-On-Symbol-Tables">7.2 Transformations on Symbol Tables</a>
+<ul>
+<li><a href="Transformations-On-Static-Variables.html#Transformations-On-Static-Variables">7.2.1 Transformations on Static Variables</a>
+<li><a href="Transformations-On-Global-Variables.html#Transformations-On-Global-Variables">7.2.2 Transformations on Global Variables</a>
+<li><a href="Stab-Section-Transformations.html#Stab-Section-Transformations">7.2.3 Transformations of Stabs in separate sections</a>
+</li></ul>
+</li></ul>
+<li><a name="toc_Cplusplus" href="Cplusplus.html#Cplusplus">8 GNU C<tt>++</tt> Stabs</a>
+<ul>
+<li><a href="Class-Names.html#Class-Names">8.1 C<tt>++</tt> Class Names</a>
+<li><a href="Nested-Symbols.html#Nested-Symbols">8.2 Defining a Symbol Within Another Type</a>
+<li><a href="Basic-Cplusplus-Types.html#Basic-Cplusplus-Types">8.3 Basic Types For C<tt>++</tt></a>
+<li><a href="Simple-Classes.html#Simple-Classes">8.4 Simple Class Definition</a>
+<li><a href="Class-Instance.html#Class-Instance">8.5 Class Instance</a>
+<li><a href="Methods.html#Methods">8.6 Method Definition</a>
+<li><a href="Method-Type-Descriptor.html#Method-Type-Descriptor">8.7 The `<samp><span class="samp">#</span></samp>' Type Descriptor</a>
+<li><a href="Member-Type-Descriptor.html#Member-Type-Descriptor">8.8 The `<samp><span class="samp">@</span></samp>' Type Descriptor</a>
+<li><a href="Protections.html#Protections">8.9 Protections</a>
+<li><a href="Method-Modifiers.html#Method-Modifiers">8.10 Method Modifiers (<code>const</code>, <code>volatile</code>, <code>const volatile</code>)</a>
+<li><a href="Virtual-Methods.html#Virtual-Methods">8.11 Virtual Methods</a>
+<li><a href="Inheritance.html#Inheritance">8.12 Inheritance</a>
+<li><a href="Virtual-Base-Classes.html#Virtual-Base-Classes">8.13 Virtual Base Classes</a>
+<li><a href="Static-Members.html#Static-Members">8.14 Static Members</a>
+</li></ul>
+<li><a name="toc_Stab-Types" href="Stab-Types.html#Stab-Types">Appendix A Table of Stab Types</a>
+<ul>
+<li><a href="Non_002dStab-Symbol-Types.html#Non_002dStab-Symbol-Types">A.1 Non-Stab Symbol Types</a>
+<li><a href="Stab-Symbol-Types.html#Stab-Symbol-Types">A.2 Stab Symbol Types</a>
+</li></ul>
+<li><a name="toc_Symbol-Descriptors" href="Symbol-Descriptors.html#Symbol-Descriptors">Appendix B Table of Symbol Descriptors</a>
+<li><a name="toc_Type-Descriptors" href="Type-Descriptors.html#Type-Descriptors">Appendix C Table of Type Descriptors</a>
+<li><a name="toc_Expanded-Reference" href="Expanded-Reference.html#Expanded-Reference">Appendix D Expanded Reference by Stab Type</a>
+<ul>
+<li><a href="N_005fPC.html#N_005fPC">D.1 N_PC</a>
+<li><a href="N_005fNSYMS.html#N_005fNSYMS">D.2 N_NSYMS</a>
+<li><a href="N_005fNOMAP.html#N_005fNOMAP">D.3 N_NOMAP</a>
+<li><a href="N_005fM2C.html#N_005fM2C">D.4 N_M2C</a>
+<li><a href="N_005fBROWS.html#N_005fBROWS">D.5 N_BROWS</a>
+<li><a href="N_005fDEFD.html#N_005fDEFD">D.6 N_DEFD</a>
+<li><a href="N_005fEHDECL.html#N_005fEHDECL">D.7 N_EHDECL</a>
+<li><a href="N_005fMOD2.html#N_005fMOD2">D.8 N_MOD2</a>
+<li><a href="N_005fCATCH.html#N_005fCATCH">D.9 N_CATCH</a>
+<li><a href="N_005fSSYM.html#N_005fSSYM">D.10 N_SSYM</a>
+<li><a href="N_005fSCOPE.html#N_005fSCOPE">D.11 N_SCOPE</a>
+<li><a href="Gould.html#Gould">D.12 Non-base registers on Gould systems</a>
+<li><a href="N_005fLENG.html#N_005fLENG">D.13 N_LENG</a>
+</li></ul>
+<li><a name="toc_Questions" href="Questions.html#Questions">Appendix E Questions and Anomalies</a>
+<li><a name="toc_Stab-Sections" href="Stab-Sections.html#Stab-Sections">Appendix F Using Stabs in Their Own Sections</a>
+<ul>
+<li><a href="Stab-Section-Basics.html#Stab-Section-Basics">F.1 How to Embed Stabs in Sections</a>
+<li><a href="ELF-Linker-Relocation.html#ELF-Linker-Relocation">F.2 Having the Linker Relocate Stabs in ELF</a>
+</li></ul>
+<li><a name="toc_GNU-Free-Documentation-License" href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License">Appendix G GNU Free Documentation License</a>
+<li><a name="toc_Symbol-Types-Index" href="Symbol-Types-Index.html#Symbol-Types-Index">Symbol Types Index</a>
+</li></ul>
+</div>
+
+   </body></html>
+
