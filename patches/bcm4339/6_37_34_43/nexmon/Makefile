@@ -89,9 +89,9 @@ gen/patch.elf: patch.ld gen/nexmon.ld gen/flashpatches.ld gen/memory.ld $(OBJS)
 fw_bcmdhd.bin: gen/patch.elf $(FW_PATH)/$(RAM_FILE) gen/nexmon.mk gen/flashpatches.mk
 	$(Q)cp $(FW_PATH)/$(RAM_FILE) $@
 	@printf "\033[0;31m  APPLYING FLASHPATCHES\033[0m gen/flashpatches.mk => %s (details: log/flashpatches.log)\n" $@
-	$(Q)make -f gen/flashpatches.mk >>log/flashpatches.log
+	$(Q)make -f gen/flashpatches.mk >>log/flashpatches.log 2>>log/flashpatches.log
 	@printf "\033[0;31m  APPLYING PATCHES\033[0m gen/nexmon.mk => %s (details: log/patches.log)\n" $@
-	$(Q)make -f gen/nexmon.mk >>log/patches.log
+	$(Q)make -f gen/nexmon.mk >>log/patches.log 2>>log/flashpatches.log
 
 ###################################################################
 # ucode compression related
@@ -99,7 +99,7 @@ fw_bcmdhd.bin: gen/patch.elf $(FW_PATH)/$(RAM_FILE) gen/nexmon.mk gen/flashpatch
 
 ucode_compressed.bin: $(FW_PATH)/ucode.bin
 	@printf "\033[0;31m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
-	$(Q)cat $< | zlib-flate -compress > $@
+	$(Q)cat $< | $(ZLIBFLATE) > $@
 
 src/ucode_compressed.c: ucode_compressed.bin
 	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@

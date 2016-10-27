@@ -1,11 +1,25 @@
 fpext : fpext.o darm/armv7.o darm/armv7-tbl.o darm/darm.o darm/darm-tbl.o darm/thumb2.o darm/thumb2-decoder.o darm/thumb2-tbl.o darm/thumb.o darm/thumb-tbl.o
+ifeq ($(HOSTUNAME),Darwin)
+	gcc-mp-5 -L/opt/local/lib -largp -o $@ $^
+else
 	gcc -o $@ $^
+endif
 
 fpext.o : fpext.c
+ifeq ($(HOSTUNAME),Darwin)
+	gcc-mp-5 -std=c99 -Wall -Wno-unused-result -O0 -D_BSD_SOURCE -o $@ -c $<
+else
 	gcc -std=c99 -Wall -Wno-unused-result -O0 -D_BSD_SOURCE -o $@ -c $<
+endif
 
 darm/%.o: darm/%.c
+ifeq ($(HOSTUNAME),Darwin)
+	gcc-mp-5 -std=c99 -Wall -O2 -Wextra -Wno-missing-field-initializers -o $@ -c $^
+else
 	gcc -std=c99 -Wall -O2 -Wextra -Wno-missing-field-initializers -o $@ -c $^
+endif
 
-fp.6.37.32.RC23.34.43_r639704_hammerhead_mob30y.c: ../../bootimg_src/firmware/fw_bcmdhd.6.37.32.RC23.34.43_r639704_hammerhead_mob30y.bin
-	./fpext -r $< -b 0x1d2000 -e 0x1d2948 > $@
+clean: FORCE
+	rm -f *.o darm/*.o fpext
+
+FORCE:

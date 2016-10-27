@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <argp.h>
 #include <string.h>
-#include <byteswap.h>
 #include "darm/darm.h"
 
 #include <arpa/inet.h>
