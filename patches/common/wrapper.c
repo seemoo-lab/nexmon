@@ -148,12 +148,14 @@ RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x1654C)
 AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x807B24)
+AT(CHIP_VER_BCM4330, FW_VER_5_90_100_41, 0x80D800)
 void *
 hndrte_add_timer(void *t, int ms, int periodic)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x166cc)
 AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x807CB4)
+AT(CHIP_VER_BCM4330, FW_VER_5_90_100_41, 0x80D9A0)
 void *
 hndrte_init_timer(void *context, void *data, void *mainfn, void *auxfn)
 RETURN_DUMMY
