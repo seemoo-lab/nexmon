@@ -1,0 +1,22 @@
+# aem-ve.specs
+#
+# Spec file for AArch32 A profile baremetal newlib, libgloss on VE platform with AngelAPI
+# semi-hosting.
+#
+# This Spec file is also appropriate for the foundation model.
+
+%rename link old_link
+
+*link:
+--defsym=_rdimon_vector_base=0x80000000 -Ttext-segment=0x80010000 %(old_link)
+
+%rename lib libc
+
+*libgloss:
+-lrdimon
+
+*lib:
+cpu-init/rdimon-aem.o%s --start-group %(libc) %(libgloss) --end-group
+
+*startfile:
+crti%O%s crtbegin%O%s %{!pg:rdimon-crt0%O%s} %{pg:rdimon-crt0%O%s}
