@@ -49,23 +49,27 @@
 
 #pragma NEXMON targetregion "patch"
 
-#include <firmware_version.h>   // definition of firmware version macros
-#include <debug.h>              // contains macros to access the debug hardware
-#include <wrapper.h>            // wrapper definitions for functions that already exist in the firmware
-#include <structs.h>            // structures that are used by the code in the firmware
-#include <helper.h>             // useful helper functions
-#include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
-#include <rates.h>              // rates used to build the ratespec for frame injection
-#include <capabilities.h>		// capabilities included in a nexmon patch
+#include <firmware_version.h>
+#include <wrapper.h>	// wrapper definitions for functions that already exist in the firmware
+#include <structs.h>	// structures that are used by the code in the firmware
+#include <patcher.h>
+#include <helper.h>
+#include <capabilities.h>      // capabilities included in a nexmon patch
 
 int capabilities = NEX_CAP_MONITOR_MODE | NEX_CAP_MONITOR_MODE_RADIOTAP | NEX_CAP_FRAME_INJECTION;
 
+void *
+wlc_recvdata_hook(void *wlc, void *osh, void *rxh, void *p) {
+    return pkt_buf_free_skb(osh, p, 0);
+}
+
+__attribute__((at(0x1210C, "", CHIP_VER_BCM43438, FW_VER_ALL)))
+BPatch(wlc_recvdata_hook, wlc_recvdata_hook);
+
 // Hook the call to wlc_ucode_write in wlc_ucode_download
-__attribute__((at(0x1F4F08, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243)))
-__attribute__((at(0x1F4F14, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704)))
+__attribute__((at(0x44ED0, "", CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327)))
 BLPatch(wlc_ucode_write_compressed, wlc_ucode_write_compressed);
 
-// Patch the "wl%d: Broadcom BCM%04x 802.11 Wireless Controller %s\n" string
-__attribute__((at(0x1FD31B, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243)))
-__attribute__((at(0x1FD327, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704)))
-StringPatch(version_string, "nexmon (" __DATE__ " " __TIME__ ")\n");
+// Update the ucode length to become the length of the extracted ucode before compression
+__attribute__((at(0x4E9BC, "", CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327)))
+GenericPatch4(ucode_length, 0xCC28);
