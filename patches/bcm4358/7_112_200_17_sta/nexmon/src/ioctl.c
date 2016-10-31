@@ -56,30 +56,94 @@
 #include <helper.h>             // useful helper functions
 #include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
 #include <rates.h>              // rates used to build the ratespec for frame injection
-#include <capabilities.h>		// capabilities included in a nexmon patch
+#include <nexioctls.h>          // ioctls added in the nexmon patch
+#include <capabilities.h>       // capabilities included in a nexmon patch
 
-int capabilities = NEX_CAP_MONITOR_MODE | NEX_CAP_MONITOR_MODE_RADIOTAP | NEX_CAP_FRAME_INJECTION;
+struct beacon {
+    char dummy[40];
+    char ssid_len;
+    char ssid[32];
+};
 
-// Normally the former space of the flash patching config will be freed and added to the
-// heap. We intend to place our "patch" memory region there, so that we can store our
-// patch code, hence, we nop the call to the function that adds the fp config space to the heap
-__attribute__((at(0x18AA58, "", CHIP_VER_BCM4358, FW_VER_7_112_200_17)))
-GenericPatch4(nop_freeing_fp_config, 0x00000000);
+struct beacon beacon = {
+    .dummy = {
+        0x80, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
+        0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x00, 0x11, 0x22, 0x33, 
+        0x44, 0x55, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x82, 0x00
+    },
+    .ssid_len = 32,
+    .ssid = { 0 }
+};
 
-// Hook the call to wlc_ucode_write in wlc_ucode_download
-__attribute__((at(0x1F4F08, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243)))
-__attribute__((at(0x1F4F14, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704)))
-__attribute__((at(0x1F485C, "", CHIP_VER_BCM4358, FW_VER_7_112_200_17)))
-__attribute__((at(0x27474, "", CHIP_VER_BCM4330, FW_VER_5_90_100_41)))
-BLPatch(wlc_ucode_write_compressed, wlc_ucode_write_compressed);
+char beacon_len = sizeof(struct beacon);
 
-__attribute__((at(0x363B4, "", CHIP_VER_BCM4330, FW_VER_5_90_100_41)))
-GenericPatch4(ucode_length, 0x9F70);
+void
+send_beacon(struct wlc_info *wlc)
+{
+    sk_buff *p = pkt_buf_get_skb(wlc->osh, beacon_len + 202);
+    struct beacon *beacon_skb;
 
+    beacon_skb = (struct beacon *) skb_pull(p, 202);
 
-// Patch the "wl%d: Broadcom BCM%04x 802.11 Wireless Controller %s\n" string
-__attribute__((at(0x1FD31B, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243)))
-__attribute__((at(0x1FD327, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704)))
-__attribute__((at(0x201551, "", CHIP_VER_BCM4358, FW_VER_7_112_200_17)))
-__attribute__((at(0x2D744, "", CHIP_VER_BCM4330, FW_VER_5_90_100_41)))
-StringPatch(version_string, "nexmon (" __DATE__ " " __TIME__ ")\n");
+    memcpy(beacon_skb, &beacon, beacon_len);
+
+    wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, 1, 0, 0);
+}
+
+void
+timer_handler(struct hndrte_timer * t)
+{
+    send_beacon(t->data);
+}
+
+struct hndrte_timer *t = 0;
+
+int 
+wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
+{
+    int ret = IOCTL_ERROR;
+
+    switch (cmd) {
+        case NEX_GET_CAPABILITIES:
+            if (len == 4) {
+                memcpy(arg, &capabilities, 4);
+                ret = IOCTL_SUCCESS;
+            }
+            break;
+
+        case NEX_WRITE_TO_CONSOLE:
+            if (len > 0) {
+                arg[len-1] = 0;
+                printf("ioctl: %s\n", arg);
+                ret = IOCTL_SUCCESS; 
+            }
+            break;
+
+        case NEX_CT_EXPERIMENTS:
+            if (len > 0) {
+                arg[len-1] = 0;
+                printf("ioctl: %s\n", arg);
+
+                memcpy(beacon.ssid, arg, len);
+                beacon.ssid_len = len <= 33 ? len - 1 : 32;
+                beacon_len = sizeof(struct beacon) - 32 + beacon.ssid_len;
+
+                if (!t) {
+                    t = hndrte_init_timer(0, wlc, timer_handler, 0);
+                    hndrte_add_timer(t, 100, 1);
+                }
+
+                ret = IOCTL_SUCCESS;
+            }
+            break;
+
+        default:
+            ret = wlc_ioctl(wlc, cmd, arg, len, wlc_if);
+    }
+
+    return ret;
+}
+
+__attribute__((at(0x1F1DE8, "", CHIP_VER_BCM4358, FW_VER_7_112_200_17)))
+GenericPatch4(wlc_ioctl_hook, wlc_ioctl_hook + 1);

@@ -56,12 +56,16 @@
 #include <helper.h>             // useful helper functions
 #include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
 #include <rates.h>              // rates used to build the ratespec for frame injection
+#include <nexioctls.h>          // ioctls added in the nexmon patch
+#include <capabilities.h>       // capabilities included in a nexmon patch
 
 struct beacon {
     char dummy[40];
     char ssid_len;
     char ssid[32];
-} beacon = {
+};
+
+struct beacon beacon = {
     .dummy = {
         0x80, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
         0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x00, 0x11, 0x22, 0x33, 
@@ -90,7 +94,6 @@ send_beacon(struct wlc_info *wlc)
 void
 timer_handler(struct hndrte_timer * t)
 {
-    printf("tic\n");
     send_beacon(t->data);
 }
 
@@ -99,23 +102,43 @@ struct hndrte_timer *t = 0;
 int 
 wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 {
-    if (cmd == 15 && len > 0) {
-        arg[len-1] = 0;
-        printf("ioctl: %s\n", arg);
+    int ret = IOCTL_ERROR;
 
-        memcpy(beacon.ssid, arg, len);
-        beacon.ssid_len = len <= 33 ? len - 1 : 32;
-        beacon_len = sizeof(struct beacon) - 32 + beacon.ssid_len;
+    switch (cmd) {
+        case NEX_GET_CAPABILITIES:
+            if (len == 4) {
+                memcpy(arg, &capabilities, 4);
+                return IOCTL_SUCCESS;
+            }
+            break;
 
-        if (!t) {
-            t = hndrte_init_timer(0, wlc, timer_handler, 0);
-            hndrte_add_timer(t, 100, 1);
-        }
+        case NEX_WRITE_TO_CONSOLE:
+            if (len > 0) {
+                arg[len-1] = 0;
+                printf("ioctl: %s\n", arg);
+                return IOCTL_SUCCESS; 
+            }
+            break;
 
-        return 0;
-    } else {
-        return wlc_ioctl(wlc, cmd, arg, len, wlc_if);
+        case NEX_CT_EXPERIMENTS:
+            arg[len-1] = 0;
+            printf("ioctl: %s\n", arg);
+
+            memcpy(beacon.ssid, arg, len);
+            beacon.ssid_len = len <= 33 ? len - 1 : 32;
+            beacon_len = sizeof(struct beacon) - 32 + beacon.ssid_len;
+
+            if (!t) {
+                t = hndrte_init_timer(0, wlc, timer_handler, 0);
+                hndrte_add_timer(t, 100, 1);
+            }
+            break;
+
+        default:
+            ret = wlc_ioctl(wlc, cmd, arg, len, wlc_if);
     }
+
+    return ret;
 }
 
 __attribute__((at(0x1F3488, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704)))

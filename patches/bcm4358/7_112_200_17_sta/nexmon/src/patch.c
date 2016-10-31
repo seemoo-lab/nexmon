@@ -58,7 +58,7 @@
 #include <rates.h>              // rates used to build the ratespec for frame injection
 #include <capabilities.h>		// capabilities included in a nexmon patch
 
-int capabilities = NEX_CAP_MONITOR_MODE | NEX_CAP_MONITOR_MODE_RADIOTAP | NEX_CAP_FRAME_INJECTION;
+int capabilities = NEX_CAP_MONITOR_MODE | NEX_CAP_MONITOR_MODE_RADIOTAP;
 
 // Normally the former space of the flash patching config will be freed and added to the
 // heap. We intend to place our "patch" memory region there, so that we can store our
@@ -67,19 +67,9 @@ __attribute__((at(0x18AA58, "", CHIP_VER_BCM4358, FW_VER_7_112_200_17)))
 GenericPatch4(nop_freeing_fp_config, 0x00000000);
 
 // Hook the call to wlc_ucode_write in wlc_ucode_download
-__attribute__((at(0x1F4F08, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243)))
-__attribute__((at(0x1F4F14, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704)))
 __attribute__((at(0x1F485C, "", CHIP_VER_BCM4358, FW_VER_7_112_200_17)))
-__attribute__((at(0x27474, "", CHIP_VER_BCM4330, FW_VER_5_90_100_41)))
 BLPatch(wlc_ucode_write_compressed, wlc_ucode_write_compressed);
 
-__attribute__((at(0x363B4, "", CHIP_VER_BCM4330, FW_VER_5_90_100_41)))
-GenericPatch4(ucode_length, 0x9F70);
-
-
 // Patch the "wl%d: Broadcom BCM%04x 802.11 Wireless Controller %s\n" string
-__attribute__((at(0x1FD31B, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243)))
-__attribute__((at(0x1FD327, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704)))
 __attribute__((at(0x201551, "", CHIP_VER_BCM4358, FW_VER_7_112_200_17)))
-__attribute__((at(0x2D744, "", CHIP_VER_BCM4330, FW_VER_5_90_100_41)))
 StringPatch(version_string, "nexmon (" __DATE__ " " __TIME__ ")\n");

@@ -47,39 +47,10 @@
  *                                                                         *
  **************************************************************************/
 
-#pragma NEXMON targetregion "patch"
+#define IOCTL_ERROR						-23
+#define IOCTL_SUCCESS					0
 
-#include <firmware_version.h>   // definition of firmware version macros
-#include <debug.h>              // contains macros to access the debug hardware
-#include <wrapper.h>            // wrapper definitions for functions that already exist in the firmware
-#include <structs.h>            // structures that are used by the code in the firmware
-#include <helper.h>             // useful helper functions
-#include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
-#include <rates.h>              // rates used to build the ratespec for frame injection
-
-/**
- *  add data to the start of a buffer
- */
-void *
-skb_push(sk_buff *p, unsigned int len)
-{
-    p->data -= len;
-    p->len += len;
-
-    if (p->data < p->head)
-        printf("%s: failed", __FUNCTION__);
-
-    return p->data;
-}
-
-/**
- *  remove data from the start of a buffer
- */
-void *
-skb_pull(sk_buff *p, unsigned int len)
-{
-    p->data += len;
-    p->len -= len;
-
-    return p->data;
-}
+// IOCTLs used by Nexmon
+#define NEX_GET_CAPABILITIES			400
+#define NEX_WRITE_TO_CONSOLE			401
+#define NEX_CT_EXPERIMENTS				402

@@ -1,4 +1,4 @@
-FW_PATH=$(NEXMON_ROOT)/firmwares/bcm4339/6_37_34_43
+FW_PATH=$(NEXMON_ROOT)/firmwares/bcm4358/7_112_200_17_sta
 include $(FW_PATH)/definitions.mk
 
 LOCAL_SRCS=$(wildcard src/*.c) src/ucode_compressed.c
@@ -114,8 +114,8 @@ ifndef NEXMON_SETUP_ENV
 endif
 
 install-firmware: fw_bcmdhd.bin
-	@printf "\033[0;31m  REMOUNTING /system\033[0m\n"
-	$(Q)adb shell 'su -c "mount -o rw,remount /system"'
+	@printf "\033[0;31m  REMOUNTING /vendor\033[0m\n"
+	$(Q)adb shell 'su -c "mount -o rw,remount /vendor"'
 	@printf "\033[0;31m  COPYING TO PHONE\033[0m %s => /sdcard/%s\n" $< $<
 	$(Q)adb push $< /sdcard/ >> log/adb.log 2>> log/adb.log
 	@printf "\033[0;31m  COPYING\033[0m /sdcard/fw_bcmdhd.bin => /vendor/firmware/fw_bcmdhd.bin\n"

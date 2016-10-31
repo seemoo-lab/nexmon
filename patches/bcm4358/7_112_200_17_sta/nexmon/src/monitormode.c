@@ -56,30 +56,51 @@
 #include <helper.h>             // useful helper functions
 #include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
 #include <rates.h>              // rates used to build the ratespec for frame injection
-#include <capabilities.h>		// capabilities included in a nexmon patch
+#include "ieee80211_radiotap.h"
+#include <bcmwifi_channels.h>
 
-int capabilities = NEX_CAP_MONITOR_MODE | NEX_CAP_MONITOR_MODE_RADIOTAP | NEX_CAP_FRAME_INJECTION;
+void
+wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p)
+{
+    struct osl_info *osh = wl->wlc->osh;
+    struct sk_buff *p_new = pkt_buf_get_skb(osh, p->len + sizeof(struct nexmon_radiotap_header));
+    struct nexmon_radiotap_header *frame = (struct nexmon_radiotap_header *) p_new->data;
+    int freq = 0;
+    void *ci = 0;
 
-// Normally the former space of the flash patching config will be freed and added to the
-// heap. We intend to place our "patch" memory region there, so that we can store our
-// patch code, hence, we nop the call to the function that adds the fp config space to the heap
-__attribute__((at(0x18AA58, "", CHIP_VER_BCM4358, FW_VER_7_112_200_17)))
-GenericPatch4(nop_freeing_fp_config, 0x00000000);
+    memset(p_new->data, 0, sizeof(struct nexmon_radiotap_header));
 
-// Hook the call to wlc_ucode_write in wlc_ucode_download
-__attribute__((at(0x1F4F08, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243)))
-__attribute__((at(0x1F4F14, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704)))
-__attribute__((at(0x1F485C, "", CHIP_VER_BCM4358, FW_VER_7_112_200_17)))
-__attribute__((at(0x27474, "", CHIP_VER_BCM4330, FW_VER_5_90_100_41)))
-BLPatch(wlc_ucode_write_compressed, wlc_ucode_write_compressed);
+    frame->header.it_version = 0;
+    frame->header.it_pad = 0;
+    frame->header.it_len = sizeof(struct nexmon_radiotap_header);
+    frame->header.it_present = 
+          (1<<IEEE80211_RADIOTAP_TSFT) 
+        | (1<<IEEE80211_RADIOTAP_FLAGS)
+        | (1<<IEEE80211_RADIOTAP_CHANNEL)
+        | (1<<IEEE80211_RADIOTAP_DBM_ANTSIGNAL)
+        | (1<<IEEE80211_RADIOTAP_DBM_ANTNOISE);
+    frame->tsf.tsf_l = sts->mactime;
+    frame->tsf.tsf_h = 0;
+    frame->flags = IEEE80211_RADIOTAP_F_FCS;
+    wlc_phy_chan2freq_acphy(wl->wlc->band->pi, CHSPEC_CHANNEL(sts->chanspec), &freq, &ci);
+    frame->chan_freq = freq;
+    frame->chan_flags = 0;
+    frame->dbm_antsignal = sts->signal;
+    frame->dbm_antnoise = sts->noise;
 
-__attribute__((at(0x363B4, "", CHIP_VER_BCM4330, FW_VER_5_90_100_41)))
-GenericPatch4(ucode_length, 0x9F70);
+    memcpy(p_new->data + sizeof(struct nexmon_radiotap_header), p->data + 6, p->len - 6);
+    p_new->len -= 6;
+
+    wl_sendup(wl, 0, p_new);
+}
 
 
-// Patch the "wl%d: Broadcom BCM%04x 802.11 Wireless Controller %s\n" string
-__attribute__((at(0x1FD31B, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243)))
-__attribute__((at(0x1FD327, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704)))
-__attribute__((at(0x201551, "", CHIP_VER_BCM4358, FW_VER_7_112_200_17)))
-__attribute__((at(0x2D744, "", CHIP_VER_BCM4330, FW_VER_5_90_100_41)))
-StringPatch(version_string, "nexmon (" __DATE__ " " __TIME__ ")\n");
+// Hook the call to wl_monitor in wlc_monitor
+__attribute__((at(0x18DA30, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243)))
+__attribute__((at(0x18DB20, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704)))
+__attribute__((at(0x1f0a6, "flashpatch", CHIP_VER_BCM4358, FW_VER_7_112_200_17)))
+BLPatch(wl_monitor_hook, wl_monitor_hook);
+//GenericPatch4(xxx, 0x0);
+
+__attribute__((at(0x739DC, "flashpatch", CHIP_VER_BCM4358, FW_VER_7_112_200_17)))
+GenericPatch4(xxxx, 0x0);
