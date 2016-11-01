@@ -10,6 +10,8 @@ WiFi Chip | Firmware Version | Used in           | Operating System |  M  | RT  
 --------- | ---------------- | ----------------- | ---------------- | --- | --- | --- | --- | --- | ---
 bcm4330   | 5_90_100_41_sta  | Samsung Galaxy S2 | Cyanogenmod 13.0 |  X  |  X  |     |  X  |  X  |    
 bcm4339   | 6_37_34_43       | Nexus 5           | Android 6 Stock  |  X  |  X  |  X  |  X  |  X  |  X 
+bcm43438  | 7_45_41_26       | Raspberry Pi 3    | Raspbian 8       |  ?  |  ?  |  ?  |  ?  |  ?  |  ? 
+
 
 ## Legend
 - M = Monitor Mode
