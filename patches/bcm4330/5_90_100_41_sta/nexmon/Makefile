@@ -118,7 +118,7 @@ install-firmware: $(RAM_FILE)
 	@printf "\033[0;31m  REMOUNTING /system\033[0m\n"
 	$(Q)adb shell 'su -c "mount -o rw,remount /system"'
 	@printf "\033[0;31m  COPYING TO PHONE\033[0m %s => /sdcard/%s\n" $< $<
-	$(Q)adb push $< /sdcard/
+	$(Q)adb push $< /sdcard/ >> log/adb.log 2>> log/adb.log
 	@printf "\033[0;31m  COPYING\033[0m /sdcard/bcmdhd_sta.bin => /system/etc/wifi/bcmdhd_sta.bin\n"
 	$(Q)adb shell 'su -c "cp /sdcard/bcmdhd_sta.bin /system/etc/wifi/bcmdhd_sta.bin"'
 	@printf "\033[0;31m  REBOOTING TO RELOAD FIRMWARE\033[0m\n"

@@ -69,7 +69,7 @@ sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned i
     if (wlc->hw->up) {
         wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 0);
     } else {
-        wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 1);
+    	pkt_buf_free_skb(wlc->osh, p, 0);
         printf("ERR: wlc down\n");
     }
 }
