@@ -58,35 +58,18 @@
 #include <rates.h>              // rates used to build the ratespec for frame injection
 #include <nexioctls.h>          // ioctls added in the nexmon patch
 #include <capabilities.h>       // capabilities included in a nexmon patch
-#include <sendframe.h>          // sendframe functionality
 
-int 
-wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
+void
+sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned int rate)
 {
-    int ret = IOCTL_ERROR;
-
-    switch (cmd) {
-        case NEX_GET_CAPABILITIES:
-            if (len == 4) {
-                memcpy(arg, &capabilities, 4);
-                ret = IOCTL_SUCCESS;
-            }
-            break;
-
-        case NEX_WRITE_TO_CONSOLE:
-            if (len > 0) {
-                arg[len-1] = 0;
-                printf("ioctl: %s\n", arg);
-                ret = IOCTL_SUCCESS; 
-            }
-            break;
-
-        default:
-            ret = wlc_ioctl(wlc, cmd, arg, len, wlc_if);
+    if (wlc->band->bandtype == WLC_BAND_5G && rate < RATES_RATE_6M) {
+        rate = RATES_RATE_6M;
     }
 
-    return ret;
+    if (wlc->hw->up) {
+        wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 0);
+    } else {
+        wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 1);
+        printf("ERR: wlc down\n");
+    }
 }
-
-__attribute__((at(0x1F3488, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704)))
-GenericPatch4(wlc_ioctl_hook, wlc_ioctl_hook + 1);

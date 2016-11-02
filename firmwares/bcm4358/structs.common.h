@@ -54,25 +54,70 @@
 
 struct wlc_hw_info {
     struct wlc_info *wlc;       /* 0x00 */
-    int PAD[4];                 /* 0x04 */
+    int PAD;                    /* 0x04 */
+    int PAD;                    /* 0x08 */
+    int PAD;                    /* 0x0c */
+    int PAD;                    /* 0x10 */
     struct dma_info *di[6];     /* 0x14 - only 4 bytes */
-    int PAD[17];
-    int PAD;
-    char PAD[2];        /* 0x70 */
-    char ucode_loaded;          /* 0x72 */
-    char PAD;                   /* 0x73 */
-    int PAD;                    /* 0x74 */
-    int sih;                    /* 0x78 */
-    int vars;                   /* 0x7C */
-    int vars_size;              /* 0x80 */
-    struct d11regs* regs;       /* 0x84 */
-    int physhim;                /* 0x88 */
-    int phy_sh;                 /* 0x8C */
-    struct wlc_hwband *band;     /* 0x90 */
-    int PAD[26];
-    int maccontrol; // @ 0xe7
-    int PAD[18];
-    struct sk_buff *some_skbuff_ptr; // @ 0x134
+    int PAD;                    // 0x2c
+    int PAD;                    // 0x30
+    int PAD;                    // 0x34
+    int PAD;                    // 0x38
+    int PAD;                    // 0x3c
+    int PAD;                    // 0x40
+    int PAD;                    // 0x44
+    int PAD;                    // 0x48
+    int PAD;                    // 0x4c
+    int PAD;                    // 0x50
+    int PAD;                    // 0x54
+    int PAD;                    // 0x58
+    int PAD;                    // 0x5c
+    int PAD;                    // 0x60
+    int PAD;                    // 0x64
+    int PAD;                    // 0x68
+    int PAD;                    // 0x6c
+    int PAD;                    // 0x70
+    char PAD;                   // 0x74
+    char PAD;                   // 0x75
+    char ucode_loaded;          /* 0x76 */
+    char PAD;                   /* 0x77 */
+    int PAD;                    /* 0x78 */
+    int sih;                    /* 0x7c */
+    int vars;                   /* 0x80 */
+    int vars_size;              /* 0x84 */
+    struct d11regs* regs;       /* 0x88 */
+    int physhim;                /* 0x8c */
+    int phy_sh;                 /* 0x90 */
+    struct wlc_hwband *band;    /* 0x94 */
+    int PAD;                    // 0x98
+    int PAD;                    // 0x9c
+    int PAD;                    // 0xa0
+    int PAD;                    // 0xa4
+    int PAD;                    // 0xa8
+    char up;                    // 0xac verified wl_dpc
+    char PAD;
+    char PAD;
+    char PAD;
+    int PAD;                    // 0xb0
+    int PAD;                    // 0xb4
+    int PAD;                    // 0xb8
+    int PAD;                    // 0xbc
+    int PAD;                    // 0xc0
+    int PAD;                    // 0xc4
+    int PAD;                    // 0xc8
+    int PAD;                    // 0xcc
+    int PAD;                    // 0xd0
+    int PAD;                    // 0xd4
+    int PAD;                    // 0xd8
+    int PAD;                    // 0xdc
+    int PAD;                    // 0xe0
+    int PAD;                    // 0xe4
+    int PAD;                    // 0xe8
+    int PAD;                    // 0xec
+    int PAD;                    // 0xf0
+    int PAD;                    // 0xf4
+    int PAD;                    // 0xf8
+    int PAD;                    // 0xfc
 };
 
 struct wl_rxsts {

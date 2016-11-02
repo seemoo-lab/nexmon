@@ -124,13 +124,33 @@ struct wlc_hwband {
 
 struct wlc_hw_info {
     struct wlc_info *wlc;       /* 0x00 */
-    int PAD[4];                 /* 0x04 */
+    int PAD;                    /* 0x04 */
+    int PAD;                    /* 0x08 */
+    int PAD;                    /* 0x0c */
+    int PAD;                    /* 0x10 */
     struct dma_info *di[6];     /* 0x14 - only 4 bytes */
-    int PAD[17];
-    char PAD[2];
-    char ucode_loaded;
-    char PAD;
-    int PAD;
+    int PAD;                    // 0x2c
+    int PAD;                    // 0x30
+    int PAD;                    // 0x34
+    int PAD;                    // 0x38
+    int PAD;                    // 0x3c
+    int PAD;                    // 0x40
+    int PAD;                    // 0x44
+    int PAD;                    // 0x48
+    int PAD;                    // 0x4c
+    int PAD;                    // 0x50
+    int PAD;                    // 0x54
+    int PAD;                    // 0x58
+    int PAD;                    // 0x5c
+    int PAD;                    // 0x60
+    int PAD;                    // 0x64
+    int PAD;                    // 0x68
+    int PAD;                    // 0x6c
+    char PAD;                   // 0x70
+    char PAD;                   // 0x71
+    char ucode_loaded;          // 0x72
+    char PAD;                   // 0x73
+    int PAD;                    // 0x74
     int sih;                    /* 0x78 */
     int vars;                   /* 0x7C */
     int vars_size;              /* 0x80 */
@@ -169,7 +189,7 @@ struct wlc_hw_info {
     int PAD;                    // 0xf8
     int PAD;                    // 0xfc
     int PAD[18];
-    sk_buff *some_skbuff_ptr; // @ 0x134
+    sk_buff *some_skbuff_ptr;
 
 };
 
