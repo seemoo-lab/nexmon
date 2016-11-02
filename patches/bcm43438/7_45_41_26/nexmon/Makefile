@@ -20,11 +20,18 @@ CFLAGS= \
 	-I$(NEXMON_ROOT)/patches/include \
 	-I$(FW_PATH)
 
-all: $(RAM_FILE)
+all: $(RAM_FILE) brcmfmac.ko
 
 init: FORCE
 	$(Q)make -s -f $(NEXMON_ROOT)/patches/common/header.mk
 	$(Q)mkdir -p obj gen log
+
+brcmfmac.ko: check-nexmon-setup-env
+ifeq ($(shell uname -m),armv7l)
+	make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac  -j2
+else
+	$(warning Warning: Driver can not be compiled for this platform)
+endif
 
 obj/%.o: src/%.c
 	@printf "\033[0;31m  COMPILING\033[0m %s => %s (details: log/compiler.log)\n" $< $@
