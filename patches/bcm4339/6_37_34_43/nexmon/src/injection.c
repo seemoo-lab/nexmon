@@ -58,6 +58,7 @@
 #include <rates.h>              // rates used to build the ratespec for frame injection
 #include <bcmwifi_channels.h>
 #include <ieee80211_radiotap.h>
+#include <sendframe.h>          // sendframe functionality
 
 void *
 inject_frame(struct wlc_info *wlc, struct sk_buff *p)
@@ -105,15 +106,7 @@ inject_frame(struct wlc_info *wlc, struct sk_buff *p)
     // remove radiotap header
     skb_pull(p, rtap_len);
 
-    if (wlc->band->bandtype == WLC_BAND_5G && data_rate < RATES_RATE_6M) {
-        data_rate = RATES_RATE_6M;
-        //data_rate = RATES_OVERRIDE_MODE | BW_160MHZ | RATES_ENCODE_HT;
-        //printf("rate: %08x\n", data_rate);
-    }
-    
-
-    ret = wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, 1, data_rate, 0);
-    //printf("inj %d %08x\n", ret, data_rate);
+    sendframe(wlc, p, 1, data_rate);
 
     return 0;
 }

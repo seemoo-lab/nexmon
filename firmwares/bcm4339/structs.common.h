@@ -137,9 +137,37 @@ struct wlc_hw_info {
     struct d11regs* regs;       /* 0x84 */
     int physhim;                /* 0x88 */
     int phy_sh;                 /* 0x8C */
-    struct wlc_hwband *band;     /* 0x90 */
-    int PAD[26];
-    int maccontrol; // @ 0xe7
+    struct wlc_hwband *band;    /* 0x90 */
+    int PAD;                    // 0x94
+    int PAD;                    // 0x98
+    int PAD;                    // 0x9c
+    int PAD;                    // 0xa0
+    int PAD;                    // 0xa4
+    char up;                    // 0xa8
+    char PAD;
+    char PAD;
+    char PAD;
+    int PAD;                    // 0xac
+    int PAD;                    // 0xb0
+    int PAD;                    // 0xb4
+    int PAD;                    // 0xb8
+    int PAD;                    // 0xbc
+    int PAD;                    // 0xc0
+    int PAD;                    // 0xc4
+    int PAD;                    // 0xc8
+    int PAD;                    // 0xcc
+    int PAD;                    // 0xd0
+    int PAD;                    // 0xd4
+    int PAD;                    // 0xd8
+    int PAD;                    // 0xdc
+    int PAD;                    // 0xe0
+    int PAD;                    // 0xe4
+    int PAD;                    // 0xe8
+    int PAD;                    // 0xec
+    int PAD;                    // 0xf0
+    int PAD;                    // 0xf4
+    int PAD;                    // 0xf8
+    int PAD;                    // 0xfc
     int PAD[18];
     sk_buff *some_skbuff_ptr; // @ 0x134
 
@@ -162,11 +190,23 @@ struct device {
  *  Name might be inaccurate
  */
 struct wl_info {
-    int unit;
-    void *pub;
-    struct wlc_info *wlc;
-    struct wlc_hw_info *wlc_hw;
-    struct device *dev;
+    int unit;                           // 0x00
+    void *pub;                          // 0x04
+    struct wlc_info *wlc;               // 0x08
+    struct wlc_hw_info *wlc_hw;         // 0x0c
+    struct device *dev;                 // 0x10
+    int PAD;                            // 0x14
+    int PAD;                            // 0x18
+    int PAD;                            // 0x1c
+    int PAD;                            // 0x20
+    int PAD;                            // 0x24
+    int PAD;                            // 0x28
+    int PAD;                            // 0x2c
+    int PAD;                            // 0x30
+    int PAD;                            // 0x34
+    int PAD;                            // 0x38
+    int PAD;                            // 0x3c
+    struct hndrte_timer *dpcTimer;      // 0x40
 };
 
 /**
@@ -205,7 +245,7 @@ struct wlcband {
 struct wlc_info {
     struct wlc_pub *pub;                /* 0x000 */
     struct osl_info *osh;               /* 0x004 */
-    void *wl;                           /* 0x008 */
+    struct wl_info *wl;                 /* 0x008 */
     volatile struct d11regs *regs;      /* 0x00C */
     struct wlc_hw_info *hw;             /* 0x010 */
     int PAD;                            /* 0x014 */

@@ -349,7 +349,7 @@ AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x38BB0)
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0xdc84)
 AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x2E4B0)
 int 
-wlc_sendctl(void *wlc, void *p, void *qi, void *scb, unsigned int fifo, unsigned int rate_override, char enq_only) 
+wlc_sendctl(void *wlc, void *p, void *qi, void *scb, unsigned int fifo, unsigned int rate_override, char enq_only)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x9DEA)

@@ -47,108 +47,11 @@
  *                                                                         *
  **************************************************************************/
 
-#pragma NEXMON targetregion "patch"
+#ifndef SENDFRAME_H
+#define SENDFRAME_H
 
-#include <firmware_version.h>   // definition of firmware version macros
-#include <debug.h>              // contains macros to access the debug hardware
-#include <wrapper.h>            // wrapper definitions for functions that already exist in the firmware
-#include <structs.h>            // structures that are used by the code in the firmware
-#include <helper.h>             // useful helper functions
-#include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
-#include <rates.h>              // rates used to build the ratespec for frame injection
-#include <nexioctls.h>          // ioctls added in the nexmon patch
-#include <capabilities.h>       // capabilities included in a nexmon patch
-#include <sendframe.h>          // sendframe functionality
+#include <structs.h>
 
-struct beacon {
-  char dummy[40];
-  char ssid_len;
-  char ssid[32];
-} beacon = {
-  .dummy = {
-    0x80, 0x00, 0x00, 0x00, 0xff, 
-    0xff, 0xff, 0xff, 0xff, 0xff, 
-    0x00, 0x11, 0x22, 0x33, 0x44, 
-    0x55, 0x00, 0x11, 0x22, 0x33, 
-    0x44, 0x55, 0x00, 0x00, 0x00, 
-    0x00, 0x00, 0x00, 0x00, 0x00, 
-    0x00, 0x00, 0x00, 0x00, 0x00, 
-    0x00, 0x01, 0x01, 0x82, 0x00
-  },
-  .ssid_len = 5,
-  .ssid = { 'H', 'E', 'L', 'L', 'O' }
-};
+void sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned int rate);
 
-void
-send_beacon(struct wlc_info *wlc)
-{
-    int len = sizeof(beacon) - 32 + beacon.ssid_len;
-    sk_buff *p = pkt_buf_get_skb(wlc->osh, len + 202);
-    struct beacon *beacon_skb;
-    beacon_skb = (struct beacon *) skb_pull(p, 202);
-    memcpy(beacon_skb, &beacon, len);
-    sendframe(wlc, p, 1, 0);
-}
-
-struct hndrte_timer *t = 0;
-
-void
-timer_handler(struct hndrte_timer * t)
-{
-    send_beacon(t->data);
-}
-
-int
-handle_ct_ioctl(struct wlc_info *wlc, char *arg, int len)
-{
-    if (!t) {
-        t = hndrte_init_timer(0, wlc, timer_handler, 0);
-        hndrte_add_timer(t, 100, 1);
-    }
-
-    if (len > 0 && *arg != 0) {
-        arg[len - 1] = 0;
-
-        printf("IOCTL: %s\n", arg);
-
-        memcpy(beacon.ssid, arg, len - 1);
-        beacon.ssid_len = len - 1;
-    }
-
-    return IOCTL_SUCCESS;
-}
-
-int 
-wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
-{
-    int ret = IOCTL_ERROR;
-
-    switch (cmd) {
-        case NEX_GET_CAPABILITIES:
-            if (len == 4) {
-                memcpy(arg, &capabilities, 4);
-                ret = IOCTL_SUCCESS;
-            }
-            break;
-
-        case NEX_WRITE_TO_CONSOLE:
-            if (len > 0) {
-                arg[len-1] = 0;
-                printf("ioctl: %s\n", arg);
-                ret = IOCTL_SUCCESS; 
-            }
-            break;
-
-        case NEX_CT_EXPERIMENTS:
-            ret = handle_ct_ioctl(wlc, arg, len);
-            break;
-
-        default:
-            ret = wlc_ioctl(wlc, cmd, arg, len, wlc_if);
-    }
-
-    return ret;
-}
-
-__attribute__((at(0x1F3488, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704)))
-GenericPatch4(wlc_ioctl_hook, wlc_ioctl_hook + 1);
+#endif /* SENDFRAME_H */
