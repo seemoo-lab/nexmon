@@ -56,21 +56,20 @@
 #include <helper.h>             // useful helper functions
 #include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
 #include <rates.h>              // rates used to build the ratespec for frame injection
-#include <capabilities.h>
+#include <nexioctls.h>          // ioctls added in the nexmon patch
+#include <capabilities.h>       // capabilities included in a nexmon patch
 
-int capabilities = NEX_CAP_MONITOR_MODE | NEX_CAP_MONITOR_MODE_RADIOTAP;
+void
+sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned int rate)
+{
+    if (wlc->band->bandtype == WLC_BAND_5G && rate < RATES_RATE_6M) {
+        rate = RATES_RATE_6M;
+    }
 
-// reduce the amount of ucode memory freed to become part of the heap
-__attribute__((at(0xB008, "", CHIP_VER_BCM4330, FW_VER_5_90_100_41)))
-GenericPatch4(hndrte_reclaim_0_end, 0x341EC);
-
-// Hook the call to wlc_ucode_write in wlc_ucode_download
-__attribute__((at(0x27474, "", CHIP_VER_BCM4330, FW_VER_5_90_100_41)))
-BLPatch(wlc_ucode_write_compressed, wlc_ucode_write_compressed);
-
-__attribute__((at(0x363B4, "", CHIP_VER_BCM4330, FW_VER_5_90_100_41)))
-GenericPatch4(ucode_length, 0x9F70);
-
-// Patch the "wl%d: Broadcom BCM%04x 802.11 Wireless Controller %s\n" string
-__attribute__((at(0x2D744, "", CHIP_VER_BCM4330, FW_VER_5_90_100_41)))
-StringPatch(version_string, "nexmon (" __DATE__ " " __TIME__ ")\n");
+    if (wlc->hw->up) {
+        wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 0);
+    } else {
+        wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 1);
+        printf("ERR: wlc down\n");
+    }
+}
