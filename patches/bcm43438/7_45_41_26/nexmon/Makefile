@@ -20,7 +20,7 @@ CFLAGS= \
 	-I$(NEXMON_ROOT)/patches/include \
 	-I$(FW_PATH)
 
-all: fw_bcmdhd.bin
+all: $(RAM_FILE)
 
 init: FORCE
 	$(Q)make -s -f $(NEXMON_ROOT)/patches/common/header.mk
@@ -47,7 +47,7 @@ gen/nexmon.ld: $(OBJS)
 
 gen/nexmon.mk: $(OBJS) $(FW_PATH)/definitions.mk
 	@printf "\033[0;31m  GENERATING MAKE FILE\033[0m gen/nexmon.pre => %s\n" $@
-	$(Q)printf "fw_bcmdhd.bin: gen/patch.elf FORCE\n" > $@
+	$(Q)printf "$(RAM_FILE): gen/patch.elf FORCE\n" > $@
 	$(Q)sort gen/nexmon.pre | \
 		gawk -v src_file=gen/patch.elf -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.mk.1.awk | \
 		gawk -v ramstart=$(RAMSTART) -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.mk.2.awk >> $@
@@ -70,7 +70,7 @@ gen/flashpatches.mk: $(OBJS) $(FW_PATH)/definitions.mk
 		-v fp_config_base_ptr_2=$(FP_CONFIG_BASE_PTR_2) \
 		-v fp_config_end_ptr_2=$(FP_CONFIG_END_PTR_2) \
 		-v ramstart=$(RAMSTART) \
-		-v out_file=fw_bcmdhd.bin \
+		-v out_file=$(RAM_FILE) \
 		-v src_file=gen/patch.elf \
 		-f $(NEXMON_ROOT)/buildtools/scripts/flashpatches.mk.awk > $@
 
@@ -86,7 +86,7 @@ gen/patch.elf: patch.ld gen/nexmon.ld gen/flashpatches.ld gen/memory.ld $(OBJS)
 	@printf "\033[0;31m  LINKING OBJECTS\033[0m => %s (details: log/linker.log, log/linker.err)\n" $@
 	$(Q)$(CC)ld -T $< -o $@ --gc-sections --print-gc-sections -M >>log/linker.log 2>>log/linker.err
 
-fw_bcmdhd.bin: init gen/patch.elf $(FW_PATH)/$(RAM_FILE) gen/nexmon.mk gen/flashpatches.mk
+$(RAM_FILE): init gen/patch.elf $(FW_PATH)/$(RAM_FILE) gen/nexmon.mk gen/flashpatches.mk
 	$(Q)cp $(FW_PATH)/$(RAM_FILE) $@
 	@printf "\033[0;31m  APPLYING FLASHPATCHES\033[0m gen/flashpatches.mk => %s (details: log/flashpatches.log)\n" $@
 	$(Q)make -f gen/flashpatches.mk >>log/flashpatches.log 2>>log/flashpatches.log
@@ -113,29 +113,9 @@ ifndef NEXMON_SETUP_ENV
 	$(error run 'source setup_env.sh' first in the repository\'s root directory)
 endif
 
-install-firmware: fw_bcmdhd.bin
-	@printf "\033[0;31m  REMOUNTING /system\033[0m\n"
-	$(Q)adb shell 'su -c "mount -o rw,remount /system"'
-	@printf "\033[0;31m  COPYING TO PHONE\033[0m %s => /sdcard/%s\n" $< $<
-	$(Q)adb push $< /sdcard/ >> log/adb.log 2>> log/adb.log
-	@printf "\033[0;31m  COPYING\033[0m /sdcard/fw_bcmdhd.bin => /vendor/firmware/fw_bcmdhd.bin\n"
-	$(Q)adb shell 'su -c "cp /sdcard/fw_bcmdhd.bin /vendor/firmware/fw_bcmdhd.bin"'
-	@printf "\033[0;31m  RELOADING FIRMWARE\033[0m\n"
-	$(Q)adb shell 'su -c "ifconfig wlan0 down && ifconfig wlan0 up"'
-
-backup-firmware: FORCE
-	adb shell 'su -c "cp /vendor/firmware/fw_bcmdhd.bin /sdcard/fw_bcmdhd.orig.bin"'
-	adb pull /sdcard/fw_bcmdhd.orig.bin
-
-install-backup: fw_bcmdhd.orig.bin
-	adb shell 'su -c "mount -o rw,remount /system"' && \
-	adb push $< /sdcard/ && \
-	adb shell 'su -c "cp /sdcard/fw_bcmdhd.bin /vendor/firmware/fw_bcmdhd.bin"'
-	adb shell 'su -c "ifconfig wlan0 down && ifconfig wlan0 up"'
-
 clean-firmware: FORCE
 	@printf "\033[0;31m  CLEANING\033[0m\n"
-	$(Q)rm -fr fw_bcmdhd.bin obj gen log src/ucode_compressed.c ucode_compressed.bin
+	$(Q)rm -fr $(RAM_FILE) obj gen log src/ucode_compressed.c ucode_compressed.bin
 
 clean: clean-firmware
 
