@@ -28,7 +28,8 @@ init: FORCE
 
 brcmfmac.ko: check-nexmon-setup-env
 ifeq ($(shell uname -m),armv7l)
-	make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac  -j2
+	@printf "\033[0;31m  BUILDING DRIVER \033[0m brcmfmac/brcmfmac.ko (details: log/driver.log)\n" $@
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac -j2 >log/driver.log
 else
 	$(warning Warning: Driver can not be compiled for this platform)
 endif
@@ -125,5 +126,9 @@ clean-firmware: FORCE
 	$(Q)rm -fr $(RAM_FILE) obj gen log src/ucode_compressed.c ucode_compressed.bin
 
 clean: clean-firmware
+ifeq ($(shell uname -m),armv7l)
+	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac clean
+endif
 
 FORCE:

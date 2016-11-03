@@ -1,5 +1,6 @@
 export ARCH=arm
 export SUBARCH=arm
+export KERNEL=kernel7
 
 export HOSTUNAME=$(uname -s)
 export PLATFORMUNAME=$(uname -m)
