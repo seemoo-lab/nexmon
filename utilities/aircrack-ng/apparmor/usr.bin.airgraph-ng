@@ -1,0 +1,24 @@
+#include <tunables/global>
+
+/usr/bin/airgraph-ng {
+  #include <abstractions/base>
+  #include <abstractions/private-files-strict>
+  
+  # No need to access dot files
+  deny @{HOME}/.** rw,
+
+  # For reading input
+  @{HOME}/** r,
+  /tmp/** r,
+
+  # For writing output
+  owner @{HOME}/** w,
+  owner /tmp/** w,
+
+  # For executing 'fdp'
+  /usr/{,local/,s}bin/fdp ix,
+
+  # Needed for ptrace/core dumps
+  /usr/bin/airgraph-ng rm,
+
+}

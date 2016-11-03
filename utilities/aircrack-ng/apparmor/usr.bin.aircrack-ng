@@ -1,0 +1,21 @@
+#include <tunables/global>
+
+/usr/bin/aircrack-ng {
+  #include <abstractions/base>
+  #include <abstractions/private-files-strict>
+  
+  # No need to access dot files
+  deny @{HOME}/.** rw,
+
+  # For reading pcap files (and sqldb)
+  @{HOME}/** r,
+  /tmp/** r,
+
+  # For -l (and writing sqldb)
+  owner @{HOME}/** w,
+  owner /tmp/** w,
+
+  # Needed for ptrace/core dumps
+  /usr/bin/aircrack-ng rm,
+
+}

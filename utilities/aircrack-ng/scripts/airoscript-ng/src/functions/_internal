@@ -1,0 +1,298 @@
+# Internal functions file for airoscript.
+# Recommends: wlandecrypter
+
+# Copyright (C) 2009-2011 David Francos Cuartero
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+required(){
+    check_function $1 ||  { specialwarn "${warn}${2}"; return 1; }
+}
+
+change_mac(){
+    type macchanger && {
+        fail=$(ifconfig $1 down; $MACCHANGER $1 --mac $2 2>&1; ifconfig $1 up)
+    } || {
+        fail=$(ifconfig $1 down; ifconfig $1 $2 2>&1; ifconfig $1 up)
+    }
+
+    [[ $? == 0 ]] && echo -e "${mark}Interface mac set up correctly $(FAKE_MAC)" || echo -en "${mark}Unable to set interface mac: $?\n $fail"
+}
+
+error(){
+    export ERRORS="$@";
+}
+info(){
+    export INFOS="$@";
+}
+
+
+reload_config(){
+    return
+}
+
+cleanautovars(){
+    export AUTO=0;
+    export QUIET="";
+    export INTERACTIVE=$OLDINTERACTIVE
+    return
+}
+
+configure(){
+    if [ -O $DUMP_PATH/$Host_MAC.key ] && [ "$Host_MAC" != "" ]; then
+        warn "${mark}Configuring network"
+        KEY="$(cat $DUMP_PATH/$Host_MAC.key)"
+        tag;warn "${mark}Got key: $KEY"
+        [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && {
+            tag;warn "${mark}Configuring wpa_supplicant"
+            wpa_passphrase $Host_SSID "$KEY" > $DUMP_PATH/$Host_MAC.wpa_supplicant;
+            wpa_supplicant -i $wificard -B -c$DUMP_PATH/$Host_MAC.wpa_supplicant;
+            tag; warn "${mark}Launching $DHCPSOFT to $wificard"
+            $DHCPSOFT $wificard &>/dev/null || warn "${mark}Could not autoconfigure network"
+        } || {
+            tag; warn "${mark}Configuring network with iwconfig"
+            $iwconfig $wificard essid $Host_SSID channel $Host_CHAN key $KEY &>/dev/null && {
+            tag; warn "${mark}Launching $DHCPSOFT to $wificard"
+                $DHCPSOFT $wificard &>/dev/null || warn  "${mark}Could not autoconfigure network" && return 2
+            } || { warn "${mark}Could not autoconfigure network, wrong password size?"; }
+        }
+    else
+        warn "You haven't cracked this network yet"; sleep 3; $clear
+    fi
+}
+
+
+usage(){
+    cat << eof
+Usage: $(basename $0) [-h] [-t TERMINAL] [-v] [-w WIRELESS_CARD] [-b] [-m fakemac|realmac] [-a] [-n FILTER] [-x] [-z] [-p PLUGIN_FILE]
+
+options:
+   -h                    Show this message
+   -t TERMINAL           Specify terminal
+   -c                    Launches an interface selection menu (requires -pzenity)
+   -v                    Verbose & debug mode
+   -w wireless_card      Specify wifi card
+   -b                    Writes a csv file with network data.
+   -m [fakemac|realmac]  Change mac to fakemac before everything else.
+   -a                    Automatic mode
+   -n [regex]            Filter SSID by regex
+   -x                    Autoconfigure network after automatic crack (requires -a)
+   -z                    Don't scan automatically at start
+   -p [plugin file]      Load plugin at start
+
+eof
+}
+
+launch_help_fifo(){
+    [[ -e $DUMP_PATH/help_fifo ]] || mkfifo $DUMP_PATH/help_fifo &>/dev/null
+    execute "Help"  "tail -f $DUMP_PATH/help_fifo"
+}
+
+help_fifo(){
+    clear >> $DUMP_PATH/help_fifo
+    echo -e $@ >> $DUMP_PATH/help_fifo
+}
+
+function choose_interface(){
+    zenity --question --ok-label "Graphical" --cancel-label "Text" --text "Wich interface would you like to use?" --title "Interface selection" && load_plugins zenity
+}
+
+setargs(){
+     while getopts “bn:ht:w:zxcvm:fap:” option; do
+        case $option in
+            c)  choose_interface ;;
+            h)  opt_functions+=(usage);;
+            t)  export TERMINAL="$OPTARG";;
+            v)  opt_functions+=(v);;
+            w)  export wificard="$OPTARG";;
+            b)  export report_mode=1;;
+            m)  opts_mac_opt="$OPTARG"; opt_functions+=(m);;
+            a)  opt_functions+=(auto);;
+            n)  export filter_ssid_="$OPTARG";;
+            x)  export options_autoconfigure=1;;
+            z)  export noscan=1;;
+            p)  load_plugins $OPTARG;;
+            ?)  opt_functions+=(usage);;
+        esac
+    done
+
+    for i in ${opt_functions[@]}; do [[ $i == "usage" ]] && { usage; exit 1; }; done # Small hack to execute usage the first
+    for i in ${opt_functions[@]}; do [[ $i != auto ]] && options_$i || execute_auto=1; done
+    [[ $execute_auto ]] && options_auto; # Small hack to execute auto the lastest xD
+}
+
+options_m(){ opts_change_$opts_mac_opt; }
+opts_change_fakemac(){ wichchangemac 1; opts_wireless; }
+opts_change_realmac(){ checkforcemac 3; opts_wireless; }
+
+options_v(){
+    export debug=1;
+    export hold=1;
+    _source "./airoscript-ng_debug.conf ~/airoscript-ng_debug.conf /etc/airoscript-ng_debug.conf /usr/local/etc/airoscript-ng_debug.conf"
+}
+
+opts_wireless(){
+    { guess_idata "start"; testmac; export iwifi=$wifi ; } &>/dev/null;
+    sleep 1; set_wifi_by_args=1
+}
+
+options_auto(){
+    export noscan=1;
+    temporary_switch_clear;
+    export clear="";
+    check_function autopwn || source $path/autocrack;
+    check_function doexit || source $path/internal/exit;
+    autopwn runner
+    doexit;
+}
+
+load_plugins(){
+    for i in ${@}; do
+        [[ $i =~ (.*)bash(.*) ]] && export BASH_PLUGIN=1 || {
+            if [[ -e $path/plugins/$i ]]; then
+                _source "${path}/plugins/${i}"
+            fi
+        }
+    done
+    [[ $BASH_PLUGIN ]] || BASH_PLUGIN=0
+}
+
+initial_warning(){
+    markwarn $"  Airoscript is provided under the gpl.
+I'm not responsible of the use anyone can give to airoscript.
+Written for educational purpose in mind.
+"
+sleep $warn_time
+}
+
+# Standard functions.
+
+markwarn(){
+    echo -e "${warn}${@}"
+}
+
+_debug(){
+    if [ "$debug" == 1 ]; then markwarn $1; fi
+}
+
+execute(){
+    check_function mkmenu || source $path/interface
+    check_function save_pids || source $path/internal/childs
+    title=$1; shift;
+
+    if [  "$ADDOPTIONS" != "" ]; then
+        printf -- "Executing $@"
+        echo
+        read -p $"Enter extra options to execute: " eopts
+    fi
+        if [ "$1" == "crack" ]; then shift; fi # FIXME This will not do anything.
+        if [ "$QUIET" != "" ] || [ "$AUTO" == "1" ]; then
+            [[ $NOTITLE ]] || warn "${mark}$title"
+            if [[ $wait_for_execute != 1 ]]; then
+                ${@} $eopts &> /dev/null &
+            else
+                ${@} $eopts &> /dev/null
+            fi
+        else
+            args="${@}"; args="${args/% /} ${eopts}" # Failsafe, this way if there's a trailing space it'll remove it before executing.
+            [[ $wait_for_execute != 1 ]] && {
+                $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $termargs  "$args" &
+            } || {
+                $CDCMD $TERMINAL $HOLDA $TITLEFLAG "$title" $termargs "$args"
+            }
+        fi
+    [[ $debug == 1 ]] && { echo $TERMINAL $HOLDA $TITLEFLAG "$title" $TOPLEFTBIG $BGC $BACKGROUND_COLOR $FGC $DUMPING_COLOR $EXECFLAG "$args"; read; }
+    save_pids $!
+}
+
+monmode(){
+    {
+        ifconfig $1 up
+        [[ $($iwconfig $1) =~ (.*)Mode:Monitor(.*) ]] && {
+            MON_PREFIX=$mon_prefix $AIRMON start $1 $2
+        }
+    } &>/dev/null
+}
+
+# this function allows debugging, called from main menu.
+function debug {
+    if [ "$debug" == "1" ] || [ "$hold" == "1"  ]; then
+        export HOLD=$HOLDFLAG; echo $"Debug Mode enabled, you'll have to manually close windows"
+    else export HOLD="" ;fi
+}
+
+_read(){
+    # Read function so we can override it later, to add another interface.
+    read "${@}";
+}
+
+# Various checks.
+checkdir(){
+    if [ -d $DUMP_PATH ]; then
+        if [ "$DEBUG" == 1 ]; then
+            echo $"[INFO] Output folder is" " $DUMP_PATH";
+        fi
+    else
+        echo $"[Error] Output folder does not exists or is a regular file."
+        exit
+    fi
+}
+
+check_function(){
+    declare -f $1 &>/dev/null
+    return $?
+}
+
+# Standard attacks functions.
+
+attack_wpa(){
+    check_function wpa_attacks || source $path/attacks/wpa
+    wpa_attacks menu
+}
+
+attack_wep(){
+    check_function wep_attacks || source $path/attacks/wep
+    wep_attacks menu
+}
+
+attack_opn(){ # If no encryption detected
+    $clear && error "Network not encrypted or not network selected";
+}
+
+capture(){
+    hardclean
+    execute "Capturing" $AIRODUMP --ignore-negative-one --bssid $Host_MAC -w $DUMP_PATH/$Host_MAC -c $Host_CHAN -a $wifi
+    echo
+}
+
+tag(){ echo -ne "\t"; }
+
+hardclean(){ rm -rf $DUMP_PATH/$Host_MAC*; }
+
+single_question(){ read -p "${@}" ans; }
+special_single_question(){ single_question "${@}"; }
+warn(){ echo "${@}"; }
+specialwarn(){ echo -e -n "${@}"; }
+yesno(){
+    read -p "${@} [Y|n]" -n1 -s a; echo
+    [[ $a =~ (.*)[N|n](.*) ]] && return 1 || return 0
+}
+
+check_default_software(){
+    for program in ${required_software[@]}; do
+        [[ $(whereis $program) ]] || { echo -en "$program"; warn "not found, quitting." ; exit ; }
+    done
+}
+
+_source $path/internal/startup

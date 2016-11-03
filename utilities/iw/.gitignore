@@ -1,0 +1,6 @@
+iw
+*~
+*.o
+.config
+iw.8.gz
+*-stamp

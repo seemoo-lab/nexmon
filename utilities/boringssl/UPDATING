@@ -1,0 +1,9 @@
+rm -Rf src
+git clone https://boringssl.googlesource.com/boringssl src
+cd src
+git show -s --pretty=%H > ../BORINGSSL_REVISION
+cd ..
+rm -Rf src/.git
+rm -Rf src/fuzz
+rm -Rf linux-aarch64/ linux-arm/ linux-x86/ linux-x86_64/ mac-x86/ mac-x86_64/ win-x86_64/ win-x86/
+python src/util/generate_build_files.py android

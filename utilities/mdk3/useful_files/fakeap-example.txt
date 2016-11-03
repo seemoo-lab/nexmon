@@ -1,0 +1,6 @@
+00:00:11:11:22:22 This_is_a_fake_AP
+00:11:22:33:44:55 Whitespaces are allowed
+00:33:22:44:55:11 Overlenght SSIDs are also supported by FakeAP mode. Up to 256 characters are possible.
+019283746510 You can even use short MACs
+abcdefABCDEF And capital letters of course
+ff:ff:ff:ff:ff:ff Let's go!

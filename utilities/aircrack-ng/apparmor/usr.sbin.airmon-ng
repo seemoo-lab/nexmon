@@ -1,0 +1,179 @@
+#include <tunables/global>
+
+/usr/sbin/airmon-ng {
+  #include <abstractions/base>
+  #include <abstractions/bash>
+  #include <abstractions/private-files-strict>
+
+  /usr/sbin/airmon-ng rix,
+  
+  /bin/cat rix,
+  
+  /bin/dmesg rCx,
+  profile /bin/dmesg {
+    #include <abstractions/base>
+
+    /bin/dmesg mr,
+  }
+  
+  /bin/*sh ix,
+  /bin/grep rix,
+
+  /bin/ip rCx,  
+  profile /bin/ip {
+    #include <abstractions/base>
+
+    /bin/ip mr,
+    
+    capability net_admin,
+  }
+  
+  /bin/kmod rCx,
+  profile /bin/kmod {
+    #include <abstractions/base>
+
+    /bin/kmod mr,
+
+    /proc/cmdline r,
+  }
+  
+  /bin/ps rCx,
+  profile /bin/ps {
+    #include <abstractions/base>
+
+    /bin/ps mr,
+
+    capability sys_ptrace,
+    capability dac_override,
+    
+    ptrace (trace),
+    ptrace (read),
+  
+    /proc/ r,
+    /proc/*/ r,
+    /proc/*/maps r,
+    /proc/*/net/dev r,
+    /proc/*/stat r,
+    /proc/*/status r,
+    /proc/*/task/ r,
+    /proc/sys/kernel/pid_max r,
+    /proc/tty/drivers r,
+    /proc/uptime r,
+  }
+  
+  /bin/readlink rix,
+  /bin/sed rix,
+  /bin/sleep rix,
+  /bin/uname rix,
+  /dev/bus/usb/ r,
+  /dev/rfkill rix,
+  /dev/tty* r,
+  /dev/vmnet r,
+  /etc/udev/udev.conf r,
+  /proc/*/net/dev r,
+  /proc/*/net/psched r,
+  /proc/bus/pci/ r,
+  /proc/ide/hd*/model r,
+  /proc/filesystems r,
+  /proc/meminfo r,
+  /proc/scsi/scsi/ r,
+  /proc/sys/dev/*/fftxqmin r,
+  
+  /sbin/ethtool rCx,
+  profile /sbin/ethtool {
+    #include <abstractions/base>
+
+    /sbin/ethtool mr,
+    
+      capability net_admin,
+      capability net_raw,
+      
+      network,
+  }
+  
+  /sbin/ifconfig rCx,
+  profile /sbin/ifconfig {
+    #include <abstractions/base>
+
+    /sbin/ifconfig mr,
+  }
+  
+  
+  /sbin/iw rCx,
+  profile /sbin/iw {
+    #include <abstractions/base>
+
+    /sbin/iw mr,
+    
+    capability net_admin,
+    
+    /proc/net/psched r,
+    /sys/class/ieee80211/ r,
+    /sys/class/ieee80211/** r,
+    /sys/devices/** r,
+    /proc/*/net/psched r,
+  }
+  
+  /sbin/iwconfig rCx,
+  profile /sbin/iwconfig {
+    #include <abstractions/base>
+
+    /sbin/iwconfig mr,
+      
+      capability net_admin,
+      capability net_raw,
+      
+      network inet dgram,
+      
+      /proc/filesystems r,
+      /proc/*/net/dev r,
+  }
+  
+  /sbin/modinfo rCx,
+  profile /sbin/modinfo {
+    #include <abstractions/base>
+
+    /sbin/modinfo mr,
+    
+    /proc/cmdline r,
+  }
+  
+  /sbin/modprobe rCx,
+  profile /sbin/modprobe {
+    #include <abstractions/base>
+
+    /sbin/modprobe mr,
+  }
+  
+  
+  /sys/bus/ r,
+  /sys/bus/pci r,
+  /sys/bus/pci_express r,
+  /sys/bus/usb/devices/ r,
+  /sys/class/ r,
+  /sys/class/ieee80211/ r,
+  /sys/class/ieee80211/** r,
+  /sys/class/net/ r,
+  /sys/class/net/** r,
+  /sys/devices/** r,
+  /sys/module/ r,
+  /usr/bin/basename rix,
+  /usr/bin/cut rix,
+  /usr/bin/*awk rix,
+  /usr/bin/head rix,
+  /usr/bin/id rix,
+  /usr/bin/lspci rix,
+  /usr/bin/lscpu rix,
+  /usr/bin/lsusb rix,
+  /usr/bin/sort rix,
+  
+  /usr/sbin/dmidecode rCx,
+  profile /usr/sbin/dmidecode {
+    #include <abstractions/base>
+
+    /usr/sbin/dmidecode mr,
+  }
+
+  /usr/sbin/rfkill rix,
+  /var/lib/usbutils/usb.ids r,
+}

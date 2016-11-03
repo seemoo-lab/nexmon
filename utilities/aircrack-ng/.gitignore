@@ -1,0 +1,7 @@
+.*
+!/.gitignore
+libssl.so
+libcrypto.so
+libsqlite.so
+libs
+local

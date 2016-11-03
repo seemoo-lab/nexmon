@@ -1,0 +1,39 @@
+diff -u -p udev-106/udev_rules.j1.c udev-106/udev_rules.c
+--- udev-106/udev_rules.j1.c	2007-03-15 10:07:51.000000000 -0700
++++ udev-106/udev_rules.c	2007-03-15 10:09:50.000000000 -0700
+@@ -186,7 +186,16 @@ static int import_keys_into_env(struct u
+ 		linepos = line;
+ 		if (get_key(&linepos, &variable, &value) == 0) {
+ 			dbg("import '%s=%s'", variable, value);
+-			name_list_key_add(&udev->env_list, variable, value);
++			/* handle device, renamed by external tool,
++			 * returning new path */
++			if (strcmp(variable, "DEVPATH") == 0) {
++				info("updating devpath from '%s' to '%s'",
++				     udev->dev->devpath, value);
++				sysfs_device_set_values(udev->dev, value,
++							NULL, NULL);
++			} else
++				name_list_key_add(&udev->env_list,
++						  variable, value);
+ 			setenv(variable, value, 1);
+ 		}
+ 	}
+diff -u -p udev-106/udevtest.j1.c udev-106/udevtest.c
+--- udev-106/udevtest.j1.c	2007-03-15 10:39:16.000000000 -0700
++++ udev-106/udevtest.c	2007-03-15 10:42:09.000000000 -0700
+@@ -59,8 +59,13 @@ int main(int argc, char *argv[], char *e
+ 
+ 	info("version %s", UDEV_VERSION);
+ 	udev_config_init();
+-	if (udev_log_priority < LOG_INFO)
++	if (udev_log_priority < LOG_INFO) {
++		char priority[32];
++
+ 		udev_log_priority = LOG_INFO;
++		sprintf(priority, "%i", udev_log_priority);
++		setenv("UDEV_LOG", priority, 1);
++	}
+ 
+ 	for (i = 1 ; i < argc; i++) {
+ 		char *arg = argv[i];

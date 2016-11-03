@@ -1,0 +1,18 @@
+Requirements (Deps)
+===================
+
+Deps:
++++++
+
+| ip (iproute package)
+| aircrack-ng (same version as airoscript-ng)
+| bash ( >4.0 )
+| iproute ( /bin/ip )
+
+Recommended
+++++++++++++
+
+| digenpy ( http://github.com/XayOn/Digenpy ) # Depends on python 2.6
+| mdk
+| macchanger
+   

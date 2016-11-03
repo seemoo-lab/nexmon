@@ -1,0 +1,41 @@
+# Exit and cleanup file used by airoscript
+# Copyright (C) 2010-2011 David Francos Cuartero
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        along with this program; if not, write to the Free Software
+
+delete_vinterfaces(){
+    while read interface; do
+        [[ $interface =~ ^$MON_PREFIX(.*)\S*(.*) ]] && {
+            iw dev ${MON_PREFIX}${BASH_REMATCH[1]} del
+        }
+    done < <($AIRMON)
+}
+
+deconfigure(){ airmon-ng stop $wifi &> /dev/null ; delete_vinterfaces &>/dev/null; }
+delete_dpath(){ [[ $DUMP_PATH =~ /tmp/(.*) ]] && rm -r $DUMP_PATH &>/dev/null;  }
+
+doexit(){
+        check_function make_report || source $path/reporting
+        [[ -e $DUMP_PATH/$Host_MAC.key ]] && {
+            yesno "Create a full report?" && {
+                warn "${mark}Creating report"; make_report;
+                yesno "Copy report to ~?" && { cp -f $DUMP_PATH/$Host_MAC.png $DUMP_PATH/$Host_MAC.report.html $DUMP_PATH/$Host_MAC.report.pdf $HOME/ &>/dev/null; }
+            }
+        }
+
+        [[ $keep_exit_quiet == 0 ]] && {
+            yesno "Stop monitor mode on $wifi and delete virtual interfaces? (Y/n) " && { warn "${mark}Cleaning interface"; deconfigure; }
+            yesno 'Delete temporary data dir? (y/N) ' && { warn "${mark}Deleting $DUMP_PATH"; delete_dpath &>/dev/null; }
+        } || { deconfigure; [[ $delete_files_on_exit == 1 ]] && delete_dpath &>/dev/null;  }
+        [[ "$1" == "killme" ]] && pkill air $$ || exit # Needed because of autopwn
+}

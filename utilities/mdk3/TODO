@@ -1,0 +1,38 @@
+MDK3 TODO List
+
+* Write complete docs
+* Update manpage
+
+802.11 allows you to fragment each packet into as many as 16 pieces. It would be nice if we could use fragmentated packets in every attack.
+if you want to make the WIDS vendors hate you, also match the sequence numbers of the victims
+  * Done for TKIP QoS reinjection
+  * NOT done for deauth
+  * NOT done for eapol Logoff
+Ad-hoc compatibility?
+  * Works for Probing
+  * Deauth should work (untested)
+  * AuthDos untested (does this even work?)
+    -> do STA flooding instead
+Intelligent AuthDOS with Shared Key Auth
+SSID Bruteforce: Read Wordlist from stdin
+CTS control frame flooding
+
+* Fuzzing mode modifying incoming packets or creating random ones
+
+* Beacon Flooding should also have an options to send probe requests and responses (unicast + broadcast probes) to annoy IDS ;)
+
+* Match Sequence Numbers for all attacks that impersonate somebody (like, almost all attacks do) for MAXIMUM WIDS PAIN!
+
+EAP attacks:
+
+802.1X EAP-Failure
+Observing a valid 802.1X EAP exchange, and then sending the station a forged EAP-Failure message.
+
+802.1X EAP-of-Death
+Sending a malformed 802.1X EAP Identity response known to cause some APs to crash.
+
+802.1X EAP Length Attacks
+Sending EAP type-specific messages with bad length fields to try to crash an AP or RADIUS server.
+
+Above table was taken from
+http://searchsecurity.techtarget.com/general/0,295582,sid14_gci1167611,00.html?track=wsland

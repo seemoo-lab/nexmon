@@ -1,0 +1,286 @@
+# Other tools (mostly external) functions file for airoscript.
+
+# Copyright (C) 2009-2011 David Francos Cuartero
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+check_function fakeauth3 || source $path/attacks/auth # It depends on auth module ;)
+check_function injectmenu || source $path/attacks/injection # It depends on injection module ;)
+
+othertmenu(){
+    while true; do
+         mkmenu $"Other aircrack-ng tools" $"Scanning" $"Injection" $"Autentication" $"Package manipulation" $"Create virtual interface with airtun-ng" $"Diagnostics and reports" $"Auto crack wep with wesside-ng" "Easside-ng" $"Return to main menu"
+        case $choice in
+            1  ) AUTO=0 menu_type; $clear; break;;
+            2  ) othersinjectmenu    ; $clear; break;;
+            3  ) authmenu      ; $clear; break;;
+            4  ) package_menu  ; $clear; break;;
+            5  ) airtunmenu    ; $clear; break;;
+            6  ) diagmenu      ; $clear; break;;
+            7  ) choosewesside ; $clear; break;;
+            8  ) eassideng     ; $clear; break;;
+            9 ) $clear        ; break ;;
+            *  ) echo $"Unknown response, try again"; sleep 1; $clear;;
+        esac
+    done
+}
+
+
+generate_hcap(){
+    wait_for_execute=1; execute $AIRCRACK $DUMP_PATH/$Host_MAC-01.cap -J $DUMP_PATH/$Host_MAC-01.hccap; wait_for_execute=0;
+    read -p $"Your hccap file is in $DUMP_PATH/$Host_MAC-01.hccap . Press enter to continue"
+    export HCCAPFILE=$DUMP_PATH/$Host_MAC-01.hccap
+}
+
+airdecmenu(){
+    while true; do
+        if [ "$d_cloaked_null" == 1 ]; then d_cloaked_null_status="X"; else d_cloaked_null_status=" "; fi
+        if [ "$d_cloaked_base" == 1 ]; then d_cloaked_base_status="X"; else d_cloaked_base_status=" "; fi
+        if [ "$d_cloaked_frag" == 1 ]; then d_cloaked_frag_status="X"; else d_cloaked_frag_status=" "; fi
+
+        mkmenu "Airdecloak-ng" "Asume that null packets can be cloacked [$d_cloaked_null_status]" "Disable base filter [$d_cloaked_base_status]" "Drop fragmented packets [$d_cloaked_frag_status]" "Specify filters (comma separated)" "Launch decloak" "Return to main menu"
+        opts="";
+        case $choice in
+            1) if [ "$d_cloaked_null" == 1 ]; then d_cloaked_null=0; else d_cloaked_null=1; fi; $clear;;
+            2) if [ "$d_cloaked_base" == 1 ]; then d_cloaked_base=0; else d_cloaked_base=1; fi; $clear;;
+            3) if [ "$d_cloaked_frag" == 1 ]; then d_cloaked_frag=0; else d_cloaked_frag=1; fi; $clear;;
+            4) single_question "Enter filters: "; d_cloaked_filters=$ans; $clear;;
+            5)
+                if [ "$d_cloaked_null" == 1 ]; then opts="$opts --null-packets"; fi
+                if [ "$d_cloaked_base" == 1 ]; then opts="$opts --diable-base-filter"; fi
+                if [ "$d_cloaked_frag" == 1 ]; then opts="$opts --drop-frag"; fi
+                execute $AIRDECLOAK $opts --ssid $Host_SSID --bssid $Host_MAC --filters $d_cloaked_filters -i $DUMP_PATH/$Host_MAC-01.cap
+                $clear; break;;
+            6) $clear; break;;
+        esac
+    done
+}
+
+airtunmenu(){
+    if [ "$Host_MAC" != "" ] && [ "$Host_SSID" != "" ] && [ -e $DUMP_PATH/$Host_MAC.key ]; then
+        execute $AIRTUN -a $Host_MAC -i $wificard -w "`cat $DUMP_PATH/$Host_MAC.key`"
+    else
+        if [ "$Host_MAC" != "" ] && [ "$Host_SSID" != "" ] && [[ $Host_ENC =~ (.*)"OPN"(.*) ]]; then
+            execute $AIRTUN -a $Host_MAC -i $wificard
+        else
+            warn "Error: Network not selected"
+         fi
+       fi
+}
+
+cleanairtun() {
+    killall airtun-ng
+}
+
+package_menu(){
+    while true; do
+        [[ "$Host_ENC" =~ (.*)WPA(.*) ]] && {
+            mkmenu $"Package manipulation tools" $"Merge all ivs from all sessions" $"Decrypt current packages" $"Decloack packages"\
+                $"Generate hccap file for oclhashcat" $"Return to main menu"
+            case $choice in
+                1) mergeallivs;$clear; break;;
+                2) decrypt; $clear; break;;
+                3) airdecmenu; $clear; break;;
+                4) generate_hcap ; $clear; break;;
+                5) $clear;break ;;
+                * ) echo $"Unknown response. Try again" ;;
+            esac
+        } || {
+            mkmenu $"Package manipulation tools" $"Merge all ivs from all sessions" $"Decrypt current packages" $"Decloack packages"\
+                $"Return to main menu"
+            case $choice in
+                1) mergeallivs;$clear; break;;
+                2) decrypt; $clear; break;;
+                3) airdecmenu; $clear; break;;
+                4) $clear;break ;;
+                * ) echo $"Unknown response. Try again" ;;
+            esac
+        }
+    done
+}
+
+mergeallivs(){ # TODO Untested
+    newdir=`mktemp -d`
+    for i in $TMPDIR/*/*.cap; do b=$(( $b + 1 )); $IVSTOOLS --convert $i $newdir/$b; done
+    ivstools --merge $newdir/* $DUMP_PATH/merged.cap
+    read -p $"Select merged data as target? (y/N): " ACP && [[ "$ACP" = $"y" ]] && Host_MAC="merged"
+}
+
+choosewesside(){
+        while true; do
+            $clear; mkmenu $"Choose Wesside-ng Options" $"No args" $"Selected target" $"Sel. target max retrans" $"Sel. target poor conection" $"Select another target" $"Return to main menu"
+            case $choice in
+                1 ) wesside ; break ;;
+                2 ) wessidetarget ; break ;;
+                3 ) wessidetargetmaxer ; break ;;
+                4 ) wessidetargetpoor ; break ;;
+                5 ) wessidenewtarget ; break ;;
+                6 ) break ;;
+                * ) echo -e $"Unknown response. Try again" ;;
+            esac
+    done
+}
+
+wesside(){
+    rm -rf prga.log wep.cap key.log
+    execute "Wesside-ng" $WESSIDE -i $wifi & choosewesside
+}
+
+wessidetarget(){
+    rm -rf prga.log wep.cap key.log
+    execute "Wesside-ng" $WESSIDE -v $Host_MAC -i $wifi & { [[ $1 ]] || choosewesside; }
+}
+
+wessidetargetmaxer(){
+    rm -rf prga.log wep.cap key.log
+    execute "Wesside-ng" $WESSIDE -v $Host_MAC -k 1 -i $wifi  & { [[ $1 ]] || choosewesside; }
+}
+
+wessidetargetpoor(){
+    rm -rf prga.log wep.cap key.log
+    execute "Wesside-ng" $WESSIDE -v $Host_MAC -k 3 -i $wifi & { [[ $1 ]] || choosewesside; }
+}
+
+wessidenewtarget(){
+    rm -rf prga.log wep.cap  key.log
+    selectAp
+    execute "Wesside" $WESSIDE -v $Host_MAC -i $wifi & { [[ $1 ]] || choosewesside; }
+}
+
+diagmenu(){
+    check_function kstatsmenu || source $path/reporting
+    while true; do
+        mkmenu $"Diagnostic tools and reports" $"Show kstats report" $"Test injection" $"Checks with airmon-ng" $"Create graphs" $"Update airoscript report" $"Return to main menu"
+        case $choice in
+            1  ) kstatsmenu    ; $clear; break;;
+            2  ) inject_test   ; $clear; break;;
+            3  ) airmoncheck   ; $clear; break;;
+            4  ) _airgraph     ; $clear; break;;
+            5  ) report_mode   ; $clear; break;;
+            6  ) make_report   ; $clear; break;;
+            7  )                 $clear; break;;
+            *  ) $"Unknown response, try again"; sleep 1; $clear;;
+        esac
+    done
+}
+
+
+
+inject_test(){
+    execute "Test injection" $AIREPLAY $iwifi --test
+}
+
+airmoncheck(){
+    if [ "$TYPE" = "Atherosmadwifi-ng" ]; then $AIRMON check wifi0
+    else $AIRMON check $wificard; fi
+}
+
+
+decrypt(){
+    $AIRDECAP $DUMP_PATH/$Host_MAC.cap -w "`cat $DUMP_PATH/$Host_MAC.key`"
+    warn "Decrypted packages to $DUMP_PATH/$Host_MAC.cap-dec.cap"
+}
+
+menu_options(){
+    while [ "1" ] ; do
+        mkmenu $"Airoscript options"  $"Select another interface" $"Reset selected interface"\
+            $"Change MAC of interface"  $"Enable monitor mode" $"Change DUMP_PATH"\
+            $"Try to configure network" $"Return to main menu"
+
+        case $choice in
+        1 ) setinterface 1 ; $clear; break ;;
+        2 ) cleanup; $clear; break ;;
+        3 ) wichchangemac ; $clear; break ;;
+        4 ) monmode;$clear ; break ;;
+        5 ) changedumppath;$clear; break;;
+        6 ) configure;$clear; break;;
+        7 ) $clear;break ;;
+        * ) $"Unknown response. Try again" ;;
+        esac
+    done
+}
+
+cleanup(){
+    while [ "1" ]; do
+        mkmenu $"Interface cleanup" $"Normal cleanup" $"Reset driver" $"Vmware fix for bt4" $"Return to main menu"
+        case $choice in
+            1 ) { killall -9 aireplay-ng airodump-ng &> /dev/null &
+                $AIRMON stop $wificard; ifconfig $wificard down;
+                $clear; sleep 2; $CARDCTL eject; sleep 2; $CARDCTL insert;
+                ifconfig $wificard up; $AIRMON start $wificard $Host_CHAN;
+                $iwconfig $wificard;
+            } &>/dev/null ; break ;;
+            2 ) { rmmod $DRIVER; modprobe $DRIVER; } &>/dev/null; break ;;
+            3 ) { ifconfig $wificard down; rmmod $DRIVER; rfkill blockall; rfkill unblock all; modprobe $DRIVER; rfkill unblock all; ifconfig $wificard up; } &>/dev/null; break ;;
+            4 ) $clear; break ;;
+            * ) $clear;;
+        esac
+    done
+}
+
+
+changedumppath(){
+    OLD_DUMP_PATH=$DUMP_PATH
+    read -p $"Enter new path: " DUMP_PATH
+    read -p $"Copy data into new folder? (y/N): " ACP && [[ "$ACP" = $"y" ]] && cp -r $OLD_DUMP_PATH/* $DUMP_PATH/
+    read -p $"Erase old folder? (y/N): " EPF && [[ "$EPF" = $"y" ]] && rm -r $OLD_DUMP_PATH
+    mkdir -p $DUMP_PATH # If exists, it won't be created again, so we don't lose anything fot this :-)
+    $olear
+}
+
+eassideng(){
+     while true; do $clear
+        mkmenu "Easside-ng" $"Create virtual interface" "Run buddy server" "Return to main menu"
+        case $choice in
+            1 )
+                while true; do $clear
+                    read -p $"Select buddy IP" buddyip; $clear
+                    mkmenu $"Choose ap mac " $"Choose source mac" $"Chosse Source IP" $"Choose router ip" $"Execute" $"Return";
+                    read -p $"Anser: " answer; echo
+                    case $choice in
+                        1 ) opts=" $opts -v $answer " ;break ;;
+                        2 ) opts=" $opts -m $answer " ;break ;;
+                        3 ) opts=" $opts -i $answer " ;break ;;
+                        4 ) opts=" $opts -r $answer " ;break ;;
+                        5 ) execute "Easside-ng" $EASSIDE -s $buddyip -f $wifi $opts ;break ;;
+                        6 ) $clear; break ;;
+                    esac
+                done ;;
+            2 ) execute $BUDDY ;;
+            3 ) $clear ; break ;;
+            * ) $clear; echo  $"Unknow response, try again"; sleep 2 ;;
+        esac
+    done
+}
+
+airbaseng(){
+    # FUCK This tool is quite awesome, too much for a single function... :/ Might be an entire class, but... this is bash.
+    # Functional and so on, let's make a hack!
+    check_function airbaseng_main || source $path/attacks/airbaseng
+    opt=$1; shift;
+    airbase_$opt $@;
+}
+
+
+setupairservng(){
+    single_question $"Do you want to use airserv-ng? [y/N] "
+    if [ "$ans" == $"y" ]; then
+        export wificard=$wifi && single_question $"Start a local server? [y/N] "
+        if [ "$ans" == $"y" ]; then export wifi="127.0.0.1:666" && $AIRSERV -d  $wificard >/dev/null 2>1 &
+        else read -p $"Enter airserv-ng address [127.0.0.1:666]"
+            wifi=$ans
+            if [ "$wifi" == "" ]; then export wifi="127.0.0.1:666";fi
+        fi
+    fi
+}
