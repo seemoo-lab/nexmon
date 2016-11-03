@@ -10,9 +10,9 @@ The following devices are currently supported by our nexmon firmware patch.
 
 WiFi Chip | Firmware Version | Used in           | Operating System |  M  | RT  |  I  | FP  | UC  | CT 
 --------- | ---------------- | ----------------- | ---------------- | --- | --- | --- | --- | --- | ---
-bcm4330   | 5_90_100_41_sta  | Samsung Galaxy S2 | Cyanogenmod 13.0 |  X  |  X  |     |  X  |  X  |    
+bcm4330   | 5_90_100_41_sta  | Samsung Galaxy S2 | Cyanogenmod 13.0 |  X  |  X  |     |  X  |  X  |  X 
 bcm4339   | 6_37_34_43       | Nexus 5           | Android 6 Stock  |  X  |  X  |  X  |  X  |  X  |  X 
-bcm43438  | 7_45_41_26       | Raspberry Pi 3    | Raspbian 8       |  ?  |  ?  |  ?  |  ?  |  ?  |  ? 
+bcm43438  | 7_45_41_26       | Raspberry Pi 3    | Raspbian 8       |  X  |  X  |  X  |  X  |  X  |  ? 
 bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  |     |  X  |  X  |  X 
 
 ## Legend
