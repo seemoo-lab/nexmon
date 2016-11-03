@@ -49,30 +49,45 @@
 
 #pragma NEXMON targetregion "patch"
 
-#include <firmware_version.h>
-#include <wrapper.h>	// wrapper definitions for functions that already exist in the firmware
-#include <structs.h>	// structures that are used by the code in the firmware
-#include <patcher.h>
-#include <helper.h>
-#include <capabilities.h>      // capabilities included in a nexmon patch
+#include <firmware_version.h>   // definition of firmware version macros
+#include <debug.h>              // contains macros to access the debug hardware
+#include <wrapper.h>            // wrapper definitions for functions that already exist in the firmware
+#include <structs.h>            // structures that are used by the code in the firmware
+#include <helper.h>             // useful helper functions
+#include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
+#include <rates.h>              // rates used to build the ratespec for frame injection
+#include <nexioctls.h>          // ioctls added in the nexmon patch
+#include <capabilities.h>       // capabilities included in a nexmon patch
+#include <sendframe.h>          // sendframe functionality
 
-int capabilities = NEX_CAP_MONITOR_MODE | NEX_CAP_MONITOR_MODE_RADIOTAP | NEX_CAP_FRAME_INJECTION;
+int 
+wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
+{
+    int ret = IOCTL_ERROR;
 
-void *
-wlc_recvdata_hook(void *wlc, void *osh, void *rxh, void *p) {
-    return pkt_buf_free_skb(osh, p, 0);
+    switch (cmd) {
+        case NEX_GET_CAPABILITIES:
+            if (len == 4) {
+                memcpy(arg, &capabilities, 4);
+                ret = IOCTL_SUCCESS;
+            }
+            break;
+
+        case NEX_WRITE_TO_CONSOLE:
+            if (len > 0) {
+                arg[len-1] = 0;
+                printf("ioctl: %s\n", arg);
+                ret = IOCTL_SUCCESS; 
+            }
+            break;
+
+        default:
+            ret = wlc_ioctl(wlc, cmd, arg, len, wlc_if);
+    }
+
+    return ret;
 }
 
-//__attribute__((at(0x1210C, "", CHIP_VER_BCM43438, FW_VER_ALL)))
-//BPatch(wlc_recvdata_hook, wlc_recvdata_hook);
+__attribute__((at(0x42924, "", CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327)))
+GenericPatch4(wlc_ioctl_hook, wlc_ioctl_hook + 1);
 
-// Hook the call to wlc_ucode_write in wlc_ucode_download
-__attribute__((at(0x44ED0, "", CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327)))
-BLPatch(wlc_ucode_write_compressed, wlc_ucode_write_compressed);
-
-// Update the ucode length to become the length of the extracted ucode before compression
-__attribute__((at(0x4E9BC, "", CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327)))
-GenericPatch4(ucode_length, 0xCC28);
-
-__attribute__((at(0x2654, "", CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327)))
-GenericPatch4(hndrte_reclaim_0_end, 0x592a4);
