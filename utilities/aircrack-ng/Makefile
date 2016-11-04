@@ -10,6 +10,11 @@ libs/armeabi/aircrack-ng: Android.mk SYSTEM_LIBS ../libosdep/local/armeabi/libos
 
 SYSTEM_LIBS: FORCE
 	cd ../shared_system_libs && make
+
+install: libs/armeabi/aircrack-ng
+	adb push libs/armeabi/aireplay-ng /sdcard/
+	adb shell su -c "mount -o remount,rw /system"
+	adb shell su -c "cp /sdcard/aireplay-ng /system/bin/aireplay-ng"
 	
 FORCE:
 
