@@ -1,0 +1,661 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html; charset=ISO-8859-15"
+ http-equiv="content-type">
+  <title>MDK3 Documentation</title>
+</head>
+<body>
+<div style="text-align: center;"><img
+ style="width: 466px; height: 145px;" alt="k2wrlz logo" src="k2wrlz.png"><br>
+<br>
+<big style="font-weight: bold;"><big>MDK3 Documentation</big></big><br>
+<br>
+<div style="text-align: left;">
+<div style="text-align: center;">MDK is a proof-of-concept tool to
+exploit common IEEE 802.11 protocol weaknesses.<br>
+<span style="text-decoration: underline; font-weight: bold;">It is your
+responsibility to
+make sure you have permission from the network owner before running MDK
+against it.</span><br>
+</div>
+<br>
+<br>
+MDK3 is a Wi-Fi testing tool from ASPj of k2wrlz, it uses the osdep
+library from the
+aircrack-ng project to inject frames on several operating systems.<br>
+Many parts of it have been contributed by the great aircrack-ng
+community:<br>
+<span style="font-weight: bold;">Antragon, moongray, Ace, Zero_Chaos,
+Hirte, thefkboss, ducttape, telek0miker, Le_Vert, sorbo, Andy Green,
+bahathir, Dawid Gajownik and Ruslan Nabioullin.</span><br>
+THANK YOU!<br>
+<br>
+MDK3 is licenced under the <a
+ href="http://www.gnu.org/licenses/gpl-2.0.html" target="_blank">GPLv2</a>
+or later.<br>
+<br>
+<br>
+<big>Contents:<br>
+1. Setting up your environment<br>
+2. Getting MDK3 to run (Compiling MDK3)<br>
+3. How to use MDK3<br>
+4. The different test modes</big><br>
+<br>
+<br>
+<br>
+<big style="font-weight: bold;"><big>1. Setting up your environment<br>
+</big></big><big><big><br>
+</big><big><small><small>MDK3 is a tool that "injects" data into
+wireless networks. "Injection" is the possibility to send self-made
+data through the air without being connected or associated to any
+network or station.
+MDK3 is used to send valid and invalid packets, which belong to the
+wireless management and not to regular data connections. This is only
+possible with this Injection technique. Sadly, this is something, WiFi
+equipment has NOT been built for in the first place! To enable the
+injection feature on your
+wireless card, you possibly need modified drivers. A lot of work has
+already
+been done by several hackers (including me) to make these modified
+drivers available for a lot of hardware. Furthermore, the new wireless
+subsystem <a href="http://linuxwireless.org/">mac80211</a> in the
+Linux kernel supports Injection out of the box for many drivers and
+cards.<br>
+To set up your driver for Injection, please visit <a
+ href="http://www.aircrack-ng.org">www.aircrack-ng.org</a> and follow
+the <a
+ href="http://www.aircrack-ng.org/doku.php?id=compatibility_drivers">Driver
+Documentation</a> there.<br>
+MDK3 uses the drivers and Injection routines from this project and its
+predecessor. Thus, all drivers listed there should work with MDK3.
+(Some special hardware, like Intel Centrino (ipw2200) is NOT supported
+since they can only inject data, and no management information!)<br>
+MDK3 works on Linux and maybe FreeBSD currently, it may also run on
+Windows, but you need very special and expensive drivers and hardware
+there, so it is totally unsupported by MDK3 and aircrack-ng. MDK3 runs
+best with a pretty
+up-to-date kernel and drivers. Use the recommended drivers and patches (<a
+ href="http://www.aircrack-ng.org/doku.php?id=compat-wireless">compat-wireless</a>)
+mentioned in the aircrack-ng Wiki.<br>
+<br>
+<br>
+</small></small></big></big><big style="font-weight: bold;"><big>2.
+Getting MDK3 to run (Compiling MDK3)<br>
+<br>
+</big></big><big><big><small><small>Some Linux distributions already
+contain a precompiled mdk3 binary. Sometimes they are pretty old and
+buggy. You are advised to always use the most up-to-date version, since
+version changes usually have many new features and bugfixes.<br>
+To compile mdk3, go to the directory, where you extracted the tarballs
+contents and simply type <span style="font-style: italic;">make<br>
+</span>To copy the compiled binary to your /usr/local/sbin directory
+(installing it), type <span style="font-style: italic;">make install</span>
+afterwards.<br>
+mdk3 needs libpthread and libpcap. pcap is possibly not installed on
+your machine, use your package manager to install the development
+package for pcap (ie. <span style="font-style: italic;">zypper in
+libpcap-devel</span> for SuSE or <span style="font-style: italic;">apt-get
+install libpcap-dev</span> for Debian/Ubuntu)<br>
+<br>
+<span style="font-style: italic;"></span><br>
+</small></small></big></big><big style="font-weight: bold;"><big>3. How
+to use MDK3<br>
+</big></big><big style="font-weight: bold;"><big><br>
+</big></big><big><big><small><small>Using MDK3 is quite simple, since
+it comes with lots of help screens directly included.<br>
+You can easily access them by typing only <span
+ style="font-style: italic;">mdk3</span><br>
+MDK3 displays the main help screen. To see all possible options, type <span
+ style="font-style: italic;">mdk3 --fullhelp</span><br>
+To see only information for a specific test, type <span
+ style="font-style: italic;">mdk3 --help</span> followed by the test
+mode identifier (b, a, p, d, m, x, w, f or g)<br>
+<br>
+Before you can use MDK3, you need to setup your wireless adaptor. As
+far as there are different driver architectures, the way to setup your
+adaptor may vary depending on which driver is in use. To make this
+procedure easy, it is recommended to use <span
+ style="font-style: italic;">airmon-ng</span> from the aircrack
+project, since it can setup almost every known driver correctly.<br>
+Read the <a href="http://www.aircrack-ng.org/doku.php?id=airmon-ng">documentation
+for airmon-ng</a> to learn how to set your WiFi card into the proper
+mode.<br>
+<br>
+<span style="font-weight: bold;">IMPORTANT: You need to set your device
+to the channel where the target
+AP/client is, otherwise it won't work! This is a very common error.</span><br>
+<br>
+To find APs and clients, it is recommended to use airodump-ng. Simply
+start it with <span style="font-style: italic;">airodump-ng</span>
+[your_interface] first, to see the available stations. If you have
+decided
+on one CHANNEL where to run the tests on, you should restart airodump
+and
+set it to STAY on this specific channel, so your card won't change
+channels anymore to find other stations. You can do this with <span
+ style="font-style: italic;">airodump-ng -c </span>[channel]
+[your_interface]<br>
+The good thing of using airodump-ng is, that you don't need to care
+about setting your card up correctly since airmon-ng and airodump-ng
+already did this
+job.<br>
+<br>
+Your hardware is now correctly set up, and you can start using MDK3.<br>
+<br>
+Another important notice for professional users: Some drivers do not
+correctly echo back injected frames to the system, thus your injected
+packets won't be seen if you sniff on the interface on which you are
+injecting. To check if the frames are sent correctly you need to setup
+another inteface on the same channel and sniff the injected frames with
+it! You can also use aireplay-ng's injection test to see if everything
+is alright.<br>
+<span style="font-style: italic;"><br>
+<br>
+</span></small></small></big></big><big style="font-weight: bold;"><big>4.
+The different test modes</big></big><br>
+<br>
+<span style="font-weight: bold; text-decoration: underline;">b&nbsp;&nbsp;
+- Beacon Flooding</span><br>
+<br>
+AccessPoints send out approximately 10 beacon frames per second. They
+are to identify the network. When you scan for networks, your card does
+in fact look for beacon frames on every available channel. With MDK3,
+it is possible to send those beacon frames, too. Therefor you are able
+to create as many networks as you like, always keep in mind, that those
+networks are fake, and nobody can actually connect to them. People will
+see those networks when they scan with their WiFi device. Windows does
+scan
+automatically as long as it isn't connected and shows an info, if a
+network is found. Additionally, this mode can be used
+to hide a network by generating thousands of fake networks with the
+same name as the original one. This mode has several options to set
+network name, i encryption, speed etc. So read on to get familiar
+with them:<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -n &lt;ssid&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Use SSID &lt;ssid&gt;
+instead of randomly generated ones<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; This lets you set the
+name of the network. Only networks with the given name will be faked.
+This is used if you want to hide a network.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -f &lt;filename&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Read SSIDs from file<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; This lets you read the
+names for the networks from a file. This way you can fake multiple
+networks at once.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -v &lt;filename&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Read MACs and SSIDs
+from file. See example file!<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; This is used to fake
+only a very specific set of networks. Every line in this file consists
+of the APs adress and its name. See the example file fakeap-example.txt
+on how to use it.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -t &lt;adhoc&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -t 1 = Create only
+Ad-Hoc network<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -t 0 = Create only
+Managed (AP) networks<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; without this option,
+both types are generated<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Select to fake a real
+network, or an Ad-Hoc network with clients only. (networks
+without APs, where peers communicate directly) or both.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -w &lt;encryptions&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Select which type of
+encryption the fake networks shall have<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Valid options: n = No
+Encryption, w = WEP, t = TKIP (WPA), a = AES (WPA2)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; You can select
+multiple types, i.e. "-w wta" will only create WEP and WPA networks<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -b &lt;bitrate&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Select if 11 Mbit (b)
+or 54 MBit (g) networks are created<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Without this option,
+both types will be used.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -m<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Use valid accesspoint
+MAC from built-in OUI database<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Usually, MDK3
+generates networks with a random adress. But as far as not all adresses
+are used by actual hardware, it would be easy to detect most of mdk3's
+network as Fakes.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; This option refers to
+the adress database included
+in MDK3 to generate only AcessPoints with adresses from known hardware
+vendors. With this option it is hard to say, if a network is fake or
+not.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -h<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Hop to channel where
+network is spoofed<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; This is more effective
+with some devices/drivers<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; But it reduces packet
+rate due to channel hopping.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; This makes MDK3 to
+change your card's channel to the channel where the fake network should
+actually be. Good thing about this is, its harder to determine if this
+network is fake, since the channel given in the beacon data matches the
+channel the packet is send on. Bad thing is, your card needs some time
+to change to a specific channel. So this slows down the injection
+speed. You
+could avoid this by generating fake networks on one channel only (see
+-c option below), but in this case, the targets don't need to change
+their channels in order to find the correct AP, thus they may find the
+real
+AP faster.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -c &lt;chan&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Create fake networks
+on channel &lt;chan&gt;. If you want your card to<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; hop on this channel,
+you have to set -h option, too.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -s &lt;pps&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set speed in packets
+per second (Default: 50)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; More speed = More fake
+networks.<br>
+<br>
+<br>
+<span style="font-weight: bold;">EXAMPLES:</span><br>
+<br>
+There is your WPA2 AES network named "Hack me" on channel 11,
+supporting
+up to 54 MBit with lots of clients. You want to confuse attackers
+by generating some fake clone networks:<br>
+<br>
+<span style="font-style: italic;">mdk3 </span>[your_interface] <span
+ style="font-style: italic;">b -n "Hack me" -b 54 -w a -m -c 11</span><br>
+<br>
+The b activates beacon flood mode, -n sets the name, -b 54 makes it 54
+MBit, -w a enables WPA2/AES only, -m makes MDK3 only use valid adresses
+so the attacker will have a hard time to filter and -c
+sets the correct channel.<br>
+Do not forget to set your card's channel
+before your start such it! You could also use -h option for this.<br>
+<br>
+<br>
+<span style="font-weight: bold; text-decoration: underline;">a&nbsp;&nbsp;
+- Authentication Denial-Of-Service<br>
+<br>
+</span>When a station connects to an AccessPoint, it needs to fulfill
+several steps of Authentication. The two basic steps are Authentication
+and Association. The first step starts the whole process and asks the
+AP if another station may connect to it, and lets the AP decide if the
+new client is allowed. A MAC Filter would deny this request if an
+unknown station would try to connect. In the second step, the
+encryption is checked. Most APs use the Open mode, so the Association
+Phase is always accepted, and the real check if a clients key is valid
+is done later (i.e. in the EAP phase for WPA). The weak point of this
+is, that you can start multiple requests and forget about them, but the
+AP needs to keep those request in its memory in order to complete it.
+This Denial-of-Service-Mode starts as much requests as possible and
+keeps track of the answers, the AP sends. You can execute this test on
+multiple APs at once, or you can select the intelligent variant, where
+mdk3 does itself keep track about clients, and even re-injects valid
+Data packets it intercepts from the network, so an AP may not be able
+to distinguish real and fake clients, and may start dropping legitimate
+ones to free up space.<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -a &lt;ap_mac&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Only test the
+specified AP. Otherwise mdk3 will test all APs found on the current
+channel (you could use some other tool to hop channels to attack all
+APs in range.)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -m<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Use valid client MAC
+from built-in OUI database, so the AP can't filter invalid adresses.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -i &lt;ap_mac&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Perform intelligent
+test on AP.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; This test connects
+clients to the AP and reinjects sniffed data to keep them alive.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -s &lt;pps&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set speed in packets
+per second (Default: unlimited)<br>
+<br>
+<br>
+<span style="font-weight: bold;">EXAMPLES:</span><br>
+<br>
+You want to test if your own network is vulnerable to Denial-of-Service
+attacks. So first, you try a simple attack to see how your AP handles
+too many connected clients. Usually at a certain limit (128 or 256
+clients), the AP denies additional clients. Cheap APs also tend to
+FREEZE and need to be resetted, so be careful with this! Let's assume
+your AP has 00:00:11:22:33:44 as hardware adress, this is the first
+test:<br>
+<br>
+<span style="font-style: italic;">mdk3 </span>[your_interface]<span
+ style="font-style: italic;"> a -a 00:00:11:22:33:44 -m<br>
+<br>
+<span style="font-style: italic;"></span></span>a activates the Auth
+DoS mode. -a selects your target AP, -m makes mdk3 use only valid
+adresses to make filtering difficult. After a few seconds mdk3 may show
+one or mor of those messages:<br>
+<ul>
+  <li><span style="font-weight: bold;">AP 00:00:11:22:33:44 is
+responding</span>: Your AP is responding to mdk3's fake clients. This
+just lets you know, that your test is working.</li>
+  <li><span style="font-weight: bold;">AP 00:00:11:22:33:44 has stopped
+responding and seems to be frozen after 157 clients</span>: Your AP
+stopped responding to mdk3's requests. Check if your AP is still
+functional. If not, it is vulnerable to Auth DoS attacks, and needs to
+be reset if one occurs! You should request a fix from your vendor!</li>
+  <li><span style="font-weight: bold;">AP 00:00:11:22:33:44 is
+reporting ERRORs and denies connections after 251 clients</span>: Your
+AP stopped accepting new clients, but did not crash, and correctly
+denies new ones. Your network is now FULL, but stiull functional.
+However you cannot connect to this AP anymore until the fake clients
+from mdk3 time out and the AP accept new ones again. There is nothing
+wrong with that, this DoS condition is compliant with the IEEE 802.11
+standard!<br>
+  </li>
+</ul>
+Afterwards, you may want to try the intelligent test, that makes it
+hard for your AP to distinguish fake and real clients. This causes a
+constant Denial of Service for new clients, as long as the attack is
+running. And as soon as a legitimate clients disconnects, he cannot
+re-join the network.<br>
+<br>
+<span style="font-style: italic;">mdk3 </span>[your_interface]<span
+ style="font-style: italic;"> a -i 00:00:11:22:33:44</span><br>
+<br>
+mdk3 will print statistics each second:<br>
+<span style="font-family: monospace;">Clients: Created:&nbsp;&nbsp;
+67&nbsp;&nbsp; Authenticated:&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;
+Associated:&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp; Denied: 5461&nbsp;&nbsp;
+Got Kicked:&nbsp;&nbsp;&nbsp; 0<br>
+Data&nbsp;&nbsp; : Captured:&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;
+Sent:&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp; Responses:&nbsp;&nbsp;&nbsp;
+0&nbsp;&nbsp; Relayed:&nbsp;&nbsp;&nbsp; 0<br>
+</span>
+<ul>
+  <li><span style="font-weight: bold;">Created:</span> Number of fake
+clients mdk3 currently handles and tries to connect and keep connected
+to the network</li>
+  <li><span style="font-weight: bold;">Authenticated:</span> Number of
+successful Authentication cycles</li>
+  <li><span style="font-weight: bold;">Associated:</span> Number of
+successful Association cycles</li>
+  <li><span style="font-weight: bold;">Denied:</span> Number of failed
+cycles (because AP is full)</li>
+  <li><span style="font-weight: bold;">Got kicked:</span> Number of
+fake clients that once were connected but the AP sent Deauthentication
+packets to</li>
+  <li><span style="font-weight: bold;">Captured:</span> Number of VALID
+Data packets that have been captured</li>
+  <li><span style="font-weight: bold;">Sent:</span> Number of Data
+packets that have been sent to the network with a fake clients identity</li>
+  <li><span style="font-weight: bold;">Responses:</span> Number of
+responses the fake clients got after sending data</li>
+  <li><span style="font-weight: bold;">Relayed:</span> Number of Data
+packets the AP accepted from the fake clients (AP forwards incoming
+packets so we know when it accepted one, if we intercept the forwarded
+one!)<br>
+  </li>
+</ul>
+In this example, the intelligent attack has been started about 10
+minutes after the standard one. As you can see, the AP is STILL denying
+any new client! So be careful when you test a network that cannot
+afford some downtime!<br>
+<br>
+<br>
+<br>
+<span style="font-weight: bold; text-decoration: underline;">p &nbsp;
+- Probing<br>
+<br>
+</span>The IEEE standard defines Probe packets. Those packets allow a
+station to send a request for a certain network into the air, with all
+matching APs responding to it. With those packets you can check, if an
+AP is in your range (ie. if you can reach it and it reaches you). Most
+APs have a feature called "hidden SSID". With a hidden SSID, a network
+cannot be "found" with Windows, and will be displayed on other Systems
+as "Hidden". The beacon frames emitted by those APs do NOT contain the
+networks name. Instead they either contain ZEROS for each character in
+the SSID, or only a single Zero. In order to connect to such a hidden
+network, an attacker must find out the networks real name. As far as
+the network's name is being transmitted in plaintext upon Association
+to the AP, an attacker could simply wait until some client connects to
+the AP or disconnect an already connected one with aireplay-ng or any
+other Deauthentication tool (mdk3 can do it too, Mode d), and wait for
+it to reconnect (which it usually does instantly). However, if there is
+NO CLIENT connected, the SSID stays hidden. With mdk3 however, you are
+able to try SSIDs from a Wordlist or via Bruteforce. It sends Probe
+Frames and waits for responses. If you hit the right SSID, the AP will
+respond to you, and it's name isn't hidden anymore. If you are lucky,
+the AP keeps the original length of the real SSID in its beacon frames.
+mdk3 will detect that and will only try SSIDs that match.<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -e &lt;ssid&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SSID to probe for - If
+you know the target SSID already and/or just want to check if an AP is
+in your range.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -f &lt;filename&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Read SSIDs from file
+for bruteforcing hidden SSIDs<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -t &lt;bssid&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set MAC address of
+target AP<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; With a target set,
+mdk3 will only print responses from this network, and stops when the
+Wordlist ends.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -s &lt;pps&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set speed (Default:
+400)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -b &lt;character sets&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Use full Bruteforce
+mode (recommended for short SSIDs only!)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; You can select
+multiple character sets at once:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; * n
+(Numbers:&nbsp;&nbsp; 0-9)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; * u (Uppercase: A-Z)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; * l (Lowercase: a-z)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; * s (Symbols: ASCII)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -p &lt;word&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Continue bruteforcing,
+starting at &lt;word&gt;.<br>
+<br>
+<br>
+<span style="font-weight: bold;">EXAMPLES:</span><br>
+<br>
+Let's assume you got a pretty important network, that is well secured.
+Lets say this network is only used a few hours each month, so an
+attacker may not be lucky to catch a client authenticating to it. You
+decide to add some extra security to that network by disabling the SSID
+broadcasting. That way an attacker may not be able to connect to it,
+since he doesn't know its SSID, and thus may not be able to run
+Authentication Denial-of-Service attacks. You select a pretty short
+SSID, but you add a special character to it, hoping that it cannot be
+guessed: <span style="font-weight: bold;">aa1*<br>
+</span>Let's test if this SSID can be decloaked by a Wordlist attack:<br>
+<br>
+<span style="font-style: italic;">mdk3 </span>[your_interface]<span
+ style="font-style: italic;"> p -f useful_files/common-ssids.txt -t
+00:00:11:22:33:44<br>
+</span><span style="font-family: monospace;">Waiting for a beacon frame
+from target to get its SSID length.<br>
+SSID length is 4<br>
+Trying SSID:
+3Com&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br>
+Trying SSID:
+AZRF&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br>
+Trying SSID:
+WiFi&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br>
+Trying SSID:
+mine&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br>
+Packets sent:&nbsp;&nbsp;&nbsp;&nbsp; 44 - Speed:&nbsp;&nbsp; 20
+packets/sec<br>
+Wordlist completed.<br>
+</span><br>
+Sadly, your AP does only overwrite the SSID itself with ZEROS, not its
+length tag, so mdk3 knows, your SSID is only 4 characters long.
+Therefor, it tries only those words in the specified file, that a 4
+characters long. Luckily, aa1* is not being found in the list, and mdk3
+cannot find the hidden SSID. The attacker may now try to use
+Bruteforcing, since the SSID is very short. Let's say he already tried
+several character sets, and wants to finally try all possible
+characters:<br>
+<br>
+<span style="font-style: italic;">mdk3 </span>[your_interface]<span
+ style="font-style: italic;"> p -t 00:00:11:22:33:44 -b lnus<br>
+</span><span style="font-family: monospace;">Waiting for a beacon frame
+from target to get its SSID length.<br>
+SSID length is 4<br>
+Trying SSID:
+aaaa&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br>
+Trying SSID:
+aac&amp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br>
+Trying SSID:
+aag-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br>
+Trying SSID:
+aak&lt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br>
+Trying SSID:
+aao@&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br>
+Trying SSID:
+aas^&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br>
+Trying SSID:
+aaw{&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br>
+Trying SSID:
+aa0{&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br>
+Probe Response from target AP with SSID
+aa1*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br>
+Job's done, have a nice day :)</span><br>
+<span style="font-style: italic;"><span style="font-family: monospace;"></span></span><span
+ style="font-weight: bold;"><span style="font-weight: bold;"></span></span><br>
+This time, mdk3 is successful.-b lnus means, start with lowercase, then
+numbers, then Uppercase and finally symbols. After about 2500 tries,
+the SSID has been found, and therefor does not add much extra security
+to your network. Consider using a longer one!<br>
+<br>
+<br>
+<br>
+<span style="text-decoration: underline; font-weight: bold;">d&nbsp;&nbsp;
+- Deauthentication ans Disassociation</span><br>
+<br>
+If a station wants to leave a network, it sends a Deauthentication
+packet to the AP to deregister itself from it. Additionally, the AP is
+allowed to disconnect stations when it thinks it is necessary (for
+example, the AP is full, and the oldest stations gets kicked from it to
+allow new clients to connect). As far as those packets are not
+encrypted our signed (if you are not using the new amendment <a
+ href="http://en.wikipedia.org/wiki/IEEE_802.11w-2009">IEEE_802.11w</a>),
+an attacker can easily forge them to disconnect legitimate clients from
+your AP. mdk3 is capable of creating different types of those packets,
+with different options:<br>
+<ul>
+  <li><span style="font-weight: bold;">Deauthentication from AP to
+client:</span> mdk3 injects a deauthentication packet with the MAC
+Adress of the AP to the Station, telling the station is has been
+disconnected for unspecified reasons.</li>
+  <li><span style="font-weight: bold;">Deauthentication from client to
+AP:</span> mdk3 injects a deauthentication packet from the Station to
+the AP, telling the AP, the station is leaving the network.</li>
+  <li><span style="font-weight: bold;">Disassociation from AP to client:</span>
+mdk3 tells the client, it has been kicked because the AP is full.<br>
+  </li>
+  <li><span style="font-weight: bold;">Disassociation from client to AP:</span>
+mdk3 tells the AP, the client is leaving the network.</li>
+</ul>
+mdk3 listens on the current channel for Data packets, extracts the
+adresses of AP and Station from them, and sends one packet of each
+type. Every second, a status message is displayed, if something has
+happened.<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -w &lt;filename&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Read file containing
+MACs not to care about (Whitelist mode)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Put the MAC adresses
+of stations and APs, who shall NOT be attacked in this file, mdk3 will
+skip them<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -b &lt;filename&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Read file containing
+MACs to run test on (Blacklist Mode)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Put MAC adresses of
+stations and APs in this file, who SHALL BE attacked.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -s &lt;pps&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set speed in packets
+per second (Default: unlimited)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -c [chan,chan,chan,...]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Enable channel
+hopping. Without providing any channels, mdk3 will hop an all<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 14 b/g channels.
+Channel will be changed every 3 seconds.<br>
+<br>
+<span style="font-weight: bold;">EXAMPLE:</span><br>
+<br>
+<span style="font-style: italic;">mdk3 </span>[your_interface]<span
+ style="font-style: italic;"> d -c 1,6,11<br>
+<br>
+</span><span style="font-family: monospace;">Disconnecting
+00:04:0E:91:5C:56 from 00:1D:E5:7A:18:B9 on channel 1</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">Disconnecting 00:04:0E:91:5C:56
+from 00:1D:E5:7A:18:B9 on channel 1</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">Disconnecting 00:04:0E:91:5C:56
+from 00:1D:E5:7A:18:B9 on channel 1</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">Disconnecting 00:04:0E:91:5A:77
+from 00:1D:E5:7A:15:CE on channel 6</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">Disconnecting 00:04:0E:91:5A:77
+from 00:1D:E5:7A:15:CE on channel 6</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">Disconnecting 00:23:08:DD:4A:FE
+from 00:1D:E5:7A:43:00 on channel 11</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">Disconnecting 00:04:0E:91:5C:56
+from 00:1D:E5:7A:18:B9 on channel 1</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">Packets sent:&nbsp;&nbsp;&nbsp;
+117 - Speed:&nbsp;&nbsp; 16 packets/sec</span><span
+ style="font-style: italic;"><br>
+</span><br>
+mdk3 hops on channel 1, 6 and 11, and disconnects every station found
+there. Most stations try to reconnect, however, almost no communication
+is possible anymore, because they mostly get disconnected again, as
+soon as they re-request their IP-Adresses with DHCP and ARP, which
+triggers another Deauthentication cycle in mdk3. Use 802.11w if
+available or some IDS to at least detect such attacks on your network.<br>
+<br>
+<br>
+m&nbsp;&nbsp; - Michael shutdown exploitation (TKIP)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cancels all traffic continuously<br>
+<br>
+EXAMPLES:<br>
+<br>
+x&nbsp;&nbsp; - 802.1X tests<br>
+<br>
+EXAMPLES:<br>
+<br>
+<br>
+<span style="font-weight: bold;">And for those who read this document
+until
+the end, here is the special Multi Destruction Mode to really
+shutdown and destroy a network.</span><br>
+WARNING: This could REALLY shutdown every communication, even until the
+hardware is manually resetted. This can crash drivers, computers and
+APs alike! So consider yourself warned! Run these commands
+only, if there is no important data transmitted and you can afford some
+downtime!<br>
+<br>
+<br>
+<br>
+(c) Pedro Larbig 2007<br>
+</div>
+</div>
+</body>
+</html>

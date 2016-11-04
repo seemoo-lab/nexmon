@@ -1,0 +1,523 @@
+0 Unknown
+04PPk99
+0CP2REDS0X
+1
+101
+102
+111
+11g AP
+122
+123
+130
+140
+188
+188ALT
+1cst0ck8
+2
+2eja5qmd6cna
+2wire021
+2wire046
+2wire122
+2wire129
+2wire304
+2wire384
+2wire420
+2wire429
+2wire468
+2wire527
+2wire619
+2wire633
+2wire662
+2wire722
+2wire746
+2wire783
+2wire794
+2wire824
+2wire868
+2wire928
+3Com
+3blindmice
+5ECUR3w3p5TOR3
+72653
+72654
+7590000001
+<No current ssid>
+<any ssid>
+<hidden ssid>
+<no ssid>
+@home
+ACTIONTEC
+ADSL-WiFi
+AISD-GUEST
+ALICE-WLAN
+AMAT_Prod
+AMX
+ANY
+AP7XR
+AP_Router
+ASAP
+AT&T
+AT&T Wireless
+AZRF
+Access
+Agere Systems
+Air2Data
+AirWave
+Airport
+Alex
+Andrew
+Apartment
+Apple
+Apple Network
+ArcorWirelessLAN
+B2B
+BNDEMO
+BSU
+BTOpenzone
+BWA711
+Barney
+Baymont
+Belkin
+Belkin54g
+BestWestern
+Blitzz
+Blue
+Brian
+CEDSAP
+CISCO
+CMU
+COMPAQ
+CONNECT2AIR
+CapCBR
+CaseGuest
+Chris
+Comcast
+ConnectionPoint
+Cottonwood
+Cox-Hospitality
+Customer ID
+D-LINK
+DAN
+DLINK
+DSLWLANModem200
+DV201AM
+Dave
+DaysInn
+Draadloos
+EASE
+ELSA
+ESSID51
+Ethostream
+FDSSEC
+FG04Apr06MBS
+FRANK
+FRITZ!Box Fon WLAN
+FRITZ!Box Fon WLAN 7050
+FRITZ!Box Fon WLAN 7141
+FRITZ!Box Fon WLAN 7170
+FRITZ!Box SL WLAN
+FRITZ!Box WLAN 3030
+FRITZ!Box WLAN 3050
+Family
+FatPort (Non-UBC user)
+FeatherByEarthLink
+Free Internet Access
+Free Public WiFi
+GDS VCI 01
+GPCSTORE
+GTW
+Galaxy
+Gary
+Gateway
+GeekSquad
+GeorgeAP22
+GlobalSuiteWireless
+GlobalSync
+GoAway
+GoldenTree
+Green
+Guest
+Guestnet
+HBS
+HOMENETWORK
+HOMEWLAN
+HOTEL
+Harvard University
+Heb1905
+Holiday Inn
+Home AirPort
+Home Network
+Home Office
+HomeNet
+HomeOffice
+HomeRun
+HomeWireless
+Homestead
+HotSpot
+HotelAir
+HotelNet
+House
+I2E_TELBUS_GROS
+IBM
+IEEE 802.11 LAN
+IEEE 802.11b LAN
+INTERMEC
+ITS Wireless
+IU Wireless
+Instant Internet
+Intel Gateway
+Internet
+Internet Oasis (FREE)
+JACK
+JONES
+James
+Jason
+Jim
+KC_LV_2003
+KPN
+Kelly
+Kevin
+Kimpton
+KiteNet
+LISA
+LODGE
+Lee
+Library
+LiteShow
+LockOn
+Lucent Outdoor Router
+MCWN80
+MIT
+MSFTWLAN
+MSHOME
+MSUNet Wireless
+Main
+Maison
+Marconi
+Matt
+MetroFi-Free
+Michael
+Michelle
+Miller
+Motorola
+My Network
+My Wireless Network A
+My Wireless Network B
+N9UF_TEL9COM
+NESPOT
+NETGEAR
+NETGEAR_11g
+NETWORK
+NOMAD
+Netgear1
+No current ssid
+NoWireUC
+OMNI
+Office
+On-Net
+PANERA
+PASSYM
+PATRICK
+PCX5000
+PWLAN1
+Pal
+Paul
+Philips WiFi
+Print Server
+Private
+PwC80211
+RCA
+RGXLPQSNGBNYVRAK
+RTC
+RYAN
+Richard
+RoamAbout Default Network Name
+Robert
+SILENTWITNESS
+SITECOM
+SMARTSIGHT
+SST-PR-1
+STOPS
+STSN
+STSN_Conf
+Sam
+Scott
+SiriCOMM
+SkyHighSpeed
+Skynet
+Smith
+Spark
+SpeedLinks
+SpeedStream
+Speedport W 501V
+Stanford
+Super8
+SurfandSip
+T-Mobile_T-Com
+TA
+TEKLOGIX
+TELENETHOTSPOT
+TELUS
+TI
+TI-AR7WRD
+Telenor Mobil WLAN
+Telstra
+Thomson
+Thuis
+Topcom
+Truckstop.neT
+UBC
+UCSD
+UCo
+UDwireless
+UIUCnet
+UPSTAIRS
+USR5450
+USR5461
+USR5462
+USR8022
+USR8054
+USR9106
+University of Washington
+Untitled
+UofM Wireless
+V1500
+Vanilla
+Verizon Wi-Fi
+Voice
+WAG0Nwhee1
+WANO
+WAZASU
+WAZTempe
+WLAN
+WLAN-AP
+WLAN-PS
+WLCM
+WNR2004
+WORK
+WRC_Network
+WSR-5000
+WaveLAN Network
+Wayport_Access
+Webstar
+WiFi
+Williams
+Wingate
+Wireless
+Wireless Network
+Wireless1
+WirelessNet
+X-Micro
+Zoom
+ZyXEL
+^Y
+acer
+admin
+airimba
+airnet
+airpath
+airport network
+airportthru
+alpha
+anderson
+andy
+any ssid
+ap
+ap1
+arescom
+arwain.net
+asu
+attwifi
+ba2
+belgacom
+benq
+bestbuy
+bill
+bob
+bridge
+brown
+buffalo
+c42dmga5bcys
+casa
+cavalier
+cci
+charlie
+comfort
+comfortinn
+comtrend
+concourse
+conexant
+cool cloud
+cuairnet
+cvsretail
+d
+d0llartree1nc
+daniel
+datavalet
+david
+davis
+dd-wrt
+default
+default-ssid
+defcon
+dgs769157
+digitalpath.net
+dlink_wireless
+dnawlan
+e478
+ea54
+eduroam
+eric
+etwireless
+eurospot
+fa1779zvpo
+fanTM
+fatport
+flyingj
+frank
+fred
+freedom
+freedomlink
+freephonie
+g3n3r1cw8p
+george
+getwifi
+gigabyte
+goesh
+greg
+guestwifi
+hawking
+hhonors
+hidden ssid
+hilton
+holiday
+holidayinn
+home
+home wireless
+home1
+home\wireless
+homebase
+homelan
+homer
+hp
+hpsetup
+hsia
+hwtvm
+hyatt
+ibahn
+intelwlan
+jackson
+jah719
+jeff
+jennifer
+joe
+john
+johnson
+kaisicher
+kim
+laptop
+laquinta
+larry
+linda
+link
+linksys
+linksys-g
+linksys1
+linksys123
+linksys2
+linksysxx
+maison
+mark
+marriott
+martin
+matrix
+mcsy
+medion
+megahoc
+megahoc.21
+megahoc.v22
+mike
+mine
+mobile
+monkey
+mycloud
+myhome
+mynet
+mynetwork
+mywireless
+mywlan
+net
+netpoint
+no ssid
+no_ssid
+non-specified SSID !!
+nowireapaccess
+nowires
+nuwlan
+onenet
+orange
+orange12
+orange13
+orange14
+osuwireless
+pennstate
+peter
+philips
+pi07490509x
+pi07490509x09
+pi07490509x09sa
+pi07490509xsa
+pocwyg7swean
+poswireless
+public
+pvdorm
+ramada
+restricted.utexas.edu
+roomlinx
+router
+sarah
+sboca
+scandic_easy
+signNet
+skyriver
+smc
+smith
+sonicwall
+ssid
+stayonline
+steve
+studio
+suitespeed
+surfhere
+swisscom
+taylor
+tdc
+test
+thomas
+tigernet
+tim
+tmobile
+tom
+tony
+tsunami
+turbonet
+typhoon
+ubcsecure
+ukyedu
+uofm
+usr2249
+utexas
+virus
+visitor
+vodafone
+walker
+west
+wilson
+wireless home
+wirelesshome
+wirelesslan
+workgroup
+wxyz
+yale wireless
+z3w7fsb4
+Regency

@@ -1,0 +1,21 @@
+#include <tunables/global>
+
+/usr/bin/airolib-ng {
+  #include <abstractions/base>
+  #include <abstractions/private-files-strict>
+  
+  # No need to access dot files
+  deny @{HOME}/.** rw,
+
+  # For reading database files
+  @{HOME}/** r,
+  /tmp/** r,
+
+  # For writing database files and exporting cowpatty files
+  owner @{HOME}/** w,
+  owner /tmp/** w,
+
+  # Needed for ptrace/core dumps
+  /usr/bin/airolib-ng rm,
+
+}

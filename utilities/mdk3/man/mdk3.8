@@ -1,0 +1,291 @@
+.TH MDK3 8 "July 2010" "mdk3 v7"
+
+.SH NAME
+mdk3 \- IEEE 802.11 PoC tool
+
+.SH SYNOPSIS
+.B mdk3
+[
+.IR interface
+] [
+.IR test_mode
+] [
+.IR test_options
+]
+
+.SH DESCRIPTION
+.I mdk3
+is a proof-of-concept (PoC) tool to exploit common IEEE 802.11 protocol weaknesses.
+
+.SH OPTIONS
+
+.B a
+- Authentication DoS
+.br
+Sends authentication frames to all APs found in range. Too many clients freeze or reset almost every AP.
+.RS
+.TP
+.BI -a " ap_mac"
+Only test an AP with the MAC address
+.IR ap_mac
+.TP
+.BI -m
+Use valid client MAC address from the OUI database
+.TP
+.BI -c
+Do not check for the test being successful.
+.TP
+.BI -i " ap_mac"
+Perform intelligent test on AP (-a and -c will be ignored): connect clients to an AP with the MAC address
+.IR ap_mac
+and reinjects sniffed data to keep them alive
+.TP
+.BI -s " rate"
+Set speed in packets per second to
+.IR rate
+(Default: infinity)
+.RE
+
+.B b
+- Beacon Flood
+.br
+Sends beacon frames to show fake APs at clients. This can sometimes crash network scanners and even drivers!
+.RS
+.TP
+.BI -n " ssid"
+Use SSID
+.IR ssid
+instead of randomly generated ones
+.TP
+.BI -f " file"
+Read SSIDs from
+.IR file
+instead of randomly generating them
+.TP
+.BI -v " file"
+Read MACs and SSIDs from
+.IR file
+; cf. example file
+.TP
+.BI -d
+Show station as Ad-Hoc
+.TP
+.BI -w
+Set WEP bit (generate encrypted networks)
+.TP
+.BI -g
+Show stations as 802.11g (54 Mbit)
+.TP
+.BI -t
+Show stations using WPA TKIP encryption
+.TP
+.BI -a
+Show stations using WPA AES encryption
+.TP
+.BI -m
+Use valid accesspoint MACs from OUI database
+.TP
+.BI -h
+Hop to channel where AP is spoofed - this makes the test more effective against some devices/drivers, but it reduces packet rate due to channel hopping
+.TP
+.BI -c " chan"
+Fake an AP on channel
+.IR chan
+\. If you want your card to hop on this channel, you have to set -h option, too!
+.TP
+.BI -s " rate"
+Set speed in packets per second to
+.IR rate
+(Default: 50)
+.RE
+
+.B d
+- Deauthentication / Disassociation Amok Mode
+.br
+Kicks everybody found from AP.
+.RS
+.TP
+.BI -w " file"
+Read MACs from
+.IR file
+that are to be unaffected (whitelist mode)
+.TP
+.BI -b " file"
+Read MACs from
+.IR file
+that are to be tested on (blacklist mode)
+.TP
+.BI -s " rate"
+Set speed in packets per second to
+.IR rate
+(Default: infinity)
+.TP
+.BI -c " [chan_1,chan_2,...chan_n]"
+Enable channel hopping. Without providing any channels, mdk3 will hop an all 14 b/g channels. The current channel will be changed every 5 seconds.
+.RE
+
+.B f
+- MAC Filter Bruteforce Mode
+.br
+This test uses a list of known client MAC addresses and tries to authenticate them to the given AP while dynamically changing the response timeout for best performance. It currently works only on APs which deny an open authentication request properly.
+.RS
+.TP
+.BI -t " bssid"
+Target
+.IR bssid
+.TP
+.BI -m " mac_prefix"
+Set the MAC adress range
+.IR mac_prefix
+(3 bytes, e.g. 00:12:34); without -m, the internal database will be used
+.TP
+.BI -f " mac"
+Begin bruteforcing with MAC address
+.IR mac
+(Note: -f and -m cannot be used at the same time)
+.RE
+
+.B g
+- WPA Downgrade Test
+.br
+Deauthenticates Stations and APs sending WPA encrypted packets. With this test you can check if the sysadmin will try setting his network to WEP or disable encryption. mdk3 will let WEP and unencrypted clients work, so if the sysadmin simply thinks "WPA is broken" he sure isn't the right one for this job (this can/should be combined with social engineering).
+.RS
+.TP
+.BI -t " bssid"
+Target
+.IR bssid
+.RE
+
+.B m
+- Michael Shutdown Exploitation (TKIP)
+.br
+Cancels all traffic continuously.
+.RS
+.TP
+.BI -t " bssid"
+Target
+.IR bssid
+.TP
+.BI -w " time"
+Time
+.IR time
+(in seconds) between bursts (Default: 10)
+.TP
+.BI -n " ppb"
+Set packets per burst
+.IR ppb
+(Default: 70)
+.TP
+.BI -j
+Use the new TKIP QoS-Exploit - needs just a few packets to shut the AP down!
+.TP
+.BI -s " rate"
+Set speed in packets per second to
+.IR rate
+(Default: infinity)
+.RE
+
+.B p
+- Basic Probing and ESSID Bruteforce Mode
+.br
+Probes AP and check for answer, useful for checking if the SSID has been correctly decloaked or if AP is in your adaptor's sending range. Use -f and -t option to enable SSID Bruteforcing.
+.RS
+.TP
+.BI -e " ssid"
+Probe for
+.IR bssid
+.TP
+.BI -f " file"
+Read lines from
+.IR file
+for bruteforcing hidden SSIDs
+.TP
+.BI -t " bssid"
+Target AP
+.IR bssid
+.TP
+.BI -s " rate"
+Set speed in packets per second to
+.IR rate
+(Normal Default: infinity; Bruteforce Default: 300)
+.TP
+.BI -b " character_set"
+Use full Bruteforce mode based on
+.IR character_set
+(recommended for short SSIDs only!) - use this switch only to show its help screen
+.RE
+
+.B w
+- WIDS/WIPS/WDS Confusion
+.br
+Confuses a WDS with multi-authenticated clients, which messes up routing tables.
+.RS
+.TP
+.BI -e " ssid"
+SSID
+.IR ssid
+of target WDS network
+.TP
+.BI -c " [chan_1,chan_2,...chan_n]"
+Enable channel hopping.
+.TP
+.BI -z
+activate Zero_Chaos' WIDS exploit (authenticates clients from a WDS to foreign APs to make WIDS go nuts)
+.RE
+
+.B x
+- 802.1X tests
+.RS
+0 - EAPOL Start packet flooding
+.RS
+.TP
+.BI -n " ssid"
+Use SSID
+.IR ssid
+.TP
+.BI -t " bssid"
+Target AP
+.IR bssid
+.TP
+.BI -w " WPA_type"
+Set WPA type to
+.IR WPA_type
+(1: WPA, 2: WPA2/RSN; default: WPA)
+.TP
+.BI -u " unicast_cipher_type"
+Set unicast cipher type to
+.IR unicast_cipher_type
+(1: TKIP, 2: CCMP; default: TKIP)
+.TP
+.BI -m " multicast_cipher_type"
+Set multicast cipher type to
+.IR multicast_cipher_type
+(1: TKIP, 2: CCMP; default: TKIP)
+.TP
+.BI -s " rate"
+Set speed in packets per second to
+.IR rate
+(Default: 400)
+
+.RE
+1 - EAPOL Logoff test
+.RS
+.TP
+.BI -t " ssid"
+Set target AP MAC address to
+.IR ssid
+.TP
+.BI -c " bssid"
+Set target STA MAC address to
+.IR bssid
+.TP
+.BI -s " rate"
+Set speed in packets per second to
+.IR rate
+(Default: 400)
+.RE
+.RE
+
+.SH AUTHORS
+.I mdk3
+was written by Pedro Larbig (ASPj) with contributions from the aircrack-ng community: Antragon, moongray, Ace, Zero_Chaos, Hirte, thefkboss, ducttape, telek0miker, Le_Vert, sorbo, Andy Green, bahathir, Dawid Gajownik and Ruslan Nabioullin.

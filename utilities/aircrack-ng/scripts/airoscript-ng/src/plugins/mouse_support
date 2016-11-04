@@ -1,0 +1,51 @@
+# Copyright (2011) David Francos Cuartero, and some of the sources might be from other versions.
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        Along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+is_number(){
+	[[ $1 =~ ^[0-9]+$ ]]
+}
+function get_mouse_position(){
+	_STTY=$(stty -g)
+	echo -en "\e[?1000h"; read -n12 x &>/dev/null ; echo -en "\r                 \r";  echo -en "\e[?1000l"
+	is_number $x && { echo $x; choice=$x; return; }
+	stty "$_STTY"
+	m1=${x#???}
+	m2=${x#????}
+	m3=${x#?????}
+	eval "$(printf "mb=%d mx=%d my=%d" "'$m1" "'$m2" "'$m3")"
+	[ $mx -lt 0 ] && mx=$(( 255 + $mx ))
+	[ $my -lt 0 ] && my=$(( 255 + $my ))
+	BUTTON=$(( ($mb & 3) + 1 ))
+	MOUSEX=$(( $mx - 32 ))
+	MOUSEY=$(( $my - 32 ))
+	choice=$(($MOUSEY - $Y_OFFSET))
+	ans=$choice;
+	echo $choice;
+}
+
+mkmenuheader(){
+$clear;
+	stty -echo; echo -n $'\e[6n'; read -d R x; stty echo; a=$(( $(echo ${x#??} |cut -d\; -f1) + 1 ))
+	Y_OFFSET=$a;
+	echo -en "\033[$(($2 / 2 - (${#1} / 2 - 10) ))C$1\n";
+}
+
+
+_read(){
+	get_mouse_position
+}
+special_single_question(){
+	get_mouse_position
+}

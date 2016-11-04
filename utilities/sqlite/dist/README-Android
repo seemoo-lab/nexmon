@@ -1,0 +1,8 @@
+SQLite on Android
+
+The Android port of SQLite contains a few customizations.
+They are immortalized in Android.patch to ease future upgraded.
+
+This file can be regenerated using:
+
+diff -r -u -d orig . | grep -v "Only in" > Android.patch

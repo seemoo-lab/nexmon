@@ -1,0 +1,127 @@
+#!/bin/sh
+
+
+
+if [ -n "$1" ] && [ -z "$2" ]; then
+	echo "Invalid command. Valid commands: [start|stop] INTERFACE."
+	exit 1
+fi
+
+if [ -n "$1" ]; then
+	if [ "$1" != 'stop' ] && [ "$1" != 'start' ]; then
+		echo "Invalid command. Valid commands: [start|stop] INTERFACE."
+		exit 1
+	fi
+fi
+
+if [ -n "$2" ]; then
+	ifconfig $2 >/dev/null 2>/dev/null
+	if [ $? -ne 0 ]; then
+		echo "Error: Interface $2 does not exist."
+		exit 1
+	fi
+fi
+
+COMMAND=$1
+INTERFACE_TO_USE=$2
+
+CHIPSET=""
+DRIVER=""
+PARENT=""
+
+get_interface_info() {
+	[ -z "$1" ] && return
+	if [ -n "$(echo $1 | grep -E '^(ath|otus|urtwn)[0-9]+$' )" ]; then
+		DRIVER="$(echo $1 | sed 's/[0-9]*//g')"
+	elif [ -n "$(echo $1 | grep -E ^wlan[0-9]+$)" ]; then
+		# It most likely is a monitor interface.
+		IFACE_IDX=$(echo $1 | sed 's/[^0-9]*//g')
+		PARENT=$(sysctl net.wlan.${IFACE_IDX}.%parent | awk '{print $2}')
+		if [ -n "${PARENT}" ]; then
+			get_interface_info ${PARENT}
+			return
+		fi
+	fi	
+
+	if [ "${DRIVER}" = "ath" ]; then
+		CHIPSET=$(dmesg | grep -E "^$1: <" | tail -n 1 | awk -F\< '{print $2}' | awk -F\> '{print $1}' )
+	elif [ "${DRIVER}" = "urtwn" ]; then
+		USB_INFO=$(dmesg | grep -E "^$1: <" | tail -n 1 | tr ',' '\n' | tail -n 1 | tr '>' ' ')
+		USB_ADDR=$(echo ${USB_INFO} | awk '{print $2}')
+		USB_BUS=$(echo ${USB_INFO} | awk '{print $4}' | sed 's/[^0-9]*//g')
+		VENDOR_ID=$(usbconfig -u ${USB_BUS} -a ${USB_ADDR} dump_device_desc | grep idVendor | awk '{print $3}')
+		PRODUCT_ID=$(usbconfig -u ${USB_BUS} -a ${USB_ADDR} dump_device_desc | grep idProduct | awk '{print $3}')
+		if [ "${VENDOR_ID}" = "0x0bda" ]; then
+			[ "${PRODUCT_ID}" = "0x8171" ] && CHIPSET="RTL8188SU"
+			[ "${PRODUCT_ID}" = "0x8172" ] && CHIPSET="RTL8191SU"
+			[ "${PRODUCT_ID}" = "0x8174" ] && CHIPSET="RTL8192SU"
+			[ "${PRODUCT_ID}" = "0x8176" ] && CHIPSET="RTL8188CUS"
+			[ "${PRODUCT_ID}" = "0x8178" ] && CHIPSET="RTL8192CU"
+			[ "${PRODUCT_ID}" = "0x8179" ] && CHIPSET="RTL8188EUS"
+			[ "${PRODUCT_ID}" = "0x817f" ] && CHIPSET="RTL8188RU"
+			[ "${PRODUCT_ID}" = "0x8192" ] && CHIPSET="RTL8191SU"
+			[ "${PRODUCT_ID}" = "0x8193" ] && CHIPSET="RTL8192DU"
+			[ "${PRODUCT_ID}" = "0x8199" ] && CHIPSET="RTL8187SU"
+			[ "${PRODUCT_ID}" = "0x8812" ] && CHIPSET="RTL8812AU"
+		elif [ "${VENDOR_ID}" = "0x06f8" ] && [ "${PRODUCT_ID}" = "0xe033" ]; then
+			CHIPSET="RTL8188CUS"
+		elif [ "${VENDOR_ID}" = "0x2001" ] && [ "${PRODUCT_ID}" = "0x3308" ]; then
+			CHIPSET="RTL8188CUS"
+		elif [ "${VENDOR_ID}" = "0x20f4" ] && [ "${PRODUCT_ID}" = "0x648b" ]; then
+			CHIPSET="RTL8188CUS"
+		elif [ "${VENDOR_ID}" = "0x7392" ] && [ "${PRODUCT_ID}" = "0x7811" ]; then
+			CHIPSET="RTL8188CUS"
+		elif [ "${VENDOR_ID}" = "0x2019" ]; then
+			[ "${PRODUCT_ID}" = "0xab2a" ] && CHIPSET="RTL8188CUS"
+			[ "${PRODUCT_ID}" = "0xed17" ] && CHIPSET="RTL8188CUS"
+		elif [ "${VENDOR_ID}" = "0x050d" ]; then
+			[ "${PRODUCT_ID}" = "0x1102" ] && CHIPSET="RTL8188CUS"
+			[ "${PRODUCT_ID}" = "0x11f2" ] && CHIPSET="RTL8188CUS"
+		elif [ "${VENDOR_ID}" = "0x0846" ]; then
+			[ "${PRODUCT_ID}" = "0x9041" ] && CHIPSET="RTL8188CUS"
+			[ "${PRODUCT_ID}" = "0x9042" ] && CHIPSET="RTL8188CUS"
+			[ "${PRODUCT_ID}" = "0x9043" ] && CHIPSET="RTL8188CUS"
+		fi
+		[ -z "${CHIPSET}" ] && CHIPSET="Report dmesg and usbconfig (dump commands) to http://trac.aircrack-ng.org" 
+	elif [ -n "${DRIVER}" ]; then
+		CHIPSET="Report dmesg and usbconfig (dump commands) to http://trac.aircrack-ng.org"
+	else
+		CHIPSET="Unknown"
+		[ -z "${DRIVER}" ] && DRIVER="Unknown"
+	fi
+}
+
+printf "\nInterface\tDriver\t\tChipset\n\n"
+
+for IFACE in $(ifconfig -a | grep -E '^(wlan|ath|otus|urtwn)[0-9]+' | awk -F: '{print $1}' )
+do
+	get_interface_info ${IFACE}
+	printf "${IFACE}\t\t${DRIVER}\t\t${CHIPSET}\n\n"
+	if [ -n "${PARENT}" ]; then
+		printf "\t(monitor mode interface. Parent: ${PARENT})\n"
+	fi
+
+	if [ "${INTERFACE_TO_USE}" = "${IFACE}" ]; then
+		if [ "${COMMAND}" = 'start' ]; then
+			if [ -n "${PARENT}" ]; then
+				printf "\t Interface is already in monitor mode, ignoring\n"
+			else
+				MONITOR_IFACE=$(ifconfig wlan create wlandev ${IFACE} wlanmode monitor)
+				if [ $? -eq 0 ]; then
+					 printf "\tCreated monitor mode interface ${MONITOR_IFACE} from ${IFACE}\n"
+				else
+					printf "\tFailed creating monitor interface\n"
+				fi
+			fi
+		elif [ "${COMMAND}" = 'stop' ]; then
+			ifconfig ${IFACE} destroy 2>/dev/null
+			if [ $? -ne 0 ]; then
+				printf "\tFailed to remove monitor mode interface ${IFACE}\n"
+			else
+				printf "\tDestroyed monitor interface ${IFACE}\n"
+			fi
+		fi
+	fi 
+done
+
+exit 0

@@ -1,0 +1,323 @@
+# Copyright (C)  2011 David Francos Cuartero
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        Along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+check_cardctl(){
+    if [ `uname -r|cut -d . -f 2` == "6" ]; then CARDCTL="pccardctl"
+    else CARDCTL="cardctl"; fi
+}
+
+_askinterface(){
+        askinterface && checkforcemac $startup_mac_set
+}
+
+bsd_interfaces(){
+    for i in $( ifconfig | awk '/flags/ { print $1}'|cut -d: -f1 ); do { ifconfig $i | grep "wlan" &>/dev/null && echo $i ; }  ; done
+}
+
+linux_interfaces() {
+    while read r; do [[ $r =~ (.*)IEEE\ 802.11(.*) ]] && { iw=${BASH_REMATCH[1]}; [[ $r =~ (.*)Mode:Monitor(.*) ]] || echo $iw; }; done < <(iwconfig 2>/dev/null)
+}
+
+all_interfaces() {
+    while read r; do [[ $r =~ (^[0-9]+)(.*):(.*):(.*) ]] && echo ${BASH_REMATCH[3]}; done < <(ip link 2>/dev/null)
+}
+
+setinterface(){
+    help_fifo "${mark} ${red}Welcome to airoscript-ng${end}, I'll be your guide from now on\n"\
+        "First, we have to setup a wireless interface to work with.\n" \
+        "Be careful, using this interface with airoscript-ng will disrupt any traffic going trough it." \
+        "If you're using it to connect to the internet, you'll be most likely disconnected "
+
+    declare -a INTERFACES
+     [[ "$wifi" != "" ]] && [[ "$1" == "start" ]] && [[ "$set_wifi_by_args" == 1 ]] || {
+        if [ "$1" == "" ] || [[ "$1" == 1 ]] || [ "$1" == "start" ]  ; then
+            if [ "$show_only_wireless_extensions" == 1 ]; then
+                [[ -e /bsd ]] && {
+                    INTERFACES=( $(bsd_interfaces) )
+                } || {
+                    INTERFACES=( $(linux_interfaces) )
+                }
+            else
+                INTERFACES=( $(all_interfaces) )
+            fi
+        fi
+        _askinterface
+        [[ "$DEFAULT_MONITOR_MODE" == 1 ]] &&{ ac="start"; } || {
+        single_question 'Should I put it in monitor mode? (Y/n) ';
+        [[ "$ans" != n ]] && ac="start" || ac="stop"
+        }
+        { guess_idata $ac; testmac; } &>/dev/null
+     }
+     export iwifi=$wifi
+
+
+}
+
+askinterface(){
+    [[ ${#INTERFACES[@]} == 1 ]] && { warn "${mark}Only one capable wireless interface found. Selecting" ${INTERFACES[0]}; wificard=${INTERFACES[0]}; auto_fake_mac=1 return; }
+    mkmenu "Interface" ${INTERFACES[@]}
+    export wificard="${INTERFACES[$choice - 1]}"
+    [[ $wificard == "" ]] && {
+        $clear
+        warn "${mark}Error: That interface does not exists"
+        askinterface
+    }
+}
+
+checkforcemac() {
+    if [ "$force_mac_address" == "1" ]; then $clear && warn "${mark}Warn: Not checking mac"
+    else
+        export mac=$(get_current_mac);
+        if [ "$FAKE_MAC" != "$mac" ]; then
+            wichchangemac_startup &>/dev/null;
+        fi
+    fi
+}
+
+guess_idata(){
+    declare -a monitorlines line
+    while read -a line; do
+        [[ ${line[@]} =~ ^$wificard ]] && {
+            phy=${line[-1]};
+            [[ ${line[@]} =~ "- ${phy}" ]] && {
+                monitorlines=("${line[@]}")
+                getNextLine=1
+            }
+        } || {
+            [[ $getNextLine == 1 ]] && {
+                export wifi=${line[-1]/)/}
+                getNextLine=0
+            }
+        }
+    done < <(airmon-ng start $wificard)
+
+    export iwifi=${wifi}
+    export fisical=${monitorlines[-1]}
+    export DRIVER=${monitorlines[-3]}
+    export TYPE=${monitorlines[1]}
+}
+
+wichchangemac_startup(){
+    change_mac $wificard $FAKE_MAC
+    change_mac $wifi $FAKE_MAC
+    change_mac $iwifi $FAKE_MAC
+}
+
+
+wichchangemac(){
+    while true; do
+         [[ "$1" != "" ]] && { startup_mac_set=$1; choice=$1; } || {
+            mkmenu "Select MAC options" "Change MAC to FAKEMAC" "Change MAC to CLIENTMAC" "Use real MAC" "Manual Mac Input"
+        }
+        case $choice in
+            1) change_mac $wifi $FAKE_MAC; break ;;
+            2) change_mac $wifi $Client_MAC; break ;;
+            3)  export FAKE_MAC=$(get_current_mac);
+                change_mac $wifi $FAKE_MAC; break ;;
+            4) single_question "MAC: "; Manual_MAC="$ans";
+                change_mac $wifi $Manual_MAC; break ;;
+            *) echo $"Unknown response. Try again" ;;
+        esac
+    done
+}
+
+is_number(){ return $(expr "$1 + 1" &> /dev/null); }
+
+# Wrapper to make interface creation easier.
+selectap_wrapper(){
+    while [ "1" ]; do
+        mkmenueline $max r; echo " Rescan targets";
+        echo -en "$separator_bl"; for i in $(seq 1 $max); do echo -en "$separator_h"; done; echo "$separator_br";
+        special_single_question "Select Target: ";
+        choice=$ans;
+        is_number $choice && break
+    done
+}
+
+valid_mac(){ (( ${#1} >= 17 )) && return 0 || return 1; }
+
+conn_crack(){
+    wpa_passphrase $Host_SSID $(cat $DUMP_PATH/digenpy__dic) | wpa_supplicant -i$wificard -c/dev/stdin -f $DUMP_PATH/wpa_sup.log
+    count=0;
+    while [ 1 ]; do
+        grep "completed" $DUMP_PATH/wpa_sup.log && break
+        sleep 1
+        count=$(( count + 1 ))
+        (( $count > 15 )) && break;
+    done
+    pkill -9 -f wpa
+    grep "completed" $DUMP_PATH/wpa_sup.log && return 0
+    return 1
+}
+
+# Some various functions that didn't know where to put them
+
+sort_aircrack_csv() {
+    sort -t, -k+9 -n <(sed -n "/Key/,/Station/p" $FILE|head -n-2|tail -n+2)|tac
+}
+
+get_aps_in_file(){
+    sort -t, -k+9 -n <(sed -n "/Key/,/Station/p" $1|head -n-2|tail -n+2)| wc -l
+}
+
+selectAp(){
+    k=0; i=0;
+    DUMP_FILE=$DUMP_PATH/dump-02.csv
+    [[ $2 ]] && DUMP_FILE=${2}
+
+    if [ "$AUTO" == 2 ]; then
+        choice=$CURRENT
+        CURRENT=$(( $CURRENT + 1 ))
+    else
+        res=();
+        title=$1; shift; line=0;
+        max=$((`tput cols` - 10));
+        echo
+        mkmenuheader "Detected access points" $max
+        echo -en "$separator_tl"; for i in $(seq 1 $max); do echo -en "$separator_h"; done; echo "$separator_tr";
+    fi
+
+    while IFS=, read MAC FTS LTS CHANNEL SPEED PRIVACY CYPHER AUTH POWER BEACON IV LANIP IDLENGTH ESSID KEY;do
+        $(valid_mac "$MAC") && {
+            k=$(($k+1))
+            if [ "$AUTO" != 2  ]; then
+                res+=( "$k" " $MAC " "$CHANNEL" "$PRIVACY" "$POWER" "$IDLENGTH" "$ESSID");
+                mkmenueline $max $k
+                echo -e " $MAC | $CHANNEL | $PRIVACY | $POWER | $IDLENGTH | $ESSID"
+            fi
+            aidlenght=$IDLENGTH
+            assid[$k]=$ESSID; achannel[$k]=$CHANNEL;
+            amac[$k]=$MAC; aprivacy[$k]=$PRIVACY;
+            aspeed[$k]=$SPEED; apower[$k]=$POWER
+        }
+    done < $DUMP_FILE
+
+    if [ "$AUTO" != 2 ]; then selectap_wrapper; fi
+    if [ "$choice" != "r" ] ; then
+        [[ ${amac[$choice]} ]] || { echo "Wrong option, scanning for targets again"; autoscan; }
+        idlenght=${aidlenght[$choice]}
+        ssid=${assid[$choice]}
+        channel=${achannel[$choice]}
+        mac=${amac[$choice]}
+        privacy=${aprivacy[$choice]}
+        speed=${aspeed[$choice]}
+        Host_IDL=$idlength
+        Host_SPEED=$speed
+        Host_ENC=$privacy
+        Host_MAC=$mac
+        Host_CHAN=$channel
+        acouper=${#ssid}
+        fin=$(($acouper-idlength))
+        Host_SSID=${ssid:1:fin}
+        tag; echo "${mark}Target network is $Host_SSID $Host_MAC"
+    else autoscan; fi
+    [[ $report_mode_enabled == 1 ]] && report_mode
+}
+
+launch_counter(){
+    o=$2; [[ $o == "" ]] && o="targets"
+    for i in $( seq 1 $1 ); do
+        a=$(( ($i * 100) / $1 ))
+        sleep 1; echo -ne "\r${mark}Scanning for $o: [$a/100 completed]";
+    done
+    echo
+}
+
+autoscan(){
+    launch_counter $time_to_scan &
+    export OLDAUTO=$AUTO
+    OLDINTERACTIVE=$INTERACTIVE; F=0; export AUTO=1; export QUIET=1; export INTERACTIVE=0
+    menu_type "${1}" && sleep $time_to_scan && killall -2 "airodump-ng";
+    AUTO=$OLDAUTO
+    [[ $AUTO != 2 ]] && select_ap
+    cleanautovars
+}
+
+Scan(){
+    help_fifo "${mark}${red}Scanning${end}\nWe're scanning for near networks \n"\
+        "You'll be asked to select one of them, ${red}they're ordered according to their signal strenght${end}"\
+        "The strongest is the lastest, your network should be near the end"
+    export SCAN=1
+    rm -rf $DUMP_PATH/dump* &>/dev/null
+    [[ $SILENT_SCAN != 1 ]] && {
+        markwarn $"Interface used is" ": $wifi ($iwifi) for $wificard "
+        markwarn $"Interface type is" ": $TYPE ($DRIVER)"
+    }
+    [[ ! $1 ]] && { export QUIET=1; export NOTITLE=1; }
+    execute "" $AIRODUMP --ignore-negative-one -w $DUMP_PATH/dump --encrypt $ENCRYPT -a $wifi
+    wait_for_execute=0
+    export SCAN=0
+}
+
+Host_ssidinput(){
+    single_question $"Please enter Host SSID";
+    Host_SSID="$ans";
+    $clear
+}
+
+setaircrackpaths(){
+    AIRMON="${SBINDIR}airmon-ng"
+    AIRODUMP="${SBINDIR}airodump-ng"
+    AIREPLAY="${SBINDIR}aireplay-ng --ignore-negative-one"
+    AIRCRACK="${BINDIR}aircrack-ng"
+    ARPFORGE="${BINDIR}packetforge-ng"
+    WESSIDE="${SBINDIR}wesside-ng"
+    AIRSERV="${SBINDIR}airserv-ng"
+    TKIPTUN="${SBINDIR}tkiptun-ng"
+    IVSTOOLS="${SBINDIR}ivstools"
+    BUDDY="${SBINDIR}buddy-ng"
+    EASSIDE="${SBINDIR}easside-ng"
+    MACCHANGER="${BINDIR}macchanger"
+    AIRGRAPH="${BINDIR}airgraph-ng"
+    AIRDECLOAK="${BINDIR}airdecloak-ng"
+    KSTATS=$BINDIR"kstats"
+    iwconfig="iwconfig"
+}
+
+confwarn(){
+$'Youre going to use a config file on your home or current dir.
+This may be harmfull, for example, if your user have been
+compromised, and youre getting rights trought sudo, someone
+can modify your config file to do something malicious as
+root. Be sure to check your home config file before using it.
+Defaults on /etc/airoscript-ng.conf should be ok so you can
+safely remove your ~/.airoscript-ng.conf\n\n
+Do you really want to do it (yes/No): '
+}
+get_current_mac(){
+    while read line; do
+        [[ $line =~ ^$wificard\S*(.*)HWaddr\S*(.*) ]] &&
+        echo ${BASH_REMATCH[2]};
+    done < <( ifconfig )
+}
+testmac(){
+    if [ "$TYPE" = "Atherosmadwifi-ng" ]; then
+        FAKE_MAC=$(get_current_mac)
+        $"Changed fake_mac :" " $FAKE_MAC"
+        return
+    fi
+    [[ $auto_fake_mac == 1 ]] && { [[ $set_wifi_by_args != 1 ]] && { markwarn $"Automatically setting fake mac";  wichchangemac 1 ; }; }
+}
+
+filter_ssid(){
+    [[ -n "$filter_ssid_" ]] && { echo; echo;
+        tag; warn "${mark}Filtering essid to $filter_ssid_ "
+        while read line; do
+            [[ $line =~ (.*)${filter_ssid_}(.*) ]] && echo $line >> $DUMP_PATH/dump-02.csv
+        done <<< $DUMP_PATH/dump-01.csv
+    }
+}
+
+

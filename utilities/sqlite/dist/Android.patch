@@ -1,0 +1,141 @@
+diff -r -u -d orig/shell.c ./shell.c
+--- orig/shell.c	2016-04-16 21:02:33.163176554 -0700
++++ ./shell.c	2016-04-16 21:02:33.207176154 -0700
+@@ -52,6 +52,12 @@
+ #endif
+ #include <ctype.h>
+ #include <stdarg.h>
++// Begin Android Add
++#ifndef NO_ANDROID_FUNCS
++#include "IcuUtils.h"
++#include <sqlite3_android.h>
++#endif
++// End Android Add
+ 
+ #if !defined(_WIN32) && !defined(WIN32)
+ # include <signal.h>
+@@ -1943,6 +1949,22 @@
+                             readfileFunc, 0, 0);
+     sqlite3_create_function(p->db, "writefile", 2, SQLITE_UTF8, 0,
+                             writefileFunc, 0, 0);
++
++    // Begin Android Add
++    #ifndef NO_ANDROID_FUNCS
++        InitializeIcuOrDie();
++        int err = register_localized_collators(p->db, "en_US", 0);
++        if (err != SQLITE_OK) {
++          fprintf(stderr, "register_localized_collators() failed\n");
++          exit(1);
++        }
++        err = register_android_functions(p->db, 0);
++        if (err != SQLITE_OK) {
++          fprintf(stderr, "register_android_functions() failed\n");
++          exit(1);
++        }
++    #endif
++    // End Android Add
+   }
+ }
+ 
+diff -r -u -d orig/sqlite3.c ./sqlite3.c
+--- orig/sqlite3.c	2016-04-16 21:02:33.203176190 -0700
++++ ./sqlite3.c	2016-04-16 21:52:23.179841572 -0700
+@@ -27024,7 +27024,12 @@
+ #else
+   { "pread64",      (sqlite3_syscall_ptr)0,          0  },
+ #endif
++#ifdef ANDROID
++// Bionic defines pread64 using off64_t rather than off_t.
++#define osPread64   ((ssize_t(*)(int,void*,size_t,off64_t))aSyscall[10].pCurrent)
++#else
+ #define osPread64   ((ssize_t(*)(int,void*,size_t,off_t))aSyscall[10].pCurrent)
++#endif
+ 
+   { "write",        (sqlite3_syscall_ptr)write,      0  },
+ #define osWrite     ((ssize_t(*)(int,const void*,size_t))aSyscall[11].pCurrent)
+@@ -27042,8 +27047,14 @@
+ #else
+   { "pwrite64",     (sqlite3_syscall_ptr)0,          0  },
+ #endif
++#ifdef ANDROID
++// Bionic defines pwrite64 using off64_t rather than off_t.
++#define osPwrite64  ((ssize_t(*)(int,const void*,size_t,off64_t))\
++                    aSyscall[13].pCurrent)
++#else
+ #define osPwrite64  ((ssize_t(*)(int,const void*,size_t,off_t))\
+                     aSyscall[13].pCurrent)
++#endif
+ 
+   { "fchmod",       (sqlite3_syscall_ptr)fchmod,     0  },
+ #define osFchmod    ((int(*)(int,mode_t))aSyscall[14].pCurrent)
+@@ -30292,7 +30303,7 @@
+   SimulateIOError( rc=1 );
+   if( rc!=0 ){
+     storeLastErrno((unixFile*)id, errno);
+-    return SQLITE_IOERR_FSTAT;
++    return unixLogError(SQLITE_IOERR_FSTAT, "fstat", ((unixFile*)id)->zPath);
+   }
+   *pSize = buf.st_size;
+ 
+@@ -30328,7 +30339,7 @@
+     struct stat buf;              /* Used to hold return values of fstat() */
+    
+     if( osFstat(pFile->h, &buf) ){
+-      return SQLITE_IOERR_FSTAT;
++      return unixLogError(SQLITE_IOERR_FSTAT, "fstat", pFile->zPath);
+     }
+ 
+     nSize = ((nByte+pFile->szChunk-1) / pFile->szChunk) * pFile->szChunk;
+@@ -30913,7 +30924,7 @@
+     ** with the same permissions.
+     */
+     if( osFstat(pDbFd->h, &sStat) && pInode->bProcessLock==0 ){
+-      rc = SQLITE_IOERR_FSTAT;
++      rc = unixLogError(SQLITE_IOERR_FSTAT, "fstat", pDbFd->zPath);
+       goto shm_open_err;
+     }
+ 
+@@ -32260,7 +32271,7 @@
+       *pUid = sStat.st_uid;
+       *pGid = sStat.st_gid;
+     }else{
+-      rc = SQLITE_IOERR_FSTAT;
++      rc = unixLogError(SQLITE_IOERR_FSTAT, "stat", zDb);
+     }
+   }else if( flags & SQLITE_OPEN_DELETEONCLOSE ){
+     *pMode = 0600;
+@@ -108046,7 +108057,7 @@
+   }
+   if( pDb->pSchema->file_format>SQLITE_MAX_FILE_FORMAT ){
+     sqlite3SetString(pzErrMsg, db, "unsupported file format");
+-    rc = SQLITE_ERROR;
++    rc = SQLITE_CORRUPT_BKPT; // Android Change from "rc = SQLITE_ERROR;"
+     goto initone_error_out;
+   }
+ 
+@@ -139786,13 +139797,25 @@
+   ** module with sqlite.
+   */
+   if( SQLITE_OK==rc 
++#ifndef ANDROID    /* fts3_tokenizer disabled for security reasons */
+    && SQLITE_OK==(rc = sqlite3Fts3InitHashTable(db, pHash, "fts3_tokenizer"))
++#endif
+    && SQLITE_OK==(rc = sqlite3_overload_function(db, "snippet", -1))
+    && SQLITE_OK==(rc = sqlite3_overload_function(db, "offsets", 1))
+    && SQLITE_OK==(rc = sqlite3_overload_function(db, "matchinfo", 1))
+    && SQLITE_OK==(rc = sqlite3_overload_function(db, "matchinfo", 2))
+    && SQLITE_OK==(rc = sqlite3_overload_function(db, "optimize", 1))
+   ){
++#ifdef SQLITE_ENABLE_FTS3_BACKWARDS
++    rc = sqlite3_create_module_v2(
++        db, "fts1", &fts3Module, (void *)pHash, 0
++        );
++    if(rc) return rc;
++    rc = sqlite3_create_module_v2(
++        db, "fts2", &fts3Module, (void *)pHash, 0
++        );
++    if(rc) return rc;
++#endif
+     rc = sqlite3_create_module_v2(
+         db, "fts3", &fts3Module, (void *)pHash, hashDestroy
+     );

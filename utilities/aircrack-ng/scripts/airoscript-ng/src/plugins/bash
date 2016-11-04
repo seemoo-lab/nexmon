@@ -1,0 +1,7 @@
+echo "Welcome to the airoscript-ng bash plugin"
+echo "This plugin will load bash, with all the needed variables to make wireless pentesting much faster and typeless, without loosing the power of the console and aircrack-ng"
+echo "You can check for Host_MAC Host_SSID and so on variables"
+echo "Have a look at the autocompletion features! (try airodump-ng --<tab> AIROSCRIPT_<tab>)"
+echo "To return to airoscript, write exit"
+
+bash

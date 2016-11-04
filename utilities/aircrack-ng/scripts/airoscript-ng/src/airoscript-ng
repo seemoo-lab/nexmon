@@ -1,0 +1,104 @@
+#!/bin/bash
+# Depends: aircrack-ng, bash >= 4
+# Recommends: mdk3, digenpy, macchanger,
+
+# Copyright (C) 2008 Daouid
+# Copyright (C) 2009-2013 David Francos Cuartero
+# See Authors for a more detailed authors spec.
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        Along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+main_args=$@;
+declare -a -x enabled_plugins
+declare -a p_menu
+declare -A extend_menu
+
+p_menu+=( "Enable plugin" )
+
+_source(){ for cfile in $@; do if [ -f $cfile ] && [ -O $cfile ]; then source $cfile; else if [ "$debug" == 1 ]; then echo "Could not load $cfile"; sleep 0.2 ;fi; fi; done; }
+Enable_plugin(){
+    cd $path/plugins; available_plugins=(*); cd -; mkmenu "Enable plugin" "${available_plugins[@]}"
+    _source $path/plugins/${available_plugins[$choice - 1 ]} || { warn "${mark}Unknown option or bad plugin, try again"; Enable_plugin; } #nodebug
+}
+exit_trap(){ [[ $tail_launched != 0 ]] && { tail_launched=0; return; }; check_function doexit || source $path/internal/exit; echo; echo; doexit; }
+Return_to_main_menu(){ mainmenu; }
+if [ "$UID" != 0 ]; then echo -e "You Must be root to use airoscript"; exit 1; fi;
+
+[[ ! $path ]] && {
+    [[ $(dirname ${BASH_SOURCE[0]}) =~ "local" ]] &&  {
+        path=/usr/local/share/airoscript-ng
+        _source "/usr/local/etc/airoscript-ng_advanced.conf /usr/local/etc/airoscript-ng.conf"
+    } || {
+        _source "/usr/etc/airoscript-ng_advanced.conf /usr/etc/airoscript-ng.conf"
+        _source "/etc/airoscript-ng_advanced.conf /etc/airoscript-ng.conf"
+        path=/usr/share/airoscript-ng
+    }
+}
+
+plugin_check_and_source(){
+    grep "#DEPENDS:" $1 &>/dev/null && {
+        declare -a DEPS
+        DEPS=($(grep "#DEPENDS: " $1|sed 's/#DEPENDS: //g'))
+        for dep in ${DEPS[@]}; do
+            type $dep &>/dev/null && {
+                _source $1
+            } || {
+                echo "${mark}Not loading $1, dependence not installed"
+                sleep 1
+            }
+        done
+    } || _source $1
+}
+
+# We preload functions, configs and themes in a cool way.
+_source "$path/_internal $path/menu $path/interface"
+_source  "$path/themes/$theme" || default_theme
+for i in ${enabled_plugins[@]}; do plugin_check_and_source $i; done
+
+check_injection() {
+    echo -n "${mark}Checking if interface can inject..."
+    $AIREPLAY -9 $wifi &>/dev/null && echo "${red}success${end}"
+}
+
+# Setup wordlist
+[[ ! -e $DUMP_PATH/wordlist.txt ]] && { cp $WORDLIST $DUMP_PATH &>/dev/null; WORDLIST="$DUMP_PATH/`basename $WORDLIST`"; }
+
+trap exit_trap 1 2 3 4 5 6 7 8 10 12 13 14 15 20 # Set an exit trap to clean out all the interfaces
+setaircrackpaths # Set aircrack-ng paths
+setps # Set PS3 variable
+warn "${mark}Welcome to airoscript, have a nice day"
+check_default_software &
+setargs $@ # Plugins are also loaded here, so be carefull
+
+check_cardctl; #debug
+
+launch_help_fifo &
+setinterface "start"
+cleanautovars
+check_injection
+[[ "$noscan" != 1 ]] && autoscan
+
+(( $BASH_PLUGIN > 0 )) && {
+    export AIROSCRIPT_AP_CHAN=$Host_CHAN
+    export AIROSCRIPT_AP_ENC=$Host_ENC
+    export AIROSCRIPT_AP_IDL=$Host_IDL
+    export AIROSCRIPT_AP_IP=$Host_IP
+    export AIROSCRIPT_AP_MAC=$Host_MAC
+    export AIROSCRIPT_AP_SPEED=$Host_SPEED
+    export AIROSCRIPT_AP_SSID=$Host_SSID
+    export AIROSCRIPT_AP_NAME=$Host_SSID
+    source $path/plugins/bash
+} || {
+    mainmenu
+}

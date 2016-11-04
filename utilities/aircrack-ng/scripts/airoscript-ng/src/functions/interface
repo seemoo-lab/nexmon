@@ -1,0 +1,118 @@
+# Interface library for airoscript.
+
+# Copyright (C) 2009-2011 David Francos Cuartero
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+notify(){
+    tput sc
+    msg="${@}"; x=$(( $(tput cols) - ( ${#msg} + 20 ) ));
+    tput cup 0 $x
+    echo $msg;
+    tput rc
+    notification="";
+}
+
+_(){
+   gettext "${@}"
+}
+
+setps(){
+    $clear
+    if [ "$1" != "" ]; then PS3="$1";
+    else PS3=$'Input number: '; fi
+}
+
+default_theme(){
+    markwarn $'Theme file does not exists, using defaults...'
+    DUMPING_COLOR="#FFFFFF"; INJECTION_COLOR="#1DFF00"
+    ASSOCIATION_COLOR="#FF0009"; DEAUTH_COLOR="#99CCFF"; BACKGROUND_COLOR="#000000"
+}
+
+
+target(){
+help_fifo "${red}_______Target information______${end}\n"\
+"   AP SSID       = $Host_SSID\n"\
+"   AP MAC        = $Host_MAC\n"\
+"   AP Channel    =$Host_CHAN\n"\
+"   Client MAC    = $Client_MAC\n"\
+"   Fake MAC      = $FAKE_MAC\n"\
+"   AP Encryption =$Host_ENC\n"\
+"   AP Speed      =$Host_SPEED\n"\
+"________________________________"
+}
+
+fill_menu(){
+    len=$(( $1 - $2 )); for i in `seq 0 $len`; do echo -n "$3"; done;
+}
+
+fill(){
+    menu_w="$3"; separator="$2"; title="$1"; len_1=$((${#title} + 3))
+    half_len_1=$(( $len_1 / 2 )) ; loop_times=$(( $menu_w / 2 - $half_len_1 ))
+    fill_menu $loop_times 1 "$separator";echo -n "$title";fill_menu $loop_times 1 "$separator"
+}
+
+function mkbox(){
+     echo -n "+"; fill "$menu_t" "$separator_h" "$(( $max + ${#menu_t} ))" center;
+     echo "+"
+}
+
+temporary_switch_clear(){
+    temp="$oldclear"; oldclear=$clear; clear=$temp;
+    $@ ;
+    clear=$oldclear
+}
+
+airoscript_quiet(){
+    mkdir -p $DUMP_PATH/Terminals/ &>/dev/null
+    title=${1/ /_}; shift
+    $@ &> "$DUMP_PATH/Terminals/${title}" &
+}
+
+vline(){ for i in `seq 0 $1`; do echo -n ${separator_v}; done; }
+mkmenuheader(){ echo -en "\033[$(($2 / 2 - (${#1} / 2 - 10) ))C$1\n"; }
+getmaxlenfromlist(){ max=0; for i in "${@}"; do [[ ${#i} -gt $max ]] && max=${#i}; done; echo $max; }
+mkmenueline(){ echo -en "           ${separator_v}\033[${1}C${separator_v}\033[${1}D${white}${2}${red})${end} ${separator_v}";}
+tabulate() { for i in $(seq 0 $1); do echo -n " "; done; }
+mkmenulines(){ max=$1; shift; for i in "${@}"; do line=$(( $line + 1 )); mkmenueline $max $line; echo -n " "; _ "${i}"; echo; done; }
+
+mkmenu(){
+    if [ "$AUTO" == 2 ]; then return; fi
+    [[ ${ERRORS} ]] && markwarn "Error:" "${ERRORS[@]}"
+    ERRORS=""
+    [[ ${INFOS} ]] && markwarn "Info:" "${INFOS[@]}"
+    INFOS=""
+    max=`getmaxlenfromlist "${@}"`
+    max=$(( $max + 10 ))
+    title=$1; shift; line=0;
+    tot=${#@}
+    f=$((`tput cols` - 10));
+    title=($(_ "${title}"))
+    tabulate 10
+    mkmenuheader "${title[@]}" $max
+    tabulate 10
+    echo -en "$separator_tl"; for i in $(seq 1 $max); do echo -en "$separator_h"; done; echo "$separator_tr";
+    mkmenulines $max "${@}"
+    [[ ${extra_menus[${title/\//_}]} ]] && mkmenulines ${extra_menus[${title/\//_}]};
+    tabulate 10
+    echo -en "$separator_bl"; for i in $(seq 1 $max); do echo -en "$separator_h"; done; echo "$separator_br";
+
+    markwarn $"Select option:"
+    set -a choice
+    _read -a choice
+    (( $choice > $tot )) && { ${extra_menus[$title]/ /_}; echo "Ok, sorry, that was ${#@}"; }
+}
+
+
+

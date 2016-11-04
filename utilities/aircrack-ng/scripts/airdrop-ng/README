@@ -1,0 +1,223 @@
+   _   _         _                            _  ___     
+  /_\ (_)_ __ __| |_ __ ___  _ __         /\ \ \/ _ \
+ //_\\| | '__/ _` | '__/ _ \| '_ \ _____ /  \/ / /_\/
+/  _  \ | | | (_| | | | (_) | |_) |_____/ /\  / /_\\ 
+\_/ \_/_|_|  \__,_|_|  \___/| .__/      \_\ \/\____/ 
+                            |_|                      
+README
+
+Airdrop-ng is a rule based Deauth Tool
+
+Readme Written by Mubix & TheX1le
+
+#####################################################
+
+# Dependencies and Installation #
+
+#####################################################
+
+Requires python 2.7 for the installer to work, unless you edit it and remove the "--prefix " part.
+
+Dependencies:
+
+[*] lorcon
+[*] Pylorcon2
+[*] A lorcon supported wireless card (mac80211 drivers) with monitor mode and injection
+
+**********************
+* Installing lorcon *
+**********************
+
+You can get lorcon source from:
+
+[*] git clone https://code.google.com/p/lorcon/ trunk 
+
+Then you will have to compile it:
+
+[*] cd trunk && ./configure &&make && make install
+
+Next compile Pylorcon2 source
+
+[*] wget http://pylorcon2.googlecode.com/files/PyLorcon2-0.1.tar.gz
+
+Untar the file
+[*] tar -xvaf PyLorcon2-0.1.tar.gz
+
+Build and install the souce
+[*] cd PyLorcon2-0.1 && python setup.py install
+
+If pylorcon reports import errors you need to run the following command:
+
+[*] ln -s /usr/local/lib/liborcon-2.0.0.so /usr/lib
+
+This will create a symlink to the directory that pylorcon looks in for 
+liborcon.
+
+If you are on ubuntu you will also need to install the python-dev 
+package as they do not include the headers
+#####################################################
+
+# Usage and Options #
+
+#####################################################
+
+-t
+
+Airodump-ng CSV file location.
+
+It is highly recommended that you have Airodump-ng ACTIVELY RUNNING
+
+before and while you run Airdrop-ng. You should run Airodump-ng with
+
+the following options:
+
+# airodump-ng <interface> --write <filename(no extension)> 
+--output-format csv
+
+# EXAMPLE: airodump-ng wlan0 -w capture --output-format csv
+
+# this will write capture-01.csv to the current working directory
+
+-r
+
+Rule set config file location.
+
+docs/dropRules.conf.example contains several examples on how construct
+
+your rules please take a look at this file. The Rules are the core of 
+what
+
+makes airdrop-ng so special and determine what clients get a kick and 
+which
+
+ones are saved.
+
+Rules are run cascading order so make sure your allows are written 
+before your denys.
+
+Adding a # to the front of a line comments out the line
+
+NOTE: The a/any|any rule... This rule currently causes the program to 
+exit
+
+with a error message. This is by design as the tool allows by default.
+
+NOTE: By default if no rule exist for a client or ap airdrop-ng assumes 
+that
+
+you wish to allow it. This can be changed by putting a d/any|any
+
+#####################################################
+
+# Advanced Rule Writing #
+
+#####################################################
+
+Rules based on OUI:
+
+Currently it only supports the company name or a single OUI, the format 
+is as follows:
+
+Company name
+
+a or d /bssid or any|company name;company name; company name
+
+EXAMPLE: d/any|apple
+
+This example attacks only devices with OUI's matching "Apple"
+
+Notice the ; as a delimiter for company names this is because many 
+company
+
+names contain comas. When writing rules make sure you check the oui.txt
+
+file in the support directory. There isn't a standard for company names.
+
+For example "Apple" has 11 unique names in the file. If you check the
+
+Apple.sample.txt file in the support directory you can see a list of
+
+each one of them.
+
+For all OUIs to be used you would need to write a rule that contained
+
+each company name. A newer and easier way is to use the built in regex
+
+function. Airdrop-ng will attempt to find all of company names for you a
+
+sample rule using this is:
+
+d/any|Sony Corporation
+
+or even better:
+
+d/any|sony
+
+The same can be done in the bssid field
+
+d/sony|any
+
+d/broadcom|apple
+
+The above example would kick any apple device off a broadcom radio AP
+
+The regular expression function is NOT case sensitive. This option while
+
+much faster only works well with companies that support proprietary 
+hardware
+
+like Apple or Sony. This is not to say it wont work with others but it 
+works
+
+best on proprietary hardware.
+
+Rules written in this manner will match all OUI's found for that company 
+name
+
+Matching a single OUI
+
+Example:
+
+d/00:50:E4|any
+
+This rule will match any bssid that 00:50:E4 as an OUI and kick any 
+clients attached to it
+
+The same can be done in the client field
+
+d/any|00:50:E4
+
+Note: doing a single OUI will match only that OUI.
+
+Note: You can mix and match rule types IE
+
+d/apple|00:21:E9:3D:EB:45,00:17:AB:5C:DE:3A,00:1B:63:00:60:C4
+
+Or
+
+a/00:1B:63:00:60:C4|apple
+
+However it is not wise to try to mix and match rule types for example
+
+d/apple|00:21:E9:3D:EB:45,00:17:AB:5C:DE:3A,sony
+
+
+this confuses the current parser and makes it unhappy
+
+You can complete the same thing with two rules IE
+
+d/apple|00:21:E9:3D:EB:45,00:17:AB:5C:DE:3A
+
+d/apple|sony
+
+Airdrop-ng works in a loop
+
+Each time the program finishes sending packets it re-parses the airodump 
+file
+
+for changes as well as the rule file. This means that it possible to 
+update
+
+rules while the program is running.
+
+Happy hacking! 

