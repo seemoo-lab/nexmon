@@ -55,6 +55,7 @@
 #include <patcher.h>
 #include <helper.h>
 #include <ieee80211_radiotap.h>
+#include <sendframe.h>
 #include "bcm43438.h"
 #include "d11.h"
 #include "brcm.h"
@@ -65,8 +66,6 @@ inject_frame(sk_buff *p) {
 
     //needed for sending:
     struct wlc_info *wlc = WLC_INFO_ADDR;
-    int short_preamble = 0;
-    struct wlc_txh_info txh = {0};
     int data_rate = 0;
     //Radiotap parsing:
     struct ieee80211_radiotap_iterator iterator;
@@ -101,18 +100,7 @@ inject_frame(sk_buff *p) {
     skb_pull(p, rtap_len);
 
     //inject frame without using the queue
-    if(wlc->band->hwrs_scb) {
-        wlc_d11hdrs(wlc, p, wlc->band->hwrs_scb, short_preamble, 0, 1, 1, 0, 0, data_rate);
-        
-        p->scb = wlc->band->hwrs_scb;
-
-        wlc_get_txh_info(wlc, p, &txh);
-
-        wlc_txfifo(wlc, 1, p, &txh, 1, 1);
-    } else {
-        printf("no scb found, discarding packet!\n");
-        pkt_buf_free_skb(wlc->osh, p, 0);
-    }
+    sendframe(wlc, p, 1, data_rate);
 
     return 0;
 }
