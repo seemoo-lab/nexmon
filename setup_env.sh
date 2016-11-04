@@ -1,3 +1,6 @@
+OLD_PWD=$(pwd)
+cd $(dirname ${BASH_SOURCE[0]})
+
 export ARCH=arm
 export SUBARCH=arm
 export KERNEL=kernel7
@@ -26,6 +29,6 @@ fi
 fi
 
 export Q=@
-
 export NEXMON_SETUP_ENV=1
 
+cd "$OLD_PWD"
