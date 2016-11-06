@@ -66,3 +66,8 @@ bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  
       * `patcher.h`: Macros use to perform patching for existing firmware code (e.g., BPatch patches a branch instruction)
       * `capabilities.h`: Allows to indicate capabilities (such as, monitor mode and frame injection)
       * `nexioctl.h`: Defines custom IOCTL numbers
+
+# Related Projects
+[bcmon](https://bcmon.blogspot.de/): Monitor Mode and Frame Injection for the bcm4329 and bcm4330
+[monmob](https://github.com/tuter/monmob): Monitor Mode and Frame Injection for the bcm4325, bcm4329 and bcm4330
+[imon](https://imon.site/): Penetration Testing for Apple devices with Broadcom WiFi Chip
