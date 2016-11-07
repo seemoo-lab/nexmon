@@ -12,7 +12,7 @@ WiFi Chip | Firmware Version | Used in           | Operating System |  M  | RT  
 --------- | ---------------- | ----------------- | ---------------- | --- | --- | --- | --- | --- | ---
 bcm4330   | 5_90_100_41_sta  | Samsung Galaxy S2 | Cyanogenmod 13.0 |  X  |  X  |     |  X  |  X  |  X 
 bcm4339   | 6_37_34_43       | Nexus 5           | Android 6 Stock  |  X  |  X  |  X  |  X  |  X  |  X 
-bcm43438  | 7_45_41_26       | Raspberry Pi 3    | Raspbian 8       |  X  |  X  |  X  |  X  |  X  |  ? 
+bcm43438  | 7_45_41_26       | Raspberry Pi 3    | Raspbian 8       |  X  |  X  |  X  |  X  |  X  |  X 
 bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  |     |  X  |  X  |  X 
 
 ## Legend
@@ -22,6 +22,24 @@ bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  
 - FP = Flash Patching
 - UC = Ucode Compression
 - CT = c't Article Support
+
+# Steps to create your own firmware patches
+## Build patches for bcm4330, bcm4339 and bcm4358 using a x86 computer running Linux (e.g. Ubuntu 16.04)
+* Install some dependencies: `sudo apt-get install git gawk adb`
+* **Only necessary for x86_64 systems**, install i386 libs: 
+  ```
+  sudo dpkg --add-architecture i386
+  sudo apt-get update
+  sudo apt-get install libc6:i386 libncurses5:i386 libstdc++6:i386
+  ```
+* Clone our repository: `git clone https://github.com/seemoo-lab/nexmon.git`
+* In the root directory of the repository: `cd nexmon`
+  * Setup the build environment: `source setup_env.sh`
+  * Compile some build tools and extract the ucode and flashpatches from the original firmware files: `make`
+* Go to the patch folder of your target device (e.g. bcm4339 for the Nexus 5): `cd patches/bcm4339/6_37_34_43/nexmon/`
+  * Compile a patched firmware: `make`
+  * Generate a backup of your original firmware file: `make backup-firmware`
+  * Install the patched firmware on your smartphone: `make install-firmare` (make sure your smartphone is connected to your machine beforehand)
 
 # Structure of this repository
 * `buildtools`: Contains compilers and other tools to build the firmware
