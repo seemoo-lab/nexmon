@@ -27,6 +27,7 @@ bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  
 - CT = c't Article Support
 
 # Steps to create your own firmware patches
+
 ## Build patches for bcm4330, bcm4339 and bcm4358 using a x86 computer running Linux (e.g. Ubuntu 16.04)
 * Install some dependencies: `sudo apt-get install git gawk adb`
 * **Only necessary for x86_64 systems**, install i386 libs: 
@@ -44,6 +45,19 @@ bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  
   * Compile a patched firmware: `make`
   * Generate a backup of your original firmware file: `make backup-firmware`
   * Install the patched firmware on your smartphone: `make install-firmware` (make sure your smartphone is connected to your machine beforehand)
+
+## Build patches for bcm43438 on the RPI3 using Raspbian 8 (recommended)
+* Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
+* Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk`
+* Clone our repository: `git clone https://github.com/seemoo-lab/nexmon.git`
+* Go into the root directory of our repository: `cd nexmon`
+  * Setup the build environment: `source setup_env.sh`
+  * Compile some build tools and extract the ucode and flashpatches from the original firmware files: `make`
+* Go to the *patches* folder for the bcm43438 chipset: `cd patches/bcm43438/7_45_41_26/nexmon/`
+  * Compile a patched firmware: `make`
+  * Generate a backup of your original firmware file: `make backup-firmware`
+  * Install the patched firmware on your smartphone: `make install-firmware`
+* *Optional*: remove wpa_supplicant for better control over the WiFi interface: `apt-get remove wpasupplicant`
 
 # Structure of this repository
 * `buildtools`: Contains compilers and other tools to build the firmware
