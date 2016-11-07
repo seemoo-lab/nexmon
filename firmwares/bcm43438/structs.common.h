@@ -93,8 +93,11 @@ struct wlc_hw_info {
     int physhim;                /* 0x88 */
     int phy_sh;                 /* 0x8C */
     struct wlc_hwband *band;     /* 0x90 */
-    int PAD[26];
-    int maccontrol; // @ 0xe7
+    int PAD[6];                 /* 0x94 */
+    char up;                    /* 0x98 CHECKED */
+    char PAD;                   /* 0x9a */
+    int PAD[19];                /* 0x9c */
+    int maccontrol;
     int PAD[18];
     sk_buff *some_skbuff_ptr; // @ 0x134
 
@@ -168,8 +171,7 @@ struct wlc_info {
     void *core;                         /* 0x01C */
     struct wlcband *band;               /* 0x020 */
     int PAD;                            /* 0x024 */
-    int PAD;                            /* 0x028 */
-    int PAD;                            /* 0x02C */
+    struct wlcband *bandstate[2];       /* 0x028 */
     int PAD;                            /* 0x030 */
     int PAD;                            /* 0x034 */
     int PAD;                            /* 0x038 */

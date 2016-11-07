@@ -49,68 +49,33 @@
 
 #pragma NEXMON targetregion "patch"
 
-#include <firmware_version.h>
-#include <wrapper.h>	// wrapper definitions for functions that already exist in the firmware
-#include <structs.h>	// structures that are used by the code in the firmware
-#include <patcher.h>
-#include <helper.h>
-#include <ieee80211_radiotap.h>
-#include <sendframe.h>
-#include "bcm43438.h"
-#include "d11.h"
-#include "brcm.h"
+#include <firmware_version.h>   // definition of firmware version macros
+#include <debug.h>              // contains macros to access the debug hardware
+#include <wrapper.h>            // wrapper definitions for functions that already exist in the firmware
+#include <structs.h>            // structures that are used by the code in the firmware
+#include <helper.h>             // useful helper functions
+#include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
+#include <rates.h>              // rates used to build the ratespec for frame injection
+#include <nexioctls.h>          // ioctls added in the nexmon patch
+#include <capabilities.h>       // capabilities included in a nexmon patch
 
-int
-inject_frame(sk_buff *p) {
-    int rtap_len = 0;
-
-    //needed for sending:
-    struct wlc_info *wlc = WLC_INFO_ADDR;
-    int data_rate = 0;
-    //Radiotap parsing:
-    struct ieee80211_radiotap_iterator iterator;
-    struct ieee80211_radiotap_header *rtap_header;
-
-    //parse radiotap header
-    rtap_len = *((char *)(p->data + 2));
-
-    rtap_header = (struct ieee80211_radiotap_header *) p->data;
-
-    int ret = ieee80211_radiotap_iterator_init(&iterator, rtap_header, rtap_len);
-
-    while(!ret) {
-        ret = ieee80211_radiotap_iterator_next(&iterator);
-        if(ret) {
-            continue;
-        }
-        switch(iterator.this_arg_index) {
-            case IEEE80211_RADIOTAP_RATE:
-                data_rate = (*iterator.this_arg);
-                break;
-            case IEEE80211_RADIOTAP_CHANNEL:
-                //printf("Channel (freq): %d\n", iterator.this_arg[0] | (iterator.this_arg[1] << 8) );
-                break;
-            default:
-                //printf("default: %d\n", iterator.this_arg_index);
-                break;
-        }
-    }
-    
-    //remove radiotap header
-    skb_pull(p, rtap_len);
-
-    //inject frame without using the queue
-    sendframe(wlc, p, 1, data_rate);
-
-    return 0;
-}
-
-int
-wlc_sdio_hook(int a1, int a2, struct sk_buff *p)
+void
+sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned int rate)
 {
-    inject_frame(p);
-    return 0;
-}
+    int short_preamble = 0;
+    struct wlc_txh_info txh = {0};
 
-__attribute__((at(0x7EF8, "", CHIP_VER_BCM43438, FW_VER_ALL)))
-BPatch(wlc_sdio_hook, wlc_sdio_hook);
+    if(wlc->band->hwrs_scb) {
+        if (wlc->hw->up) {
+            wlc_d11hdrs(wlc, p, wlc->band->hwrs_scb, short_preamble, 0, 1, 1, 0, 0, rate);
+            p->scb = wlc->band->hwrs_scb;
+            wlc_get_txh_info(wlc, p, &txh);
+            wlc_txfifo(wlc, 1, p, &txh, 1, 1);
+        } else {
+            printf("ERR: wlc down\n");
+        }
+    } else {
+        printf("ERR: no scb found, discarding packet!\n");
+        pkt_buf_free_skb(wlc->osh, p, 0);
+    }
+}

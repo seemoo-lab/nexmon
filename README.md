@@ -5,6 +5,9 @@ mode with radiotap headers and frame injection.
 
 Before we started to work on this repository, we developed patches for the Nexus 5 (with bcm4339 WiFi chip) in the [bcm-public](https://github.com/seemoo-lab/bcm-public)  repository and those for the Raspberry Pi 3 (with bcm43438 WiFi chip) in the [bcm-rpi3](https://github.com/seemoo-lab/bcm-rpi3) repository. To remove the development overhead of maintaining multiple separate repositories, we decided to merge them in this repository and add support for some additional devices. In contrast to the former repositories, here, you can only build the firmware patch without drivers and kernels. The Raspberry Pi 3 makes an exception, as here it is always required to also build the driver.
 
+# WARNING
+Our software may damage your hardware and may void your hardware’s warranty! You use our tools at your own risk and responsibility! If you don't like these terms, don't use nexmon!
+
 # Supported Devices
 The following devices are currently supported by our nexmon firmware patch.
 
@@ -12,7 +15,7 @@ WiFi Chip | Firmware Version | Used in           | Operating System |  M  | RT  
 --------- | ---------------- | ----------------- | ---------------- | --- | --- | --- | --- | --- | ---
 bcm4330   | 5_90_100_41_sta  | Samsung Galaxy S2 | Cyanogenmod 13.0 |  X  |  X  |     |  X  |  X  |  X 
 bcm4339   | 6_37_34_43       | Nexus 5           | Android 6 Stock  |  X  |  X  |  X  |  X  |  X  |  X 
-bcm43438  | 7_45_41_26       | Raspberry Pi 3    | Raspbian 8       |  X  |  X  |  X  |  X  |  X  |  ? 
+bcm43438  | 7_45_41_26       | Raspberry Pi 3    | Raspbian 8       |  X  |  X  |  X  |  X  |  X  |  X 
 bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  |     |  X  |  X  |  X 
 
 ## Legend
@@ -22,6 +25,39 @@ bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  
 - FP = Flash Patching
 - UC = Ucode Compression
 - CT = c't Article Support
+
+# Steps to create your own firmware patches
+
+## Build patches for bcm4330, bcm4339 and bcm4358 using a x86 computer running Linux (e.g. Ubuntu 16.04)
+* Install some dependencies: `sudo apt-get install git gawk adb`
+* **Only necessary for x86_64 systems**, install i386 libs: 
+
+  ```
+  sudo dpkg --add-architecture i386
+  sudo apt-get update
+  sudo apt-get install libc6:i386 libncurses5:i386 libstdc++6:i386
+  ```
+* Clone our repository: `git clone https://github.com/seemoo-lab/nexmon.git`
+* In the root directory of the repository: `cd nexmon`
+  * Setup the build environment: `source setup_env.sh`
+  * Compile some build tools and extract the ucode and flashpatches from the original firmware files: `make`
+* Go to the *patches* folder of your target device (e.g. bcm4339 for the Nexus 5): `cd patches/bcm4339/6_37_34_43/nexmon/`
+  * Compile a patched firmware: `make`
+  * Generate a backup of your original firmware file: `make backup-firmware`
+  * Install the patched firmware on your smartphone: `make install-firmware` (make sure your smartphone is connected to your machine beforehand)
+
+## Build patches for bcm43438 on the RPI3 using Raspbian 8 (recommended)
+* Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
+* Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk`
+* Clone our repository: `git clone https://github.com/seemoo-lab/nexmon.git`
+* Go into the root directory of our repository: `cd nexmon`
+  * Setup the build environment: `source setup_env.sh`
+  * Compile some build tools and extract the ucode and flashpatches from the original firmware files: `make`
+* Go to the *patches* folder for the bcm43438 chipset: `cd patches/bcm43438/7_45_41_26/nexmon/`
+  * Compile a patched firmware: `make`
+  * Generate a backup of your original firmware file: `make backup-firmware`
+  * Install the patched firmware on your smartphone: `make install-firmware`
+* *Optional*: remove wpa_supplicant for better control over the WiFi interface: `apt-get remove wpasupplicant`
 
 # Structure of this repository
 * `buildtools`: Contains compilers and other tools to build the firmware
@@ -66,3 +102,8 @@ bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  
       * `patcher.h`: Macros use to perform patching for existing firmware code (e.g., BPatch patches a branch instruction)
       * `capabilities.h`: Allows to indicate capabilities (such as, monitor mode and frame injection)
       * `nexioctl.h`: Defines custom IOCTL numbers
+
+# Related Projects
+* [bcmon](https://bcmon.blogspot.de/): Monitor Mode and Frame Injection for the bcm4329 and bcm4330
+* [monmob](https://github.com/tuter/monmob): Monitor Mode and Frame Injection for the bcm4325, bcm4329 and bcm4330
+* [imon](https://imon.site/): Penetration Testing for Apple devices with Broadcom WiFi Chip
