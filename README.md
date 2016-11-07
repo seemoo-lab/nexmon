@@ -40,7 +40,7 @@ bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  
 * Go to the patch folder of your target device (e.g. bcm4339 for the Nexus 5): `cd patches/bcm4339/6_37_34_43/nexmon/`
   * Compile a patched firmware: `make`
   * Generate a backup of your original firmware file: `make backup-firmware`
-  * Install the patched firmware on your smartphone: `make install-firmare` (make sure your smartphone is connected to your machine beforehand)
+  * Install the patched firmware on your smartphone: `make install-firmware` (make sure your smartphone is connected to your machine beforehand)
 
 # Structure of this repository
 * `buildtools`: Contains compilers and other tools to build the firmware
