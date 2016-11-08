@@ -59,14 +59,29 @@
 #include "ieee80211_radiotap.h"
 #include <bcmwifi_channels.h>
 
+int
+channel2freq(struct wl_info *wl, unsigned int channel)
+{
+    int freq = 0;
+    void *ci = 0;
+
+    wlc_phy_chan2freq_acphy(wl->wlc->band->pi, channel, &freq, &ci);
+
+    return freq;
+}
+
 void
 wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p)
 {
     struct osl_info *osh = wl->wlc->osh;
     struct sk_buff *p_new = pkt_buf_get_skb(osh, p->len + sizeof(struct nexmon_radiotap_header));
+
+    if (!p_new) {
+        printf("ERR: no free sk_buff\n");
+        return;
+    }
+
     struct nexmon_radiotap_header *frame = (struct nexmon_radiotap_header *) p_new->data;
-    int freq = 0;
-    void *ci = 0;
 
     memset(p_new->data, 0, sizeof(struct nexmon_radiotap_header));
 
@@ -82,8 +97,7 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p)
     frame->tsf.tsf_l = sts->mactime;
     frame->tsf.tsf_h = 0;
     frame->flags = IEEE80211_RADIOTAP_F_FCS;
-    wlc_phy_chan2freq_acphy(wl->wlc->band->pi, CHSPEC_CHANNEL(sts->chanspec), &freq, &ci);
-    frame->chan_freq = freq;
+    frame->chan_freq = channel2freq(wl, CHSPEC_CHANNEL(sts->chanspec));
     frame->chan_flags = 0;
     frame->dbm_antsignal = sts->signal;
     frame->dbm_antnoise = sts->noise;
