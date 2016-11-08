@@ -64,6 +64,12 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p)
 {
     struct osl_info *osh = wl->wlc->osh;
     struct sk_buff *p_new = pkt_buf_get_skb(osh, p->len + sizeof(struct nexmon_radiotap_header));
+
+    if (!p_new) {
+        printf("ERR: no free sk_buff\n");
+        return;
+    }
+
     struct nexmon_radiotap_header *frame = (struct nexmon_radiotap_header *) p_new->data;
 
     memset(p_new->data, 0, sizeof(struct nexmon_radiotap_header));
