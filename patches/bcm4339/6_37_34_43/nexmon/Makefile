@@ -97,7 +97,17 @@ fw_bcmdhd.bin: init gen/patch.elf $(FW_PATH)/$(RAM_FILE) gen/nexmon.mk gen/flash
 # ucode compression related
 ###################################################################
 
-ucode_compressed.bin: $(FW_PATH)/ucode.bin
+ifneq ($(wildcard src/ucode.asm), )
+gen/ucode.bin: src/ucode.asm
+	@printf "\033[0;31m  ASSEMBLING UCODE\033[0m %s => %s\n" $< $@
+	$(Q)$(NEXMON_ROOT)/buildtools/b43/assembler/b43-asm $< $@ --format raw-le32
+else
+gen/ucode.bin: $(FW_PATH)/ucode.bin
+	@printf "\033[0;31m  COPYING UCODE\033[0m %s => %s\n" $< $@
+	$(Q)cp $< $@
+endif
+
+ucode_compressed.bin: gen/ucode.bin
 	@printf "\033[0;31m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
 	$(Q)cat $< | $(ZLIBFLATE) > $@
 
