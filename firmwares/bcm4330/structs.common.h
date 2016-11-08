@@ -236,8 +236,7 @@ struct wlc_info {
     int PAD;                            /* 0x02C */
     struct wlcband *band;               /* 0x030 */
     int PAD;                            /* 0x034 */
-    int PAD;                            /* 0x038 */
-    int PAD;                            /* 0x03C */
+    struct wlcband *bandstate[2];       /* 0x038 */
     int PAD;                            /* 0x040 */
     int PAD;                            /* 0x044 */
     int PAD;                            /* 0x048 */

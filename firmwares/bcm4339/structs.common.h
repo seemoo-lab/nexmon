@@ -240,6 +240,71 @@ struct sdiox_info {
     void *device_address;
 } __attribute__((packed));
 
+struct phy_info {
+    int PAD;                            // 0x000
+    int PAD;                            // 0x004
+    int PAD;                            // 0x008
+    int PAD;                            // 0x00c
+    int PAD;                            // 0x010
+    int PAD;                            // 0x014
+    int PAD;                            // 0x018
+    int PAD;                            // 0x01c
+    int PAD;                            // 0x020
+    int PAD;                            // 0x024
+    int PAD;                            // 0x028
+    int PAD;                            // 0x02c
+    int PAD;                            // 0x030
+    int PAD;                            // 0x034
+    int PAD;                            // 0x038
+    int PAD;                            // 0x03c
+    int PAD;                            // 0x040
+    int PAD;                            // 0x044
+    int PAD;                            // 0x048
+    int PAD;                            // 0x04c
+    int PAD;                            // 0x050
+    int PAD;                            // 0x054
+    int PAD;                            // 0x058
+    int PAD;                            // 0x05c
+    int PAD;                            // 0x060
+    int PAD;                            // 0x064
+    int PAD;                            // 0x068
+    int PAD;                            // 0x06c
+    int PAD;                            // 0x070
+    int PAD;                            // 0x074
+    int PAD;                            // 0x078
+    int PAD;                            // 0x07c
+    int PAD;                            // 0x080
+    int PAD;                            // 0x084
+    int PAD;                            // 0x088
+    int PAD;                            // 0x08c
+    int PAD;                            // 0x090
+    int PAD;                            // 0x094
+    int PAD;                            // 0x098
+    int PAD;                            // 0x09c
+    int PAD;                            // 0x0a0
+    int PAD;                            // 0x0a4
+    int PAD;                            // 0x0a8
+    int PAD;                            // 0x0ac
+    int PAD;                            // 0x0b0
+    int PAD;                            // 0x0b4
+    int PAD;                            // 0x0b8
+    int PAD;                            // 0x0bc
+    int PAD;                            // 0x0c0
+    int PAD;                            // 0x0c4
+    int PAD;                            // 0x0c8
+    int PAD;                            // 0x0cc
+    int PAD;                            // 0x0d0
+    int PAD;                            // 0x0d4
+    int PAD;                            // 0x0d8
+    int PAD;                            // 0x0dc
+    int PAD;                            // 0x0e0
+    int PAD;                            // 0x0e4
+    int PAD;                            // 0x0e8
+    short PAD;                          // 0x0ec
+    short radio_chanspec;               // 0x0ee
+    int PAD;                            // 0x0f0
+};
+
 struct wlcband {
     int bandtype;                       /* 0x000 */
     int bandunit;                       /* 0x004 */
@@ -247,7 +312,7 @@ struct wlcband {
     short phyrev;                       /* 0x00A */
     short radioid;                      /* 0x00C */
     short radiorev;                     /* 0x00E */
-    void *pi;                           /* 0x010 */
+    struct phy_info *pi;                /* 0x010 */
     char abgphy_encore;                 /* 0x014 */
     char gmode;                         /* 0x015 */
     char PAD;                           /* 0x016 */
@@ -273,8 +338,7 @@ struct wlc_info {
     void *core;                         /* 0x01C */
     struct wlcband *band;               /* 0x020 */
     int PAD;                            /* 0x024 */
-    int PAD;                            /* 0x028 */
-    int PAD;                            /* 0x02C */
+    struct wlcband *bandstate[2];       /* 0x028 */
     int PAD;                            /* 0x030 */
     int PAD;                            /* 0x034 */
     int PAD;                            /* 0x038 */
