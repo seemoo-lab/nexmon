@@ -55,88 +55,10 @@
 #include <structs.h>            // structures that are used by the code in the firmware
 #include <helper.h>             // useful helper functions
 #include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
+#include <objmem.h>             // Functions to access object memory
 
 extern unsigned char ucode_compressed_bin[];
 extern unsigned int ucode_compressed_bin_len;
-
-void
-wlc_bmac_read_objmem32(struct wlc_hw_info *wlc_hw, unsigned int offset, unsigned int *val, int sel)
-{
-  volatile struct d11regs *regs;
-
-  regs = wlc_hw->regs;
-  regs->objaddr = sel | ((offset & 0xfffffffc) >> 2);
-  regs->objaddr;
-
-  *val = regs->objdata;
-}
-
-void
-wlc_bmac_read_objmem64(struct wlc_hw_info *wlc_hw, unsigned int offset, unsigned int *val_low, unsigned int *val_high, int sel)
-{
-  volatile struct d11regs *regs;
-
-  regs = wlc_hw->regs;
-  regs->objaddr = sel | ((offset & 0xfffffff8) >> 2);
-  regs->objaddr;
-
-  *val_low = regs->objdata;
-
-  regs->objaddr = (sel | ((offset & 0xfffffff8) >> 2)) + 1;
-  regs->objaddr;
-
-  *val_high = regs->objdata;
-}
-
-void
-wlc_bmac_write_objmem64(struct wlc_hw_info *wlc_hw, unsigned int offset, unsigned int val_low, unsigned int val_high, int sel)
-{
-  volatile struct d11regs *regs;
-
-  regs = wlc_hw->regs;
-  regs->objaddr = sel | ((offset & 0xfffffff8) >> 2);
-  regs->objaddr;
-
-  regs->objdata = val_low;
-
-  regs->objaddr = (sel | ((offset & 0xfffffff8) >> 2)) + 1;
-  regs->objaddr;
-
-  regs->objdata = val_high;
-}
-
-void
-wlc_bmac_write_objmem_byte(struct wlc_hw_info *wlc_hw, unsigned int offset, unsigned char value, int sel)
-{
-  unsigned int low;
-  unsigned int high;
-
-    // first we read in one QWORD of existing bytes stored in the d11 object memory
-  wlc_bmac_read_objmem64(wlc_hw, offset, &low, &high, sel);
-    
-    // then we replace the byte that should be written in this QWORD
-  if (offset & 4) {
-    ((unsigned char *) &high)[offset & 3] = value;
-  } else {
-    ((unsigned char *) &low)[offset & 3] = value;
-  }
-
-    // then we write back the changed QWORD into the object memory. We always access
-    // a whole QWORD to be able to read back the written value at the next call to the
-    // wlc_bmac_read_objmem64 function. Writing less than 64 bits (one QWORD) does not
-    // deliver the new but the old value on the next read.
-  wlc_bmac_write_objmem64(wlc_hw, offset, low, high, sel);
-}
-
-unsigned char
-wlc_bmac_read_objmem_byte(struct wlc_hw_info *wlc_hw, unsigned int offset, int sel)
-{
-  unsigned int val;
-
-  wlc_bmac_read_objmem32(wlc_hw, offset, &val, sel);
-    
-    return ((unsigned char *) &val)[offset & 0x3];
-}
 
 /**
  *  Function used by tinflate_partial to write a byte to an address in the output buffer
