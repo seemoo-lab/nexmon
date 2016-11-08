@@ -55,3 +55,7 @@
 #define NEX_WRITE_TO_CONSOLE			401
 #define NEX_CT_EXPERIMENTS				402
 #define NEX_GET_CONSOLE					403
+#define NEX_GET_PHYREG					404
+#define NEX_SET_PHYREG					405
+#define NEX_READ_OBJMEM					406
+#define NEX_WRITE_OBJMEM				407
