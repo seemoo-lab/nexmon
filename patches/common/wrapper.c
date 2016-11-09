@@ -190,6 +190,11 @@ void *
 osl_malloc(void *osh, unsigned int size) 
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C48DE)
+void
+phy_reg_mod(void *pi, unsigned short addr, unsigned short mask, unsigned short val)
+VOID_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1C3D32) 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C3F7E) 
 int 

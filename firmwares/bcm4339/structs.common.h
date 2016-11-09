@@ -716,6 +716,10 @@ struct wlc_info {
     int PAD;                            /* 0X5F4 */
     int PAD;                            /* 0X5F8 */
     int PAD;                            /* 0X5FC */
+    int PAD;                            /* 0X600 */
+    int PAD;                            /* 0X604 */
+    int PAD;                            /* 0X608 */
+    int hwrxoff;                        /* 0X60C */
 };
 
 struct wlc_pub {

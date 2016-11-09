@@ -9,6 +9,9 @@ skb_push(sk_buff *p, unsigned int len);
 void *
 skb_pull(sk_buff *p, unsigned int len);
 
+void
+hexdump(char *desc, void *addr, int len);
+
 // somehow the strings are not removed during optimization, so that they end up in the binary, hence, move the functions somewhere else, where they are only included if they are needed.
 inline uint16
 htons(uint16 a)
@@ -76,50 +79,6 @@ copy_stack(void *dest, int copy_size) {
         memcpy( (void *) (dest), get_stack_ptr(), copy_size);
     }
     return;
-}
-
-inline void
-hexdump(char *desc, void *addr, int len) {
-    int i;
-    unsigned char buff[17];
-    unsigned char *pc = (unsigned char*)addr;
-
-    // Output description if given.
-    if (desc != 0)
-        printf ("%s:\n", desc);
-
-    // Process every byte in the data.
-    for (i = 0; i < len; i++) {
-        // Multiple of 16 means new line (with line offset).
-
-        if ((i % 16) == 0) {
-            // Just don't print ASCII for the zeroth line.
-            if (i != 0)
-                printf ("  %s\n", buff);
-
-            // Output the offset.
-            printf ("  %04x ", i);
-        }
-
-        // Now the hex code for the specific character.
-        printf (" %02x", pc[i]);
-
-        // And store a printable ASCII character for later.
-        if ((pc[i] < 0x20) || (pc[i] > 0x7e))
-            buff[i % 16] = '.';
-        else
-            buff[i % 16] = pc[i];
-        buff[(i % 16) + 1] = '\0';
-    }
-
-    // Pad out last line if not exactly 16 characters.
-    while ((i % 16) != 0) {
-        printf ("   ");
-        i++;
-    }
-
-    // And print the final ASCII bit.
-    printf ("  %s\n", buff);
 }
 */
 
