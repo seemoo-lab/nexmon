@@ -1,7 +1,7 @@
 FW_PATH=$(NEXMON_ROOT)/firmwares/bcm4339/6_37_34_43
 include $(FW_PATH)/definitions.mk
 
-LOCAL_SRCS=$(wildcard src/*.c) src/ucode_compressed.c
+LOCAL_SRCS=$(wildcard src/*.c) src/ucode_compressed.c src/templateram.c
 COMMON_SRCS=$(wildcard $(NEXMON_ROOT)/patches/common/*.c)
 FW_SRCS=$(wildcard $(FW_PATH)/*.c)
 
@@ -107,14 +107,19 @@ gen/ucode.bin: $(FW_PATH)/ucode.bin
 	$(Q)cp $< $@
 endif
 
-ucode_compressed.bin: gen/ucode.bin
+gen/ucode_compressed.bin: gen/ucode.bin
 	@printf "\033[0;31m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
 	$(Q)cat $< | $(ZLIBFLATE) > $@
 
-src/ucode_compressed.c: ucode_compressed.bin
+src/ucode_compressed.c: gen/ucode_compressed.bin
 	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@
 	$(Q)printf "#pragma NEXMON targetregion \"ucode\"\n\n" > $@
-	$(Q)xxd -i $< >> $@
+	$(Q)cd $(dir $<) && xxd -i $(notdir $<) >> $(shell pwd)/$@
+
+src/templateram.c: $(FW_PATH)/templateram.bin
+	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@
+	$(Q)printf "#pragma NEXMON targetregion \"ucode\"\n\n" > $@
+	$(Q)cd $(dir $<) && xxd -i $(notdir $<) >> $(shell pwd)/$@
 
 ###################################################################
 
@@ -145,7 +150,7 @@ install-backup: fw_bcmdhd.orig.bin
 
 clean-firmware: FORCE
 	@printf "\033[0;31m  CLEANING\033[0m\n"
-	$(Q)rm -fr fw_bcmdhd.bin obj gen log src/ucode_compressed.c ucode_compressed.bin
+	$(Q)rm -fr fw_bcmdhd.bin obj gen log src/ucode_compressed.c src/templateram.c
 
 clean: clean-firmware
 
