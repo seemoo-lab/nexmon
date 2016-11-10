@@ -65,11 +65,6 @@ __attribute__((at(0x1F4F08, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581
 __attribute__((at(0x1F4F14, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704)))
 BLPatch(wlc_ucode_write_compressed, wlc_ucode_write_compressed);
 
-// Move the old ucode length away from the end of the old ucode region and update the pointer in the wlc_ucode_download function
-static int ucode_length = UCODESIZE;
-__attribute__((at(0x1F4F20, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704)))
-GenericPatch4(ucode_length_ptr, &ucode_length);
-
 // reduce the amount of ucode memory freed to become part of the heap
 __attribute__((at(0x1816E0, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704)))
 GenericPatch4(hndrte_reclaim_0_end, PATCHSTART);

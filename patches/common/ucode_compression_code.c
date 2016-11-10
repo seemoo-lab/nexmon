@@ -958,13 +958,6 @@ tinflate_partial(const void *compressed_data, long compressed_size,
 void
 wlc_ucode_write_compressed(struct wlc_hw_info *wlc_hw, const int ucode[], const unsigned int nbytes)
 {
-    int i = 0;
-    char *ucode_c = (char *) ucode;
-
-    for (i = 0; i < nbytes; i++) {
-        wlc_bmac_write_objmem_byte(wlc_hw, i, ucode_c[i], 0);
-    }
-
     /* state: Decompression state buffer to pass to tinflate_block(). */
     DecompressionState state;
 
