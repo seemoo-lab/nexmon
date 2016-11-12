@@ -17,16 +17,19 @@
 
 #define HEXDUMP_COLS 8
 
-#define WLC_IOCTL_MAGIC     0x14e46c77
-#define DHD_IOCTL_MAGIC     0x00444944
-#define WLC_GET_MAGIC                0
-#define DHD_GET_MAGIC                0
+#define WLC_IOCTL_MAGIC          0x14e46c77
+#define DHD_IOCTL_MAGIC          0x00444944
+#define WLC_GET_MAGIC                     0
+#define DHD_GET_MAGIC                     0
 
-#define WLC_GET_PROMISC             9
-#define WLC_SET_PROMISC             10
+#define WLC_GET_PROMISC                   9
+#define WLC_SET_PROMISC                  10
 
-#define WLC_GET_MONITOR             107
-#define WLC_SET_MONITOR            108
+#define WLC_GET_MONITOR                 107
+#define WLC_SET_MONITOR                 108
+
+#define WLC_GET_SCANSUPPRESS            115
+#define WLC_SET_SCANSUPPRESS            116
 
 /* Linux network driver ioctl encoding */
 typedef struct nex_ioctl {
@@ -45,6 +48,9 @@ unsigned char   get_monitor = 0;
 unsigned char   set_promisc = 0;
 unsigned char   set_promisc_value = 0;
 unsigned char   get_promisc = 0;
+unsigned char   set_scansuppress = 0;
+unsigned char   set_scansuppress_value = 0;
+unsigned char   get_scansuppress = 0;
 unsigned int    custom_cmd = 0;
 signed char     custom_cmd_set = -1;
 unsigned int    custom_cmd_buf_len = 4;
@@ -61,8 +67,10 @@ static char doc[] = "nexutil -- a program to control a nexmon firmware for broad
 static struct argp_option options[] = {
     {"set-monitor", 'm', "BOOL", 0, "Set monitor mode"},
     {"set-promisc", 'p', "BOOL", 0, "Set promiscuous mode"},
+    {"set-scansuppress", 'c', "BOOL", 0, "Set scan suppress setting to avoid scanning"},
     {"get-monitor", 'n', 0, 0, "Get monitor mode"},
     {"get-promisc", 'q', 0, 0, "Get promiscuous mode"},
+    {"get-scansuppress", 'd', 0, 0, "Get scan suppress setting"},
     {"get-custom-cmd", 'g', "INT", 0, "Get custom command, e.g. 107 for WLC_GET_VAR"},
     {"set-custom-cmd", 's', "INT", 0, "Set custom command, e.g. 108 for WLC_SET_VAR"},
     {"custom-cmd-buf-len", 'l', "INT", 0, "Custom command buffer length (default: 4)"},
@@ -77,21 +85,30 @@ parse_opt(int key, char *arg, struct argp_state *state)
 {
     switch (key) {
         case 'm':
-            set_monitor = 1;
-            set_monitor_value = strncmp(arg, "true", 4) ? 0 : 1;
+            set_monitor = true;
+            set_monitor_value = strncmp(arg, "true", 4) ? false : true;
             break;
 
         case 'p':
-            set_promisc = 1;
-            set_promisc_value = strncmp(arg, "true", 4) ? 0 : 1;
+            set_promisc = true;
+            set_promisc_value = strncmp(arg, "true", 4) ? false : true;
+            break;
+
+        case 'c':
+            set_scansuppress = true;
+            set_scansuppress_value = strncmp(arg, "true", 4) ? false : true;
             break;
 
         case 'n':
-            get_monitor = 1;
+            get_monitor = true;
             break;
 
         case 'q':
-            get_promisc = 1;
+            get_promisc = true;
+            break;
+
+        case 'd':
+            get_scansuppress = true;
             break;
 
         case 'g':
@@ -227,25 +244,34 @@ main(int argc, char **argv)
     if (set_monitor) {
         buf = set_monitor_value;
         ret = nex_ioctl(&ifr, WLC_SET_MONITOR, &buf, 4, true);
-        //printf("ret: %d\n", ret);
     }
 
     if (set_promisc) {
         buf = set_promisc_value;
         ret = nex_ioctl(&ifr, WLC_SET_PROMISC, &buf, 4, true);
-        //printf("ret: %d\n", ret);
+    }
+
+    if (set_scansuppress) {
+        buf = set_scansuppress_value;
+        if (set_scansuppress_value)
+            ret = nex_ioctl(&ifr, WLC_SET_SCANSUPPRESS, &buf, 4, true);
+        else
+            ret = nex_ioctl(&ifr, WLC_SET_SCANSUPPRESS, &buf, 1, true);
     }
 
     if (get_monitor) {
         ret = nex_ioctl(&ifr, WLC_GET_MONITOR, &buf, 4, false);
-        //printf("ret: %d\n", ret);
         printf("monitor: %d\n", buf);
     }
 
     if (get_promisc) {
         ret = nex_ioctl(&ifr, WLC_GET_PROMISC, &buf, 4, false);
-        //printf("ret: %d\n", ret);
         printf("promisc: %d\n", buf);
+    }
+
+    if (get_scansuppress) {
+        ret = nex_ioctl(&ifr, WLC_GET_SCANSUPPRESS, &buf, 4, false);
+        printf("scansuppress: %d\n", buf);
     }
 
     if (custom_cmd_set != -1) {
