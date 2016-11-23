@@ -109,3 +109,7 @@ bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  
 * [bcmon](https://bcmon.blogspot.de/): Monitor Mode and Frame Injection for the bcm4329 and bcm4330
 * [monmob](https://github.com/tuter/monmob): Monitor Mode and Frame Injection for the bcm4325, bcm4329 and bcm4330
 * [imon](https://imon.site/): Penetration Testing for Apple devices with Broadcom WiFi Chip
+
+# Contact
+* [Matthias Schulz](https://seemoo.tu-darmstadt.de/mschulz) <mschulz@seemoo.tu-darmstadt.de>
+* Daniel Wegemer <dwegemer@seemoo.tu-darmstadt.de>
