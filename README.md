@@ -1,4 +1,6 @@
-# nexmon
+![NexMon logo](https://github.com/seemoo-lab/bcm-public/raw/master/logo/nexmon-logo-color.png)
+
+# What is nexmon?
 Nexmon is our C-based firmware patching framework for Broadcom/Cypress WiFi chips 
 that enables you to write your own firmware patches, for example, to enable monitor
 mode with radiotap headers and frame injection.
