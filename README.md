@@ -48,6 +48,14 @@ bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  
   * Generate a backup of your original firmware file: `make backup-firmware`
   * Install the patched firmware on your smartphone: `make install-firmware` (make sure your smartphone is connected to your machine beforehand)
 
+### Using the Monitor Mode patch
+* Install at least *nexutil* and *libfakeioctl* from our utilities using this app: https://play.google.com/store/apps/details?id=de.tu_darmstadt.seemoo.nexmon
+* Connect to your Android phone using the ADB tools: `adb shell`
+* Make sure you are **not** connected to an access point
+* Use *nexutil* to enable monitor mode: `nexutil -m true`
+* At this point the monitor mode is active. There is no need to call *airmon-ng*. 
+* **Important:** Most tools need a Radiotap interface to work properly. *libfakeioctl* emulates this type of interface for you, therefore use LD_PRELOAD to load this library when you call the favourite tool (e.g. tcpdump or airodump-ng): `LD_PRELOAD=libfakeioctl tcpdump -i wlan0`
+
 ## Build patches for bcm43438 on the RPI3 using Raspbian 8 (recommended)
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
 * Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk`
