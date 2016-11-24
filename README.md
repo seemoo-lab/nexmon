@@ -54,7 +54,7 @@ bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  
 * Make sure you are **not** connected to an access point
 * Use *nexutil* to enable monitor mode: `nexutil -m true`
 * At this point the monitor mode is active. There is no need to call *airmon-ng*. 
-* **Important:** Most tools need a Radiotap interface to work properly. *libfakeioctl* emulates this type of interface for you, therefore use LD_PRELOAD to load this library when you call the favourite tool (e.g. tcpdump or airodump-ng): `LD_PRELOAD=libfakeioctl tcpdump -i wlan0`
+* **Important:** Most tools need a Radiotap interface to work properly. *libfakeioctl* emulates this type of interface for you, therefore use LD_PRELOAD to load this library when you call the favourite tool (e.g. tcpdump or airodump-ng): `LD_PRELOAD=libfakeioctl.so tcpdump -i wlan0`
 
 ## Build patches for bcm43438 on the RPI3 using Raspbian 8 (recommended)
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
