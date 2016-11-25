@@ -58,6 +58,8 @@ void            *custom_cmd_buf = NULL;
 char            *custom_cmd_value = NULL;
 unsigned char   custom_cmd_value_int = false;
 unsigned char   raw_output = false;
+unsigned int    dump_objmem_addr = 0;
+unsigned char   dump_objmem = false;
 
 const char *argp_program_version = "nexutil";
 const char *argp_program_bug_address = "<mschulz@seemoo.tu-darmstadt.de>";
@@ -77,6 +79,7 @@ static struct argp_option options[] = {
     {"custom-cmd-value", 'v', "CHAR/INT", 0, "Initialization value for the buffer used by custom command"},
     {"custom-cmd-value-int", 'i', 0, 0, "Define that custom-cmd-value should be interpreted as integer"},
     {"raw-output", 'r', 0, 0, "Write raw output to stdout instead of hex dumping"},
+    {"dump-objmem", 'o', "INT", 0, "Dumps objmem at addr INT"},
     { 0 }
 };
 
@@ -135,6 +138,11 @@ parse_opt(int key, char *arg, struct argp_state *state)
 
         case 'r':
             raw_output = true;
+            break;
+
+        case 'o':
+            dump_objmem_addr = strtol(arg, NULL, 0);
+            dump_objmem = true;
             break;
         
         default:
@@ -296,6 +304,35 @@ main(int argc, char **argv)
             } else {
                 hexdump(custom_cmd_buf, custom_cmd_buf_len);
             }
+    }
+
+    if (dump_objmem) {
+        custom_cmd_buf = malloc(custom_cmd_buf_len);
+        if (!custom_cmd_buf)
+            return -1;
+
+        memset(custom_cmd_buf, 0, custom_cmd_buf_len);
+
+        unsigned int *custom_cmd_buf_pos = (unsigned int *) custom_cmd_buf;
+
+        int i = 0;
+        for (i = 0; i < custom_cmd_buf_len / 0x2000; i++) {
+            *custom_cmd_buf_pos = dump_objmem_addr + i * 0x2000 / 4;
+            printf("%08x %08x\n", (int) custom_cmd_buf_pos, *custom_cmd_buf_pos);
+            ret = nex_ioctl(&ifr, 406, custom_cmd_buf_pos, 0x2000, false);    
+            custom_cmd_buf_pos += 0x2000 / 4;
+        }
+        if (custom_cmd_buf_len % 0x2000 != 0) {
+            *(unsigned int *) custom_cmd_buf_pos = dump_objmem_addr + i * 0x2000 / 4;
+            ret = nex_ioctl(&ifr, 406, custom_cmd_buf_pos, custom_cmd_buf_len % 0x2000, false);
+        }
+
+        if (raw_output) {
+            fwrite(custom_cmd_buf, sizeof(char), custom_cmd_buf_len, stdout);
+            fflush(stdout);
+        } else {
+            hexdump(custom_cmd_buf, custom_cmd_buf_len);
+        }
     }
 
     return 0;
