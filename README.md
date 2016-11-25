@@ -1,4 +1,6 @@
-# nexmon
+![NexMon logo](https://github.com/seemoo-lab/bcm-public/raw/master/logo/nexmon-logo-color.png)
+
+# What is nexmon?
 Nexmon is our C-based firmware patching framework for Broadcom/Cypress WiFi chips 
 that enables you to write your own firmware patches, for example, to enable monitor
 mode with radiotap headers and frame injection.
@@ -46,6 +48,14 @@ bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  
   * Generate a backup of your original firmware file: `make backup-firmware`
   * Install the patched firmware on your smartphone: `make install-firmware` (make sure your smartphone is connected to your machine beforehand)
 
+### Using the Monitor Mode patch
+* Install at least *nexutil* and *libfakeioctl* from our utilities. The easiest way to do this is by using this app: https://play.google.com/store/apps/details?id=de.tu_darmstadt.seemoo.nexmon. But you can also build it from the source by executing `make` in the *utilties* folder (Note: you will need the Android NDK properly installed for this).
+* Connect to your Android phone using the ADB tools: `adb shell`
+* Make sure you are **not** connected to an access point
+* Use *nexutil* to enable monitor mode: `nexutil -m true`
+* At this point the monitor mode is active. There is no need to call *airmon-ng*. 
+* **Important:** Most tools need a Radiotap interface to work properly. *libfakeioctl* emulates this type of interface for you, therefore, use LD_PRELOAD to load this library when you call the favourite tool (e.g. tcpdump or airodump-ng): `LD_PRELOAD=libfakeioctl.so tcpdump -i wlan0`
+
 ## Build patches for bcm43438 on the RPI3 using Raspbian 8 (recommended)
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
 * Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk`
@@ -58,6 +68,12 @@ bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  
   * Generate a backup of your original firmware file: `make backup-firmware`
   * Install the patched firmware on your smartphone: `make install-firmware`
 * *Optional*: remove wpa_supplicant for better control over the WiFi interface: `apt-get remove wpasupplicant`
+
+### Using the Monitor Mode patch
+* Our modified driver sets the interface in monitor mode as soon as the interface goes up: `ifconfig wlan0 up`
+* At this point the monitor mode is active. There is no need to call *airmon-ng*. 
+* The interface already set the Radiotap header, therefore, tools like *tcpdump* or *airodump-ng* can be used out of the box: `tcpdump -i wlan0`
+* **Note:** It is not possible to connect to an access point anymore using our modified driver and firmware, if you whant to go back to the default behaviour you will need to load the original driver and firmware.
 
 # Structure of this repository
 * `buildtools`: Contains compilers and other tools to build the firmware
@@ -107,3 +123,7 @@ bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  
 * [bcmon](https://bcmon.blogspot.de/): Monitor Mode and Frame Injection for the bcm4329 and bcm4330
 * [monmob](https://github.com/tuter/monmob): Monitor Mode and Frame Injection for the bcm4325, bcm4329 and bcm4330
 * [imon](https://imon.site/): Penetration Testing for Apple devices with Broadcom WiFi Chip
+
+# Contact
+* [Matthias Schulz](https://seemoo.tu-darmstadt.de/mschulz) <mschulz@seemoo.tu-darmstadt.de>
+* Daniel Wegemer <dwegemer@seemoo.tu-darmstadt.de>
