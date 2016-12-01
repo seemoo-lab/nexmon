@@ -9,6 +9,11 @@ libs/armeabi/tcpdump: Android.mk ../libpcap/local/armeabi/libpcap.a
 ../shared_system_libs/libssl.so: FORCE
 	cd ../shared_system_libs && make
 
+install: libs/armeabi/tcpdump
+	adb push $< /sdcard/
+	adb shell su -c "mount -o remount,rw /system"
+	adb shell su -c "cp /sdcard/tcpdump /system/bin/tcpdump"
+
 clean:
 	rm -Rf libs
 	rm -Rf local
