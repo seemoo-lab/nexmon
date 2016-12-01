@@ -31,7 +31,7 @@ ifeq ($(shell uname -m),armv7l)
 	@printf "\033[0;31m  BUILDING DRIVER \033[0m brcmfmac/brcmfmac.ko (details: log/driver.log)\n" $@
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac -j2 >log/driver.log
 else
-	$(warning Warning: Driver can not be compiled for this platform)
+	$(warning Warning: Driver can not be compiled on this platform, execute the make command on a raspberry pi)
 endif
 
 obj/%.o: src/%.c
