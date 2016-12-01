@@ -89,21 +89,29 @@ struct nexmon_radiotap_header {
     struct ieee80211_radiotap_header header;
     struct tsf tsf;
     char flags;
-    char PAD;
+    unsigned char data_rate;
     unsigned short chan_freq;
     unsigned short chan_flags;
     char dbm_antsignal;
     char dbm_antnoise;
-//  unsigned short vht_known;
-//  unsigned char vht_flags;
-//  unsigned char vht_bandwidth;
-//  unsigned char vht_mcs_nss[4];
-//  unsigned char vht_coding;
-//  unsigned char vht_group_id;
-//  unsigned short vht_partial_aid;
+#ifdef RADIOTAP_MCS
+    char mcs[3];
+    char PAD;
+#endif
+#ifdef RADIOTAP_VHT
+    unsigned short vht_known;
+    unsigned char vht_flags;
+    unsigned char vht_bandwidth;
+    unsigned char vht_mcs_nss[4];
+    unsigned char vht_coding;
+    unsigned char vht_group_id;
+    unsigned short vht_partial_aid;
+#endif
+#ifdef RADIOTAP_VENDOR
     unsigned char vendor_oui[3];
     unsigned char vendor_sub_namespace;
     unsigned short vendor_skip_length;
+#endif
 } __attribute__((packed));
 
 /* Name                                 Data type    Units
