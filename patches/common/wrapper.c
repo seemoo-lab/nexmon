@@ -287,12 +287,14 @@ int
 wlc_bmac_read_shm(void *wlc_hw, unsigned int offset) 
 RETURN_DUMMY
 
-AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x3B0BC) 
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x3B0BC)
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x3085C)
 void 
 wlc_suspend_mac_and_wait(void *wlc) 
 VOID_DUMMY
 
-AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x4FC88) 
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x4FC88)
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x449FC)
 void 
 wlc_bmac_suspend_mac_and_wait(void *wlc_hw) 
 VOID_DUMMY
@@ -337,6 +339,7 @@ wlc_d11hdrs(void *wlc, void *p, void *scb, int short_preamble, unsigned int frag
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x3352C) 
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x29F50)
 void *
 wlc_enable_mac(void *wlc) 
 RETURN_DUMMY
@@ -675,12 +678,14 @@ RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1C456E)
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C47BA)
+AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x1D15B2)
 void 
 wlc_phyreg_enter(void *pi) 
 VOID_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1C4588)
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C47D4)
+AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x1D15CC)
 void 
 wlc_phyreg_exit(void *pi) 
 VOID_DUMMY
@@ -717,12 +722,14 @@ VOID_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1BE636) 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1BE882)
+AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x1C68D8)
 void 
 wlc_phy_stay_in_carriersearch_phy(void *pi, int enable) 
 VOID_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1BAF88)
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1BB1D4)
+AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x1C2EC8)
 void 
 wlc_phy_table_read_phy(void *pi, unsigned int id, unsigned int len, unsigned int offset, unsigned int width, void *data) 
 VOID_DUMMY
