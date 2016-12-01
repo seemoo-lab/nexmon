@@ -141,6 +141,51 @@ struct wl_rxsts {
     void        *wlif;          /* wl interface */
 } __attribute__((packed));
 
+/* status per error RX pkt */
+#define WL_RXS_CRC_ERROR        0x00000001 /* CRC Error in packet */
+#define WL_RXS_RUNT_ERROR       0x00000002 /* Runt packet */
+#define WL_RXS_ALIGN_ERROR      0x00000004 /* Misaligned packet */
+#define WL_RXS_OVERSIZE_ERROR       0x00000008 /* packet bigger than RX_LENGTH (usually 1518) */
+#define WL_RXS_WEP_ICV_ERROR        0x00000010 /* Integrity Check Value error */
+#define WL_RXS_WEP_ENCRYPTED        0x00000020 /* Encrypted with WEP */
+#define WL_RXS_PLCP_SHORT       0x00000040 /* Short PLCP error */
+#define WL_RXS_DECRYPT_ERR      0x00000080 /* Decryption error */
+#define WL_RXS_OTHER_ERR        0x80000000 /* Other errors */
+
+/* phy type */
+#define WL_RXS_PHY_A            0x00000000 /* A phy type */
+#define WL_RXS_PHY_B            0x00000001 /* B phy type */
+#define WL_RXS_PHY_G            0x00000002 /* G phy type */
+#define WL_RXS_PHY_N            0x00000004 /* N phy type */
+
+/* encoding */
+#define WL_RXS_ENCODING_UNKNOWN     0x00000000
+#define WL_RXS_ENCODING_DSSS_CCK    0x00000001 /* DSSS/CCK encoding (1, 2, 5.5, 11) */
+#define WL_RXS_ENCODING_OFDM        0x00000002 /* OFDM encoding */
+#define WL_RXS_ENCODING_HT          0x00000003 /* HT encoding */
+#define WL_RXS_ENCODING_AC          0x00000004 /* HT encoding */
+
+/* preamble */
+#define WL_RXS_UNUSED_STUB      0x0     /* stub to match with wlc_ethereal.h */
+#define WL_RXS_PREAMBLE_SHORT       0x00000001  /* Short preamble */
+#define WL_RXS_PREAMBLE_LONG        0x00000002  /* Long preamble */
+#define WL_RXS_PREAMBLE_HT_MM       0x00000003  /* HT mixed mode preamble */
+#define WL_RXS_PREAMBLE_HT_GF       0x00000004  /* HT green field preamble */
+
+/* htflags */
+#define WL_RXS_HTF_40           0x01
+#define WL_RXS_HTF_20L          0x02
+#define WL_RXS_HTF_20U          0x04
+#define WL_RXS_HTF_SGI          0x08
+#define WL_RXS_HTF_STBC_MASK        0x30
+#define WL_RXS_HTF_STBC_SHIFT       4
+#define WL_RXS_HTF_LDPC         0x40
+
+#define WL_RXS_NFRM_AMPDU_FIRST     0x00000001 /* first MPDU in A-MPDU */
+#define WL_RXS_NFRM_AMPDU_SUB       0x00000002 /* subsequent MPDU(s) in A-MPDU */
+#define WL_RXS_NFRM_AMSDU_FIRST     0x00000004 /* first MSDU in A-MSDU */
+#define WL_RXS_NFRM_AMSDU_SUB       0x00000008 /* subsequent MSDU(s) in A-MSDU */
+
 struct osl_info {
 	unsigned int pktalloced;
 	int PAD[1];
