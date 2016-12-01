@@ -7,6 +7,7 @@ install: libs/armeabi/iw
 	adb push $< /sdcard/
 	adb shell su -c "mount -o remount,rw /system"
 	adb shell su -c "cp /sdcard/iw /system/bin/iw"
+	adb shell su -c "chmod +x /system/bin/iw"
 
 clean:
 	rm -Rf libs

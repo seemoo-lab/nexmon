@@ -7,6 +7,7 @@ install: libs/armeabi/dhdutil
 	adb push $< /sdcard/
 	adb shell su -c "mount -o remount,rw /system"
 	adb shell su -c "cp /sdcard/dhdutil /system/bin/dhdutil"
+	adb shell su -c "chmod +x /system/bin/dhdutil"
 
 clean:
 	rm -Rf libs

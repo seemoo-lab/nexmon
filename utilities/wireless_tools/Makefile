@@ -17,6 +17,9 @@ install: libs/armeabi/iwconfig libs/armeabi/iwlist libs/armeabi/iwpriv
 	adb shell su -c "cp /sdcard/iwconfig /system/bin/iwconfig"
 	adb shell su -c "cp /sdcard/iwlist /system/bin/iwlist"
 	adb shell su -c "cp /sdcard/iwpriv /system/bin/iwpriv"
+	adb shell su -c "chmod +x /system/bin/iwconfig"
+	adb shell su -c "chmod +x /system/bin/iwlist"
+	adb shell su -c "chmod +x /system/bin/iwpriv"
 
 clean:
 	rm -Rf libs

@@ -7,6 +7,7 @@ install: libs/armeabi/nexutil
 	adb push $< /sdcard/
 	adb shell su -c "mount -o remount,rw /system"
 	adb shell su -c "cp /sdcard/nexutil /system/bin/nexutil"
+	adb shell su -c "chmod +x /system/bin/nexutil"
 
 clean:
 	rm -Rf libs
