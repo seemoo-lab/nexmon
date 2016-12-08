@@ -39,8 +39,6 @@
  *                                                                         *
  **************************************************************************/
 
-Copyright (c) 2015 NexMon Team
-
 #include <stdarg.h>
 #include <dlfcn.h>
 #include <stdio.h>
