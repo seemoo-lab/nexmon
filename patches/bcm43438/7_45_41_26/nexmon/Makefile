@@ -1,7 +1,7 @@
 FW_PATH=$(NEXMON_ROOT)/firmwares/bcm43438/7_45_41_26
 include $(FW_PATH)/definitions.mk
 
-LOCAL_SRCS=$(wildcard src/*.c) src/ucode_compressed.c
+LOCAL_SRCS=$(wildcard src/*.c)
 COMMON_SRCS=$(wildcard $(NEXMON_ROOT)/patches/common/*.c)
 FW_SRCS=$(wildcard $(FW_PATH)/*.c)
 
