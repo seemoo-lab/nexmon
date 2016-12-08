@@ -45,7 +45,11 @@
 #include <unistd.h>
 
 #include <sys/ioctl.h>
+#ifdef BUILD_ON_RPI
+#include <linux/if.h>
+#else
 #include <net/if.h>
+#endif
 #include <stdbool.h>
 #include <errno.h>
 
@@ -67,13 +71,13 @@
 
 /* Linux network driver ioctl encoding */
 typedef struct nex_ioctl {
-    uint cmd;   /* common ioctl definition */
+    unsigned int cmd;   /* common ioctl definition */
     void *buf;  /* pointer to user buffer */
-    uint len;   /* length of user buffer */
+    unsigned int len;   /* length of user buffer */
     bool set;   /* get or set request (optional) */
-    uint used;  /* bytes read or written (optional) */
-    uint needed;    /* bytes needed (optional) */
-    uint driver;    /* to identify target driver */
+    unsigned int used;  /* bytes read or written (optional) */
+    unsigned int needed;    /* bytes needed (optional) */
+    unsigned int driver;    /* to identify target driver */
 } nex_ioctl_t;
 
 unsigned char   set_monitor = 0;
@@ -194,7 +198,7 @@ static int __nex_driver_io(struct ifreq *ifr, nex_ioctl_t *ioc)
     int ret = 0;
 
     /* pass ioctl data */
-    ifr->ifr_data = (caddr_t)ioc;
+    ifr->ifr_data = (void *) ioc;
 
     /* open socket to kernel */
     if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
