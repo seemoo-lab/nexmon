@@ -227,7 +227,7 @@ struct wlc_hw_info {
     int PAD;                    // 0xdc
     int PAD;                    // 0xe0
     int PAD;                    // 0xe4
-    int PAD;                    // 0xe8
+    int maccontrol;             // 0xe8
     int PAD;                    // 0xec
     int PAD;                    // 0xf0
     int PAD;                    // 0xf4
