@@ -16,7 +16,7 @@ install: libs/armeabi/nexutil
 	adb shell su -c "cp /sdcard/nexutil /system/bin/nexutil"
 	adb shell su -c "chmod +x /system/bin/nexutil"
 else
-install: libs/armeabi/nexutil
+install: nexutil
 	cp $< /usr/bin/
 endif
 
