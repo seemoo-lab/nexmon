@@ -371,6 +371,7 @@ RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x18628)
 AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x819510)
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x270F0)
 void
 wl_monitor(void *wl, void *sts, void *p)
 VOID_DUMMY
@@ -647,6 +648,7 @@ wlc_iovar_change_handler_plus4(void *wlc, int a2, int cmd, char *a4, unsigned in
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x18BB6C)
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x18BC5C)
 AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x82ABEC)
 int 
 wlc_iovar_op(void *wlc, char *varname, void *params, int p_len, void *arg, int len, char set, void *wlcif) 
