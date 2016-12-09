@@ -119,10 +119,22 @@ bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  
       * `capabilities.h`: Allows to indicate capabilities (such as, monitor mode and frame injection)
       * `nexioctl.h`: Defines custom IOCTL numbers
 
-# Related Projects
+# Related projects
 * [bcmon](https://bcmon.blogspot.de/): Monitor Mode and Frame Injection for the bcm4329 and bcm4330
 * [monmob](https://github.com/tuter/monmob): Monitor Mode and Frame Injection for the bcm4325, bcm4329 and bcm4330
 * [imon](https://imon.site/): Penetration Testing for Apple devices with Broadcom WiFi Chip
+
+# Read our papers
+* M. Schulz. [Nexmon - Wie man die eigene WLAN-Firmware hackt]
+(http://heise.de/-3538660), c't 26/2016, S. 168, Heise Verlag, 2016.
+* M. Schulz, D. Wegemer, M. Hollick. [DEMO: Using NexMon, the C-based WiFi 
+firmware modification framework](https://dl.acm.org/citation.cfm?id=2942419), 
+Proceedings of the 9th ACM Conference on Security and Privacy in Wireless and 
+Mobile Networks, WiSec 2016, July 2016.
+* M. Schulz, D. Wegemer and M. Hollick. [NexMon: A Cookbook for Firmware 
+Modifications on Smartphones to Enable Monitor Mode]
+(http://arxiv.org/abs/1601.07077), CoRR, vol. abs/1601.07077, December 2015. 
+[bibtex](http://dblp.uni-trier.de/rec/bibtex/journals/corr/SchulzWH16)
 
 # Contact
 * [Matthias Schulz](https://seemoo.tu-darmstadt.de/mschulz) <mschulz@seemoo.tu-darmstadt.de>
