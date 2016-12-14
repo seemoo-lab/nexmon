@@ -56,6 +56,7 @@ inject_frame(struct wlc_info *wlc, struct sk_buff *p)
 {
     int rtap_len = 0;
     int data_rate = 0;
+    unsigned char use_ratespec = 0;
     int txdelay = 0;
     int txrepetitions = 0;
     int txperiodicity = 0;
@@ -94,6 +95,11 @@ inject_frame(struct wlc_info *wlc, struct sk_buff *p)
                     txperiodicity = get_unaligned_le32(iterator.this_arg + 4);
                     break;
 
+                case RADIOTAP_NEX_RATESPEC:
+                    data_rate = get_unaligned_le32(iterator.this_arg);
+                    use_ratespec = 1; // this will override the rate of the regular radiotap header
+                    break;
+
                 default:
                     printf("unknows vendor field %d\n", iterator.this_arg_index);
             }
@@ -101,7 +107,9 @@ inject_frame(struct wlc_info *wlc, struct sk_buff *p)
         } else if (iterator.current_namespace == &radiotap_ns) {
             switch(iterator.this_arg_index) {
                 case IEEE80211_RADIOTAP_RATE:
-                    data_rate = (*iterator.this_arg);
+                    if (!use_ratespec) {
+                        data_rate = (*iterator.this_arg);
+                    }
                     break;
 
                 case IEEE80211_RADIOTAP_CHANNEL:

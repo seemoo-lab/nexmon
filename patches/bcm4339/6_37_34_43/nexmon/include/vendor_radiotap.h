@@ -52,10 +52,16 @@ extern const struct ieee80211_radiotap_vendor_namespaces rtap_vendor_namespaces;
  *		the number of retransmissions to -1 leads to infinite 
  *		retransmissions
  *
+ * RADIOTAP_NEX_RATESPEC               	u32	    		unitless
+ *
+ *      Define the ratespec according to the definitions in rates.h
+ *		This value overrides the rate settings in the regular 
+ *		radiotap header
  */
 enum radiotap_nex_vendor_subns_0_type {
     RADIOTAP_NEX_TXDELAY = 0,
-    RADIOTAP_NEX_TXREPETITIONS = 1
+    RADIOTAP_NEX_TXREPETITIONS = 1,
+    RADIOTAP_NEX_RATESPEC = 2
 };
 
 #endif /* VENDOR_RADIOTAP_H */

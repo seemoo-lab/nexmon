@@ -40,6 +40,7 @@
 static const struct radiotap_align_size radiotap_nex_vendor_subns_0_sizes[] = {
     [RADIOTAP_NEX_TXDELAY] = { .align = 4, .size = 4, },
     [RADIOTAP_NEX_TXREPETITIONS] = { .align = 8, .size = 8, },
+    [RADIOTAP_NEX_RATESPEC] = { .align = 4, .size = 4, },
 };
 
 static const struct ieee80211_radiotap_namespace radiotap_nex_vendor_ns[] = {
