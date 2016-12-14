@@ -68,6 +68,7 @@ bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  
   * Generate a backup of your original firmware file: `make backup-firmware`
   * Install the patched firmware on your smartphone: `make install-firmware`
 * *Optional*: remove wpa_supplicant for better control over the WiFi interface: `apt-get remove wpasupplicant`
+* *Optional*: install nexutil: from the root directory of our repository switch to the nexutil folder: `cd utilities/nexutil/`. Compile and install nexutil: `make && make install`.
 
 ### Using the Monitor Mode patch
 * Our modified driver sets the interface in monitor mode as soon as the interface goes up: `ifconfig wlan0 up`
