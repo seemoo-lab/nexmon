@@ -32,17 +32,27 @@
  *                                                                         *
  **************************************************************************/
 
-#define IOCTL_ERROR						-23
-#define IOCTL_SUCCESS					0
+#pragma NEXMON targetregion "patch"
 
-// IOCTLs used by Nexmon
-#define NEX_GET_CAPABILITIES			400
-#define NEX_WRITE_TO_CONSOLE			401
-#define NEX_CT_EXPERIMENTS				402
-#define NEX_GET_CONSOLE					403
-#define NEX_GET_PHYREG					404
-#define NEX_SET_PHYREG					405
-#define NEX_READ_OBJMEM					406
-#define NEX_WRITE_OBJMEM				407
-#define NEX_INJECT_FRAME				408
-#define NEX_PRINT_TIMERS				409
+#include <ieee80211_radiotap.h>
+#include <vendor_radiotap.h>
+
+static const struct radiotap_align_size radiotap_nex_vendor_subns_0_sizes[] = {
+    [RADIOTAP_NEX_TXDELAY] = { .align = 4, .size = 4, },
+    [RADIOTAP_NEX_TXREPETITIONS] = { .align = 8, .size = 8, },
+};
+
+static const struct ieee80211_radiotap_namespace radiotap_nex_vendor_ns[] = {
+    [0] = {
+        .n_bits = ARRAY_SIZE(radiotap_nex_vendor_subns_0_sizes),
+        .align_size = radiotap_nex_vendor_subns_0_sizes,
+        .oui = 0x004e4558, // NEX
+        .subns = 0
+    }
+};
+
+const struct ieee80211_radiotap_vendor_namespaces rtap_vendor_namespaces = {
+    .ns = radiotap_nex_vendor_ns,
+    .n_ns = ARRAY_SIZE(radiotap_nex_vendor_ns),
+};
+ 

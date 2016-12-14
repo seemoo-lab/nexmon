@@ -38,5 +38,6 @@
 #include <structs.h>
 
 void sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned int rate);
+void sendframe_with_timer(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned int rate, int txdelay, int txrepetitions, int txperiodicity);
 
 #endif /* SENDFRAME_H */

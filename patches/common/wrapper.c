@@ -137,6 +137,16 @@ void *
 hndrte_add_timer(void *t, int ms, int periodic)
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x16604)
+int
+hndrte_del_timer(void *t)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x16690)
+void
+hndrte_free_timer(void *t)
+VOID_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x166cc)
 AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x807CB4)
 AT(CHIP_VER_BCM4330, FW_VER_5_90_100_41, 0x80D9A0)
@@ -145,11 +155,14 @@ void *
 hndrte_init_timer(void *context, void *data, void *mainfn, void *auxfn)
 RETURN_DUMMY
 
-AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1814f4)
-AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1814f4)
-//AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x1673C) 
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x168AC)
+int
+hndrte_schedule_work(void *context, void *data, void *taskfn, int delay)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x1814f4)
 void *
-malloc(unsigned int size, char alignment) 
+malloc(unsigned int size, char alignment)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8C3DC)

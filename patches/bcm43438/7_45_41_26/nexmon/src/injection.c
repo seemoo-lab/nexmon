@@ -61,7 +61,7 @@ inject_frame(sk_buff *p) {
 
     rtap_header = (struct ieee80211_radiotap_header *) p->data;
 
-    int ret = ieee80211_radiotap_iterator_init(&iterator, rtap_header, rtap_len);
+    int ret = ieee80211_radiotap_iterator_init(&iterator, rtap_header, rtap_len, 0);
 
     while(!ret) {
         ret = ieee80211_radiotap_iterator_next(&iterator);

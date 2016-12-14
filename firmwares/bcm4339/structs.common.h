@@ -129,6 +129,34 @@ typedef struct sk_buff {
     void *scb;                  /* 0x30 */
 } __attribute__((packed)) sk_buff;
 
+#define HNDRTE_DEV_NAME_MAX 16
+
+typedef struct hndrte_dev {
+    char                        name[HNDRTE_DEV_NAME_MAX];
+    struct hndrte_devfuncs      *funcs;
+    uint32                      devid;
+    void                        *softc;     /* Software context */
+    uint32                      flags;      /* RTEDEVFLAG_XXXX */
+    struct hndrte_dev           *next;
+    struct hndrte_dev           *chained;
+    void                        *pdev;
+} hndrte_dev;
+
+struct hndrte_devfuncs {
+    void *(*probe)(struct hndrte_dev *dev, void *regs, uint bus,
+                   uint16 device, uint coreid, uint unit);
+    int (*open)(struct hndrte_dev *dev);
+    int (*close)(struct hndrte_dev *dev);
+    int (*xmit)(struct hndrte_dev *src, struct hndrte_dev *dev, void *lb);
+    int (*recv)(struct hndrte_dev *src, struct hndrte_dev *dev, void *pkt);
+    int (*ioctl)(struct hndrte_dev *dev, uint32 cmd, void *buffer, int len,
+                 int *used, int *needed, int set);
+    void (*txflowcontrol) (struct hndrte_dev *dev, bool state, int prio);
+    void (*poll)(struct hndrte_dev *dev);
+    int (*xmit_ctl)(struct hndrte_dev *src, struct hndrte_dev *dev, void *lb);
+    int (*xmit2)(struct hndrte_dev *src, struct hndrte_dev *dev, void *lb, int8 ch);
+};
+
 struct tunables {
     char gap[62];
     short somebnd; // @ 0x38
@@ -226,25 +254,12 @@ struct wlc_hw_info {
 /**
  *  Name might be inaccurate
  */
-struct device {
-    char name[16];
-    void *init_function;
-    int PAD;
-    void *some_device_info;
-    int PAD;
-    int PAD;
-    struct device *bound_device;
-};
-
-/**
- *  Name might be inaccurate
- */
 struct wl_info {
     int unit;                           // 0x00
     void *pub;                          // 0x04
     struct wlc_info *wlc;               // 0x08
     struct wlc_hw_info *wlc_hw;         // 0x0c
-    struct device *dev;                 // 0x10
+    struct hndrte_dev *dev;             // 0x10
     int PAD;                            // 0x14
     int PAD;                            // 0x18
     int PAD;                            // 0x1c
@@ -758,7 +773,7 @@ struct wlc_pub {
     int PAD;                            /* 0x008 */
     int PAD;                            /* 0x00C */
     int PAD;                            /* 0x010 */
-    int PAD;                            /* 0x014 */
+    int osh;                            /* 0x014 */
     int PAD;                            /* 0x018 */
     int PAD;                            /* 0x01C */
     int PAD;                            /* 0x020 */
@@ -1716,6 +1731,12 @@ struct udp_header {
         uint16 checksum_coverage;   /* UDPLITE: checksum_coverage */
     } len_chk_cov;
     uint16 checksum;
+} __attribute__((packed));
+
+struct ethernet_ip_udp_header {
+    struct ethernet_header ethernet;
+    struct ip_header ip;
+    struct udp_header udp;
 } __attribute__((packed));
 
 struct bdc_ethernet_ip_udp_header {

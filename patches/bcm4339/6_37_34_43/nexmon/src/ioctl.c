@@ -45,6 +45,14 @@
 #include <capabilities.h>       // capabilities included in a nexmon patch
 #include <sendframe.h>          // sendframe functionality
 #include <objmem.h>             // Functions to access object memory
+#include <ieee80211_radiotap.h> // Radiotap header related
+
+extern void *inject_frame(struct wlc_info *wlc, struct sk_buff *p);
+
+struct inject_frame {
+    int flags;
+    char data[1];
+};
 
 int 
 wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
@@ -121,6 +129,70 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 
                 ret = IOCTL_SUCCESS;
             }
+            break;
+
+        case NEX_INJECT_FRAME:
+            {
+                sk_buff *p;
+                struct inject_frame *frm = (struct inject_frame *) arg;
+
+                // add a dummy radiotap header if frame does not contain one
+                if (frm->flags == 0) {
+                    p = pkt_buf_get_skb(wlc->osh, len + 202 + 8 - 4);
+                    skb_pull(p, 202);
+                    struct ieee80211_radiotap_header *radiotap = 
+                        (struct ieee80211_radiotap_header *) p->data;
+                    
+                    memset(radiotap, 0, sizeof(struct ieee80211_radiotap_header));
+                    
+                    radiotap->it_len = 8;
+                    
+                    skb_pull(p, 8);
+                    memcpy(p->data, frm->data, len - 4);
+                    skb_push(p, 8);
+                } else {
+                    p = pkt_buf_get_skb(wlc->osh, len + 202 - 4);
+                    skb_pull(p, 202);
+
+                    memcpy(p->data, frm->data, len - 4);
+                }
+
+                inject_frame(wlc, p);
+
+                ret = IOCTL_SUCCESS;
+            }
+            break;
+
+        case NEX_PRINT_TIMERS:
+            {
+                struct _ctimeout *timers = (struct _ctimeout *) 0x180E6C;
+                struct _ctimeout *this;
+                int bytes_written = 0;
+
+                if ((this = timers->next) == 0) {
+                    printf("No timers\n");
+                    ret = IOCTL_ERROR;
+                } else {
+                    while (this != 0 && len >= bytes_written + 64) {
+                        bytes_written += sprintf(arg + bytes_written, 
+                            "timer %p, fun %p, arg %p, %d ms\n", 
+                            this, this->fun, this->arg, this->ms);
+                        this = this->next;
+                    }
+
+                    ret = IOCTL_SUCCESS;
+                }
+            }
+            break;
+
+        case 500:
+            wlc_iovar_op(wlc, "mpc", 0, 0, arg, len, 1, 0);  
+            ret = IOCTL_SUCCESS;
+            break;
+
+        case 501:
+            wlc_iovar_op(wlc, "mpc", 0, 0, arg, len, 0, 0);
+            ret = IOCTL_SUCCESS;
             break;
 
         default:

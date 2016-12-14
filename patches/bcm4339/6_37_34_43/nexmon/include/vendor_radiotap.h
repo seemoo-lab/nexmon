@@ -32,17 +32,30 @@
  *                                                                         *
  **************************************************************************/
 
-#define IOCTL_ERROR						-23
-#define IOCTL_SUCCESS					0
+#ifndef VENDOR_RADIOTAP_H
+#define VENDOR_RADIOTAP_H
 
-// IOCTLs used by Nexmon
-#define NEX_GET_CAPABILITIES			400
-#define NEX_WRITE_TO_CONSOLE			401
-#define NEX_CT_EXPERIMENTS				402
-#define NEX_GET_CONSOLE					403
-#define NEX_GET_PHYREG					404
-#define NEX_SET_PHYREG					405
-#define NEX_READ_OBJMEM					406
-#define NEX_WRITE_OBJMEM				407
-#define NEX_INJECT_FRAME				408
-#define NEX_PRINT_TIMERS				409
+extern const struct ieee80211_radiotap_vendor_namespaces rtap_vendor_namespaces;
+
+/* Name                                 Data type    	Units
+ * ----                                 ---------    	-----
+ *
+ * RADIOTAP_NEX_TXDELAY               	s32	    		milliseconds
+ *
+ *      Value in milliseconds to wait before transmitting this frame
+ *		for the first time
+ *
+ * RADIOTAP_NEX_TXREPETITIONS        	2 x s32    		unitless, milliseconds
+ *
+ *      Amount of how often this frame should be transmitted and the
+ *		periodicity in milliseconds of the retransmissions. Setting
+ *		the number of retransmissions to -1 leads to infinite 
+ *		retransmissions
+ *
+ */
+enum radiotap_nex_vendor_subns_0_type {
+    RADIOTAP_NEX_TXDELAY = 0,
+    RADIOTAP_NEX_TXREPETITIONS = 1
+};
+
+#endif /* VENDOR_RADIOTAP_H */

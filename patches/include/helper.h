@@ -12,13 +12,13 @@ skb_pull(sk_buff *p, unsigned int len);
 void
 hexdump(char *desc, void *addr, int len);
 
-// somehow the strings are not removed during optimization, so that they end up in the binary, hence, move the functions somewhere else, where they are only included if they are needed.
+#define HTONS(A) ((((uint16)(A) & 0xff00) >> 8) | (((uint16)(A) & 0x00ff) << 8))
+
 inline uint16
 htons(uint16 a)
 {
-	return (a & 0xff00) >> 8 | (a & 0xff) << 8;
+    return (a & 0xff00) >> 8 | (a & 0xff) << 8;
 }
-/*
 
 inline uint32
 htonl(uint32 a)
@@ -36,7 +36,7 @@ inline uint32
 ntohl(uint32 a)
 {
 	return htonl(a);
-}*/
+}
 
 inline void *
 get_stack_ptr() {

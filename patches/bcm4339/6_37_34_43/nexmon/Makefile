@@ -20,6 +20,7 @@ CFLAGS= \
 	-Wall -Werror -O2 -nostdlib -nostartfiles -ffreestanding -mthumb -march=$(NEXMON_ARCH) \
 	-ffunction-sections -fdata-sections \
 	-I$(NEXMON_ROOT)/patches/include \
+	-Iinclude \
 	-I$(FW_PATH)
 
 all: fw_bcmdhd.bin
