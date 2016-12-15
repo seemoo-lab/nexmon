@@ -10,6 +10,9 @@ Before we started to work on this repository, we developed patches for the Nexus
 # WARNING
 Our software may damage your hardware and may void your hardware’s warranty! You use our tools at your own risk and responsibility! If you don't like these terms, don't use nexmon!
 
+# Important changes
+* Starting with commit 1bcfdc95b4395c2e8bdd962791ae20c4ba602f5b we changed the nexutil interface. Instead of calling `nexutil -m true` to activate monitor mode, you should now write `nexutil -m1`. To get the current monitor mode state execute `nexutil -m` instead of `nexutil -n`.
+
 # Supported Devices
 The following devices are currently supported by our nexmon firmware patch.
 
@@ -52,7 +55,7 @@ bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  
 * Install at least *nexutil* and *libfakeioctl* from our utilities. The easiest way to do this is by using this app: https://play.google.com/store/apps/details?id=de.tu_darmstadt.seemoo.nexmon. But you can also build it from the source by executing `make` in the *utilties* folder (Note: you will need the Android NDK properly installed for this).
 * Connect to your Android phone using the ADB tools: `adb shell`
 * Make sure you are **not** connected to an access point
-* Use *nexutil* to enable monitor mode: `nexutil -m true`
+* Use *nexutil* to enable monitor mode: `nexutil -m1`
 * At this point the monitor mode is active. There is no need to call *airmon-ng*. 
 * **Important:** Most tools need a Radiotap interface to work properly. *libfakeioctl* emulates this type of interface for you, therefore, use LD_PRELOAD to load this library when you call the favourite tool (e.g. tcpdump or airodump-ng): `LD_PRELOAD=libfakeioctl.so tcpdump -i wlan0`
 
