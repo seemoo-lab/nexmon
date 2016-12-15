@@ -45,6 +45,19 @@
 #include <ieee80211_radiotap.h> // radiotap header related
 #include <vendor_radiotap.h>    // vendor specific radiotap extensions
 #include <sendframe.h>          // sendframe functionality
+#include <securitycookie.h>     // related to securtiy cookie
+
+#define NEXUDP_IOCTL            0
+#define NEXUDP_INJECT_RADIOTAP  1
+
+extern int wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if);
+extern void prepend_ethernet_ipv4_udp_header(struct sk_buff *p);
+
+struct nexudp_header {
+    char nex[3];
+    char type;
+    int securitycookie;
+} __attribute__((packed));
 
 inline uint32_t
 get_unaligned_le32(void *p) {
@@ -136,8 +149,46 @@ handle_sdio_xmit_request_hook(void *sdio_hw, struct sk_buff *p)
 {
     struct wl_info *wl = *(*((struct wl_info ***) sdio_hw + 15) + 6);
     struct wlc_info *wlc = wl->wlc;
+    struct ethernet_ip_udp_header *ethfrm = (struct ethernet_ip_udp_header *) (p != 0) ? (p->data + 4) : 0;
+    struct nexudp_header *nexudphdr = (struct nexudp_header *) (((void *) ethfrm) + sizeof(struct ethernet_ip_udp_header));
 
-    if (wlc->monitor && p != 0 && p->data != 0 && ((short *) p->data)[2] == 0) {
+    // Check if destination MAC address starts with ff:ff:ff:ff, port equals 5500, and first three bytes equal NEX
+    if (p != 0 && p->data != 0 
+            && !memcmp(&ethfrm->ethernet.dst, "\xff\xff\xff\xff\xff\xff", 6) 
+            && ethfrm->udp.dst_port == htons(5500) 
+            && !memcmp(&nexudphdr->nex, "NEX", 3)) {
+
+        if (!check_securitycookie(nexudphdr->securitycookie)) {
+            printf("ERR: incorrect or unset security cookie.\n");
+            pkt_buf_free_skb(wlc->osh, p, 0);
+            return 0;
+        }
+
+        // remove bdc, ethernet, ip, udp and nexudp headers
+        skb_pull(p, sizeof(struct bdc_ethernet_ip_udp_header) + sizeof(struct nexudp_header));
+
+        switch(nexudphdr->type) {
+            case NEXUDP_IOCTL:
+                wlc_ioctl_hook(wlc, *(int *) p->data, p->data + 4, p->len - 4, 0);
+
+                // prepare to send back an answer tunneled over udp
+                prepend_ethernet_ipv4_udp_header(p);
+
+                // send back the answer
+                wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p);
+                return 0;
+                break;
+
+            case NEXUDP_INJECT_RADIOTAP:
+                return inject_frame(wlc, p);
+                break;
+
+            default:
+                hexdump("test", p->data, p->len);
+                pkt_buf_free_skb(wlc->osh, p, 0);
+                return 0;
+        }
+    } else if (wlc->monitor && p != 0 && p->data != 0 && ((short *) p->data)[2] == 0) {
         // remove bdc header
         skb_pull(p, 4);
 
