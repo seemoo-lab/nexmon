@@ -32,19 +32,11 @@
  *                                                                         *
  **************************************************************************/
 
-#define IOCTL_ERROR						-23
-#define IOCTL_SUCCESS					0
+#ifndef SECURITYCOOKIE_H
+#define SECURITYCOOKIE_H
 
-// IOCTLs used by Nexmon
-#define NEX_GET_CAPABILITIES			400
-#define NEX_WRITE_TO_CONSOLE			401
-#define NEX_CT_EXPERIMENTS				402
-#define NEX_GET_CONSOLE					403
-#define NEX_GET_PHYREG					404
-#define NEX_SET_PHYREG					405
-#define NEX_READ_OBJMEM					406
-#define NEX_WRITE_OBJMEM				407
-#define NEX_INJECT_FRAME				408
-#define NEX_PRINT_TIMERS				409
-#define NEX_GET_SECURITYCOOKIE			410
-#define NEX_SET_SECURITYCOOKIE			411
+void set_securitycookie(unsigned int newsecuritycookie);
+unsigned int get_securitycookie();
+unsigned char check_securitycookie(unsigned int testsecuritycookie);
+
+#endif /* SECURITYCOOKIE_H */

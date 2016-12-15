@@ -46,6 +46,7 @@
 #include <sendframe.h>          // sendframe functionality
 #include <objmem.h>             // Functions to access object memory
 #include <ieee80211_radiotap.h> // Radiotap header related
+#include <securitycookie.h>     // Security cookie related
 
 extern void *inject_frame(struct wlc_info *wlc, struct sk_buff *p);
 
@@ -191,6 +192,20 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 
                     ret = IOCTL_SUCCESS;
                 }
+            }
+            break;
+
+        case NEX_GET_SECURITYCOOKIE:
+            if (len == 4) {
+                *(int *) arg = get_securitycookie();
+                ret = IOCTL_SUCCESS;
+            }
+            break;
+
+        case NEX_SET_SECURITYCOOKIE:
+            if (len == 4) {
+                set_securitycookie(*(int *) arg);
+                ret = IOCTL_SUCCESS;
             }
             break;
 

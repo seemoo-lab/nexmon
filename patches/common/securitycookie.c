@@ -32,19 +32,40 @@
  *                                                                         *
  **************************************************************************/
 
-#define IOCTL_ERROR						-23
-#define IOCTL_SUCCESS					0
+#pragma NEXMON targetregion "patch"
 
-// IOCTLs used by Nexmon
-#define NEX_GET_CAPABILITIES			400
-#define NEX_WRITE_TO_CONSOLE			401
-#define NEX_CT_EXPERIMENTS				402
-#define NEX_GET_CONSOLE					403
-#define NEX_GET_PHYREG					404
-#define NEX_SET_PHYREG					405
-#define NEX_READ_OBJMEM					406
-#define NEX_WRITE_OBJMEM				407
-#define NEX_INJECT_FRAME				408
-#define NEX_PRINT_TIMERS				409
-#define NEX_GET_SECURITYCOOKIE			410
-#define NEX_SET_SECURITYCOOKIE			411
+static unsigned int securitycookie = 0;
+
+void
+set_securitycookie(unsigned int newsecuritycookie)
+{
+	securitycookie = newsecuritycookie;
+}
+
+unsigned int
+get_securitycookie()
+{
+	return securitycookie;
+}
+
+/**
+ *	Tests if the test security cookie equals the stored
+ *	security cookie. Resets the stored security cookie,
+ *	if the test fails.
+ *	
+ *	@returns: 1 if both security cookies match
+ *			  0 if either the stored security cookie is 0
+ *				or if both security cookies do not match
+ */
+unsigned char
+check_securitycookie(unsigned int testsecuritycookie)
+{
+	if (securitycookie == 0) {
+		return 0;
+	} else if (securitycookie == testsecuritycookie) {
+		return 1;
+	} else {
+		securitycookie = 0;
+		return 0;
+	}
+}
