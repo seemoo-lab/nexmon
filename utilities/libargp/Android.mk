@@ -20,25 +20,34 @@ LOCAL_PATH:= $(call my-dir)
 
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES := \
-	nexutil.c
+	mempcpy.c \
+	strchrnul.c \
+	rawmemchr.c \
+	basename-lgpl.c \
+	argp-parse.c \
+	argp-help.c \
+	argp-pvh.c \
+	argp-fmtstream.c \
+	argp-eexst.c \
+	getopt1.c \
+	getopt.c
 
-LOCAL_MODULE := nexutil
+LOCAL_CFLAGS := -std=c99
+LOCAL_CFLAGS += -D_GL_INLINE_HEADER_BEGIN=
+LOCAL_CFLAGS += -D_GL_INLINE_HEADER_END=
+LOCAL_CFLAGS += -DARGP_EI=inline
+LOCAL_CFLAGS += -D_GL_INLINE=inline
+LOCAL_CFLAGS += -D_GL_ATTRIBUTE_PURE=
+LOCAL_CFLAGS += -Dfwrite_unlocked=fwrite
+LOCAL_CFLAGS += -Dfputs_unlocked=fputs
+LOCAL_CFLAGS += -D__getopt_argv_const=
+LOCAL_CFLAGS += -D_GL_UNUSED=
+ifeq ($(TARGET_ARCH),arm)
+LOCAL_CFLAGS += -mabi=aapcs-linux
+endif
 
-LOCAL_STATIC_LIBRARIES  += libnexio
-LOCAL_STATIC_LIBRARIES  += libargp
+LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)
 
-LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
+LOCAL_MODULE:= libargp
 
-include $(BUILD_EXECUTABLE)
-
-include $(CLEAR_VARS)
-LOCAL_MODULE := libnexio
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../libnexio/local/armeabi/libnexio.a
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../libnexio
-include $(PREBUILT_STATIC_LIBRARY)
-
-include $(CLEAR_VARS)
-LOCAL_MODULE := libargp
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../libargp/local/armeabi/libargp.a
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../libargp
-include $(PREBUILT_STATIC_LIBRARY)
+include $(BUILD_STATIC_LIBRARY)

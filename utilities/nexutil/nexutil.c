@@ -36,7 +36,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <argp.h>
+#include <argp-extern.h>
 #include <string.h>
 #include <byteswap.h>
 
@@ -55,13 +55,10 @@
 
 #define HEXDUMP_COLS 8
 
-#define WLC_IOCTL_MAGIC          0x14e46c77
-#define DHD_IOCTL_MAGIC          0x00444944
-#define WLC_GET_MAGIC                     0
-#define DHD_GET_MAGIC                     0
-
 #define WLC_GET_PROMISC                   9
 #define WLC_SET_PROMISC                  10
+
+#define WLC_DISASSOC                     52
 
 #define WLC_GET_MONITOR                 107
 #define WLC_SET_MONITOR                 108
@@ -69,16 +66,11 @@
 #define WLC_GET_SCANSUPPRESS            115
 #define WLC_SET_SCANSUPPRESS            116
 
-/* Linux network driver ioctl encoding */
-typedef struct nex_ioctl {
-    unsigned int cmd;   /* common ioctl definition */
-    void *buf;  /* pointer to user buffer */
-    unsigned int len;   /* length of user buffer */
-    bool set;   /* get or set request (optional) */
-    unsigned int used;  /* bytes read or written (optional) */
-    unsigned int needed;    /* bytes needed (optional) */
-    unsigned int driver;    /* to identify target driver */
-} nex_ioctl_t;
+#define NEX_GET_SECURITYCOOKIE          410
+#define NEX_SET_SECURITYCOOKIE          411
+
+extern int
+nex_ioctl(struct ifreq *ifr, int cmd, void *buf, int len, bool set);
 
 unsigned char   set_monitor = 0;
 unsigned char   set_monitor_value = 0;
@@ -89,6 +81,9 @@ unsigned char   get_promisc = 0;
 unsigned char   set_scansuppress = 0;
 unsigned char   set_scansuppress_value = 0;
 unsigned char   get_scansuppress = 0;
+unsigned char   set_securitycookie = 0;
+unsigned int    set_securitycookie_value = 0;
+unsigned char   get_securitycookie = 0;
 unsigned int    custom_cmd = 0;
 signed char     custom_cmd_set = -1;
 unsigned int    custom_cmd_buf_len = 4;
@@ -98,6 +93,7 @@ unsigned char   custom_cmd_value_int = false;
 unsigned char   raw_output = false;
 unsigned int    dump_objmem_addr = 0;
 unsigned char   dump_objmem = false;
+unsigned char   disassociate = false;
 
 const char *argp_program_version = "nexutil";
 const char *argp_program_bug_address = "<mschulz@seemoo.tu-darmstadt.de>";
@@ -105,12 +101,10 @@ const char *argp_program_bug_address = "<mschulz@seemoo.tu-darmstadt.de>";
 static char doc[] = "nexutil -- a program to control a nexmon firmware for broadcom chips.";
 
 static struct argp_option options[] = {
-    {"set-monitor", 'm', "BOOL", 0, "Set monitor mode"},
-    {"set-promisc", 'p', "BOOL", 0, "Set promiscuous mode"},
-    {"set-scansuppress", 'c', "BOOL", 0, "Set scan suppress setting to avoid scanning"},
-    {"get-monitor", 'n', 0, 0, "Get monitor mode"},
-    {"get-promisc", 'q', 0, 0, "Get promiscuous mode"},
-    {"get-scansuppress", 'd', 0, 0, "Get scan suppress setting"},
+    {"monitor", 'm', "INT", OPTION_ARG_OPTIONAL, "Set/Get monitor mode"},
+    {"promisc", 'p', "INT", OPTION_ARG_OPTIONAL, "Set/Get promiscuous mode"},
+    {"scansuppress", 'c', "INT", OPTION_ARG_OPTIONAL, "Set/Get scan suppress setting to avoid scanning"},
+    {"disassociate", 'd', 0, 0, "Disassociate from access point"},
     {"get-custom-cmd", 'g', "INT", 0, "Get custom command, e.g. 107 for WLC_GET_VAR"},
     {"set-custom-cmd", 's', "INT", 0, "Set custom command, e.g. 108 for WLC_SET_VAR"},
     {"custom-cmd-buf-len", 'l', "INT", 0, "Custom command buffer length (default: 4)"},
@@ -118,6 +112,7 @@ static struct argp_option options[] = {
     {"custom-cmd-value-int", 'i', 0, 0, "Define that custom-cmd-value should be interpreted as integer"},
     {"raw-output", 'r', 0, 0, "Write raw output to stdout instead of hex dumping"},
     {"dump-objmem", 'o', "INT", 0, "Dumps objmem at addr INT"},
+    {"securitycookie", 'x', "INT", OPTION_ARG_OPTIONAL, "Set/Get securitycookie"},
     { 0 }
 };
 
@@ -126,30 +121,34 @@ parse_opt(int key, char *arg, struct argp_state *state)
 {
     switch (key) {
         case 'm':
-            set_monitor = true;
-            set_monitor_value = strncmp(arg, "true", 4) ? false : true;
+            if (arg) {
+                set_monitor = true;
+                set_monitor_value = strtol(arg, NULL, 0);
+            } else {
+                get_monitor = true;
+            }
             break;
 
         case 'p':
-            set_promisc = true;
-            set_promisc_value = strncmp(arg, "true", 4) ? false : true;
+            if (arg) {
+                set_promisc = true;
+                set_promisc_value = strtol(arg, NULL, 0);
+            } else {
+                get_promisc = true;
+            }
             break;
 
         case 'c':
-            set_scansuppress = true;
-            set_scansuppress_value = strncmp(arg, "true", 4) ? false : true;
-            break;
-
-        case 'n':
-            get_monitor = true;
-            break;
-
-        case 'q':
-            get_promisc = true;
+            if (arg) {
+                set_scansuppress = true;
+                set_scansuppress_value = strtol(arg, NULL, 0);
+            } else {
+                get_scansuppress = true;
+            }
             break;
 
         case 'd':
-            get_scansuppress = true;
+            disassociate = true;
             break;
 
         case 'g':
@@ -182,6 +181,15 @@ parse_opt(int key, char *arg, struct argp_state *state)
             dump_objmem_addr = strtol(arg, NULL, 0);
             dump_objmem = true;
             break;
+
+        case 'x':
+            if (arg) {
+                set_securitycookie = true;
+                set_securitycookie_value = strtol(arg, NULL, 0);
+            } else {
+                get_securitycookie = true;
+            }
+            break;
         
         default:
             return ARGP_ERR_UNKNOWN;
@@ -191,57 +199,6 @@ parse_opt(int key, char *arg, struct argp_state *state)
 }
 
 static struct argp argp = { options, parse_opt, 0, doc };
-
-static int __nex_driver_io(struct ifreq *ifr, nex_ioctl_t *ioc)
-{
-    int s;
-    int ret = 0;
-
-    /* pass ioctl data */
-    ifr->ifr_data = (void *) ioc;
-
-    /* open socket to kernel */
-    if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-        printf("error: socket\n");
-
-    ret = ioctl(s, SIOCDEVPRIVATE, ifr);
-    if (ret < 0 && errno != EAGAIN)
-        printf("%s: error\n", __FUNCTION__);
-
-    /* cleanup */
-    close(s);
-    return ret;
-}
-
-/* This function is called by ioctl_setinformation_fe or ioctl_queryinformation_fe
- * for executing  remote commands or local commands
- */
-static int
-nex_ioctl(struct ifreq *ifr, int cmd, void *buf, int len, bool set)
-{
-    nex_ioctl_t ioc;
-    int ret = 0;
-
-    /* By default try to execute wl commands */
-    int driver_magic = WLC_IOCTL_MAGIC;
-    int get_magic = WLC_GET_MAGIC;
-
-    // For local dhd commands execute dhd
-    //driver_magic = DHD_IOCTL_MAGIC;
-    //get_magic = DHD_GET_MAGIC;
-
-    /* do it */
-    ioc.cmd = cmd;
-    ioc.buf = buf;
-    ioc.len = len;
-    ioc.set = set;
-    ioc.driver = driver_magic;
-
-    ret = __nex_driver_io(ifr, &ioc);
-    if (ret < 0 && cmd != get_magic)
-        ret = -1;
-    return ret;
-}
 
 /* source: http://grapsus.net/blog/post/Hexadecimal-dump-in-C */
 void
@@ -305,6 +262,11 @@ main(int argc, char **argv)
             ret = nex_ioctl(&ifr, WLC_SET_SCANSUPPRESS, &buf, 1, true);
     }
 
+    if (set_securitycookie) {
+        buf = set_securitycookie_value;
+        ret = nex_ioctl(&ifr, NEX_SET_SECURITYCOOKIE, &buf, 4, true);
+    }
+
     if (get_monitor) {
         ret = nex_ioctl(&ifr, WLC_GET_MONITOR, &buf, 4, false);
         printf("monitor: %d\n", buf);
@@ -318,6 +280,11 @@ main(int argc, char **argv)
     if (get_scansuppress) {
         ret = nex_ioctl(&ifr, WLC_GET_SCANSUPPRESS, &buf, 4, false);
         printf("scansuppress: %d\n", buf);
+    }
+
+    if (get_securitycookie) {
+        ret = nex_ioctl(&ifr, NEX_GET_SECURITYCOOKIE, &buf, 4, false);
+        printf("securitycookie: %d\n", buf);
     }
 
     if (custom_cmd_set != -1) {
@@ -371,6 +338,11 @@ main(int argc, char **argv)
         } else {
             hexdump(custom_cmd_buf, custom_cmd_buf_len);
         }
+    }
+
+    if (disassociate) {
+        buf = 1;
+        ret = nex_ioctl(&ifr, WLC_DISASSOC, &buf, 4, true);
     }
 
     return 0;

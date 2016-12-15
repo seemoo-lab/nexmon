@@ -1,13 +1,18 @@
 all: libs/armeabi/nexutil
 
 ifneq ($(shell uname -m),armv7l)
-libs/armeabi/nexutil: Android.mk nexutil.c
+libs/armeabi/nexutil: Android.mk nexutil.c ../libargp/local/armeabi/libargp.a ../libnexio/local/armeabi/libnexio.a
 	$(NDK_ROOT)/ndk-build NDK_APPLICATION_MK=`pwd`/Application.mk NDK_APP_OUT=. TARGET_PLATFORM=android-21
 else
 libs/armeabi/nexutil: nexutil.c
 	gcc -o nexutil nexutil.c -DBUILD_ON_RPI
 endif
 
+../libargp/local/armeabi/libargp.a: FORCE
+	cd ../libargp && make
+
+../libnexio/local/armeabi/libnexio.a: FORCE
+	cd ../libnexio && make
 
 ifneq ($(shell uname -m),armv7l)
 install: libs/armeabi/nexutil
@@ -23,3 +28,6 @@ endif
 clean:
 	rm -Rf libs
 	rm -Rf local
+
+FORCE:
+	
