@@ -475,6 +475,11 @@ int
 function_with_huge_jump_table(void *wlc, int a2, int cmd, int a4, int a5, unsigned int a6, int a7, int a8, int a9, int a10) 
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x08C3CC)
+int
+memcmp(void *s1, void *s2, int n)
+RETURN_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x181418) 
 int 
 memcpy_ram(void *dst, void *src, int len) 
