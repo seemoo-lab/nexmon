@@ -85,7 +85,7 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p,
         skb_pull(p_new, sizeof(struct ethernet_ip_udp_header) + 2);
 
     struct nexmon_radiotap_header *frame = (struct nexmon_radiotap_header *) p_new->data;
-    printf("xx %08x \n", frame->tsf.tsf_l);
+
     memset(p_new->data, 0, sizeof(struct nexmon_radiotap_header));
     frame->header.it_version = 0;
     frame->header.it_pad = 0;
