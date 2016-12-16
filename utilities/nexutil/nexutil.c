@@ -69,9 +69,20 @@
 #define NEX_GET_SECURITYCOOKIE          410
 #define NEX_SET_SECURITYCOOKIE          411
 
-extern int
-nex_ioctl(struct ifreq *ifr, int cmd, void *buf, int len, bool set);
+#define IPADDR(a,b,c,d) ((d) << 24 | (c) << 16 | (b) << 8 | (a))
 
+struct nexio {
+    struct ifreq *ifr;
+    int sock_rx_ioctl;
+    int sock_rx_frame;
+    int sock_tx;
+};
+
+extern int nex_ioctl(struct nexio *nexio, int cmd, void *buf, int len, bool set);
+extern struct nexio *nex_init_ioctl(const char *ifname);
+extern struct nexio *nex_init_udp(unsigned int securitycookie, unsigned int txip);
+
+char            *ifname = "wlan0";
 unsigned char   set_monitor = 0;
 unsigned char   set_monitor_value = 0;
 unsigned char   get_monitor = 0;
@@ -84,6 +95,8 @@ unsigned char   get_scansuppress = 0;
 unsigned char   set_securitycookie = 0;
 unsigned int    set_securitycookie_value = 0;
 unsigned char   get_securitycookie = 0;
+unsigned int    use_udp_tunneling = 0; // contains the securtiy cookie
+unsigned int    txip = IPADDR(192,168,222,255);
 unsigned int    custom_cmd = 0;
 signed char     custom_cmd_set = -1;
 unsigned int    custom_cmd_buf_len = 4;
@@ -101,6 +114,7 @@ const char *argp_program_bug_address = "<mschulz@seemoo.tu-darmstadt.de>";
 static char doc[] = "nexutil -- a program to control a nexmon firmware for broadcom chips.";
 
 static struct argp_option options[] = {
+    {"interface-name", 'I', "CHAR", 0, "Set interface name (default: wlan0)"},
     {"monitor", 'm', "INT", OPTION_ARG_OPTIONAL, "Set/Get monitor mode"},
     {"promisc", 'p', "INT", OPTION_ARG_OPTIONAL, "Set/Get promiscuous mode"},
     {"scansuppress", 'c', "INT", OPTION_ARG_OPTIONAL, "Set/Get scan suppress setting to avoid scanning"},
@@ -112,7 +126,9 @@ static struct argp_option options[] = {
     {"custom-cmd-value-int", 'i', 0, 0, "Define that custom-cmd-value should be interpreted as integer"},
     {"raw-output", 'r', 0, 0, "Write raw output to stdout instead of hex dumping"},
     {"dump-objmem", 'o', "INT", 0, "Dumps objmem at addr INT"},
-    {"securitycookie", 'x', "INT", OPTION_ARG_OPTIONAL, "Set/Get securitycookie"},
+    {"security-cookie", 'x', "INT", OPTION_ARG_OPTIONAL, "Set/Get security cookie"},
+    {"use-udp-tunneling", 'X', "INT", 0, "Use UDP tunneling with security cookie INT"},
+    {"broadcast-ip", 'B', "CHAR", 0, "Broadcast IP to use for UDP tunneling (default: 192.168.222.255)"},
     { 0 }
 };
 
@@ -120,6 +136,10 @@ static error_t
 parse_opt(int key, char *arg, struct argp_state *state)
 {
     switch (key) {
+        case 'I':
+            ifname = arg;
+            break;
+
         case 'm':
             if (arg) {
                 set_monitor = true;
@@ -190,6 +210,22 @@ parse_opt(int key, char *arg, struct argp_state *state)
                 get_securitycookie = true;
             }
             break;
+
+        case 'X':
+            if (set_securitycookie == false) {
+                use_udp_tunneling = strtol(arg, NULL, 0);
+                if (use_udp_tunneling == 0)
+                    printf("ERR: You need to use a security cookie different from 0.");
+            } else {
+                printf("ERR: You cannot use -x in combination with -X.");
+            }
+            break;
+
+        case 'B':
+            if (arg) {
+                txip = inet_addr(arg);
+            }
+            break;
         
         default:
             return ARGP_ERR_UNKNOWN;
@@ -235,55 +271,57 @@ hexdump(void *mem, unsigned int len)
 int
 main(int argc, char **argv)
 {
-    struct ifreq ifr;
+    struct nexio *nexio;
     int ret;
     int buf = 0;
 
     argp_parse(&argp, argc, argv, 0, 0, 0);
 
-    memset(&ifr, 0, sizeof(struct ifreq));
-    memcpy(ifr.ifr_name, "wlan0", 5);
+    if (use_udp_tunneling != 0)
+        nexio = nex_init_udp(use_udp_tunneling, txip);
+    else
+        nexio = nex_init_ioctl(ifname);
 
     if (set_monitor) {
         buf = set_monitor_value;
-        ret = nex_ioctl(&ifr, WLC_SET_MONITOR, &buf, 4, true);
+        ret = nex_ioctl(nexio, WLC_SET_MONITOR, &buf, 4, true);
     }
 
     if (set_promisc) {
         buf = set_promisc_value;
-        ret = nex_ioctl(&ifr, WLC_SET_PROMISC, &buf, 4, true);
+        ret = nex_ioctl(nexio, WLC_SET_PROMISC, &buf, 4, true);
     }
 
     if (set_scansuppress) {
         buf = set_scansuppress_value;
         if (set_scansuppress_value)
-            ret = nex_ioctl(&ifr, WLC_SET_SCANSUPPRESS, &buf, 4, true);
+            ret = nex_ioctl(nexio, WLC_SET_SCANSUPPRESS, &buf, 4, true);
         else
-            ret = nex_ioctl(&ifr, WLC_SET_SCANSUPPRESS, &buf, 1, true);
+            ret = nex_ioctl(nexio, WLC_SET_SCANSUPPRESS, &buf, 1, true);
     }
 
     if (set_securitycookie) {
         buf = set_securitycookie_value;
-        ret = nex_ioctl(&ifr, NEX_SET_SECURITYCOOKIE, &buf, 4, true);
+        ret = nex_ioctl(nexio, NEX_SET_SECURITYCOOKIE, &buf, 4, true);
     }
 
     if (get_monitor) {
-        ret = nex_ioctl(&ifr, WLC_GET_MONITOR, &buf, 4, false);
+        ret = nex_ioctl(nexio, WLC_GET_MONITOR, &buf, 4, false);
         printf("monitor: %d\n", buf);
     }
 
     if (get_promisc) {
-        ret = nex_ioctl(&ifr, WLC_GET_PROMISC, &buf, 4, false);
+        ret = nex_ioctl(nexio, WLC_GET_PROMISC, &buf, 4, false);
         printf("promisc: %d\n", buf);
     }
 
     if (get_scansuppress) {
-        ret = nex_ioctl(&ifr, WLC_GET_SCANSUPPRESS, &buf, 4, false);
+        ret = nex_ioctl(nexio, WLC_GET_SCANSUPPRESS, &buf, 4, false);
         printf("scansuppress: %d\n", buf);
     }
 
     if (get_securitycookie) {
-        ret = nex_ioctl(&ifr, NEX_GET_SECURITYCOOKIE, &buf, 4, false);
+        ret = nex_ioctl(nexio, NEX_GET_SECURITYCOOKIE, &buf, 4, false);
         printf("securitycookie: %d\n", buf);
     }
 
@@ -300,7 +338,7 @@ main(int argc, char **argv)
             else
                 strncpy(custom_cmd_buf, custom_cmd_value, custom_cmd_buf_len);
 
-        ret = nex_ioctl(&ifr, custom_cmd, custom_cmd_buf, custom_cmd_buf_len, custom_cmd_set);
+        ret = nex_ioctl(nexio, custom_cmd, custom_cmd_buf, custom_cmd_buf_len, custom_cmd_set);
 
         if (custom_cmd_set == false)
             if (raw_output) {
@@ -324,12 +362,12 @@ main(int argc, char **argv)
         for (i = 0; i < custom_cmd_buf_len / 0x2000; i++) {
             *custom_cmd_buf_pos = dump_objmem_addr + i * 0x2000 / 4;
             printf("%08x %08x\n", (int) custom_cmd_buf_pos, *custom_cmd_buf_pos);
-            ret = nex_ioctl(&ifr, 406, custom_cmd_buf_pos, 0x2000, false);    
+            ret = nex_ioctl(nexio, 406, custom_cmd_buf_pos, 0x2000, false);    
             custom_cmd_buf_pos += 0x2000 / 4;
         }
         if (custom_cmd_buf_len % 0x2000 != 0) {
             *(unsigned int *) custom_cmd_buf_pos = dump_objmem_addr + i * 0x2000 / 4;
-            ret = nex_ioctl(&ifr, 406, custom_cmd_buf_pos, custom_cmd_buf_len % 0x2000, false);
+            ret = nex_ioctl(nexio, 406, custom_cmd_buf_pos, custom_cmd_buf_len % 0x2000, false);
         }
 
         if (raw_output) {
@@ -342,7 +380,7 @@ main(int argc, char **argv)
 
     if (disassociate) {
         buf = 1;
-        ret = nex_ioctl(&ifr, WLC_DISASSOC, &buf, 4, true);
+        ret = nex_ioctl(nexio, WLC_DISASSOC, &buf, 4, true);
     }
 
     return 0;
