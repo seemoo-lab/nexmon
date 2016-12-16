@@ -25,5 +25,12 @@ LOCAL_SRC_FILES := \
 LOCAL_MODULE := libfakeioctl
 LOCAL_CFLAGS := -std=c99
 LOCAL_LDLIBS := -ldl
+LOCAL_STATIC_LIBRARIES  += libnexio
 
 include $(BUILD_SHARED_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := libnexio
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../libnexio/local/armeabi/libnexio.a
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../libnexio
+include $(PREBUILT_STATIC_LIBRARY)

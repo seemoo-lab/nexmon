@@ -43,10 +43,31 @@
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <sys/socket.h>
 #include <linux/if_arp.h>
 #include <linux/sockios.h>
 #include <linux/wireless.h>
+
+#define MONITOR_DISABLED  0
+#define MONITOR_IEEE80211 1
+#define MONITOR_RADIOTAP  2
+#define MONITOR_LOG_ONLY  3
+#define MONITOR_DROP_FRM  4
+#define MONITOR_IPV4_UDP  5
+
+#define WLC_GET_MONITOR                 107
+#define WLC_SET_MONITOR                 108
+
+struct nexio {
+    struct ifreq *ifr;
+    int sock_rx_ioctl;
+    int sock_rx_frame;
+    int sock_tx;
+};
+
+extern int nex_ioctl(struct nexio *nexio, int cmd, void *buf, int len, bool set);
+extern struct nexio *nex_init_ioctl(const char *ifname);
 
 #ifndef RTLD_NEXT
 #define RTLD_NEXT ((void *) -1l)
@@ -58,31 +79,13 @@ typedef int request_t;
 
 typedef void (*sighandler_t)(int);
 
-static int sa_family = 0;
-static char *sa_family_str = NULL;
+static struct nexio *nexio = NULL;
+
+static const char *ifname = "wlan0";
 
 static void _libfakeioctl_init() __attribute__ ((constructor));
 static void _libfakeioctl_init() {
-    const char *env_var = getenv("NEXMON_SA_FAMILY");
-    if (env_var != NULL) {
-        if (!strcmp(env_var, "ARPHRD_IEEE80211")) {
-            sa_family = ARPHRD_IEEE80211;
-            sa_family_str = "ARPHRD_IEEE80211";
-        } else {
-            sa_family = ARPHRD_IEEE80211_RADIOTAP;
-            sa_family_str = "ARPHRD_IEEE80211_RADIOTAP";
-        }
-    } else {
-        sa_family = ARPHRD_IEEE80211_RADIOTAP;
-        sa_family_str = "ARPHRD_IEEE80211_RADIOTAP";
-    }
-
-    printf("####################################################\n");
-    printf("## nexmon ioctl hook active\n");
-    printf("## sa_family = %s\n", sa_family_str);
-    printf("## to change sa_family, set NEXMON_SA_FAMILY\n");
-    printf("## environment variable to ARPHRD_IEEE80211\n");
-    printf("####################################################\n");
+    nexio = nex_init_ioctl("wlan0");
 
 }
 
@@ -91,27 +94,80 @@ int ioctl (int fd, request_t request, ...){
     va_list args;
     void *argp;
     int ret;
-    struct ifreq* p_ifr;
-    struct iwreq* p_wrq;
-
+    
     if (! func_ioctl)
         func_ioctl = (int (*) (int, request_t, void *)) dlsym (REAL_LIBC, "ioctl");
     va_start (args, request);
     argp = va_arg (args, void *);
     va_end (args);
 
-    ret = func_ioctl (fd, request, argp);
+    ret = func_ioctl(fd, request, argp);
 
     switch (request) {
         case SIOCGIFHWADDR:
-            p_ifr = (struct ifreq *) argp;
-            p_ifr->ifr_hwaddr.sa_family = sa_family;
+            {
+                int buf;
+                struct ifreq* p_ifr = (struct ifreq *) argp;
+                if (!strncmp(p_ifr->ifr_ifrn.ifrn_name, ifname, strlen(ifname))) {
+                    nex_ioctl(nexio, WLC_GET_MONITOR, &buf, 4, false);
+                    
+                    switch(buf) {
+                        case MONITOR_IEEE80211:
+                            p_ifr->ifr_hwaddr.sa_family = ARPHRD_IEEE80211;
+                            break;
+
+                        case MONITOR_RADIOTAP:
+                            p_ifr->ifr_hwaddr.sa_family = ARPHRD_IEEE80211_RADIOTAP;
+                            break;
+
+                        case MONITOR_DISABLED:
+                        case MONITOR_LOG_ONLY:
+                        case MONITOR_DROP_FRM:
+                        case MONITOR_IPV4_UDP:
+                            p_ifr->ifr_hwaddr.sa_family = ARPHRD_ETHER;
+                            break;
+                    }
+                }
+            }
             break;
+
         case SIOCGIWMODE:
-            p_wrq = (struct iwreq*) argp;
-            p_wrq->u.mode = IW_MODE_MONITOR;
+            {
+                int buf;
+                struct iwreq* p_wrq = (struct iwreq*) argp;
+
+                if (!strncmp(p_wrq->ifr_ifrn.ifrn_name, ifname, strlen(ifname))) {
+                    nex_ioctl(nexio, WLC_GET_MONITOR, &buf, 4, false);
+
+                    switch(buf) {
+                        case MONITOR_RADIOTAP:
+                        case MONITOR_IEEE80211:
+                        case MONITOR_LOG_ONLY:
+                        case MONITOR_DROP_FRM:
+                        case MONITOR_IPV4_UDP:
+                            p_wrq->u.mode = IW_MODE_MONITOR;
+                            break;
+                    }
+                }
+            }
+            break;
+
+        case SIOCSIWMODE:
+            {
+                int buf;
+                struct iwreq* p_wrq = (struct iwreq*) argp;
+
+                if (!strncmp(p_wrq->ifr_ifrn.ifrn_name, ifname, strlen(ifname))) {
+                    if (p_wrq->u.mode == IW_MODE_MONITOR) {
+                        buf = MONITOR_RADIOTAP;
+                    } else {
+                        buf = MONITOR_DISABLED;
+                    }
+
+                    ret = nex_ioctl(nexio, WLC_SET_MONITOR, &buf, 4, true);
+                }
+            }
             break;
     }
-
     return ret;
 }
