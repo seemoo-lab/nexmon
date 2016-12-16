@@ -199,6 +199,34 @@ typedef struct sk_buff {
     int dword2C;                    // 0x2C
 } __attribute__((packed)) sk_buff;
 
+#define HNDRTE_DEV_NAME_MAX 16
+
+typedef struct hndrte_dev {
+    char                        name[HNDRTE_DEV_NAME_MAX];
+    struct hndrte_devfuncs      *funcs;
+    uint32                      devid;
+    void                        *softc;     /* Software context */
+    uint32                      flags;      /* RTEDEVFLAG_XXXX */
+    struct hndrte_dev           *next;
+    struct hndrte_dev           *chained;
+    void                        *pdev;
+} hndrte_dev;
+
+struct hndrte_devfuncs {
+    void *(*probe)(struct hndrte_dev *dev, void *regs, uint bus,
+                   uint16 device, uint coreid, uint unit);
+    int (*open)(struct hndrte_dev *dev);
+    int (*close)(struct hndrte_dev *dev);
+    int (*xmit)(struct hndrte_dev *src, struct hndrte_dev *dev, void *lb);
+    int (*recv)(struct hndrte_dev *src, struct hndrte_dev *dev, void *pkt);
+    int (*ioctl)(struct hndrte_dev *dev, uint32 cmd, void *buffer, int len,
+                 int *used, int *needed, int set);
+    void (*txflowcontrol) (struct hndrte_dev *dev, bool state, int prio);
+    void (*poll)(struct hndrte_dev *dev);
+    int (*xmit_ctl)(struct hndrte_dev *src, struct hndrte_dev *dev, void *lb);
+    int (*xmit2)(struct hndrte_dev *src, struct hndrte_dev *dev, void *lb, int8 ch);
+};
+
 struct tunables {
     char gap[62];
     short somebnd; // @ 0x38
@@ -243,7 +271,7 @@ struct wl_info {
     struct wlc_pub *pub;
     struct wlc_info *wlc;
     struct wlc_hw_info *wlc_hw;
-    struct device *dev;
+    struct hndrte_dev *dev;             // 0x10
 };
 
 /**
@@ -407,14 +435,14 @@ struct wlc_info {
     int PAD;                            /* 0x1EC */
     int PAD;                            /* 0x1F0 */
     int PAD;                            /* 0x1F4 */
-    int monitor;                        /* 0x1F8 */
-    int bcnmisc_ibss;                   /* 0x1FC */
-    int bcnmisc_scan;                   /* 0x200 */
-    int bcnmisc_monitor;                /* 0x204 */
-    int PAD;                            /* 0x208 */
-    int PAD;                            /* 0x20C */
-    int PAD;                            /* 0x210 */
-    int PAD;                            /* 0x214 */
+    int PAD;                            /* 0x1F8 */
+    int PAD;                            /* 0x1FC */
+    int PAD;                            /* 0x200 */
+    int PAD;                            /* 0x204 */
+    int monitor;                        /* 0x208 */
+    int bcnmisc_ibss;                   /* 0x20C */
+    int bcnmisc_scan;                   /* 0x210 */
+    int bcnmisc_monitor;                /* 0x214 */
     int PAD;                            /* 0x218 */
     int PAD;                            /* 0x21C */
     int PAD;                            /* 0x220 */
