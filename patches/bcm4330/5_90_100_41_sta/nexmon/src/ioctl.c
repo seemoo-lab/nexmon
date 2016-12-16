@@ -45,6 +45,9 @@
 #include <capabilities.h>       // capabilities included in a nexmon patch
 #include <sendframe.h>          // sendframe functionality
 
+#define WLC_GET_MONITOR             107
+#define WLC_SET_MONITOR             108
+
 int 
 wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 {
@@ -69,6 +72,10 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
         default:
             ret = wlc_ioctl(wlc, cmd, arg, len, wlc_if);
     }
+
+    // fix the ioctl number to use numbers different from 0 and 1
+    if (cmd == WLC_SET_MONITOR)
+        wlc->monitor = *(char *) arg;
 
     return ret;
 }
