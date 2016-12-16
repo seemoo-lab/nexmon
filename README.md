@@ -59,6 +59,11 @@ bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  
 * At this point the monitor mode is active. There is no need to call *airmon-ng*. 
 * **Important:** Most tools need a Radiotap interface to work properly. *libfakeioctl* emulates this type of interface for you, therefore, use LD_PRELOAD to load this library when you call the favourite tool (e.g. tcpdump or airodump-ng): `LD_PRELOAD=libfakeioctl.so tcpdump -i wlan0`
 
+### Using nexutil over UDP
+To be able to communicate with the firmwrae without root priviledges, we created a UDP interface accessible through the `libnexio`, which is also used by `nexutil`. You first have to prove to the firmware that you generally have root priviledges by setting a securtiy cookie. Then you can use it for UDP based connections:
+* Set the security cookie as root: `nexutil -x<cookie (uint)>`
+* Start a UDP connection for example to activate monitor mode: `nexutil -X<cookie> -m1`
+
 ## Build patches for bcm43438 on the RPI3 using Raspbian 8 (recommended)
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
 * Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk`
