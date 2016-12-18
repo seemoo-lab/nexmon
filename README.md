@@ -34,7 +34,7 @@ bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  
 # Steps to create your own firmware patches
 
 ## Build patches for bcm4330, bcm4339 and bcm4358 using a x86 computer running Linux (e.g. Ubuntu 16.04)
-* Install some dependencies: `sudo apt-get install git gawk adb`
+* Install some dependencies: `sudo apt-get install git gawk qpdf adb`
 * **Only necessary for x86_64 systems**, install i386 libs: 
 
   ```
