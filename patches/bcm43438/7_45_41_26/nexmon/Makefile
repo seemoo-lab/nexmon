@@ -27,12 +27,9 @@ init: FORCE
 	$(Q)mkdir -p obj gen log
 
 brcmfmac.ko: check-nexmon-setup-env
-ifeq ($(shell uname -m),armv7l)
 	@printf "\033[0;31m  BUILDING DRIVER \033[0m brcmfmac/brcmfmac.ko (details: log/driver.log)\n" $@
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac -j2 >log/driver.log
-else
-	$(warning Warning: Driver can not be compiled on this platform, execute the make command on a raspberry pi)
-endif
+	$(Q)make -C /lib/modules/4.4.33-v7_Re4son-Kali-Pi-TFT+/build M=$$PWD/brcmfmac -j2 >log/driver.log
+
 
 obj/%.o: src/%.c
 	@printf "\033[0;31m  COMPILING\033[0m %s => %s (details: log/compiler.log)\n" $< $@
@@ -122,31 +119,21 @@ ifndef NEXMON_SETUP_ENV
 endif
 
 backup-firmware:
-ifeq ($(shell uname -m),armv7l)
 	cp /lib/firmware/brcm/brcmfmac43430-sdio.bin brcmfmac43430-sdio.bin.orig
-else
-	$(warning Warning: Cannot backup the original firmware on this arch.)
-endif
 
 install-firmware:
-ifeq ($(shell uname -m),armv7l)
 	@printf "\033[0;31m  COPYING\033[0m brcmfmac43430-sdio.bin => /lib/firmware/brcm/brcmfmac43430-sdio.bin\n"
 	$(Q)cp brcmfmac43430-sdio.bin /lib/firmware/brcm/brcmfmac43430-sdio.bin
 	$(Q)rmmod brcmfmac
 	$(Q)modprobe brcmutil
 	$(Q)insmod brcmfmac/brcmfmac.ko
-else
-	$(warning Warning: Cannot install firmware on this arch., bcm43430-sdio.bin needs to be copied manually into /lib/firmware/brcm/ on your RPI3)
-endif
 
 clean-firmware: FORCE
 	@printf "\033[0;31m  CLEANING\033[0m\n"
 	$(Q)rm -fr $(RAM_FILE) obj gen log src/ucode_compressed.c ucode_compressed.bin
 
 clean: clean-firmware
-ifeq ($(shell uname -m),armv7l)
 	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac clean
-endif
+	$(Q)make -C /lib/modules/4.4.33-v7_Re4son-Kali-Pi-TFT+/build M=$$PWD/brcmfmac clean
 
 FORCE:
