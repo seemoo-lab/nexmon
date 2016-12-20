@@ -1,13 +1,16 @@
 all: libs/armeabi/tcpdump
 
-libs/armeabi/tcpdump: Android.mk ../libpcap/local/armeabi/libpcap.a
+libs/armeabi/tcpdump: Android.mk ../libssl/local/armeabi/libssl.a ../libcrypto/local/armeabi/libcrypto.a ../libpcap/local/armeabi/libpcap.a
 	$(NDK_ROOT)/ndk-build NDK_APPLICATION_MK=`pwd`/Application.mk NDK_APP_OUT=. TARGET_PLATFORM=android-21
 
 ../libpcap/local/armeabi/libpcap.a: FORCE
 	cd ../libpcap && make
 
-../shared_system_libs/libssl.so: FORCE
-	cd ../shared_system_libs && make
+../libssl/local/armeabi/libssl.a: FORCE
+	cd ../libssl && make
+
+../libcrypto/local/armeabi/libcrypto.a: FORCE
+	cd ../libcrypto && make
 
 install: libs/armeabi/tcpdump
 	adb push $< /sdcard/
