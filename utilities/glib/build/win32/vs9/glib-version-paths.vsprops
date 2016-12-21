@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="glibversionpathsprops"
+	>
+	<UserMacro
+		Name="VSVer"
+		Value="9"
+	/>
+	<UserMacro
+		Name="GlibVersion"
+		Value="2.48.1"
+	/>
+	<UserMacro
+		Name="ApiVersion"
+		Value="2.0"
+	/>
+	<UserMacro
+		Name="GlibEtcInstallRoot"
+		Value="..\..\..\..\vs$(VSVer)\$(PlatformName)"
+	/>
+	<UserMacro
+		Name="CopyDir"
+		Value="$(GlibEtcInstallRoot)"
+	/>
+	<UserMacro
+		Name="GlibLibtoolCompatibleDllPrefix"
+		Value="lib"
+	/>
+	<UserMacro
+		Name="GlibLibtoolCompatibleDllSuffix"
+		Value="-$(ApiVersion)-0"
+	/>
+	<UserMacro
+		Name="GlibSeparateVSDllPrefix"
+		Value=""
+	/>
+	<UserMacro
+		Name="GlibSeparateVSDllSuffix"
+		Value="-2-vs$(VSVer)"
+	/>
+	<!-- Change these two to GlibLibtoolCompatibleDllPrefix and
+	GlibLibtoolCompatibleDllSuffix if that is what you want -->
+	<UserMacro
+		Name="GlibDllPrefix"
+		Value="$(GlibSeparateVSDllPrefix)"
+	/>
+	<UserMacro
+		Name="GlibDllSuffix"
+		Value="$(GlibSeparateVSDllSuffix)"
+	/>
+	<UserMacro
+		Name="PythonPath"
+		Value="c:\python27"
+	/>
+</VisualStudioPropertySheet>
