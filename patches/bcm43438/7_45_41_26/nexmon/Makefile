@@ -28,7 +28,7 @@ init: FORCE
 
 brcmfmac.ko: check-nexmon-setup-env
 	@printf "\033[0;31m  BUILDING DRIVER \033[0m brcmfmac/brcmfmac.ko (details: log/driver.log)\n" $@
-	$(Q)make -C /lib/modules/4.4.33-v7_Re4son-Kali-Pi-TFT+/build M=$$PWD/brcmfmac -j2 >log/driver.log
+	$(Q)make -C /lib/modules/4.4.39-v7_Re4son-Kali-Pi-TFT+/build M=$$PWD/brcmfmac -j2 >log/driver.log
 
 
 obj/%.o: src/%.c
@@ -134,6 +134,6 @@ clean-firmware: FORCE
 
 clean: clean-firmware
 	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
-	$(Q)make -C /lib/modules/4.4.33-v7_Re4son-Kali-Pi-TFT+/build M=$$PWD/brcmfmac clean
+	$(Q)make -C /lib/modules/4.4.39-v7_Re4son-Kali-Pi-TFT+/build M=$$PWD/brcmfmac clean
 
 FORCE:
