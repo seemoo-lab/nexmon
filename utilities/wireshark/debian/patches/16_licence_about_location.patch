@@ -1,0 +1,26 @@
+Description: Change location of license file in about dialog
+Forwarded: not-needed
+Author: Frederic Peters <fpeters@debian.org>
+
+--- a/ui/gtk/about_dlg.c
++++ b/ui/gtk/about_dlg.c
+@@ -516,7 +516,7 @@
+ #if defined(_WIN32)
+   absolute_path = get_datafile_path("COPYING.txt");
+ #else
+-  absolute_path = get_datafile_path("COPYING");
++  absolute_path = get_datafile_path("ABOUT.GPL");
+ #endif
+   page = text_page_new(absolute_path);
+ 
+--- a/ui/qt/about_dialog.cpp
++++ b/ui/qt/about_dialog.cpp
+@@ -341,7 +341,7 @@
+ #if defined(_WIN32)
+     f_license.setFileName(get_datafile_path("COPYING.txt"));
+ #else
+-    f_license.setFileName(get_datafile_path("COPYING"));
++    f_license.setFileName(get_datafile_path("ABOUT.GPL"));
+ #endif
+ 
+     f_license.open(QFile::ReadOnly | QFile::Text);

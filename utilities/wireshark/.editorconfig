@@ -1,0 +1,74 @@
+#
+# Editor configuration
+#
+# http://editorconfig.org/
+#
+
+# Global settings
+
+# We're the top. We're the Coliseum.
+root = true
+
+[*]
+tab_width = 8
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# Autotools, Make
+[{Makefile.am,Makefile}]
+indent_style = tab
+indent_size = 8
+
+# Python
+[*.py]
+indent_style = space
+indent_size = 4
+
+# C/C++
+[*.{c,cpp,h}]
+indent_style = space
+indent_size = 4
+
+[{capinfos,captype,mergecap,mkcap,tfshark,tshark}.c]
+indent_size = 2
+
+[{dftest,echld_test,randpkt,trigcap}.c]
+indent_style = tab
+indent_size = tab
+
+[capture_stop_conditions.[ch]]
+indent_size = 2
+
+[cfile.[ch]]
+indent_size = 2
+
+[conditions.[ch]]
+indent_size = 2
+
+[file.[ch]]
+indent_size = 2
+
+[filter_files.[ch]]
+indent_size = 2
+
+[frame_tvbuff.[ch]]
+indent_style = tab
+indent_size = tab
+
+[pcapio.[ch]]
+indent_size = 8
+
+[ringbuffer.[ch]]
+indent_size = 2
+
+[summary.[ch]]
+indent_size = 2
+
+[randpkt_core.[ch]]
+indent_style = tab
+indent_size = tab
+
+[ws_version_info.[ch]]
+indent_style = tab
+indent_size = tab
