@@ -1,0 +1,55 @@
+# Portuguese translation of 'hello-c-gnome3' package.
+# Copyright (C) 2005 Yoyodyne, Inc.
+# This file is distributed under the same license as the hello-c-gnome3 package.
+# Helder Correia <helder.pereira.correia@gmail.com>, 2005.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-c-gnome3 0.14.5\n"
+"Report-Msgid-Bugs-To: bug-gnu-gettext@gnu.org\n"
+"PO-Revision-Date: 2005-11-19 23:08+0000\n"
+"Last-Translator: Helder Correia <helder.pereira.correia@gmail.com>\n"
+"Language-Team: Portuguese <translation-team-pt@lists.sourceforge.net>\n"
+"Language: pt\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: hello.c:79
+#, fuzzy, c-format
+msgid ""
+"<big>Hello world!</big>\n"
+"This program is running as process number <b>%d</b>."
+msgstr "Este programa está a ser executado com o número de processo %d."
+
+#: hello.c:84
+msgid "<big><u>This is another text</u></big>"
+msgstr ""
+
+#: hello.c:86
+msgid "<big><i>This is yet another text</i></big>"
+msgstr ""
+
+#: hello.desktop.in.in:4
+msgid "Hello"
+msgstr ""
+
+#: hello.desktop.in.in:5
+msgid "Hello, world!"
+msgstr "Olá, Mundo!"
+
+#: hello.ui:5
+msgid "Example Application"
+msgstr ""
+
+#: hello.ui:33
+msgid "Update text"
+msgstr ""
+
+#: hello.gschema.xml:7
+msgid "Use XML markup"
+msgstr ""
+
+#: hello.gschema.xml:8
+msgid "Whether to use XML markup in the text."
+msgstr ""

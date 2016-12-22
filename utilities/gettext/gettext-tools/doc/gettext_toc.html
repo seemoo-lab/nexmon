@@ -1,0 +1,474 @@
+<HTML>
+<HEAD>
+<!-- This HTML file has been created by texi2html 1.52b
+     from gettext.texi on 11 June 2016 -->
+
+<META HTTP-EQUIV="content-type" CONTENT="text/html; charset=UTF-8">
+<TITLE>GNU gettext utilities - Table of Contents</TITLE>
+</HEAD>
+<BODY>
+<H1>GNU gettext tools, version 0.19.8.1</H1>
+<H2>Native Language Support Library and Tools</H2>
+<H2>Edition 0.19.8.1, 25 March 2016</H2>
+<ADDRESS>Ulrich Drepper</ADDRESS>
+<ADDRESS>Jim Meyering</ADDRESS>
+<ADDRESS>Fran&ccedil;ois Pinard</ADDRESS>
+<ADDRESS>Bruno Haible</ADDRESS>
+<P>
+<P><HR><P>
+<UL>
+<LI><A NAME="TOC1" HREF="gettext_1.html#SEC1">1  Introduction</A>
+<UL>
+<LI><A NAME="TOC2" HREF="gettext_1.html#SEC2">1.1  The Purpose of GNU <CODE>gettext</CODE></A>
+<LI><A NAME="TOC3" HREF="gettext_1.html#SEC3">1.2  I18n, L10n, and Such</A>
+<LI><A NAME="TOC4" HREF="gettext_1.html#SEC4">1.3  Aspects in Native Language Support</A>
+<LI><A NAME="TOC5" HREF="gettext_1.html#SEC5">1.4  Files Conveying Translations</A>
+<LI><A NAME="TOC6" HREF="gettext_1.html#SEC6">1.5  Overview of GNU <CODE>gettext</CODE></A>
+</UL>
+<LI><A NAME="TOC7" HREF="gettext_2.html#SEC7">2  The User's View</A>
+<UL>
+<LI><A NAME="TOC8" HREF="gettext_2.html#SEC8">2.1  Operating System Installation</A>
+<LI><A NAME="TOC9" HREF="gettext_2.html#SEC9">2.2  Setting the Locale Used by GUI Programs</A>
+<LI><A NAME="TOC10" HREF="gettext_2.html#SEC10">2.3  Setting the Locale through Environment Variables</A>
+<UL>
+<LI><A NAME="TOC11" HREF="gettext_2.html#SEC11">2.3.1  Locale Names</A>
+<LI><A NAME="TOC12" HREF="gettext_2.html#SEC12">2.3.2  Locale Environment Variables</A>
+<LI><A NAME="TOC13" HREF="gettext_2.html#SEC13">2.3.3  Specifying a Priority List of Languages</A>
+</UL>
+<LI><A NAME="TOC14" HREF="gettext_2.html#SEC14">2.4  Installing Translations for Particular Programs</A>
+</UL>
+<LI><A NAME="TOC15" HREF="gettext_3.html#SEC15">3  The Format of PO Files</A>
+<LI><A NAME="TOC16" HREF="gettext_4.html#SEC16">4  Preparing Program Sources</A>
+<UL>
+<LI><A NAME="TOC17" HREF="gettext_4.html#SEC17">4.1  Importing the <CODE>gettext</CODE> declaration</A>
+<LI><A NAME="TOC18" HREF="gettext_4.html#SEC18">4.2  Triggering <CODE>gettext</CODE> Operations</A>
+<LI><A NAME="TOC19" HREF="gettext_4.html#SEC19">4.3  Preparing Translatable Strings</A>
+<LI><A NAME="TOC20" HREF="gettext_4.html#SEC20">4.4  How Marks Appear in Sources</A>
+<LI><A NAME="TOC21" HREF="gettext_4.html#SEC21">4.5  Marking Translatable Strings</A>
+<LI><A NAME="TOC22" HREF="gettext_4.html#SEC22">4.6  Special Comments preceding Keywords</A>
+<LI><A NAME="TOC23" HREF="gettext_4.html#SEC23">4.7  Special Cases of Translatable Strings</A>
+<LI><A NAME="TOC24" HREF="gettext_4.html#SEC24">4.8  Letting Users Report Translation Bugs</A>
+<LI><A NAME="TOC25" HREF="gettext_4.html#SEC25">4.9  Marking Proper Names for Translation</A>
+<LI><A NAME="TOC26" HREF="gettext_4.html#SEC26">4.10  Preparing Library Sources</A>
+</UL>
+<LI><A NAME="TOC27" HREF="gettext_5.html#SEC27">5  Making the PO Template File</A>
+<UL>
+<LI><A NAME="TOC28" HREF="gettext_5.html#SEC28">5.1  Invoking the <CODE>xgettext</CODE> Program</A>
+<UL>
+<LI><A NAME="TOC29" HREF="gettext_5.html#SEC29">5.1.1  Input file location</A>
+<LI><A NAME="TOC30" HREF="gettext_5.html#SEC30">5.1.2  Output file location</A>
+<LI><A NAME="TOC31" HREF="gettext_5.html#SEC31">5.1.3  Choice of input file language</A>
+<LI><A NAME="TOC32" HREF="gettext_5.html#SEC32">5.1.4  Input file interpretation</A>
+<LI><A NAME="TOC33" HREF="gettext_5.html#SEC33">5.1.5  Operation mode</A>
+<LI><A NAME="TOC34" HREF="gettext_5.html#SEC34">5.1.6  Language specific options</A>
+<LI><A NAME="TOC35" HREF="gettext_5.html#SEC35">5.1.7  Output details</A>
+<LI><A NAME="TOC36" HREF="gettext_5.html#SEC36">5.1.8  Informative output</A>
+</UL>
+</UL>
+<LI><A NAME="TOC37" HREF="gettext_6.html#SEC37">6  Creating a New PO File</A>
+<UL>
+<LI><A NAME="TOC38" HREF="gettext_6.html#SEC38">6.1  Invoking the <CODE>msginit</CODE> Program</A>
+<UL>
+<LI><A NAME="TOC39" HREF="gettext_6.html#SEC39">6.1.1  Input file location</A>
+<LI><A NAME="TOC40" HREF="gettext_6.html#SEC40">6.1.2  Output file location</A>
+<LI><A NAME="TOC41" HREF="gettext_6.html#SEC41">6.1.3  Input file syntax</A>
+<LI><A NAME="TOC42" HREF="gettext_6.html#SEC42">6.1.4  Output details</A>
+<LI><A NAME="TOC43" HREF="gettext_6.html#SEC43">6.1.5  Informative output</A>
+</UL>
+<LI><A NAME="TOC44" HREF="gettext_6.html#SEC44">6.2  Filling in the Header Entry</A>
+</UL>
+<LI><A NAME="TOC45" HREF="gettext_7.html#SEC45">7  Updating Existing PO Files</A>
+<UL>
+<LI><A NAME="TOC46" HREF="gettext_7.html#SEC46">7.1  Invoking the <CODE>msgmerge</CODE> Program</A>
+<UL>
+<LI><A NAME="TOC47" HREF="gettext_7.html#SEC47">7.1.1  Input file location</A>
+<LI><A NAME="TOC48" HREF="gettext_7.html#SEC48">7.1.2  Operation mode</A>
+<LI><A NAME="TOC49" HREF="gettext_7.html#SEC49">7.1.3  Output file location</A>
+<LI><A NAME="TOC50" HREF="gettext_7.html#SEC50">7.1.4  Output file location in update mode</A>
+<LI><A NAME="TOC51" HREF="gettext_7.html#SEC51">7.1.5  Operation modifiers</A>
+<LI><A NAME="TOC52" HREF="gettext_7.html#SEC52">7.1.6  Input file syntax</A>
+<LI><A NAME="TOC53" HREF="gettext_7.html#SEC53">7.1.7  Output details</A>
+<LI><A NAME="TOC54" HREF="gettext_7.html#SEC54">7.1.8  Informative output</A>
+</UL>
+</UL>
+<LI><A NAME="TOC55" HREF="gettext_8.html#SEC55">8  Editing PO Files</A>
+<UL>
+<LI><A NAME="TOC56" HREF="gettext_8.html#SEC56">8.1  KDE's PO File Editor</A>
+<LI><A NAME="TOC57" HREF="gettext_8.html#SEC57">8.2  GNOME's PO File Editor</A>
+<LI><A NAME="TOC58" HREF="gettext_8.html#SEC58">8.3  Emacs's PO File Editor</A>
+<UL>
+<LI><A NAME="TOC59" HREF="gettext_8.html#SEC59">8.3.1  Completing GNU <CODE>gettext</CODE> Installation</A>
+<LI><A NAME="TOC60" HREF="gettext_8.html#SEC60">8.3.2  Main PO mode Commands</A>
+<LI><A NAME="TOC61" HREF="gettext_8.html#SEC61">8.3.3  Entry Positioning</A>
+<LI><A NAME="TOC62" HREF="gettext_8.html#SEC62">8.3.4  Normalizing Strings in Entries</A>
+<LI><A NAME="TOC63" HREF="gettext_8.html#SEC63">8.3.5  Translated Entries</A>
+<LI><A NAME="TOC64" HREF="gettext_8.html#SEC64">8.3.6  Fuzzy Entries</A>
+<LI><A NAME="TOC65" HREF="gettext_8.html#SEC65">8.3.7  Untranslated Entries</A>
+<LI><A NAME="TOC66" HREF="gettext_8.html#SEC66">8.3.8  Obsolete Entries</A>
+<LI><A NAME="TOC67" HREF="gettext_8.html#SEC67">8.3.9  Modifying Translations</A>
+<LI><A NAME="TOC68" HREF="gettext_8.html#SEC68">8.3.10  Modifying Comments</A>
+<LI><A NAME="TOC69" HREF="gettext_8.html#SEC69">8.3.11  Details of Sub Edition</A>
+<LI><A NAME="TOC70" HREF="gettext_8.html#SEC70">8.3.12  C Sources Context</A>
+<LI><A NAME="TOC71" HREF="gettext_8.html#SEC71">8.3.13  Consulting Auxiliary PO Files</A>
+</UL>
+<LI><A NAME="TOC72" HREF="gettext_8.html#SEC72">8.4  Using Translation Compendia</A>
+<UL>
+<LI><A NAME="TOC73" HREF="gettext_8.html#SEC73">8.4.1  Creating Compendia</A>
+<UL>
+<LI><A NAME="TOC74" HREF="gettext_8.html#SEC74">8.4.1.1  Concatenate PO Files</A>
+<LI><A NAME="TOC75" HREF="gettext_8.html#SEC75">8.4.1.2  Extract a Message Subset from a PO File</A>
+</UL>
+<LI><A NAME="TOC76" HREF="gettext_8.html#SEC76">8.4.2  Using Compendia</A>
+<UL>
+<LI><A NAME="TOC77" HREF="gettext_8.html#SEC77">8.4.2.1  Initialize a New Translation File</A>
+<LI><A NAME="TOC78" HREF="gettext_8.html#SEC78">8.4.2.2  Update an Existing Translation File</A>
+</UL>
+</UL>
+</UL>
+<LI><A NAME="TOC79" HREF="gettext_9.html#SEC79">9  Manipulating PO Files</A>
+<UL>
+<LI><A NAME="TOC80" HREF="gettext_9.html#SEC80">9.1  Invoking the <CODE>msgcat</CODE> Program</A>
+<UL>
+<LI><A NAME="TOC81" HREF="gettext_9.html#SEC81">9.1.1  Input file location</A>
+<LI><A NAME="TOC82" HREF="gettext_9.html#SEC82">9.1.2  Output file location</A>
+<LI><A NAME="TOC83" HREF="gettext_9.html#SEC83">9.1.3  Message selection</A>
+<LI><A NAME="TOC84" HREF="gettext_9.html#SEC84">9.1.4  Input file syntax</A>
+<LI><A NAME="TOC85" HREF="gettext_9.html#SEC85">9.1.5  Output details</A>
+<LI><A NAME="TOC86" HREF="gettext_9.html#SEC86">9.1.6  Informative output</A>
+</UL>
+<LI><A NAME="TOC87" HREF="gettext_9.html#SEC87">9.2  Invoking the <CODE>msgconv</CODE> Program</A>
+<UL>
+<LI><A NAME="TOC88" HREF="gettext_9.html#SEC88">9.2.1  Input file location</A>
+<LI><A NAME="TOC89" HREF="gettext_9.html#SEC89">9.2.2  Output file location</A>
+<LI><A NAME="TOC90" HREF="gettext_9.html#SEC90">9.2.3  Conversion target</A>
+<LI><A NAME="TOC91" HREF="gettext_9.html#SEC91">9.2.4  Input file syntax</A>
+<LI><A NAME="TOC92" HREF="gettext_9.html#SEC92">9.2.5  Output details</A>
+<LI><A NAME="TOC93" HREF="gettext_9.html#SEC93">9.2.6  Informative output</A>
+</UL>
+<LI><A NAME="TOC94" HREF="gettext_9.html#SEC94">9.3  Invoking the <CODE>msggrep</CODE> Program</A>
+<UL>
+<LI><A NAME="TOC95" HREF="gettext_9.html#SEC95">9.3.1  Input file location</A>
+<LI><A NAME="TOC96" HREF="gettext_9.html#SEC96">9.3.2  Output file location</A>
+<LI><A NAME="TOC97" HREF="gettext_9.html#SEC97">9.3.3  Message selection</A>
+<LI><A NAME="TOC98" HREF="gettext_9.html#SEC98">9.3.4  Input file syntax</A>
+<LI><A NAME="TOC99" HREF="gettext_9.html#SEC99">9.3.5  Output details</A>
+<LI><A NAME="TOC100" HREF="gettext_9.html#SEC100">9.3.6  Informative output</A>
+<LI><A NAME="TOC101" HREF="gettext_9.html#SEC101">9.3.7  Examples</A>
+</UL>
+<LI><A NAME="TOC102" HREF="gettext_9.html#SEC102">9.4  Invoking the <CODE>msgfilter</CODE> Program</A>
+<UL>
+<LI><A NAME="TOC103" HREF="gettext_9.html#SEC103">9.4.1  Input file location</A>
+<LI><A NAME="TOC104" HREF="gettext_9.html#SEC104">9.4.2  Output file location</A>
+<LI><A NAME="TOC105" HREF="gettext_9.html#SEC105">9.4.3  The filter</A>
+<LI><A NAME="TOC106" HREF="gettext_9.html#SEC106">9.4.4  Useful <VAR>filter-option</VAR>s when the <VAR>filter</VAR> is <SAMP>&lsquo;sed&rsquo;</SAMP></A>
+<LI><A NAME="TOC107" HREF="gettext_9.html#SEC107">9.4.5  Built-in <VAR>filter</VAR>s</A>
+<LI><A NAME="TOC108" HREF="gettext_9.html#SEC108">9.4.6  Input file syntax</A>
+<LI><A NAME="TOC109" HREF="gettext_9.html#SEC109">9.4.7  Output details</A>
+<LI><A NAME="TOC110" HREF="gettext_9.html#SEC110">9.4.8  Informative output</A>
+<LI><A NAME="TOC111" HREF="gettext_9.html#SEC111">9.4.9  Examples</A>
+</UL>
+<LI><A NAME="TOC112" HREF="gettext_9.html#SEC112">9.5  Invoking the <CODE>msguniq</CODE> Program</A>
+<UL>
+<LI><A NAME="TOC113" HREF="gettext_9.html#SEC113">9.5.1  Input file location</A>
+<LI><A NAME="TOC114" HREF="gettext_9.html#SEC114">9.5.2  Output file location</A>
+<LI><A NAME="TOC115" HREF="gettext_9.html#SEC115">9.5.3  Message selection</A>
+<LI><A NAME="TOC116" HREF="gettext_9.html#SEC116">9.5.4  Input file syntax</A>
+<LI><A NAME="TOC117" HREF="gettext_9.html#SEC117">9.5.5  Output details</A>
+<LI><A NAME="TOC118" HREF="gettext_9.html#SEC118">9.5.6  Informative output</A>
+</UL>
+<LI><A NAME="TOC119" HREF="gettext_9.html#SEC119">9.6  Invoking the <CODE>msgcomm</CODE> Program</A>
+<UL>
+<LI><A NAME="TOC120" HREF="gettext_9.html#SEC120">9.6.1  Input file location</A>
+<LI><A NAME="TOC121" HREF="gettext_9.html#SEC121">9.6.2  Output file location</A>
+<LI><A NAME="TOC122" HREF="gettext_9.html#SEC122">9.6.3  Message selection</A>
+<LI><A NAME="TOC123" HREF="gettext_9.html#SEC123">9.6.4  Input file syntax</A>
+<LI><A NAME="TOC124" HREF="gettext_9.html#SEC124">9.6.5  Output details</A>
+<LI><A NAME="TOC125" HREF="gettext_9.html#SEC125">9.6.6  Informative output</A>
+</UL>
+<LI><A NAME="TOC126" HREF="gettext_9.html#SEC126">9.7  Invoking the <CODE>msgcmp</CODE> Program</A>
+<UL>
+<LI><A NAME="TOC127" HREF="gettext_9.html#SEC127">9.7.1  Input file location</A>
+<LI><A NAME="TOC128" HREF="gettext_9.html#SEC128">9.7.2  Operation modifiers</A>
+<LI><A NAME="TOC129" HREF="gettext_9.html#SEC129">9.7.3  Input file syntax</A>
+<LI><A NAME="TOC130" HREF="gettext_9.html#SEC130">9.7.4  Informative output</A>
+</UL>
+<LI><A NAME="TOC131" HREF="gettext_9.html#SEC131">9.8  Invoking the <CODE>msgattrib</CODE> Program</A>
+<UL>
+<LI><A NAME="TOC132" HREF="gettext_9.html#SEC132">9.8.1  Input file location</A>
+<LI><A NAME="TOC133" HREF="gettext_9.html#SEC133">9.8.2  Output file location</A>
+<LI><A NAME="TOC134" HREF="gettext_9.html#SEC134">9.8.3  Message selection</A>
+<LI><A NAME="TOC135" HREF="gettext_9.html#SEC135">9.8.4  Attribute manipulation</A>
+<LI><A NAME="TOC136" HREF="gettext_9.html#SEC136">9.8.5  Input file syntax</A>
+<LI><A NAME="TOC137" HREF="gettext_9.html#SEC137">9.8.6  Output details</A>
+<LI><A NAME="TOC138" HREF="gettext_9.html#SEC138">9.8.7  Informative output</A>
+</UL>
+<LI><A NAME="TOC139" HREF="gettext_9.html#SEC139">9.9  Invoking the <CODE>msgen</CODE> Program</A>
+<UL>
+<LI><A NAME="TOC140" HREF="gettext_9.html#SEC140">9.9.1  Input file location</A>
+<LI><A NAME="TOC141" HREF="gettext_9.html#SEC141">9.9.2  Output file location</A>
+<LI><A NAME="TOC142" HREF="gettext_9.html#SEC142">9.9.3  Input file syntax</A>
+<LI><A NAME="TOC143" HREF="gettext_9.html#SEC143">9.9.4  Output details</A>
+<LI><A NAME="TOC144" HREF="gettext_9.html#SEC144">9.9.5  Informative output</A>
+</UL>
+<LI><A NAME="TOC145" HREF="gettext_9.html#SEC145">9.10  Invoking the <CODE>msgexec</CODE> Program</A>
+<UL>
+<LI><A NAME="TOC146" HREF="gettext_9.html#SEC146">9.10.1  Input file location</A>
+<LI><A NAME="TOC147" HREF="gettext_9.html#SEC147">9.10.2  Input file syntax</A>
+<LI><A NAME="TOC148" HREF="gettext_9.html#SEC148">9.10.3  Informative output</A>
+</UL>
+<LI><A NAME="TOC149" HREF="gettext_9.html#SEC149">9.11  Highlighting parts of PO files</A>
+<UL>
+<LI><A NAME="TOC150" HREF="gettext_9.html#SEC150">9.11.1  The <CODE>--color</CODE> option</A>
+<LI><A NAME="TOC151" HREF="gettext_9.html#SEC151">9.11.2  The environment variable <CODE>TERM</CODE></A>
+<LI><A NAME="TOC152" HREF="gettext_9.html#SEC152">9.11.3  The <CODE>--style</CODE> option</A>
+<LI><A NAME="TOC153" HREF="gettext_9.html#SEC153">9.11.4  Style rules for PO files</A>
+<LI><A NAME="TOC154" HREF="gettext_9.html#SEC154">9.11.5  Customizing <CODE>less</CODE> for viewing PO files</A>
+</UL>
+<LI><A NAME="TOC155" HREF="gettext_9.html#SEC155">9.12  Writing your own programs that process PO files</A>
+</UL>
+<LI><A NAME="TOC156" HREF="gettext_10.html#SEC156">10  Producing Binary MO Files</A>
+<UL>
+<LI><A NAME="TOC157" HREF="gettext_10.html#SEC157">10.1  Invoking the <CODE>msgfmt</CODE> Program</A>
+<UL>
+<LI><A NAME="TOC158" HREF="gettext_10.html#SEC158">10.1.1  Input file location</A>
+<LI><A NAME="TOC159" HREF="gettext_10.html#SEC159">10.1.2  Operation mode</A>
+<LI><A NAME="TOC160" HREF="gettext_10.html#SEC160">10.1.3  Output file location</A>
+<LI><A NAME="TOC161" HREF="gettext_10.html#SEC161">10.1.4  Output file location in Java mode</A>
+<LI><A NAME="TOC162" HREF="gettext_10.html#SEC162">10.1.5  Output file location in C# mode</A>
+<LI><A NAME="TOC163" HREF="gettext_10.html#SEC163">10.1.6  Output file location in Tcl mode</A>
+<LI><A NAME="TOC164" HREF="gettext_10.html#SEC164">10.1.7  Desktop Entry mode operations</A>
+<LI><A NAME="TOC165" HREF="gettext_10.html#SEC165">10.1.8  XML mode operations</A>
+<LI><A NAME="TOC166" HREF="gettext_10.html#SEC166">10.1.9  Input file syntax</A>
+<LI><A NAME="TOC167" HREF="gettext_10.html#SEC167">10.1.10  Input file interpretation</A>
+<LI><A NAME="TOC168" HREF="gettext_10.html#SEC168">10.1.11  Output details</A>
+<LI><A NAME="TOC169" HREF="gettext_10.html#SEC169">10.1.12  Informative output</A>
+</UL>
+<LI><A NAME="TOC170" HREF="gettext_10.html#SEC170">10.2  Invoking the <CODE>msgunfmt</CODE> Program</A>
+<UL>
+<LI><A NAME="TOC171" HREF="gettext_10.html#SEC171">10.2.1  Operation mode</A>
+<LI><A NAME="TOC172" HREF="gettext_10.html#SEC172">10.2.2  Input file location</A>
+<LI><A NAME="TOC173" HREF="gettext_10.html#SEC173">10.2.3  Input file location in Java mode</A>
+<LI><A NAME="TOC174" HREF="gettext_10.html#SEC174">10.2.4  Input file location in C# mode</A>
+<LI><A NAME="TOC175" HREF="gettext_10.html#SEC175">10.2.5  Input file location in Tcl mode</A>
+<LI><A NAME="TOC176" HREF="gettext_10.html#SEC176">10.2.6  Output file location</A>
+<LI><A NAME="TOC177" HREF="gettext_10.html#SEC177">10.2.7  Output details</A>
+<LI><A NAME="TOC178" HREF="gettext_10.html#SEC178">10.2.8  Informative output</A>
+</UL>
+<LI><A NAME="TOC179" HREF="gettext_10.html#SEC179">10.3  The Format of GNU MO Files</A>
+</UL>
+<LI><A NAME="TOC180" HREF="gettext_11.html#SEC180">11  The Programmer's View</A>
+<UL>
+<LI><A NAME="TOC181" HREF="gettext_11.html#SEC181">11.1  About <CODE>catgets</CODE></A>
+<UL>
+<LI><A NAME="TOC182" HREF="gettext_11.html#SEC182">11.1.1  The Interface</A>
+<LI><A NAME="TOC183" HREF="gettext_11.html#SEC183">11.1.2  Problems with the <CODE>catgets</CODE> Interface?!</A>
+</UL>
+<LI><A NAME="TOC184" HREF="gettext_11.html#SEC184">11.2  About <CODE>gettext</CODE></A>
+<UL>
+<LI><A NAME="TOC185" HREF="gettext_11.html#SEC185">11.2.1  The Interface</A>
+<LI><A NAME="TOC186" HREF="gettext_11.html#SEC186">11.2.2  Solving Ambiguities</A>
+<LI><A NAME="TOC187" HREF="gettext_11.html#SEC187">11.2.3  Locating Message Catalog Files</A>
+<LI><A NAME="TOC188" HREF="gettext_11.html#SEC188">11.2.4  How to specify the output character set <CODE>gettext</CODE> uses</A>
+<LI><A NAME="TOC189" HREF="gettext_11.html#SEC189">11.2.5  Using contexts for solving ambiguities</A>
+<LI><A NAME="TOC190" HREF="gettext_11.html#SEC190">11.2.6  Additional functions for plural forms</A>
+<LI><A NAME="TOC191" HREF="gettext_11.html#SEC191">11.2.7  Optimization of the *gettext functions</A>
+</UL>
+<LI><A NAME="TOC192" HREF="gettext_11.html#SEC192">11.3  Comparing the Two Interfaces</A>
+<LI><A NAME="TOC193" HREF="gettext_11.html#SEC193">11.4  Using libintl.a in own programs</A>
+<LI><A NAME="TOC194" HREF="gettext_11.html#SEC194">11.5  Being a <CODE>gettext</CODE> grok</A>
+<LI><A NAME="TOC195" HREF="gettext_11.html#SEC195">11.6  Temporary Notes for the Programmers Chapter</A>
+<UL>
+<LI><A NAME="TOC196" HREF="gettext_11.html#SEC196">11.6.1  Temporary - Two Possible Implementations</A>
+<LI><A NAME="TOC197" HREF="gettext_11.html#SEC197">11.6.2  Temporary - About <CODE>catgets</CODE></A>
+<LI><A NAME="TOC198" HREF="gettext_11.html#SEC198">11.6.3  Temporary - Why a single implementation</A>
+<LI><A NAME="TOC199" HREF="gettext_11.html#SEC199">11.6.4  Temporary - Notes</A>
+</UL>
+</UL>
+<LI><A NAME="TOC200" HREF="gettext_12.html#SEC200">12  The Translator's View</A>
+<UL>
+<LI><A NAME="TOC201" HREF="gettext_12.html#SEC201">12.1  Introduction 0</A>
+<LI><A NAME="TOC202" HREF="gettext_12.html#SEC202">12.2  Introduction 1</A>
+<LI><A NAME="TOC203" HREF="gettext_12.html#SEC203">12.3  Discussions</A>
+<LI><A NAME="TOC204" HREF="gettext_12.html#SEC204">12.4  Organization</A>
+<UL>
+<LI><A NAME="TOC205" HREF="gettext_12.html#SEC205">12.4.1  Central Coordination</A>
+<LI><A NAME="TOC206" HREF="gettext_12.html#SEC206">12.4.2  National Teams</A>
+<UL>
+<LI><A NAME="TOC207" HREF="gettext_12.html#SEC207">12.4.2.1  Sub-Cultures</A>
+<LI><A NAME="TOC208" HREF="gettext_12.html#SEC208">12.4.2.2  Organizational Ideas</A>
+</UL>
+<LI><A NAME="TOC209" HREF="gettext_12.html#SEC209">12.4.3  Mailing Lists</A>
+</UL>
+<LI><A NAME="TOC210" HREF="gettext_12.html#SEC210">12.5  Information Flow</A>
+<LI><A NAME="TOC211" HREF="gettext_12.html#SEC211">12.6  Translating plural forms</A>
+<LI><A NAME="TOC212" HREF="gettext_12.html#SEC212">12.7  Prioritizing messages: How to determine which messages to translate first</A>
+</UL>
+<LI><A NAME="TOC213" HREF="gettext_13.html#SEC213">13  The Maintainer's View</A>
+<UL>
+<LI><A NAME="TOC214" HREF="gettext_13.html#SEC214">13.1  Flat or Non-Flat Directory Structures</A>
+<LI><A NAME="TOC215" HREF="gettext_13.html#SEC215">13.2  Prerequisite Works</A>
+<LI><A NAME="TOC216" HREF="gettext_13.html#SEC216">13.3  Invoking the <CODE>gettextize</CODE> Program</A>
+<LI><A NAME="TOC217" HREF="gettext_13.html#SEC217">13.4  Files You Must Create or Alter</A>
+<UL>
+<LI><A NAME="TOC218" HREF="gettext_13.html#SEC218">13.4.1  <TT>&lsquo;POTFILES.in&rsquo;</TT> in <TT>&lsquo;po/&rsquo;</TT></A>
+<LI><A NAME="TOC219" HREF="gettext_13.html#SEC219">13.4.2  <TT>&lsquo;LINGUAS&rsquo;</TT> in <TT>&lsquo;po/&rsquo;</TT></A>
+<LI><A NAME="TOC220" HREF="gettext_13.html#SEC220">13.4.3  <TT>&lsquo;Makevars&rsquo;</TT> in <TT>&lsquo;po/&rsquo;</TT></A>
+<LI><A NAME="TOC221" HREF="gettext_13.html#SEC221">13.4.4  Extending <TT>&lsquo;Makefile&rsquo;</TT> in <TT>&lsquo;po/&rsquo;</TT></A>
+<LI><A NAME="TOC222" HREF="gettext_13.html#SEC222">13.4.5  <TT>&lsquo;configure.ac&rsquo;</TT> at top level</A>
+<LI><A NAME="TOC223" HREF="gettext_13.html#SEC223">13.4.6  <TT>&lsquo;config.guess&rsquo;</TT>, <TT>&lsquo;config.sub&rsquo;</TT> at top level</A>
+<LI><A NAME="TOC224" HREF="gettext_13.html#SEC224">13.4.7  <TT>&lsquo;mkinstalldirs&rsquo;</TT> at top level</A>
+<LI><A NAME="TOC225" HREF="gettext_13.html#SEC225">13.4.8  <TT>&lsquo;aclocal.m4&rsquo;</TT> at top level</A>
+<LI><A NAME="TOC226" HREF="gettext_13.html#SEC226">13.4.9  <TT>&lsquo;acconfig.h&rsquo;</TT> at top level</A>
+<LI><A NAME="TOC227" HREF="gettext_13.html#SEC227">13.4.10  <TT>&lsquo;config.h.in&rsquo;</TT> at top level</A>
+<LI><A NAME="TOC228" HREF="gettext_13.html#SEC228">13.4.11  <TT>&lsquo;Makefile.in&rsquo;</TT> at top level</A>
+<LI><A NAME="TOC229" HREF="gettext_13.html#SEC229">13.4.12  <TT>&lsquo;Makefile.in&rsquo;</TT> in <TT>&lsquo;src/&rsquo;</TT></A>
+<LI><A NAME="TOC230" HREF="gettext_13.html#SEC230">13.4.13  <TT>&lsquo;gettext.h&rsquo;</TT> in <TT>&lsquo;lib/&rsquo;</TT></A>
+</UL>
+<LI><A NAME="TOC231" HREF="gettext_13.html#SEC231">13.5  Autoconf macros for use in <TT>&lsquo;configure.ac&rsquo;</TT></A>
+<UL>
+<LI><A NAME="TOC232" HREF="gettext_13.html#SEC232">13.5.1  AM_GNU_GETTEXT in <TT>&lsquo;gettext.m4&rsquo;</TT></A>
+<LI><A NAME="TOC233" HREF="gettext_13.html#SEC233">13.5.2  AM_GNU_GETTEXT_VERSION in <TT>&lsquo;gettext.m4&rsquo;</TT></A>
+<LI><A NAME="TOC234" HREF="gettext_13.html#SEC234">13.5.3  AM_GNU_GETTEXT_NEED in <TT>&lsquo;gettext.m4&rsquo;</TT></A>
+<LI><A NAME="TOC235" HREF="gettext_13.html#SEC235">13.5.4  AM_GNU_GETTEXT_INTL_SUBDIR in <TT>&lsquo;intldir.m4&rsquo;</TT></A>
+<LI><A NAME="TOC236" HREF="gettext_13.html#SEC236">13.5.5  AM_PO_SUBDIRS in <TT>&lsquo;po.m4&rsquo;</TT></A>
+<LI><A NAME="TOC237" HREF="gettext_13.html#SEC237">13.5.6  AM_XGETTEXT_OPTION in <TT>&lsquo;po.m4&rsquo;</TT></A>
+<LI><A NAME="TOC238" HREF="gettext_13.html#SEC238">13.5.7  AM_ICONV in <TT>&lsquo;iconv.m4&rsquo;</TT></A>
+</UL>
+<LI><A NAME="TOC239" HREF="gettext_13.html#SEC239">13.6  Integrating with Version Control Systems</A>
+<UL>
+<LI><A NAME="TOC240" HREF="gettext_13.html#SEC240">13.6.1  Avoiding version mismatch in distributed development</A>
+<LI><A NAME="TOC241" HREF="gettext_13.html#SEC241">13.6.2  Files to put under version control</A>
+<LI><A NAME="TOC242" HREF="gettext_13.html#SEC242">13.6.3  Put PO Files under Version Control</A>
+<LI><A NAME="TOC243" HREF="gettext_13.html#SEC243">13.6.4  Invoking the <CODE>autopoint</CODE> Program</A>
+<UL>
+<LI><A NAME="TOC244" HREF="gettext_13.html#SEC244">13.6.4.1  Options</A>
+<LI><A NAME="TOC245" HREF="gettext_13.html#SEC245">13.6.4.2  Informative output</A>
+</UL>
+</UL>
+<LI><A NAME="TOC246" HREF="gettext_13.html#SEC246">13.7  Creating a Distribution Tarball</A>
+</UL>
+<LI><A NAME="TOC247" HREF="gettext_14.html#SEC247">14  The Installer's and Distributor's View</A>
+<LI><A NAME="TOC248" HREF="gettext_15.html#SEC248">15  Other Programming Languages</A>
+<UL>
+<LI><A NAME="TOC249" HREF="gettext_15.html#SEC249">15.1  The Language Implementor's View</A>
+<LI><A NAME="TOC250" HREF="gettext_15.html#SEC250">15.2  The Programmer's View</A>
+<LI><A NAME="TOC251" HREF="gettext_15.html#SEC251">15.3  The Translator's View</A>
+<UL>
+<LI><A NAME="TOC252" HREF="gettext_15.html#SEC252">15.3.1  C Format Strings</A>
+<LI><A NAME="TOC253" HREF="gettext_15.html#SEC253">15.3.2  Objective C Format Strings</A>
+<LI><A NAME="TOC254" HREF="gettext_15.html#SEC254">15.3.3  Shell Format Strings</A>
+<LI><A NAME="TOC255" HREF="gettext_15.html#SEC255">15.3.4  Python Format Strings</A>
+<LI><A NAME="TOC256" HREF="gettext_15.html#SEC256">15.3.5  Lisp Format Strings</A>
+<LI><A NAME="TOC257" HREF="gettext_15.html#SEC257">15.3.6  Emacs Lisp Format Strings</A>
+<LI><A NAME="TOC258" HREF="gettext_15.html#SEC258">15.3.7  librep Format Strings</A>
+<LI><A NAME="TOC259" HREF="gettext_15.html#SEC259">15.3.8  Scheme Format Strings</A>
+<LI><A NAME="TOC260" HREF="gettext_15.html#SEC260">15.3.9  Smalltalk Format Strings</A>
+<LI><A NAME="TOC261" HREF="gettext_15.html#SEC261">15.3.10  Java Format Strings</A>
+<LI><A NAME="TOC262" HREF="gettext_15.html#SEC262">15.3.11  C# Format Strings</A>
+<LI><A NAME="TOC263" HREF="gettext_15.html#SEC263">15.3.12  awk Format Strings</A>
+<LI><A NAME="TOC264" HREF="gettext_15.html#SEC264">15.3.13  Object Pascal Format Strings</A>
+<LI><A NAME="TOC265" HREF="gettext_15.html#SEC265">15.3.14  YCP Format Strings</A>
+<LI><A NAME="TOC266" HREF="gettext_15.html#SEC266">15.3.15  Tcl Format Strings</A>
+<LI><A NAME="TOC267" HREF="gettext_15.html#SEC267">15.3.16  Perl Format Strings</A>
+<LI><A NAME="TOC268" HREF="gettext_15.html#SEC268">15.3.17  PHP Format Strings</A>
+<LI><A NAME="TOC269" HREF="gettext_15.html#SEC269">15.3.18  GCC internal Format Strings</A>
+<LI><A NAME="TOC270" HREF="gettext_15.html#SEC270">15.3.19  GFC internal Format Strings</A>
+<LI><A NAME="TOC271" HREF="gettext_15.html#SEC271">15.3.20  Qt Format Strings</A>
+<LI><A NAME="TOC272" HREF="gettext_15.html#SEC272">15.3.21  Qt Format Strings</A>
+<LI><A NAME="TOC273" HREF="gettext_15.html#SEC273">15.3.22  KDE Format Strings</A>
+<LI><A NAME="TOC274" HREF="gettext_15.html#SEC274">15.3.23  KUIT Format Strings</A>
+<LI><A NAME="TOC275" HREF="gettext_15.html#SEC275">15.3.24  Boost Format Strings</A>
+<LI><A NAME="TOC276" HREF="gettext_15.html#SEC276">15.3.25  Lua Format Strings</A>
+<LI><A NAME="TOC277" HREF="gettext_15.html#SEC277">15.3.26  JavaScript Format Strings</A>
+</UL>
+<LI><A NAME="TOC278" HREF="gettext_15.html#SEC278">15.4  The Maintainer's View</A>
+<LI><A NAME="TOC279" HREF="gettext_15.html#SEC279">15.5  Individual Programming Languages</A>
+<UL>
+<LI><A NAME="TOC280" HREF="gettext_15.html#SEC280">15.5.1  C, C++, Objective C</A>
+<LI><A NAME="TOC281" HREF="gettext_15.html#SEC281">15.5.2  sh - Shell Script</A>
+<UL>
+<LI><A NAME="TOC282" HREF="gettext_15.html#SEC282">15.5.2.1  Preparing Shell Scripts for Internationalization</A>
+<LI><A NAME="TOC283" HREF="gettext_15.html#SEC283">15.5.2.2  Contents of <CODE>gettext.sh</CODE></A>
+<LI><A NAME="TOC284" HREF="gettext_15.html#SEC284">15.5.2.3  Invoking the <CODE>gettext</CODE> program</A>
+<LI><A NAME="TOC285" HREF="gettext_15.html#SEC285">15.5.2.4  Invoking the <CODE>ngettext</CODE> program</A>
+<LI><A NAME="TOC286" HREF="gettext_15.html#SEC286">15.5.2.5  Invoking the <CODE>envsubst</CODE> program</A>
+<LI><A NAME="TOC287" HREF="gettext_15.html#SEC287">15.5.2.6  Invoking the <CODE>eval_gettext</CODE> function</A>
+<LI><A NAME="TOC288" HREF="gettext_15.html#SEC288">15.5.2.7  Invoking the <CODE>eval_ngettext</CODE> function</A>
+</UL>
+<LI><A NAME="TOC289" HREF="gettext_15.html#SEC289">15.5.3  bash - Bourne-Again Shell Script</A>
+<LI><A NAME="TOC290" HREF="gettext_15.html#SEC290">15.5.4  Python</A>
+<LI><A NAME="TOC291" HREF="gettext_15.html#SEC291">15.5.5  GNU clisp - Common Lisp</A>
+<LI><A NAME="TOC292" HREF="gettext_15.html#SEC292">15.5.6  GNU clisp C sources</A>
+<LI><A NAME="TOC293" HREF="gettext_15.html#SEC293">15.5.7  Emacs Lisp</A>
+<LI><A NAME="TOC294" HREF="gettext_15.html#SEC294">15.5.8  librep</A>
+<LI><A NAME="TOC295" HREF="gettext_15.html#SEC295">15.5.9  GNU guile - Scheme</A>
+<LI><A NAME="TOC296" HREF="gettext_15.html#SEC296">15.5.10  GNU Smalltalk</A>
+<LI><A NAME="TOC297" HREF="gettext_15.html#SEC297">15.5.11  Java</A>
+<LI><A NAME="TOC298" HREF="gettext_15.html#SEC298">15.5.12  C#</A>
+<LI><A NAME="TOC299" HREF="gettext_15.html#SEC299">15.5.13  GNU awk</A>
+<LI><A NAME="TOC300" HREF="gettext_15.html#SEC300">15.5.14  Pascal - Free Pascal Compiler</A>
+<LI><A NAME="TOC301" HREF="gettext_15.html#SEC301">15.5.15  wxWidgets library</A>
+<LI><A NAME="TOC302" HREF="gettext_15.html#SEC302">15.5.16  YCP - YaST2 scripting language</A>
+<LI><A NAME="TOC303" HREF="gettext_15.html#SEC303">15.5.17  Tcl - Tk's scripting language</A>
+<LI><A NAME="TOC304" HREF="gettext_15.html#SEC304">15.5.18  Perl</A>
+<UL>
+<LI><A NAME="TOC305" HREF="gettext_15.html#SEC305">15.5.18.1  General Problems Parsing Perl Code</A>
+<LI><A NAME="TOC306" HREF="gettext_15.html#SEC306">15.5.18.2  Which keywords will xgettext look for?</A>
+<LI><A NAME="TOC307" HREF="gettext_15.html#SEC307">15.5.18.3  How to Extract Hash Keys</A>
+<LI><A NAME="TOC308" HREF="gettext_15.html#SEC308">15.5.18.4  What are Strings And Quote-like Expressions?</A>
+<LI><A NAME="TOC309" HREF="gettext_15.html#SEC309">15.5.18.5  Invalid Uses Of String Interpolation</A>
+<LI><A NAME="TOC310" HREF="gettext_15.html#SEC310">15.5.18.6  Valid Uses Of String Interpolation</A>
+<LI><A NAME="TOC311" HREF="gettext_15.html#SEC311">15.5.18.7  When To Use Parentheses</A>
+<LI><A NAME="TOC312" HREF="gettext_15.html#SEC312">15.5.18.8  How To Grok with Long Lines</A>
+<LI><A NAME="TOC313" HREF="gettext_15.html#SEC313">15.5.18.9  Bugs, Pitfalls, And Things That Do Not Work</A>
+</UL>
+<LI><A NAME="TOC314" HREF="gettext_15.html#SEC314">15.5.19  PHP Hypertext Preprocessor</A>
+<LI><A NAME="TOC315" HREF="gettext_15.html#SEC315">15.5.20  Pike</A>
+<LI><A NAME="TOC316" HREF="gettext_15.html#SEC316">15.5.21  GNU Compiler Collection sources</A>
+<LI><A NAME="TOC317" HREF="gettext_15.html#SEC317">15.5.22  Lua</A>
+<LI><A NAME="TOC318" HREF="gettext_15.html#SEC318">15.5.23  JavaScript</A>
+<LI><A NAME="TOC319" HREF="gettext_15.html#SEC319">15.5.24  Vala</A>
+</UL>
+<LI><A NAME="TOC320" HREF="gettext_15.html#SEC320">15.6  Internationalizable Data</A>
+<UL>
+<LI><A NAME="TOC321" HREF="gettext_15.html#SEC321">15.6.1  POT - Portable Object Template</A>
+<LI><A NAME="TOC322" HREF="gettext_15.html#SEC322">15.6.2  Resource String Table</A>
+<LI><A NAME="TOC323" HREF="gettext_15.html#SEC323">15.6.3  Glade - GNOME user interface description</A>
+<LI><A NAME="TOC324" HREF="gettext_15.html#SEC324">15.6.4  GSettings - GNOME user configuration schema</A>
+<LI><A NAME="TOC325" HREF="gettext_15.html#SEC325">15.6.5  AppData - freedesktop.org application description</A>
+<LI><A NAME="TOC326" HREF="gettext_15.html#SEC326">15.6.6  Preparing Rules for XML Internationalization</A>
+<UL>
+<LI><A NAME="TOC327" HREF="gettext_15.html#SEC327">15.6.6.1  Two Use-cases of Translated Strings in XML</A>
+</UL>
+</UL>
+</UL>
+<LI><A NAME="TOC328" HREF="gettext_16.html#SEC328">16  Concluding Remarks</A>
+<UL>
+<LI><A NAME="TOC329" HREF="gettext_16.html#SEC329">16.1  History of GNU <CODE>gettext</CODE></A>
+<LI><A NAME="TOC330" HREF="gettext_16.html#SEC330">16.2  Related Readings</A>
+</UL>
+<LI><A NAME="TOC331" HREF="gettext_17.html#SEC331">A  Language Codes</A>
+<UL>
+<LI><A NAME="TOC332" HREF="gettext_17.html#SEC332">A.1  Usual Language Codes</A>
+<LI><A NAME="TOC333" HREF="gettext_17.html#SEC333">A.2  Rare Language Codes</A>
+</UL>
+<LI><A NAME="TOC334" HREF="gettext_18.html#SEC334">B  Country Codes</A>
+<LI><A NAME="TOC335" HREF="gettext_19.html#SEC335">C  Licenses</A>
+<UL>
+<LI><A NAME="TOC336" HREF="gettext_19.html#SEC336">C.1  GNU GENERAL PUBLIC LICENSE</A>
+<LI><A NAME="TOC337" HREF="gettext_19.html#SEC337">C.2  GNU LESSER GENERAL PUBLIC LICENSE</A>
+<LI><A NAME="TOC338" HREF="gettext_19.html#SEC338">C.3  GNU Free Documentation License</A>
+</UL>
+<LI><A NAME="TOC339" HREF="gettext_20.html#SEC339">Program Index</A>
+<LI><A NAME="TOC340" HREF="gettext_21.html#SEC340">Option Index</A>
+<LI><A NAME="TOC341" HREF="gettext_22.html#SEC341">Variable Index</A>
+<LI><A NAME="TOC342" HREF="gettext_23.html#SEC342">PO Mode Index</A>
+<LI><A NAME="TOC343" HREF="gettext_24.html#SEC343">Autoconf Macro Index</A>
+<LI><A NAME="TOC344" HREF="gettext_25.html#SEC344">General Index</A>
+</UL>
+<P><HR><P>
+This document was generated on 11 June 2016 using the
+<A HREF="http://wwwinfo.cern.ch/dis/texi2html/">texi2html</A>
+translator version 1.52b.</P>
+</BODY>
+</HTML>

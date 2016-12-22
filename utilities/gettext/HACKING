@@ -1,0 +1,96 @@
+All you need to know when hacking (modifying) GNU gettext or when building
+it off the git repository.
+
+
+Requirements
+============
+
+You will need reasonably recent versions of the build tools:
+
+  * A C compiler; on Cygwin or mingw also a C++ compiler. Such as GNU GCC.
+    + Homepage:
+      http://gcc.gnu.org/
+
+  * GNU automake
+    + Homepage:
+      http://www.gnu.org/software/automake/
+
+  * GNU autoconf
+    + Homepage:
+      http://www.gnu.org/software/autoconf/
+
+  * GNU m4
+    + Homepage:
+      http://www.gnu.org/software/m4/
+
+  * GNU bison
+    + Homepage:
+      http://www.gnu.org/software/bison/
+
+  * GNU gperf
+    + Homepage:
+      http://www.gnu.org/software/gperf/
+
+  * GNU groff 1.17 or newer
+    + Homepage:
+      http://www.gnu.org/software/groff/
+
+  * GNU texinfo
+    + Homepage:
+      http://www.gnu.org/software/texinfo/
+
+  * GNU emacs or XEmacs
+    + Homepage:
+      http://www.gnu.org/software/emacs/
+      http://www.xemacs.org/
+
+  * Perl
+    + Homepage:
+      http://www.perl.org/
+
+  * TeX (for making the doc in .dvi, .ps or .pdf format)
+    + Homepage:
+      http://tug.org/teTeX/
+
+  * Either an internet connection or a recent copy of GNU gnulib.
+    + Homepage:
+      http://www.gnu.org/software/gnulib/
+
+  * GNU tar (for creating distributable tarballs)
+    + Homepage:
+      http://www.gnu.org/software/tar/
+
+And, of course, the packages listed in the DEPENDENCIES file.
+
+
+Building off the git repository
+===============================
+
+Access to the git repository is described at
+  http://savannah.gnu.org/git/?group=gettext
+
+After fetching the sources from the repository, peek at the comments in
+autogen.sh, then run "./autogen.sh"; then you can proceed with "./configure"
+as usual.
+
+Submitting patches
+==================
+
+Patches should be sent to bug-gettext@gnu.org, the bug/feature mailing
+list.  You can subscribe to the mailing list, or see the list
+archives, by following links from
+http://savannah.gnu.org/mail/?group=gettext .
+
+To email a patch you can use a shell command like 'git format-patch
+-1' to create a file, and then attach the file to your email.  
+
+GNU gettext development no longer stores descriptions of new changes
+in ChangeLog files.  Instead, a single ChangeLog file is generated
+from the commit messages when a release is prepared.  So changes you
+commit should not touch any of the ChangeLog files in the repository,
+but instead should contain the log entries in the commit message.
+
+For the style of a ChangeLog entry, see the "Change Logs" section of
+the GNU coding standards:
+
+  http://www.gnu.org/prep/standards/html_node/Change-Logs.html

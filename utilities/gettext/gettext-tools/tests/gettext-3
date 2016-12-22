@@ -1,0 +1,56 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test that on glibc systems, gettext() works right even with intermediate
+# setlocale() calls.
+
+# This test works only on glibc systems.
+: ${GLIBC2=no}
+test "$GLIBC2" = yes || {
+  echo "Skipping test: not a glibc system"
+  Exit 77
+}
+
+# This test works only on systems that have a de_DE and fr_FR locale installed.
+LC_ALL=de_DE ../testlocale || {
+  if test -f /usr/bin/localedef; then
+    echo "Skipping test: locale de_DE not installed"
+  else
+    echo "Skipping test: locale de_DE not supported"
+  fi
+  Exit 77
+}
+LC_ALL=fr_FR ../testlocale || {
+  if test -f /usr/bin/localedef; then
+    echo "Skipping test: locale fr_FR not installed"
+  else
+    echo "Skipping test: locale fr_FR not supported"
+  fi
+  Exit 77
+}
+
+test -d gt-3 || mkdir gt-3
+test -d gt-3/de_DE || mkdir gt-3/de_DE
+test -d gt-3/de_DE/LC_MESSAGES || mkdir gt-3/de_DE/LC_MESSAGES
+test -d gt-3/fr_FR || mkdir gt-3/fr_FR
+test -d gt-3/fr_FR/LC_MESSAGES || mkdir gt-3/fr_FR/LC_MESSAGES
+
+: ${MSGFMT=msgfmt}
+${MSGFMT} -o gt-3/de_DE/LC_MESSAGES/tstlang.mo "$abs_srcdir"/gettext-3-1.po
+${MSGFMT} -o gt-3/fr_FR/LC_MESSAGES/tstlang.mo "$abs_srcdir"/gettext-3-2.po
+
+cat <<EOF > gt-3.ok
+String1 - Lang1: 1st string
+String2 - Lang1: 2nd string
+String1 - Lang2: 1st string
+String2 - Lang2: 2nd string
+String1 - First string for testing.
+String2 - Another string for testing.
+EOF
+
+../gettext-3-prg > gt-3.out || Exit 1
+
+: ${DIFF=diff}
+${DIFF} gt-3.ok gt-3.out || Exit 1
+
+Exit 0

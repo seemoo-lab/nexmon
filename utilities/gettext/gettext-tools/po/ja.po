@@ -1,0 +1,4621 @@
+# Translation of `gettext-tools' messages to Japanese.
+# Copyright (C) 1999, 2002, 2003, 2004, 2005, 2006, 2007, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016 Free Software Foundation, Inc.
+# This file is distributed under the same license as the gettext package.
+# Masahito Yamaga <ma@yama-ga.com>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: GNU gettext-tools 0.19.8-rc1\n"
+"Report-Msgid-Bugs-To: bug-gnu-gettext@gnu.org\n"
+"POT-Creation-Date: 2016-06-11 22:08+0900\n"
+"PO-Revision-Date: 2016-06-01 19:35+0900\n"
+"Last-Translator: Masahito Yamaga <ma@yama-ga.com>\n"
+"Language-Team: Japanese <translation-team-ja@lists.sourceforge.net>\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=EUC-JP\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: gnulib-lib/argmatch.c:133
+#, c-format
+msgid "invalid argument %s for %s"
+msgstr "%2$s に対する引数 %1$s が間違っています"
+
+#: gnulib-lib/argmatch.c:134
+#, c-format
+msgid "ambiguous argument %s for %s"
+msgstr "%2$s に対する引数 %1$s が曖昧です"
+
+#: gnulib-lib/argmatch.c:153
+msgid "Valid arguments are:"
+msgstr "正しい引数:"
+
+#: gnulib-lib/clean-temp.c:325
+#, c-format
+msgid "cannot find a temporary directory, try setting $TMPDIR"
+msgstr "一時ディレクトリを見付けられません. $TMPDIR を設定してみてください"
+
+#: gnulib-lib/clean-temp.c:339
+#, c-format
+msgid "cannot create a temporary directory using template \"%s\""
+msgstr "テンプレート \"%s\" を使って一時ディレクトリを作ることができません"
+
+#: gnulib-lib/clean-temp.c:435
+#, c-format
+msgid "cannot remove temporary file %s"
+msgstr "一時ファイル \"%s\" を削除できません"
+
+#: gnulib-lib/clean-temp.c:450
+#, c-format
+msgid "cannot remove temporary directory %s"
+msgstr "一時ディレクトリ %s を削除できません"
+
+#: gnulib-lib/closeout.c:66
+msgid "write error"
+msgstr "書き込みエラー"
+
+#: gnulib-lib/copy-acl.c:54 gnulib-lib/copy-file.c:214
+#, c-format
+msgid "preserving permissions for %s"
+msgstr "%s に対するアクセス権を維持"
+
+#: gnulib-lib/copy-file.c:191
+#, c-format
+msgid "error while opening %s for reading"
+msgstr "%s を読み込もうとしてエラーが発生しました"
+
+#: gnulib-lib/copy-file.c:195
+#, c-format
+msgid "cannot open backup file %s for writing"
+msgstr "バックアップファイル %s を書き込み用に開くことができません"
+
+#: gnulib-lib/copy-file.c:199
+#, c-format
+msgid "error reading %s"
+msgstr "%s を読み込み中にエラーが発生しました"
+
+#: gnulib-lib/copy-file.c:203
+#, c-format
+msgid "error writing %s"
+msgstr "%s を書き込み中にエラーが発生しました"
+
+#: gnulib-lib/copy-file.c:207
+#, c-format
+msgid "error after reading %s"
+msgstr "%s を読み込んだ後にエラーが発生しました"
+
+#: gnulib-lib/csharpcomp.c:310 gnulib-lib/javaversion.c:76 src/msginit.c:897
+#: src/msginit.c:972 src/msginit.c:1132 src/msginit.c:1231 src/msginit.c:1396
+#: src/read-csharp.c:73 src/read-java.c:71 src/read-resources.c:74
+#: src/read-tcl.c:111 src/write-resources.c:78
+#, c-format
+msgid "fdopen() failed"
+msgstr "fdopen() 失敗"
+
+#: gnulib-lib/csharpcomp.c:571
+#, c-format
+msgid "C# compiler not found, try installing pnet"
+msgstr "C# コンパイラが見つかりません. pnet をインストールしてみてください"
+
+#: gnulib-lib/csharpexec.c:343
+#, c-format
+msgid "C# virtual machine not found, try installing pnet"
+msgstr "C# 仮想マシンが見つかりません. pnet をインストールしてみてください"
+
+#: gnulib-lib/error.c:191
+msgid "Unknown system error"
+msgstr "未知のシステムエラー"
+
+#: gnulib-lib/execute.c:191 gnulib-lib/execute.c:264
+#: gnulib-lib/spawn-pipe.c:238 gnulib-lib/spawn-pipe.c:352
+#: gnulib-lib/wait-process.c:282 gnulib-lib/wait-process.c:356
+#, c-format
+msgid "%s subprocess failed"
+msgstr "%s サブプロセスが失敗しました"
+
+#: gnulib-lib/getopt.c:575 gnulib-lib/getopt.c:604
+#, c-format
+msgid "%s: option '%s' is ambiguous; possibilities:"
+msgstr "%s: オプション '%s' が曖昧. 指定可能なもの:"
+
+#: gnulib-lib/getopt.c:619
+#, c-format
+msgid "%s: option '%s' is ambiguous\n"
+msgstr "%s: オプション '%s' は曖昧です\n"
+
+#: gnulib-lib/getopt.c:654 gnulib-lib/getopt.c:658
+#, c-format
+msgid "%s: option '--%s' doesn't allow an argument\n"
+msgstr "%s: オプション '--%s' に引数はありません\n"
+
+#: gnulib-lib/getopt.c:667 gnulib-lib/getopt.c:672
+#, c-format
+msgid "%s: option '%c%s' doesn't allow an argument\n"
+msgstr "%s: オプション '%c%s' に引数はありません\n"
+
+#: gnulib-lib/getopt.c:715 gnulib-lib/getopt.c:734
+#, c-format
+msgid "%s: option '--%s' requires an argument\n"
+msgstr "%s: オプション '--%s' には引数が必要です\n"
+
+#: gnulib-lib/getopt.c:772 gnulib-lib/getopt.c:775
+#, c-format
+msgid "%s: unrecognized option '--%s'\n"
+msgstr "%s: オプション `--%s' は不可\n"
+
+#: gnulib-lib/getopt.c:783 gnulib-lib/getopt.c:786
+#, c-format
+msgid "%s: unrecognized option '%c%s'\n"
+msgstr "%s: オプション '%c%s' は不可\n"
+
+#: gnulib-lib/getopt.c:835 gnulib-lib/getopt.c:838
+#, c-format
+msgid "%s: invalid option -- '%c'\n"
+msgstr "%s: 無効なオプション -- '%c'\n"
+
+#: gnulib-lib/getopt.c:891 gnulib-lib/getopt.c:908 gnulib-lib/getopt.c:1118
+#: gnulib-lib/getopt.c:1136
+#, c-format
+msgid "%s: option requires an argument -- '%c'\n"
+msgstr "%s: 引数が必要なオプション -- '%c'\n"
+
+#: gnulib-lib/getopt.c:964 gnulib-lib/getopt.c:980
+#, c-format
+msgid "%s: option '-W %s' is ambiguous\n"
+msgstr "%s: オプション '-W %s' は曖昧です\n"
+
+#: gnulib-lib/getopt.c:1004 gnulib-lib/getopt.c:1022
+#, c-format
+msgid "%s: option '-W %s' doesn't allow an argument\n"
+msgstr "%s: オプション '-W %s' に引数はありません\n"
+
+#: gnulib-lib/getopt.c:1043 gnulib-lib/getopt.c:1061
+#, c-format
+msgid "%s: option '-W %s' requires an argument\n"
+msgstr "%s: オプション '-W %s' には引数が必要です\n"
+
+#: gnulib-lib/javacomp.c:121 gnulib-lib/javacomp.c:135
+#: gnulib-lib/javacomp.c:151
+#, c-format
+msgid "invalid source_version argument to compile_java_class"
+msgstr "compile_java_class に対する無効な source_version 引数"
+
+#: gnulib-lib/javacomp.c:166 gnulib-lib/javacomp.c:187
+#, c-format
+msgid "invalid target_version argument to compile_java_class"
+msgstr "compile_java_class に対する無効な target_version 引数"
+
+#: gnulib-lib/javacomp.c:498 src/write-csharp.c:739 src/write-java.c:1140
+#: src/write-java.c:1148 src/write-java.c:1176 src/write-java.c:1188
+#, c-format
+msgid "failed to create \"%s\""
+msgstr "\"%s\" の生成に失敗しました"
+
+#: gnulib-lib/javacomp.c:505 src/write-catalog.c:256 src/write-catalog.c:320
+#: src/write-csharp.c:748 src/write-desktop.c:182 src/write-java.c:1156
+#: src/write-java.c:1197 src/write-mo.c:811 src/write-qt.c:749
+#: src/write-tcl.c:223 src/write-xml.c:75
+#, c-format
+msgid "error while writing \"%s\" file"
+msgstr "\"%s\" ファイルを書き込み中にエラーが発生しました"
+
+#: gnulib-lib/javacomp.c:2338
+#, c-format
+msgid "Java compiler not found, try installing gcj or set $JAVAC"
+msgstr ""
+"Java コンパイラが見つかりません. gcj をインストールするか $JAVAC を設定してみ"
+"てください"
+
+#: gnulib-lib/javaexec.c:417
+#, c-format
+msgid "Java virtual machine not found, try installing gij or set $JAVA"
+msgstr ""
+"Java 仮想マシンが見つかりません. gij をインストールするか $JAVA を設定してく"
+"ださい"
+
+#: gnulib-lib/javaversion.c:84 src/msginit.c:905 src/msginit.c:980
+#: src/msginit.c:1140 src/msginit.c:1404
+#, c-format
+msgid "%s subprocess I/O error"
+msgstr "%s サブプロセス入出力エラー"
+
+#: gnulib-lib/obstack.c:338 gnulib-lib/obstack.c:340 gnulib-lib/xmalloc.c:38
+#: gnulib-lib/xsetenv.c:37 src/cldr-plurals.c:61 src/msgl-check.c:563
+#: src/po-lex.c:83 src/po-lex.c:102 libgettextpo/gettext-po.c:1326
+#, c-format
+msgid "memory exhausted"
+msgstr "メモリを使い果たしました"
+
+#: gnulib-lib/pipe-filter-ii.c:316
+#, c-format
+msgid "creation of threads failed"
+msgstr "スレッドの生成に失敗"
+
+#: gnulib-lib/pipe-filter-ii.c:348 gnulib-lib/pipe-filter-ii.c:505
+#: src/msgexec.c:427
+#, c-format
+msgid "write to %s subprocess failed"
+msgstr "%s へ書き出すサブプロセスが失敗しました"
+
+#: gnulib-lib/pipe-filter-ii.c:369 gnulib-lib/pipe-filter-ii.c:548
+#, c-format
+msgid "read from %s subprocess failed"
+msgstr "%s サブプロセスからの読み込みに失敗"
+
+#: gnulib-lib/pipe-filter-ii.c:422
+#, c-format
+msgid "cannot set up nonblocking I/O to %s subprocess"
+msgstr "%s サブプロセスにブロッキングしない入出力を設定できません"
+
+#: gnulib-lib/pipe-filter-ii.c:460
+#, c-format
+msgid "communication with %s subprocess failed"
+msgstr "%s サブプロセスとの通信に失敗"
+
+#: gnulib-lib/pipe-filter-ii.c:580
+#, c-format
+msgid "%s subprocess terminated with exit code %d"
+msgstr "%s サブプロセスが終了コード %d で終了"
+
+#. TRANSLATORS:
+#. Get translations for open and closing quotation marks.
+#. The message catalog should translate "`" to a left
+#. quotation mark suitable for the locale, and similarly for
+#. "'".  For example, a French Unicode local should translate
+#. these to U+00AB (LEFT-POINTING DOUBLE ANGLE
+#. QUOTATION MARK), and U+00BB (RIGHT-POINTING DOUBLE ANGLE
+#. QUOTATION MARK), respectively.
+#.
+#. If the catalog has no translation, we will try to
+#. use Unicode U+2018 (LEFT SINGLE QUOTATION MARK) and
+#. Unicode U+2019 (RIGHT SINGLE QUOTATION MARK).  If the
+#. current locale is not Unicode, locale_quoting_style
+#. will quote 'like this', and clocale_quoting_style will
+#. quote "like this".  You should always include translations
+#. for "`" and "'" even if U+2018 and U+2019 are appropriate
+#. for your locale.
+#.
+#. If you don't know what to put here, please see
+#. <http://en.wikipedia.org/wiki/Quotation_marks_in_other_languages>
+#. and use glyphs suitable for your language.
+#: gnulib-lib/quotearg.c:347
+msgid "`"
+msgstr "`"
+
+#: gnulib-lib/quotearg.c:348
+msgid "'"
+msgstr "'"
+
+#: gnulib-lib/set-acl.c:46
+#, c-format
+msgid "setting permissions for %s"
+msgstr "%s に対するアクセス権を設定"
+
+#: gnulib-lib/spawn-pipe.c:144 gnulib-lib/spawn-pipe.c:147
+#: gnulib-lib/spawn-pipe.c:268 gnulib-lib/spawn-pipe.c:271
+#, c-format
+msgid "cannot create pipe"
+msgstr "パイプを作ることができません"
+
+#: gnulib-lib/w32spawn.h:45
+#, c-format
+msgid "_open_osfhandle failed"
+msgstr "_open_osfhandle 失敗"
+
+#: gnulib-lib/w32spawn.h:86
+#, c-format
+msgid "cannot restore fd %d: dup2 failed"
+msgstr "fd %d を復元できません: dup2 失敗"
+
+#: gnulib-lib/wait-process.c:223 gnulib-lib/wait-process.c:255
+#: gnulib-lib/wait-process.c:317
+#, c-format
+msgid "%s subprocess"
+msgstr "%s サブプロセス"
+
+#: gnulib-lib/wait-process.c:274 gnulib-lib/wait-process.c:346
+#, c-format
+msgid "%s subprocess got fatal signal %d"
+msgstr "%s サブプロセスが致命的なシグナル %d を受け取りました"
+
+#: src/cldr-plurals.c:69
+#, c-format
+msgid "The root element must be <%s>"
+msgstr "そのルート要素は <%s> でなければなりません"
+
+#: src/cldr-plurals.c:83
+#, c-format
+msgid "The element <%s> does not contain a <%s> element"
+msgstr "要素 <%s> は <%s> 要素を含みません"
+
+#: src/cldr-plurals.c:105 src/cldr-plurals.c:146
+#, c-format
+msgid "The element <%s> does not have attribute <%s>"
+msgstr "要素 <%s> は属性 <%s> を持ちません"
+
+#: src/cldr-plurals.c:191 src/hostname.c:210 src/msgattrib.c:418
+#: src/msgcat.c:363 src/msgcmp.c:210 src/msgcomm.c:355 src/msgconv.c:304
+#: src/msgen.c:301 src/msgexec.c:260 src/msgfilter.c:410 src/msgfmt.c:904
+#: src/msggrep.c:513 src/msginit.c:359 src/msgmerge.c:495 src/msgunfmt.c:424
+#: src/msguniq.c:323 src/recode-sr-latin.c:144 src/urlget.c:173
+#: src/xgettext.c:1032
+#, c-format
+msgid "Try '%s --help' for more information.\n"
+msgstr "より多くの情報を得るためには '%s --help' と入力してください.\n"
+
+#: src/cldr-plurals.c:195
+#, c-format
+msgid "Usage: %s [OPTION...] [LOCALE RULES]...\n"
+msgstr "使用法: %s [オプション...] [ロケールルール]...\n"
+
+#: src/cldr-plurals.c:200
+#, c-format, no-wrap
+msgid ""
+"Extract or convert Unicode CLDR plural rules.\n"
+"\n"
+"If both LOCALE and RULES are specified, it reads CLDR plural rules for\n"
+"LOCALE from RULES and print them in a form suitable for gettext use.\n"
+"If no argument is given, it reads CLDR plural rules from the standard input.\n"
+msgstr ""
+"ユニコード CLDR 複数形ルールを抽出または変換.\n"
+"\n"
+"LOCALE と RULES の両方が指定された場合, RULES から LOCALE に対する\n"
+"CLDR 複数形ルールを読み込み, gettext が使えるような形で表示します.\n"
+"引数がない場合, 標準入力から CLDR 複数形ルールを読み込みます.\n"
+
+#: src/cldr-plurals.c:209 src/msgfmt.c:917 src/xgettext.c:1045
+#, c-format, no-wrap
+msgid ""
+"Mandatory arguments to long options are mandatory for short options too.\n"
+"Similarly for optional arguments.\n"
+msgstr ""
+"長いオプションに必須の引数は短いオプションにも必須です.\n"
+"必須でない引数も同じです.\n"
+
+#: src/cldr-plurals.c:214
+#, c-format
+msgid "  -c, --cldr                  print plural rules in the CLDR format\n"
+msgstr "  -c, --cldr                  CLDR 形式で複数形ルールを表示\n"
+
+#: src/cldr-plurals.c:216 src/hostname.c:233 src/msgattrib.c:537
+#: src/msgcat.c:471 src/msgcmp.c:261 src/msgcomm.c:457 src/msgconv.c:388
+#: src/msgen.c:384 src/msgexec.c:309 src/msgfilter.c:510 src/msgfmt.c:1070
+#: src/msggrep.c:631 src/msginit.c:423 src/msgmerge.c:622 src/msgunfmt.c:530
+#: src/msguniq.c:420 src/recode-sr-latin.c:165 src/urlget.c:189
+#: src/xgettext.c:1220
+#, c-format, no-wrap
+msgid "  -h, --help                  display this help and exit\n"
+msgstr "  -h, --help                  このヘルプを表示して終了\n"
+
+#: src/cldr-plurals.c:218 src/hostname.c:235 src/msgattrib.c:539
+#: src/msgcat.c:473 src/msgcmp.c:263 src/msgcomm.c:459 src/msgconv.c:390
+#: src/msgen.c:386 src/msgexec.c:311 src/msgfilter.c:512 src/msgfmt.c:1072
+#: src/msggrep.c:633 src/msginit.c:425 src/msgmerge.c:624 src/msgunfmt.c:532
+#: src/msguniq.c:422 src/recode-sr-latin.c:168 src/urlget.c:191
+#: src/xgettext.c:1222
+#, c-format, no-wrap
+msgid "  -V, --version               output version information and exit\n"
+msgstr "  -V, --version               バージョン情報を表示して終了\n"
+
+#. TRANSLATORS: The placeholder indicates the bug-reporting address
+#. for this package.  Please add _another line_ saying
+#. "Report translation bugs to <...>\n" with the address for translation
+#. bugs (typically your translation team's web or email address).
+#: src/cldr-plurals.c:225 src/hostname.c:242 src/msgattrib.c:546
+#: src/msgcat.c:480 src/msgcmp.c:270 src/msgcomm.c:466 src/msgconv.c:397
+#: src/msgen.c:393 src/msgexec.c:318 src/msgfilter.c:519 src/msgfmt.c:1083
+#: src/msggrep.c:640 src/msginit.c:432 src/msgmerge.c:635 src/msgunfmt.c:541
+#: src/msguniq.c:429 src/recode-sr-latin.c:175 src/urlget.c:200
+#: src/xgettext.c:1229
+msgid "Report bugs to <bug-gnu-gettext@gnu.org>.\n"
+msgstr "バグレポートは <bug-gnu-gettext@gnu.org> まで.\n"
+
+#: src/cldr-plurals.c:289 src/hostname.c:181 src/msgattrib.c:356
+#: src/msgcat.c:294 src/msgcmp.c:173 src/msgcomm.c:285 src/msgconv.c:245
+#: src/msgen.c:242 src/msgexec.c:187 src/msgfilter.c:289 src/msgfmt.c:446
+#: src/msggrep.c:420 src/msginit.c:269 src/msgmerge.c:357 src/msgunfmt.c:263
+#: src/msguniq.c:265 src/recode-sr-latin.c:111 src/urlget.c:144
+#: src/xgettext.c:681
+#, c-format, no-wrap
+msgid ""
+"Copyright (C) %s Free Software Foundation, Inc.\n"
+"License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n"
+"This is free software: you are free to change and redistribute it.\n"
+"There is NO WARRANTY, to the extent permitted by law.\n"
+msgstr ""
+"Copyright (C) %s Free Software Foundation, Inc.\n"
+"License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n"
+"This is free software: you are free to change and redistribute it.\n"
+"There is NO WARRANTY, to the extent permitted by law.\n"
+"\n"
+"[参考訳]\n"
+"これはフリー・ソフトウェアですので変更と再配布は自由です.\n"
+"ただし法律が許す範囲で無保証です.\n"
+
+#: src/cldr-plurals.c:295 src/hostname.c:187 src/msgattrib.c:362
+#: src/msgcat.c:300 src/msgcmp.c:179 src/msgcomm.c:291 src/msgconv.c:251
+#: src/msgen.c:248 src/msgexec.c:193 src/msgfilter.c:295 src/msgfmt.c:452
+#: src/msggrep.c:426 src/msginit.c:275 src/msgmerge.c:363 src/msgunfmt.c:269
+#: src/msguniq.c:271 src/urlget.c:150 src/xgettext.c:687
+#, c-format
+msgid "Written by %s.\n"
+msgstr "作者 %s.\n"
+
+#. This is a proper name. See the gettext manual, section Names.
+#: src/cldr-plurals.c:295
+msgid "Daiki Ueno"
+msgstr "Daiki Ueno"
+
+#: src/cldr-plurals.c:315
+#, c-format
+msgid "%s cannot be read"
+msgstr "%s は読み込めません"
+
+#: src/cldr-plurals.c:321
+#, c-format
+msgid "cannot extract rules for %s"
+msgstr "%s に対するルールを抽出できません"
+
+#: src/cldr-plurals.c:331
+#, c-format
+msgid "cannot parse CLDR rule"
+msgstr "CLDR ルールをパースできません"
+
+#: src/cldr-plurals.c:366
+#, c-format
+msgid "extra operand %s"
+msgstr "余分なオペランド %s"
+
+#: src/file-list.c:54 src/msggrep.c:248 src/open-catalog.c:123
+#: src/read-mo.c:261 src/read-tcl.c:126 src/urlget.c:217
+#: src/write-desktop.c:172 src/xgettext.c:2174 src/xgettext.c:2187
+#: src/xgettext.c:2197
+#, c-format
+msgid "error while opening \"%s\" for reading"
+msgstr "\"%s\" を読み込もうとしてエラーが発生しました"
+
+#: src/format-awk.c:510 src/format-boost.c:618 src/format-elisp.c:349
+#: src/format-gcc-internal.c:627 src/format-javascript.c:356
+#: src/format-kde.c:224 src/format-librep.c:313 src/format-lua.c:228
+#: src/format-pascal.c:398 src/format-perl.c:585 src/format-php.c:351
+#: src/format-qt.c:174 src/format-tcl.c:391 src/format-ycp.c:148
+#, c-format
+msgid ""
+"a format specification for argument %u, as in '%s', doesn't exist in '%s'"
+msgstr "引数 %u に対する形式の指定が '%s' のように '%s' に存在しません"
+
+#: src/format-awk.c:521 src/format-boost.c:629 src/format-elisp.c:360
+#: src/format-gcc-internal.c:638 src/format-javascript.c:367
+#: src/format-kde.c:235 src/format-librep.c:324 src/format-lua.c:235
+#: src/format-pascal.c:409 src/format-perl.c:596 src/format-php.c:362
+#: src/format-qt.c:171 src/format-tcl.c:402 src/format-ycp.c:145
+#, c-format
+msgid "a format specification for argument %u doesn't exist in '%s'"
+msgstr "引数 %u に対する形式の指定が '%s' に存在しません"
+
+#: src/format-awk.c:541 src/format-boost.c:649 src/format-c.c:147
+#: src/format-elisp.c:380 src/format-gcc-internal.c:658
+#: src/format-gfc-internal.c:372 src/format-javascript.c:390
+#: src/format-librep.c:344 src/format-lua.c:242 src/format-pascal.c:429
+#: src/format-perl.c:616 src/format-php.c:382 src/format-python.c:527
+#: src/format-tcl.c:422
+#, c-format
+msgid "format specifications in '%s' and '%s' for argument %u are not the same"
+msgstr "引数 %3$u に対する '%1$s' と '%2$s' での形式の指定が同じではありません"
+
+#: src/format-boost.c:450
+#, c-format
+msgid "The directive number %u starts with | but does not end with |."
+msgstr "命令番号 %u が, | で始まっていますが | で終わっていません."
+
+#: src/format.c:152
+#, c-format
+msgid "'%s' is not a valid %s format string, unlike '%s'. Reason: %s"
+msgstr "'%s' は正しい %s 形式の文字列ではなく, '%s' とは違います. 理由: %s"
+
+#: src/format-c.c:37
+#, c-format
+msgid ""
+"In the directive number %u, the token after '<' is not the name of a format "
+"specifier macro. The valid macro names are listed in ISO C 99 section 7.8.1."
+msgstr ""
+"命令番号 %u では, '<' の後のトークンはフォーマット記述子マクロ名ではありませ"
+"ん. 正しいマクロ名は ISO C 99 の 7.8.1 節に一覧があります."
+
+#: src/format-c.c:40
+#, c-format
+msgid "In the directive number %u, the token after '<' is not followed by '>'."
+msgstr "命令番号 %u では, '<' の後のトークンの後に '>' が来ることはありません."
+
+#: src/format-c.c:43 src/format-gfc-internal.c:289
+#, c-format
+msgid "The string refers to argument number %u but ignores argument number %u."
+msgstr "文字列は引数番号 %u を参照していますが引数番号 %u を無視しています."
+
+#: src/format-c.c:138 src/format-csharp.c:207 src/format-gfc-internal.c:363
+#: src/format-python.c:515 src/format-qt-plural.c:111
+#, c-format
+msgid "number of format specifications in '%s' and '%s' does not match"
+msgstr "'%s' と '%s' で指定した形式の数が合っていません"
+
+#: src/format-csharp.c:89 src/format-java.c:206
+#, c-format
+msgid "In the directive number %u, '{' is not followed by an argument number."
+msgstr "命令番号 %u では, '{' の後に引数の数が来ることはありません."
+
+#: src/format-csharp.c:110
+#, c-format
+msgid "In the directive number %u, ',' is not followed by a number."
+msgstr "命令番号 %u では, ',' の後に数字が来ることはありません."
+
+#: src/format-csharp.c:131 src/format-java.c:192
+msgid ""
+"The string ends in the middle of a directive: found '{' without matching '}'."
+msgstr "文字列は命令の途中で終わっています: '{' と '}' が一致していません."
+
+#: src/format-csharp.c:140
+#, c-format
+msgid ""
+"The directive number %u ends with an invalid character '%c' instead of '}'."
+msgstr "命令番号 %u が, '}' の代わりに不正な文字 '%c' で終わっています."
+
+#: src/format-csharp.c:141
+#, c-format
+msgid "The directive number %u ends with an invalid character instead of '}'."
+msgstr "命令番号 %u が, '}' の代わりに不正な文字で終わっています."
+
+#: src/format-csharp.c:162 src/format-java.c:347
+msgid ""
+"The string starts in the middle of a directive: found '}' without matching "
+"'{'."
+msgstr "文字列は命令の途中から始まっています: '}' と '{' が一致していません."
+
+#: src/format-csharp.c:163
+#, c-format
+msgid "The string contains a lone '}' after directive number %u."
+msgstr "文字列が命令番号 %u のあとに閉じていない '}' を含んでいます."
+
+#: src/format-gcc-internal.c:255
+#, c-format
+msgid "In the directive number %u, the flags combination is invalid."
+msgstr "命令番号 %u では, そのフラグの組み合わせは無効です."
+
+#: src/format-gcc-internal.c:292
+#, c-format
+msgid "In the directive number %u, a precision is not allowed before '%c'."
+msgstr "命令番号 %u では, '%c' の前に精度が来ることはありません."
+
+#: src/format-gcc-internal.c:334
+#, c-format
+msgid ""
+"In the directive number %u, the argument number for the precision must be "
+"equal to %u."
+msgstr "命令番号 %u では, 精度の引数値は %u と等しくなくてはなりません."
+
+#: src/format-gcc-internal.c:398
+#, c-format
+msgid ""
+"In the directive number %u, a precision specification is not allowed before "
+"'%c'."
+msgstr "命令番号 %u では, '%c' の前に精度指定が来ることはありません."
+
+#: src/format-gcc-internal.c:406
+#, c-format
+msgid "In the directive number %u, the precision specification is invalid."
+msgstr "命令番号 %u では, その精度指定は無効です."
+
+#: src/format-gcc-internal.c:463
+#, c-format
+msgid "In the directive number %u, flags are not allowed before '%c'."
+msgstr "命令番号 %u では, '%c' の前にフラグが来ることはありません."
+
+#: src/format-gcc-internal.c:677
+#, c-format
+msgid "'%s' uses %%m but '%s' doesn't"
+msgstr "'%s' は %%m を使いますが '%s' は使いません"
+
+#: src/format-gcc-internal.c:680
+#, c-format
+msgid "'%s' does not use %%m but '%s' uses %%m"
+msgstr "'%s' は %%m を使いませんが '%s' は %%m を使います"
+
+#: src/format-gfc-internal.c:383
+#, c-format
+msgid "'%s' uses %%C but '%s' doesn't"
+msgstr "'%s' は %%C を使いますが '%s' は使いません"
+
+#: src/format-gfc-internal.c:386
+#, c-format
+msgid "'%s' does not use %%C but '%s' uses %%C"
+msgstr "'%s' は %%C を使いませんが '%s' は %%C を使います"
+
+#: src/format-invalid.h:22
+msgid "The string ends in the middle of a directive."
+msgstr "文字列が命令の途中で終わっています."
+
+#: src/format-invalid.h:25
+msgid ""
+"The string refers to arguments both through absolute argument numbers and "
+"through unnumbered argument specifications."
+msgstr ""
+"文字列は, 番号付けされた引数も, 番号付けされていない引数も, どちらの引数も参"
+"照しています."
+
+#: src/format-invalid.h:28
+#, c-format
+msgid ""
+"In the directive number %u, the argument number 0 is not a positive integer."
+msgstr "命令番号 %u では, 引数番号 0 は正の整数ではありません."
+
+#: src/format-invalid.h:30
+#, c-format
+msgid ""
+"In the directive number %u, the width's argument number 0 is not a positive "
+"integer."
+msgstr "命令番号 %u では, 幅の引数番号 0 は正の整数ではありません."
+
+#: src/format-invalid.h:32
+#, c-format
+msgid ""
+"In the directive number %u, the precision's argument number 0 is not a "
+"positive integer."
+msgstr "命令番号 %u では, 精度の引数番号 0 は正の整数ではありません."
+
+#: src/format-invalid.h:36
+#, c-format
+msgid ""
+"In the directive number %u, the character '%c' is not a valid conversion "
+"specifier."
+msgstr "命令番号 %u では, 文字 '%c' は正しい変換記述子ではありません."
+
+#: src/format-invalid.h:37
+#, c-format
+msgid ""
+"The character that terminates the directive number %u is not a valid "
+"conversion specifier."
+msgstr "命令番号 %u の終端文字は正しい変換記述子ではありません."
+
+#: src/format-invalid.h:40
+#, c-format
+msgid "The string refers to argument number %u in incompatible ways."
+msgstr "文字列は非互換な方法で引数番号 %u を参照しています."
+
+#: src/format-java.c:241
+#, c-format
+msgid ""
+"In the directive number %u, the substring \"%s\" is not a valid date/time "
+"style."
+msgstr "命令番号 %u では, \"%s\" は正しい日付や時刻の形式ではありません."
+
+#: src/format-java.c:252 src/format-java.c:286 src/format-java.c:315
+#, c-format
+msgid "In the directive number %u, \"%s\" is not followed by a comma."
+msgstr "命令番号 %u では, \"%s\" の後にカンマが来ることはありません."
+
+#: src/format-java.c:275
+#, c-format
+msgid ""
+"In the directive number %u, the substring \"%s\" is not a valid number style."
+msgstr "命令番号 %u では, \"%s\" は正しい数値の形式ではありません."
+
+#: src/format-java.c:324
+#, c-format
+msgid ""
+"In the directive number %u, the argument number is not followed by a comma "
+"and one of \"%s\", \"%s\", \"%s\", \"%s\"."
+msgstr ""
+"命令番号 %u では, 引数の数の後にカンマや \"%s\", \"%s\", \"%s\", \"%s\" の中"
+"の 1つが来ることはありません."
+
+#: src/format-java.c:573
+#, c-format
+msgid "In the directive number %u, a choice contains no number."
+msgstr "命令番号 %u では, 選択肢に数値がありません."
+
+#: src/format-java.c:584
+#, c-format
+msgid ""
+"In the directive number %u, a choice contains a number that is not followed "
+"by '<', '#' or '%s'."
+msgstr ""
+"命令番号 %u では, 選択肢に数値があり, '<', '#' や '%s' がその後にくることはあ"
+"りません."
+
+#: src/format-java.c:746
+#, c-format
+msgid ""
+"a format specification for argument {%u}, as in '%s', doesn't exist in '%s'"
+msgstr "引数 {%u} に対する形式の指定が '%s' のように '%s' に存在しません"
+
+#: src/format-java.c:757
+#, c-format
+msgid "a format specification for argument {%u} doesn't exist in '%s'"
+msgstr "引数 {%u} に対する形式の指定が '%s' に存在しません"
+
+#: src/format-java.c:777
+#, c-format
+msgid ""
+"format specifications in '%s' and '%s' for argument {%u} are not the same"
+msgstr "'%s' と '%s' での引数 {%u} に対する形式の指定が同じではありません"
+
+#: src/format-kde.c:159
+#, c-format
+msgid ""
+"The string refers to argument number %u but ignores the arguments %u and %u."
+msgstr "文字列は引数番号 %u を参照していますが引数 %u と %u を無視しています."
+
+#: src/format-kde.c:243
+#, c-format
+msgid ""
+"a format specification for arguments %u and %u doesn't exist in '%s', only "
+"one argument may be ignored"
+msgstr ""
+"引数 %u と %u に対する形式の指定が '%s' に存在せず, 1つの引数だけが無視されて"
+"いるかもしれません"
+
+#: src/format-kde-kuit.c:244 src/format-kde-kuit.c:264
+#: src/format-kde-kuit.c:274
+#, c-format
+msgid "error while parsing: %s"
+msgstr "構文解析中のエラー: %s"
+
+#: src/format-lisp.c:2340 src/format-lisp.c:2352 src/format-scheme.c:2365
+#: src/format-scheme.c:2377
+#, c-format
+msgid ""
+"In the directive number %u, parameter %u is of type '%s' but a parameter of "
+"type '%s' is expected."
+msgstr ""
+"命令番号 %u では, パラメータ %u は '%s' 型ですが '%s' 型のパラメータは想定さ"
+"れていません."
+
+#: src/format-lisp.c:2375 src/format-scheme.c:2400
+#, c-format
+msgid ""
+"In the directive number %u, too many parameters are given; expected at most "
+"%u parameter."
+msgid_plural ""
+"In the directive number %u, too many parameters are given; expected at most "
+"%u parameters."
+msgstr[0] ""
+"命令番号 %u では, 指定されたパラメータが多すぎます: パラメータは最大でも %u "
+"個です."
+
+#: src/format-lisp.c:2499 src/format-scheme.c:2501
+#, c-format
+msgid "In the directive number %u, '%c' is not followed by a digit."
+msgstr "命令番号 %u では, '%c' の後に数値が来ることはありません."
+
+#: src/format-lisp.c:2739 src/format-scheme.c:2756
+#, c-format
+msgid "In the directive number %u, the argument %d is negative."
+msgstr "命令番号 %u では, 引数 %d は負です."
+
+#: src/format-lisp.c:2808
+msgid "The string ends in the middle of a ~/.../ directive."
+msgstr "文字列は ~/.../ 命令の途中で終わっています."
+
+#: src/format-lisp.c:2846 src/format-lisp.c:3111 src/format-lisp.c:3228
+#: src/format-lisp.c:3288 src/format-lisp.c:3400 src/format-scheme.c:2842
+#: src/format-scheme.c:3107 src/format-scheme.c:3224 src/format-scheme.c:3322
+#, c-format
+msgid "Found '~%c' without matching '~%c'."
+msgstr "'~%c' が '~%c' に一致していません."
+
+#: src/format-lisp.c:2866 src/format-scheme.c:2862
+#, c-format
+msgid "In the directive number %u, both the @ and the : modifiers are given."
+msgstr "命令番号 %u では, @ と : の両方の修飾子が指定されています."
+
+#: src/format-lisp.c:2979 src/format-scheme.c:2975
+#, c-format
+msgid ""
+"In the directive number %u, '~:[' is not followed by two clauses, separated "
+"by '~;'."
+msgstr "命令番号 %u では, '~:[' の後に '~;' で分けられた 2つの節がありません."
+
+#: src/format-lisp.c:3329 src/format-scheme.c:3265
+#, c-format
+msgid "In the directive number %u, '~;' is used in an invalid position."
+msgstr "命令番号 %u では, '~;' は不正な場所で使われています."
+
+#: src/format-lisp.c:3435 src/format-scheme.c:3357
+msgid "The string refers to some argument in incompatible ways."
+msgstr "文字列は非互換な方法で引数を参照しています."
+
+#: src/format-lisp.c:3477 src/format-scheme.c:3399
+#, c-format
+msgid "format specifications in '%s' and '%s' are not equivalent"
+msgstr "'%s' と '%s' での形式の指定が等しくありません"
+
+#: src/format-lisp.c:3493 src/format-scheme.c:3415
+#, c-format
+msgid "format specifications in '%s' are not a subset of those in '%s'"
+msgstr "'%s' での形式の指定が '%s' でのサブセットではありません"
+
+#: src/format-perl-brace.c:199 src/format-python-brace.c:442
+#: src/format-python-brace.c:455 src/format-python.c:471 src/format-sh.c:309
+#, c-format
+msgid "a format specification for argument '%s' doesn't exist in '%s'"
+msgstr "引数 '%s' に対する形式指定が '%s' に存在しません"
+
+#: src/format-perl.c:434
+#, c-format
+msgid ""
+"In the directive number %u, the size specifier is incompatible with the "
+"conversion specifier '%c'."
+msgstr "命令番号 %u では, サイズ指定は変換指定 '%c' と互換ではありません."
+
+#: src/format-python-brace.c:138
+#, c-format
+msgid "In the directive number %u, '%c' cannot start a field name."
+msgstr "命令番号 %u では, '%c' でフィールド名をはじめることができません."
+
+#: src/format-python-brace.c:157
+#, c-format
+msgid "In the directive number %u, '%c' cannot start a getattr argument."
+msgstr "命令番号 %u では, '%c' で getattr の引数をはじめることができません."
+
+#: src/format-python-brace.c:171
+#, c-format
+msgid "In the directive number %u, '%c' cannot start a getitem argument."
+msgstr "命令番号 %u では, '%c' で getitem の引数をはじめることができません."
+
+#: src/format-python-brace.c:193
+#, c-format
+msgid ""
+"In the directive number %u, no more nesting is allowed in a format specifier."
+msgstr "命令番号 %u では, フォーマット識別子でこれ以上のネストはできません."
+
+#: src/format-python-brace.c:278
+#, c-format
+msgid "In the directive number %u, there is an unterminated format directive."
+msgstr "命令番号 %u で, 終端文字のないフォーマット命令があります."
+
+#: src/format-python.c:115
+msgid ""
+"The string refers to arguments both through argument names and through "
+"unnamed argument specifications."
+msgstr ""
+"文字列は, 名前のある引数も, 名前なしの引数も, どちらの引数も参照しています."
+
+#: src/format-python.c:354
+#, c-format
+msgid "The string refers to the argument named '%s' in incompatible ways."
+msgstr "文字列は非互換な方法で引数名 '%s' を参照しています."
+
+#: src/format-python.c:430
+#, c-format
+msgid ""
+"format specifications in '%s' expect a mapping, those in '%s' expect a tuple"
+msgstr "'%s' での形式指定はマッピングですが, '%s' ではタプル (tuple) です"
+
+#: src/format-python.c:437
+#, c-format
+msgid ""
+"format specifications in '%s' expect a tuple, those in '%s' expect a mapping"
+msgstr "'%s' での形式指定はタプル (tuple) ですが, '%s' ではマッピングです"
+
+#: src/format-python.c:460 src/format-sh.c:298
+#, c-format
+msgid ""
+"a format specification for argument '%s', as in '%s', doesn't exist in '%s'"
+msgstr "引数 '%s' に対する形式指定が '%s' のように '%s' に存在しません"
+
+#: src/format-python.c:494
+#, c-format
+msgid ""
+"format specifications in '%s' and '%s' for argument '%s' are not the same"
+msgstr "引数 '%3$s' に対する '%1$s' と '%2$s' での形式指定が同じではありません"
+
+#: src/format-qt.c:153
+#, c-format
+msgid ""
+"'%s' is a simple format string, but '%s' is not: it contains an 'L' flag or "
+"a double-digit argument number"
+msgstr ""
+"'%s' は単純なフォーマット文字列ですが, '%s' は違います. 'L' フラグか 2桁の数"
+"値引数を含みます"
+
+#: src/format-sh.c:80
+msgid "The string refers to a shell variable with a non-ASCII name."
+msgstr "文字列は名前がアスキーでないシェル変数を参照しています."
+
+#: src/format-sh.c:82
+msgid ""
+"The string refers to a shell variable with complex shell brace syntax. This "
+"syntax is unsupported here due to security reasons."
+msgstr ""
+"文字列は複雑なシェル括弧の文法を使ったシェル変数を参照しています. この文法は"
+"ここではセキュリティ上の理由で実装されていません."
+
+#: src/format-sh.c:84
+msgid ""
+"The string refers to a shell variable whose value may be different inside "
+"shell functions."
+msgstr ""
+"文字列はシェル関数内で異なる可能性のある値を持ったシェル変数を参照しています."
+
+#: src/format-sh.c:86
+msgid "The string refers to a shell variable with an empty name."
+msgstr "文字列は名前が空のシェル変数を参照しています."
+
+#: src/format-ycp.c:91
+#, c-format
+msgid ""
+"In the directive number %u, the character '%c' is not a digit between 1 and "
+"9."
+msgstr "命令番号 %u では, 文字 '%c' は 1 から 9 の間の数字ではありません."
+
+#: src/format-ycp.c:92
+#, c-format
+msgid ""
+"The character that terminates the directive number %u is not a digit between "
+"1 and 9."
+msgstr "命令番号 %u の終端文字は 1 から 9 の間の数字ではありません."
+
+#. This is a proper name. See the gettext manual, section Names.
+#: src/hostname.c:187 src/msgattrib.c:362 src/msgcat.c:300 src/msgconv.c:251
+#: src/msgen.c:248 src/msgexec.c:193 src/msgfilter.c:295 src/msggrep.c:426
+#: src/msginit.c:275 src/msguniq.c:271 src/recode-sr-latin.c:122
+#: src/urlget.c:150
+msgid "Bruno Haible"
+msgstr "Bruno Haible"
+
+#: src/hostname.c:197 src/msginit.c:285 src/recode-sr-latin.c:131
+#, c-format
+msgid "too many arguments"
+msgstr "引数が多すぎます"
+
+#: src/hostname.c:214 src/msginit.c:363 src/recode-sr-latin.c:149
+#, c-format, no-wrap
+msgid "Usage: %s [OPTION]\n"
+msgstr "使用法: %s [オプション]\n"
+
+#: src/hostname.c:218
+#, c-format
+msgid "Print the machine's hostname.\n"
+msgstr "マシンのホスト名を表示.\n"
+
+#: src/hostname.c:221
+#, c-format
+msgid "Output format:\n"
+msgstr "出力形式:\n"
+
+#: src/hostname.c:223
+#, c-format
+msgid "  -s, --short                 short host name\n"
+msgstr "  -s, --short                 短いホスト名\n"
+
+#: src/hostname.c:225
+#, c-format
+msgid ""
+"  -f, --fqdn, --long          long host name, includes fully qualified "
+"domain\n"
+"                                name, and aliases\n"
+msgstr ""
+"  -f, --fqdn, --long          長いホスト名, FQDN (Fully Qualified Domain "
+"Name)\n"
+"                                と別名 (エイリアス) を含む\n"
+
+#: src/hostname.c:228
+#, c-format
+msgid "  -i, --ip-address            addresses for the hostname\n"
+msgstr "  -i, --ip-address            ホスト名に対するアドレス\n"
+
+#: src/hostname.c:231 src/msgattrib.c:535 src/msgcat.c:469 src/msgcmp.c:259
+#: src/msgcomm.c:455 src/msgconv.c:386 src/msgen.c:382 src/msgexec.c:307
+#: src/msgfilter.c:508 src/msgfmt.c:1068 src/msggrep.c:629 src/msginit.c:421
+#: src/msgmerge.c:620 src/msgunfmt.c:528 src/msguniq.c:418
+#: src/recode-sr-latin.c:162 src/urlget.c:187 src/xgettext.c:1218
+#, c-format, no-wrap
+msgid "Informative output:\n"
+msgstr "情報出力:\n"
+
+#: src/hostname.c:258 src/hostname.c:264 src/hostname.c:271
+#, c-format
+msgid "could not get host name"
+msgstr "ホスト名を取得できませんでした"
+
+#: src/its.c:319
+#, c-format
+msgid "selector is not specified"
+msgstr "セレクターが指定されていません"
+
+#: src/its.c:326 src/its.c:1550
+#, c-format
+msgid "cannot create XPath context"
+msgstr "XPath コンテキストを作ることができません"
+
+#: src/its.c:344
+#, c-format
+msgid "cannot evaluate XPath expression: %s"
+msgstr "評価できない XPath 表現: %s"
+
+#: src/its.c:614
+#, c-format
+msgid "\"%s\" node does not contain \"%s\""
+msgstr "\"%s\" ノードは \"%s\" を含みません"
+
+#: src/its.c:1001
+#, c-format
+msgid "invalid attribute value \"%s\" for \"%s\""
+msgstr "\"%2$s\" に対する属性値 \"%1$s\" が間違っています"
+
+#: src/its.c:1333
+#, c-format
+msgid "the root element is not \"rules\" under namespace %s"
+msgstr "そのルート要素は名前空間 %s の下では \"rules\" ではありません"
+
+#: src/its.c:1376 src/its.c:1402 src/its.c:1795 src/its.c:1914
+#: src/locating-rule.c:170
+#, c-format
+msgid "cannot read %s: %s"
+msgstr "%s を読み込めません: %s"
+
+#: src/its.c:1573
+#, c-format
+msgid "cannot evaluate XPath location path: %s"
+msgstr "評価できない XPath ロケーションパス: %s"
+
+#: src/locating-rule.c:236
+#, c-format
+msgid "\"%s\" node does not have \"%s\""
+msgstr "\"%s\" ノードに \"%s\" はありません"
+
+#: src/locating-rule.c:307
+#, c-format
+msgid "cannot read XML file %s"
+msgstr "読み込めない XML ファイル %s"
+
+#: src/locating-rule.c:319
+#, c-format
+msgid "the root element is not \"locatingRules\""
+msgstr "そのルート要素は \"locatingRules\" ではありません"
+
+#: src/msgattrib.c:377 src/msgconv.c:266 src/msgexec.c:155 src/msgfilter.c:197
+#: src/msggrep.c:441 src/msginit.c:198 src/msguniq.c:286
+#, c-format
+msgid "at most one input file allowed"
+msgstr "最大 1つの入力ファイルが許されます"
+
+#: src/msgattrib.c:383 src/msgcat.c:316 src/msgcomm.c:301 src/msgconv.c:272
+#: src/msgen.c:270 src/msgfilter.c:310 src/msgfmt.c:505 src/msgfmt.c:513
+#: src/msgfmt.c:528 src/msgfmt.c:550 src/msggrep.c:447 src/msgmerge.c:388
+#: src/msgmerge.c:393 src/msgmerge.c:398 src/msgmerge.c:419 src/msgunfmt.c:300
+#: src/msguniq.c:292 src/xgettext.c:697 src/xgettext.c:704 src/xgettext.c:707
+#: src/xgettext.c:710 src/xgettext.c:734
+#, c-format
+msgid "%s and %s are mutually exclusive"
+msgstr "%s と %s は背反です"
+
+#: src/msgattrib.c:422 src/msgconv.c:308 src/msggrep.c:517 src/msguniq.c:327
+#, c-format
+msgid "Usage: %s [OPTION] [INPUTFILE]\n"
+msgstr "使用法: %s [オプション] [入力ファイル]\n"
+
+#: src/msgattrib.c:427
+#, c-format, no-wrap
+msgid ""
+"Filters the messages of a translation catalog according to their attributes,\n"
+"and manipulates the attributes.\n"
+msgstr "属性に従って翻訳カタログのメッセージを選別し, 属性をうまく操作します.\n"
+
+#: src/msgattrib.c:431 src/msgcat.c:384 src/msgcmp.c:228 src/msgcomm.c:375
+#: src/msgconv.c:316 src/msgen.c:317 src/msgexec.c:288 src/msgfilter.c:422
+#: src/msggrep.c:527 src/msginit.c:373 src/msgmerge.c:516 src/msgunfmt.c:436
+#: src/msguniq.c:343
+#, c-format
+msgid ""
+"Mandatory arguments to long options are mandatory for short options too.\n"
+msgstr "長いオプションに必須の引数は短いオプションにも必須です.\n"
+
+#: src/msgattrib.c:434 src/msgcat.c:387 src/msgcmp.c:231 src/msgcomm.c:378
+#: src/msgconv.c:319 src/msgen.c:320 src/msgexec.c:291 src/msgfilter.c:425
+#: src/msgfmt.c:922 src/msggrep.c:530 src/msginit.c:376 src/msgmerge.c:519
+#: src/msgunfmt.c:450 src/msguniq.c:346 src/xgettext.c:1050
+#, c-format
+msgid "Input file location:\n"
+msgstr "入力ファイルの指定:\n"
+
+#: src/msgattrib.c:436 src/msgconv.c:321 src/msggrep.c:532 src/msguniq.c:348
+#, c-format
+msgid "  INPUTFILE                   input PO file\n"
+msgstr "  INPUTFILE                   入力 PO ファイル\n"
+
+#: src/msgattrib.c:438 src/msgcat.c:393 src/msgcmp.c:237 src/msgcomm.c:384
+#: src/msgconv.c:323 src/msgen.c:324 src/msgexec.c:295 src/msgfilter.c:429
+#: src/msgfmt.c:926 src/msggrep.c:534 src/msgmerge.c:525 src/msguniq.c:350
+#: src/xgettext.c:1056
+#, c-format
+msgid ""
+"  -D, --directory=DIRECTORY   add DIRECTORY to list for input files search\n"
+msgstr ""
+"  -D, --directory=DIRECTORY   入力ファイルの検索リストに DIRECTORY を追加\n"
+
+#: src/msgattrib.c:440 src/msgconv.c:325 src/msgexec.c:297 src/msgfilter.c:431
+#: src/msggrep.c:536 src/msgunfmt.c:454 src/msguniq.c:352
+#, c-format
+msgid "If no input file is given or if it is -, standard input is read.\n"
+msgstr ""
+"入力ファイルが指定されない, もしくは - の場合は標準入力が読み込まれます.\n"
+
+#: src/msgattrib.c:443 src/msgcat.c:398 src/msgcomm.c:389 src/msgconv.c:328
+#: src/msgen.c:329 src/msgfilter.c:434 src/msgfmt.c:950 src/msggrep.c:539
+#: src/msginit.c:384 src/msgmerge.c:537 src/msgunfmt.c:490 src/msguniq.c:355
+#: src/xgettext.c:1061
+#, c-format
+msgid "Output file location:\n"
+msgstr "出力ファイルの指定:\n"
+
+#: src/msgattrib.c:445 src/msgcat.c:400 src/msgcomm.c:391 src/msgconv.c:330
+#: src/msgen.c:331 src/msgfilter.c:436 src/msgfmt.c:952 src/msgfmt.c:1001
+#: src/msgfmt.c:1020 src/msggrep.c:541 src/msgmerge.c:539 src/msgunfmt.c:492
+#: src/msguniq.c:357
+#, c-format
+msgid "  -o, --output-file=FILE      write output to specified file\n"
+msgstr "  -o, --output-file=FILE      指定したファイルに出力\n"
+
+#: src/msgattrib.c:447 src/msgcat.c:402 src/msgcomm.c:393 src/msgconv.c:332
+#: src/msgen.c:333 src/msgfilter.c:438 src/msggrep.c:543 src/msgmerge.c:541
+#: src/msgunfmt.c:494 src/msguniq.c:359
+#, c-format
+msgid ""
+"The results are written to standard output if no output file is specified\n"
+"or if it is -.\n"
+msgstr ""
+"出力ファイルが指定されない, もしくは - の場合は標準出力に結果が書き出されま"
+"す.\n"
+
+#: src/msgattrib.c:451 src/msgcat.c:406 src/msgcomm.c:397 src/msguniq.c:363
+#, c-format
+msgid "Message selection:\n"
+msgstr "メッセージ選択:\n"
+
+#: src/msgattrib.c:453
+#, c-format
+msgid ""
+"      --translated            keep translated, remove untranslated messages\n"
+msgstr ""
+"      --translated            翻訳されたメッセージを残し, 未翻訳を削除\n"
+
+#: src/msgattrib.c:455
+#, c-format
+msgid ""
+"      --untranslated          keep untranslated, remove translated messages\n"
+msgstr ""
+"      --untranslated          未翻訳のメッセージを残し, 翻訳されたものを削"
+"除\n"
+
+#: src/msgattrib.c:457
+#, c-format
+msgid "      --no-fuzzy              remove 'fuzzy' marked messages\n"
+msgstr "      --no-fuzzy              'fuzzy' マーク付きのメッセージを削除\n"
+
+#: src/msgattrib.c:459
+#, c-format
+msgid "      --only-fuzzy            keep 'fuzzy' marked messages\n"
+msgstr "      --only-fuzzy            'fuzzy' マーク付きのメッセージを残す\n"
+
+#: src/msgattrib.c:461
+#, c-format
+msgid "      --no-obsolete           remove obsolete #~ messages\n"
+msgstr "      --no-obsolete           廃れた #~ メッセージを削除\n"
+
+#: src/msgattrib.c:463
+#, c-format
+msgid "      --only-obsolete         keep obsolete #~ messages\n"
+msgstr "      --only-obsolete         廃れた #~ メッセージを残す\n"
+
+#: src/msgattrib.c:466
+#, c-format
+msgid "Attribute manipulation:\n"
+msgstr "属性操作:\n"
+
+#: src/msgattrib.c:468
+#, c-format
+msgid "      --set-fuzzy             set all messages 'fuzzy'\n"
+msgstr "      --set-fuzzy             全てのメッセージを 'fuzzy' に設定\n"
+
+#: src/msgattrib.c:470
+#, c-format
+msgid "      --clear-fuzzy           set all messages non-'fuzzy'\n"
+msgstr "      --clear-fuzzy           全てのメッセージを '非 fuzzy' に設定\n"
+
+#: src/msgattrib.c:472
+#, c-format
+msgid "      --set-obsolete          set all messages obsolete\n"
+msgstr "      --set-obsolete          全てのメッセージを '廃れた' 状態に設定\n"
+
+#: src/msgattrib.c:474
+#, c-format
+msgid "      --clear-obsolete        set all messages non-obsolete\n"
+msgstr ""
+"      --clear-obsolete        全てのメッセージを非 '廃れた' 状態に設定\n"
+
+#: src/msgattrib.c:476
+#, c-format
+msgid ""
+"      --previous              when setting 'fuzzy', keep previous msgids\n"
+"                              of translated messages.\n"
+msgstr ""
+"      --previous              'fuzzy'を設定する時, 翻訳されたメッセージの\n"
+"                              前の msgid を残す\n"
+
+#: src/msgattrib.c:479
+#, c-format
+msgid ""
+"      --clear-previous        remove the \"previous msgid\" from all "
+"messages\n"
+msgstr ""
+"      --clear-previous        全てのメッセージから \"前の msgid\" を削除\n"
+
+#: src/msgattrib.c:481
+#, c-format
+msgid ""
+"      --empty                 when removing 'fuzzy', also set msgstr empty\n"
+msgstr "      --empty                 'fuzzy' の削除時に msgstr も空に設定\n"
+
+#: src/msgattrib.c:483
+#, c-format
+msgid ""
+"      --only-file=FILE.po     manipulate only entries listed in FILE.po\n"
+msgstr "      --only-file=FILE.po     FILE.po にあるエントリのみ処理\n"
+
+#: src/msgattrib.c:485
+#, c-format
+msgid ""
+"      --ignore-file=FILE.po   manipulate only entries not listed in FILE.po\n"
+msgstr "      --ignore-file=FILE.po   FILE.po にないエントリのみ処理\n"
+
+#: src/msgattrib.c:487
+#, c-format
+msgid "      --fuzzy                 synonym for --only-fuzzy --clear-fuzzy\n"
+msgstr "      --fuzzy                 --only-fuzzy --clear-fuzzy と同じ\n"
+
+#: src/msgattrib.c:489
+#, c-format
+msgid ""
+"      --obsolete              synonym for --only-obsolete --clear-obsolete\n"
+msgstr ""
+"      --obsolete              --only-obsolete --clear-obsolete と同じ\n"
+
+#: src/msgattrib.c:492 src/msgcat.c:418 src/msgcmp.c:251 src/msgcomm.c:409
+#: src/msgconv.c:343 src/msgen.c:337 src/msgexec.c:300 src/msgfilter.c:463
+#: src/msgfmt.c:1030 src/msggrep.c:586 src/msginit.c:392 src/msgmerge.c:574
+#: src/msguniq.c:370
+#, c-format
+msgid "Input file syntax:\n"
+msgstr "入力ファイルの文法:\n"
+
+#: src/msgattrib.c:494 src/msgconv.c:345 src/msgen.c:339 src/msgexec.c:302
+#: src/msgfilter.c:465 src/msggrep.c:588 src/msginit.c:394 src/msguniq.c:372
+#, c-format
+msgid ""
+"  -P, --properties-input      input file is in Java .properties syntax\n"
+msgstr "  -P, --properties-input      入力ファイルは Java .properties の文法\n"
+
+#: src/msgattrib.c:496 src/msgconv.c:347 src/msgen.c:341 src/msgexec.c:304
+#: src/msgfilter.c:467 src/msggrep.c:590 src/msginit.c:396 src/msguniq.c:374
+#, c-format
+msgid ""
+"      --stringtable-input     input file is in NeXTstep/GNUstep .strings "
+"syntax\n"
+msgstr ""
+"      --stringtable-input     入力ファイルは NeXTstep/GNUstep .strings の文"
+"法\n"
+
+#: src/msgattrib.c:499 src/msgcat.c:426 src/msgcomm.c:417 src/msgconv.c:350
+#: src/msgen.c:344 src/msgfilter.c:470 src/msgfmt.c:1058 src/msggrep.c:593
+#: src/msginit.c:399 src/msgmerge.c:582 src/msgunfmt.c:498 src/msguniq.c:377
+#: src/xgettext.c:1162
+#, c-format
+msgid "Output details:\n"
+msgstr "出力の詳細:\n"
+
+#: src/msgattrib.c:501 src/msgcat.c:435 src/msgcomm.c:419 src/msgconv.c:352
+#: src/msgen.c:348 src/msgfilter.c:472 src/msggrep.c:595 src/msginit.c:405
+#: src/msgmerge.c:586 src/msgunfmt.c:500 src/msguniq.c:384 src/xgettext.c:1164
+#, c-format
+msgid ""
+"      --color                 use colors and other text attributes always\n"
+"      --color=WHEN            use colors and other text attributes if WHEN.\n"
+"                              WHEN may be 'always', 'never', 'auto', or "
+"'html'.\n"
+msgstr ""
+"      --color                 常にカラーと他のテキスト属性を使う\n"
+"      --color=WHEN            WHEN ならばカラーと他のテキスト属性を使う.\n"
+"                              WHEN は 'always', 'never', 'auto', または "
+"'html'.\n"
+
+#: src/msgattrib.c:505 src/msgcat.c:439 src/msgcomm.c:423 src/msgconv.c:356
+#: src/msgen.c:352 src/msgfilter.c:476 src/msggrep.c:599 src/msginit.c:409
+#: src/msgmerge.c:590 src/msgunfmt.c:504 src/msguniq.c:388 src/xgettext.c:1168
+#, c-format
+msgid "      --style=STYLEFILE       specify CSS style rule file for --color\n"
+msgstr ""
+"      --style=STYLEFILE       --color に対する CSS スタイルルールを指定\n"
+
+#: src/msgattrib.c:507 src/msgcat.c:441 src/msgcomm.c:425 src/msgconv.c:358
+#: src/msgen.c:354 src/msgmerge.c:592 src/msgunfmt.c:506 src/msguniq.c:390
+#: src/xgettext.c:1170
+#, c-format
+msgid ""
+"  -e, --no-escape             do not use C escapes in output (default)\n"
+msgstr ""
+"  -e, --no-escape             出力に C 言語のエスケープを使わない (標準)\n"
+
+#: src/msgattrib.c:509 src/msgcat.c:443 src/msgcomm.c:427 src/msgconv.c:360
+#: src/msgen.c:356 src/msgfilter.c:480 src/msgmerge.c:594 src/msgunfmt.c:508
+#: src/msguniq.c:392 src/xgettext.c:1172
+#, c-format
+msgid ""
+"  -E, --escape                use C escapes in output, no extended chars\n"
+msgstr ""
+"  -E, --escape                出力に C 言語のエスケープを使い,\n"
+"                              拡張文字を含めない\n"
+
+#: src/msgattrib.c:511 src/msgcat.c:445 src/msgcomm.c:429 src/msgconv.c:362
+#: src/msgen.c:358 src/msgfilter.c:482 src/msggrep.c:605 src/msgmerge.c:596
+#: src/msgunfmt.c:510 src/msguniq.c:394 src/xgettext.c:1174
+#, c-format
+msgid "      --force-po              write PO file even if empty\n"
+msgstr "      --force-po              空であっても PO ファイルを書き出す\n"
+
+#: src/msgattrib.c:513 src/msgcat.c:447 src/msgcomm.c:431 src/msguniq.c:396
+#: src/xgettext.c:1176
+#, c-format
+msgid "  -i, --indent                write the .po file using indented style\n"
+msgstr "  -i, --indent                字下げ形式で .po ファイルを出力\n"
+
+#: src/msgattrib.c:515 src/msgcat.c:449 src/msgcomm.c:433 src/msguniq.c:398
+#: src/xgettext.c:1178
+#, c-format
+msgid "      --no-location           do not write '#: filename:line' lines\n"
+msgstr ""
+"      --no-location           '#: ファイル名:行番号' の行を書き出さない\n"
+
+#: src/msgattrib.c:517 src/msgcat.c:451 src/msgcomm.c:435 src/msguniq.c:400
+#: src/xgettext.c:1180
+#, c-format
+msgid ""
+"  -n, --add-location          generate '#: filename:line' lines (default)\n"
+msgstr ""
+"  -n, --add-location          '#: ファイル名:行番号' の行を生成 (標準)\n"
+
+#: src/msgattrib.c:519 src/msgcat.c:453 src/msgcomm.c:437 src/msguniq.c:402
+#: src/xgettext.c:1182
+#, c-format
+msgid ""
+"      --strict                write out strict Uniforum conforming .po file\n"
+msgstr ""
+"      --strict                厳密な Uniforum 形式の .po ファイルを出力\n"
+
+#: src/msgattrib.c:521 src/msgcat.c:455 src/msgcomm.c:439 src/msgconv.c:372
+#: src/msgen.c:368 src/msgfilter.c:494 src/msggrep.c:615 src/msginit.c:411
+#: src/msgmerge.c:606 src/msgunfmt.c:516 src/msguniq.c:404
+#, c-format
+msgid "  -p, --properties-output     write out a Java .properties file\n"
+msgstr "  -p, --properties-output     Java .properties ファイルを出力\n"
+
+#: src/msgattrib.c:523 src/msgcat.c:457 src/msgcomm.c:441 src/msgconv.c:374
+#: src/msgen.c:370 src/msgfilter.c:496 src/msggrep.c:617 src/msginit.c:413
+#: src/msgmerge.c:608 src/msgunfmt.c:518 src/msguniq.c:406 src/xgettext.c:1186
+#, c-format
+msgid ""
+"      --stringtable-output    write out a NeXTstep/GNUstep .strings file\n"
+msgstr ""
+"      --stringtable-output    NeXTstep/GNUstep .strings ファイルを出力\n"
+
+#: src/msgattrib.c:525 src/msgcat.c:459 src/msgcomm.c:443 src/msgconv.c:376
+#: src/msgen.c:372 src/msgfilter.c:498 src/msggrep.c:619 src/msginit.c:415
+#: src/msgmerge.c:610 src/msgunfmt.c:520 src/msguniq.c:408 src/xgettext.c:1190
+#, c-format
+msgid "  -w, --width=NUMBER          set output page width\n"
+msgstr "  -w, --width=NUMBER          出力ページの幅を設定\n"
+
+#: src/msgattrib.c:527 src/msgcat.c:461 src/msgcomm.c:445 src/msgconv.c:378
+#: src/msgen.c:374 src/msgfilter.c:500 src/msggrep.c:621 src/msginit.c:417
+#: src/msgmerge.c:612 src/msgunfmt.c:522 src/msguniq.c:410 src/xgettext.c:1192
+#, c-format
+msgid ""
+"      --no-wrap               do not break long message lines, longer than\n"
+"                              the output page width, into several lines\n"
+msgstr ""
+"      --no-wrap               出力ページの幅より長いメッセージ行を改行しな"
+"い\n"
+
+#: src/msgattrib.c:530 src/msgcat.c:464 src/msgcomm.c:448 src/msgconv.c:381
+#: src/msgen.c:377 src/msgfilter.c:503 src/msgmerge.c:615 src/msgunfmt.c:525
+#: src/msguniq.c:413 src/xgettext.c:1195
+#, c-format
+msgid "  -s, --sort-output           generate sorted output\n"
+msgstr "  -s, --sort-output           ソートされた出力を生成\n"
+
+#: src/msgattrib.c:532 src/msgcat.c:466 src/msgcomm.c:450 src/msgconv.c:383
+#: src/msgen.c:379 src/msgfilter.c:505 src/msgmerge.c:617 src/msguniq.c:415
+#: src/xgettext.c:1197
+#, c-format
+msgid "  -F, --sort-by-file          sort output by file location\n"
+msgstr "  -F, --sort-by-file          ファイルで出力をソート\n"
+
+#: src/msgcat.c:322 src/msgcomm.c:327
+#, c-format
+msgid "impossible selection criteria specified (%d < n < %d)"
+msgstr "指定された選択基準 (%d < n < %d) は不可能です"
+
+#: src/msgcat.c:367 src/msgcomm.c:359 src/xgettext.c:1036
+#, c-format
+msgid "Usage: %s [OPTION] [INPUTFILE]...\n"
+msgstr "使用法: %s [オプション] [入力ファイル]...\n"
+
+#: src/msgcat.c:372
+#, c-format, no-wrap
+msgid ""
+"Concatenates and merges the specified PO files.\n"
+"Find messages which are common to two or more of the specified PO files.\n"
+"By using the --more-than option, greater commonality may be requested\n"
+"before messages are printed.  Conversely, the --less-than option may be\n"
+"used to specify less commonality before messages are printed (i.e.\n"
+"--less-than=2 will only print the unique messages).  Translations,\n"
+"comments, extracted comments, and file positions will be cumulated, except\n"
+"that if --use-first is specified, they will be taken from the first PO file\n"
+"to define them.\n"
+msgstr ""
+"指定された PO ファイルを連結し、マージします.\n"
+"2つまたはそれ以上の指定された PO ファイルで共通なメッセージを見つけます.\n"
+"--more-than オプションを使うことで, 表示するメッセージの共通性を高いものに\n"
+"指定することができます. 逆に, --less-than オプションで表示するメッセージの\n"
+"共通性を低く指定することができます (つまり, --less-than=2 は 1つしかない\n"
+"メッセージのみを出力するということになります). 翻訳やコメント, 抽出された\n"
+"コメント, ファイルの位置はそのまま残されます. ただし --use-first が指定された\n"
+"場合には, それらが定義された最初の PO ファイルのものがそのまま残されます.\n"
+
+#: src/msgcat.c:389 src/msgcomm.c:380 src/xgettext.c:1052
+#, c-format
+msgid "  INPUTFILE ...               input files\n"
+msgstr "  INPUTFILE ...               入力ファイル\n"
+
+#: src/msgcat.c:391 src/msgcomm.c:382 src/xgettext.c:1054
+#, c-format
+msgid "  -f, --files-from=FILE       get list of input files from FILE\n"
+msgstr "  -f, --files-from=FILE       入力ファイルのリストを FILE から取得\n"
+
+#: src/msgcat.c:395 src/msgcomm.c:386 src/msgen.c:326 src/msgfmt.c:928
+#: src/xgettext.c:1058
+#, c-format
+msgid "If input file is -, standard input is read.\n"
+msgstr "入力ファイルが - の場合は標準入力が読み込まれます.\n"
+
+#: src/msgcat.c:408 src/msgcomm.c:399
+#, c-format
+msgid ""
+"  -<, --less-than=NUMBER      print messages with less than this many\n"
+"                              definitions, defaults to infinite if not set\n"
+msgstr ""
+"  -<, --less-than=NUMBER      NUMBER より少ない回数だけ定義されたメッセージ\n"
+"                              を出力. 設定されない場合は標準で無限個\n"
+
+#: src/msgcat.c:411
+#, c-format
+msgid ""
+"  ->, --more-than=NUMBER      print messages with more than this many\n"
+"                              definitions, defaults to 0 if not set\n"
+msgstr ""
+"  ->, --more-than=NUMBER      NUMBER より多く定義されたメッセージを出力\n"
+"                              設定されない場合は標準で 0\n"
+
+#: src/msgcat.c:414 src/msgcomm.c:405
+#, c-format
+msgid ""
+"  -u, --unique                shorthand for --less-than=2, requests\n"
+"                              that only unique messages be printed\n"
+msgstr ""
+"  -u, --unique                --less-than=2 の短縮形. 1つしかないメッセージ\n"
+"                              のみを表示\n"
+
+#: src/msgcat.c:420 src/msgcmp.c:253 src/msgcomm.c:411 src/msgfmt.c:1032
+#: src/msgmerge.c:576
+#, c-format
+msgid ""
+"  -P, --properties-input      input files are in Java .properties syntax\n"
+msgstr "  -P, --properties-input      入力ファイルは Java .properties の文法\n"
+
+#: src/msgcat.c:422 src/msgcmp.c:255 src/msgcomm.c:413 src/msgfmt.c:1034
+#: src/msgmerge.c:578
+#, c-format
+msgid ""
+"      --stringtable-input     input files are in NeXTstep/GNUstep .strings\n"
+"                              syntax\n"
+msgstr ""
+"      --stringtable-input     入力ファイルは NeXTstep/GNUstep .strings の文"
+"法\n"
+
+#: src/msgcat.c:428 src/msgconv.c:338 src/msguniq.c:379
+#, c-format
+msgid "  -t, --to-code=NAME          encoding for output\n"
+msgstr "  -t, --to-code=NAME          出力のエンコーディング\n"
+
+#: src/msgcat.c:430 src/msguniq.c:381
+#, c-format
+msgid ""
+"      --use-first             use first available translation for each\n"
+"                              message, don't merge several translations\n"
+msgstr ""
+"      --use-first             各々のメッセージの最初に有効な翻訳を使う\n"
+"                              複数の翻訳をマージしない\n"
+
+#: src/msgcat.c:433 src/msgen.c:346 src/msgmerge.c:584
+#, c-format
+msgid ""
+"      --lang=CATALOGNAME      set 'Language' field in the header entry\n"
+msgstr "      --lang=CATALOGNAME      ヘッダ項目の 'Language' 欄を指定\n"
+
+#. This is a proper name. See the gettext manual, section Names.
+#: src/msgcmp.c:179 src/msgcomm.c:291 src/msgmerge.c:363
+msgid "Peter Miller"
+msgstr "Peter Miller"
+
+#: src/msgcmp.c:190 src/msgmerge.c:374
+#, c-format
+msgid "no input files given"
+msgstr "入力ファイルが指定されていません"
+
+#: src/msgcmp.c:195 src/msgmerge.c:379
+#, c-format
+msgid "exactly 2 input files required"
+msgstr "正確に 2つの入力ファイルが必要です"
+
+#: src/msgcmp.c:214 src/msgmerge.c:499
+#, c-format
+msgid "Usage: %s [OPTION] def.po ref.pot\n"
+msgstr "使用法: %s [オプション] def.po ref.pot\n"
+
+#: src/msgcmp.c:219
+#, c-format, no-wrap
+msgid ""
+"Compare two Uniforum style .po files to check that both contain the same\n"
+"set of msgid strings.  The def.po file is an existing PO file with the\n"
+"translations.  The ref.pot file is the last created PO file, or a PO Template\n"
+"file (generally created by xgettext).  This is useful for checking that\n"
+"you have translated each and every message in your program.  Where an exact\n"
+"match cannot be found, fuzzy matching is used to produce better diagnostics.\n"
+msgstr ""
+"2つの Uniforum 形式の .po ファイルを比較して両方が同じ msgid の文字列の組を\n"
+"含んでいるかどうかを確認します. def.po ファイルは以前の翻訳が記述された\n"
+"PO ファイルです. ref.pot ファイルは最新の PO ファイル, もしくは PO のテンプ\n"
+"レートファイル (一般に xgettext により生成される) です. これはプログラム中の\n"
+"各々のメッセージまたは全てのメッセージを翻訳したかどうかを確認するのに便利です.\n"
+"正確に一致している個所が見つからない場合は, あいまい (fuzzy) 検索を使うと\n"
+"より良い診断メッセージが得られます.\n"
+
+#: src/msgcmp.c:233
+#, c-format
+msgid "  def.po                      translations\n"
+msgstr "  def.po                      翻訳\n"
+
+#: src/msgcmp.c:235
+#, c-format
+msgid "  ref.pot                     references to the sources\n"
+msgstr "  ref.pot                     ソースへの参照\n"
+
+#: src/msgcmp.c:240 src/msgmerge.c:565
+#, c-format
+msgid "Operation modifiers:\n"
+msgstr "操作指定:\n"
+
+#: src/msgcmp.c:242 src/msgmerge.c:567
+#, c-format
+msgid ""
+"  -m, --multi-domain          apply ref.pot to each of the domains in def."
+"po\n"
+msgstr ""
+"  -m, --multi-domain          ref.pot を def.po 内のドメインの各々に適用\n"
+
+#: src/msgcmp.c:244 src/msgmerge.c:569
+#, c-format
+msgid "  -N, --no-fuzzy-matching     do not use fuzzy matching\n"
+msgstr "  -N, --no-fuzzy-matching     あいまい検索を行わない\n"
+
+#: src/msgcmp.c:246
+#, c-format
+msgid "      --use-fuzzy             consider fuzzy entries\n"
+msgstr "      --use-fuzzy             fuzzy (あいまい) 項目を考慮\n"
+
+#: src/msgcmp.c:248
+#, c-format
+msgid "      --use-untranslated      consider untranslated entries\n"
+msgstr "      --use-untranslated      未翻訳のメッセージを考慮\n"
+
+#: src/msgcmp.c:325
+#, c-format
+msgid "this message is untranslated"
+msgstr "このメッセージは未翻訳です"
+
+#: src/msgcmp.c:331
+#, c-format
+msgid "this message needs to be reviewed by the translator"
+msgstr "このメッセージは翻訳者によるレビューが必要です"
+
+#: src/msgcmp.c:370 src/msgmerge.c:1523
+#, c-format
+msgid "this message is used but not defined..."
+msgstr "このメッセージは使われますが定義されていません..."
+
+#: src/msgcmp.c:373 src/msgmerge.c:1526
+#, c-format
+msgid "...but this definition is similar"
+msgstr "...しかしこの定義が似ています"
+
+#: src/msgcmp.c:378 src/msgmerge.c:1554
+#, c-format
+msgid "this message is used but not defined in %s"
+msgstr "このメッセージは使われますが %s では定義されていません"
+
+#: src/msgcmp.c:547
+#, c-format
+msgid "warning: this message is not used"
+msgstr "警告: このメッセージは使われません"
+
+#: src/msgcmp.c:554 src/msgfmt.c:777 src/msgfmt.c:1623 src/xgettext.c:1008
+#, c-format
+msgid "found %d fatal error"
+msgid_plural "found %d fatal errors"
+msgstr[0] "%d 個の致命的エラーが見つかりました"
+
+#: src/msgcomm.c:316
+#, c-format
+msgid "at least two files must be specified"
+msgstr "少なくとも 2つのファイルを指定しなければいけません"
+
+#: src/msgcomm.c:364
+#, c-format, no-wrap
+msgid ""
+"Find messages which are common to two or more of the specified PO files.\n"
+"By using the --more-than option, greater commonality may be requested\n"
+"before messages are printed.  Conversely, the --less-than option may be\n"
+"used to specify less commonality before messages are printed (i.e.\n"
+"--less-than=2 will only print the unique messages).  Translations,\n"
+"comments and extracted comments will be preserved, but only from the first\n"
+"PO file to define them.  File positions from all PO files will be\n"
+"cumulated.\n"
+msgstr ""
+"2つまたはそれ以上の指定された PO ファイルで共通なメッセージを見つけます.\n"
+"--more-than オプションを使うことで, 表示するメッセージの共通性を高いものに\n"
+"指定することができます. 逆に, --less-than オプションで表示するメッセージの\n"
+"共通性を低く指定することができます (つまり, --less-than=2 は 1つしかない\n"
+"メッセージのみを出力するということになります). 翻訳やコメント, 抽出された\n"
+"コメントは, それらが定義された最初の PO ファイルのもののみそのまま残されます.\n"
+"またファイルの位置は全ての PO ファイルからそのまま残されます.\n"
+
+#: src/msgcomm.c:402
+#, c-format
+msgid ""
+"  ->, --more-than=NUMBER      print messages with more than this many\n"
+"                              definitions, defaults to 1 if not set\n"
+msgstr ""
+"  ->, --more-than=NUMBER      NUMBER より多く定義されたメッセージを出力\n"
+"                              設定されない場合は標準で 1\n"
+
+#: src/msgcomm.c:452 src/xgettext.c:1199
+#, c-format
+msgid ""
+"      --omit-header           don't write header with 'msgid \"\"' entry\n"
+msgstr ""
+"      --omit-header           'msgid \"\"' を含んだヘッダを出力しない\n"
+
+#: src/msgconv.c:312
+#, c-format
+msgid "Converts a translation catalog to a different character encoding.\n"
+msgstr "翻訳カタログを異なった文字エンコーディングに変換.\n"
+
+#: src/msgconv.c:336
+#, c-format
+msgid "Conversion target:\n"
+msgstr "変換対象:\n"
+
+#: src/msgconv.c:340
+#, c-format
+msgid "The default encoding is the current locale's encoding.\n"
+msgstr "標準のエンコーディングは現在のローカルのエンコーディングです.\n"
+
+#: src/msgconv.c:364 src/msgen.c:360 src/msgmerge.c:598
+#, c-format
+msgid "  -i, --indent                indented output style\n"
+msgstr "  -i, --indent                字下げ形式の出力\n"
+
+#: src/msgconv.c:366 src/msgen.c:362 src/msgfilter.c:488 src/msggrep.c:609
+#: src/msgmerge.c:600
+#, c-format
+msgid "      --no-location           suppress '#: filename:line' lines\n"
+msgstr "      --no-location           '#: filename:line' の行を出力しない\n"
+
+#: src/msgconv.c:368 src/msgen.c:364 src/msgfilter.c:490 src/msggrep.c:611
+#: src/msgmerge.c:602
+#, c-format
+msgid ""
+"  -n, --add-location          preserve '#: filename:line' lines (default)\n"
+msgstr "  -n, --add-location          '#: filename:line' の行を保持 (標準)\n"
+
+#: src/msgconv.c:370 src/msgen.c:366 src/msgfilter.c:492 src/msggrep.c:613
+#: src/msgmerge.c:604
+#, c-format
+msgid "      --strict                strict Uniforum output style\n"
+msgstr "      --strict                厳密な Uniforum 出力形式\n"
+
+#: src/msgen.c:259 src/msgfmt.c:465 src/xgettext.c:727
+#, c-format
+msgid "no input file given"
+msgstr "入力ファイルが指定されていません"
+
+#: src/msgen.c:264
+#, c-format
+msgid "exactly one input file required"
+msgstr "正確に 1つの入力ファイルが必要です"
+
+#: src/msgen.c:305
+#, c-format
+msgid "Usage: %s [OPTION] INPUTFILE\n"
+msgstr "使用法: %s [オプション] INPUTFILE\n"
+
+#: src/msgen.c:310
+#, c-format, no-wrap
+msgid ""
+"Creates an English translation catalog.  The input file is the last\n"
+"created English PO file, or a PO Template file (generally created by\n"
+"xgettext).  Untranslated entries are assigned a translation that is\n"
+"identical to the msgid.\n"
+msgstr ""
+"英語の翻訳カタログを生成. 入力ファイルは最新の英語版 PO ファイル, もしくは\n"
+"PO テンプレートファイル (一般に xgettext によって生成) です. 未翻訳のエントリ\n"
+"は msgid と同じ翻訳に割り当てられます.\n"
+
+#: src/msgen.c:322
+#, c-format
+msgid "  INPUTFILE                   input PO or POT file\n"
+msgstr "  INPUTFILE                   入力する PO または POT ファイル\n"
+
+#: src/msgexec.c:203
+#, c-format
+msgid "missing command name"
+msgstr "コマンド名がありません"
+
+#: src/msgexec.c:264
+#, c-format
+msgid "Usage: %s [OPTION] COMMAND [COMMAND-OPTION]\n"
+msgstr "使用法: %s [オプション] コマンド [コマンドオプション]\n"
+
+#: src/msgexec.c:269
+#, c-format, no-wrap
+msgid ""
+"Applies a command to all translations of a translation catalog.\n"
+"The COMMAND can be any program that reads a translation from standard\n"
+"input.  It is invoked once for each translation.  Its output becomes\n"
+"msgexec's output.  msgexec's return code is the maximum return code\n"
+"across all invocations.\n"
+msgstr ""
+"翻訳カタログの全ての翻訳にコマンドを適用します.\n"
+"「コマンド」には標準入力から翻訳を読み込むような任意のプログラムを指定する\n"
+"ことができます. そのプログラムは各翻訳に対して 1回ずつ呼び出され, 更に\n"
+"その出力が msgexec の出力になります. msgexec の終了コードは内部から呼び\n"
+"出されたプログラムの終了コードの最大値になります.\n"
+
+#: src/msgexec.c:278
+#, c-format, no-wrap
+msgid ""
+"A special builtin command called '0' outputs the translation, followed by a\n"
+"null byte.  The output of \"msgexec 0\" is suitable as input for \"xargs -0\".\n"
+msgstr ""
+"'0' という特別な組み込みコマンドは最後にヌル文字を付けて翻訳を出力します.\n"
+"\"msgexec 0\" の出力は \"xargs -0\" への入力に適しています.\n"
+
+#: src/msgexec.c:283
+#, c-format
+msgid "Command input:\n"
+msgstr "コマンド入力:\n"
+
+#: src/msgexec.c:285
+#, c-format
+msgid "  --newline                   add newline at the end of input\n"
+msgstr "  --newline                   入力の最後に改行を追加\n"
+
+#: src/msgexec.c:293 src/msgfilter.c:427
+#, c-format
+msgid "  -i, --input=INPUTFILE       input PO file\n"
+msgstr "  -i, --input=INPUTFILE       入力する PO ファイル\n"
+
+#: src/msgexec.c:357
+#, c-format
+msgid "write to stdout failed"
+msgstr "標準出力への書き出しが失敗しました"
+
+#: src/msgfilter.c:305
+#, c-format
+msgid "missing filter name"
+msgstr "フィルタ名がありません"
+
+#: src/msgfilter.c:325
+#, c-format
+msgid "at least one sed script must be specified"
+msgstr "少なくとも 1つの sed スクリプトを指定しなければいけません"
+
+#: src/msgfilter.c:414
+#, c-format
+msgid "Usage: %s [OPTION] FILTER [FILTER-OPTION]\n"
+msgstr "使用法: %s [オプション] フィルタ [フィルタオプション]\n"
+
+#: src/msgfilter.c:418
+#, c-format
+msgid "Applies a filter to all translations of a translation catalog.\n"
+msgstr "翻訳カタログの全ての翻訳にフィルタを適用.\n"
+
+#: src/msgfilter.c:442
+#, c-format
+msgid ""
+"The FILTER can be any program that reads a translation from standard input\n"
+"and writes a modified translation to standard output.\n"
+msgstr ""
+"FILTER としては, 標準入力から翻訳を読み取り, 修正した翻訳を標準出力へ書き出"
+"す\n"
+"任意のプログラムを指定することができます.\n"
+
+#: src/msgfilter.c:447
+#, c-format
+msgid "Filter input and output:\n"
+msgstr "フィルタの入力と出力:\n"
+
+#: src/msgfilter.c:449
+#, c-format
+msgid ""
+"  --newline                   add a newline at the end of input and\n"
+"                                remove a newline from the end of output"
+msgstr ""
+"  --newline                   入力の最後に改行を追加し\n"
+"                                出力の最後から改行を削除"
+
+#: src/msgfilter.c:453
+#, c-format
+msgid "Useful FILTER-OPTIONs when the FILTER is 'sed':\n"
+msgstr "FILTER が 'sed' の場合に便利な FILTER-OPTION:\n"
+
+#: src/msgfilter.c:455
+#, c-format
+msgid ""
+"  -e, --expression=SCRIPT     add SCRIPT to the commands to be executed\n"
+msgstr "  -e, --expression=SCRIPT     実行されるコマンドに SCRIPT を追加\n"
+
+#: src/msgfilter.c:457
+#, c-format
+msgid ""
+"  -f, --file=SCRIPTFILE       add the contents of SCRIPTFILE to the "
+"commands\n"
+"                                to be executed\n"
+msgstr ""
+"  -f, --file=SCRIPTFILE       SCRIPTFILE の内容を実行されるコマンドに追加\n"
+
+#: src/msgfilter.c:460
+#, c-format
+msgid ""
+"  -n, --quiet, --silent       suppress automatic printing of pattern space\n"
+msgstr "  -n, --quiet, --silent       パターンスペースの自動的な表示を抑制\n"
+
+#: src/msgfilter.c:478 src/msggrep.c:601
+#, c-format
+msgid ""
+"      --no-escape             do not use C escapes in output (default)\n"
+msgstr ""
+"      --no-escape             出力に C 言語のエスケープを使わない (標準)\n"
+
+#: src/msgfilter.c:484 src/msggrep.c:607
+#, c-format
+msgid "      --indent                indented output style\n"
+msgstr "      --indent                字下げ形式の出力\n"
+
+#: src/msgfilter.c:486
+#, c-format
+msgid ""
+"      --keep-header           keep header entry unmodified, don't filter it\n"
+msgstr "      --keep-header           ヘッダのエントリを修正せずに保持\n"
+
+#: src/msgfilter.c:666
+#, c-format
+msgid "filter output is not terminated with a newline"
+msgstr "フィルタの出力は改行で終端されていません"
+
+#: src/msgfmt.c:374
+#, c-format
+msgid "the argument to %s should be a single punctuation character"
+msgstr "%s への引数は単一の区切り文字であるべきです"
+
+#: src/msgfmt.c:421
+#, c-format
+msgid "invalid endianness: %s"
+msgstr "無効なエンディアン: %s"
+
+#. This is a proper name. See the gettext manual, section Names.
+#: src/msgfmt.c:452 src/msgunfmt.c:269 src/xgettext.c:687
+msgid "Ulrich Drepper"
+msgstr "Ulrich Drepper"
+
+#: src/msgfmt.c:473
+#, c-format
+msgid "no input file should be given if %s and %s are specified"
+msgstr "%s と %s を指定する場合は入力ファイルを指定していはいけません"
+
+#: src/msgfmt.c:519 src/msgfmt.c:541 src/msgfmt.c:563 src/msgunfmt.c:331
+#: src/msgunfmt.c:354
+#, c-format
+msgid "%s requires a \"-d directory\" specification"
+msgstr "%s には \"-d ディレクトリ\" の指定が必要です"
+
+#: src/msgfmt.c:534 src/msgfmt.c:556 src/msgfmt.c:591 src/msgfmt.c:619
+#: src/msgunfmt.c:324 src/msgunfmt.c:347
+#, c-format
+msgid "%s requires a \"-l locale\" specification"
+msgstr "%s には \"-l ロカール\" の指定が必要です"
+
+#: src/msgfmt.c:573 src/msgfmt.c:601
+#, c-format
+msgid "%s requires a \"--template template\" specification"
+msgstr "%s には \"--template テンプレート\" の指定が必要です"
+
+#: src/msgfmt.c:580 src/msgfmt.c:608
+#, c-format
+msgid "%s requires a \"-o file\" specification"
+msgstr "%s には \"-o ファイル\" の指定が必要です"
+
+#: src/msgfmt.c:586 src/msgfmt.c:614
+#, c-format
+msgid "%s and %s are mutually exclusive in %s"
+msgstr "%s と %s は %s において背反です"
+
+#: src/msgfmt.c:628 src/msgunfmt.c:363 src/msgunfmt.c:369
+#, c-format
+msgid "%s is only valid with %s or %s"
+msgstr "%s は %s または %s がある場合にのみ有効です"
+
+#: src/msgfmt.c:634 src/msgfmt.c:640
+#, c-format
+msgid "%s is only valid with %s, %s or %s"
+msgstr "%s は %s, %s または %s がある場合にのみ有効です"
+
+#: src/msgfmt.c:713
+#, c-format
+msgid "cannot locate ITS rules for %s"
+msgstr "%s に対する ITS ルールの場所がわかりません"
+
+#. TRANSLATORS: The prefix before a statistics message.  The argument
+#. is a file name or a comma separated list of file names.
+#: src/msgfmt.c:874
+#, c-format
+msgid "%s: "
+msgstr "%s: "
+
+#: src/msgfmt.c:878
+#, c-format
+msgid "%d translated message"
+msgid_plural "%d translated messages"
+msgstr[0] "%d 個の翻訳メッセージ"
+
+#: src/msgfmt.c:883
+#, c-format
+msgid ", %d fuzzy translation"
+msgid_plural ", %d fuzzy translations"
+msgstr[0] ", %d 個のあいまいな翻訳"
+
+#: src/msgfmt.c:888
+#, c-format
+msgid ", %d untranslated message"
+msgid_plural ", %d untranslated messages"
+msgstr[0] ", %d 個の未訳のメッセージ"
+
+#: src/msgfmt.c:908
+#, c-format
+msgid "Usage: %s [OPTION] filename.po ...\n"
+msgstr "使用法: %s [オプション] filename.po ...\n"
+
+#: src/msgfmt.c:912
+#, c-format
+msgid "Generate binary message catalog from textual translation description.\n"
+msgstr "バイナリメッセージカタログを原文の翻訳の記述から生成.\n"
+
+#: src/msgfmt.c:924
+#, c-format
+msgid "  filename.po ...             input files\n"
+msgstr "  filename.po ...             入力ファイル\n"
+
+#: src/msgfmt.c:931 src/msgmerge.c:531 src/msgunfmt.c:439 src/xgettext.c:1094
+#, c-format
+msgid "Operation mode:\n"
+msgstr "操作モード:\n"
+
+#: src/msgfmt.c:933
+#, c-format
+msgid ""
+"  -j, --java                  Java mode: generate a Java ResourceBundle "
+"class\n"
+msgstr ""
+"  -j, --java                  Java モード: Java ResourceBundle クラスの生成\n"
+
+#: src/msgfmt.c:935
+#, c-format
+msgid ""
+"      --java2                 like --java, and assume Java2 (JDK 1.2 or "
+"higher)\n"
+msgstr ""
+"      --java2                 --java と同じで Java2 (JDK 1.2 以降) を仮定\n"
+
+#: src/msgfmt.c:937
+#, c-format
+msgid "      --csharp                C# mode: generate a .NET .dll file\n"
+msgstr "      --csharp                C# モード: .NET .dll ファイルの生成\n"
+
+#: src/msgfmt.c:939
+#, c-format
+msgid ""
+"      --csharp-resources      C# resources mode: generate a .NET .resources "
+"file\n"
+msgstr ""
+"      --csharp-resources      C# resources モード: .NET .resources ファイルの"
+"生成\n"
+
+#: src/msgfmt.c:941
+#, c-format
+msgid ""
+"      --tcl                   Tcl mode: generate a tcl/msgcat .msg file\n"
+msgstr ""
+"      --tcl                   Tcl モード: tcl/msgcat .msg ファイルの生成\n"
+
+#: src/msgfmt.c:943
+#, c-format
+msgid "      --qt                    Qt mode: generate a Qt .qm file\n"
+msgstr "      --qt                    Qt モード: Qt .qm ファイルの生成\n"
+
+#: src/msgfmt.c:945
+#, c-format
+msgid ""
+"      --desktop               Desktop Entry mode: generate a .desktop file\n"
+msgstr ""
+"      --desktop               Desktop Entry モード: .desktop ファイルの生成\n"
+
+#: src/msgfmt.c:947
+#, c-format
+msgid "      --xml                   XML mode: generate XML file\n"
+msgstr "      --xml                   XML モード: XML ファイルの生成\n"
+
+#: src/msgfmt.c:954
+#, c-format
+msgid "      --strict                enable strict Uniforum mode\n"
+msgstr "      --strict                厳密な Uniforum モードを有効に\n"
+
+#: src/msgfmt.c:956 src/xgettext.c:1069
+#, c-format
+msgid "If output file is -, output is written to standard output.\n"
+msgstr "出力ファイルが - の場合は標準出力に結果が書き出されます.\n"
+
+#: src/msgfmt.c:959
+#, c-format
+msgid "Output file location in Java mode:\n"
+msgstr "Java モードにおける出力ファイルの場所:\n"
+
+#: src/msgfmt.c:961 src/msgfmt.c:977 src/msgunfmt.c:459 src/msgunfmt.c:470
+#, c-format
+msgid "  -r, --resource=RESOURCE     resource name\n"
+msgstr "  -r, --resource=RESOURCE     リソース名\n"
+
+#: src/msgfmt.c:963 src/msgfmt.c:979 src/msgfmt.c:989 src/msgfmt.c:999
+#: src/msgfmt.c:1016 src/msgunfmt.c:461 src/msgunfmt.c:472 src/msgunfmt.c:482
+#, c-format
+msgid ""
+"  -l, --locale=LOCALE         locale name, either language or "
+"language_COUNTRY\n"
+msgstr ""
+"  -l, --locale=LOCALE          ロカール名. 言語名もしくは \"言語名_国名\"\n"
+
+#: src/msgfmt.c:965
+#, c-format
+msgid ""
+"      --source                produce a .java file, instead of a .class "
+"file\n"
+msgstr ""
+"      --source                .class ファイルの代わりに .java ファイルを作"
+"成\n"
+
+#: src/msgfmt.c:967
+#, c-format
+msgid ""
+"  -d DIRECTORY                base directory of classes directory hierarchy\n"
+msgstr ""
+"  -d DIRECTORY                クラスディレクトリの階層の基本ディレクトリ\n"
+
+#: src/msgfmt.c:969
+#, c-format
+msgid ""
+"The class name is determined by appending the locale name to the resource "
+"name,\n"
+"separated with an underscore.  The -d option is mandatory.  The class is\n"
+"written under the specified directory.\n"
+msgstr ""
+"クラス名は, リソース名の末尾に下付きバー \"_\" を挟んでロカール名を加えるこ"
+"と\n"
+"で決められます. -d オプションは必須です. クラスは指定されたディレクトリ以下"
+"に\n"
+"書き出されます.\n"
+
+#: src/msgfmt.c:975
+#, c-format
+msgid "Output file location in C# mode:\n"
+msgstr "C# モードにおける出力ファイルの場所:\n"
+
+#: src/msgfmt.c:981 src/msgunfmt.c:474
+#, c-format
+msgid ""
+"  -d DIRECTORY                base directory for locale dependent .dll "
+"files\n"
+msgstr ""
+"  -d DIRECTORY                ロカール依存の .dll ファイルの基本ディレクト"
+"リ\n"
+
+#: src/msgfmt.c:983
+#, c-format
+msgid ""
+"The -l and -d options are mandatory.  The .dll file is written in a\n"
+"subdirectory of the specified directory whose name depends on the locale.\n"
+msgstr ""
+"-l と -d オプションは必須です. .dll ファイルはロカールに依存した名前を持つ\n"
+"指定されたディレクトリのサブディレクトリに書き出されます.\n"
+
+#: src/msgfmt.c:987
+#, c-format
+msgid "Output file location in Tcl mode:\n"
+msgstr "Tcl モードにおける出力ファイルの場所:\n"
+
+#: src/msgfmt.c:991 src/msgunfmt.c:484
+#, c-format
+msgid "  -d DIRECTORY                base directory of .msg message catalogs\n"
+msgstr ""
+"  -d DIRECTORY                .msg メッセージカタログの基本ディレクトリ\n"
+
+#: src/msgfmt.c:993
+#, c-format
+msgid ""
+"The -l and -d options are mandatory.  The .msg file is written in the\n"
+"specified directory.\n"
+msgstr ""
+"-l と -d オプションは必須です. .msg ファイルは指定されたディレクトリに書き\n"
+"出されます.\n"
+
+#: src/msgfmt.c:997
+#, c-format
+msgid "Desktop Entry mode options:\n"
+msgstr "Desktop Entry モードのオプション:\n"
+
+#: src/msgfmt.c:1003
+#, c-format
+msgid "  --template=TEMPLATE         a .desktop file used as a template\n"
+msgstr "  --template=TEMPLATE         .desktop ファイルをテンプレートに使用\n"
+
+#: src/msgfmt.c:1005 src/msgfmt.c:1024
+#, c-format
+msgid "  -d DIRECTORY                base directory of .po files\n"
+msgstr "  -d DIRECTORY                .po ファイルの基本ディレクトリ\n"
+
+#: src/msgfmt.c:1007 src/xgettext.c:1123
+#, c-format
+msgid ""
+"  -kWORD, --keyword=WORD      look for WORD as an additional keyword\n"
+"  -k, --keyword               do not to use default keywords\n"
+msgstr ""
+"  -kWORD, --keyword=WORD      追加キーワードとして WORD を検索\n"
+"  -k, --keyword               標準のキーワードは使わない\n"
+
+#: src/msgfmt.c:1010 src/msgfmt.c:1026
+#, c-format
+msgid ""
+"The -l, -o, and --template options are mandatory.  If -D is specified, "
+"input\n"
+"files are read from the directory instead of the command line arguments.\n"
+msgstr ""
+"-l, -o, および --template オプションは必須です. -D が指定された場合, 入力\n"
+"ファイルはコマンドライン引数の代わりにそのディレクトリから読み込まれます.\n"
+
+#: src/msgfmt.c:1014
+#, c-format
+msgid "XML mode options:\n"
+msgstr "XML モードのオプション:\n"
+
+#: src/msgfmt.c:1018
+#, c-format
+msgid "  -L, --language=NAME         recognise the specified XML language\n"
+msgstr "  -L, --language=NAME         指定された XML 言語を認識\n"
+
+#: src/msgfmt.c:1022
+#, c-format
+msgid "  --template=TEMPLATE         an XML file used as a template\n"
+msgstr "  --template=TEMPLATE         XML ファイルをテンプレートに使用\n"
+
+#: src/msgfmt.c:1038 src/xgettext.c:1086
+#, c-format
+msgid "Input file interpretation:\n"
+msgstr "入力ファイルの解釈:\n"
+
+#: src/msgfmt.c:1040
+#, c-format
+msgid ""
+"  -c, --check                 perform all the checks implied by\n"
+"                                --check-format, --check-header, --check-"
+"domain\n"
+msgstr ""
+"  -c, --check                 --check-format, --check-header, --check-"
+"domain\n"
+"                              で指定される全てのチェックを行なう\n"
+
+#: src/msgfmt.c:1043
+#, c-format
+msgid "      --check-format          check language dependent format strings\n"
+msgstr ""
+"      --check-format          言語に依存したフォーマット文字列をチェック\n"
+
+#: src/msgfmt.c:1045
+#, c-format
+msgid ""
+"      --check-header          verify presence and contents of the header "
+"entry\n"
+msgstr "      --check-header          ヘッダ項目の存在と内容を確認\n"
+
+#: src/msgfmt.c:1047
+#, c-format
+msgid ""
+"      --check-domain          check for conflicts between domain directives\n"
+"                                and the --output-file option\n"
+msgstr ""
+"      --check-domain          ドメイン命令と --output-file オプションの間に\n"
+"                              矛盾がないかチェック\n"
+
+#: src/msgfmt.c:1050
+#, c-format
+msgid ""
+"  -C, --check-compatibility   check that GNU msgfmt behaves like X/Open "
+"msgfmt\n"
+msgstr ""
+"  -C, --check-compatibility   GNU msgfmt の X/Open msgfmt との互換性を確認\n"
+
+#: src/msgfmt.c:1052
+#, c-format
+msgid ""
+"      --check-accelerators[=CHAR]  check presence of keyboard accelerators "
+"for\n"
+"                                menu items\n"
+msgstr ""
+"      --check-accelerators[=文字]  メニュー項目へのキー割り当てをチェック\n"
+
+#: src/msgfmt.c:1055
+#, c-format
+msgid "  -f, --use-fuzzy             use fuzzy entries in output\n"
+msgstr "  -f, --use-fuzzy             fuzzy (あいまい) 項目を出力に使う\n"
+
+#: src/msgfmt.c:1060
+#, c-format
+msgid ""
+"  -a, --alignment=NUMBER      align strings to NUMBER bytes (default: %d)\n"
+msgstr ""
+"  -a, --alignment=NUMBER      文字列を NUMBER バイトに揃える (標準: %d)\n"
+
+#: src/msgfmt.c:1062
+#, c-format
+msgid ""
+"      --endianness=BYTEORDER  write out 32-bit numbers in the given byte "
+"order\n"
+"                                (big or little, default depends on "
+"platform)\n"
+msgstr ""
+"      --endianness=BYTEORDER  指定されたバイトオーダで32ビットの数値を書き出"
+"す\n"
+"                                (標準はプラットフォームにより big か "
+"little)\n"
+
+#: src/msgfmt.c:1065
+#, c-format
+msgid ""
+"      --no-hash               binary file will not include the hash table\n"
+msgstr ""
+"      --no-hash               バイナリファイルはハッシュテーブルを含まない\n"
+
+#: src/msgfmt.c:1074
+#, c-format
+msgid "      --statistics            print statistics about translations\n"
+msgstr "      --statistics            翻訳に関する統計情報を表示\n"
+
+#: src/msgfmt.c:1076 src/msgmerge.c:626 src/msgunfmt.c:534
+#, c-format
+msgid "  -v, --verbose               increase verbosity level\n"
+msgstr "  -v, --verbose               診断レベルを上げる\n"
+
+#: src/msgfmt.c:1189
+#, c-format
+msgid "warning: PO file header missing or invalid\n"
+msgstr "警告: PO ファイルのヘッダがない, もしくは不正です\n"
+
+#: src/msgfmt.c:1192
+#, c-format
+msgid "warning: charset conversion will not work\n"
+msgstr "警告: 文字セットの変換が機能しません\n"
+
+#: src/msgfmt.c:1202
+#, c-format
+msgid "warning: PO file header fuzzy\n"
+msgstr "警告: PO ファイルヘッダがあいまいです\n"
+
+#: src/msgfmt.c:1204
+#, c-format
+msgid "warning: older versions of msgfmt will give an error on this\n"
+msgstr "警告: msgfmt の以前のバージョンではここでエラーになります\n"
+
+#: src/msgfmt.c:1228
+#, c-format
+msgid "domain name \"%s\" not suitable as file name"
+msgstr "ドメイン名 \"%s\" はファイル名として適切ではありません"
+
+#: src/msgfmt.c:1233
+#, c-format
+msgid "domain name \"%s\" not suitable as file name: will use prefix"
+msgstr ""
+"ドメイン名 \"%s\" はファイル名として適切ではありません. 接頭辞を使います"
+
+#: src/msgfmt.c:1247
+#, c-format
+msgid "'domain %s' directive ignored"
+msgstr "'ドメイン %s' 命令は無視されます"
+
+#: src/msgfmt.c:1307
+#, c-format
+msgid "empty 'msgstr' entry ignored"
+msgstr "空の 'msgstr' エントリは無視されます"
+
+#: src/msgfmt.c:1308
+#, c-format
+msgid "fuzzy 'msgstr' entry ignored"
+msgstr "あいまい (fuzzy) な 'msgstr' エントリは無視されます"
+
+#: src/msgfmt.c:1357
+#, c-format
+msgid "%s: warning: source file contains fuzzy translation"
+msgstr "%s: 警告: ソースファイルにあいまい (fuzzy) な翻訳があります"
+
+#: src/msgfmt.c:1474
+#, c-format
+msgid "%s does not exist"
+msgstr "%s は存在しません"
+
+#: src/msgfmt.c:1481
+#, c-format
+msgid "%s exists but cannot read"
+msgstr "%s は存在しますが読み込めません"
+
+#: src/msggrep.c:259 src/po-lex.c:657 src/read-desktop.c:127 src/read-mo.c:87
+#: src/read-properties.c:90 src/read-stringtable.c:99 src/x-awk.c:139
+#: src/x-c.c:583 src/x-csharp.c:164 src/x-elisp.c:145 src/x-java.c:181
+#: src/x-javascript.c:172 src/x-librep.c:147 src/x-lisp.c:212 src/x-lua.c:173
+#: src/x-perl.c:227 src/x-perl.c:302 src/x-perl.c:395 src/x-php.c:163
+#: src/x-python.c:176 src/x-rst.c:233 src/x-scheme.c:171 src/x-sh.c:155
+#: src/x-smalltalk.c:92 src/x-tcl.c:150 src/x-vala.c:176 src/x-ycp.c:92
+#, c-format
+msgid "error while reading \"%s\""
+msgstr "\"%s\" を読み込み中にエラーが発生しました"
+
+#: src/msggrep.c:502
+#, c-format
+msgid ""
+"option '%c' cannot be used before 'J' or 'K' or 'T' or 'C' or 'X' has been "
+"specified"
+msgstr ""
+"オプション '%c' は 'J' や 'K' や 'T' や 'C' や 'X' が指定される前に使うことは"
+"できません"
+
+#: src/msggrep.c:522
+#, c-format, no-wrap
+msgid ""
+"Extracts all messages of a translation catalog that match a given pattern\n"
+"or belong to some given source files.\n"
+msgstr ""
+"翻訳カタログの中から, 指定されたパターンに一致する, もしくは指定されたいくつ\n"
+"かのソースファイルに含まれる全てのメッセージを取り出します.\n"
+
+#: src/msggrep.c:548
+#, c-format, no-wrap
+msgid ""
+"Message selection:\n"
+"  [-N SOURCEFILE]... [-M DOMAINNAME]...\n"
+"  [-J MSGCTXT-PATTERN] [-K MSGID-PATTERN] [-T MSGSTR-PATTERN]\n"
+"  [-C COMMENT-PATTERN] [-X EXTRACTED-COMMENT-PATTERN]\n"
+"A message is selected if it comes from one of the specified source files,\n"
+"or if it comes from one of the specified domains,\n"
+"or if -J is given and its context (msgctxt) matches MSGCTXT-PATTERN,\n"
+"or if -K is given and its key (msgid or msgid_plural) matches MSGID-PATTERN,\n"
+"or if -T is given and its translation (msgstr) matches MSGSTR-PATTERN,\n"
+"or if -C is given and the translator's comment matches COMMENT-PATTERN,\n"
+"or if -X is given and the extracted comment matches EXTRACTED-COMMENT-PATTERN.\n"
+"\n"
+"When more than one selection criterion is specified, the set of selected\n"
+"messages is the union of the selected messages of each criterion.\n"
+"\n"
+"MSGCTXT-PATTERN or MSGID-PATTERN or MSGSTR-PATTERN or COMMENT-PATTERN or\n"
+"EXTRACTED-COMMENT-PATTERN syntax:\n"
+"  [-E | -F] [-e PATTERN | -f FILE]...\n"
+"PATTERNs are basic regular expressions by default, or extended regular\n"
+"expressions if -E is given, or fixed strings if -F is given.\n"
+"\n"
+"  -N, --location=SOURCEFILE   select messages extracted from SOURCEFILE\n"
+"  -M, --domain=DOMAINNAME     select messages belonging to domain DOMAINNAME\n"
+"  -J, --msgctxt               start of patterns for the msgctxt\n"
+"  -K, --msgid                 start of patterns for the msgid\n"
+"  -T, --msgstr                start of patterns for the msgstr\n"
+"  -C, --comment               start of patterns for the translator's comment\n"
+"  -X, --extracted-comment     start of patterns for the extracted comment\n"
+"  -E, --extended-regexp       PATTERN is an extended regular expression\n"
+"  -F, --fixed-strings         PATTERN is a set of newline-separated strings\n"
+"  -e, --regexp=PATTERN        use PATTERN as a regular expression\n"
+"  -f, --file=FILE             obtain PATTERN from FILE\n"
+"  -i, --ignore-case           ignore case distinctions\n"
+"  -v, --invert-match          output only the messages that do not match any\n"
+"                              selection criterion\n"
+msgstr ""
+"メッセージ選択:\n"
+"  [-N SOURCEFILE]... [-M DOMAINNAME]...\n"
+"  [-J MSGCTXT-PATTERN] [-K MSGID-PATTERN] [-T MSGSTR-PATTERN]\n"
+"  [-C COMMENT-PATTERN] [-X EXTRACTED-COMMENT-PATTERN]\n"
+"メッセージは次のうちのいずれかの場合に選択されます.\n"
+"  そのメッセージが指定されたソースファイルの 1つに存在\n"
+"  そのメッセージが指定されたドメインの 1つに存在\n"
+"  -J が指定され, その文脈 (msgctxt) が MSGCTXT-PATTERN に一致\n"
+"  -K が指定され, そのキー (msgid または msgid_plural) が MSGID-PATTERN に一致\n"
+"  -T が指定され, その翻訳 (msgstr) が MSGSTR-PATTERN に一致\n"
+"  -C が指定され, 翻訳者のコメントが COMMENT-PATTERN に一致\n"
+"  -X が指定され,抽出されたコメントが EXTRACTED-COMMENT-PATTERN に一致\n"
+"\n"
+"1つ以上の選択基準が指定された場合, 一連の選択されたメッセージは各基準で選択\n"
+"されたメッセージの集まりになります.\n"
+"\n"
+"MSGCTXT-PATTERN または MSGID-PATTERN または MSGSTR-PATTERN または\n"
+"COMMENT-PATTERN または EXTRACTED-COMMENT-PATTERN の文法:\n"
+"  [-E | -F] [-e PATTERN | -f FILE]...\n"
+"PATTERN は, 標準では基本的な正規表現, -E が指定されれば拡張正規表現,\n"
+"-F が指定されれば固定文字列になります.\n"
+"\n"
+"  -N, --location=SOURCEFILE   SOURCEFILE から取り出したメッセージを選択\n"
+"  -M, --domain=DOMAINNAME     ドメイン DOMAINNAME に属するメッセージを選択\n"
+"  -J, --msgctxt               msgctxt に対するパターン\n"
+"  -K, --msgid                 msgid に対するパターン\n"
+"  -T, --msgstr                msgstr に対するパターン\n"
+"  -C, --comment               翻訳者のコメントに対するパターン\n"
+"  -X, --extracted-comment     抽出されたコメントに対するパターン\n"
+"  -E, --extended-regexp       PATTERN は拡張正規表現\n"
+"  -F, --fixed-strings         PATTERN は改行で分けられた文字列の集まり\n"
+"  -e, --regexp=PATTERN        正規表現として PATTERN を使う\n"
+"  -f, --file=FILE             PATTERN を FILE から指定\n"
+"  -i, --ignore-case           大文字小文字を区別しない\n"
+"  -v, --invert-match          どの選択基準にも一致しないメッセージのみを出力\n"
+
+#: src/msggrep.c:603
+#, c-format
+msgid ""
+"      --escape                use C escapes in output, no extended chars\n"
+msgstr ""
+"      --escape                出力に C 言語のエスケープを使い,\n"
+"                              拡張文字を含めない\n"
+
+#: src/msggrep.c:624
+#, c-format
+msgid "      --sort-output           generate sorted output\n"
+msgstr "      --sort-output           ソートされた出力を生成\n"
+
+#: src/msggrep.c:626
+#, c-format
+msgid "      --sort-by-file          sort output by file location\n"
+msgstr "      --sort-by-file          ファイルで出力をソート\n"
+
+#: src/msginit.c:298
+msgid ""
+"You are in a language indifferent environment.  Please set\n"
+"your LANG environment variable, as described in the ABOUT-NLS\n"
+"file.  This is necessary so you can test your translations.\n"
+msgstr ""
+"あなたは言語に関わりのない環境にいます. ABOUT-NLS に記述されたように\n"
+"環境変数 LANG を指定してください. これで翻訳をテストすることができます.\n"
+
+#: src/msginit.c:322
+#, c-format
+msgid ""
+"Output file %s already exists.\n"
+"Please specify the locale through the --locale option or\n"
+"the output .po file through the --output-file option.\n"
+msgstr ""
+"出力ファイル %s は既に存在しています.\n"
+"--locale オプションでロカールを指定するか, --output-file オプションで\n"
+"出力する .po ファイルを指定してください.\n"
+
+#: src/msginit.c:348
+#, c-format
+msgid "Created %s.\n"
+msgstr "%s を生成.\n"
+
+#: src/msginit.c:368
+#, c-format, no-wrap
+msgid ""
+"Creates a new PO file, initializing the meta information with values from the\n"
+"user's environment.\n"
+msgstr "新しい PO ファイルを作成. ユーザ環境からの値でメタ情報を初期化します.\n"
+
+#: src/msginit.c:378
+#, c-format
+msgid "  -i, --input=INPUTFILE       input POT file\n"
+msgstr "  -i, --input=INPUTFILE       入力する POT ファイル\n"
+
+#: src/msginit.c:380
+#, c-format
+msgid ""
+"If no input file is given, the current directory is searched for the POT "
+"file.\n"
+"If it is -, standard input is read.\n"
+msgstr ""
+"入力ファイルが指定されない場合はカレントディレクトリで POT ファイルが検索\n"
+"されます. もし入力ファイルが - ならば標準入力が読み込まれます.\n"
+
+#: src/msginit.c:386
+#, c-format
+msgid "  -o, --output-file=FILE      write output to specified PO file\n"
+msgstr "  -o, --output-file=FILE      指定された PO ファイルに出力\n"
+
+#: src/msginit.c:388
+#, c-format
+msgid ""
+"If no output file is given, it depends on the --locale option or the user's\n"
+"locale setting.  If it is -, the results are written to standard output.\n"
+msgstr ""
+"出力ファイルが指定されない場合, 出力ファイルは --locale オプションかユーザ"
+"の\n"
+"ロカール設定に依存します. もし - ならば結果は標準出力に出力されます.\n"
+
+#: src/msginit.c:401
+#, c-format
+msgid "  -l, --locale=LL_CC          set target locale\n"
+msgstr "  -l, --locale=LL_CC          対象となるロカールを設定\n"
+
+#: src/msginit.c:403
+#, c-format
+msgid ""
+"      --no-translator         assume the PO file is automatically generated\n"
+msgstr "      --no-translator         PO ファイルが自動生成されると仮定\n"
+
+#: src/msginit.c:469
+msgid ""
+"Found more than one .pot file.\n"
+"Please specify the input .pot file through the --input option.\n"
+msgstr ""
+"1つ以上の .pot ファイルを見つけました.\n"
+"--input オプションで入力する .pot ファイルを指定してください.\n"
+
+#: src/msginit.c:477 src/msginit.c:482
+#, c-format
+msgid "error reading current directory"
+msgstr "カレントディレクトリの読み込みエラー"
+
+#: src/msginit.c:490
+msgid ""
+"Found no .pot file in the current directory.\n"
+"Please specify the input .pot file through the --input option.\n"
+msgstr ""
+"カレントディレクトリに .pot ファイルが見つかりませんでした.\n"
+"--input オプションで入力する .pot ファイルを指定してください.\n"
+
+#: src/msginit.c:918 src/msginit.c:993 src/msginit.c:1153 src/msginit.c:1248
+#: src/msginit.c:1418 src/read-csharp.c:84 src/read-java.c:82
+#: src/read-resources.c:85 src/read-tcl.c:128 src/write-resources.c:105
+#, c-format
+msgid "%s subprocess failed with exit code %d"
+msgstr "%s サブプロセス失敗, 終了コード %d"
+
+#: src/msginit.c:1118
+msgid ""
+"The new message catalog should contain your email address, so that users "
+"can\n"
+"give you feedback about the translations, and so that maintainers can "
+"contact\n"
+"you in case of unexpected technical problems.\n"
+msgstr ""
+"ユーザが翻訳に関するフィードバックをあなたに送ることができるように,\n"
+"新しいメッセージカタログにはあなたの email アドレスを含めてください.\n"
+"またこれは, 予期せぬ技術的な問題が発生した場合に管理者があなたに連絡が取れ"
+"る\n"
+"ようにするという目的もあります.\n"
+
+#. TRANSLATORS: "English" needs to be replaced by your language.
+#. For example in it.po write "Traduzioni italiani ...",
+#. *not* "Traduzioni inglesi ...".
+#: src/msginit.c:1615
+#, c-format
+msgid "English translations for %s package"
+msgstr "%s パッケージに対する英訳"
+
+#: src/msgl-cat.c:178 src/msgl-charset.c:87 src/msgl-iconv.c:247
+#, c-format
+msgid "present charset \"%s\" is not a portable encoding name"
+msgstr "現在の文字セット \"%s\" は可搬性のあるエンコーディング名ではありません"
+
+#: src/msgl-cat.c:189 src/msgl-iconv.c:259
+#, c-format
+msgid "two different charsets \"%s\" and \"%s\" in input file"
+msgstr "2つの異なった文字セット \"%s\" と \"%s\" が入力ファイルにあります"
+
+#: src/msgl-cat.c:204
+#, c-format
+msgid ""
+"input file '%s' doesn't contain a header entry with a charset specification"
+msgstr "入力ファイル '%s' に文字セットを指定するヘッダ項目がありません"
+
+#: src/msgl-cat.c:208
+#, c-format
+msgid ""
+"domain \"%s\" in input file '%s' doesn't contain a header entry with a "
+"charset specification"
+msgstr ""
+"入力ファイル '%2$s' 内のドメイン \"%1$s\" には文字セットを指定するヘッダ項目"
+"がありません"
+
+#: src/msgl-cat.c:394 src/msgl-iconv.c:375
+#, c-format
+msgid "target charset \"%s\" is not a portable encoding name."
+msgstr ""
+"対象となる文字セット \"%s\" は可搬性のあるエンコーディング名ではありません"
+
+#: src/msgl-cat.c:445 src/msgl-cat.c:451 src/msgl-charset.c:93
+#: src/msgl-charset.c:128 src/po-xerror.c:122 src/po-xerror.c:147
+#: src/xgettext.c:579 src/xgettext.c:3729
+#, c-format
+msgid "warning: "
+msgstr "警告: "
+
+#: src/msgl-cat.c:446
+#, c-format
+msgid ""
+"Input files contain messages in different encodings, UTF-8 among others.\n"
+"Converting the output to UTF-8.\n"
+msgstr ""
+"入力ファイルには異なったエンコーディングのメッセージが含まれています.\n"
+"出力を UTF-8 に変換します.\n"
+
+#: src/msgl-cat.c:452
+#, c-format
+msgid ""
+"Input files contain messages in different encodings, %s and %s among "
+"others.\n"
+"Converting the output to UTF-8.\n"
+"To select a different output encoding, use the --to-code option.\n"
+msgstr ""
+"入力ファイルには %s や %s などの異なったエンコーディングのメッセージが含まれ"
+"ています.\n"
+"出力を UTF-8 に変換します.\n"
+"別の出力エンコーディングを選択する場合は --to-code オプションを使ってくださ"
+"い.\n"
+
+#: src/msgl-cat.c:491
+#, c-format
+msgid ""
+"Conversion of file %s from %s encoding to %s encoding\n"
+"changes some msgids or msgctxts.\n"
+"Either change all msgids and msgctxts to be pure ASCII, or ensure they are\n"
+"UTF-8 encoded from the beginning, i.e. already in your source code files.\n"
+msgstr ""
+"ファイル %s の %s エンコーディングから %s エンコーディングへの変換は\n"
+"いくつかの msgid や msgctxt を変更します.\n"
+"全ての msgid と msgctxt を純粋な ASCII に変換するか, それらが最初から, つま"
+"り\n"
+"ソースコードファイルの中で, UTF-8 でエンコードされていることを保証するか\n"
+"どちらかです.\n"
+
+#: src/msgl-charset.c:94
+#, c-format
+msgid ""
+"Locale charset \"%s\" is different from\n"
+"input file charset \"%s\".\n"
+"Output of '%s' might be incorrect.\n"
+"Possible workarounds are:\n"
+msgstr ""
+"ロカール文字セット \"%s\" は\n"
+"入力の文字セット \"%s\" と異なっています.\n"
+"'%s' の出力は不正確である可能性があります.\n"
+"可能な回避策:\n"
+
+#: src/msgl-charset.c:101
+#, c-format
+msgid "- Set LC_ALL to a locale with encoding %s.\n"
+msgstr "- LC_ALL をエンコーディング %s のロカールに設定.\n"
+
+#: src/msgl-charset.c:106
+#, c-format
+msgid ""
+"- Convert the translation catalog to %s using 'msgconv',\n"
+"  then apply '%s',\n"
+"  then convert back to %s using 'msgconv'.\n"
+msgstr ""
+"- 翻訳カタログを 'msgconv' を使って %s に変換し,\n"
+"  その後 '%s' を適用.\n"
+"  更に 'msgconv' を使って %s に戻す.\n"
+
+#: src/msgl-charset.c:115
+#, c-format
+msgid ""
+"- Set LC_ALL to a locale with encoding %s,\n"
+"  convert the translation catalog to %s using 'msgconv',\n"
+"  then apply '%s',\n"
+"  then convert back to %s using 'msgconv'.\n"
+msgstr ""
+"- LC_ALL をエンコーディング %s のロカールに設定し,\n"
+"  翻訳カタログを 'msgconv' を使って %s に変換し,\n"
+"  その後 '%s' を適用.\n"
+"  更に 'msgconv' を使って %s に戻す.\n"
+
+#: src/msgl-charset.c:129
+#, c-format
+msgid ""
+"Locale charset \"%s\" is not a portable encoding name.\n"
+"Output of '%s' might be incorrect.\n"
+"A possible workaround is to set LC_ALL=C.\n"
+msgstr ""
+"ロカール文字セット \"%s\" は可搬性のあるエンコーディング名ではありません.\n"
+"'%s' の出力は不正確である可能性があります.\n"
+"可能な回避策としては LC_ALL=C と設定します.\n"
+
+#: src/msgl-check.c:134
+msgid "plural expression can produce negative values"
+msgstr "複数表現が負の値を生成する可能性があります"
+
+#: src/msgl-check.c:145
+#, c-format
+msgid "nplurals = %lu but plural expression can produce values as large as %lu"
+msgstr ""
+"nplurals = %lu ですが複数表現が %lu と同じ程度の値を生成する可能性があります"
+
+#: src/msgl-check.c:191
+msgid "plural expression can produce division by zero"
+msgstr "複数表現がゼロ割りを起こす可能性があります"
+
+#: src/msgl-check.c:196
+msgid "plural expression can produce integer overflow"
+msgstr "複数表現が整数あふれを起こす可能性があります"
+
+#: src/msgl-check.c:201
+msgid ""
+"plural expression can produce arithmetic exceptions, possibly division by "
+"zero"
+msgstr "複数表現が演算例外, おそらくゼロ割りを起こす可能性があります"
+
+#: src/msgl-check.c:270
+#, c-format
+msgid "Try using the following, valid for %s:"
+msgstr "%s にとって有効な, 次を使ってみてください:"
+
+#: src/msgl-check.c:362 src/msgl-check.c:386
+msgid "message catalog has plural form translations"
+msgstr "メッセージカタログに複数形の翻訳があります"
+
+#: src/msgl-check.c:364
+msgid "but header entry lacks a \"plural=EXPRESSION\" attribute"
+msgstr "しかしヘッダエントリに \"plural=EXPRESSION\" 属性がありません"
+
+#: src/msgl-check.c:388
+msgid "but header entry lacks a \"nplurals=INTEGER\" attribute"
+msgstr "しかしヘッダエントリに \"nplurals=INTEGER\" 属性がありません"
+
+#: src/msgl-check.c:424
+msgid "invalid nplurals value"
+msgstr "不正な nplurals の値"
+
+#: src/msgl-check.c:446
+msgid "invalid plural expression"
+msgstr "不正な複数 (plural) 表現"
+
+#: src/msgl-check.c:476 src/msgl-check.c:492
+#, c-format
+msgid "nplurals = %lu"
+msgstr "nplurals = %lu"
+
+#: src/msgl-check.c:478
+#, c-format
+msgid "but some messages have only one plural form"
+msgid_plural "but some messages have only %lu plural forms"
+msgstr[0] "しかしいくつかのメッセージには %lu 個だけ複数形があります"
+
+#: src/msgl-check.c:494
+#, c-format
+msgid "but some messages have one plural form"
+msgid_plural "but some messages have %lu plural forms"
+msgstr[0] "しかしいくつかのメッセージには %lu 個の複数形があります"
+
+#: src/msgl-check.c:518
+msgid ""
+"message catalog has plural form translations, but lacks a header entry with "
+"\"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\""
+msgstr ""
+"メッセージカタログには複数形の翻訳があります. しかし \"Plural-Forms: "
+"nplurals=INTEGER; plural=EXPRESSION;\" というヘッダエントリがありません"
+
+#: src/msgl-check.c:615
+msgid "'msgid' and 'msgid_plural' entries do not both begin with '\\n'"
+msgstr ""
+"'msgid' と 'msgid_plural' のエントリがどちらも '\\n' で始まっていません"
+
+#: src/msgl-check.c:623
+#, c-format
+msgid "'msgid' and 'msgstr[%u]' entries do not both begin with '\\n'"
+msgstr "'msgid' と 'msgstr[%u]' のエントリがどちらも '\\n' で始まっていません"
+
+#: src/msgl-check.c:638
+msgid "'msgid' and 'msgstr' entries do not both begin with '\\n'"
+msgstr "'msgid' と 'msgstr' のエントリがどちらも '\\n' で始まっていません"
+
+#: src/msgl-check.c:656
+msgid "'msgid' and 'msgid_plural' entries do not both end with '\\n'"
+msgstr ""
+"'msgid' と 'msgid_plural' のエントリがどちらも '\\n' で終わっていません"
+
+#: src/msgl-check.c:664
+#, c-format
+msgid "'msgid' and 'msgstr[%u]' entries do not both end with '\\n'"
+msgstr "'msgid' と 'msgstr[%u]' のエントリがどちらも '\\n' で終わっていません"
+
+#: src/msgl-check.c:679
+msgid "'msgid' and 'msgstr' entries do not both end with '\\n'"
+msgstr "'msgid' と 'msgstr' のエントリがどちらも '\\n' で終わっていません"
+
+#: src/msgl-check.c:691
+msgid "plural handling is a GNU gettext extension"
+msgstr "複数形の制御は GNU gettext の拡張です"
+
+#: src/msgl-check.c:733
+#, c-format
+msgid "msgstr lacks the keyboard accelerator mark '%c'"
+msgstr "msgstr にはキーボードアクセレレータの記号 '%c' がありません"
+
+#: src/msgl-check.c:744
+#, c-format
+msgid "msgstr has too many keyboard accelerator marks '%c'"
+msgstr ""
+"msgstr にはあまりに多くのキーボードアクセレレータの記号 '%c' があります"
+
+#: src/msgl-check.c:818
+#, c-format
+msgid "header field '%s' still has the initial default value\n"
+msgstr "ヘッダ情報 '%s' が初期標準値のままです\n"
+
+#: src/msgl-check.c:835
+#, c-format
+msgid "header field '%s' missing in header\n"
+msgstr "ヘッダ情報 '%s' がヘッダの中にありません\n"
+
+#: src/msgl-check.c:940
+msgid "ASCII ellipsis ('...') instead of Unicode"
+msgstr "Unicode の代わりに ASCII の省略記号 ('...')"
+
+#: src/msgl-check.c:1013
+msgid "space before ellipsis found in user visible strings"
+msgstr "ユーザが見える文字列に省略記号が見つかる前にスペース"
+
+#: src/msgl-check.c:1042
+msgid "ASCII double quote used instead of Unicode"
+msgstr "Unicode の代わりに ASCII の二重引用符を使用"
+
+#: src/msgl-check.c:1048
+msgid "ASCII single quote used instead of Unicode"
+msgstr "Unicode の代わりに ASCII の単一引用符を使用"
+
+#: src/msgl-check.c:1163
+#, c-format
+msgid "ASCII bullet ('%c') instead of Unicode"
+msgstr "Unicode の代わりに ASCII の黒丸記号 ('%c')"
+
+#: src/msgl-iconv.c:65
+#, c-format
+msgid "%s: input is not valid in \"%s\" encoding"
+msgstr "%s: 入力は \"%s\" エンコーディングにおいて有効ではありません"
+
+#: src/msgl-iconv.c:69
+#, c-format
+msgid "%s: error while converting from \"%s\" encoding to \"%s\" encoding"
+msgstr ""
+"%s: \"%s\" エンコーディングから \"%s\" エンコーディングに変換する際にエラーが"
+"発生しました"
+
+#: src/msgl-iconv.c:290
+msgid "input file doesn't contain a header entry with a charset specification"
+msgstr "入力ファイルに文字セットを指定するヘッダ項目がありません"
+
+#: src/msgl-iconv.c:305 src/recode-sr-latin.c:289 src/recode-sr-latin.c:294
+#: src/xgettext.c:800 src/x-python.c:665
+#, c-format
+msgid ""
+"Cannot convert from \"%s\" to \"%s\". %s relies on iconv(), and iconv() does "
+"not support this conversion."
+msgstr ""
+"\"%s\" から \"%s\" に変換できません. %s は iconv() に依存していますが,"
+"iconv() はこの変換を実装していません."
+
+#: src/msgl-iconv.c:335
+#, c-format
+msgid ""
+"Conversion from \"%s\" to \"%s\" introduces duplicates: some different "
+"msgids become equal."
+msgstr ""
+"\"%s\" から \"%s\" への変換が重複, いくつかの異なった msgid が等しくなってい"
+"ます."
+
+#: src/msgl-iconv.c:341 src/recode-sr-latin.c:303 src/xgettext.c:807
+#: src/x-python.c:672
+#, c-format
+msgid ""
+"Cannot convert from \"%s\" to \"%s\". %s relies on iconv(). This version was "
+"built without iconv()."
+msgstr ""
+"\"%s\" から \"%s\" に変換できません. %s は iconv() に依存しています.このバー"
+"ジョンは iconv() なしで作られています."
+
+#: src/msgmerge.c:406 src/msgmerge.c:412
+#, c-format
+msgid "%s is only valid with %s"
+msgstr "%s は %s がある場合にのみ有効です"
+
+#: src/msgmerge.c:467
+msgid "backup type"
+msgstr "バックアップタイプ"
+
+#: src/msgmerge.c:504
+#, c-format, no-wrap
+msgid ""
+"Merges two Uniforum style .po files together.  The def.po file is an\n"
+"existing PO file with translations which will be taken over to the newly\n"
+"created file as long as they still match; comments will be preserved,\n"
+"but extracted comments and file positions will be discarded.  The ref.pot\n"
+"file is the last created PO file with up-to-date source references but\n"
+"old translations, or a PO Template file (generally created by xgettext);\n"
+"any translations or comments in the file will be discarded, however dot\n"
+"comments and file positions will be preserved.  Where an exact match\n"
+"cannot be found, fuzzy matching is used to produce better results.\n"
+msgstr ""
+"2つの Uniforum 形式の .po ファイルを 1つにマージします. def.po ファイルは\n"
+"以前の翻訳が記述された PO ファイルで, 一致する限り新しく作られたファイルに\n"
+"内容が引き継がれます. またコメントはそのまま残されますが, ソースから\n"
+"抜き出されたコメントとファイルの位置は破棄されます. ref.pot ファイルは\n"
+"最新の PO ファイル (xgettext により生成) で, そのファイル中のいかなる翻訳や\n"
+"コメントも破棄されます. しかしドットコメントとファイルの位置はそのまま\n"
+"残されます. 正確に一致している個所が見つからない場合は, あいまい (fuzzy)\n"
+"検索を使うとより良い結果を生むでしょう. \n"
+
+#: src/msgmerge.c:521
+#, c-format
+msgid "  def.po                      translations referring to old sources\n"
+msgstr "  def.po                      古いソースに対する参照翻訳\n"
+
+#: src/msgmerge.c:523
+#, c-format
+msgid "  ref.pot                     references to new sources\n"
+msgstr "  ref.pot                     新しいソースに対する参照\n"
+
+#: src/msgmerge.c:527
+#, c-format
+msgid ""
+"  -C, --compendium=FILE       additional library of message translations,\n"
+"                              may be specified more than once\n"
+msgstr ""
+"  -C, --compendium=FILE       メッセージ翻訳の追加文献\n"
+"                              1回以上指定される可能性あり\n"
+
+#: src/msgmerge.c:533
+#, c-format
+msgid ""
+"  -U, --update                update def.po,\n"
+"                              do nothing if def.po already up to date\n"
+msgstr ""
+"  -U, --update                def.po を更新\n"
+"                              def.po が既に最新版であれば何もしない\n"
+
+#: src/msgmerge.c:545
+#, c-format
+msgid "Output file location in update mode:\n"
+msgstr "更新モードでの出力ファイルの場所:\n"
+
+#: src/msgmerge.c:547
+#, c-format
+msgid "The result is written back to def.po.\n"
+msgstr "結果は def.po に書き戻されます.\n"
+
+#: src/msgmerge.c:549
+#, c-format
+msgid "      --backup=CONTROL        make a backup of def.po\n"
+msgstr "      --backup=CONTROL        def.po のバックアップを作成\n"
+
+#: src/msgmerge.c:551
+#, c-format
+msgid "      --suffix=SUFFIX         override the usual backup suffix\n"
+msgstr "      --suffix=SUFFIX         通常のバックアップ接尾辞を上書き\n"
+
+#: src/msgmerge.c:553
+#, c-format
+msgid ""
+"The version control method may be selected via the --backup option or "
+"through\n"
+"the VERSION_CONTROL environment variable.  Here are the values:\n"
+"  none, off       never make backups (even if --backup is given)\n"
+"  numbered, t     make numbered backups\n"
+"  existing, nil   numbered if numbered backups exist, simple otherwise\n"
+"  simple, never   always make simple backups\n"
+msgstr ""
+"バージョン管理の方法は --backup オプション, もしくは環境変数 "
+"VERSION_CONTROL\n"
+"で選択できます. その値は以下の通り:\n"
+"  none, off       バックアップを作成しない (--backup が指定されても)\n"
+"  numbered, t     番号付きのバックアップを作成\n"
+"  existing, nil   番号付きバックアップがあれば番号付き, そうでなければ単純形"
+"式\n"
+"  simple, never   常に単純形式のバックアップを作成\n"
+
+#: src/msgmerge.c:560
+#, c-format
+msgid ""
+"The backup suffix is '~', unless set with --suffix or the "
+"SIMPLE_BACKUP_SUFFIX\n"
+"environment variable.\n"
+msgstr ""
+"--suffix や環境変数 SIMPLE_BACKUP_SUFFIX が設定されていなければ,\n"
+"バックアップ接尾辞は '~' です.\n"
+
+#: src/msgmerge.c:571
+#, c-format
+msgid ""
+"      --previous              keep previous msgids of translated messages\n"
+msgstr ""
+"      --previous              翻訳されたメッセージの前の msgid を残す\n"
+
+#: src/msgmerge.c:628 src/urlget.c:193
+#, c-format
+msgid "  -q, --quiet, --silent       suppress progress indicators\n"
+msgstr "  -q, --quiet, --silent       進行状況を表示しない\n"
+
+#: src/msgmerge.c:1627
+#, c-format
+msgid "this message should define plural forms"
+msgstr "このメッセージは複数形を定義すべきです"
+
+#: src/msgmerge.c:1650
+#, c-format
+msgid "this message should not define plural forms"
+msgstr "このメッセージは複数形を定義すべきではありません"
+
+#: src/msgmerge.c:2053
+#, c-format
+msgid ""
+"%sRead %ld old + %ld reference, merged %ld, fuzzied %ld, missing %ld, "
+"obsolete %ld.\n"
+msgstr ""
+"%s %ld(前の版) + %ld(新版) を読み込み (マージ %ld, あいまい %ld, 欠落 %ld, 破"
+"棄 %ld).\n"
+
+#: src/msgmerge.c:2061 src/urlget.c:307 src/urlget.c:354 src/urlget.c:396
+#: src/urlget.c:438
+#, c-format
+msgid " done.\n"
+msgstr " 完了.\n"
+
+#: src/msgunfmt.c:309 src/msgunfmt.c:318 src/msgunfmt.c:341
+#, c-format
+msgid "%s and explicit file names are mutually exclusive"
+msgstr "%s と明示的に指定されたファイル名は背反です"
+
+#: src/msgunfmt.c:428
+#, c-format
+msgid "Usage: %s [OPTION] [FILE]...\n"
+msgstr "使用法: %s [オプション] [ファイル]...\n"
+
+#: src/msgunfmt.c:432
+#, c-format
+msgid "Convert binary message catalog to Uniforum style .po file.\n"
+msgstr "バイナリメッセージカタログを Uniforum 形式の .po ファイルに変換.\n"
+
+#: src/msgunfmt.c:441
+#, c-format
+msgid ""
+"  -j, --java                  Java mode: input is a Java ResourceBundle "
+"class\n"
+msgstr ""
+"  -j, --java                  Java モード: 入力は Java ResourceBundle クラ"
+"ス\n"
+
+#: src/msgunfmt.c:443
+#, c-format
+msgid "      --csharp                C# mode: input is a .NET .dll file\n"
+msgstr "      --csharp                C# モード: 入力は .NET .dll ファイル\n"
+
+#: src/msgunfmt.c:445
+#, c-format
+msgid ""
+"      --csharp-resources      C# resources mode: input is a .NET .resources "
+"file\n"
+msgstr ""
+"      --csharp-resources      C# resources モード: 入力は .NET .resources "
+"ファイル\n"
+
+#: src/msgunfmt.c:447
+#, c-format
+msgid ""
+"      --tcl                   Tcl mode: input is a tcl/msgcat .msg file\n"
+msgstr ""
+"      --tcl                   Tcl モード: 入力は tcl/msgcat .msg ファイル\n"
+
+#: src/msgunfmt.c:452
+#, c-format
+msgid "  FILE ...                    input .mo files\n"
+msgstr "  FILE ...                    入力する .mo ファイル\n"
+
+#: src/msgunfmt.c:457
+#, c-format
+msgid "Input file location in Java mode:\n"
+msgstr "Java モードにおける入力ファイルの場所:\n"
+
+#: src/msgunfmt.c:463
+#, c-format
+msgid ""
+"The class name is determined by appending the locale name to the resource "
+"name,\n"
+"separated with an underscore.  The class is located using the CLASSPATH.\n"
+msgstr ""
+"クラス名は, リソース名の末尾に下付きバー \"_\" を挟んでロカール名を加えるこ"
+"と\n"
+"で決められます. クラスの場所は CLASSPATH で指定されます.\n"
+
+#: src/msgunfmt.c:468
+#, c-format
+msgid "Input file location in C# mode:\n"
+msgstr "C# モードにおける入力ファイルの場所:\n"
+
+#: src/msgunfmt.c:476
+#, c-format
+msgid ""
+"The -l and -d options are mandatory.  The .dll file is located in a\n"
+"subdirectory of the specified directory whose name depends on the locale.\n"
+msgstr ""
+"-l と -d オプションは必須. .dll ファイルはロカールに依存した名前を持つ\n"
+"指定されたディレクトリのサブディレクトリに置かれます.\n"
+
+#: src/msgunfmt.c:480
+#, c-format
+msgid "Input file location in Tcl mode:\n"
+msgstr "Tcl モードにおける入力ファイルの場所:\n"
+
+#: src/msgunfmt.c:486
+#, c-format
+msgid ""
+"The -l and -d options are mandatory.  The .msg file is located in the\n"
+"specified directory.\n"
+msgstr ""
+"-l と -d オプションは必須. .msg ファイルは指定されたディレクトリに置かれま"
+"す.\n"
+
+#: src/msgunfmt.c:512
+#, c-format
+msgid "  -i, --indent                write indented output style\n"
+msgstr "  -i, --indent                字下げ形式の出力\n"
+
+#: src/msgunfmt.c:514
+#, c-format
+msgid "      --strict                write strict uniforum style\n"
+msgstr "      --strict                厳密な Uniforum 形式で出力\n"
+
+#: src/msguniq.c:332
+#, c-format, no-wrap
+msgid ""
+"Unifies duplicate translations in a translation catalog.\n"
+"Finds duplicate translations of the same message ID.  Such duplicates are\n"
+"invalid input for other programs like msgfmt, msgmerge or msgcat.  By\n"
+"default, duplicates are merged together.  When using the --repeated option,\n"
+"only duplicates are output, and all other messages are discarded.  Comments\n"
+"and extracted comments will be cumulated, except that if --use-first is\n"
+"specified, they will be taken from the first translation.  File positions\n"
+"will be cumulated.  When using the --unique option, duplicates are discarded.\n"
+msgstr ""
+"翻訳カタログ中の重複した翻訳を統合します.\n"
+"同じメッセージ ID で重複した翻訳を見つけます. そのような重複は, msgfmt,\n"
+"msgmerge や msgcat のような他のプログラムの入力としては不正です. 標準では,\n"
+"重複したものはともにマージされます. --repeated オプションを使うと, 重複した\n"
+"ものだけが出力され, それ以外の全てのメッセージは無視されます. コメントや\n"
+"取り出されたコメントはそのまま残りますが, --use-first が指定されると\n"
+"最初の翻訳から取り出されます. ファイルの位置はそのまま残ります. --unique\n"
+"オプションを使うと重複は無視されます.\n"
+
+#: src/msguniq.c:365
+#, c-format
+msgid "  -d, --repeated              print only duplicates\n"
+msgstr "  -d, --repeated              重複しているもののみを表示\n"
+
+#: src/msguniq.c:367
+#, c-format
+msgid ""
+"  -u, --unique                print only unique messages, discard "
+"duplicates\n"
+msgstr ""
+"  -u, --unique                唯一のメッセージのみを表示し, 重複を無視\n"
+
+#: src/open-catalog.c:57 libgettextpo/gettext-po.c:102
+#: libgettextpo/gettext-po.c:150 libgettextpo/gettext-po.c:198
+msgid "<stdin>"
+msgstr "<標準入力>"
+
+#: src/po-charset.c:489
+#, c-format
+msgid ""
+"Charset \"%s\" is not a portable encoding name.\n"
+"Message conversion to user's charset might not work.\n"
+msgstr ""
+"文字セット \"%s\" は汎用のエンコーディグ名ではありません.\n"
+"ユーザの文字セットへのメッセージの変換はうまく働かないかも知れません.\n"
+
+#: src/po-charset.c:557
+#, c-format
+msgid ""
+"Charset \"%s\" is not supported. %s relies on iconv(),\n"
+"and iconv() does not support \"%s\".\n"
+msgstr ""
+"文字セット \"%s\" は実装されていません. %s は iconv() に依存しますが,\n"
+"iconv() は \"%s\" を実装していません.\n"
+
+#: src/po-charset.c:564 src/po-charset.c:612
+msgid ""
+"Installing GNU libiconv and then reinstalling GNU gettext\n"
+"would fix this problem.\n"
+msgstr ""
+"GNU libiconv をインストールしてから GNU gettext を再インストールすれば\n"
+"この問題は解決するでしょう.\n"
+
+#: src/po-charset.c:578 src/po-charset.c:616
+msgid "Continuing anyway, expect parse errors."
+msgstr "とにかく続けますが, 文法エラーを起こすでしょう."
+
+#: src/po-charset.c:580
+msgid "Continuing anyway."
+msgstr "とにかく続けます."
+
+#: src/po-charset.c:607
+#, c-format
+msgid ""
+"Charset \"%s\" is not supported. %s relies on iconv().\n"
+"This version was built without iconv().\n"
+msgstr ""
+"文字セット \"%s\" は実装されていません. %s は iconv() に依存します.\n"
+"このバージョンは iconv() 無しで作られました.\n"
+
+#: src/po-charset.c:644
+msgid ""
+"Charset missing in header.\n"
+"Message conversion to user's charset will not work.\n"
+msgstr ""
+"文字セットがヘッダにありません.\n"
+"ユーザの文字セットへのメッセージ変換が機能しません.\n"
+
+#: src/po-gram-gen.y:94
+#, c-format
+msgid "inconsistent use of #~"
+msgstr "一貫していない #~ の使用"
+
+#: src/po-gram-gen.y:244
+#, c-format
+msgid "missing 'msgstr[]' section"
+msgstr "'msgstr[]' の項がありません"
+
+#: src/po-gram-gen.y:253
+#, c-format
+msgid "missing 'msgid_plural' section"
+msgstr "'msgid_plural' の項がありません"
+
+#: src/po-gram-gen.y:261
+#, c-format
+msgid "missing 'msgstr' section"
+msgstr "'msgstr' の項がありません"
+
+#: src/po-gram-gen.y:400
+#, c-format
+msgid "first plural form has nonzero index"
+msgstr "最初の複数形に非ゼロの索引があります"
+
+#: src/po-gram-gen.y:402
+#, c-format
+msgid "plural form has wrong index"
+msgstr "複数形に間違った索引があります"
+
+#: src/po-lex.c:90 src/po-lex.c:109
+#, c-format
+msgid "too many errors, aborting"
+msgstr "エラーが多過ぎるので, 処理を打ち切ります"
+
+#: src/po-lex.c:437 src/po-lex.c:507 src/write-po.c:813 src/write-po.c:951
+#, c-format
+msgid "invalid multibyte sequence"
+msgstr "不正な複数バイトのシーケンス"
+
+#: src/po-lex.c:465
+#, c-format
+msgid "incomplete multibyte sequence at end of file"
+msgstr "ファイル終端に不完全な複数バイトのシーケンス"
+
+#: src/po-lex.c:475
+#, c-format
+msgid "incomplete multibyte sequence at end of line"
+msgstr "行末に不完全な複数バイトのシーケンス"
+
+#: src/po-lex.c:487
+msgid "iconv failure"
+msgstr "iconv の失敗"
+
+#: src/po-lex.c:744
+#, c-format
+msgid "keyword \"%s\" unknown"
+msgstr "キーワード \"%s\" は知りません"
+
+#: src/po-lex.c:854
+#, c-format
+msgid "invalid control sequence"
+msgstr "不正な制御シーケンス"
+
+#: src/po-lex.c:981
+#, c-format
+msgid "end-of-file within string"
+msgstr "文字列中の end-of-file"
+
+#: src/po-lex.c:987
+#, c-format
+msgid "end-of-line within string"
+msgstr "文字列中の end-of-line"
+
+#: src/po-lex.c:1008
+#, c-format
+msgid "context separator <EOT> within string"
+msgstr "文字列中の文脈セパレータ <EOT>"
+
+#: src/read-catalog.c:325 src/xgettext.c:1241
+#, c-format
+msgid "this file may not contain domain directives"
+msgstr "このファイルはドメイン命令を含んでいないようです"
+
+#: src/read-catalog.c:370
+msgid "duplicate message definition"
+msgstr "メッセージが二重に定義されています"
+
+#: src/read-catalog.c:372
+msgid "this is the location of the first definition"
+msgstr "これは最初の定義の場所です"
+
+#: src/read-desktop.c:267
+msgid "unterminated group name"
+msgstr "終端されていないグループ名"
+
+#: src/read-desktop.c:286
+msgid "invalid non-blank character"
+msgstr "不正な非ブランク文字"
+
+#: src/read-desktop.c:405
+#, c-format
+msgid "missing '=' after \"%s\""
+msgstr "\"%s\" の後に '=' がありません"
+
+#: src/read-desktop.c:468
+msgid "invalid non-blank line"
+msgstr "不正な非ブランク行"
+
+#: src/read-mo.c:107 src/read-mo.c:129 src/read-mo.c:167 src/read-mo.c:183
+#, c-format
+msgid "file \"%s\" is truncated"
+msgstr "ファイル \"%s\" が短く切り捨てられています"
+
+#: src/read-mo.c:132
+#, c-format
+msgid "file \"%s\" contains a not NUL terminated string"
+msgstr "ファイル \"%s\" は終端が NUL でない文字列を含んでいます"
+
+#: src/read-mo.c:175 src/read-mo.c:283
+#, c-format
+msgid "file \"%s\" is not in GNU .mo format"
+msgstr "ファイル \"%s\" は GNU の .mo 形式ではありません"
+
+#: src/read-mo.c:189
+#, c-format
+msgid "file \"%s\" contains a not NUL terminated string, at %s"
+msgstr "ファイル \"%s\" は %s に終端が NUL でない文字列を含んでいます"
+
+#: src/read-properties.c:228
+msgid "warning: invalid \\uxxxx syntax for Unicode character"
+msgstr "警告: Unicode 文字に対する不正な \\uxxxx 文法"
+
+#: src/read-stringtable.c:803
+msgid "warning: unterminated string"
+msgstr "警告: 文字列に終端がありません"
+
+#: src/read-stringtable.c:811
+msgid "warning: syntax error"
+msgstr "警告: 文法エラー"
+
+#: src/read-stringtable.c:872 src/read-stringtable.c:894
+msgid "warning: unterminated key/value pair"
+msgstr "警告: キー/値の組に終端がありません"
+
+#: src/read-stringtable.c:940
+msgid "warning: syntax error, expected ';' after string"
+msgstr "警告: 文法エラー, 文字列の後には ';'"
+
+#: src/read-stringtable.c:949
+msgid "warning: syntax error, expected '=' or ';' after string"
+msgstr "警告: 文法エラー, 文字列の後には '=' または ';'"
+
+#: src/recode-sr-latin.c:117
+#, c-format
+msgid "Written by %s and %s.\n"
+msgstr "作者 %s と %s.\n"
+
+#. TRANSLATORS: This is a proper name. The last name is
+#. (with Unicode escapes) "\u0160egan" or (with HTML entities)
+#. "&Scaron;egan".
+#. This is a proper name. See the gettext manual, section Names.
+#: src/recode-sr-latin.c:121
+msgid "Danilo Segan"
+msgstr "Danilo Segan"
+
+#: src/recode-sr-latin.c:154
+#, c-format, no-wrap
+msgid "Recode Serbian text from Cyrillic to Latin script.\n"
+msgstr "Recode Serbian テキスト キリル文字からラテン文字.\n"
+
+#: src/recode-sr-latin.c:157
+#, c-format, no-wrap
+msgid ""
+"The input text is read from standard input.  The converted text is output to\n"
+"standard output.\n"
+msgstr ""
+"入力テキストは標準入力から読み込まれます. 変換されたテキストは標準出力へ出力\n"
+"されます.\n"
+
+#: src/recode-sr-latin.c:340
+#, c-format
+msgid "input is not valid in \"%s\" encoding"
+msgstr "入力は \"%s\" エンコーディングにおいて有効ではありません"
+
+#: src/recode-sr-latin.c:368
+#, c-format
+msgid "error while converting from \"%s\" encoding to \"%s\" encoding"
+msgstr ""
+"\"%s\" エンコーディングから \"%s\" エンコーディングに変換する際にエラーが発生"
+"しました"
+
+#: src/urlget.c:160
+#, c-format
+msgid "expected two arguments"
+msgstr "引数は 2つです"
+
+#: src/urlget.c:177
+#, c-format
+msgid "Usage: %s [OPTION] URL FILE\n"
+msgstr "使用法: %s [オプション] URL ファイル\n"
+
+#: src/urlget.c:182
+#, c-format, no-wrap
+msgid ""
+"Fetches and outputs the contents of an URL.  If the URL cannot be accessed,\n"
+"the locally accessible FILE is used instead.\n"
+msgstr ""
+"URL の内容を取得し出力します. もしその URL にアクセスできなければ,\n"
+"ローカルにアクセス可能な FILE が代わりに使われます.\n"
+
+#: src/urlget.c:229
+#, c-format
+msgid "error reading \"%s\""
+msgstr "\"%s\" を読み込み中にエラーが発生しました"
+
+#: src/urlget.c:235
+#, c-format
+msgid "error writing stdout"
+msgstr "標準出力に書き込み中にエラーが発生しました"
+
+#: src/urlget.c:239
+#, c-format
+msgid "error after reading \"%s\""
+msgstr "\"%s\" を読み込んだ後にエラーが発生しました"
+
+#: src/urlget.c:265
+#, c-format
+msgid "Retrieving %s..."
+msgstr "%s を検索中..."
+
+#: src/urlget.c:309
+#, c-format
+msgid " timed out.\n"
+msgstr " タイムアウト.\n"
+
+#: src/urlget.c:446
+#, c-format
+msgid " failed.\n"
+msgstr " 失敗.\n"
+
+#: src/write-catalog.c:127
+msgid ""
+"Cannot output multiple translation domains into a single file with the "
+"specified output format. Try using PO file syntax instead."
+msgstr ""
+"複数の翻訳ドメインを指定された出力形式で単一のファイルに出力することはできま"
+"せん. 代わりに PO ファイルの文法を使ってみてください."
+
+#: src/write-catalog.c:130
+msgid ""
+"Cannot output multiple translation domains into a single file with the "
+"specified output format."
+msgstr ""
+"複数の翻訳ドメインを指定された出力形式で単一のファイルに出力することはできま"
+"せん."
+
+#: src/write-catalog.c:163
+msgid ""
+"message catalog has context dependent translations, but the output format "
+"does not support them."
+msgstr ""
+"メッセージカタログには文脈依存の翻訳がありますが, 出力形式はそれらを実装して"
+"いません."
+
+#: src/write-catalog.c:198
+msgid ""
+"message catalog has plural form translations, but the output format does not "
+"support them. Try generating a Java class using \"msgfmt --java\", instead "
+"of a properties file."
+msgstr ""
+"メッセージカタログには複数形の翻訳があります. しかし出力形式はそれを実装して"
+"いません. 属性ファイルの代わりに \"msgfmt --java\" を使って Java クラスを生成"
+"してみてください."
+
+#: src/write-catalog.c:203
+msgid ""
+"message catalog has plural form translations, but the output format does not "
+"support them."
+msgstr ""
+"メッセージカタログには複数形の翻訳がありますが, 出力形式はそれらを実装してい"
+"ません."
+
+#: src/write-catalog.c:232 src/write-catalog.c:276 src/write-xml.c:58
+#, c-format
+msgid "cannot create output file \"%s\""
+msgstr "出力ファイル \"%s\" を作ることができません"
+
+#: src/write-catalog.c:240 src/write-catalog.c:284
+msgid "standard output"
+msgstr "標準出力"
+
+#: src/write-csharp.c:703
+#, c-format
+msgid "failed to create directory \"%s\""
+msgstr "ディレクトリ \"%s\" の作成に失敗しました"
+
+#: src/write-csharp.c:766
+#, c-format
+msgid "compilation of C# class failed, please try --verbose"
+msgstr "C# クラスのコンパイルに失敗. --verbose を試してください"
+
+#: src/write-csharp.c:768
+#, c-format
+msgid "compilation of C# class failed"
+msgstr "C# クラスのコンパイルに失敗"
+
+#: src/write-desktop.c:162 src/write-mo.c:799 src/write-qt.c:737
+#: src/write-tcl.c:213
+#, c-format
+msgid "error while opening \"%s\" for writing"
+msgstr "\"%s\" に書き込もうとしてエラーが発生しました"
+
+#: src/write-java.c:1091
+#, c-format
+msgid "not a valid Java class name: %s"
+msgstr "正しい Java クラス名ではありません: %s"
+
+#: src/write-java.c:1210
+#, c-format
+msgid "compilation of Java class failed, please try --verbose or set $JAVAC"
+msgstr ""
+"Java クラスのコンパイルに失敗. --verbose を試すか $JAVAC を設定してください"
+
+#: src/write-java.c:1213
+#, c-format
+msgid "compilation of Java class failed, please try to set $JAVAC"
+msgstr "Java クラスのコンパイルに失敗. $JAVAC を設定してみてください"
+
+#: src/write-po.c:822
+msgid "incomplete multibyte sequence"
+msgstr "不完全な複数バイトのシーケンス"
+
+#: src/write-po.c:885
+#, c-format
+msgid ""
+"internationalized messages should not contain the '\\%c' escape sequence"
+msgstr ""
+"国際化されたメッセージは '\\%c' というエスケープシーケンスを含んではいけませ"
+"ん"
+
+#: src/write-po.c:1336 src/write-po.c:1460
+#, c-format
+msgid ""
+"The following msgctxt contains non-ASCII characters.\n"
+"This will cause problems to translators who use a character encoding\n"
+"different from yours. Consider using a pure ASCII msgctxt instead.\n"
+"%s\n"
+msgstr ""
+"次の msgctxt は ASCII 以外の文字を含んでいます.\n"
+"これは, あなたとは違う文字エンコーディングを使っている翻訳者にとって\n"
+"問題になります. 代わりに ASCII 文字だけからなる msgctxt を使うことを\n"
+"検討してください.\n"
+"%s\n"
+
+#: src/write-po.c:1348 src/write-po.c:1472
+#, c-format
+msgid ""
+"The following msgid contains non-ASCII characters.\n"
+"This will cause problems to translators who use a character encoding\n"
+"different from yours. Consider using a pure ASCII msgid instead.\n"
+"%s\n"
+msgstr ""
+"次の msgid は ASCII 以外の文字を含んでいます.\n"
+"これは, あなたとは違う文字エンコーディングを使っている翻訳者にとって\n"
+"問題になります. 代わりに ASCII 文字だけからなる msgid を使うことを\n"
+"検討してください.\n"
+"%s\n"
+
+#: src/write-qt.c:668
+msgid ""
+"message catalog has plural form translations\n"
+"but the Qt message catalog format doesn't support plural handling\n"
+msgstr ""
+"メッセージカタログには複数形の翻訳があります.\n"
+"しかし Qt メッセージカタログ形式は複数形の処理を実装していません\n"
+
+#: src/write-qt.c:694
+msgid ""
+"message catalog has msgctxt strings containing characters outside "
+"ISO-8859-1\n"
+"but the Qt message catalog format supports Unicode only in the translated\n"
+"strings, not in the context strings\n"
+msgstr ""
+"メッセージカタログには ISO-8859-1 以外の文字を含む msgctxt 文字列があります"
+"が\n"
+"Qt メッセージカタログ形式は翻訳文字列でのみ Unicode を実装し, 元の文字列\n"
+"では実装していません.\n"
+
+#: src/write-qt.c:718
+msgid ""
+"message catalog has msgid strings containing characters outside ISO-8859-1\n"
+"but the Qt message catalog format supports Unicode only in the translated\n"
+"strings, not in the untranslated strings\n"
+msgstr ""
+"メッセージカタログには ISO-8859-1 以外の文字を含む msgid 文字列がありますが\n"
+"Qt メッセージカタログ形式は翻訳文字列でのみ Unicode を実装し, 翻訳前の文字"
+"列\n"
+"では実装していません.\n"
+
+#: src/write-resources.c:95
+#, c-format
+msgid "error while writing to %s subprocess"
+msgstr "%s サブプロセスへの書き込み中にエラーが発生しました"
+
+#: src/write-resources.c:132
+msgid ""
+"message catalog has context dependent translations\n"
+"but the C# .resources format doesn't support contexts\n"
+msgstr ""
+"メッセージカタログには文脈依存の翻訳があります.\n"
+"しかし C# .resources 形式は文脈を実装していません\n"
+
+#: src/write-resources.c:151
+msgid ""
+"message catalog has plural form translations\n"
+"but the C# .resources format doesn't support plural handling\n"
+msgstr ""
+"メッセージカタログには複数形の翻訳があります.\n"
+"しかし C# .resources 形式は複数形の処理を実装していません\n"
+
+#: src/write-tcl.c:158
+msgid ""
+"message catalog has context dependent translations\n"
+"but the Tcl message catalog format doesn't support contexts\n"
+msgstr ""
+"メッセージカタログには文脈依存の翻訳があります.\n"
+"しかし Tcl メッセージカタログ形式は文脈を実装していません\n"
+
+#: src/write-tcl.c:177
+msgid ""
+"message catalog has plural form translations\n"
+"but the Tcl message catalog format doesn't support plural handling\n"
+msgstr ""
+"メッセージカタログには複数形の翻訳があります.\n"
+"しかし Tcl メッセージカタログ形式は複数形の処理を実装していません\n"
+
+#: src/x-awk.c:341 src/x-javascript.c:796 src/x-python.c:931
+#, c-format
+msgid "%s:%d: warning: unterminated string"
+msgstr "%s:%d: 警告: 文字列に終端がありません"
+
+#: src/x-awk.c:592
+#, c-format
+msgid "%s:%d: warning: unterminated regular expression"
+msgstr "%s:%d: 警告: 正規表現に終端がありません"
+
+#: src/x-c.c:1161
+#, c-format
+msgid "warning: invalid Unicode character"
+msgstr "警告: 不正な Unicode 文字"
+
+#: src/x-c.c:1475 src/x-csharp.c:1510 src/x-java.c:872 src/x-vala.c:619
+#, c-format
+msgid "%s:%d: warning: unterminated character constant"
+msgstr "%s:%d: 警告: 文字定数に終端がありません"
+
+#: src/x-c.c:1531 src/x-c.c:1582 src/x-vala.c:729
+#, c-format
+msgid "%s:%d: warning: unterminated string literal"
+msgstr "%s:%d: 警告: 文字列に終端がありません"
+
+#: src/x-csharp.c:225 src/xgettext.c:2365
+msgid "Please specify the source encoding through --from-code."
+msgstr "--from-code で入力エンコーディングを指定してください."
+
+#: src/x-csharp.c:270
+#, c-format
+msgid ""
+"%s:%d: Invalid multibyte sequence.\n"
+"Please specify the correct source encoding through --from-code.\n"
+msgstr ""
+"%s:%d: 不正なマルチバイトシーケンス.\n"
+"--from-code で正しい入力エンコーディングを指定してください.\n"
+
+#: src/x-csharp.c:286
+#, c-format
+msgid ""
+"%s:%d: Long incomplete multibyte sequence.\n"
+"Please specify the correct source encoding through --from-code.\n"
+msgstr ""
+"%s:%d: 長い不完全なマルチバイトシーケンス.\n"
+"--from-code で正しい入力エンコーディングを指定してください.\n"
+
+#: src/x-csharp.c:298
+#, c-format
+msgid ""
+"%s:%d: Incomplete multibyte sequence at end of file.\n"
+"Please specify the correct source encoding through --from-code.\n"
+msgstr ""
+"%s:%d: ファイルの最後に不完全なマルチバイトシーケンス.\n"
+"--from-code で正しい入力エンコーディングを指定してください.\n"
+
+#: src/x-csharp.c:307
+#, c-format
+msgid ""
+"%s:%d: Incomplete multibyte sequence at end of line.\n"
+"Please specify the correct source encoding through --from-code.\n"
+msgstr ""
+"%s:%d: 行末に不正なマルチバイトシーケンス.\n"
+"--from-code で正しい入力エンコーディングを指定してください.\n"
+
+#: src/x-csharp.c:316 src/x-javascript.c:322 src/x-python.c:374
+#, c-format
+msgid "%s:%d: iconv failure"
+msgstr "%s:%d: iconv の失敗"
+
+#: src/x-csharp.c:339
+#, c-format
+msgid ""
+"%s:%d: Invalid multibyte sequence.\n"
+"Please specify the source encoding through --from-code.\n"
+msgstr ""
+"%s:%d: 不正なマルチバイトシーケンス.\n"
+"--from-code で入力エンコーディングを指定してください.\n"
+
+#: src/x-csharp.c:1391 src/x-python.c:1138
+#, c-format
+msgid "%s:%d: warning: invalid Unicode character"
+msgstr "%s:%d: 警告: 不正な Unicode 文字"
+
+#: src/x-csharp.c:1513 src/x-java.c:875
+#, c-format
+msgid "%s:%d: warning: unterminated string constant"
+msgstr "%s:%d: 警告: 文字列定数に終端がありません"
+
+#: src/x-csharp.c:2019 src/x-java.c:1369
+#, c-format
+msgid "%s:%d: warning: ')' found where '}' was expected"
+msgstr "%s:%d: 警告: '}' があるべきところに ')' があります"
+
+#: src/x-csharp.c:2053 src/x-java.c:1403
+#, c-format
+msgid "%s:%d: warning: '}' found where ')' was expected"
+msgstr "%s:%d: 警告: ')' があるべきところに '}' があります"
+
+#: src/xgettext.c:580
+#, c-format
+msgid "'%s' is not a valid encoding name.  Using ASCII as fallback.\n"
+msgstr "'%s' は有効なエンコード名ではありません. 代わりに ASCII を使用.\n"
+
+#: src/xgettext.c:651
+#, c-format
+msgid "syntax check '%s' unknown"
+msgstr "構文チェック '%s' は知りません"
+
+#: src/xgettext.c:660
+#, c-format
+msgid "sentence end type '%s' unknown"
+msgstr "文末のタイプ '%s' は知りません"
+
+#: src/xgettext.c:714
+#, c-format
+msgid "--join-existing cannot be used when output is written to stdout"
+msgstr "--join-existing は出力先が標準出力の場合には使えません"
+
+#: src/xgettext.c:719
+#, c-format
+msgid "xgettext cannot work without keywords to look for"
+msgstr "xgettext は検索するキーワードがなければ動きません"
+
+#: src/xgettext.c:855
+#, c-format
+msgid "warning: ITS rule file '%s' does not exist"
+msgstr "警告: ITS ルールファイル '%s' がありません"
+
+#: src/xgettext.c:936
+#, c-format
+msgid ""
+"warning: ITS rule file '%s' does not exist; check your gettext installation"
+msgstr ""
+"警告: ITS ルールファイル '%s' がありません. gettext のインストールを確認"
+
+#: src/xgettext.c:954
+#, c-format
+msgid "warning: file '%s' extension '%s' is unknown; will try C"
+msgstr "警告: ファイル '%s' (拡張子 '%s') は未知の形式なので C 言語を試します"
+
+#: src/xgettext.c:1040
+#, c-format
+msgid "Extract translatable strings from given input files.\n"
+msgstr "与えられた入力ファイルから翻訳可能な文字列を取り出します.\n"
+
+#: src/xgettext.c:1063
+#, c-format
+msgid ""
+"  -d, --default-domain=NAME   use NAME.po for output (instead of messages."
+"po)\n"
+msgstr ""
+"  -d, --default-domain=NAME   出力に NAME.po を使用 (message.po の代わり)\n"
+
+#: src/xgettext.c:1065
+#, c-format
+msgid "  -o, --output=FILE           write output to specified file\n"
+msgstr "  -o, --output=FILE           指定されたファイルに出力\n"
+
+#: src/xgettext.c:1067
+#, c-format
+msgid ""
+"  -p, --output-dir=DIR        output files will be placed in directory DIR\n"
+msgstr "  -p, --output-dir=DIR        ディレクトリ DIR にファイルを出力\n"
+
+#: src/xgettext.c:1072
+#, c-format
+msgid "Choice of input file language:\n"
+msgstr "入力ファイル言語の選択:\n"
+
+#: src/xgettext.c:1074
+#, c-format
+msgid ""
+"  -L, --language=NAME         recognise the specified language\n"
+"                                (C, C++, ObjectiveC, PO, Shell, Python, "
+"Lisp,\n"
+"                                EmacsLisp, librep, Scheme, Smalltalk, Java,\n"
+"                                JavaProperties, C#, awk, YCP, Tcl, Perl, "
+"PHP,\n"
+"                                GCC-source, NXStringTable, RST, Glade, Lua,\n"
+"                                JavaScript, Vala, Desktop)\n"
+msgstr ""
+"  -L, --language=NAME         指定された言語を認識\n"
+"                                (C, C++, ObjectiveC, PO, Shell, Python, "
+"Lisp,\n"
+"                                EmacsLisp, librep, Scheme, Smalltalk, Java,\n"
+"                                JavaProperties, C#, awk, YCP, Tcl, Perl, "
+"PHP,\n"
+"                                GCC-source, NXStringTable, RST, Glade, Lua,\n"
+"                                JavaScript, Vala, Desktop)\n"
+
+#: src/xgettext.c:1081
+#, c-format
+msgid "  -C, --c++                   shorthand for --language=C++\n"
+msgstr "  -C, --c++                   --language=C++ の短縮形\n"
+
+#: src/xgettext.c:1083
+#, c-format
+msgid ""
+"By default the language is guessed depending on the input file name "
+"extension.\n"
+msgstr "標準で言語は入力ファイルの拡張子で識別されます.\n"
+
+#: src/xgettext.c:1088
+#, c-format
+msgid ""
+"      --from-code=NAME        encoding of input files\n"
+"                                (except for Python, Tcl, Glade)\n"
+msgstr ""
+"      --from-code=NAME           入力ファイルのエンコーディング\n"
+"                                         (Python, Tcl, Glade 以外)\n"
+
+#: src/xgettext.c:1091
+#, c-format
+msgid "By default the input files are assumed to be in ASCII.\n"
+msgstr "標準では, 入力ファイルは ASCII と仮定されます.\n"
+
+#: src/xgettext.c:1096
+#, c-format
+msgid "  -j, --join-existing         join messages with existing file\n"
+msgstr "  -j, --join-existing         存在するファイルとメッセージを結合\n"
+
+#: src/xgettext.c:1098
+#, c-format
+msgid "  -x, --exclude-file=FILE.po  entries from FILE.po are not extracted\n"
+msgstr "  -x, --exclude-file=FILE.po  FILE.po からの項目は抽出されない\n"
+
+#: src/xgettext.c:1100
+#, c-format
+msgid ""
+"  -cTAG, --add-comments=TAG   place comment blocks starting with TAG and\n"
+"                                preceding keyword lines in output file\n"
+"  -c, --add-comments          place all comment blocks preceding keyword "
+"lines\n"
+"                                in output file\n"
+msgstr ""
+"  -cTAG, --add-comments=TAG   TAG からキーワード行までのコメント部分を\n"
+"                                出力ファイルに入れる\n"
+"  -c, --add-comments[=TAG]    キーワード行までの全てのコメント部分を\n"
+"                                出力ファイルに入れる\n"
+
+#: src/xgettext.c:1105
+#, c-format
+msgid ""
+"      --check=NAME            perform syntax check on messages\n"
+"                                (ellipsis-unicode, space-ellipsis,\n"
+"                                 quote-unicode, bullet-unicode)\n"
+msgstr ""
+"      --check=NAME            メッセージに対して構文チェックを実行\n"
+"                                (ellipsis-unicode, space-ellipsis,\n"
+"                                 quote-unicode, bullet-unicode)\n"
+
+#: src/xgettext.c:1109
+#, c-format
+msgid ""
+"      --sentence-end=TYPE     type describing the end of sentence\n"
+"                                (single-space, which is the default, \n"
+"                                 or double-space)\n"
+msgstr ""
+"      --sentence-end=TYPE     文末の記述タイプ\n"
+"                                (single-space または double-space, \n"
+"                                 標準は single-space)\n"
+
+#: src/xgettext.c:1114
+#, c-format
+msgid "Language specific options:\n"
+msgstr "言語指定オプション:\n"
+
+#: src/xgettext.c:1116
+#, c-format
+msgid "  -a, --extract-all           extract all strings\n"
+msgstr "  -a, --extract-all           全ての文字列を抽出\n"
+
+#: src/xgettext.c:1118
+#, c-format
+msgid ""
+"                                (only languages C, C++, ObjectiveC, Shell,\n"
+"                                Python, Lisp, EmacsLisp, librep, Scheme, "
+"Java,\n"
+"                                C#, awk, Tcl, Perl, PHP, GCC-source, Glade,\n"
+"                                Lua, JavaScript, Vala)\n"
+msgstr ""
+"                                (C, C++, ObjectiveC, Shell,\n"
+"                                Python, Lisp, EmacsLisp, librep, Scheme, "
+"Java,\n"
+"                                C#, awk. Tcl, Perl, PHP, GCC-source, Glade,\n"
+"                                Lua, JavaScript, Vala 言語のみ)\n"
+
+#: src/xgettext.c:1126
+#, c-format
+msgid ""
+"                                (only languages C, C++, ObjectiveC, Shell,\n"
+"                                Python, Lisp, EmacsLisp, librep, Scheme, "
+"Java,\n"
+"                                C#, awk, Tcl, Perl, PHP, GCC-source, Glade,\n"
+"                                Lua, JavaScript, Vala, Desktop)\n"
+msgstr ""
+"                                (次の言語のみ: C, C++, ObjectiveC, Shell,\n"
+"                                Python, Lisp, EmacsLisp, librep, Scheme, "
+"Java,\n"
+"                                C#, awk, Tcl, Perl, PHP, GCC-source, Glade,\n"
+"                                Lua, JavaScript, Vala, Desktop)\n"
+
+#: src/xgettext.c:1131
+#, c-format
+msgid ""
+"      --flag=WORD:ARG:FLAG    additional flag for strings inside the "
+"argument\n"
+"                              number ARG of keyword WORD\n"
+msgstr ""
+"      --flag=WORD:ARG:FLAG    キーワード WORD の引数の数 ARG 以内の文字列に対"
+"する\n"
+"                              付加フラグ\n"
+
+#: src/xgettext.c:1134
+#, c-format
+msgid ""
+"                                (only languages C, C++, ObjectiveC, Shell,\n"
+"                                Python, Lisp, EmacsLisp, librep, Scheme, "
+"Java,\n"
+"                                C#, awk, YCP, Tcl, Perl, PHP, GCC-source,\n"
+"                                Lua, JavaScript, Vala)\n"
+msgstr ""
+"                                (C, C++, ObjectiveC, Shell,\n"
+"                                Python, Lisp, EmacsLisp, librep, Scheme, "
+"Java,\n"
+"                                C#, awk, YCP, Tcl, Perl, PHP, GCC-source,\n"
+"                                Lua, JavaScript, Vala 言語のみ)\n"
+
+#: src/xgettext.c:1139
+#, c-format
+msgid "  -T, --trigraphs             understand ANSI C trigraphs for input\n"
+msgstr "  -T, --trigraphs             入力された ANSI C トライグラフを認識\n"
+
+#: src/xgettext.c:1141
+#, c-format
+msgid "                                (only languages C, C++, ObjectiveC)\n"
+msgstr "                                (C, C++, ObjectiveC 言語のみ)\n"
+
+#: src/xgettext.c:1143
+#, c-format
+msgid "      --its=FILE              apply ITS rules from FILE\n"
+msgstr "      --its=FILE              FILE から ITS ルールを適用\n"
+
+#: src/xgettext.c:1145
+#, c-format
+msgid "                                (only XML based languages)\n"
+msgstr "                                (XMLベースの言語のみ)\n"
+
+#: src/xgettext.c:1147
+#, c-format
+msgid "      --qt                    recognize Qt format strings\n"
+msgstr "      --qt                    Qt 形式の文字列を認識\n"
+
+#: src/xgettext.c:1149 src/xgettext.c:1153 src/xgettext.c:1157
+#, c-format
+msgid "                                (only language C++)\n"
+msgstr "                                (C++ 言語のみ)\n"
+
+#: src/xgettext.c:1151
+#, c-format
+msgid "      --kde                   recognize KDE 4 format strings\n"
+msgstr "      --kde                   KDE 4 形式の文字列を認識\n"
+
+#: src/xgettext.c:1155
+#, c-format
+msgid "      --boost                 recognize Boost format strings\n"
+msgstr "      --boost                 Boost 形式の文字列を認識\n"
+
+#: src/xgettext.c:1159
+#, c-format
+msgid ""
+"      --debug                 more detailed formatstring recognition result\n"
+msgstr "      --debug                 より詳細なフォーマット文字列の認識結果\n"
+
+#: src/xgettext.c:1184
+#, c-format
+msgid "      --properties-output     write out a Java .properties file\n"
+msgstr "      --properties-output     Java .properties ファイルを出力\n"
+
+#: src/xgettext.c:1188
+#, c-format
+msgid "      --itstool               write out itstool comments\n"
+msgstr "      --itstool               itstool コメントを書き出し\n"
+
+#: src/xgettext.c:1201
+#, c-format
+msgid "      --copyright-holder=STRING  set copyright holder in output\n"
+msgstr "      --copyright-holder=STRING  著作権保有者を出力で設定\n"
+
+#: src/xgettext.c:1203
+#, c-format
+msgid ""
+"      --foreign-user          omit FSF copyright in output for foreign user\n"
+msgstr ""
+"      --foreign-user          GNU プロジェクト以外のユーザ向けに出力中の FSF "
+"著作権を省略\n"
+
+#: src/xgettext.c:1205
+#, c-format
+msgid "      --package-name=PACKAGE  set package name in output\n"
+msgstr "      --package-name=PACKAGE  パッケージ名を出力で設定\n"
+
+#: src/xgettext.c:1207
+#, c-format
+msgid "      --package-version=VERSION  set package version in output\n"
+msgstr "      --package-version=VERSION  パッケージバージョンを出力で設定\n"
+
+#: src/xgettext.c:1209
+#, c-format
+msgid ""
+"      --msgid-bugs-address=EMAIL@ADDRESS  set report address for msgid bugs\n"
+msgstr ""
+"      --msgid-bugs-address=EMAIL@ADDRESS  msgid のバグ報告用アドレスを設定\n"
+
+#: src/xgettext.c:1211
+#, c-format
+msgid ""
+"  -m[STRING], --msgstr-prefix[=STRING]  use STRING or \"\" as prefix for "
+"msgstr\n"
+"                                values\n"
+msgstr ""
+"  -m[STRING], --msgstr-prefix[=STRING]  msgstr 項目の接頭辞に STRING か "
+"\"\"\n"
+"                                を使用\n"
+
+#: src/xgettext.c:1214
+#, c-format
+msgid ""
+"  -M[STRING], --msgstr-suffix[=STRING]  use STRING or \"\" as suffix for "
+"msgstr\n"
+"                                values\n"
+msgstr ""
+"  -M[STRING], --msgstr-suffix[=STRING]  msgstr 項目の接尾辞に STRING か "
+"\"\"\n"
+"                                を使用\n"
+
+#: src/xgettext.c:2040
+#, c-format
+msgid ""
+"A --flag argument doesn't have the <keyword>:<argnum>:[pass-]<flag> syntax: "
+"%s"
+msgstr ""
+"--flag 引数は <keyword>:<argnum>:[pass-]<flag> 文法を持っていません: %s"
+
+#: src/xgettext.c:2165
+msgid "standard input"
+msgstr "標準入力"
+
+#: src/xgettext.c:2330
+#, c-format
+msgid "Non-ASCII character at %s%s."
+msgstr "%s%s に非ASCII文字."
+
+#: src/xgettext.c:2334
+#, c-format
+msgid "Non-ASCII comment at or before %s%s."
+msgstr "%s%s またはその前に非ASCIIコメント."
+
+#: src/xgettext.c:2339
+#, c-format
+msgid "Non-ASCII string at %s%s."
+msgstr "%s%s に非ASCII文字列."
+
+#: src/xgettext.c:2445 src/xgettext.c:2478 src/xgettext.c:2543
+#, c-format
+msgid "%s%s: warning: "
+msgstr "%s%s: 警告: "
+
+#: src/xgettext.c:2448
+#, c-format
+msgid ""
+"Although being used in a format string position, the %s is not a valid %s "
+"format string. Reason: %s\n"
+msgstr ""
+"フォーマット文字列の位置で使われていますが, %s は正しい %s フォーマット文字列"
+"ではありません. 理由: %s\n"
+
+#: src/xgettext.c:2449
+#, c-format
+msgid ""
+"Although declared as such, the %s is not a valid %s format string. Reason: "
+"%s\n"
+msgstr ""
+"そのように宣言されていますが, '%s' は正しい %s 形式の文字列ではありません. 理"
+"由: %s\n"
+
+#: src/xgettext.c:2480
+#, c-format
+msgid ""
+"'%s' format string with unnamed arguments cannot be properly localized:\n"
+"The translator cannot reorder the arguments.\n"
+"Please consider using a format string with named arguments,\n"
+"and a mapping instead of a tuple for the arguments.\n"
+msgstr ""
+"名無し引数のある '%s' フォーマット文字列を適切に特定することができません:\n"
+"翻訳者は引数の順序を変えることができません.\n"
+"名前付き引数のあるフォーマット文字列を使うこと, 且つ引数に対して組 (tuple)\n"
+"の代わりにマッピングを使うことを検討してください.\n"
+
+#: src/xgettext.c:2545
+msgid ""
+"Empty msgid.  It is reserved by GNU gettext:\n"
+"gettext(\"\") returns the header entry with\n"
+"meta information, not the empty string.\n"
+msgstr ""
+"空の msgid. GNU gettext で予約されています:\n"
+"gettext(\"\") はメタ情報の付いたヘッダエントリを返しますが\n"
+"空の文字列は返しません.\n"
+
+#: src/xgettext.c:3282
+#, c-format
+msgid "ambiguous argument specification for keyword '%.*s'"
+msgstr "キーワード '%.*s' に対する引数指定が曖昧です"
+
+#: src/xgettext.c:3309
+#, c-format
+msgid "warning: missing context for keyword '%.*s'"
+msgstr "警告: キーワード '%.*s' に対する文脈がありません"
+
+#: src/xgettext.c:3334
+#, c-format
+msgid "warning: missing context for plural argument of keyword '%.*s'"
+msgstr "警告: キーワード '%.*s' の複数形引数に文脈がありません"
+
+#: src/xgettext.c:3355
+#, c-format
+msgid "context mismatch between singular and plural form"
+msgstr "文脈が単数系と複数形で一致しません"
+
+#: src/xgettext.c:3730
+msgid ""
+"The option --msgid-bugs-address was not specified.\n"
+"If you are using a 'Makevars' file, please specify\n"
+"the MSGID_BUGS_ADDRESS variable there; otherwise please\n"
+"specify an --msgid-bugs-address command line option.\n"
+msgstr ""
+"オプション --msgid-bugs-address が指定されていません.\n"
+"'Makevars' ファイルを使っている場合は MSGID_BUGS_ADDRESS 変数を指定してくださ"
+"い.\n"
+"もしくは, コマンドラインオプション --msgid-bugs-address を指定してください.\n"
+
+#: src/xgettext.c:3948
+#, c-format
+msgid "language '%s' unknown"
+msgstr "言語 '%s' は知りません"
+
+#: src/x-java.c:494
+#, c-format
+msgid "%s:%d: warning: lone surrogate U+%04X"
+msgstr "%s:%d: 警告: 長いサロゲート U+%04X"
+
+#: src/x-javascript.c:231
+msgid "Please specify the source encoding through --from-code\n"
+msgstr "--from-code で入力エンコーディングを指定してください\n"
+
+#: src/x-javascript.c:276
+#, c-format
+msgid ""
+"%s:%d: Invalid multibyte sequence.\n"
+"Please specify the correct source encoding through --from-code\n"
+msgstr ""
+"%s:%d: 不正なマルチバイトシーケンス.\n"
+"--from-code で正しい入力エンコーディングを指定してください\n"
+
+#: src/x-javascript.c:292
+#, c-format
+msgid ""
+"%s:%d: Long incomplete multibyte sequence.\n"
+"Please specify the correct source encoding through --from-code\n"
+msgstr ""
+"%s:%d: 長い不完全なマルチバイトシーケンス.\n"
+"--from-code で正しい入力エンコーディングを指定してください\n"
+
+#: src/x-javascript.c:304
+#, c-format
+msgid ""
+"%s:%d: Incomplete multibyte sequence at end of file.\n"
+"Please specify the correct source encoding through --from-code\n"
+msgstr ""
+"%s:%d: ファイルの最後に不完全なマルチバイトシーケンス.\n"
+"--from-code で正しい入力エンコーディングを指定してください\n"
+
+#: src/x-javascript.c:313
+#, c-format
+msgid ""
+"%s:%d: Incomplete multibyte sequence at end of line.\n"
+"Please specify the correct source encoding through --from-code\n"
+msgstr ""
+"%s:%d: 行末に不正なマルチバイトシーケンス.\n"
+"--from-code で正しい入力エンコーディングを指定してください\n"
+
+#: src/x-javascript.c:345
+#, c-format
+msgid ""
+"%s:%d: Invalid multibyte sequence.\n"
+"Please specify the source encoding through --from-code\n"
+msgstr ""
+"%s:%d: 不正なマルチバイトシーケンス.\n"
+"--from-code で入力エンコーディングを指定してください\n"
+
+#: src/x-javascript.c:955
+#, c-format
+msgid "%s:%d: warning: RegExp literal terminated too early"
+msgstr "%s:%d: 警告: RegExp リテラルの終端が早過ぎます"
+
+#: src/x-javascript.c:1056
+#, c-format
+msgid "%s:%d: warning: %s is not allowed"
+msgstr "%s:%d: 警告: %s は許可されていません"
+
+#: src/x-javascript.c:1070
+#, c-format
+msgid "%s:%d: warning: unterminated XML markup"
+msgstr "%s:%d: 警告: 終端のない XML マークアップ"
+
+#: src/x-perl.c:308
+#, c-format
+msgid "%s:%d: can't find string terminator \"%s\" anywhere before EOF"
+msgstr "%s:%d: EOF の前のどこにも文字列終端 \"%s\" が見つかりません"
+
+#: src/x-perl.c:1043
+#, c-format
+msgid "%s:%d: missing right brace on \\x{HEXNUMBER}"
+msgstr "%s:%d: \\x{HEXNUMBER} に右括弧がありません"
+
+#: src/x-perl.c:1163
+#, c-format
+msgid "%s:%d: invalid interpolation (\"\\l\") of 8bit character \"%c\""
+msgstr "%s:%d: 不正な補間 (\"\\l\") 8bit 文字 \"%c\""
+
+#: src/x-perl.c:1183
+#, c-format
+msgid "%s:%d: invalid interpolation (\"\\u\") of 8bit character \"%c\""
+msgstr "%s:%d: 不正な補間 (\"\\u\") 8bit 文字 \"%c\""
+
+#: src/x-perl.c:1217
+#, c-format
+msgid "%s:%d: invalid variable interpolation at \"%c\""
+msgstr "%s:%d: \"%c\" に不正な変数補間"
+
+#: src/x-perl.c:1230
+#, c-format
+msgid "%s:%d: invalid interpolation (\"\\L\") of 8bit character \"%c\""
+msgstr "%s:%d: 不正な補間 (\"\\L\") 8bit 文字 \"%c\""
+
+#: src/x-perl.c:1247
+#, c-format
+msgid "%s:%d: invalid interpolation (\"\\U\") of 8bit character \"%c\""
+msgstr "%s:%d: 不正な補間 (\"\\U\") 8bit 文字 \"%c\""
+
+#: src/x-python.c:278
+msgid ""
+"Please specify the source encoding through --from-code or through a comment\n"
+"as specified in http://www.python.org/peps/pep-0263.html.\n"
+msgstr ""
+"--from-code または http://www.python.org/peps/pep-0263.html にあるコメント"
+"を\n"
+"使って入力エンコーディングを指定してください.\n"
+
+#: src/x-python.c:324
+#, c-format
+msgid ""
+"%s:%d: Invalid multibyte sequence.\n"
+"Please specify the correct source encoding through --from-code or through a\n"
+"comment as specified in http://www.python.org/peps/pep-0263.html.\n"
+msgstr ""
+"%s:%d: 無効なマルチバイトシーケンス.\n"
+"--from-code または http://www.python.org/peps/pep-0263.html にあるコメント"
+"を\n"
+"使って正しい入力エンコーディングを指定してください.\n"
+
+#: src/x-python.c:341
+#, c-format
+msgid ""
+"%s:%d: Long incomplete multibyte sequence.\n"
+"Please specify the correct source encoding through --from-code or through a\n"
+"comment as specified in http://www.python.org/peps/pep-0263.html.\n"
+msgstr ""
+"%s:%d: 長い不完全なマルチバイトシーケンス.\n"
+"--from-code または http://www.python.org/peps/pep-0263.html にあるコメント"
+"を\n"
+"使って正しい入力エンコーディングを指定してください.\n"
+
+#: src/x-python.c:354
+#, c-format
+msgid ""
+"%s:%d: Incomplete multibyte sequence at end of file.\n"
+"Please specify the correct source encoding through --from-code or through a\n"
+"comment as specified in http://www.python.org/peps/pep-0263.html.\n"
+msgstr ""
+"%s:%d: ファイルの最後に不完全なマルチバイトシーケンス.\n"
+"--from-code または http://www.python.org/peps/pep-0263.html にあるコメント"
+"を\n"
+"使って正しい入力エンコーディングを指定してください.\n"
+
+#: src/x-python.c:364
+#, c-format
+msgid ""
+"%s:%d: Incomplete multibyte sequence at end of line.\n"
+"Please specify the correct source encoding through --from-code or through a\n"
+"comment as specified in http://www.python.org/peps/pep-0263.html.\n"
+msgstr ""
+"%s:%d: 行末に不完全なマルチバイトシーケンス.\n"
+"--from-code または http://www.python.org/peps/pep-0263.html にあるコメント"
+"を\n"
+"使って正しい入力エンコーディングを指定してください.\n"
+
+#: src/x-python.c:397
+#, c-format
+msgid ""
+"%s:%d: Invalid multibyte sequence.\n"
+"Please specify the source encoding through --from-code or through a comment\n"
+"as specified in http://www.python.org/peps/pep-0263.html.\n"
+msgstr ""
+"%s:%d: 無効なマルチバイトシーケンス.\n"
+"--from-code または http://www.python.org/peps/pep-0263.html にあるコメント"
+"を\n"
+"使って正しい入力エンコーディングを指定してください.\n"
+
+#: src/x-python.c:722
+#, c-format
+msgid "Unknown encoding \"%s\". Proceeding with ASCII instead."
+msgstr "未知のエンコーディング \"%s\". 代わりに ASCII として進めます."
+
+#: src/x-rst.c:108
+#, c-format
+msgid "%s:%d: invalid string definition"
+msgstr "%s:%d: 不正な文字列定義"
+
+#: src/x-rst.c:172
+#, c-format
+msgid "%s:%d: missing number after #"
+msgstr "%s:%d: # の後に数字がありません"
+
+#: src/x-rst.c:207
+#, c-format
+msgid "%s:%d: invalid string expression"
+msgstr "%s:%d: 不正な文字列表現"
+
+#: src/x-sh.c:1075
+#, c-format
+msgid ""
+"%s:%lu: warning: the syntax $\"...\" is deprecated due to security reasons; "
+"use eval_gettext instead"
+msgstr ""
+"%s:%lu: 警告: 文法 $\"...\" はセキュリティ上の理由で推奨されません. 代わりに "
+"eval_gettext を使ってください"
+
+#: src/x-vala.c:414
+#, c-format
+msgid "%s:%d: warning: regular expression literal terminated too early"
+msgstr "%s:%d: 警告: 正規表現リテラルの終端が早過ぎます"
+
+#: libgettextpo/gettext-po.c:84
+msgid "<unnamed>"
+msgstr "<名前なし>"
+
+#: libgettextpo/markup.c:366 libgettextpo/markup.c:449
+msgid "invalid UTF-8 sequence"
+msgstr "不正な UTF-8 シーケンス"
+
+#: libgettextpo/markup.c:377
+#, c-format
+msgid "'%s' is not a valid name: %c"
+msgstr "'%s' は正しい名前ではありません: %c"
+
+#: libgettextpo/markup.c:397
+#, c-format
+msgid "'%s' is not a valid name: '%c'"
+msgstr "'%s' は正しい名前ではありません: '%c'"
+
+#: libgettextpo/markup.c:523 libgettextpo/markup.c:534
+#: libgettextpo/markup.c:559
+#, c-format
+msgid "invalid character reference: %s"
+msgstr "不正な文字参照: %s"
+
+#: libgettextpo/markup.c:526
+msgid "not a valid number specification"
+msgstr "数値の指定が不正"
+
+#: libgettextpo/markup.c:535 libgettextpo/markup.c:606
+msgid "no ending ';'"
+msgstr "末尾 ';' がありません"
+
+#: libgettextpo/markup.c:560
+msgid "non-permitted character"
+msgstr "許可されていない文字"
+
+#: libgettextpo/markup.c:599
+msgid "empty"
+msgstr "空"
+
+#: libgettextpo/markup.c:604
+msgid "unknown"
+msgstr "未知"
+
+#: libgettextpo/markup.c:608
+#, c-format
+msgid "invalid entity reference: %s"
+msgstr "無効なエンティティ参照: %s"
+
+#: libgettextpo/markup.c:959
+msgid "document must begin with an element"
+msgstr "文書は要素から始まらなければなりません"
+
+#: libgettextpo/markup.c:994 libgettextpo/markup.c:1301
+#: libgettextpo/markup.c:1332
+#, c-format
+msgid "invalid character after '%s'"
+msgstr "'%s' の後の不正な文字"
+
+#: libgettextpo/markup.c:1031 libgettextpo/markup.c:1107
+#, c-format
+msgid "missing '%c'"
+msgstr "'%c' がありません"
+
+#: libgettextpo/markup.c:1140 libgettextpo/markup.c:1176
+#, c-format
+msgid "missing '%c' or '%c'"
+msgstr "'%c' または '%c' がありません"
+
+#: libgettextpo/markup.c:1333
+msgid "a close element name"
+msgstr "近い要素名"
+
+#: libgettextpo/markup.c:1339 libgettextpo/markup.c:1344
+msgid "element is closed"
+msgstr "要素は閉じられています"
+
+#: libgettextpo/markup.c:1475
+msgid "empty document"
+msgstr "空の文書"
+
+#: libgettextpo/markup.c:1488
+msgid "after '<'"
+msgstr "'<' の後"
+
+#: libgettextpo/markup.c:1495 libgettextpo/markup.c:1527
+msgid "elements still open"
+msgstr "要素はまだ開いています"
+
+#: libgettextpo/markup.c:1500
+msgid "missing '>'"
+msgstr "'>' が足りません"
+
+#: libgettextpo/markup.c:1504
+msgid "inside an element name"
+msgstr "要素名の中"
+
+#: libgettextpo/markup.c:1509
+msgid "inside an attribute name"
+msgstr "属性名の中"
+
+#: libgettextpo/markup.c:1513
+msgid "inside an open tag"
+msgstr "開いたタグの中"
+
+#: libgettextpo/markup.c:1517
+msgid "after '='"
+msgstr "'=' の後"
+
+#: libgettextpo/markup.c:1522
+msgid "inside an attribute value"
+msgstr "属性値の中"
+
+#: libgettextpo/markup.c:1533
+msgid "inside the close tag"
+msgstr "閉じられたタグの中"
+
+#: libgettextpo/markup.c:1537
+msgid "inside a comment or processing instruction"
+msgstr "コメントまたは処理命令の中"
+
+#: libgettextpo/markup.c:1548
+#, c-format
+msgid "document ended unexpectedly: %s"
+msgstr "文書が想定外に終了: %s"
+
+#~ msgid "The root element <%s> is not allowed in a valid CLDR file"
+#~ msgstr "ルート要素 <%s> を有効な CLDR ファイルに入れることはできません"

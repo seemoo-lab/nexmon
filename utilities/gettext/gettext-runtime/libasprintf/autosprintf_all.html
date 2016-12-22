@@ -1,0 +1,174 @@
+<HTML>
+<HEAD>
+<!-- This HTML file has been created by texi2html 1.52b
+     from autosprintf.texi on 1 September 2007 -->
+
+<META HTTP-EQUIV="content-type" CONTENT="text/html; charset=UTF-8">
+<TITLE>GNU autosprintf</TITLE>
+</HEAD>
+<BODY>
+<H1>GNU autosprintf, version 1.0</H1>
+<H2>Formatted Output to Strings in C++</H2>
+<ADDRESS>Bruno Haible</ADDRESS>
+<P>
+<P><HR><P>
+<H1>Table of Contents</H1>
+<UL>
+<LI><A NAME="TOC1" HREF="autosprintf.html#SEC1">1  Introduction</A>
+<LI><A NAME="TOC2" HREF="autosprintf.html#SEC2">2  The <CODE>autosprintf</CODE> class</A>
+<LI><A NAME="TOC3" HREF="autosprintf.html#SEC3">3  Using <CODE>autosprintf</CODE> in own programs</A>
+</UL>
+<P><HR><P>
+
+<P>
+Copyright (C) 2002-2003, 2006-2007, 2015-2016 Free Software Foundation, Inc.
+
+</P>
+<P>
+This manual is free documentation.  It is dually licensed under the
+GNU FDL and the GNU GPL.  This means that you can redistribute this
+manual under either of these two licenses, at your choice.
+
+</P>
+<P>
+This manual is covered by the GNU FDL.  Permission is granted to copy,
+distribute and/or modify this document under the terms of the
+GNU Free Documentation License (FDL), either version 1.2 of the
+License, or (at your option) any later version published by the
+Free Software Foundation (FSF); with no Invariant Sections, with no
+Front-Cover Text, and with no Back-Cover Texts.
+A copy of the license is at <A HREF="http://www.gnu.org/licenses/fdl.html">http://www.gnu.org/licenses/fdl.html</A>.
+
+</P>
+<P>
+This manual is covered by the GNU GPL.  You can redistribute it and/or
+modify it under the terms of the GNU General Public License (GPL), either
+version 2 of the License, or (at your option) any later version published
+by the Free Software Foundation (FSF).
+A copy of the license is at <A HREF="http://www.gnu.org/licenses/gpl.html">http://www.gnu.org/licenses/gpl.html</A>.
+
+</P>
+
+
+
+<H1><A NAME="SEC1" HREF="autosprintf.html#TOC1">1  Introduction</A></H1>
+
+<P>
+This package makes the C formatted output routines (<CODE>fprintf</CODE> et al.)
+usable in C++ programs, for use with the <CODE>&#60;string&#62;</CODE> strings and the
+<CODE>&#60;iostream&#62;</CODE> streams.
+
+</P>
+<P>
+It allows to write code like
+
+</P>
+
+<PRE>
+cerr &#60;&#60; autosprintf ("syntax error in %s:%d: %s", filename, line, errstring);
+</PRE>
+
+<P>
+instead of
+
+</P>
+
+<PRE>
+cerr &#60;&#60; "syntax error in " &#60;&#60; filename &#60;&#60; ":" &#60;&#60; line &#60;&#60; ": " &#60;&#60; errstring;
+</PRE>
+
+<P>
+The benefits of the autosprintf syntax are:
+
+</P>
+
+<UL>
+<LI>
+
+It reuses the standard POSIX printf facility. Easy migration from C to C++.
+
+<LI>
+
+English sentences are kept together.
+
+<LI>
+
+It makes internationalization possible. Internationalization requires format
+strings, because in some cases the translator needs to change the order of a
+sentence, and more generally it is easier for the translator to work with a
+single string for a sentence than with multiple string pieces.
+
+<LI>
+
+It reduces the risk of programming errors due to forgotten state in the
+output stream (e.g. <CODE>cout &#60;&#60; hex;</CODE> not followed by <CODE>cout &#60;&#60; dec;</CODE>).
+</UL>
+
+
+
+<H1><A NAME="SEC2" HREF="autosprintf.html#TOC2">2  The <CODE>autosprintf</CODE> class</A></H1>
+
+<P>
+An instance of class <CODE>autosprintf</CODE> just contains a string with the
+formatted output result. Such an instance is usually allocated as an
+automatic storage variable, i.e. on the stack, not with <CODE>new</CODE> on the
+heap.
+
+</P>
+<P>
+The constructor <CODE>autosprintf (const char *format, ...)</CODE> takes a format
+string and additional arguments, like the C function <CODE>printf</CODE>.
+
+</P>
+<P>
+Conversions to <CODE>char *</CODE> and <CODE>std::string</CODE> are defined that return
+the encapsulated string.  The conversion to <CODE>char *</CODE> returns a freshly
+allocated copy of the encapsulated string; it needs to be freed using
+<CODE>delete[]</CODE>.  The conversion to <CODE>std::string</CODE> returns a copy of
+the encapsulated string, with automatic memory management.
+
+</P>
+<P>
+The destructor <CODE>~autosprintf ()</CODE> destroys the encapsulated string.
+
+</P>
+<P>
+An <CODE>operator &#60;&#60;</CODE> is provided that outputs the encapsulated string to the
+given <CODE>ostream</CODE>.
+
+</P>
+
+
+<H1><A NAME="SEC3" HREF="autosprintf.html#TOC3">3  Using <CODE>autosprintf</CODE> in own programs</A></H1>
+
+<P>
+To use the <CODE>autosprintf</CODE> class in your programs, you need to add
+
+</P>
+
+<PRE>
+#include "autosprintf.h"
+using gnu::autosprintf;
+</PRE>
+
+<P>
+to your source code.
+The include file defines the class <CODE>autosprintf</CODE>, in a namespace called
+<CODE>gnu</CODE>. The <SAMP>&lsquo;using&rsquo;</SAMP> statement makes it possible to use the class
+without the (otherwise natural) <CODE>gnu::</CODE> prefix.
+
+</P>
+<P>
+When linking your program, you need to link with <CODE>libasprintf</CODE>, because
+that's where the class is defined. In projects using GNU <CODE>autoconf</CODE>,
+this means adding <SAMP>&lsquo;AC_LIB_LINKFLAGS([asprintf])&rsquo;</SAMP> to <CODE>configure.in</CODE>
+or <CODE>configure.ac</CODE>, and using the @LIBASPRINTF@ Makefile variable that
+it provides.
+
+</P>
+<P><HR><P>
+This document was generated on 1 September 2007 using the
+<A HREF="http://wwwinfo.cern.ch/dis/texi2html/">texi2html</A>
+translator version 1.52b.</P>
+</BODY>
+</HTML>

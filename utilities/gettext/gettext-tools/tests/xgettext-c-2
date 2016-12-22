@@ -1,0 +1,55 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test C support: comments meant for xgettext, whitespace, and literals.
+
+cat <<EOF > xg-c-2.in.c
+This is a test of the xgettext functionality.
+/* xgettext:no-c-format */
+_("extract me")
+Sometimes keywords can be spread apart
+xgettext:no-c-format
+_ ( "what about me" )
+And even further on accasion
+_
+(
+"hello"
+)
+static int c = '';
+_("after character")
+static char *s = "";
+_("after string")
+static double d = 10e-1;
+_("after double")
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} -d xg-c-2.tmp -k_ --omit-header --no-location xg-c-2.in.c || Exit 1
+LC_ALL=C tr -d '\r' < xg-c-2.tmp.po > xg-c-2.po || Exit 1
+
+cat <<EOF > xg-c-2.ok
+#, no-c-format
+msgid "extract me"
+msgstr ""
+
+msgid "what about me"
+msgstr ""
+
+msgid "hello"
+msgstr ""
+
+msgid "after character"
+msgstr ""
+
+msgid "after string"
+msgstr ""
+
+msgid "after double"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-c-2.ok xg-c-2.po
+result=$?
+
+exit $result

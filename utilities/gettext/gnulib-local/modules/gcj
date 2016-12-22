@@ -1,0 +1,21 @@
+Description:
+Check for a Java compiler that creates executables.
+
+Files:
+m4/gcj.m4
+
+Depends-on:
+
+configure.ac:
+gt_GCJ
+
+Makefile.am:
+
+Include:
+
+License:
+GPL
+
+Maintainer:
+Bruno Haible
+
