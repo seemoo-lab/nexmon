@@ -1495,6 +1495,12 @@ struct udp_header {
     uint16 checksum;
 } __attribute__((packed));
 
+struct ethernet_ip_udp_header {
+    struct ethernet_header ethernet;
+    struct ip_header ip;
+    struct udp_header udp;
+} __attribute__((packed));
+
 typedef void (*to_fun_t)(void *arg);
 
 typedef struct _ctimeout {
