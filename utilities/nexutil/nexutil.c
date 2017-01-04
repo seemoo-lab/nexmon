@@ -53,6 +53,8 @@
 #include <stdbool.h>
 #include <errno.h>
 
+#include <wlcnt.h>
+
 #define HEXDUMP_COLS 8
 
 #define WLC_GET_PROMISC                   9
@@ -68,6 +70,8 @@
 
 #define NEX_GET_SECURITYCOOKIE          410
 #define NEX_SET_SECURITYCOOKIE          411
+
+#define NEX_GET_WL_CNT                  412
 
 #define IPADDR(a,b,c,d) ((d) << 24 | (c) << 16 | (b) << 8 | (a))
 
@@ -107,8 +111,9 @@ unsigned char   raw_output = false;
 unsigned int    dump_objmem_addr = 0;
 unsigned char   dump_objmem = false;
 unsigned char   disassociate = false;
+unsigned char   dump_wl_cnt = false;
 
-const char *argp_program_version = "nexutil";
+const char *argp_program_version = VERSION;
 const char *argp_program_bug_address = "<mschulz@seemoo.tu-darmstadt.de>";
 
 static char doc[] = "nexutil -- a program to control a nexmon firmware for broadcom chips.";
@@ -125,6 +130,7 @@ static struct argp_option options[] = {
     {"custom-cmd-value", 'v', "CHAR/INT", 0, "Initialization value for the buffer used by custom command"},
     {"custom-cmd-value-int", 'i', 0, 0, "Define that custom-cmd-value should be interpreted as integer"},
     {"raw-output", 'r', 0, 0, "Write raw output to stdout instead of hex dumping"},
+    {"dump-wl_cnt", 'w', 0, 0, "Dump WL counters"},
     {"dump-objmem", 'o', "INT", 0, "Dumps objmem at addr INT"},
     {"security-cookie", 'x', "INT", OPTION_ARG_OPTIONAL, "Set/Get security cookie"},
     {"use-udp-tunneling", 'X', "INT", 0, "Use UDP tunneling with security cookie INT"},
@@ -200,6 +206,10 @@ parse_opt(int key, char *arg, struct argp_state *state)
         case 'o':
             dump_objmem_addr = strtol(arg, NULL, 0);
             dump_objmem = true;
+            break;
+
+        case 'w':
+            dump_wl_cnt = true;
             break;
 
         case 'x':
@@ -381,6 +391,20 @@ main(int argc, char **argv)
     if (disassociate) {
         buf = 1;
         ret = nex_ioctl(nexio, WLC_DISASSOC, &buf, 4, true);
+    }
+
+    if (dump_wl_cnt) {
+        wl_cnt_t cnt;
+        wl_cnt_t *_cnt = &cnt;
+        memset(_cnt, 0, sizeof(cnt));
+        ret = nex_ioctl(nexio, NEX_GET_WL_CNT, _cnt, sizeof(cnt), false);
+        unsigned int i;
+        printf("version: %d\n", _cnt->version);
+        printf("length: %d\n", _cnt->length);
+        for (i = 1; i < sizeof(cnt)/4; i++) {
+            printf("%s: %d (%s)\n", wl_cnt_varname[i], ((uint32 *) _cnt)[i], wl_cnt_description[i]);
+        }
+        //hexdump(_cnt, sizeof(_cnt)); 
     }
 
     return 0;
