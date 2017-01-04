@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:weightSum="1">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" >
+
+
+    <TextView
+        android:text="You can start a WEP aircrack attack by selecting a PCAP file. PCAP files can be scanned for Access Points and selected from the list.\nWe currently support PTW and KoreK attacks."
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/tv_aircrack_info"
+        android:textAllCaps="false"
+        android:textAlignment="viewStart"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:paddingBottom="10dp"
+        android:paddingTop="15dp" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select File"
+        android:id="@+id/btn_wepcrack_select_file"
+        android:layout_gravity="center_horizontal" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Scan File for AP"
+        android:id="@+id/btn_wepcrack_scan_ap"
+        android:layout_gravity="center_horizontal" />
+
+    <Spinner
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/spinner_wepcrack_ap"
+        android:layout_gravity="center_horizontal"
+        android:spinnerMode="dialog"
+        android:paddingTop="15dp"
+        android:paddingBottom="15dp" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/edittext_wepcrack_bssid"
+        android:text="BSSID (MAC)"
+        android:layout_gravity="center_horizontal"
+        android:paddingTop="15dp"
+        android:paddingBottom="15dp" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/edittext_wepcrack_ssid"
+        android:text="SSID (NAME)"
+        android:paddingTop="15dp"
+        android:paddingBottom="15dp" />
+
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="15dp"
+        android:paddingBottom="15dp">
+        <RadioGroup
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <RadioButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PTW"
+                android:id="@+id/rb_aircrack_ptw"
+                android:checked="true" />
+
+            <RadioButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="KoreK"
+                android:id="@+id/rb_aircrack_korek"
+                android:checked="false" />
+        </RadioGroup>
+
+        <CheckBox
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="Decloak"
+            android:id="@+id/cb_aircrack_decloak"
+            android:layout_marginLeft="70dp"
+            android:checked="false"
+            android:textAlignment="viewStart"
+            android:gravity="right|center_vertical|end"
+            android:foregroundGravity="right"
+            android:layout_gravity="right" />
+
+    </LinearLayout>
+
+
+    <Button
+        android:layout_width="match_parent"
+        android:text="Crack"
+        android:id="@+id/btn_aircrack_wepcrack"
+        android:layout_gravity="center_horizontal"
+        android:layout_height="wrap_content"
+        android:paddingTop="15dp"
+        android:paddingBottom="15dp" />
+
+            </LinearLayout>
+    </ScrollView>
+</LinearLayout>

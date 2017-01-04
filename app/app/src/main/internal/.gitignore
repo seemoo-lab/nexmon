@@ -1,0 +1,5 @@
+.*
+!/.gitignore
+libs
+local
+obj

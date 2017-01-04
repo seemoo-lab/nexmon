@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin">
+
+    <ScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/imgNexmonLogo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:paddingBottom="10dp"
+                android:paddingTop="10dp"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:src="@drawable/nexmon_logo_color" />
+
+            <TextView
+                android:id="@+id/tvAboutUs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingBottom="10dp"
+                android:text="Nexmon started as a firmware modification framework to enable monitor mode and frame injection on the BCM4339 WiFi chip, which is available in the Nexus 5. If you do not have a Nexus 5, but another device with a Broadcom WiFi chip, you should still be able to activate monitor mode without radiotap headers with our nexutil program." />
+
+            <TextView
+                android:id="@+id/tvAboutUsCont"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:autoLink="web"
+                android:paddingBottom="10dp"
+                android:text="Main developer Nexmon:\nMatthias Schulz &lt;mschulz@seemoo.de&gt;\nDaniel Wegemer &lt;dwegemer@seemoo.de&gt;\n\nDeveloper of this app:\nFabian Knapp &lt;fknapp@seemoo.de&gt;\n\nNexmon was developed in the Secure Mobile Networking Lab (SEEMOO) at the Technische Universität Darmstadt (TU Darmstadt) in Germany. All sources are available under https://nexmon.org. You can follow us on Twitter https://twitter.com/nexmon_dev" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:orientation="horizontal"
+                android:weightSum="2">
+
+                <ImageView
+                    android:id="@+id/imgSeemooLogo"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_weight="1"
+                    android:paddingRight="10dp"
+                    android:paddingLeft="10dp"
+                    android:src="@drawable/seemoo_logo" />
+
+                <ImageView
+                    android:id="@+id/imgTudLogo"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_weight="1"
+                    android:paddingRight="10dp"
+                    android:paddingLeft="10dp"
+                    android:src="@drawable/tud_logo" />
+            </LinearLayout>
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Licenses"
+                android:id="@+id/btnLicenses"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentStart="true" />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+
+</RelativeLayout>

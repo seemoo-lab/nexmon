@@ -1,0 +1,38 @@
+{
+  "project_info": {
+    "project_number": "316761220194",
+    "project_id": "nexmon-c40ae"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:316761220194:android:2d5794f105bf6f3b",
+        "android_client_info": {
+          "package_name": "de.tu_darmstadt.seemoo.nexmon"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDqFGyasQrGZa4y8ufO__cIuwNIm6m4AF0"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 2,
+          "analytics_property": {
+            "tracking_id": "UA-89218030-1"
+          }
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 1
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

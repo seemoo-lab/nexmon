@@ -1,0 +1,445 @@
+package de.tu_darmstadt.seemoo.nexmon.gui;
+
+import android.content.res.AssetManager;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.google.android.gms.analytics.HitBuilders;
+import com.google.android.gms.analytics.Tracker;
+import com.roger.catloadinglibrary.CatLoadingView;
+import com.stericson.RootShell.exceptions.RootDeniedException;
+import com.stericson.RootShell.execution.Command;
+import com.stericson.RootTools.RootTools;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.concurrent.TimeoutException;
+
+import de.tu_darmstadt.seemoo.nexmon.MyApplication;
+import de.tu_darmstadt.seemoo.nexmon.R;
+
+
+public class FirmwareFragment extends TrackingFragment implements View.OnClickListener {
+
+    private static final int UPDATE_TV_FIRMWARE_VERSION = 50;
+    private static final int UPDATE_BUTTON_ENABLED = 51;
+    private static final int GUI_SHOW_LOADING = 52;
+    private static final int GUI_DISMISS_LOADING = 53;
+    private static final int GUI_SHOW_TOAST = 54;
+
+    private static final int COMMAND_RESTART_WLAN = 101;
+    private static final int COMMAND_BACKUP_FIRMWARE = 102;
+    private static final int COMMAND_FIRMWARE_VERSION = 103;
+    private static final int COMMAND_FIRMWARE_RESTORE = 104;
+
+    private Button btnCreateFirmwareBackup;
+    private Button btnInstallNexmonFirmware;
+    private Button btnRestoreFirmwareBackup;
+    private String sdCardPath;
+    private Spinner spnDevice;
+
+    private TextView tvFirmwareVersionOutput;
+
+    private CatLoadingView loadingView;
+    private Handler guiHandler;
+
+    private String mountPoint = "";
+    private String fwPathEnd = "";
+    private String fwNameBeginning = "";
+    private String fwNameEnd = "";
+
+
+    public FirmwareFragment() {
+        sdCardPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/";
+    }
+
+    /**
+     * Use this factory method to create a new instance of
+     * this fragment using the provided parameters.
+     *
+     * @return A new instance of fragment.
+     */
+    public static FirmwareFragment newInstance() {
+        FirmwareFragment fragment = new FirmwareFragment();
+        return fragment;
+    }
+
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+
+        guiHandler = new Handler() {
+
+            @SuppressWarnings("unchecked")
+            public void handleMessage(Message msg) {
+                super.handleMessage(msg);
+
+                switch (msg.what) {
+                    case UPDATE_TV_FIRMWARE_VERSION:
+                        tvFirmwareVersionOutput.setText((String) msg.obj);
+                        break;
+                    case UPDATE_BUTTON_ENABLED:
+                        setContentVisibility();
+                        break;
+                    case GUI_SHOW_LOADING:
+                        loadingView = new CatLoadingView();
+                        loadingView.setCancelable(false);
+                        loadingView.show(getFragmentManager(), "");
+                        break;
+                    case GUI_DISMISS_LOADING:
+                        loadingView.dismiss();
+                        break;
+                    case GUI_SHOW_TOAST:
+                        Toast.makeText(MyApplication.getAppContext(), (String) msg.obj, Toast.LENGTH_SHORT).show();
+                        break;
+                    default:
+                        break;
+
+
+                }
+            }
+        };
+
+        try {
+            getActivity().setTitle("Nexmon: Firmware");
+        } catch(Exception e) {e.printStackTrace();}
+
+
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        if (container != null) {
+            container.removeAllViews();
+        }
+
+        View view = inflater.inflate(R.layout.fragment_nexmon, container, false);
+
+        getGuiElements(view);
+
+        setContentVisibility();
+        return view;
+    }
+
+    private void toast(String msg) {
+        try {
+            Message message = guiHandler.obtainMessage();
+            message.what = GUI_SHOW_TOAST;
+            message.obj = msg;
+            guiHandler.sendMessage(message);
+        } catch(Exception e) {e.printStackTrace();}
+    }
+
+    private void toastLogcatError() {
+        toast("Sorry, there was an error, find out more about it using logcat");
+    }
+
+    private void getGuiElements(View view) {
+
+        btnCreateFirmwareBackup = (Button) view.findViewById(R.id.btnCreateFirmwareBackup);
+        btnInstallNexmonFirmware = (Button) view.findViewById(R.id.btnInstallNexmonFirmware);
+
+        btnRestoreFirmwareBackup = (Button) view.findViewById(R.id.btnRestoreFirmwareBackup);
+        tvFirmwareVersionOutput = (TextView) view.findViewById(R.id.tvFirmwareVersionOutput);
+        spnDevice = (Spinner) view.findViewById(R.id.spnDevice);
+
+        btnInstallNexmonFirmware.setOnClickListener(this);
+        btnRestoreFirmwareBackup.setOnClickListener(this);
+        btnCreateFirmwareBackup.setOnClickListener(this);
+
+        spnDevice.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                evaluateFirmware();
+                onClickPrintFirmwareVersion();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+
+        String Model = android.os.Build.MODEL;
+        if(Model.contains("Nexus 6P")) {
+            spnDevice.setSelection(2);
+        } else if(Model.contains("Nexus 5")) {
+            spnDevice.setSelection(1);
+        } else if(Model.contains("GT-I9100")) {
+            spnDevice.setSelection(0);
+        }
+        evaluateFirmware();
+    }
+
+
+
+    private void setContentVisibility() {
+        if ((new File(sdCardPath + fwNameEnd + ".bac")).exists()) {
+            btnCreateFirmwareBackup.setEnabled(false);
+            btnInstallNexmonFirmware.setEnabled(true);
+            btnRestoreFirmwareBackup.setEnabled(true);
+        } else {
+            btnCreateFirmwareBackup.setEnabled(true);
+            btnRestoreFirmwareBackup.setEnabled(false);
+            btnInstallNexmonFirmware.setEnabled(false);
+        }
+    }
+
+
+
+    public void onClickCreateFirmwareBackup() {
+        evaluateFirmware();
+        final Command command = new Command(COMMAND_BACKUP_FIRMWARE, "cp " + fwPathEnd + fwNameEnd + " " + sdCardPath + fwNameEnd + ".bac") {
+
+            @Override
+            public void commandOutput(int id, String line) {
+                toast(line);
+                super.commandOutput(id, line);
+            }
+
+            @Override
+            public void commandCompleted(int id, int exitcode) {
+                guiHandler.sendEmptyMessage(UPDATE_BUTTON_ENABLED);
+                super.commandCompleted(id, exitcode);
+            }
+        };
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+                try {
+                    RootTools.getShell(true).add(command);
+
+                guiHandler.sendEmptyMessage(GUI_SHOW_LOADING);
+                Thread.sleep(3000);
+                guiHandler.sendEmptyMessage(GUI_DISMISS_LOADING);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
+
+        setContentVisibility();
+    }
+
+    public void onClickRestoreFirmwareBackup() {
+        evaluateFirmware();
+        Command command = new Command(COMMAND_FIRMWARE_RESTORE, "mount -o rw,remount " + mountPoint, "cp " + sdCardPath + fwNameEnd + ".bac " + fwPathEnd + fwNameEnd) {
+            @Override
+            public void commandOutput(int id, String line) {
+                if(id == COMMAND_FIRMWARE_RESTORE)
+                    toast(line);
+                super.commandOutput(id, line);
+            }
+
+            @Override
+            public void commandCompleted(int id, int exitcode) {
+                if(id == COMMAND_FIRMWARE_RESTORE)
+                    toast("Restore finished!");
+
+                super.commandCompleted(id, exitcode);
+            }
+        };
+        try {
+            RootTools.getShell(true).add(command);
+        } catch (Exception e) {
+            e.printStackTrace();
+            toastLogcatError();
+        }
+    }
+
+    public void onClickInstallNexmonFirmware() {
+            final Command command = new Command(COMMAND_RESTART_WLAN, "ifconfig wlan0 down", "ifconfig wlan0 up") {
+
+                @Override
+                public void commandCompleted(int id, int exitcode) {
+                    if(id == COMMAND_RESTART_WLAN) {
+                        MyApplication.evaluateAll();
+                    }
+
+                    super.commandCompleted(id, exitcode);
+                }
+
+            };
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    evaluateFirmware();
+                    guiHandler.sendEmptyMessage(GUI_SHOW_LOADING);
+
+                    extractAssets();
+                    //MyApplication.toast("Installing firmware ...");
+                    copyExtractedAsset(fwPathEnd, fwNameBeginning);
+
+                    RootTools.getShell(true).add(command);
+                    Thread.sleep(5000);
+                    guiHandler.sendEmptyMessage(GUI_DISMISS_LOADING);
+                } catch(Exception e) {e.printStackTrace();}
+            }
+        }).start();
+
+    }
+
+
+    private void copyFile(InputStream in, OutputStream out) throws IOException {
+        byte[] buffer = new byte[1024];
+        while (in.read(buffer) != -1) {
+            out.write(buffer);
+        }
+    }
+
+    private void extractAssets() throws IOException {
+        AssetManager assetManager = MyApplication.getAssetManager();
+        String[] files = null;
+        files = assetManager.list("nexmon");
+        if (files != null) for (String filename : files) {
+            InputStream in = null;
+            OutputStream out = null;
+            in = assetManager.open("nexmon/" + filename);
+            File outFile = new File(sdCardPath, filename);
+            out = new FileOutputStream(outFile);
+            copyFile(in, out);
+            if (in != null) in.close();
+            if (out != null) out.close();
+        }
+    }
+
+    private void copyExtractedAsset(String installLocation, String filename) throws TimeoutException, IOException, RootDeniedException {
+
+        RootTools.getShell(true).add(new Command(0, "mount -o rw,remount " + mountPoint,
+                "cp " + sdCardPath + filename + " " + installLocation + fwNameEnd,
+                "chmod 755 " + installLocation + fwNameEnd) {
+
+            @Override
+            public void commandOutput(int id, String line) {
+                toast(line);
+                super.commandOutput(id, line);
+            }
+        });
+    }
+
+    public void onClickPrintFirmwareVersion() {
+        final Command command = new Command(COMMAND_FIRMWARE_VERSION, "strings " + fwPathEnd + fwNameEnd + " | grep \"FWID:\"") {
+            @Override
+            public void commandOutput(int id, String line) {
+                if(id == COMMAND_FIRMWARE_VERSION) {
+                    String out;
+
+                    try {
+                        String radioChip = line.substring(0, 10);
+                        String rChip[] = radioChip.split("[a-zA-Z]+");
+                        String radioId = "bcm" + rChip[0];
+
+                        String rVersion[] = line.split(" Version: ");
+                        String rVersion2[] = rVersion[1].split(" ");
+                        String radioVersion = rVersion2[0].trim();
+                        out = "Radio chip: " + radioId + "\nFirmware version: " + radioVersion + "\n";
+                    } catch(Exception e) {
+                        e.printStackTrace();
+                        out = line + "\n";
+                    }
+
+                    Message msg = new Message();
+                    msg.what = UPDATE_TV_FIRMWARE_VERSION;
+                    msg.obj = out;
+                    guiHandler.sendMessage(msg);
+
+                    // Get tracker.
+                    Tracker t = MyApplication.getDefaultTracker();
+                    // Build and send an Event.
+                    t.send(new HitBuilders.EventBuilder()
+                            .setCategory("Firmware Version")
+                            .setLabel("Device: " + Build.MODEL)
+                            .setAction("Version: " + out)
+                            .build());
+                }
+
+                super.commandOutput(id, line);
+
+            }
+        };
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    RootTools.getShell(true).add(command);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
+    }
+
+    private void evaluateFirmware() {
+        String item = spnDevice.getSelectedItem().toString();
+
+        String fwInfo[] = new String[4];
+
+        if(item.startsWith("BCM4330 "))
+            fwInfo = getResources().getStringArray(R.array.bcm4330);
+        else if(item.startsWith("BCM4339 "))
+            fwInfo = getResources().getStringArray(R.array.bcm4339);
+        else if(item.startsWith("BCM4358 "))
+            fwInfo = getResources().getStringArray(R.array.bcm4358);
+
+        mountPoint = fwInfo[0];
+        fwPathEnd = fwInfo[1];
+        fwNameBeginning = fwInfo[2];
+        fwNameEnd = fwInfo[3];
+
+        setContentVisibility();
+    }
+
+
+    @Override
+    public void onClick(View v) {
+        switch(v.getId()) {
+            case R.id.btnInstallNexmonFirmware:
+                onClickInstallNexmonFirmware();
+                // Get tracker.
+                Tracker t = MyApplication.getDefaultTracker();
+                // Build and send an Event.
+                t.send(new HitBuilders.EventBuilder()
+                        .setCategory("Firmware")
+                        .setLabel("Device: " + Build.MODEL + " FW: " + tvFirmwareVersionOutput.getText())
+                        .setAction("Install")
+                        .build());
+                break;
+            case R.id.btnRestoreFirmwareBackup:
+                onClickRestoreFirmwareBackup();
+                break;
+            case R.id.btnCreateFirmwareBackup:
+                onClickCreateFirmwareBackup();
+                break;
+            default:
+                break;
+        }
+    }
+
+    @Override
+    public String getTrackingName() {
+        return "Screen: Firmware";
+    }
+}

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" >
+
+
+    <TextView
+        android:text="You can decrypt a PCAP file of a target Access Point. Your PCAP file has to contain a valid 4-way handshake."
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/textView2"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:paddingTop="15dp"
+        android:paddingBottom="15dp" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select File"
+        android:id="@+id/btn_select_file"
+        android:layout_gravity="center_horizontal"
+        android:paddingTop="15dp"
+        android:paddingBottom="15dp" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Scan File for AP"
+        android:id="@+id/btn_scan_ap"
+        android:layout_gravity="center_horizontal"
+        android:paddingBottom="15dp"
+        android:paddingTop="15dp" />
+
+    <Spinner
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/spinner_ap"
+        android:layout_gravity="center_horizontal"
+        android:spinnerMode="dialog"
+        android:paddingTop="15dp"
+        android:paddingBottom="15dp" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/edittext_bssid"
+        android:text="BSSID (MAC)"
+        android:layout_gravity="center_horizontal"
+        android:paddingBottom="15dp"
+        android:paddingTop="15dp" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/edittext_ssid"
+        android:text="SSID (NAME)"
+        android:paddingTop="15dp"
+        android:paddingBottom="15dp" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/edittext_passphrase"
+        android:text="Passphrase"
+        android:paddingTop="15dp"
+        android:paddingBottom="15dp" />
+
+    <RadioGroup
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <RadioButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="WEP"
+        android:id="@+id/radiobtn_wep"
+            android:paddingTop="15dp"
+            android:paddingBottom="15dp"
+            android:paddingRight="50dp" />
+
+        <RadioButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="WPA"
+            android:id="@+id/radiobtn_wpa"
+            android:paddingTop="15dp"
+            android:paddingBottom="15dp"
+             />
+
+    </RadioGroup>
+
+
+    <Button
+        android:layout_height="wrap_content"
+        android:text="Decrypt"
+        android:id="@+id/btn_decrypt"
+        android:layout_gravity="center_horizontal"
+        android:paddingTop="15dp"
+        android:paddingBottom="15dp"
+        android:layout_width="match_parent" />
+
+            </LinearLayout>
+    </ScrollView>
+</LinearLayout>
