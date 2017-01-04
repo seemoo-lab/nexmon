@@ -767,6 +767,264 @@ struct wlc_info {
     int hwrxoff;                        /* 0X60C */
 };
 
+// source of wl_cnt_t: http://svn.dd-wrt.com/browser/src/linux/universal/linux-3.10/brcm/arm/include/wlioctl.h?rev=23022
+#define NFIFO           6   /* # tx/rx fifopairs */
+
+#define WL_CNT_T_VERSION    9   /* current version of wl_cnt_t struct */
+
+typedef struct {
+    uint16  version;    /* see definition of WL_CNT_T_VERSION */
+    uint16  length;     /* length of entire structure */
+
+    /* transmit stat counters */
+    uint32  txframe;    /* tx data frames */
+    uint32  txbyte;     /* tx data bytes */
+    uint32  txretrans;  /* tx mac retransmits */
+    uint32  txerror;    /* tx data errors (derived: sum of others) */
+    uint32  txctl;      /* tx management frames */
+    uint32  txprshort;  /* tx short preamble frames */
+    uint32  txserr;     /* tx status errors */
+    uint32  txnobuf;    /* tx out of buffers errors */
+    uint32  txnoassoc;  /* tx discard because we're not associated */
+    uint32  txrunt;     /* tx runt frames */
+    uint32  txchit;     /* tx header cache hit (fastpath) */
+    uint32  txcmiss;    /* tx header cache miss (slowpath) */
+
+    /* transmit chip error counters */
+    uint32  txuflo;     /* tx fifo underflows */
+    uint32  txphyerr;   /* tx phy errors (indicated in tx status) */
+    uint32  txphycrs;
+
+    /* receive stat counters */
+    uint32  rxframe;    /* rx data frames */
+    uint32  rxbyte;     /* rx data bytes */
+    uint32  rxerror;    /* rx data errors (derived: sum of others) */
+    uint32  rxctl;      /* rx management frames */
+    uint32  rxnobuf;    /* rx out of buffers errors */
+    uint32  rxnondata;  /* rx non data frames in the data channel errors */
+    uint32  rxbadds;    /* rx bad DS errors */
+    uint32  rxbadcm;    /* rx bad control or management frames */
+    uint32  rxfragerr;  /* rx fragmentation errors */
+    uint32  rxrunt;     /* rx runt frames */
+    uint32  rxgiant;    /* rx giant frames */
+    uint32  rxnoscb;    /* rx no scb error */
+    uint32  rxbadproto; /* rx invalid frames */
+    uint32  rxbadsrcmac;    /* rx frames with Invalid Src Mac */
+    uint32  rxbadda;    /* rx frames tossed for invalid da */
+    uint32  rxfilter;   /* rx frames filtered out */
+
+    /* receive chip error counters */
+    uint32  rxoflo;     /* rx fifo overflow errors */
+    uint32  rxuflo[NFIFO];  /* rx dma descriptor underflow errors */
+
+    uint32  d11cnt_txrts_off;   /* d11cnt txrts value when reset d11cnt */
+    uint32  d11cnt_rxcrc_off;   /* d11cnt rxcrc value when reset d11cnt */
+    uint32  d11cnt_txnocts_off; /* d11cnt txnocts value when reset d11cnt */
+
+    /* misc counters */
+    uint32  dmade;      /* tx/rx dma descriptor errors */
+    uint32  dmada;      /* tx/rx dma data errors */
+    uint32  dmape;      /* tx/rx dma descriptor protocol errors */
+    uint32  reset;      /* reset count */
+    uint32  tbtt;       /* cnts the TBTT int's */
+    uint32  txdmawar;
+    uint32  pkt_callback_reg_fail;  /* callbacks register failure */
+
+    /* MAC counters: 32-bit version of d11.h's macstat_t */
+    uint32  txallfrm;   /* total number of frames sent, incl. Data, ACK, RTS, CTS,
+                 * Control Management (includes retransmissions)
+                 */
+    uint32  txrtsfrm;   /* number of RTS sent out by the MAC */
+    uint32  txctsfrm;   /* number of CTS sent out by the MAC */
+    uint32  txackfrm;   /* number of ACK frames sent out */
+    uint32  txdnlfrm;   /* Not used */
+    uint32  txbcnfrm;   /* beacons transmitted */
+    uint32  txfunfl[6]; /* per-fifo tx underflows */
+    uint32  rxtoolate;  /* receive too late */
+    uint32  txfbw;      /* transmit at fallback bw (dynamic bw) */
+    uint32  txtplunfl;  /* Template underflows (mac was too slow to transmit ACK/CTS
+                 * or BCN)
+                 */
+    uint32  txphyerror; /* Transmit phy error, type of error is reported in tx-status for
+                 * driver enqueued frames
+                 */
+    uint32  rxfrmtoolong;   /* Received frame longer than legal limit (2346 bytes) */
+    uint32  rxfrmtooshrt;   /* Received frame did not contain enough bytes for its frame type */
+    uint32  rxinvmachdr;    /* Either the protocol version != 0 or frame type not
+                 * data/control/management
+                 */
+    uint32  rxbadfcs;   /* number of frames for which the CRC check failed in the MAC */
+    uint32  rxbadplcp;  /* parity check of the PLCP header failed */
+    uint32  rxcrsglitch;    /* PHY was able to correlate the preamble but not the header */
+    uint32  rxstrt;     /* Number of received frames with a good PLCP
+                 * (i.e. passing parity check)
+                 */
+    uint32  rxdfrmucastmbss; /* Number of received DATA frames with good FCS and matching RA */
+    uint32  rxmfrmucastmbss; /* number of received mgmt frames with good FCS and matching RA */
+    uint32  rxcfrmucast;    /* number of received CNTRL frames with good FCS and matching RA */
+    uint32  rxrtsucast; /* number of unicast RTS addressed to the MAC (good FCS) */
+    uint32  rxctsucast; /* number of unicast CTS addressed to the MAC (good FCS) */
+    uint32  rxackucast; /* number of ucast ACKS received (good FCS) */
+    uint32  rxdfrmocast;    /* number of received DATA frames (good FCS and not matching RA) */
+    uint32  rxmfrmocast;    /* number of received MGMT frames (good FCS and not matching RA) */
+    uint32  rxcfrmocast;    /* number of received CNTRL frame (good FCS and not matching RA) */
+    uint32  rxrtsocast; /* number of received RTS not addressed to the MAC */
+    uint32  rxctsocast; /* number of received CTS not addressed to the MAC */
+    uint32  rxdfrmmcast;    /* number of RX Data multicast frames received by the MAC */
+    uint32  rxmfrmmcast;    /* number of RX Management multicast frames received by the MAC */
+    uint32  rxcfrmmcast;    /* number of RX Control multicast frames received by the MAC
+                 * (unlikely to see these)
+                 */
+    uint32  rxbeaconmbss;   /* beacons received from member of BSS */
+    uint32  rxdfrmucastobss; /* number of unicast frames addressed to the MAC from
+                  * other BSS (WDS FRAME)
+                  */
+    uint32  rxbeaconobss;   /* beacons received from other BSS */
+    uint32  rxrsptmout; /* Number of response timeouts for transmitted frames
+                 * expecting a response
+                 */
+    uint32  bcntxcancl; /* transmit beacons canceled due to receipt of beacon (IBSS) */
+    uint32  rxf0ovfl;   /* Number of receive fifo 0 overflows */
+    uint32  rxf1ovfl;   /* Number of receive fifo 1 overflows (obsolete) */
+    uint32  rxf2ovfl;   /* Number of receive fifo 2 overflows (obsolete) */
+    uint32  txsfovfl;   /* Number of transmit status fifo overflows (obsolete) */
+    uint32  pmqovfl;    /* Number of PMQ overflows */
+    uint32  rxcgprqfrm; /* Number of received Probe requests that made it into
+                 * the PRQ fifo
+                 */
+    uint32  rxcgprsqovfl;   /* Rx Probe Request Que overflow in the AP */
+    uint32  txcgprsfail;    /* Tx Probe Response Fail. AP sent probe response but did
+                 * not get ACK
+                 */
+    uint32  txcgprssuc; /* Tx Probe Response Success (ACK was received) */
+    uint32  prs_timeout;    /* Number of probe requests that were dropped from the PRQ
+                 * fifo because a probe response could not be sent out within
+                 * the time limit defined in M_PRS_MAXTIME
+                 */
+    uint32  rxnack;     /* obsolete */
+    uint32  frmscons;   /* obsolete */
+    uint32  txnack;     /* obsolete */
+    uint32  rxback;     /* blockack rxcnt */
+    uint32  txback;     /* blockack txcnt */
+
+    /* 802.11 MIB counters, pp. 614 of 802.11 reaff doc. */
+    uint32  txfrag;     /* dot11TransmittedFragmentCount */
+    uint32  txmulti;    /* dot11MulticastTransmittedFrameCount */
+    uint32  txfail;     /* dot11FailedCount */
+    uint32  txretry;    /* dot11RetryCount */
+    uint32  txretrie;   /* dot11MultipleRetryCount */
+    uint32  rxdup;      /* dot11FrameduplicateCount */
+    uint32  txrts;      /* dot11RTSSuccessCount */
+    uint32  txnocts;    /* dot11RTSFailureCount */
+    uint32  txnoack;    /* dot11ACKFailureCount */
+    uint32  rxfrag;     /* dot11ReceivedFragmentCount */
+    uint32  rxmulti;    /* dot11MulticastReceivedFrameCount */
+    uint32  rxcrc;      /* dot11FCSErrorCount */
+    uint32  txfrmsnt;   /* dot11TransmittedFrameCount (bogus MIB?) */
+    uint32  rxundec;    /* dot11WEPUndecryptableCount */
+
+    /* WPA2 counters (see rxundec for DecryptFailureCount) */
+    uint32  tkipmicfaill;   /* TKIPLocalMICFailures */
+    uint32  tkipcntrmsr;    /* TKIPCounterMeasuresInvoked */
+    uint32  tkipreplay; /* TKIPReplays */
+    uint32  ccmpfmterr; /* CCMPFormatErrors */
+    uint32  ccmpreplay; /* CCMPReplays */
+    uint32  ccmpundec;  /* CCMPDecryptErrors */
+    uint32  fourwayfail;    /* FourWayHandshakeFailures */
+    uint32  wepundec;   /* dot11WEPUndecryptableCount */
+    uint32  wepicverr;  /* dot11WEPICVErrorCount */
+    uint32  decsuccess; /* DecryptSuccessCount */
+    uint32  tkipicverr; /* TKIPICVErrorCount */
+    uint32  wepexcluded;    /* dot11WEPExcludedCount */
+
+    uint32  txchanrej;  /* Tx frames suppressed due to channel rejection */
+    uint32  psmwds;     /* Count PSM watchdogs */
+    uint32  phywatchdog;    /* Count Phy watchdogs (triggered by ucode) */
+
+    /* MBSS counters, AP only */
+    uint32  prq_entries_handled;    /* PRQ entries read in */
+    uint32  prq_undirected_entries; /*    which were bcast bss & ssid */
+    uint32  prq_bad_entries;    /*    which could not be translated to info */
+    uint32  atim_suppress_count;    /* TX suppressions on ATIM fifo */
+    uint32  bcn_template_not_ready; /* Template marked in use on send bcn ... */
+    uint32  bcn_template_not_ready_done; /* ...but "DMA done" interrupt rcvd */
+    uint32  late_tbtt_dpc;  /* TBTT DPC did not happen in time */
+
+    /* per-rate receive stat counters */
+    uint32  rx1mbps;    /* packets rx at 1Mbps */
+    uint32  rx2mbps;    /* packets rx at 2Mbps */
+    uint32  rx5mbps5;   /* packets rx at 5.5Mbps */
+    uint32  rx6mbps;    /* packets rx at 6Mbps */
+    uint32  rx9mbps;    /* packets rx at 9Mbps */
+    uint32  rx11mbps;   /* packets rx at 11Mbps */
+    uint32  rx12mbps;   /* packets rx at 12Mbps */
+    uint32  rx18mbps;   /* packets rx at 18Mbps */
+    uint32  rx24mbps;   /* packets rx at 24Mbps */
+    uint32  rx36mbps;   /* packets rx at 36Mbps */
+    uint32  rx48mbps;   /* packets rx at 48Mbps */
+    uint32  rx54mbps;   /* packets rx at 54Mbps */
+    uint32  rx108mbps;  /* packets rx at 108mbps */
+    uint32  rx162mbps;  /* packets rx at 162mbps */
+    uint32  rx216mbps;  /* packets rx at 216 mbps */
+    uint32  rx270mbps;  /* packets rx at 270 mbps */
+    uint32  rx324mbps;  /* packets rx at 324 mbps */
+    uint32  rx378mbps;  /* packets rx at 378 mbps */
+    uint32  rx432mbps;  /* packets rx at 432 mbps */
+    uint32  rx486mbps;  /* packets rx at 486 mbps */
+    uint32  rx540mbps;  /* packets rx at 540 mbps */
+
+    /* pkteng rx frame stats */
+    uint32  pktengrxducast; /* unicast frames rxed by the pkteng code */
+    uint32  pktengrxdmcast; /* multicast frames rxed by the pkteng code */
+
+    uint32  rfdisable;  /* count of radio disables */
+    uint32  bphy_rxcrsglitch;   /* PHY count of bphy glitches */
+    uint32  bphy_badplcp;
+
+    uint32  txexptime;  /* Tx frames suppressed due to timer expiration */
+
+    uint32  txmpdu_sgi; /* count for sgi transmit */
+    uint32  rxmpdu_sgi; /* count for sgi received */
+    uint32  txmpdu_stbc;    /* count for stbc transmit */
+    uint32  rxmpdu_stbc;    /* count for stbc received */
+
+    uint32  rxundec_mcst;   /* dot11WEPUndecryptableCount */
+
+    /* WPA2 counters (see rxundec for DecryptFailureCount) */
+    uint32  tkipmicfaill_mcst;  /* TKIPLocalMICFailures */
+    uint32  tkipcntrmsr_mcst;   /* TKIPCounterMeasuresInvoked */
+    uint32  tkipreplay_mcst;    /* TKIPReplays */
+    uint32  ccmpfmterr_mcst;    /* CCMPFormatErrors */
+    uint32  ccmpreplay_mcst;    /* CCMPReplays */
+    uint32  ccmpundec_mcst; /* CCMPDecryptErrors */
+    uint32  fourwayfail_mcst;   /* FourWayHandshakeFailures */
+    uint32  wepundec_mcst;  /* dot11WEPUndecryptableCount */
+    uint32  wepicverr_mcst; /* dot11WEPICVErrorCount */
+    uint32  decsuccess_mcst;    /* DecryptSuccessCount */
+    uint32  tkipicverr_mcst;    /* TKIPICVErrorCount */
+    uint32  wepexcluded_mcst;   /* dot11WEPExcludedCount */
+
+    uint32  dma_hang;   /* count for dma hang */
+    uint32  reinit;     /* count for reinit */
+
+    uint32  pstatxucast;    /* count of ucast frames xmitted on all psta assoc */
+    uint32  pstatxnoassoc;  /* count of txnoassoc frames xmitted on all psta assoc */
+    uint32  pstarxucast;    /* count of ucast frames received on all psta assoc */
+    uint32  pstarxbcmc; /* count of bcmc frames received on all psta */
+    uint32  pstatxbcmc; /* count of bcmc frames transmitted on all psta */
+
+    uint32  cso_passthrough; /* hw cso required but passthrough */
+    uint32  cso_normal; /* hw cso hdr for normal process */
+    uint32  chained;    /* number of frames chained */
+    uint32  chainedsz1; /* number of chain size 1 frames */
+    uint32  unchained;  /* number of frames not chained */
+    uint32  maxchainsz; /* max chain size so far */
+    uint32  currchainsz;    /* current chain size */
+    uint32  rxdrop20s;  /* drop secondary cnt */
+    uint32  pciereset;  /* Secondary Bus Reset issued by driver */
+    uint32  cfgrestore; /* configspace restore by driver */
+} wl_cnt_t;
+
 struct wlc_pub {
     struct wlc_info *wlc;               /* 0x000 */
     int PAD;                            /* 0x004 */
@@ -798,7 +1056,32 @@ struct wlc_pub {
     char PAD;                           /* 0x04E */
     char PAD;                           /* 0x04F */
     int PAD;                            /* 0x050 */
-    char gap2[147];
+    int PAD;                            /* 0x054 */
+    int PAD;                            /* 0x058 */
+    int PAD;                            /* 0x05C */
+    int PAD;                            /* 0x060 */
+    int PAD;                            /* 0x064 */
+    int PAD;                            /* 0x068 */
+    int PAD;                            /* 0x06C */
+    int PAD;                            /* 0x070 */
+    int PAD;                            /* 0x074 */
+    int PAD;                            /* 0x078 */
+    int PAD;                            /* 0x07C */
+    int PAD;                            /* 0x080 */
+    int PAD;                            /* 0x084 */
+    int PAD;                            /* 0x088 */
+    int PAD;                            /* 0x08C */
+    int PAD;                            /* 0x090 */
+    wl_cnt_t *_cnt;                /* 0x094 */
+    int PAD;                            /* 0x098 */
+    int PAD;                            /* 0x09C */
+    int PAD;                            /* 0x0A0 */
+    int PAD;                            /* 0x0A4 */
+    int PAD;                            /* 0x0A8 */
+    int PAD;                            /* 0x0AC */
+    int PAD;                            /* 0x0B0 */
+    int PAD;                            /* 0x0B4 */
+    char gap2[47];
     char is_amsdu; // @ 0xe7
 } __attribute__((packed));
 

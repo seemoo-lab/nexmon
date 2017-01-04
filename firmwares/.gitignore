@@ -2,4 +2,4 @@
 !/.gitignore
 ucode.bin
 flashpatches.c
-bcm4339/6_37_34_43/templateram.bin
+templateram.bin
