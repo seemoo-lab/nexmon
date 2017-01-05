@@ -66,6 +66,7 @@ To be able to communicate with the firmware without root priviledges, we created
 * Start a UDP connection for example to activate monitor mode: `nexutil -X<cookie> -m1`
 
 ## Build patches for bcm43438 on the RPI3 using Raspbian 8 (recommended)
+* Make sure the following commands are executed as `root`
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
 * Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk`
 * Clone our repository: `git clone https://github.com/seemoo-lab/nexmon.git`
