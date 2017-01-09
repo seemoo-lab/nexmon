@@ -55,23 +55,9 @@
 
 #include <wlcnt.h>
 
+#include <nexioctls.h>
+
 #define HEXDUMP_COLS 8
-
-#define WLC_GET_PROMISC                   9
-#define WLC_SET_PROMISC                  10
-
-#define WLC_DISASSOC                     52
-
-#define WLC_GET_MONITOR                 107
-#define WLC_SET_MONITOR                 108
-
-#define WLC_GET_SCANSUPPRESS            115
-#define WLC_SET_SCANSUPPRESS            116
-
-#define NEX_GET_SECURITYCOOKIE          410
-#define NEX_SET_SECURITYCOOKIE          411
-
-#define NEX_GET_WL_CNT                  412
 
 #define IPADDR(a,b,c,d) ((d) << 24 | (c) << 16 | (b) << 8 | (a))
 
