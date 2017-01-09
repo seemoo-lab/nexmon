@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import de.tu_darmstadt.seemoo.nexmon.DissectionStrings;
 import de.tu_darmstadt.seemoo.nexmon.MyApplication;
 import de.tu_darmstadt.seemoo.nexmon.net.IFrameReceiver;
 import de.tu_darmstadt.seemoo.nexmon.net.MonitorModeService;
@@ -112,19 +113,19 @@ public class APfinderService extends Service implements IFrameReceiver {
 
         try {
 
-            if(packet.getField("frame.protocols").contains("eapol")) {
+            if(packet.getField(DissectionStrings.DISS_PROTOCOLS).contains("eapol")) {
                 Log.d("Handshake Debugger", "EAPOL frame received.");
                 eapolPacket(packet);
             } else {
 
-                frameType = packet.getField("wlan.fc.type");
-                frameSubType = packet.getField("wlan.fc.type_subtype");
-                good = packet.getField("wlan.fcs_good");
-                bssid = packet.getField("wlan.bssid");
+                frameType = packet.getField(DissectionStrings.DISS_FRAME_TYPE);
+                frameSubType = packet.getField(DissectionStrings.DISS_FRAME_SUBTYPE);
+                good = packet.getField(DissectionStrings.DISS_FRAME_CHECK);
+                bssid = packet.getField(DissectionStrings.DISS_BSSID);
 
-                String signalStrength = packet.getField("radiotap.dbm_antsignal");
+                String signalStrength = packet.getField(DissectionStrings.DISS_SIGNAL_STRENGTH);
 
-                String dsValue = packet.getField("wlan.fc.ds");
+                String dsValue = packet.getField(DissectionStrings.DISS_DISTRIBUTION_SYSTEM);
 
                 if (dsValue.equals("0x01")) {
                     toDS = true;
@@ -144,8 +145,8 @@ public class APfinderService extends Service implements IFrameReceiver {
 
                     try {
 
-                        String fields[] = packet.getField("wlan_mgt.tag.oui.type").split(",");
-                        String tags[] = packet.getField("wlan_mgt.tag.number").split(",");
+                        String fields[] = packet.getField(DissectionStrings.DISS_TKIP).split(",");
+                        String tags[] = packet.getField(DissectionStrings.DISS_CCMP).split(",");
 
                         String enc = "";
                         for (String field : fields) {
@@ -165,15 +166,15 @@ public class APfinderService extends Service implements IFrameReceiver {
                         }
 
                         if (!enc.contains("WPA")) {
-                            if (packet.getField("wlan_mgt.fixed.capabilities.privacy").equals("1"))
+                            if (packet.getField(DissectionStrings.DISS_WEP).equals("1"))
                                 enc += "WEP ";
                             else
                                 enc += "OPEN ";
                         }
 
-                        int channel = Integer.parseInt(packet.getField("wlan_mgt.ds.current_channel"));
+                        int channel = Integer.parseInt(packet.getField(DissectionStrings.DISS_CHANNEL));
 
-                        String ssid = packet.getField("wlan_mgt.ssid");
+                        String ssid = packet.getField(DissectionStrings.DISS_SSID);
                         long lastSeen = System.currentTimeMillis();
 
                         AccessPoint ap;
@@ -204,9 +205,9 @@ public class APfinderService extends Service implements IFrameReceiver {
 
                     String stationMac;
                     if (toDS && !fromDS)
-                        stationMac = packet.getField("wlan.sa");
+                        stationMac = packet.getField(DissectionStrings.DISS_SRC_ADDR);
                     else
-                        stationMac = packet.getField("wlan.da");
+                        stationMac = packet.getField(DissectionStrings.DISS_DST_ADDR);
 
                     if (stationMac != null && !isBroadcastAddress(stationMac)) {
                         AccessPoint ap = accessPoints.get(bssid);
@@ -241,24 +242,19 @@ public class APfinderService extends Service implements IFrameReceiver {
     }
 
     private void eapolPacket(Packet packet) {
-       /* Hashtable<String, ProtoNode> allFields = packet.getAllFields();
-        Iterator<String> it = allFields.keySet().iterator();
-        while(it.hasNext())
-            Log.d("Handshake Debugger", it.next()); */
         int msgNumber = 0;
-       // boolean secSet = packet.getField("hsPackets.keydes.key_info.secure").trim().equals("1");
-        boolean ackSet = packet.getField("eapol.keydes.key_info.key_ack").trim().equals("1");
-        boolean micSet = packet.getField("eapol.keydes.key_info.key_mic").trim().equals("1");
-        boolean installSet = packet.getField("eapol.keydes.key_info.install").trim().equals("1");
+        boolean ackSet = packet.getField(DissectionStrings.DISS_EAPOL_ACK).trim().equals("1");
+        boolean micSet = packet.getField(DissectionStrings.DISS_EAPOL_MIC).trim().equals("1");
+        boolean installSet = packet.getField(DissectionStrings.DISS_EAPOL_INSTALL).trim().equals("1");
 
-        String bssid = packet.getField("wlan.bssid").trim();
+        String bssid = packet.getField(DissectionStrings.DISS_BSSID).trim();
         String station;
         if(ackSet && micSet && installSet) {
             msgNumber = 3;
         } else if(ackSet) {
             msgNumber = 1;
         } else if(micSet) {
-            int dataLength = Integer.valueOf(packet.getField("eapol.keydes.datalen").trim());
+            int dataLength = Integer.valueOf(packet.getField(DissectionStrings.DISS_EAPOL_LENGTH).trim());
             if(dataLength > 0) {
                 msgNumber = 2;
             } else {
@@ -267,9 +263,9 @@ public class APfinderService extends Service implements IFrameReceiver {
         }
 
         if(msgNumber == 1 || msgNumber == 3) {
-            station = packet.getField("wlan.da").trim();
+            station = packet.getField(DissectionStrings.DISS_DST_ADDR).trim();
         } else {
-            station = packet.getField("wlan.sa").trim();
+            station = packet.getField(DissectionStrings.DISS_SRC_ADDR).trim();
         }
 
 

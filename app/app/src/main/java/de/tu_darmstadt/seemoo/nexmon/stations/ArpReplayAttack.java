@@ -2,6 +2,7 @@ package de.tu_darmstadt.seemoo.nexmon.stations;
 
 
 
+import de.tu_darmstadt.seemoo.nexmon.DissectionStrings;
 import de.tu_darmstadt.seemoo.nexmon.MyApplication;
 import de.tu_darmstadt.seemoo.nexmon.net.FrameSender;
 import de.tu_darmstadt.seemoo.nexmon.net.IFrameReceiver;
@@ -123,7 +124,7 @@ public class ArpReplayAttack extends Attack implements IFrameReceiver {
         String client;
         String dest;
         String seq;
-        String lenString = packet.getField("data.len");
+        String lenString = packet.getField(DissectionStrings.DISS_DATA_LENGTH);
 
         if(lenString == null || lenString.isEmpty())
             return false;
@@ -133,10 +134,10 @@ public class ArpReplayAttack extends Attack implements IFrameReceiver {
         if(len != 36)
             return false;
 
-        seq = packet.getField("wlan.seq");
-        bssid = packet.getField("wlan.bssid");
-        client = packet.getField("wlan.sa");
-        dest = packet.getField("wlan.da");
+        seq = packet.getField(DissectionStrings.DISS_SEQ);
+        bssid = packet.getField(DissectionStrings.DISS_BSSID);
+        client = packet.getField(DissectionStrings.DISS_SRC_ADDR);
+        dest = packet.getField(DissectionStrings.DISS_DST_ADDR);
 
         if(seq == null || bssid == null || client == null || dest == null)
             return false;

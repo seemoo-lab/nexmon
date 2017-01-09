@@ -18,6 +18,7 @@
 
 package de.tu_darmstadt.seemoo.nexmon.gui;
 
+import de.tu_darmstadt.seemoo.nexmon.DissectionStrings;
 import de.tu_darmstadt.seemoo.nexmon.sharky.Packet;
 
 public class SharkListElement {
@@ -45,38 +46,38 @@ public class SharkListElement {
             } catch(Exception e) {e.printStackTrace();}
 
         if(packet._encap == Packet.WTAP_LINKTYPE_RADIOTAP) {
-            value = packet.getField("wlan.da");
+            value = packet.getField(DissectionStrings.DISS_DST_ADDR);
             if (value != null)
                 element.setDest(value);
             else {
-                value = packet.getField("wlan.ra");
+                value = packet.getField(DissectionStrings.DISS_RECEIVER_ADDR);
                 if (value != null)
                     element.setDest(value);
                 else
                     element.setDest("unknown");
             }
 
-            value = packet.getField("wlan.sa");
+            value = packet.getField(DissectionStrings.DISS_SRC_ADDR);
             if (value != null)
                 element.setSource(value);
             else
                 element.setSource("unknown");
         } else {
-            value = packet.getField("ip.src");
+            value = packet.getField(DissectionStrings.DISS_IP_SRC);
             if(value != null) {
                 element.setSource(value);
             } else {
-                value = packet.getField("ipv6.src");
+                value = packet.getField(DissectionStrings.DISS_IPV6_SRC);
                 if(value != null)
                     element.setSource(value);
                 else
                     element.setSource("unknown");
             }
-            value = packet.getField("ip.dst");
+            value = packet.getField(DissectionStrings.DISS_IP_DST);
             if(value != null) {
                 element.setDest(value);
             } else {
-                value = packet.getField("ipv6.dst");
+                value = packet.getField(DissectionStrings.DISS_IPV6_DST);
                 if(value != null)
                     element.setDest(value);
                 else
@@ -84,7 +85,7 @@ public class SharkListElement {
             }
         }
 
-        value = packet.getField("frame.protocols");
+        value = packet.getField(DissectionStrings.DISS_PROTOCOLS);
         String proto[] = value.split(":");
 
 
@@ -93,7 +94,7 @@ public class SharkListElement {
         element.setSSID("");
         element.setType("");
 
-        value = packet.getField("frame.time");
+        value = packet.getField(DissectionStrings.DISS_TIME);
 
         int start = value.indexOf(":") - 2;
         int end = value.lastIndexOf(".");
@@ -102,7 +103,7 @@ public class SharkListElement {
         element.setTime(value);
 
 
-        value = packet.getField("frame.len");
+        value = packet.getField(DissectionStrings.DISS_LENGTH);
         element.setLength(Integer.parseInt(value));
 
         Packet.blocked.set(false);
