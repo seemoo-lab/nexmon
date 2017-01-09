@@ -147,6 +147,8 @@ public class MyApplication extends Application {
 
     private static boolean isBcmFirmwareAvailable = false;
 
+    private static String firmwareVersion;
+
 
     private static boolean isNexmonFirmwareAvailable = false;
 
@@ -493,8 +495,26 @@ public class MyApplication extends Application {
         } catch(Exception e) {e.printStackTrace();}
     }
 
+    public static String getFirmwareVersion() {
+        try {
+            Command command = new Command(0, "ifconfig wlan0 up", "nexutil -g 413 -l 100 -r") {
+                @Override
+                public void commandOutput(int id, String line) {
+                    if (line.contains("nexmon_ver")) {
+                        try {
+                            firmwareVersion = line.substring(12, line.lastIndexOf('-'));
+                        } catch (Exception e) {
+                        }
+                    }
 
+                    super.commandOutput(id, line);
+                }
+            };
+            RootTools.getShell(true).add(command);
+        } catch(Exception e) {e.printStackTrace();}
 
+        return firmwareVersion;
+    }
 
     public static SpannableStringBuilder getInstallInfo() {
         SpannableStringBuilder ssBuilder = new SpannableStringBuilder();
@@ -570,18 +590,26 @@ public class MyApplication extends Application {
 
             if(isBcmFirmwareAvailable) {
                 if(isNexmonFirmwareAvailable) {
-                    ssBuilder.append("Nexmon Firmware", new ForegroundColorSpan(Color.GREEN), 0);
+                    String version = getFirmwareVersion();
+                    if (version != null) {
+                        if (version.equals(BuildConfig.VERSION_NAME)) {
+                            ssBuilder.append("Nexmon Firmware (" + version + ")\n", new ForegroundColorSpan(Color.GREEN), 0);
+                        } else {
+                            ssBuilder.append("Nexmon Firmware (" + version + " => upgrade to app version)\n", new ForegroundColorSpan(Color.YELLOW), 0);
+                        }
+                    } else {
+                        ssBuilder.append("Nexmon Firmware (outdated => upgrade to app version)\n", new ForegroundColorSpan(Color.RED), 0);
+                    }
                 } else {
-                    ssBuilder.append("Nexmon Firmware\n\n", new ForegroundColorSpan(Color.RED), 0);
-                    ssBuilder.append("You have to install the nexmon firmware in order to use this app. You can do so by clicking the menu button at the upper left corner and select \"Firmware\".\n\n");
+                    ssBuilder.append("Standard Firmware (install Nexmon firmware for additional features from the firmware menu)\n", new ForegroundColorSpan(Color.YELLOW), 0);
                 }
             } else {
-                ssBuilder.append("Your device is not supported by nexmon!\n\n", new ForegroundColorSpan(Color.RED), 0);
+                ssBuilder.append("Sorry, your device is not supported by Nexmon, as we require a Broadcom WiFi chip that is missing in your smartphone!\n", new ForegroundColorSpan(Color.RED), 0);
             }
 
 
         } else {
-            ssBuilder.append("We can't search for the nexmon firmware without nexutil.", new ForegroundColorSpan(Color.RED), 0);
+            ssBuilder.append("Please install nexutil to search for a supported firmware.\n", new ForegroundColorSpan(Color.RED), 0);
         }
 
         ssBuilder.append("\n");
