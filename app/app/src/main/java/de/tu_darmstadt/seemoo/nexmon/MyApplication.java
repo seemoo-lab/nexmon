@@ -711,7 +711,7 @@ public class MyApplication extends Application {
         boolean showNotification = prefs.getBoolean("switch_survey_notification", true);
         if(showNotification) {
             Uri webpage = Uri.parse("http://survey.seemoo.tu-darmstadt.de/limesurvey/index.php/465539?N00=" + nexmonUID);
-            MyApplication.showSurveyNotification();
+            //MyApplication.showSurveyNotification();
 
             Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
 
