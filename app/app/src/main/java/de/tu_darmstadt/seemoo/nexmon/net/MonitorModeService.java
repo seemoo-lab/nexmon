@@ -13,6 +13,8 @@ import com.stericson.RootTools.RootTools;
 
 import java.util.HashMap;
 
+import de.tu_darmstadt.seemoo.nexmon.MyApplication;
+
 /**
  * Created by fabian on 11/25/16.
  */
@@ -83,6 +85,10 @@ public class MonitorModeService extends Service {
                     if(line.contains("monitor: 0")) {
                         try {
                             RootTools.getShell(true).add(new StartMonitorModeCommand());
+
+                            // START NOTIFICAITON
+                            MyApplication.showSurveyNotification();
+
                         } catch(Exception e) {e.printStackTrace();}
                     }
                 }
@@ -110,6 +116,10 @@ public class MonitorModeService extends Service {
                     if(line.contains("monitor: 2")) {
                         try {
                             RootTools.getShell(true).add(new StopMonitorModeCommand());
+
+                            // STOP NOTIFICATION
+                            MyApplication.dismissSurveyNotification();
+
                         } catch(Exception e) {e.printStackTrace();}
                     }
                 }

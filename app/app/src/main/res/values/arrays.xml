@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <string-array name="firmware_names">
+        <item>fw_bcmdhd.bin</item>
+    </string-array>
+
+    <string-array name="firmware_paths">
+        <item>/vendor/firmware/</item>
+        <item>/system/etc/wifi</item>
+    </string-array>
+
     <string-array name="smartphones">
         <item>BCM4330 (Galaxy S2)</item>
         <item>BCM4339 (Nexus 5)</item>

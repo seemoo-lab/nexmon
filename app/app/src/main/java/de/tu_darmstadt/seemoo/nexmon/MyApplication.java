@@ -27,6 +27,7 @@ import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.graphics.Color;
@@ -40,6 +41,8 @@ import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Vibrator;
+import android.preference.PreferenceManager;
+import android.support.annotation.Nullable;
 import android.telephony.TelephonyManager;
 import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
@@ -74,6 +77,8 @@ public class MyApplication extends Application {
 
 
     private static Tracker mTracker;
+
+    public static final int SURVEY_NOTIFICATION_ID = 99999;
 
     /**
      * Gets the default {@link Tracker} for this {@link Application}.
@@ -504,29 +509,60 @@ public class MyApplication extends Application {
             return ssBuilder;
         }
 
-        ssBuilder.append("Tools installation status:\n\n", new StyleSpan(Typeface.BOLD), 0);
+        ssBuilder.append("App Version:\n\n", new StyleSpan(Typeface.BOLD), 0);
+        ssBuilder.append(BuildConfig.VERSION_NAME + "\n", new ForegroundColorSpan(Color.GREEN), 0);
+
+        ssBuilder.append("\nTool installation status:\n\n", new StyleSpan(Typeface.BOLD), 0);
 
         if(isNexutilAvailable) {
-            ssBuilder.append("nexutil\n", new ForegroundColorSpan(Color.GREEN), 0);
-            if(!isNexutilNew)
-                ssBuilder.append(" (Please make sure to update nexutil to the newest version!)\n", new ForegroundColorSpan(Color.RED), 0);
-        } else
-            ssBuilder.append("nexutil\n", new ForegroundColorSpan(Color.RED), 0);
+            String version = getVersion("nexutil");
+            if (version != null) {
+                if (version.equals(BuildConfig.VERSION_NAME)) {
+                    ssBuilder.append("nexutil (" + version + ")\n", new ForegroundColorSpan(Color.GREEN), 0);
+                } else {
+                    ssBuilder.append("nexutil (" + version + " => upgrade to app version)\n", new ForegroundColorSpan(Color.YELLOW), 0);
+                }
+            } else {
+                ssBuilder.append("nexutil (outdated => upgrade to app version)\n", new ForegroundColorSpan(Color.RED), 0);
+            }
+        } else {
+            ssBuilder.append("nexutil (missing => install from tools menu)\n", new ForegroundColorSpan(Color.RED), 0);
+        }
 
-        if(isRawproxyAvailable)
-            ssBuilder.append("rawproxy\n", new ForegroundColorSpan(Color.GREEN), 0);
-        else
-            ssBuilder.append("rawproxy\n", new ForegroundColorSpan(Color.RED), 0);
+        if(isRawproxyAvailable) {
+            String version = getVersion("rawproxy");
+            if (version != null) {
+                if (version.equals(BuildConfig.VERSION_NAME)) {
+                    ssBuilder.append("rawproxy (" + version + ")\n", new ForegroundColorSpan(Color.GREEN), 0);
+                } else {
+                    ssBuilder.append("rawproxy (" + version + " => upgrade to app version)\n", new ForegroundColorSpan(Color.YELLOW), 0);
+                }
+            } else {
+                ssBuilder.append("rawproxy (outdated => upgrade to app version)\n", new ForegroundColorSpan(Color.RED), 0);
+            }
+        } else {
+            ssBuilder.append("rawproxy (missing => install from tools menu)\n", new ForegroundColorSpan(Color.RED), 0);
+        }
 
-        if(isRawproxyreverseAvailable)
-            ssBuilder.append("rawproxyreverse\n\n", new ForegroundColorSpan(Color.GREEN), 0);
-        else
-            ssBuilder.append("rawproxyreverse\n\n", new ForegroundColorSpan(Color.RED), 0);
+        if(isRawproxyreverseAvailable) {
+            String version = getVersion("rawproxyreverse");
+            if (version != null) {
+                if (version.equals(BuildConfig.VERSION_NAME)) {
+                    ssBuilder.append("rawproxyreverse (" + version + ")\n", new ForegroundColorSpan(Color.GREEN), 0);
+                } else {
+                    ssBuilder.append("rawproxyreverse (" + version + " => upgrade to app version)\n", new ForegroundColorSpan(Color.YELLOW), 0);
+                }
+            } else {
+                ssBuilder.append("rawproxyreverse (outdated => upgrade to app version)\n", new ForegroundColorSpan(Color.RED), 0);
+            }
+        } else {
+            ssBuilder.append("rawproxyreverse (missing => install from tools menu)\n", new ForegroundColorSpan(Color.RED), 0);
+        }
 
         if(!isNexutilAvailable || !isRawproxyAvailable || !isRawproxyreverseAvailable)
             ssBuilder.append("You have to install all required tools in order to use nexmon. You can do so by clicking the menu button at the upper left corner and select \"Tools\".\n\n");
 
-        ssBuilder.append("Firmware installation status:\n\n", new StyleSpan(Typeface.BOLD), 0);
+        ssBuilder.append("\nFirmware installation status:\n\n", new StyleSpan(Typeface.BOLD), 0);
 
 
 
@@ -547,6 +583,8 @@ public class MyApplication extends Application {
         } else {
             ssBuilder.append("We can't search for the nexmon firmware without nexutil.", new ForegroundColorSpan(Color.RED), 0);
         }
+
+        ssBuilder.append("\n");
 
         return ssBuilder;
     }
@@ -587,7 +625,45 @@ public class MyApplication extends Application {
 
             String line;
             while ((line = in.readLine()) != null) {
-                if(line.contains("1.0-"))
+                if(line.contains(BuildConfig.VERSION_NAME))
+                    isNew = true;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return isNew;
+    }
+
+    @Nullable
+    public static String getVersion(String program) {
+        String[] cmdline = { program, "--version"};
+        try {
+            Process p = Runtime.getRuntime().exec(cmdline);
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(p.getInputStream()));
+
+            String line;
+            while ((line = in.readLine()) != null) {
+                return line;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static boolean isFirmwareNew(String firmwarePath) {
+        // strings fw.bin | grep nexmon_ver
+        boolean isNew = false;
+        String[] cmdline = {"strings " + firmwarePath + " | grep nexmon_ver"};
+        try {
+            Process p = Runtime.getRuntime().exec(cmdline);
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(p.getInputStream()));
+
+            String line;
+            while ((line = in.readLine()) != null) {
+                if(line.contains(BuildConfig.VERSION_NAME))
                     isNew = true;
             }
         } catch (IOException e) {
@@ -603,22 +679,30 @@ public class MyApplication extends Application {
     }
 
     public static void showSurveyNotification() {
-        Uri webpage = Uri.parse("http://survey.seemoo.tu-darmstadt.de/limesurvey/index.php/465539?N00=" + nexmonUID);
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(MyApplication.getAppContext());
+        boolean showNotification = prefs.getBoolean("switch_survey_notification", true);
+        if(showNotification) {
+            Uri webpage = Uri.parse("http://survey.seemoo.tu-darmstadt.de/limesurvey/index.php/465539?N00=" + nexmonUID);
+            MyApplication.showSurveyNotification();
 
-        Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
+            Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
 
-        PendingIntent pendingIntent = PendingIntent.getActivity(getAppContext(), 99999, intent, 0);
+            PendingIntent pendingIntent = PendingIntent.getActivity(getAppContext(), 99999, intent, 0);
 
-        Notification n  = new Notification.Builder(getAppContext())
-                .setContentTitle("Nexmon Survey")
-                .setContentText("Help us to improve Nexmon and take a short survey!")
-                .setAutoCancel(false)
-                .setSmallIcon(R.drawable.x_logo)
-                .setOngoing(false)
-                .setContentIntent(pendingIntent)
-                .build();
+            Notification n = new Notification.Builder(getAppContext())
+                    .setContentTitle("Nexmon Survey")
+                    .setContentText("Help us to improve Nexmon and take a short survey!")
+                    .setAutoCancel(false)
+                    .setSmallIcon(R.drawable.x_logo)
+                    .setOngoing(false)
+                    .setContentIntent(pendingIntent)
+                    .build();
 
-        getNotificationManager().notify(99999, n);
+            getNotificationManager().notify(SURVEY_NOTIFICATION_ID, n);
+        }
     }
 
+    public static void dismissSurveyNotification() {
+        MyApplication.getNotificationManager().cancel(SURVEY_NOTIFICATION_ID);
+    }
 }

@@ -26,10 +26,6 @@ import de.tu_darmstadt.seemoo.nexmon.stations.AttackInfoString;
 
 public class FrameSender {
 
-
-
-
-
     public static synchronized native AttackInfoString sendFrame(byte[] frame);
 
     public static boolean sendViaSocket(byte[] frame) {
@@ -45,20 +41,5 @@ public class FrameSender {
         }
 
     }
-
-    public static AttackInfoString sendSocket(byte[] frame) {
-        AttackInfoString attackInfoString = new AttackInfoString();
-
-        if(sendViaSocket(frame)) {
-            attackInfoString.message = frame.length + " bytes injected!\n";
-            attackInfoString.messageType = AttackInfoString.ATTACK_UPDATE_SUCCESS;
-        } else {
-            attackInfoString.message = "Error, look at logcat!";
-            attackInfoString.messageType = AttackInfoString.ATTACK_UPDATE_ERROR;
-        }
-        return attackInfoString;
-    }
-
-
 
 }

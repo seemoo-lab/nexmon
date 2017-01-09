@@ -21,13 +21,11 @@ package de.tu_darmstadt.seemoo.nexmon.gui;
 
 import android.app.Fragment;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.preference.PreferenceManager;
 import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
@@ -85,11 +83,7 @@ public class StartFragment extends TrackingFragment {
     public void onStart() {
         super.onStart();
 
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(MyApplication.getAppContext());
-        boolean showNotification = prefs.getBoolean("switch_survey_notification", true);
-        if(showNotification) {
-            MyApplication.showSurveyNotification();
-        }
+
     }
 
     @Override
