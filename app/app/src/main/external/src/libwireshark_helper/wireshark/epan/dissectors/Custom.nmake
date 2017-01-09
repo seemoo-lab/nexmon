@@ -1,0 +1,8 @@
+##
+## $Id: Custom.nmake 26783 2008-11-15 15:44:56Z etxrab $
+## Here you can add custom dissectors
+#
+
+CUSTOM_DISSECTOR_SRC = \
+
+CUSTOM_HEADER_FILES = \
