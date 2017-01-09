@@ -16,7 +16,7 @@
     <string-array name="bcm4339">       <!-- Nexus 5 -->
         <item>/system</item>                   <!-- mount point -->
         <item>/vendor/firmware/</item>                   <!-- firmware path end-->
-        <item>fw_bcm4339.bin</item>                   <!-- firmware name beginning -->
+        <item>fw_bcm4339_6_37_34_43.bin</item>                   <!-- firmware name beginning -->
         <item>fw_bcmdhd.bin</item>                   <!-- firmware name end -->
     </string-array>
 

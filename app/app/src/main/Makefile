@@ -1,11 +1,24 @@
 UTILITIES_PATH = ../../../../utilities
+PATCHES_PATH = ../../../../patches
 
-all: assets/nexmon libs/armeabi
+all: assets/nexmon assets libs/armeabi
 	
-assets: assets/nexmon assets/nexmon/nc assets/nexmon/iw assets/nexmon/iwconfig assets/nexmon/tcpdump assets/nexmon/aircrack-ng assets/nexmon/dhdutil assets/nexmon/nexutil assets/nexmon/mdk3 assets/nexmon/libfakeioctl.so FORCE 
+assets: assets/nexmon/fw_bcm4330_5_90_100_41_sta.bin assets/nexmon/fw_bcm4339_6_37_34_43.bin assets/nexmon/fw_bcm4358_7_112_200_17_sta.bin assets/nexmon assets/nexmon/nc assets/nexmon/iw assets/nexmon/iwconfig assets/nexmon/tcpdump assets/nexmon/aircrack-ng assets/nexmon/dhdutil assets/nexmon/nexutil assets/nexmon/mdk3 assets/nexmon/libfakeioctl.so FORCE 
 
 assets/nexmon: FORCE
 	mkdir -p assets/nexmon/
+
+assets/nexmon/fw_bcm4330_5_90_100_41_sta.bin: FORCE
+	make -C $(PATCHES_PATH)/bcm4330/5_90_100_41_sta/nexmon
+	cp $(PATCHES_PATH)/bcm4330/5_90_100_41_sta/nexmon/bcmdhd_sta.bin $@
+
+assets/nexmon/fw_bcm4339_6_37_34_43.bin: FORCE
+	make -C $(PATCHES_PATH)/bcm4339/6_37_34_43/nexmon
+	cp $(PATCHES_PATH)/bcm4339/6_37_34_43/nexmon/fw_bcmdhd.bin $@
+
+assets/nexmon/fw_bcm4358_7_112_200_17_sta.bin: FORCE
+	make -C $(PATCHES_PATH)/bcm4358/7_112_200_17_sta/nexmon
+	cp $(PATCHES_PATH)/bcm4358/7_112_200_17_sta/nexmon/fw_bcmdhd.bin $@
 
 assets/nexmon/tcpdump: FORCE
 	make -C $(UTILITIES_PATH)/tcpdump
