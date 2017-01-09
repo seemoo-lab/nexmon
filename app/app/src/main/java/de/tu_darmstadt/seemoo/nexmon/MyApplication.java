@@ -394,11 +394,6 @@ public class MyApplication extends Application {
         String r = "";
 
         try {
-            System.loadLibrary("nl");
-            System.loadLibrary("glib-2.0");
-            System.loadLibrary("gmodule-2.0");
-            System.loadLibrary("gpg-error");
-            System.loadLibrary("gcrypt");
             System.loadLibrary("wireshark_helper");
             System.loadLibrary("nexmonpentestsuite");
             isLibInstalledCorrectly = true;
