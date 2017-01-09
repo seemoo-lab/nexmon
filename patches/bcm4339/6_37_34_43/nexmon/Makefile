@@ -168,6 +168,6 @@ clean-firmware: FORCE
 	$(Q)rm -fr fw_bcmdhd.bin obj gen log src/ucode_compressed.c src/templateram.c
 
 clean: clean-firmware
-	$(Q)rm BUILD_NUMBER
+	$(Q)rm -f BUILD_NUMBER
 
 FORCE:

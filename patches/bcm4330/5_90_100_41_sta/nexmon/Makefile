@@ -1,3 +1,4 @@
+GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
 FW_PATH=$(NEXMON_ROOT)/firmwares/bcm4330/5_90_100_41_sta
 include $(FW_PATH)/definitions.mk
 
@@ -16,6 +17,8 @@ CFLAGS= \
 	-fplugin-arg-nexmon-fwver=$(NEXMON_FW_VERSION_NUM) \
 	-DNEXMON_CHIP=$(NEXMON_CHIP) \
 	-DNEXMON_FW_VERSION=$(NEXMON_FW_VERSION) \
+	-DGIT_VERSION=\"$(GIT_VERSION)\" \
+	-DBUILD_NUMBER=\"$$(cat BUILD_NUMBER)\" \
 	-Wall -Werror -O2 -nostdlib -nostartfiles -ffreestanding -mthumb -march=$(NEXMON_ARCH) \
 	-ffunction-sections -fdata-sections \
 	-I$(NEXMON_ROOT)/patches/include \
@@ -24,6 +27,9 @@ CFLAGS= \
 all: $(RAM_FILE)
 
 init: FORCE
+	$(Q)if ! test -f BUILD_NUMBER; then echo 0 > BUILD_NUMBER; fi
+	$(Q)echo $$(($$(cat BUILD_NUMBER) + 1)) > BUILD_NUMBER
+	$(Q)touch src/patch.c
 	$(Q)make -s -f $(NEXMON_ROOT)/patches/common/header.mk
 	$(Q)mkdir -p obj gen log
 
@@ -139,5 +145,6 @@ clean-firmware: FORCE
 	$(Q)rm -fr $(RAM_FILE) obj gen log src/ucode_compressed.c ucode_compressed.bin
 
 clean: clean-firmware
+	$(Q)rm -f BUILD_NUMBER
 
 FORCE:
