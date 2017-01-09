@@ -9,7 +9,7 @@
     <string-array name="bcm4330">       <!-- Samsung Galaxy S2 -->
         <item>/system</item>                   <!-- mount point -->
         <item>/vendor/firmware/</item>                   <!-- firmware path end-->
-        <item>fw_bcm4330.bin</item>                   <!-- firmware name beginning -->
+        <item>fw_bcm4330_5_90_100_41_sta.bin</item>                   <!-- firmware name beginning -->
         <item>fw_bcmdhd.bin</item>                   <!-- firmware name end -->
     </string-array>
 
@@ -23,7 +23,7 @@
     <string-array name="bcm4358">           <!-- Nexus 6P -->
         <item>/vendor</item>                <!-- mount point -->
         <item>/vendor/firmware/</item>      <!-- firmware path end-->
-        <item>fw_bcm4358.bin</item>         <!-- firmware name beginning -->
+        <item>fw_bcm4358_7_112_200_17_sta.bin</item>         <!-- firmware name beginning -->
         <item>fw_bcmdhd.bin</item>          <!-- firmware name end -->
     </string-array>
 
