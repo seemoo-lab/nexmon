@@ -283,6 +283,11 @@ int
 wlc_bmac_read_shm(void *wlc_hw, unsigned int offset) 
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1ABA2C)
+void
+wlc_bmac_set_chanspec(void *wlc_hw, int chanspec, int mute, void *txpwr)
+VOID_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x3B0BC)
 AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x3085C)
 void 
@@ -317,6 +322,16 @@ void *
 wlc_bsscfg_find_by_wlcif(void *wlc, int wlcif) 
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1AE014)
+void
+wlc_channel_reg_limits(void *wlc_cm, int chanspec, void *txpwr)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x5AF20)
+void
+wlc_channel_srom_limits(void *wlc_cm, int chanspec, void *srommin, void *srommax)
+VOID_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x32A90) 
 void *
 wlc_compute_plcp(void *wlc, unsigned int rspec, short length, short type_subtype_frame_ctl_field, char *plcp) 
@@ -327,11 +342,16 @@ void
 wlc_custom_scan_complete(void *wlc, int status, void *cfg)
 VOID_DUMMY
 
-AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8C97C)
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x18C4C8)
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x9F38)
 AT(CHIP_VER_BCM4330, FW_VER_ALL, 0x81C51C)
 int 
 wlc_d11hdrs(void *wlc, void *p, void *scb, int short_preamble, unsigned int frag, unsigned int nfrag, unsigned int queue, int next_frag_len, int key, int rspec_override) 
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8C97C) 
+int 
+wlc_d11hdrs_ext(void *wlc, void *p, void *scb, int short_preamble, unsigned int frag, unsigned int nfrag, unsigned int queue, int next_frag_len, int key, int rspec_override, short *ext)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x3352C) 
@@ -345,9 +365,19 @@ void
 wlc_mctrl_write(void *wlc_hw) 
 VOID_DUMMY
 
-AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x35aa0) 
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x2C760)
+void
+wlc_pdu_push_txparams(void *wlc, void *p, unsigned int flags, void *key, unsigned int rate_override, unsigned int fifo)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x35aa0)
 int 
 wlc_prec_enq_head(void *wlc, void *q, void *pkt, int prec, char head) 
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8C8EC) 
+int
+wlc_prec_enq(void *wlc, void *q, void *p, int preq)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8CD4C) 
@@ -368,6 +398,13 @@ AT(CHIP_VER_BCM4330, FW_VER_ALL, 0x832A48)
 int 
 wlc_sendctl(void *wlc, void *p, void *qi, void *scb, unsigned int fifo, unsigned int rate_override, char enq_only)
 RETURN_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x18AEC4)
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x18AFB4)
+//AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x3A95C)
+void
+wlc_statsupd(void *wlc)
+VOID_DUMMY
 
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x9DEA)
 void *
@@ -611,7 +648,8 @@ void *
 wlc_bsscfg_find_by_wlcif_ram(void *wlc, int wlcif) 
 RETURN_DUMMY
 
-AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1AE2BC) 
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1AE2BC)
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1AE40C)
 void *
 wlc_channel_set_chanspec(void *wlc_cm, unsigned short chanspec, int local_constraint_qdbm) 
 RETURN_DUMMY
@@ -630,11 +668,6 @@ AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x191438)
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x191528)
 int
 wlc_custom_scan(void *wlc, void *arg, int arg_len, void *chanspec_start, int macreq, void *bsscfg)
-RETURN_DUMMY
-
-AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x18C4C8) 
-int 
-wlc_d11hdrs_RAM(void *wlc, void *p, void *scb, int short_preamble, unsigned int frag, unsigned int nfrag, unsigned int queue, int next_frag_len, int key, int rspec_override) 
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x199874) 
@@ -776,6 +809,7 @@ wlc_scb_lookup(void *wlc, void *bsscfg, char *ea)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x81F80C)
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x2C798)
 int
 wlc_pdu_txhdr(void *wlc, void *p, void *scb)
 RETURN_DUMMY
@@ -790,7 +824,7 @@ int
 wlc_sendpkt(void *wlc, void *p, int wlcif) 
 RETURN_DUMMY
 
-AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1926B8) 
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8CA4C) 
 void 
 wlc_send_q(void *wlc, void *qi) 
 VOID_DUMMY

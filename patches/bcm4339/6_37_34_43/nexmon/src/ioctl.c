@@ -209,6 +209,14 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
             }
             break;
 
+        case NEX_GET_WL_CNT:
+            if (len >= sizeof(wl_cnt_t)) {
+                wlc_statsupd(wlc);
+                memcpy(arg, wlc->pub->_cnt, sizeof(wl_cnt_t));
+                ret = IOCTL_SUCCESS;
+            }
+            break;
+
         case 500:
             wlc_iovar_op(wlc, "mpc", 0, 0, arg, len, 1, 0);  
             ret = IOCTL_SUCCESS;
@@ -216,6 +224,32 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 
         case 501:
             wlc_iovar_op(wlc, "mpc", 0, 0, arg, len, 0, 0);
+            ret = IOCTL_SUCCESS;
+            break;
+
+        case 502:
+            // nexutil -g 502 -i -v 0x10010002 -l 210
+            // for channel 1 80 MHz
+            if (len >= (66 + 4 + 66 + 4 + 66 + 4)) {
+                int bandwidth_index = *(short *) arg;
+                int chanspec = *(short *) (arg + 2);
+
+                *(int *) arg = bandwidth_index;
+                *(int *) (arg + 66 + 4) = bandwidth_index;
+                *(int *) (arg + 66 + 4 + 66 + 4) = bandwidth_index;
+
+                wlc_channel_srom_limits(wlc->cmi, chanspec, arg, arg + 66 + 4);
+                wlc_channel_reg_limits(wlc->cmi, chanspec, arg + 66 + 4 + 66 + 4);
+            }
+
+            // There seems to be no chain limit
+            {
+                char *chain_limit_2g = (char *) (wlc->cmi + 4 + 64);
+                char *chain_limit_5g = (char *) (wlc->cmi + 4 + 108);
+                printf("chain limit 2g: %02x %02x %02x %02x\n", chain_limit_2g[0], chain_limit_2g[1], chain_limit_2g[2], chain_limit_2g[3]);
+                printf("chain limit 5g: %02x %02x %02x %02x\n", chain_limit_5g[0], chain_limit_5g[1], chain_limit_5g[2], chain_limit_5g[3]);
+            }
+
             ret = IOCTL_SUCCESS;
             break;
 

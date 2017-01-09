@@ -61,7 +61,15 @@ sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned i
     }
 
     if (wlc->hw->up) {
-        wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 0);
+        if (p->flags & 0x80) { // WLF_TXHDR = 0x80
+            if (wlc_prec_enq(wlc, wlc->active_queue + 4, p, 5)) {
+                wlc_send_q(wlc, wlc->active_queue);
+            } else {
+                pkt_buf_free_skb(wlc->osh, p, 0);
+            }
+        } else {
+            wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 0);
+        }
     } else {
         pkt_buf_free_skb(wlc->osh, p, 0);
         printf("ERR: wlc down\n");
@@ -75,6 +83,8 @@ sendframe_copy(struct tx_task *task)
     struct sk_buff *p_copy = pkt_buf_get_skb(task->wlc->osh, task->p->len + 202);
     skb_pull(p_copy, 202);
     memcpy(p_copy->data, task->p->data, task->p->len);
+    p_copy->flags = task->p->flags;
+    p_copy->scb = task->p->scb;
 
     sendframe(task->wlc, p_copy, task->fifo, task->rate);
 
