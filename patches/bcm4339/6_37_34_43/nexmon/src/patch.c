@@ -63,4 +63,4 @@ GenericPatch4(templateram_bin, templateram_bin);
 // Patch the "wl%d: Broadcom BCM%04x 802.11 Wireless Controller %s\n" string
 __attribute__((at(0x1FD31B, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243)))
 __attribute__((at(0x1FD327, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704)))
-StringPatch(version_string, "nexmon (" __DATE__ " " __TIME__ ")\n");
+StringPatch(version_string, "nexmon_ver: " GIT_VERSION "-" BUILD_NUMBER "\n");
