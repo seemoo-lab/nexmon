@@ -44,6 +44,7 @@
 #include <nexioctls.h>          // ioctls added in the nexmon patch
 #include <capabilities.h>       // capabilities included in a nexmon patch
 #include <sendframe.h>          // sendframe functionality
+#include <version.h>            // version information
 
 #define WLC_GET_MONITOR             107
 #define WLC_SET_MONITOR             108
@@ -66,6 +67,17 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
                 arg[len-1] = 0;
                 printf("ioctl: %s\n", arg);
                 ret = IOCTL_SUCCESS; 
+            }
+            break;
+
+        case NEX_GET_VERSION_STRING:
+            {
+                int strlen = 0;
+                for ( strlen = 0; version[strlen]; ++strlen );
+                if (len >= strlen) {
+                    memcpy(arg, version, strlen);
+                    ret = IOCTL_SUCCESS;
+                }
             }
             break;
 

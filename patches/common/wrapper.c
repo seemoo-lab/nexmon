@@ -242,6 +242,11 @@ int
 sprintf(char *buf, const char *format, ...) 
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x12824)
+int
+strlen(char *str)
+RETURN_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x1283C) 
 int 
 strncmp(char *str1, char *str2, unsigned int num) 

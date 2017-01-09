@@ -55,7 +55,3 @@ BLPatch(wlc_ucode_write_compressed, wlc_ucode_write_compressed);
 
 __attribute__((at(0x363B4, "", CHIP_VER_BCM4330, FW_VER_5_90_100_41)))
 GenericPatch4(ucode_length, 0x9F70);
-
-// Patch the "wl%d: Broadcom BCM%04x 802.11 Wireless Controller %s\n" string
-__attribute__((at(0x2D744, "", CHIP_VER_BCM4330, FW_VER_5_90_100_41)))
-StringPatch(version_string, "nexmon_ver: " GIT_VERSION "-" BUILD_NUMBER "\n");

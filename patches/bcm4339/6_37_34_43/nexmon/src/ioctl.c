@@ -47,6 +47,7 @@
 #include <objmem.h>             // Functions to access object memory
 #include <ieee80211_radiotap.h> // Radiotap header related
 #include <securitycookie.h>     // Security cookie related
+#include <version.h>            // version information
 
 extern void *inject_frame(struct wlc_info *wlc, struct sk_buff *p);
 
@@ -214,6 +215,15 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
                 wlc_statsupd(wlc);
                 memcpy(arg, wlc->pub->_cnt, sizeof(wl_cnt_t));
                 ret = IOCTL_SUCCESS;
+            }
+            break;
+
+        case NEX_GET_VERSION_STRING:
+            {
+                if (len >= strlen(version)) {
+                    memcpy(arg, version, strlen(version));
+                    ret = IOCTL_SUCCESS;
+                }
             }
             break;
 
