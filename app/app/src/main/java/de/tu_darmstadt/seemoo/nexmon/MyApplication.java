@@ -36,7 +36,6 @@ import android.hardware.SensorManager;
 import android.location.LocationManager;
 import android.media.AudioManager;
 import android.net.ConnectivityManager;
-import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Environment;
@@ -81,6 +80,7 @@ public class MyApplication extends Application {
     private static Tracker mTracker;
 
     public static final int SURVEY_NOTIFICATION_ID = 99999;
+    private static SpannableStringBuilder installInfo;
 
     /**
      * Gets the default {@link Tracker} for this {@link Application}.
@@ -163,6 +163,18 @@ public class MyApplication extends Application {
     private static boolean isNexutilAvailable = false;
 
     private static boolean isNexutilNew = false;
+
+    public static boolean isRawproxyNew() {
+        return isRawproxyNew;
+    }
+
+    public static boolean isRawproxyreverseNew() {
+        return isRawproxyreverseNew;
+    }
+
+    private static boolean isRawproxyNew = false;
+
+    private static boolean isRawproxyreverseNew = false;
 
     public static boolean isLibInstalledCorrectly() {
         return isLibInstalledCorrectly;
@@ -260,6 +272,10 @@ public class MyApplication extends Application {
 
     public static boolean isNexutilAvailable() {
         return isNexutilAvailable;
+    }
+
+    public static boolean isNexutilNew() {
+        return isNexutilNew;
     }
 
     public static boolean isNexmonFirmwareAvailable() {
@@ -393,7 +409,6 @@ public class MyApplication extends Application {
         startService(new Intent(getAppContext(), AttackService.class));
         startService(new Intent(getAppContext(), RawSocketReceiveService.class));
 
-       // showSurveyNotification();
     }
 
     public void initLibs() {
@@ -423,6 +438,7 @@ public class MyApplication extends Application {
                 evaluateInstallation();
                 evaluateBCMfirmware();
                 evaluateFirmwareVersion();
+                evaluateInstallInfo();
             }
         }).start();
 
@@ -517,18 +533,24 @@ public class MyApplication extends Application {
     public static String getFirmwareVersion() {
         return firmwareVersion;
     }
-
+    
     public static SpannableStringBuilder getInstallInfo() {
+        return installInfo;
+    }
+
+    public static void evaluateInstallInfo() {
         SpannableStringBuilder ssBuilder = new SpannableStringBuilder();
 
         if(!isRootGranted) {
             ssBuilder.append("We need root to proceed!", new ForegroundColorSpan(Color.RED), 0);
-            return ssBuilder;
+            installInfo = ssBuilder;
+            return;
         }
 
         if(MyApplication.getAppContext().checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             ssBuilder.append("We need read / write permission for your storage!", new ForegroundColorSpan(Color.RED), 0);
-            return ssBuilder;
+            installInfo = ssBuilder;
+            return;
         }
 
         ssBuilder.append("App Version:\n\n", new StyleSpan(Typeface.BOLD), 0);
@@ -616,14 +638,14 @@ public class MyApplication extends Application {
 
         ssBuilder.append("\n");
 
-        return ssBuilder;
+        installInfo = ssBuilder;
     }
 
     public static void evaluateInstallation() {
         isRawproxyAvailable = isBinaryAvailable("rawproxy");
         isRawproxyreverseAvailable = isBinaryAvailable("rawproxyreverse");
         isNexutilAvailable = isBinaryAvailable("nexutil");
-        isNexutilNew = isNexutilNew();
+        evaluateNexutilVersion();
     }
 
     public static boolean isBinaryAvailable(String binary) {
@@ -645,7 +667,7 @@ public class MyApplication extends Application {
         return isAvailable;
     }
 
-    public static boolean isNexutilNew() {
+    public static void evaluateNexutilVersion() {
         boolean isNew = false;
         String[] cmdline = { "nexutil", "--version"};
         try {
@@ -658,10 +680,11 @@ public class MyApplication extends Application {
                 if(line.contains(BuildConfig.VERSION_NAME))
                     isNew = true;
             }
+            isNexutilNew = isNew;
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return isNew;
+
     }
 
     @Nullable
@@ -712,9 +735,6 @@ public class MyApplication extends Application {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(MyApplication.getAppContext());
         boolean showNotification = prefs.getBoolean("switch_survey_notification", true);
         if(showNotification) {
-            //Uri webpage = Uri.parse("http://survey.seemoo.tu-darmstadt.de/limesurvey/index.php/465539?N00=" + nexmonUID);
-
-            //Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
             Intent intent = new Intent(getAppContext(), SurveyNotificationActivity.class);
             PendingIntent pendingIntent = PendingIntent.getActivity(getAppContext(), 99999, intent, 0);
 
