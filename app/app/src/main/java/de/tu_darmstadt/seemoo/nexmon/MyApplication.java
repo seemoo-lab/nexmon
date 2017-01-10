@@ -65,6 +65,7 @@ import java.io.InputStreamReader;
 import java.util.Locale;
 import java.util.UUID;
 
+import de.tu_darmstadt.seemoo.nexmon.gui.SurveyNotificationActivity;
 import de.tu_darmstadt.seemoo.nexmon.net.FrameReceiver;
 import de.tu_darmstadt.seemoo.nexmon.net.MonitorModeService;
 import de.tu_darmstadt.seemoo.nexmon.net.RawSocketReceiveService;
@@ -708,10 +709,11 @@ public class MyApplication extends Application {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(MyApplication.getAppContext());
         boolean showNotification = prefs.getBoolean("switch_survey_notification", true);
         if(showNotification) {
-            Uri webpage = Uri.parse("http://survey.seemoo.tu-darmstadt.de/limesurvey/index.php/465539?N00=" + nexmonUID);
+            //Uri webpage = Uri.parse("http://survey.seemoo.tu-darmstadt.de/limesurvey/index.php/465539?N00=" + nexmonUID);
 
-            Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
-
+            //Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
+            Intent intent = new Intent(getAppContext(), SurveyNotificationActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             PendingIntent pendingIntent = PendingIntent.getActivity(getAppContext(), 99999, intent, 0);
 
             Notification n = new Notification.Builder(getAppContext())
