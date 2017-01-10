@@ -65,6 +65,7 @@ import java.io.InputStreamReader;
 import java.util.Locale;
 import java.util.UUID;
 
+import de.tu_darmstadt.seemoo.nexmon.gui.SurveyNotificationActivity;
 import de.tu_darmstadt.seemoo.nexmon.net.FrameReceiver;
 import de.tu_darmstadt.seemoo.nexmon.net.MonitorModeService;
 import de.tu_darmstadt.seemoo.nexmon.net.RawSocketReceiveService;
@@ -75,6 +76,7 @@ import de.tu_darmstadt.seemoo.nexmon.stations.AttackService;
 
 public class MyApplication extends Application {
 
+    public static boolean isAppVisible = false;
 
     private static Tracker mTracker;
 
@@ -173,9 +175,6 @@ public class MyApplication extends Application {
     }
 
     private static String nexmonUID;
-
-
-    //public native void fakeauth(String bssid, String essid, String interfaceName, int reassocTiming, int keepaliveTiming, int packetTiming, String id);
 
     private static boolean isFrameReceiverRunning = false;
     private static NotificationManager notificationManager;
@@ -423,6 +422,7 @@ public class MyApplication extends Application {
             public void run() {
                 evaluateInstallation();
                 evaluateBCMfirmware();
+                evaluateFirmwareVersion();
             }
         }).start();
 
@@ -495,7 +495,7 @@ public class MyApplication extends Application {
         } catch(Exception e) {e.printStackTrace();}
     }
 
-    public static String getFirmwareVersion() {
+    public static void evaluateFirmwareVersion() {
         try {
             Command command = new Command(0, "ifconfig wlan0 up", "nexutil -g 413 -l 100 -r") {
                 @Override
@@ -512,7 +512,9 @@ public class MyApplication extends Application {
             };
             RootTools.getShell(true).add(command);
         } catch(Exception e) {e.printStackTrace();}
+    }
 
+    public static String getFirmwareVersion() {
         return firmwareVersion;
     }
 
@@ -710,11 +712,10 @@ public class MyApplication extends Application {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(MyApplication.getAppContext());
         boolean showNotification = prefs.getBoolean("switch_survey_notification", true);
         if(showNotification) {
-            Uri webpage = Uri.parse("http://survey.seemoo.tu-darmstadt.de/limesurvey/index.php/465539?N00=" + nexmonUID);
-            //MyApplication.showSurveyNotification();
+            //Uri webpage = Uri.parse("http://survey.seemoo.tu-darmstadt.de/limesurvey/index.php/465539?N00=" + nexmonUID);
 
-            Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
-
+            //Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
+            Intent intent = new Intent(getAppContext(), SurveyNotificationActivity.class);
             PendingIntent pendingIntent = PendingIntent.getActivity(getAppContext(), 99999, intent, 0);
 
             Notification n = new Notification.Builder(getAppContext())
@@ -727,7 +728,8 @@ public class MyApplication extends Application {
                     .build();
 
             getNotificationManager().notify(SURVEY_NOTIFICATION_ID, n);
-        }
+        } else
+            dismissSurveyNotification();
     }
 
     public static void dismissSurveyNotification() {

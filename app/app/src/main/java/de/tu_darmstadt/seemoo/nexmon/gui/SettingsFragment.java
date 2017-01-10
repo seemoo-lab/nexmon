@@ -250,6 +250,9 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
                 setWlanChannel(channelInt);
 
                 break;
+            case "switch_survey_notification":
+                MyApplication.showSurveyNotification();
+                break;
 
             default:
                 break;

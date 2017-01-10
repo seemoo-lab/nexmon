@@ -375,6 +375,18 @@ public class MyActivity extends Activity {
         } catch(Exception e) {e.printStackTrace();}
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        MyApplication.isAppVisible = true;
+        MyApplication.showSurveyNotification();
+    }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+        MyApplication.isAppVisible = false;
+        MyApplication.dismissSurveyNotification();
+    }
 }
 
