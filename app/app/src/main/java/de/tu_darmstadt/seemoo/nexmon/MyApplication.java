@@ -422,6 +422,7 @@ public class MyApplication extends Application {
             public void run() {
                 evaluateInstallation();
                 evaluateBCMfirmware();
+                evaluateFirmwareVersion();
             }
         }).start();
 
@@ -494,7 +495,7 @@ public class MyApplication extends Application {
         } catch(Exception e) {e.printStackTrace();}
     }
 
-    public static String getFirmwareVersion() {
+    public static void evaluateFirmwareVersion() {
         try {
             Command command = new Command(0, "ifconfig wlan0 up", "nexutil -g 413 -l 100 -r") {
                 @Override
@@ -511,7 +512,9 @@ public class MyApplication extends Application {
             };
             RootTools.getShell(true).add(command);
         } catch(Exception e) {e.printStackTrace();}
+    }
 
+    public static String getFirmwareVersion() {
         return firmwareVersion;
     }
 
@@ -725,7 +728,8 @@ public class MyApplication extends Application {
                     .build();
 
             getNotificationManager().notify(SURVEY_NOTIFICATION_ID, n);
-        }
+        } else
+            dismissSurveyNotification();
     }
 
     public static void dismissSurveyNotification() {
