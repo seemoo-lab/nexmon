@@ -75,6 +75,7 @@ import de.tu_darmstadt.seemoo.nexmon.stations.AttackService;
 
 public class MyApplication extends Application {
 
+    public static boolean isAppVisible = false;
 
     private static Tracker mTracker;
 
@@ -173,9 +174,6 @@ public class MyApplication extends Application {
     }
 
     private static String nexmonUID;
-
-
-    //public native void fakeauth(String bssid, String essid, String interfaceName, int reassocTiming, int keepaliveTiming, int packetTiming, String id);
 
     private static boolean isFrameReceiverRunning = false;
     private static NotificationManager notificationManager;
@@ -711,7 +709,6 @@ public class MyApplication extends Application {
         boolean showNotification = prefs.getBoolean("switch_survey_notification", true);
         if(showNotification) {
             Uri webpage = Uri.parse("http://survey.seemoo.tu-darmstadt.de/limesurvey/index.php/465539?N00=" + nexmonUID);
-            //MyApplication.showSurveyNotification();
 
             Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
 

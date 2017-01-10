@@ -86,8 +86,7 @@ public class MonitorModeService extends Service {
                         try {
                             RootTools.getShell(true).add(new StartMonitorModeCommand());
 
-                            // START NOTIFICAITON
-                            MyApplication.showSurveyNotification();
+
 
                         } catch(Exception e) {e.printStackTrace();}
                     }
@@ -117,8 +116,6 @@ public class MonitorModeService extends Service {
                         try {
                             RootTools.getShell(true).add(new StopMonitorModeCommand());
 
-                            // STOP NOTIFICATION
-                            MyApplication.dismissSurveyNotification();
 
                         } catch(Exception e) {e.printStackTrace();}
                     }
