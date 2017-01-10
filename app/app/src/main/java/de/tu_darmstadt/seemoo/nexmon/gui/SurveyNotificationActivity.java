@@ -19,7 +19,7 @@ public class SurveyNotificationActivity extends Activity {
         super.onStart();
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(MyApplication.getAppContext());
-        prefs.edit().putBoolean("switch_survey_notification", false);
+        prefs.edit().putBoolean("switch_survey_notification", false).commit();
 
         Uri webpage = Uri.parse("http://survey.seemoo.tu-darmstadt.de/limesurvey/index.php/465539?N00=" + MyApplication.getNexmonUID());
 

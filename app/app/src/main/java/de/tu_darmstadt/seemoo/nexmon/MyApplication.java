@@ -713,7 +713,6 @@ public class MyApplication extends Application {
 
             //Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
             Intent intent = new Intent(getAppContext(), SurveyNotificationActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             PendingIntent pendingIntent = PendingIntent.getActivity(getAppContext(), 99999, intent, 0);
 
             Notification n = new Notification.Builder(getAppContext())
