@@ -16,10 +16,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-package de.tu_darmstadt.seemoo.nexmon.gui;
+package de.tu_darmstadt.seemoo.nexmon.sharky;
 
 import de.tu_darmstadt.seemoo.nexmon.DissectionStrings;
-import de.tu_darmstadt.seemoo.nexmon.sharky.Packet;
 
 public class SharkListElement {
 

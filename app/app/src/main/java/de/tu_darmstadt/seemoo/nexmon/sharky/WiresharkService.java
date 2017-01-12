@@ -32,7 +32,6 @@ import java.util.ArrayList;
 
 import de.tu_darmstadt.seemoo.nexmon.MyApplication;
 import de.tu_darmstadt.seemoo.nexmon.gui.SharkFragment;
-import de.tu_darmstadt.seemoo.nexmon.gui.SharkListElement;
 import de.tu_darmstadt.seemoo.nexmon.net.IFrameReceiver;
 import de.tu_darmstadt.seemoo.nexmon.net.MonitorModeService;
 

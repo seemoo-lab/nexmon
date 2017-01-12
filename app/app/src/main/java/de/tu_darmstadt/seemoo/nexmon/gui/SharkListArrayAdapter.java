@@ -28,6 +28,7 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 import de.tu_darmstadt.seemoo.nexmon.MyApplication;
+import de.tu_darmstadt.seemoo.nexmon.sharky.SharkListElement;
 
 public class SharkListArrayAdapter extends ArrayAdapter<SharkListElement> {
 
