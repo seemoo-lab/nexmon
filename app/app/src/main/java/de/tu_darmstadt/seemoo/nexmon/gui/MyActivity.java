@@ -25,6 +25,7 @@ import android.app.Fragment;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -56,6 +57,8 @@ public class MyActivity extends Activity {
     ArrayList<String> menuItems;
     ArrayAdapter<String> adapter;
 
+    @Nullable
+    IPermissionListener permissionListener;
 
     Activity activity = this;
     Fragment sharkFragment = new SharkFragment();
@@ -74,8 +77,8 @@ public class MyActivity extends Activity {
     Fragment startFragment = StartFragment.newInstance();
 
     // Storage Permissions
-    private static final int REQUEST_EXTERNAL_STORAGE = 1;
-    private static String[] PERMISSIONS_STORAGE = {
+    public static final int REQUEST_EXTERNAL_STORAGE = 1;
+    public static final String[] PERMISSIONS_STORAGE = {
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.WRITE_EXTERNAL_STORAGE
     };
@@ -105,7 +108,15 @@ public class MyActivity extends Activity {
         return ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE);
     }
 
-
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if(permissionListener != null) {
+            try {
+                permissionListener.onPermissionResult(requestCode,permissions, grantResults);
+            } catch(Exception e) {e.printStackTrace();}
+        }
+    }
 
     public static String bytesToHex(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 3];
@@ -387,6 +398,18 @@ public class MyActivity extends Activity {
         super.onStop();
         MyApplication.isAppVisible = false;
         MyApplication.dismissSurveyNotification();
+    }
+
+    public void setPermissionListener(IPermissionListener permissionListener) {
+        this.permissionListener = permissionListener;
+    }
+
+    public void removePermissionListener() {
+        this.permissionListener = null;
+    }
+
+    public interface IPermissionListener {
+        void onPermissionResult(int requestCode, String[] permissions, int[] grantResults);
     }
 }
 
