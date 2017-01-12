@@ -1,11 +1,13 @@
 package de.tu_darmstadt.seemoo.nexmon.gui;
 
+import android.content.Intent;
 import android.content.res.AssetManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +19,7 @@ import android.widget.Toast;
 
 import com.google.android.gms.analytics.HitBuilders;
 import com.google.android.gms.analytics.Tracker;
+import com.nononsenseapps.filepicker.FilePickerActivity;
 import com.roger.catloadinglibrary.CatLoadingView;
 import com.stericson.RootShell.exceptions.RootDeniedException;
 import com.stericson.RootShell.execution.Command;
@@ -41,19 +44,26 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
     private static final int GUI_SHOW_LOADING = 52;
     private static final int GUI_DISMISS_LOADING = 53;
     private static final int GUI_SHOW_TOAST = 54;
+    private static final int GUI_UPDATE_TV_FIRMWARE_PATH = 55;
 
     private static final int COMMAND_RESTART_WLAN = 101;
     private static final int COMMAND_BACKUP_FIRMWARE = 102;
     private static final int COMMAND_FIRMWARE_VERSION = 103;
     private static final int COMMAND_FIRMWARE_RESTORE = 104;
 
+    private static final int FIRMWARE_PATH = 201;
+
     private Button btnCreateFirmwareBackup;
     private Button btnInstallNexmonFirmware;
     private Button btnRestoreFirmwareBackup;
+    private Button btnSelectFirmware;
+    private Button btnSearchFirmware;
+
     private String sdCardPath;
     private Spinner spnDevice;
 
     private TextView tvFirmwareVersionOutput;
+    private TextView tvFirmwarePath;
 
     private CatLoadingView loadingView;
     private Handler guiHandler;
@@ -63,6 +73,7 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
     private String fwNameBeginning = "";
     private String fwNameEnd = "";
 
+    private boolean firmwareFound = false;
 
     public FirmwareFragment() {
         sdCardPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/";
@@ -107,6 +118,10 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
                         break;
                     case GUI_SHOW_TOAST:
                         Toast.makeText(MyApplication.getAppContext(), (String) msg.obj, Toast.LENGTH_SHORT).show();
+                        break;
+                    case GUI_UPDATE_TV_FIRMWARE_PATH:
+                        tvFirmwarePath.setText((String) msg.obj);
+                        evaluateFirmware();
                         break;
                     default:
                         break;
@@ -157,6 +172,11 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
         btnInstallNexmonFirmware = (Button) view.findViewById(R.id.btnInstallNexmonFirmware);
 
         btnRestoreFirmwareBackup = (Button) view.findViewById(R.id.btnRestoreFirmwareBackup);
+        btnSelectFirmware = (Button) view.findViewById(R.id.btnSelectFirmware);
+        btnSearchFirmware = (Button) view.findViewById(R.id.btnSearchFirmware);
+
+
+        tvFirmwarePath = (TextView) view.findViewById(R.id.tvFirmwarePath);
         tvFirmwareVersionOutput = (TextView) view.findViewById(R.id.tvFirmwareVersionOutput);
         spnDevice = (Spinner) view.findViewById(R.id.spnDevice);
 
@@ -164,11 +184,29 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
         btnRestoreFirmwareBackup.setOnClickListener(this);
         btnCreateFirmwareBackup.setOnClickListener(this);
 
+        btnSelectFirmware.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                selectFile(FIRMWARE_PATH);
+            }
+        });
+
+        btnSearchFirmware.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String path = FirmwareUtils.getFirmwarePathComplete();
+                if(path != null) {
+                    Message msg = guiHandler.obtainMessage(GUI_UPDATE_TV_FIRMWARE_PATH, path);
+                    guiHandler.sendMessage(msg);
+                }
+            }
+        });
+
         spnDevice.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                evaluateFirmware();
-                onClickPrintFirmwareVersion();
+                //evaluateFirmware();
+                //onClickPrintFirmwareVersion(fwPathEnd + fwNameEnd);
             }
 
             @Override
@@ -191,7 +229,11 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
 
 
     private void setContentVisibility() {
-        if ((new File(sdCardPath + fwNameEnd + ".bac")).exists()) {
+        if(!(new File(fwPathEnd + fwNameEnd).exists())) {
+            btnCreateFirmwareBackup.setEnabled(false);
+            btnRestoreFirmwareBackup.setEnabled(false);
+            btnInstallNexmonFirmware.setEnabled(false);
+        }else if ((new File(sdCardPath + fwNameEnd + ".bac")).exists()) {
             btnCreateFirmwareBackup.setEnabled(false);
             btnInstallNexmonFirmware.setEnabled(true);
             btnRestoreFirmwareBackup.setEnabled(true);
@@ -291,7 +333,7 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
                     extractAssets();
                     //MyApplication.toast("Installing firmware ...");
                     copyExtractedAsset(fwPathEnd, fwNameBeginning);
-
+                    //Log.e("INSTALL PATH", "fwPathEnd: " + fwPathEnd + " fwNameEnd: " + fwNameEnd + " fwNameBeginning: " + fwNameBeginning);
                     RootTools.getShell(true).add(command);
                     Thread.sleep(5000);
                     guiHandler.sendEmptyMessage(GUI_DISMISS_LOADING);
@@ -339,13 +381,18 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
         });
     }
 
-    public void onClickPrintFirmwareVersion() {
-        final Command command = new Command(COMMAND_FIRMWARE_VERSION, "strings " + fwPathEnd + fwNameEnd + " | grep \"FWID:\"") {
+
+    public void onClickPrintFirmwareVersion(String fullPath) {
+        final Command command = new Command(COMMAND_FIRMWARE_VERSION, "strings " + fullPath + " | grep \"FWID:\"") {
+
+            boolean fwidFound = false;
+
             @Override
             public void commandOutput(int id, String line) {
                 if(id == COMMAND_FIRMWARE_VERSION) {
                     String out;
 
+                    fwidFound = true;
                     try {
                         String radioChip = line.substring(0, 10);
                         String rChip[] = radioChip.split("[a-zA-Z]+");
@@ -360,9 +407,7 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
                         out = line + "\n";
                     }
 
-                    Message msg = new Message();
-                    msg.what = UPDATE_TV_FIRMWARE_VERSION;
-                    msg.obj = out;
+                    Message msg = guiHandler.obtainMessage(UPDATE_TV_FIRMWARE_VERSION, out);
                     guiHandler.sendMessage(msg);
 
                     // Get tracker.
@@ -377,6 +422,15 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
 
                 super.commandOutput(id, line);
 
+            }
+
+            @Override
+            public void commandCompleted(int id, int exitcode) {
+                super.commandCompleted(id, exitcode);
+                if(!fwidFound) {
+                    Message msg = guiHandler.obtainMessage(UPDATE_TV_FIRMWARE_VERSION, "Not found!\nAre you sure that this file is the right one?!");
+                    guiHandler.sendMessage(msg);
+                }
             }
         };
 
@@ -405,12 +459,21 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
         else if(item.startsWith("BCM4358 "))
             fwInfo = getResources().getStringArray(R.array.bcm4358);
 
-        String pathAndFilename[] = FirmwareUtils.getFirmwareData();
+        //String pathAndFilename[] = FirmwareUtils.getFirmwarePath();
 
         mountPoint = fwInfo[0];
-        fwPathEnd = pathAndFilename[0];
+        //fwPathEnd = pathAndFilename[0];
         fwNameBeginning = fwInfo[2];
-        fwNameEnd = pathAndFilename[1];
+        //fwNameEnd = pathAndFilename[1];
+
+        String fullPath = tvFirmwarePath.getText().toString();
+
+        if(fullPath.contains("/")) {
+            int index = fullPath.lastIndexOf("/");
+            fwPathEnd = fullPath.substring(0, index + 1);
+            fwNameEnd = fullPath.substring(index + 1);
+            onClickPrintFirmwareVersion(fullPath);
+        }
 
         setContentVisibility();
     }
@@ -438,6 +501,30 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
                 break;
             default:
                 break;
+        }
+    }
+
+    private void selectFile(int requestCode) {
+        Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+
+        i.putExtra(FilePickerActivity.EXTRA_ALLOW_MULTIPLE, false);
+        i.putExtra(FilePickerActivity.EXTRA_ALLOW_CREATE_DIR, false);
+        i.putExtra(FilePickerActivity.EXTRA_MODE, FilePickerActivity.MODE_FILE);
+        i.putExtra(FilePickerActivity.EXTRA_START_PATH, "/vendor/firmware/");
+
+        startActivityForResult(i, requestCode);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if(requestCode == FIRMWARE_PATH && data != null && data.getData() != null) {
+            String path = data.getData().getPath();
+            if(path != null && !path.equals("")) {
+                Message msg = guiHandler.obtainMessage(GUI_UPDATE_TV_FIRMWARE_PATH, path);
+                guiHandler.sendMessage(msg);
+            }
         }
     }
 

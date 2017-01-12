@@ -65,13 +65,17 @@
                     android:paddingBottom="10dp"
                     android:text="In the following, you can overwrite your WiFi firmware. This only works for the following radio chips and firmwares:\n\nBCM4339 (Nexus 5) - 6.37.34.43\nBCM4358 (Nexus 6P) - 7.112.200.17-sta\nBCM4330 (SGS 2) - 5.90.100.41-sta\n\nCheck your firmware version before proceeding!" />
 
-
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@android:color/darker_gray"/>
                 <TextView
                     android:id="@+id/tvSpinnerDevice"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Device:"
                     android:paddingBottom="10dp"
+                    android:paddingTop="10dp"
                     android:textStyle="bold"/>
 
                 <Spinner
@@ -83,17 +87,85 @@
                     android:spinnerMode="dropdown"
                     android:paddingTop="15dp" />
 
+
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@android:color/darker_gray"/>
+
+                <TextView
+                    android:id="@+id/tvFirmwarePathDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Firmware Path:"
+                    android:paddingBottom="10dp"
+                    android:paddingTop="10dp"
+
+                    android:textStyle="bold"/>
+                <TextView
+                    android:id="@+id/tvFirmwarePath"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:paddingBottom="10dp"
+
+                    android:text="Search or select a firmware file." />
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:divider="?android:dividerVertical"
+                    android:showDividers="middle"
+                    android:orientation="horizontal"
+                    android:paddingBottom="10dp">
+                <Button
+                    android:id="@+id/btnSearchFirmware"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:text="Search Firmware" />
+
+                <Button
+                    android:id="@+id/btnSelectFirmware"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:text="Select Firmware" />
+                    </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@android:color/darker_gray"/>
+                <TextView
+                    android:id="@+id/tvFirmwareVersionDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Firmware Version:"
+                    android:paddingBottom="10dp"
+                    android:paddingTop="10dp"
+
+                    android:textStyle="bold"/>
                 <TextView
                     android:id="@+id/tvFirmwareVersionOutput"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:fontFamily="monospace"
-                    android:text="" />
+                    android:paddingBottom="10dp"
+                    android:text="Search or select a firmware file." />
 
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@android:color/darker_gray"/>
                 <TextView
                     android:id="@+id/tvFirmwareBackup"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:paddingTop="10dp"
                     android:paddingBottom="10dp"
                     android:text="Create a backup of the currently installed firmware at your external storage. If another backup exists, you need to manually delete it first." />
 

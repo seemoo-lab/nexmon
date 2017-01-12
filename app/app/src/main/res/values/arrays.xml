@@ -7,7 +7,7 @@
 
     <string-array name="firmware_paths">
         <item>/vendor/firmware/</item>
-        <item>/system/etc/wifi</item>
+        <item>/system/etc/wifi/</item>
     </string-array>
 
     <string-array name="smartphones">
