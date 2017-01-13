@@ -48,6 +48,12 @@ public class APfinderService extends Service implements IFrameReceiver {
         isRunning = true;
         sendMonitorModeBroadcast(true);
         startTime = System.currentTimeMillis();
+
+        Tracker tracker = MyApplication.getDefaultTracker();
+        tracker.send(new HitBuilders.EventBuilder()
+                .setCategory("Airodump")
+                .setAction("Live Capturing started")
+                .build());
     }
 
     private void sendMonitorModeBroadcast(boolean monitorModeNeeded) {
@@ -85,6 +91,12 @@ public class APfinderService extends Service implements IFrameReceiver {
                 .setCategory("Runtime")
                 .setVariable("Airodump")
                 .setValue(System.currentTimeMillis() - startTime)
+                .build());
+
+
+        tracker.send(new HitBuilders.EventBuilder()
+                .setCategory("Airodump")
+                .setAction("Live capturing stopped")
                 .build());
 
     }
