@@ -76,7 +76,7 @@ To be able to communicate with the firmware without root priviledges, we created
 * Go to the *patches* folder for the bcm43438 chipset: `cd patches/bcm43438/7_45_41_26/nexmon/`
   * Compile a patched firmware: `make`
   * Generate a backup of your original firmware file: `make backup-firmware`
-  * Install the patched firmware on your smartphone: `make install-firmware`
+  * Install the patched firmware on your RPI3: `make install-firmware`
 * *Optional*: remove wpa_supplicant for better control over the WiFi interface: `apt-get remove wpasupplicant`
 * *Optional*: install nexutil: from the root directory of our repository switch to the nexutil folder: `cd utilities/nexutil/`. Compile and install nexutil: `make && make install`.
 
