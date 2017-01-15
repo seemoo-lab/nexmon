@@ -1,0 +1,114 @@
+<!-- source: socat-exec.html -->
+<!-- Copyright Gerhard Rieger 2009 -->
+<html><head>
+<title>Executing programs using socat</title>
+<link rel="stylesheet" type="text/css" href="dest-unreach.css">
+</head>
+
+<body>
+
+<h1>Executing programs using socat</h1>
+
+<h2>Introduction</h2>
+<p>From its very beginning socat provided the <tt>EXEC</tt> and <tt>SYSTEM</tt>
+  address types for executing programs or scripts and exchanging data with
+  them. Beginning with version 2 - with implementation of the address chain 
+  feature (inter addresses) - these address types were enhanced to allow
+  execution of programs also in inter address context.
+</p>
+
+<h2>Program context types</h2>
+
+<p>Currently socat provides three contexts (interfaces) for program or script
+  execution:
+  <ul>
+    <li>The <em>endpoint</em> context: this is the classical situation where
+    socat equips the program with stdin and stdout. It does not
+    matter if the program uses other external communication channels. Address
+    keywords: EXEC, SYSTEM. This variant should be easy to understand in terms
+    of socat version 1 functionality and is therefore not further
+    discussed here.</li>
+    <li>The <em>bidirectional inter address</em> context: socat expects the
+    program to use two bidirectional channels: stdin and stdout on its "left"
+    side and file descriptors 3 and 4 on its "right" side. This allows to
+    provide nearly arbitrary data manipulations within the context of socat
+    chains. Address keywords: EXEC, SYSTEM.</li>
+    <li>The <em>unidirectional inter address</em> context: for easy
+    integration of standard UNIX programs socat provides the EXEC1 and SYSTEM1
+    address types where socat provides stdin on the "left" side and stdout on
+    the "right" side of the program, or vice versa for right-to-left
+    transfers.</li>
+  </ul>
+</p>
+
+<p>Note: The <em>endpoint</em> and the <em>unidirectional inter address</em>
+  contexts both just use the program's stdio to communicate with it. However,
+  in practice the last form will in most cases just manipulate and transfer
+  data, while the first form will usually have side effects by communicating
+  with exteral resources or by writing to the file system etc.
+</p>
+
+<h2>Executing programs in bidirectional inter address context</h2>
+<p>socat address chains concatenate internal modules that communicate
+  bidirectionally. 
+  For example, a chain that establishes encrypted connection to a socks server
+  might look something like this (parameters and options dropped):
+</p>
+<p><code>"SOCKS:... | OPENSSL-CLIENT | TCP:..."</code></p>
+<p>If you have a program that implements a new encryption protocol the chain
+  could be changed to:
+</p>
+<p><code>"SOCKS:... | EXEC:myencrypt.sh | TCP:..."</code></p>
+<p>The complete example:</p>
+<p><code>socat - "SOCKS:www.domain.com:80 | EXEC:myencrypt.sh | TCP:encrypt.secure.org:444"</code></p>
+
+<p>The <tt>myencrypt.sh</tt> script would be a wrapper around some myencrypt
+  program. It must adhere a few rules: It reads and writes cleartext data on
+  its left side (FDs 0 and 1), and it reads and writes encrypted data on its
+  right side (FDs 3 and 4). Thus, cleartext data would come from the left on FD
+  0, be encrypted, and sent to the right side through FD 4. Encrypted data would
+  come from the the right on FD 3, be unencrypted, and sent to the left side
+  through FD 1. It does not matter if the encryption protocol would required
+  negotiations or multiple packets on the right side.
+</p>
+<p>The <tt>myencrypt.sh</tt> script might log to syslog, its own log
+  file, or to stderr - this is independend of socat. It might have almost
+  arbitrary side effects.
+</p>
+<p>For optimal integration the script should be able to perform half-close and
+  should be able work with different file descriptor types (sockets, pipes,
+  ptys).
+</p>
+<p>The socat source distribution contains two example scripts that focus on
+  partial aspects:
+<ul>
+  <li><tt>predialog.sh</tt> implements an initial dialog on the "right" script
+    side and, after successful completion, begins to transfer data unmodified in
+    both directions.</li>
+  <li><tt>cat2.sh</tt> shows how to use two programs unidirectionally to gain
+    bidirectional transfer. The important aspects here are the shell based
+    input / output redirections that are necessary for half-close.</li>
+</ul>
+
+<h2>Using unidirectional inter addresses</h2>
+<p>There exist lots of UNIX programs that perform data manipulation like
+  compression or encoding from stdin to stdout, while related programs perform
+  the  reverse operation (decompression, decoding...) also from stdin to
+  stdout. socat makes it easy to use those programs directly, i.e. without the
+  need to write a bidirectional wrapper shell script.
+</p>
+<p><code>socat - "exec1:gzip % exec1:gunzip | tcp:remotehost:port"</code>
+</p>
+<p>The % character creates a dual communication context where different
+  inter addresses are used for left-to-right and right-to-left transer (see
+  <a href="socat-addresschain.html">socat-addresschain.html#dual</a>. socat
+  generates stdin/stdout file descriptors for both programs independently.
+</p>
+
+<p>
+<small>Copyright: Gerhard Rieger 2009</small><br>
+<small>License: <a href="http://www.fsf.org/licensing/licenses/fdl.html">GNU Free Documentation License (FDL)</a></small>
+</p>
+
+</body>
+</html>

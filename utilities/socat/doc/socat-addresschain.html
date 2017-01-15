@@ -1,0 +1,320 @@
+<!-- source: socat-exec.html -->
+<!-- Copyright Gerhard Rieger 2009 -->
+<html><head>
+<title>Socat address chains</title>
+<link rel="stylesheet" type="text/css" href="dest-unreach.css">
+</head>
+
+<body>
+
+<h1>Socat address chains</h1>
+
+<a name="introduction"/>
+<h2>Introduction</h2>
+<p>Socat version 2 can concatenate multiple modules and transfer data between
+  them bidirectionally.
+<p>
+
+
+<a name="example1"/>
+<h2>Example 1: OpenSSL via HTTP proxy</h2>
+
+<span class="frame"><span class="shell">
+socat - "OPENSSL,verify=0 | PROXY:secure.domain.com:443 | TCP:proxy.domain.com:8080"
+</span></span>
+
+<p>This command does the following: socat connects to proxy.domain.com on port
+  8080 and sends a proxy CONNECT request for secure.domain.com port 443; this is
+  similar to the proxy address available in version 1. Once the proxy server
+  acknowledges successful 
+  connection to the target (SSL) server, socat starts SSL negotiation and then
+  transfers data between its stdio and the SSL server.
+</p>
+
+
+<a name="basics"/>
+<h2>Address chain basics</h2>
+
+<p>socat version 1 was able to open two addresses and transfer data between 
+  them. "Addresses" could be just sockets or other file descriptors, or could
+  be a little more complex like proxy client or OpenSSL server and client. It
+  was, though desirable, practically not possible to combine complex address
+  types, or to use other socket types than the predefined ones (usually TCP)
+  with complex addresses.
+</p>
+<p>socat version 2 has been designed to overcome these limitations. First, the 
+  complex address types are now separated from the underlying file descriptor
+  types. Second, complex addresses that are now called <em>inter addresses</em>
+  can be concatenated to an <em>address chain</em>; however, an <em>endpoint
+  address</em> that just provides file descriptors must be the last component
+  of an address chain.
+</p>
+<p>The socat invocation takes two address chains, opens them, and transfers
+  data between them.
+</p>
+<p>An address chain consists of zero or more inter addresses and one endpoint
+  address, all separated by the pipe character '|'. When starting socat from
+  the command line these characters and the optional spaces must be protected
+  from the shell; it is recommended to put each address chain under double
+  quotes.
+</p>
+<p>The (bidirectional) inter addresses that are available with a socat
+  implementation can be listed with the following command:
+</p>
+<span class="frame"><span class="shell">
+socat -h |egrep 'b ..b groups='</span></span>
+<p>A full socat 2.0.0-b3 program provides the following inter addresses:
+</p>
+<table border=1>
+<tr><th>name</th><th>description</th></tr>
+<tr><td>NOP</td><td>transfers data unmodified</td></tr>
+<tr><td>OPENSSL-CLIENT</td><td>performs OpenSSL client negotiation, then
+    encrypts/decrypts data</td></tr>
+<tr><td>OPENSSL-SERVER</td><td>performs OpenSSL server negotiation, then
+    encrypts/decrypts data </td></tr>
+<tr><td>PROXY</td><td>performs proxy CONNECT client negotiation, then
+    transfers data unmodified</td></tr>
+<tr><td>SOCKS4</td><td>performs socks 4 client negotiation, then
+    transfers data unmodified</td></tr>
+<tr><td>SOCKS4A</td><td>performs socks 4a client negotiation, then
+    transfers data unmodified</td></tr>
+<tr><td>SOCKS5</td><td>performs socks 5 TCP client negotiation, then
+    transfers data unmodified</td></tr>
+<tr><td>TEST</td><td>appends &gt; to forward, and &lt; to reversely
+    transferred blocks</td></tr>
+<tr><td>EXEC</td><td>invokes a program
+    (see <a href="socat-exec.html">socat-exec.html</a>), then transfers data unmodified</td></tr>
+<tr><td>SYSTEM</td><td>invokes the shell (see <a href="socat-exec.html">socat-exec.html</a>), then transfers data unmodified</td></tr>
+
+</table>
+
+
+<a name="reverse"/>
+<h2>Reverse address use</h2>
+
+<p>Inter addresses have two interfaces. In most cases one of
+  these can be seen as a <em>data</em> interface, where arbitrary data
+  traffic may occur, and the other as <em>protocol</em> interface where the
+  transferred data has to follow some rules like socks and HTTP protocol, or
+  valid encryption.
+</p>
+<p>Bidirectional inter addresses are usually implemented such that their data
+  interface is on the "left" side, and the protocol interface on the "right"
+  side.
+</p>
+<p>It may be convenient to build an address chain where one or more inter
+  addresses work in the reverse direction, so their protocol side is connected
+  to left neighbor in the chain using the protocol, and the data side is
+  connected to the right neighbor for raw data transfer. socat allows to use
+  inter addresses in <em>reverse</em> direction by preceding their keyword with
+  &circ;.
+</p>
+
+
+<a name="example2"/>
+<h2>Example 2:</h2>
+
+<p>Endpoint addresses that fork should usually build the first socat address
+  chain, without inter addresses. For creating an SSL to TCP gateway that
+  handles multiple connections the following command line does the job:
+</p>
+<span class="frame"><span class="shell">
+socat TCP-LISTEN:443,reuseaddr,fork "^OPENSSL-SERVER,cert=server.pem | TCP:somehost:80"
+</span></span>
+
+<p>Without the reverse usage of the SSL server address, socat would "speak"
+  clear text with the clients that connected to its left address, and SSL to
+  somehost.
+</p>
+
+
+<a name="unidirectional"/>
+<h2>Unidirectional data transfer</h2>
+
+<p>Like in socat version 1, it is possible to specify unidirectional transfers
+  with version 2. Use socat options <a href="socat.html#OPTION_u">-u</a> or
+  <a href="socat.html#OPTION_U">-U</a>.
+</p>
+<p>Unidirectional transfer must be supported by the involved inter addresses;
+  e.g., SSL requires a bidirectional channel for negotiation of encryption
+  parameters etc.
+</p>
+<p>It is possible to mix uni- and bidirectional transfers within one address
+    chain: Think of a simple file transfer over SSL.
+</p>
+<p>The socat help function can tell us which address types support which kinds
+  of transfer:</p>
+<span class="frame"><span class="shell">
+socat -h |egrep 'openssl-server'</span></span>
+<p>gives the following output:
+</p>
+<p><pre>      openssl-server                      rwb   b groups=CHILD,RETRY,OPENSSL
+      openssl-server:&lt;port&gt;               rwb     groups=FD,SOCKET,LISTEN,CHILD,RETRY,RANGE,IP4,IP6,TCP,OPENSSL</pre>
+</p>
+<p>The <tt>rwb &nbsp; b</tt> flags mean that this address type can handle readonly,
+  writeonly, and bidirectional transfers on its left (data) side, but only
+  bidirectional on its right (protocol) side.
+</p>
+<p>The second line describes the (version 1) endpoint form: no right side
+  traffic kinds are specified because this address type establishes its protocol
+  communication itself.
+</p>
+
+<a name="dual"/>
+<h2>Dual inter addresses</h2>
+
+<p>In socat version 1 it was already possible to combine two unidirectional
+  addresses to one bidirectional address. This idea has been extended in version
+  2: Two unidirectional inter addresses can be combined to one bidirectional
+  transfer unit.
+</p>
+<p><em>Note: in version 1, the dual specification was like 
+    </em><tt>righttoleft!!lefttoright</tt><em>. In version 2, it is: 
+    </em><tt>lefttoright%righttoleft</tt><em>. This is the only major incompatibility
+    between versions 1 and 2.</em>
+</p>
+<p>With the few already available inter address types, this feature has no
+  practical use except with <a href="socat-exec.html">exec and system</a> type
+  addresses. However, the general function shall be described using the
+  hypothetical inter address types <tt>gzip</tt> and <tt>gunzip</tt>.
+</p>
+<p>Let us design these inter address types: <tt>gzip</tt> is a module that
+  reads arbitrary data on its left ("data") side, compresses it, and writes the
+  compressed data to its right (protocol side) neighbor.
+  <!-- Data that arrives onits right side is uncompressed and passed to the
+       left neighbor. -->
+</p>
+<p><tt>gunzip</tt> reads gzip compressed data on its left side and writes the
+  raw uncompressed data on its right side.
+</p>
+<p>socat can combine these to provide a bidirectional compress/decompress
+  function:<br>
+<tt>gzip%gunzip</tt>
+</p>
+<p>Data coming from the left is passed through gzip and sent to the right;
+  data coming from the right is passed through gunzip and sent to the left.
+</p>
+<p>When the reverse functionality is desired this arrangement does the job:<br>
+<tt>gunzip%gzip</tt>
+</p>
+
+
+<a name="fork"/>
+<h2>fork</h2>
+
+<p>socat provides the <tt>fork</tt> address option for uses like network
+  servers where multiple clients can connect and are handled in parallel in
+  different socat sub processes.
+</p>
+<p>When the sub processes should work independently (share no socat file
+  descriptors) the fork option must be applied to the last component of the
+  first address chain. For better readability it is advisable to have only the
+  "left" endpoint address in the left chain and put all intermediate addresses
+  into the right chain.
+</p>
+
+
+<a name="understanding"/>
+<h2>Understanding chain implementation</h2>
+
+<p>The idea of concatenated modules in socat is not new. But a few attempts to
+  completely rewrite and enhance the socat transfer engine 
+  were never completed. At last, it was decided to choose an approach that
+  requires only moderate changes to socats transfer engine and the existing
+  address types.
+</p>
+<p>Think of several socat1 like processes somehow combined - with an abstract
+  operator || :
+</p>
+<span class="frame"><span class="shell">
+  socat - openssl || socat - proxy:secure.domain.com || socat - tcp:proxy.domain.com:8080
+</span></span>
+<p>The solution was to put all these into one process but have each socat engine
+  run in its own thread. The transfer between the engines goes over socket
+  pairs, so the engines see file descriptors as usual. The main work then was
+  to implement the functionality for opening address chains which includes
+  parsing, creating socket pairs and threads, combining the addresses, taking
+  care of unidirectional, dual, and reverse addresses etc.
+</p>
+<p>Here is the socat version 2 command line of example 1:<br>
+<tt>socat - "OPENSSL,verify=0 | PROXY:secure.domain.com:443 | TCP:proxy.domain.com:8080"</tt>
+<p>A schematic representation of how this is realized in socat:<br>
+<tt>STDIO - engine[thread 0] - OPENSSL - socket pair - (FD) - engine[thread 1]
+- PROXY - socket pair - (FD) - engine[thread 2] - TCP</tt>
+</p>
+<p>where FD means a trivial address similar to the FD (file descriptor) address
+  type.
+</p>
+<p>For debugging address chains it proved useful to write down two lines and to note the actual file descriptor numbers:</p>
+<pre> STDIO ^ OPENSSL |    ^ PROXY |    ^ TCP
+ 0,1   ^       6 | 7  ^     4 | 5  ^   3</pre>
+<p>The symbol <b>&circ;</b> means a socat transfer engine.
+</p>
+
+<p>Now the implementation of the reverse address feature should be easier to
+  understand. While a forward address is put to the right side of its
+  engine, a reverse address is just put to the left side. Example 2 can be
+  explained so:
+</p>
+<p>Example 2 command line:<br>
+<tt>socat TCP-LISTEN:443,reuseaddr,fork "^OPENSSL-SERVER,cert=server.pem |
+  TCP:somehost:80"</tt>
+</p>
+<p>Schematic representation:<br>
+<tt>TCP-LISTEN - engine[thread 0] - (FD) - socket pair - OPENSSL-SERVER -
+  engine[thread 1] - TCP</tt>
+</p>
+<p>Debug schema:<br>
+<pre>
+ TCP-L ^    | SSL-SERV ^ TCP
+ 3     ^  5 | 6        ^   4</pre>
+
+
+<a name="commtypes"/>
+<h2>Communication types</h2>
+
+<p>For communication between the address modules of consecutive transfer
+  engines socat provides pairs (or quadruples) of file descriptors. You may
+  think about these as two normal UNIX pipes (fifos), one for left-to-right and
+  the other for right-to-left data transfer.
+</p>
+<p>There are a few requirements that these file descriptors should fulfill,
+  however they are different depending on the libraries used by the inter
+  address modules (e.g. libopenssl) or by external programs that are involved
+  (see <a href="socat-exec.html">socat-exec.html</a>).
+</p>
+<p>The factors to consider for these file dscriptors are:
+</p>
+<ul>
+  <li>Half close: when a module terminates communication on its write channel,
+    its read channel should still stay open.</li>
+  <li>Half close method: A module might half close a connection
+    using <tt>close()</tt> or <tt>shutdown()</tt> methods.</li>
+  <li>Buffering: The output buffering behaviour of some modules can be
+    influenced by the type of file descriptor</li>
+  <li>INET: Some external programs require a TCP/IPv4 file descriptor</li>
+</ul>
+<p>This table lists the available communication types and their
+  properties:</p>
+<table border=1>
+  <tr><th>comm.type</th><th>half close with close()</th><th>allows shutdown</th><th>avoids buffering</th><th>TCP/IPv4</th></tr>
+  <tr><td>socketpairs</td><td>OK</td><td>OK</td><td>no</td><td>no</td></tr>
+  <tr><td>socketpair</td><td>no</td><td>OK</td><td>no</td><td>no</td></tr>
+  <tr><td>pipes</td><td>OK</td><td>no</td><td>no</td><td>no</td></tr>
+  <tr><td>ptys</td><td>OK</td><td>no</td><td>yes</td><td>no</td></tr>
+  <tr><td>tcp</td><td>no</td><td>yes</td><td>no</td><td>yes</td></tr>
+</table>
+
+<p>The default is socketpairs.
+</p>
+<p>The overall communication type can be chosen using the <a href="socat.html#option_c"><tt>-c</tt></a> socat
+  option. With socat 2.0.0-b3 it is not possible to use different communication
+  types in one process (exception: right side of exec/system modules)
+</p>
+
+<small>Copyright: Gerhard Rieger 2009</small><br>
+<small>License: <a href="http://www.fsf.org/licensing/licenses/fdl.html">GNU Free Documentation License (FDL)</a></small>
+</p>
+
+</body>
+</html>
