@@ -79,6 +79,9 @@ LOCAL_MODULE := socat
 
 LOCAL_CFLAGS += -DVERSION=\"$(GIT_VERSION)\"
 LOCAL_CFLAGS += -DANDROID -Wno-multichar -D_GNU_SOURCE -Wall -Wno-parentheses -pthread -DHAVE_CONFIG_H -DANDROID -DNO_XMALLOC -mandroid
+LOCAL_CFLAGS += -DRAND_F_SSLEAY_RAND_BYTES=100 -DRAND_R_PRNG_NOT_SEEDED=100
+
+LOCAL_STATIC_LIBRARIES += libssl libcrypto
 
 LOCAL_C_INCLUDES += .
 
@@ -86,3 +89,16 @@ LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
 
 include $(BUILD_EXECUTABLE)
 
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := libssl
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../libssl/local/armeabi/libssl.a
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../boringssl/src/include
+include $(PREBUILT_STATIC_LIBRARY)
+
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := libcrypto
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../libcrypto/local/armeabi/libcrypto.a
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../boringssl/src/include
+include $(PREBUILT_STATIC_LIBRARY)

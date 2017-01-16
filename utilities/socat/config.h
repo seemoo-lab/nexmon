@@ -425,28 +425,28 @@
 /* #undef HAVE_SSL_CTX_set_default_verify_paths */
 
 /* Define if you have the SSLv3 client and server method functions. not in new openssl */
-/* #undef HAVE_SSLv3_client_method */
-/* #undef HAVE_SSLv3_server_method */
+#define HAVE_SSLv3_client_method 1
+#define HAVE_SSLv3_server_method 1
 
 /* Define if you have the SSLv3 client and server method functions with rollback to v2 */
-/* #undef HAVE_SSLv23_client_method */
-/* #undef HAVE_SSLv23_server_method */
+#define HAVE_SSLv23_client_method 1
+#define HAVE_SSLv23_server_method 1
 
 /* Define if you have the TLSv1.0 client and server method functions */
-/* #undef HAVE_TLSv1_client_method */
-/* #undef HAVE_TLSv1_server_method */
+#define HAVE_TLSv1_client_method 1
+#define HAVE_TLSv1_server_method 1
 
 /* Define if you have the TLSv1.1 client and server method functions */
-/* #undef HAVE_TLSv1_1_client_method */
-/* #undef HAVE_TLSv1_1_server_method */
+#define HAVE_TLSv1_1_client_method 1
+#define HAVE_TLSv1_1_server_method 1
 
 /* Define if you have the TLSv1.2 client and server method functions */
-/* #undef HAVE_TLSv1_2_client_method */
-/* #undef HAVE_TLSv1_2_server_method */
+#define HAVE_TLSv1_2_client_method 1
+#define HAVE_TLSv1_2_server_method 1
 
 /* Define if you have the DTLSv1 client and server method functions */
-/* #undef HAVE_DTLSv1_client_method */
-/* #undef HAVE_DTLSv1_server_method */
+#define HAVE_DTLSv1_client_method 1
+#define HAVE_DTLSv1_server_method 1
 
 
 /* Define if you have the flock function */
@@ -604,7 +604,7 @@
 #define WITH_TUN 1
 #define WITH_PTY 1
 #define WITH_EXT2 1
-/* #undef WITH_OPENSSL */
+#define WITH_OPENSSL 1
 #define WITH_STREAMS 1
 /* #undef WITH_FIPS */
 /* #undef OPENSSL_FIPS */
