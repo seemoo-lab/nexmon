@@ -18,6 +18,7 @@ assets: \
 	assets/nexmon/dhdutil \
 	assets/nexmon/nexutil \
 	assets/nexmon/mdk3 \
+	assets/nexmon/socat \
 	assets/nexmon/libfakeioctl.so \
 	FORCE 
 
@@ -75,6 +76,10 @@ assets/nexmon/nc: FORCE
 assets/nexmon/iw: FORCE
 	make -C $(UTILITIES_PATH)/iw
 	cp $(UTILITIES_PATH)/iw/libs/armeabi/iw $@
+
+assets/nexmon/socat: FORCE
+	make -C $(UTILITIES_PATH)/socat
+	cp $(UTILITIES_PATH)/socat/libs/armeabi/socat $@
 
 assets/nexmon/iwconfig: FORCE
 	make -C $(UTILITIES_PATH)/wireless_tools

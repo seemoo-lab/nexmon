@@ -122,6 +122,14 @@
                     android:text="mdk3: proof-of-concept tool to exploit common IEEE 802.11 protocol weaknesses."
                     android:textColor="@android:color/tab_indicator_text" />
 
+                <CheckBox
+                    android:id="@+id/chkSocat"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top"
+                    android:text="socat: Multipurpose relay (SOcket CAT)."
+                    android:textColor="@android:color/tab_indicator_text" />
+
                 <TextView
                     android:id="@+id/tvBinInstallLocation"
                     android:layout_width="match_parent"

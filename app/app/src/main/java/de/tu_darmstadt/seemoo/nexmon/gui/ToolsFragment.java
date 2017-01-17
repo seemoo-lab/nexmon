@@ -70,6 +70,7 @@ public class ToolsFragment extends TrackingFragment {
     private CheckBox chkIw;
     private CheckBox chkWirelessTools;
     private CheckBox chkMdk3;
+    private CheckBox chkSocat;
     private Spinner spnBinInstallLocation;
     private Spinner spnLibInstallLocation;
     private Button btnInstall;
@@ -148,6 +149,7 @@ public class ToolsFragment extends TrackingFragment {
         chkIw = (CheckBox) view.findViewById(R.id.chkIw);
         chkWirelessTools = (CheckBox) view.findViewById(R.id.chkWirelessTools);
         chkMdk3 = (CheckBox) view.findViewById(R.id.chkMdk3);
+        chkSocat = (CheckBox) view.findViewById(R.id.chkSocat);
         spnBinInstallLocation = (Spinner) view.findViewById(R.id.spnBinInstallLocation);
         spnLibInstallLocation = (Spinner) view.findViewById(R.id.spnLibInstallLocation);
         btnInstall = (Button) view.findViewById(R.id.btnInstall);
@@ -386,7 +388,17 @@ public class ToolsFragment extends TrackingFragment {
                                 .setLabel("MDK3")
                                 .setAction("installed")
                                 .build());
+                    }
 
+                    if (chkSocat.isChecked()) {
+                        //toast("Installing mdk3 ...");
+                        copyExtractedAsset(binInstallLocation, "socat");
+
+                        tracker.send(new HitBuilders.EventBuilder()
+                                .setCategory("Tools")
+                                .setLabel("socat")
+                                .setAction("installed")
+                                .build());
                     }
 
 
