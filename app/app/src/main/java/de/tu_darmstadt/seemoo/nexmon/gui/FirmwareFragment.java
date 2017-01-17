@@ -153,6 +153,8 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
         return view;
     }
 
+
+
     private void toast(String msg) {
         try {
             Message message = guiHandler.obtainMessage();
@@ -473,6 +475,9 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
             fwPathEnd = fullPath.substring(0, index + 1);
             fwNameEnd = fullPath.substring(index + 1);
             onClickPrintFirmwareVersion(fullPath);
+        } else {
+            fwPathEnd = "";
+            fwNameEnd = "";
         }
 
         setContentVisibility();

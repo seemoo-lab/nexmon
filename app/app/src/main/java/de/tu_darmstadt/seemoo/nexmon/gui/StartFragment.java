@@ -46,7 +46,7 @@ import de.tu_darmstadt.seemoo.nexmon.R;
  * Use the {@link StartFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class StartFragment extends TrackingFragment {
+public class StartFragment extends TrackingFragment implements MyActivity.IPermissionListener {
 
     TextView tvNexmonInfo;
     ImageView ivNexmon;
@@ -83,6 +83,15 @@ public class StartFragment extends TrackingFragment {
     public void onStart() {
         super.onStart();
 
+        ((MyActivity) getActivity()).setPermissionListener(this);
+    }
+
+
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        ((MyActivity) getActivity()).removePermissionListener();
 
     }
 
@@ -182,7 +191,9 @@ public class StartFragment extends TrackingFragment {
 
         showInstallInfo();
 
+
         return view;
+
     }
 
 
@@ -218,5 +229,10 @@ public class StartFragment extends TrackingFragment {
         intent.addCategory(Intent.CATEGORY_BROWSABLE);
         intent.setData(Uri.parse("https://nexmon.org"));
         startActivity(intent);
+    }
+
+    @Override
+    public void onPermissionResult(int requestCode, String[] permissions, int[] grantResults) {
+        showInstallInfo();
     }
 }

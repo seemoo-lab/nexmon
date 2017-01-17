@@ -145,6 +145,15 @@ public class MyApplication extends Application {
 
     private static boolean isRawproxyreverseAvailable = false;
 
+    private static boolean isNexutilNew = false;
+
+    private static String nexutilVersion;
+
+    private static String rawproxyVersion;
+
+    private static String rawproxyreverseVersion;
+
+
 
 
     private static boolean isBcmFirmwareAvailable = false;
@@ -162,19 +171,6 @@ public class MyApplication extends Application {
 
     private static boolean isNexutilAvailable = false;
 
-    private static boolean isNexutilNew = false;
-
-    public static boolean isRawproxyNew() {
-        return isRawproxyNew;
-    }
-
-    public static boolean isRawproxyreverseNew() {
-        return isRawproxyreverseNew;
-    }
-
-    private static boolean isRawproxyNew = false;
-
-    private static boolean isRawproxyreverseNew = false;
 
     public static boolean isLibInstalledCorrectly() {
         return isLibInstalledCorrectly;
@@ -438,7 +434,9 @@ public class MyApplication extends Application {
                 evaluateInstallation();
                 evaluateBCMfirmware();
                 evaluateFirmwareVersion();
-                evaluateInstallInfo();
+                rawproxyreverseVersion = getVersion("rawproxyreverse");
+                rawproxyVersion = getVersion("rawproxy");
+                nexutilVersion = getVersion("nexutil");
             }
         }).start();
 
@@ -534,23 +532,18 @@ public class MyApplication extends Application {
         return firmwareVersion;
     }
     
-    public static SpannableStringBuilder getInstallInfo() {
-        return installInfo;
-    }
 
-    public static void evaluateInstallInfo() {
+    public static SpannableStringBuilder getInstallInfo() {
         SpannableStringBuilder ssBuilder = new SpannableStringBuilder();
 
         if(!isRootGranted) {
             ssBuilder.append("We need root to proceed!", new ForegroundColorSpan(Color.RED), 0);
-            installInfo = ssBuilder;
-            return;
+            return ssBuilder;
         }
 
         if(MyApplication.getAppContext().checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             ssBuilder.append("We need read / write permission for your storage!", new ForegroundColorSpan(Color.RED), 0);
-            installInfo = ssBuilder;
-            return;
+            return ssBuilder;
         }
 
         ssBuilder.append("App Version:\n\n", new StyleSpan(Typeface.BOLD), 0);
@@ -559,12 +552,11 @@ public class MyApplication extends Application {
         ssBuilder.append("\nTool installation status:\n\n", new StyleSpan(Typeface.BOLD), 0);
 
         if(isNexutilAvailable) {
-            String version = getVersion("nexutil");
-            if (version != null) {
-                if (version.equals(BuildConfig.VERSION_NAME)) {
-                    ssBuilder.append("nexutil (" + version + ")\n", new ForegroundColorSpan(Color.GREEN), 0);
+            if (nexutilVersion != null) {
+                if (nexutilVersion.equals(BuildConfig.VERSION_NAME)) {
+                    ssBuilder.append("nexutil (" + nexutilVersion + ")\n", new ForegroundColorSpan(Color.GREEN), 0);
                 } else {
-                    ssBuilder.append("nexutil (" + version + " => upgrade to app version)\n", new ForegroundColorSpan(Color.YELLOW), 0);
+                    ssBuilder.append("nexutil (" + nexutilVersion + " => upgrade to app version)\n", new ForegroundColorSpan(Color.YELLOW), 0);
                 }
             } else {
                 ssBuilder.append("nexutil (outdated => upgrade to app version)\n", new ForegroundColorSpan(Color.RED), 0);
@@ -574,12 +566,11 @@ public class MyApplication extends Application {
         }
 
         if(isRawproxyAvailable) {
-            String version = getVersion("rawproxy");
-            if (version != null) {
-                if (version.equals(BuildConfig.VERSION_NAME)) {
-                    ssBuilder.append("rawproxy (" + version + ")\n", new ForegroundColorSpan(Color.GREEN), 0);
+            if (rawproxyVersion != null) {
+                if (rawproxyVersion.equals(BuildConfig.VERSION_NAME)) {
+                    ssBuilder.append("rawproxy (" + rawproxyVersion + ")\n", new ForegroundColorSpan(Color.GREEN), 0);
                 } else {
-                    ssBuilder.append("rawproxy (" + version + " => upgrade to app version)\n", new ForegroundColorSpan(Color.YELLOW), 0);
+                    ssBuilder.append("rawproxy (" + rawproxyVersion + " => upgrade to app version)\n", new ForegroundColorSpan(Color.YELLOW), 0);
                 }
             } else {
                 ssBuilder.append("rawproxy (outdated => upgrade to app version)\n", new ForegroundColorSpan(Color.RED), 0);
@@ -589,12 +580,11 @@ public class MyApplication extends Application {
         }
 
         if(isRawproxyreverseAvailable) {
-            String version = getVersion("rawproxyreverse");
-            if (version != null) {
-                if (version.equals(BuildConfig.VERSION_NAME)) {
-                    ssBuilder.append("rawproxyreverse (" + version + ")\n", new ForegroundColorSpan(Color.GREEN), 0);
+            if (rawproxyreverseVersion != null) {
+                if (rawproxyreverseVersion.equals(BuildConfig.VERSION_NAME)) {
+                    ssBuilder.append("rawproxyreverse (" + rawproxyreverseVersion + ")\n", new ForegroundColorSpan(Color.GREEN), 0);
                 } else {
-                    ssBuilder.append("rawproxyreverse (" + version + " => upgrade to app version)\n", new ForegroundColorSpan(Color.YELLOW), 0);
+                    ssBuilder.append("rawproxyreverse (" + rawproxyreverseVersion + " => upgrade to app version)\n", new ForegroundColorSpan(Color.YELLOW), 0);
                 }
             } else {
                 ssBuilder.append("rawproxyreverse (outdated => upgrade to app version)\n", new ForegroundColorSpan(Color.RED), 0);
@@ -638,7 +628,7 @@ public class MyApplication extends Application {
 
         ssBuilder.append("\n");
 
-        installInfo = ssBuilder;
+        return ssBuilder;
     }
 
     public static void evaluateInstallation() {
