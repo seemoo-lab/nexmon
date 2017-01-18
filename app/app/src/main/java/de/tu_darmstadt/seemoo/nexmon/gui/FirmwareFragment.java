@@ -385,7 +385,7 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
 
 
     public void onClickPrintFirmwareVersion(String fullPath) {
-        final Command command = new Command(COMMAND_FIRMWARE_VERSION, "strings " + fullPath + " | grep \"FWID:\"") {
+        final Command command = new Command(COMMAND_FIRMWARE_VERSION, "strings " + fullPath + " | grep \"CRC:\"") {
 
             boolean fwidFound = false;
 
