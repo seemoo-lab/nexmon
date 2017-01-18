@@ -2,12 +2,13 @@
 <resources>
 
     <string-array name="firmware_names">
+        <item>bcmdhd_sta.bin</item>
         <item>fw_bcmdhd.bin</item>
     </string-array>
 
     <string-array name="firmware_paths">
-        <item>/vendor/firmware/</item>
         <item>/system/etc/wifi/</item>
+        <item>/vendor/firmware/</item>
     </string-array>
 
     <string-array name="smartphones">
@@ -18,9 +19,9 @@
 
     <string-array name="bcm4330">       <!-- Samsung Galaxy S2 -->
         <item>/system</item>                   <!-- mount point -->
-        <item>/vendor/firmware/</item>                   <!-- firmware path end-->
+        <item>/system/etc/wifi/</item>                   <!-- firmware path end-->
         <item>fw_bcm4330_5_90_100_41_sta.bin</item>                   <!-- firmware name beginning -->
-        <item>fw_bcmdhd.bin</item>                   <!-- firmware name end -->
+        <item>bcmdhd_sta.bin</item>                   <!-- firmware name end -->
     </string-array>
 
     <string-array name="bcm4339">       <!-- Nexus 5 -->
