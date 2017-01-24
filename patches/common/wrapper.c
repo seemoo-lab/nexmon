@@ -711,6 +711,11 @@ int
 wlc_iovar_op(void *wlc, char *varname, void *params, int p_len, void *arg, int len, char set, void *wlcif) 
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x191388)
+void
+wlc_radio_mpc_upd(void *wlc)
+VOID_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x18D648)
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x18D738)
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x1ECC4)
@@ -862,14 +867,9 @@ void
 wlc_ucode_download(void *wlc_hw) 
 VOID_DUMMY
 
-AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1ADA64) 
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x5BA28) 
 int 
 wlc_valid_chanspec_ext(void *wlc_cm, unsigned short chanspec, int dualband) 
-RETURN_DUMMY
-
-AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1ADA68) 
-int 
-wlc_valid_chanspec_ext_plus4(void *wlc_cm, unsigned short chanspec, int dualband) 
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x84EEA0)
