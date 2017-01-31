@@ -1496,8 +1496,5 @@ LOCAL_CFLAGS := -std=gnu99 -DHAVE_CONFIG_H -I. -I.. -I.. -D_FORTIFY_SOURCE=2 -DW
 	-Wpragmas -Wno-overlength-strings -Wno-long-long -Wc++-compat -Wdeclaration-after-statement \
 	-Wshadow -Wno-pointer-sign -Wold-style-definition -Wstrict-prototypes -Wlogical-op \
 	-Wjump-misses-init -fexcess-precision=fast -fvisibility=hidden
-#	-isystem/nexmon/opt/android/include/glib-2.0 \
-#	-isystem/nexmon/opt/android/lib/glib-2.0/include \
-#	-I/nexmon/opt/android/include
 
 include $(BUILD_STATIC_LIBRARY)

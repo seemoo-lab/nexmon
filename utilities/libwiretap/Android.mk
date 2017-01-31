@@ -71,27 +71,19 @@ LOCAL_MODULE := libwiretap
 
 LOCAL_C_INCLUDES := \
 	$(WIRESHARK_SRC_PATH) \
-	$(WIRESHARK_SRC_PATH)/wiretap
+	$(WIRESHARK_SRC_PATH)/wiretap \
+	$(LOCAL_PATH)/../libglib-2.0/glib-2.0
 
 
 LOCAL_CFLAGS := -std=gnu99 -DHAVE_CONFIG_H -I. -I.. -I.. -D_FORTIFY_SOURCE=2 -DWS_BUILD_DLL \
-	-DTOP_SRCDIR=$(WIRESHARK_SRC_PATH) \
-	-DDATAFILE_DIR=\"/nexmon/opt/android/share/wireshark\" \
-	-DEXTCAP_DIR=\"/nexmon/opt/android/lib/wireshark/extcap\" \
-	-DPLUGIN_INSTALL_DIR=\"/nexmon/opt/android/lib/wireshark/plugins/2.2.3\" \
 	-DG_DISABLE_SINGLE_INCLUDES -DG_DISABLE_DEPRECATED -pthread \
-	-isystem/nexmon/opt/android/include/glib-2.0 \
-	-isystem/nexmon/opt/android/lib/glib-2.0/include \
-	--sysroot=/nexmon/dev/android-ndk-toolchain/sysroot \
-	-I/nexmon/dev/android-ndk-toolchain/sysroot/usr/include \
-	-I/nexmon/dev/android-ndk-toolchain/include/c++/ \
 	-Wall -Wextra -Wendif-labels -Wpointer-arith -Wformat-security -fwrapv -fno-strict-overflow \
 	-fno-delete-null-pointer-checks -Wvla -Waddress -Wattributes -Wdiv-by-zero -Wignored-qualifiers \
 	-Wpragmas -Wno-overlength-strings -Wno-long-long -Wc++-compat -Wdeclaration-after-statement \
 	-Wshadow -Wno-pointer-sign -Wold-style-definition -Wstrict-prototypes -Wlogical-op \
 	-Wjump-misses-init -fexcess-precision=fast -fvisibility=hidden \
-	--sysroot=/nexmon/dev/android-ndk-toolchain/sysroot \
-	-I/nexmon/dev/android-ndk-toolchain/sysroot/usr/include \
-	-I/nexmon/opt/android/include
+	-DTOP_SRCDIR=\"$(WIRESHARK_SRC_PATH)\" \
+	-DDATAFILE_DIR=\"/sdcard/wireshark\" \
+	-DEXTCAP_DIR=\"/sdcard/wireshark/extcap\"
 
 include $(BUILD_STATIC_LIBRARY)
