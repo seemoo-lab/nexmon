@@ -1542,6 +1542,12 @@ struct bdc_ethernet_ipv6_udp_header {
 } __attribute__((packed));
 */
 
+struct ethernet_ip_udp_header {
+    struct ethernet_header ethernet;
+    struct ip_header ip;
+    struct udp_header udp;
+} __attribute__((packed));
+
 struct nexmon_header {
     uint32 hooked_fct;
     uint32 args[3];
