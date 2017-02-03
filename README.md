@@ -1,7 +1,7 @@
 ![NexMon logo](https://github.com/seemoo-lab/bcm-public/raw/master/logo/nexmon-logo-color.png)
 
 # What is nexmon?
-Nexmon is our C-based firmware patching framework for Broadcom/Cypress WiFi chips 
+Nexmon is our C-based firmware patching framework for Broadcom/Cypress WiFi chips
 that enables you to write your own firmware patches, for example, to enable monitor
 mode with radiotap headers and frame injection.
 
@@ -17,12 +17,12 @@ Our software may damage your hardware and may void your hardware’s warranty! Y
 # Supported Devices
 The following devices are currently supported by our nexmon firmware patch.
 
-WiFi Chip | Firmware Version | Used in           | Operating System |  M  | RT  |  I  | FP  | UC  | CT 
+WiFi Chip | Firmware Version | Used in           | Operating System |  M  | RT  |  I  | FP  | UC  | CT
 --------- | ---------------- | ----------------- | ---------------- | --- | --- | --- | --- | --- | ---
-bcm4330   | 5_90_100_41_sta  | Samsung Galaxy S2 | Cyanogenmod 13.0 |  X  |  X  |     |  X  |  X  |  O 
-bcm4339   | 6_37_34_43       | Nexus 5           | Android 6 Stock  |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43438  | 7_45_41_26       | Raspberry Pi 3    | Raspbian 8       |  X  |  X  |  X  |  X  |     |  O 
-bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  |     |  X  |  X  |  O 
+bcm4330   | 5_90_100_41_sta  | Samsung Galaxy S2 | Cyanogenmod 13.0 |  X  |  X  |     |  X  |  X  |  O
+bcm4339   | 6_37_34_43       | Nexus 5           | Android 6 Stock  |  X  |  X  |  X  |  X  |  X  |  O
+bcm43438  | 7_45_41_26       | Raspberry Pi 3    | Raspbian 8       |  X  |  X  |  X  |  X  |     |  O
+bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  |     |  X  |  X  |  O
 
 ## Legend
 - M = Monitor Mode
@@ -36,7 +36,7 @@ bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  
 
 ## Build patches for bcm4330, bcm4339 and bcm4358 using a x86 computer running Linux (e.g. Ubuntu 16.04)
 * Install some dependencies: `sudo apt-get install git gawk qpdf adb`
-* **Only necessary for x86_64 systems**, install i386 libs: 
+* **Only necessary for x86_64 systems**, install i386 libs:
 
   ```
   sudo dpkg --add-architecture i386
@@ -57,7 +57,7 @@ bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  
 * Connect to your Android phone using the ADB tools: `adb shell`
 * Make sure you are **not** connected to an access point
 * Use *nexutil* to enable monitor mode: `nexutil -m2`
-* At this point the monitor mode is active. There is no need to call *airmon-ng*. 
+* At this point the monitor mode is active. There is no need to call *airmon-ng*.
 * **Important:** Most tools need a Radiotap interface to work properly. *libfakeioctl* emulates this type of interface for you, therefore, use LD_PRELOAD to load this library when you call the favourite tool (e.g. tcpdump or airodump-ng): `LD_PRELOAD=libfakeioctl.so tcpdump -i wlan0`
 
 ### Using nexutil over UDP on Nexus 5
@@ -68,7 +68,7 @@ To be able to communicate with the firmware without root priviledges, we created
 ## Build patches for bcm43438 on the RPI3 using Raspbian 8 (recommended)
 * Make sure the following commands are executed as `root`
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
-* Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk`
+* Install the kernel headers to build the driver and some dependencies: `sudo apt-get install raspberrypi-kernel-headers git libgmp3-dev gawk`
 * Clone our repository: `git clone https://github.com/seemoo-lab/nexmon.git`
 * Go into the root directory of our repository: `cd nexmon`
   * Setup the build environment: `source setup_env.sh`
@@ -82,7 +82,7 @@ To be able to communicate with the firmware without root priviledges, we created
 
 ### Using the Monitor Mode patch
 * Our modified driver sets the interface in monitor mode as soon as the interface goes up: `ifconfig wlan0 up`
-* At this point the monitor mode is active. There is no need to call *airmon-ng*. 
+* At this point the monitor mode is active. There is no need to call *airmon-ng*.
 * The interface already set the Radiotap header, therefore, tools like *tcpdump* or *airodump-ng* can be used out of the box: `tcpdump -i wlan0`
 * **Note:** It is not possible to connect to an access point anymore using our modified driver and firmware, if you whant to go back to the default behaviour you will need to load the original driver and firmware.
 
@@ -138,13 +138,13 @@ To be able to communicate with the firmware without root priviledges, we created
 # Read our papers
 * M. Schulz. [Nexmon - Wie man die eigene WLAN-Firmware hackt]
 (http://heise.de/-3538660), c't 26/2016, S. 168, Heise Verlag, 2016.
-* M. Schulz, D. Wegemer, M. Hollick. [DEMO: Using NexMon, the C-based WiFi 
-firmware modification framework](https://dl.acm.org/citation.cfm?id=2942419), 
-Proceedings of the 9th ACM Conference on Security and Privacy in Wireless and 
+* M. Schulz, D. Wegemer, M. Hollick. [DEMO: Using NexMon, the C-based WiFi
+firmware modification framework](https://dl.acm.org/citation.cfm?id=2942419),
+Proceedings of the 9th ACM Conference on Security and Privacy in Wireless and
 Mobile Networks, WiSec 2016, July 2016.
-* M. Schulz, D. Wegemer and M. Hollick. [NexMon: A Cookbook for Firmware 
+* M. Schulz, D. Wegemer and M. Hollick. [NexMon: A Cookbook for Firmware
 Modifications on Smartphones to Enable Monitor Mode]
-(http://arxiv.org/abs/1601.07077), CoRR, vol. abs/1601.07077, December 2015. 
+(http://arxiv.org/abs/1601.07077), CoRR, vol. abs/1601.07077, December 2015.
 [bibtex](http://dblp.uni-trier.de/rec/bibtex/journals/corr/SchulzWH16)
 
 # Contact
