@@ -103,18 +103,48 @@ struct wlc_hw_info {
 
 };
 
+#define HNDRTE_DEV_NAME_MAX 16
+
+typedef struct hndrte_dev {
+    char                        name[HNDRTE_DEV_NAME_MAX];
+    struct hndrte_devfuncs      *funcs;
+    uint32                      devid;
+    void                        *softc;     /* Software context */
+    uint32                      flags;      /* RTEDEVFLAG_XXXX */
+    struct hndrte_dev           *next;
+    struct hndrte_dev           *chained;
+    void                        *pdev;
+} hndrte_dev;
+
+struct hndrte_devfuncs {
+    void *(*probe)(struct hndrte_dev *dev, void *regs, uint bus,
+                   uint16 device, uint coreid, uint unit);
+    int (*open)(struct hndrte_dev *dev);
+    int (*close)(struct hndrte_dev *dev);
+    int (*xmit)(struct hndrte_dev *src, struct hndrte_dev *dev, void *lb);
+    int (*recv)(struct hndrte_dev *src, struct hndrte_dev *dev, void *pkt);
+    int (*ioctl)(struct hndrte_dev *dev, uint32 cmd, void *buffer, int len,
+                 int *used, int *needed, int set);
+    void (*txflowcontrol) (struct hndrte_dev *dev, bool state, int prio);
+    void (*poll)(struct hndrte_dev *dev);
+    int (*xmit_ctl)(struct hndrte_dev *src, struct hndrte_dev *dev, void *lb);
+    int (*xmit2)(struct hndrte_dev *src, struct hndrte_dev *dev, void *lb, int8 ch);
+};
+
 /**
  *  Name might be inaccurate
  */
+/*
 struct device {
-    char name[16];
-    void *init_function;
-    int PAD;
-    void *some_device_info;
-    int PAD;
-    int PAD;
-    struct device *bound_device;
+    char name[16];			// 0x000
+    void *init_function;		// 0x010
+    int PAD;				// 0x014
+    void *some_device_info;		// 0x018
+    int PAD;				// 0x01c
+    int PAD;				// 0x020
+    struct device *chained;		// 0x024
 };
+*/
 
 /**
  *  Name might be inaccurate
@@ -124,7 +154,7 @@ struct wl_info {
     void *pub;
     struct wlc_info *wlc;
     struct wlc_hw_info *wlc_hw;
-    struct device *dev;
+    struct hndrte_dev *dev;
 };
 
 /**

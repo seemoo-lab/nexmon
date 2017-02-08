@@ -39,11 +39,13 @@
 #include <structs.h>            // structures that are used by the code in the firmware
 #include <helper.h>             // useful helper functions
 #include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
+#include <bcm43438.h>
 
 void
 autostart(void)
 {
 	printf("autostart\n");
+	printf("sdio: %08x wlc: %08x osl: %08x\n", SDIO_INFO_ADDR, WLC_INFO_ADDR, OSL_INFO_ADDR);
 }
 
 __attribute__((at(0x2a64, "", CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327)))
