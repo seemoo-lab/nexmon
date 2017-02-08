@@ -41,16 +41,15 @@
 #include <helper.h>
 #include <ieee80211_radiotap.h>
 #include <sendframe.h>
-#include "bcm43438.h"
 #include "d11.h"
 #include "brcm.h"
 
 int
-inject_frame(sk_buff *p) {
+inject_frame(struct wl_info *wl, sk_buff *p) {
     int rtap_len = 0;
 
     //needed for sending:
-    struct wlc_info *wlc = WLC_INFO_ADDR;
+    struct wlc_info *wlc = wl->wlc;
     int data_rate = 0;
     //Radiotap parsing:
     struct ieee80211_radiotap_iterator iterator;
@@ -80,7 +79,7 @@ inject_frame(sk_buff *p) {
                 break;
         }
     }
-    
+
     //remove radiotap header
     skb_pull(p, rtap_len);
 
@@ -91,9 +90,12 @@ inject_frame(sk_buff *p) {
 }
 
 int
-wlc_sdio_hook(int a1, int a2, struct sk_buff *p)
+wlc_sdio_hook(int a1, struct hndrte_dev *dev, struct sk_buff *p)
 {
-    inject_frame(p);
+    struct wl_info *wl = (struct wl_info *) dev->softc;
+
+    inject_frame(wl, p);
+
     return 0;
 }
 

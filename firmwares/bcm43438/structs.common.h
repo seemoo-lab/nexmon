@@ -193,7 +193,7 @@ struct wlcband {
 struct wlc_info {
     struct wlc_pub *pub;                /* 0x000 */
     struct osl_info *osh;               /* 0x004 */
-    void *wl;                           /* 0x008 */
+    struct wl_info  *wl;                /* 0x008 */
     volatile struct d11regs *regs;      /* 0x00C */
     struct wlc_hw_info *hw;             /* 0x010 */
     int PAD;                            /* 0x014 */
