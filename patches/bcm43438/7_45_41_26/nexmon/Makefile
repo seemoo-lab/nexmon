@@ -132,8 +132,12 @@ install-firmware: brcmfmac43430-sdio.bin
 ifeq ($(shell uname -m),armv7l)
 	@printf "\033[0;31m  COPYING\033[0m brcmfmac43430-sdio.bin => /lib/firmware/brcm/brcmfmac43430-sdio.bin\n"
 	$(Q)cp brcmfmac43430-sdio.bin /lib/firmware/brcm/brcmfmac43430-sdio.bin
+ifeq ($(shell lsmod | grep "^brcmfmac" | wc -l), 1)
+	@printf "\033[0;31m  UNLOADING\033[0m brcmfmac\n"
 	$(Q)rmmod brcmfmac
+endif
 	$(Q)modprobe brcmutil
+	@printf "\033[0;31m  RELOADING\033[0m brcmfmac\n"
 	$(Q)insmod brcmfmac/brcmfmac.ko
 else
 	$(warning Warning: Cannot install firmware on this arch., bcm43430-sdio.bin needs to be copied manually into /lib/firmware/brcm/ on your RPI3)
