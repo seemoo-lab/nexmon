@@ -1,3 +1,4 @@
+GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
 FW_PATH=$(NEXMON_ROOT)/firmwares/bcm43438/7_45_41_26
 include $(FW_PATH)/definitions.mk
 
@@ -15,14 +16,22 @@ CFLAGS= \
 	-fplugin-arg-nexmon-fwver=$(NEXMON_FW_VERSION_NUM) \
 	-DNEXMON_CHIP=$(NEXMON_CHIP) \
 	-DNEXMON_FW_VERSION=$(NEXMON_FW_VERSION) \
+	-DPATCHSTART=$(PATCHSTART) \
+	-DUCODESIZE=$(UCODESIZE) \
+	-DGIT_VERSION=\"$(GIT_VERSION)\" \
+	-DBUILD_NUMBER=\"$$(cat BUILD_NUMBER)\" \
 	-Wall -Werror -O2 -nostdlib -nostartfiles -ffreestanding -mthumb -march=$(NEXMON_ARCH) \
 	-ffunction-sections -fdata-sections \
 	-I$(NEXMON_ROOT)/patches/include \
+	-Iinclude \
 	-I$(FW_PATH)
 
 all: $(RAM_FILE) brcmfmac.ko
 
 init: FORCE
+	$(Q)if ! test -f BUILD_NUMBER; then echo 0 > BUILD_NUMBER; fi
+	$(Q)echo $$(($$(cat BUILD_NUMBER) + 1)) > BUILD_NUMBER
+	$(Q)touch src/version.c
 	$(Q)make -s -f $(NEXMON_ROOT)/patches/common/header.mk
 	$(Q)mkdir -p obj gen log
 
