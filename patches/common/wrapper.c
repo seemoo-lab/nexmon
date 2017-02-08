@@ -160,6 +160,11 @@ int
 hndrte_schedule_work(void *context, void *data, void *taskfn, int delay)
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x168F4)
+unsigned int
+hndrte_time_ms()
+RETURN_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x1814f4)
 void *
 malloc(unsigned int size, char alignment)
@@ -292,6 +297,11 @@ AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1ABA2C)
 void
 wlc_bmac_set_chanspec(void *wlc_hw, int chanspec, int mute, void *txpwr)
 VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x37070) 
+unsigned short 
+wlc_read_shm(void *wlc, unsigned int offset) 
+RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x3B0BC)
 AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x3085C)
@@ -648,6 +658,11 @@ int
 wlc_bmac_recv_plus4(void *wlc_hw, unsigned int fifo, int bound, int *processed_frame_cnt) 
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x504A0) 
+void
+wlc_bmac_write_shm(void *wlc_hw, unsigned int offset, unsigned short v)
+VOID_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1AC166) 
 void *
 wlc_bsscfg_find_by_wlcif_ram(void *wlc, int wlcif) 
@@ -681,6 +696,7 @@ wlc_init(void *wlc)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x8081F0)
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x16A40)
 unsigned int
 udelay(int a1)
 RETURN_DUMMY
@@ -710,6 +726,41 @@ AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x82ABEC)
 int 
 wlc_iovar_op(void *wlc, char *varname, void *params, int p_len, void *arg, int len, char set, void *wlcif) 
 RETURN_DUMMY
+
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x2A0A2)
+void
+wlc_lcn40phy_deaf_mode(void *pi, unsigned char mode)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x24818)
+unsigned short
+wlc_lcn40phy_num_samples(void *pi, int f_Hz, unsigned int phy_bw)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x26384)
+void
+wlc_lcn40phy_run_samples(void *pi, unsigned short num_samps, unsigned short num_loops, unsigned short wait, unsigned char iqcalmode, unsigned char tx_pu_param)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x2A174)
+void
+wlc_lcn40phy_start_tx_tone(void *pi, signed int f_Hz, int max_val, int unused, int deaf_set_to_1, int tx_pu_param)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x2A0EA)
+void
+wlc_lcn40phy_stop_tx_tone(void *pi, int unused0, int unused1, int  phy_tx_tone_freq_set_to_0)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x261AC)
+void
+wlc_lcn40phy_tx_tone_samples(void *pi, signed int f_Hz, int max_val, int *data_buf, int phy_bw, unsigned short num_samps)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x253B0)
+void
+wlc_lcn40phy_write_table(void *pi, const void *pti)
+VOID_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x191388)
 void
@@ -762,34 +813,71 @@ int
 wlc_phy_chan2freq_nphy_plus6(void *pi, int a2, int a3, int a4) 
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1C5744)
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C5990)
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x23F3C)
+void
+wlc_phy_cordic(int theta, void *val)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1B9B38)
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1B9D84)
+unsigned short
+wlc_phy_gen_load_samples_acphy(void *pi, int f_kHz, unsigned short max_val)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1B9A3A)
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1B9C86)
+void
+wlc_phy_loadsampletable_acphy(void *pi, void *tone_buf, unsigned short num_samps)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1BCA64)
+void
+wlc_phy_resetcca_acphy(void *pi)
+VOID_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1C553C) 
 void 
 wlc_phy_rssi_compute(void *pih, void *ctx) 
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1BE6BC)
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1BE908)
+void
+wlc_phy_runsamples_acphy(void *pi, unsigned short num_samps, unsigned short loops, unsigned short wait, unsigned char iqmode, unsigned char mac_based)
 VOID_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1BE636) 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1BE882)
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x1C68D8)
 void 
-wlc_phy_stay_in_carriersearch_phy(void *pi, int enable) 
+wlc_phy_stay_in_carriersearch_acphy(void *pi, int enable) 
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1BE562) 
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1BE7AE)
+void
+wlc_phy_stopplayback_acphy(void *pi)
 VOID_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1BAF88)
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1BB1D4)
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x1C2EC8)
 void 
-wlc_phy_table_read_phy(void *pi, unsigned int id, unsigned int len, unsigned int offset, unsigned int width, void *data) 
+wlc_phy_table_read_acphy(void *pi, unsigned int id, unsigned int len, unsigned int offset, unsigned int width, void *data) 
 VOID_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1B8CD2)
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1B8F1E)
 void 
-wlc_phy_table_write_phy(void *pi, unsigned int id, unsigned int len, unsigned int offset, unsigned int width, const void *data) 
+wlc_phy_table_write_acphy(void *pi, unsigned int id, unsigned int len, unsigned int offset, unsigned int width, const void *data) 
 VOID_DUMMY
 
-AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1BE876) 
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1BE876)
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1BEAC2)
 int 
-wlc_phy_tx_tone_phy(void *pi, int f_kHz, int max_val, char iqmode, char dac_test_mode, char modify_bbmult) 
+wlc_phy_tx_tone_acphy(void *pi, int f_kHz, int max_val, char iqmode, char dac_test_mode, char modify_bbmult) 
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x191654) 
@@ -881,6 +969,11 @@ AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1995C8)
 void *
 wlc_wlc_txq_enq(void *wlc, void *scb, void *p, int prec) 
 RETURN_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x3BF28) 
+void
+wlc_write_shm(void *wlc, unsigned int offset, unsigned short value) 
+VOID_DUMMY
 
 #undef VOID_DUMMY
 #undef RETURN_DUMMY
