@@ -32,12 +32,19 @@
  *                                                                         *
  **************************************************************************/
 
-#ifndef BCM43438_H
-#define BCM43438_H
+#pragma NEXMON targetregion "patch"
 
-/* addresses of static structs */
-#define SDIO_INFO_ADDR			((void *) 0x6c5a8)
-#define OSL_INFO_ADDR           ((void *) 0x6b950)
-#define WLC_INFO_ADDR           ((void *) 0x6ad6c)
+#include <firmware_version.h>   // definition of firmware version macros
+#include <wrapper.h>            // wrapper definitions for functions that already exist in the firmware
+#include <structs.h>            // structures that are used by the code in the firmware
+#include <helper.h>             // useful helper functions
+#include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
 
-#endif /*BCM43438_H*/
+void
+autostart(void)
+{
+	printf("autostart\n");
+}
+
+__attribute__((at(0x2a64, "", CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327)))
+HookPatch4(hndrte_idle, autostart, "push {r4, lr}\nmov r4, r0");
