@@ -708,6 +708,12 @@ nexmon_ioctl_handling(struct net_device *ndev, struct ifreq *ifr, int cmd)
     int action_set = 0;
     struct brcmf_if *ifp = netdev_priv(ndev);
 
+    brcmf_err("NEXMON: %s: cmd 0x%x\n", __FUNCTION__, cmd);
+
+    if (cmd != SIOCDEVPRIVATE) {
+        return -EOPNOTSUPP;
+    }
+
     brcmf_err("NEXMON: %s enter\n", __FUNCTION__);
     if(copy_from_user(&ioc, ifr->ifr_data, sizeof(nex_ioctl_t))) {
         brcmf_err("NEXMON: %s: error on copy ifr_data\n", __FUNCTION__);
