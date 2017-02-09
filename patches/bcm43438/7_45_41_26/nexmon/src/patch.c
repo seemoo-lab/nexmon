@@ -55,8 +55,8 @@ BPatch(wlc_recvdata_hook, wlc_recvdata_hook);
 __attribute__((at(0x44ED0, "", CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327)))
 BLPatch(wlc_ucode_write_compressed, wlc_ucode_write_compressed);
 
-//__attribute__((at(0x2654, "", CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327)))
-//GenericPatch4(hndrte_reclaim_0_end, 0x592a4);
+__attribute__((at(0x2654, "", CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327)))
+GenericPatch4(hndrte_reclaim_0_end, PATCHSTART);
 
 extern unsigned char templateram_bin[];
 

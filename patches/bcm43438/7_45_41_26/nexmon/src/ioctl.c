@@ -44,20 +44,6 @@
 #include <nexioctls.h>          // ioctls added in the nexmon patch
 #include <capabilities.h>       // capabilities included in a nexmon patch
 #include <sendframe.h>          // sendframe functionality
-#include <objmem.h>
-
-int myobjaddr = 0;
-
-__attribute__((noinline))
-void
-read_objmem(struct wlc_hw_info *wlc_hw, unsigned int addr)
-{
-    volatile struct d11regs *regs = wlc_hw->regs;
-    regs->objaddr = addr;
-    regs->objaddr;
-
-    printf("data: %08x\n", regs->objdata);
-}
 
 int 
 wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
@@ -77,22 +63,6 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
                 arg[len-1] = 0;
                 printf("ioctl: %s\n", arg);
                 ret = IOCTL_SUCCESS; 
-            }
-            break;
-
-        case 0x700:
-            if (len >= 16) {
-                wlc_bmac_read_objmem64(wlc->hw, 0, &((unsigned int *) arg)[0], &((unsigned int *) arg)[1], 0);
-                wlc_bmac_read_objmem64(wlc->hw, 8, &((unsigned int *) arg)[2], &((unsigned int *) arg)[3], 0);
-
-                read_objmem(wlc->hw, 0);
-                //printf("regs: %08x %08x\n", regs, &regs->objaddr);
-                //regs->objaddr = myobjaddr;
-                //((unsigned int *) arg)[2] = regs->objdata;
-                //regs->objaddr = myobjaddr + 2;
-                //((unsigned int *) arg)[3] = regs->objdata;
-
-                ret = IOCTL_SUCCESS;
             }
             break;
 
