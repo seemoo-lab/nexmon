@@ -89,8 +89,9 @@ struct wlc_hw_info {
     int sih;                    /* 0x78 */
     int vars;                   /* 0x7C */
     int vars_size;              /* 0x80 */
-    struct d11regs* regs;       /* 0x84 */
-    int physhim;                /* 0x88 */
+    int PAD;                    /* 0x84 */
+    struct d11regs* regs;       /* 0x88 */
+//    int physhim;                /* 0x88 */
     int phy_sh;                 /* 0x8C */
     struct wlc_hwband *band;     /* 0x90 */
     int PAD[6];                 /* 0x94 */
