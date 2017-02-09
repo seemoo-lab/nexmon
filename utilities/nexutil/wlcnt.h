@@ -32,8 +32,8 @@
  *                                                                         *
  **************************************************************************/
 
-typedef uint32_t uint32;
-typedef uint16_t uint16;
+typedef unsigned int uint32;
+typedef unsigned short uint16;
 
 // source of wl_cnt_t: http://svn.dd-wrt.com/browser/src/linux/universal/linux-3.10/brcm/arm/include/wlioctl.h?rev=23022
 
