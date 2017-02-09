@@ -692,6 +692,13 @@ static const struct net_device_ops brcmf_netdev_ops_pri = {
     .ndo_set_rx_mode = brcmf_netdev_set_multicast_list
 };
 
+#define MONITOR_DISABLED  0
+#define MONITOR_IEEE80211 1
+#define MONITOR_RADIOTAP  2
+#define MONITOR_LOG_ONLY  3
+#define MONITOR_DROP_FRM  4
+#define MONITOR_IPV4_UDP  5
+
 static int
 nexmon_ioctl_handling(struct net_device *ndev, struct ifreq *ifr, int cmd)
 {
@@ -726,10 +733,27 @@ nexmon_ioctl_handling(struct net_device *ndev, struct ifreq *ifr, int cmd)
         brcmf_fil_cmd_data_set(ifp, ioc.cmd, buf, buflen);
         if (ioc.cmd == 108) { // WLC_SET_MONITOR
             brcmf_err("NEXMON: %s: WLC_SET_MONITOR = %d\n", __FUNCTION__, *(unsigned char *) buf);
-            if (*(unsigned char *) buf == 1) {
-                ndev->type = ARPHRD_IEEE80211_RADIOTAP;
-                ndev->ieee80211_ptr->iftype = NL80211_IFTYPE_MONITOR;
-                ndev->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_MONITOR);
+            switch(*(unsigned char *) buf) {
+                case MONITOR_IEEE80211:
+                    ndev->type = ARPHRD_IEEE80211;
+                    ndev->ieee80211_ptr->iftype = NL80211_IFTYPE_MONITOR;
+                    ndev->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_MONITOR);
+                    break;
+
+                case MONITOR_RADIOTAP:
+                    ndev->type = ARPHRD_IEEE80211_RADIOTAP;
+                    ndev->ieee80211_ptr->iftype = NL80211_IFTYPE_MONITOR;
+                    ndev->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_MONITOR);
+                    break;
+
+                case MONITOR_DISABLED:
+                case MONITOR_LOG_ONLY:
+                case MONITOR_DROP_FRM:
+                case MONITOR_IPV4_UDP:
+                    ndev->type = ARPHRD_ETHER;
+                    ndev->ieee80211_ptr->iftype = NL80211_IFTYPE_STATION;
+                    ndev->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION);
+                    break;
             }
         }
     }
