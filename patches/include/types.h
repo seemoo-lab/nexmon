@@ -4,7 +4,9 @@
 typedef unsigned char           byte;
 typedef unsigned short          word;
 typedef unsigned int            dword;
+#ifndef __bool_true_false_are_defined	//is this really necessary to have your own types.h?
 typedef unsigned char           bool;
+#endif
 typedef signed char             int8_t;
 typedef unsigned char           uint8_t;
 typedef signed short int        int16_t;

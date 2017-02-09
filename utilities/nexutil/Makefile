@@ -8,7 +8,7 @@ libs/armeabi/nexutil: Android.mk nexutil.c ../libargp/local/armeabi/libargp.a ..
 	$(NDK_ROOT)/ndk-build NDK_APPLICATION_MK=`pwd`/Application.mk NDK_APP_OUT=. TARGET_PLATFORM=android-21 GIT_VERSION=$(GIT_VERSION)
 else
 libs/armeabi/nexutil: nexutil.c FORCE
-	gcc -o nexutil nexutil.c -DBUILD_ON_RPI -DVERSION=\"$GIT_VERSION\" -I../../patches/include
+	gcc -static -o nexutil nexutil.c -DBUILD_ON_RPI -DVERSION=\"$GIT_VERSION\" -I../../patches/include -L../libnexio/ -lnexio
 endif
 
 ../libargp/local/armeabi/libargp.a: FORCE

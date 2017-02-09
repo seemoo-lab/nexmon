@@ -36,7 +36,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <argp-extern.h>
+//#include <argp-extern.h>
+#include <argp.h>
 #include <string.h>
 #include <byteswap.h>
 
@@ -53,7 +54,7 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#include <wlcnt.h>
+#include "wlcnt.h"
 
 #include <nexioctls.h>
 
