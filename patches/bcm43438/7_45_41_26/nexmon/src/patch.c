@@ -43,14 +43,6 @@
 
 int capabilities = NEX_CAP_MONITOR_MODE | NEX_CAP_MONITOR_MODE_RADIOTAP | NEX_CAP_FRAME_INJECTION;
 
-void *
-wlc_recvdata_hook(void *wlc, void *osh, void *rxh, void *p) {
-    return pkt_buf_free_skb(osh, p, 0);
-}
-
-__attribute__((at(0x1210C, "", CHIP_VER_BCM43438, FW_VER_ALL)))
-BPatch(wlc_recvdata_hook, wlc_recvdata_hook);
-
 // Hook the call to wlc_ucode_write in wlc_ucode_download
 __attribute__((at(0x44ED0, "", CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327)))
 BLPatch(wlc_ucode_write_compressed, wlc_ucode_write_compressed);

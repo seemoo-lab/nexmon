@@ -724,6 +724,9 @@ nexmon_ioctl_handling(struct net_device *ndev, struct ifreq *ifr, int cmd)
     /* set something */
     if(action_set) {
         brcmf_fil_cmd_data_set(ifp, ioc.cmd, buf, buflen);
+        if (ioc.cmd == 108) { // WLC_SET_MONITOR
+        	brcmf_err("NEXMON: %s: WLC_SET_MONITOR = %d\n", __FUNCTION__, *(unsigned char *) buf);
+        }
     }
     /* get something */ 
     else {
