@@ -3,6 +3,9 @@
 
 #include "types.h"
 
+struct hndrte_timer *
+schedule_work(void *context, void *data, void *mainfn, int ms, int periodic);
+
 void *
 skb_push(sk_buff *p, unsigned int len);
 

@@ -138,11 +138,13 @@ hndrte_add_timer(void *t, int ms, int periodic)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x16604)
+AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x807BD0)
 int
 hndrte_del_timer(void *t)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x16690)
+AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x807C24)
 void
 hndrte_free_timer(void *t)
 VOID_DUMMY
@@ -156,6 +158,7 @@ hndrte_init_timer(void *context, void *data, void *mainfn, void *auxfn)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x168AC)
+AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x807E60)
 int
 hndrte_schedule_work(void *context, void *data, void *taskfn, int delay)
 RETURN_DUMMY

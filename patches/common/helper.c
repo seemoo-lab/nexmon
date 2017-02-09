@@ -43,6 +43,21 @@
 #include <rates.h>              // rates used to build the ratespec for frame injection
 
 /**
+ *  Setup a timer to schedule a function call
+ */
+struct hndrte_timer *
+schedule_work(void *context, void *data, void *mainfn, int ms, int periodic)
+{
+    struct hndrte_timer *task;
+    task = hndrte_init_timer(context, data, mainfn, 0);
+    if (task) {
+        if(!hndrte_add_timer(task, ms, periodic))
+            hndrte_free_timer(task);
+    }
+    return task;
+}
+
+/**
  *  add data to the start of a buffer
  */
 void *
