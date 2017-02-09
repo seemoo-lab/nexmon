@@ -45,8 +45,15 @@
 //#define RADIOTAP_MCS
 #include <ieee80211_radiotap.h>
 
+#define MONITOR_DISABLED  0
+#define MONITOR_IEEE80211 1
+#define MONITOR_RADIOTAP  2
+#define MONITOR_LOG_ONLY  3
+#define MONITOR_DROP_FRM  4
+#define MONITOR_IPV4_UDP  5
+
 void
-wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
+wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
     struct sk_buff *p_new = pkt_buf_get_skb(wl->wlc->osh, p->len + sizeof(struct nexmon_radiotap_header));
     struct nexmon_radiotap_header *frame = (struct nexmon_radiotap_header *) p_new->data;
     struct tsf tsf;
@@ -71,6 +78,31 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
 
 	p_new->len -= 6;
 	wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p_new);
+}
+
+void
+wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
+    switch(wl->wlc->monitor & 0xFF) {
+        case MONITOR_RADIOTAP:
+                wl_monitor_radiotap(wl, sts, p);
+            break;
+
+        case MONITOR_IEEE80211:
+                wl_monitor(wl, sts, p);
+            break;
+
+        case MONITOR_LOG_ONLY:
+                printf("frame received\n");
+            break;
+
+        case MONITOR_DROP_FRM:
+            break;
+
+        case MONITOR_IPV4_UDP:
+                printf("%s: udp tunneling not implemented\n");
+                // not implemented yet
+            break;
+    }
 }
 
 __attribute__((at(0x81F620, "flashpatch")))

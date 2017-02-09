@@ -323,7 +323,7 @@ struct wlc_info {
     int PAD;                            /* 0x1FC */
     int PAD;                            /* 0x200 */
     int PAD;                            /* 0x204 */
-    int PAD;                            /* 0x208 */
+    int monitor;                        /* 0x208 CHECKED */
     int PAD;                            /* 0x20C */
     int PAD;                            /* 0x210 */
     int PAD;                            /* 0x214 */
