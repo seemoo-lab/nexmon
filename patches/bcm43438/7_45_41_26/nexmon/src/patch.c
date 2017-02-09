@@ -52,12 +52,14 @@ __attribute__((at(0x1210C, "", CHIP_VER_BCM43438, FW_VER_ALL)))
 BPatch(wlc_recvdata_hook, wlc_recvdata_hook);
 
 // Hook the call to wlc_ucode_write in wlc_ucode_download
-//__attribute__((at(0x44ED0, "", CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327)))
-//BLPatch(wlc_ucode_write_compressed, wlc_ucode_write_compressed);
-
-// Update the ucode length to become the length of the extracted ucode before compression
-//__attribute__((at(0x4E9BC, "", CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327)))
-//GenericPatch4(ucode_length, 0xCC28);
+__attribute__((at(0x44ED0, "", CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327)))
+BLPatch(wlc_ucode_write_compressed, wlc_ucode_write_compressed);
 
 //__attribute__((at(0x2654, "", CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327)))
 //GenericPatch4(hndrte_reclaim_0_end, 0x592a4);
+
+extern unsigned char templateram_bin[];
+
+// Moving template ram to another place in the ucode region
+__attribute__((at(0x4E8C0, "", CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327)))
+GenericPatch4(templateram_bin, templateram_bin);

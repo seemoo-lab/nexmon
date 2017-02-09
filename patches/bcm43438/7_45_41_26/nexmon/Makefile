@@ -2,7 +2,7 @@ GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
 FW_PATH=$(NEXMON_ROOT)/firmwares/bcm43438/7_45_41_26
 include $(FW_PATH)/definitions.mk
 
-LOCAL_SRCS=$(wildcard src/*.c)
+LOCAL_SRCS=$(wildcard src/*.c) src/ucode_compressed.c src/templateram.c
 COMMON_SRCS=$(wildcard $(NEXMON_ROOT)/patches/common/*.c)
 FW_SRCS=$(wildcard $(FW_PATH)/*.c)
 
@@ -114,14 +114,35 @@ $(RAM_FILE): init gen/patch.elf $(FW_PATH)/$(RAM_FILE) gen/nexmon.mk gen/flashpa
 # ucode compression related
 ###################################################################
 
-ucode_compressed.bin: $(FW_PATH)/ucode.bin
+ifneq ($(wildcard src/ucode.asm), )
+gen/ucode.bin: src/ucode.asm
+	@printf "\033[0;31m  ASSEMBLING UCODE\033[0m %s => %s\n" $< $@
+
+ifneq ($(wildcard $(NEXMON_ROOT)/buildtools/b43/assembler/b43-asm.bin), )
+	$(Q)PATH=$(PATH):$(NEXMON_ROOT)/buildtools/b43/assembler $(NEXMON_ROOT)/buildtools/b43/assembler/b43-asm $< $@ --format raw-le32
+else
+	$(error Warning: please compile b43-asm.bin first)
+endif
+
+else
+gen/ucode.bin: $(FW_PATH)/ucode.bin
+	@printf "\033[0;31m  COPYING UCODE\033[0m %s => %s\n" $< $@
+	$(Q)cp $< $@
+endif
+
+gen/ucode_compressed.bin: gen/ucode.bin
 	@printf "\033[0;31m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
 	$(Q)cat $< | $(ZLIBFLATE) > $@
 
-src/ucode_compressed.c: ucode_compressed.bin
+src/ucode_compressed.c: gen/ucode_compressed.bin
 	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@
 	$(Q)printf "#pragma NEXMON targetregion \"ucode\"\n\n" > $@
-	$(Q)xxd -i $< >> $@
+	$(Q)cd $(dir $<) && xxd -i $(notdir $<) >> $(shell pwd)/$@
+
+src/templateram.c: $(FW_PATH)/templateram.bin
+	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@
+	$(Q)printf "#pragma NEXMON targetregion \"ucode\"\n\n" > $@
+	$(Q)cd $(dir $<) && xxd -i $(notdir $<) >> $(shell pwd)/$@
 
 ###################################################################
 
@@ -151,6 +172,17 @@ endif
 else
 	$(warning Warning: Cannot install firmware on this arch., bcm43430-sdio.bin needs to be copied manually into /lib/firmware/brcm/ on your RPI3)
 endif
+
+install-remote-firmware: brcmfmac43430-sdio.bin brcmfmac.ko
+	@printf "\033[0;31m  COPYING\033[0m brcmfmac43430-sdio.bin => /lib/firmware/brcm/brcmfmac43430-sdio.bin\n"
+	$(Q)sshpass -p nexmon scp brcmfmac43430-sdio.bin root@192.168.1.231:/lib/firmware/brcm/brcmfmac43430-sdio.bin
+ifeq ($(shell sshpass -p nexmon ssh root@192.168.1.231 'lsmod | grep "^brcmfmac" | wc -l'), 1)
+	@printf "\033[0;31m  UNLOADING\033[0m brcmfmac\n"
+	$(Q)sshpass -p nexmon ssh root@192.168.1.231 'rmmod brcmfmac'
+endif
+	$(Q)sshpass -p nexmon ssh root@192.168.1.231 'modprobe brcmutil'
+	@printf "\033[0;31m  RELOADING\033[0m brcmfmac\n"
+	$(Q)sshpass -p nexmon ssh root@192.168.1.231 'insmod /root/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/brcmfmac.ko'
 
 clean-firmware: FORCE
 	@printf "\033[0;31m  CLEANING\033[0m\n"
