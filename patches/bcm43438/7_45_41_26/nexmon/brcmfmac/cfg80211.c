@@ -6062,8 +6062,8 @@ static s32 brcmf_config_dongle(struct brcmf_cfg80211_info *cfg)
 	brcmf_configure_arp_offload(ifp, true);
 
     /* NEXMON WLC_SET_MONITOR && WLC_SET_PROMISC */
-    brcmf_fil_cmd_int_set(ifp, 108, 1);
-    brcmf_fil_cmd_int_set(ifp, 10, 1);
+    //brcmf_fil_cmd_int_set(ifp, 108, 1);
+    //brcmf_fil_cmd_int_set(ifp, 10, 1);
 
 	cfg->dongle_up = true;
 default_conf_out:
