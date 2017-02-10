@@ -83,7 +83,7 @@ To be able to communicate with the firmware without root priviledges, we created
 * *Optional*: remove wpa_supplicant for better control over the WiFi interface: `apt-get remove wpasupplicant`
 
 ### Using the Monitor Mode patch
-* ~~~Our modified driver sets the interface in monitor mode as soon as the interface goes up: `ifconfig wlan0 up`~~~
+* ~~Our modified driver sets the interface in monitor mode as soon as the interface goes up: `ifconfig wlan0 up`~~
 * In the default setting the brcmfmac driver can be used regularly as a WiFi station with out firmware. To activate monitor mode execute `nexutil -m2`
 * At this point the monitor mode is active. There is no need to call *airmon-ng*. 
 * The interface already set the Radiotap header, therefore, tools like *tcpdump* or *airodump-ng* can be used out of the box: `tcpdump -i wlan0`
