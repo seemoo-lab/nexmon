@@ -59,6 +59,13 @@ struct nexudp_header {
     int securitycookie;
 } __attribute__((packed));
 
+struct nexudp_ioctl_header {
+    struct nexudp_header nexudphdr;
+    unsigned int cmd;
+    unsigned int set;
+    char payload[1];
+} __attribute__((packed));
+
 inline uint32_t
 get_unaligned_le32(void *p) {
     return ((uint8 *) p)[0] | ((uint8 *) p)[1] << 8 | ((uint8 *) p)[2] << 16 | ((uint8 *) p)[3] << 24;
@@ -158,7 +165,8 @@ handle_sdio_xmit_request_hook(void *sdio_hw, struct sk_buff *p)
     struct wl_info *wl = *(*((struct wl_info ***) sdio_hw + 15) + 6);
     struct wlc_info *wlc = wl->wlc;
     struct ethernet_ip_udp_header *ethfrm = (struct ethernet_ip_udp_header *) (p != 0) ? (p->data + 4) : 0;
-    struct nexudp_header *nexudphdr = (struct nexudp_header *) (((void *) ethfrm) + sizeof(struct ethernet_ip_udp_header));
+    struct nexudp_ioctl_header *nexioctlhdr = (struct nexudp_ioctl_header *) (((void *) ethfrm) + sizeof(struct ethernet_ip_udp_header));
+    struct nexudp_header *nexudphdr = &nexioctlhdr->nexudphdr;
 
     // Check if destination MAC address starts with ff:ff:ff:ff, port equals 5500, and first three bytes equal NEX
     if (p != 0 && p->data != 0 
@@ -177,7 +185,7 @@ handle_sdio_xmit_request_hook(void *sdio_hw, struct sk_buff *p)
 
         switch(nexudphdr->type) {
             case NEXUDP_IOCTL:
-                wlc_ioctl_hook(wlc, *(int *) p->data, p->data + 4, p->len - 4, 0);
+                wlc_ioctl_hook(wlc, nexioctlhdr->cmd, nexioctlhdr->payload, p->len - sizeof(nexioctlhdr->cmd) - sizeof(nexioctlhdr->set), 0);
 
                 // prepare to send back an answer tunneled over udp
                 prepend_ethernet_ipv4_udp_header(p);

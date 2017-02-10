@@ -71,6 +71,7 @@ struct nexio {
 extern int nex_ioctl(struct nexio *nexio, int cmd, void *buf, int len, bool set);
 extern struct nexio *nex_init_ioctl(const char *ifname);
 extern struct nexio *nex_init_udp(unsigned int securitycookie, unsigned int txip);
+extern struct nexio *nex_init_netlink(void);
 
 char            *ifname = "wlan0";
 unsigned char   set_monitor = 0;
@@ -276,7 +277,11 @@ main(int argc, char **argv)
     if (use_udp_tunneling != 0)
         nexio = nex_init_udp(use_udp_tunneling, txip);
     else
+#ifdef USE_NETLINK
+        nexio = nex_init_netlink();
+#else
         nexio = nex_init_ioctl(ifname);
+#endif
 
     if (set_monitor) {
         buf = set_monitor_value;

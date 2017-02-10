@@ -54,6 +54,8 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 
+#include <linux/netlink.h>
+
 #define WLC_IOCTL_MAGIC          0x14e46c77
 #define DHD_IOCTL_MAGIC          0x00444944
 
@@ -62,6 +64,8 @@
 
 #define NEXUDP_IOCTL            		  0
 #define NEXUDP_INJECT_RADIOTAP  		  1
+
+#define NETLINK_USER                     31
 
 #define IPADDR(a,b,c,d) ((d) << 24 | (c) << 16 | (b) << 8 | (a))
 
@@ -92,6 +96,7 @@ struct nexudp_header {
 struct nexudp_ioctl_header {
     struct nexudp_header nexudphdr;
     unsigned int cmd;
+    unsigned int set;
     char payload[1];
 } __attribute__((packed));
 
@@ -119,7 +124,7 @@ __nex_driver_io(struct ifreq *ifr, struct nex_ioctl *ioc)
 }
 
 static int
-__nex_driver_udp(struct nexio *nexio, struct nex_ioctl *ioc)
+__nex_driver_socket(struct nexio *nexio, struct nex_ioctl *ioc)
 {
 	int frame_len = ioc->len + sizeof(struct nexudp_ioctl_header) - sizeof(char);
 	int rx_frame_len = 0;
@@ -131,6 +136,7 @@ __nex_driver_udp(struct nexio *nexio, struct nex_ioctl *ioc)
 	frame->nexudphdr.securitycookie = nexio->securitycookie;
 
 	frame->cmd = ioc->cmd;
+    frame->set = ioc->set;
 
 	memcpy(frame->payload, ioc->buf, ioc->len);
 
@@ -139,8 +145,9 @@ __nex_driver_udp(struct nexio *nexio, struct nex_ioctl *ioc)
 	rx_frame_len = recv(nexio->sock_rx_ioctl, frame, frame_len, 0);
 	
 	if (ioc->set == 0 && rx_frame_len > 0 && *(unsigned int *) frame == ioc->cmd) {
-		memcpy(ioc->buf, ((char *) frame) + sizeof(frame->cmd), 
-			(rx_frame_len - sizeof(frame->cmd)) < ioc->len ? (rx_frame_len - sizeof(frame->cmd)) : ioc->len);
+		memcpy(ioc->buf, ((char *) frame) + sizeof(frame->cmd) + sizeof(frame->set), 
+			(rx_frame_len - sizeof(frame->cmd) - sizeof(frame->set)) < ioc->len ? 
+            (rx_frame_len - sizeof(frame->cmd) - sizeof(frame->set)) : ioc->len);
 	}
 
 	free(frame);
@@ -174,7 +181,7 @@ nex_ioctl(struct nexio *nexio, int cmd, void *buf, int len, bool set)
     if (nexio->ifr != 0) {
 	    ret = __nex_driver_io(nexio->ifr, &ioc);
     } else if (nexio->sock_tx != 0) {
-    	ret = __nex_driver_udp(nexio, &ioc);
+    	ret = __nex_driver_socket(nexio, &ioc);
     }
     
     if (ret < 0 && cmd != WLC_GET_MAGIC)
@@ -244,4 +251,37 @@ nex_init_udp(unsigned int securitycookie, unsigned int txip)
     bind(nexio->sock_rx_frame, (struct sockaddr *) sin_rx_frame, sizeof(struct sockaddr));
 
 	return nexio;
+}
+
+struct nexio *
+nex_init_netlink(void)
+{
+    struct nexio *nexio = (struct nexio *) malloc(sizeof(struct nexio));
+    memset(nexio, 0, sizeof(struct nexio));
+
+    struct sockaddr_nl *snl_tx = (struct sockaddr_nl *) malloc(sizeof(struct sockaddr_nl));
+    struct sockaddr_nl *snl_rx_ioctl = (struct sockaddr_nl *) malloc(sizeof(struct sockaddr_nl));
+
+    memset(snl_tx, 0, sizeof(struct sockaddr_nl));
+    memset(snl_rx_ioctl, 0, sizeof(struct sockaddr_nl));
+
+    snl_tx->nl_family = AF_NETLINK;
+    snl_tx->nl_pid = 0; /* For Linux Kernel */
+    snl_tx->nl_groups = 0; /* unicast */
+
+    snl_rx_ioctl->nl_family = AF_NETLINK;
+    snl_rx_ioctl->nl_pid = getpid();
+
+    nexio->sock_tx = socket(PF_NETLINK, SOCK_RAW, NETLINK_USER);
+    nexio->sock_rx_ioctl = socket(PF_NETLINK, SOCK_RAW, NETLINK_USER);
+
+    // Set 1 second timeout on ioctl receive socket
+    struct timeval tv = {
+        .tv_sec = 1,
+        .tv_usec = 0
+    };
+    setsockopt(nexio->sock_rx_ioctl, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+
+    connect(nexio->sock_tx, (struct sockaddr *) snl_tx, sizeof(struct sockaddr));
+    bind(nexio->sock_rx_ioctl, (struct sockaddr *) snl_rx_ioctl, sizeof(struct sockaddr));
 }
