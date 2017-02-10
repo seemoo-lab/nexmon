@@ -79,11 +79,12 @@ To be able to communicate with the firmware without root priviledges, we created
   * Compile a patched firmware: `make`
   * Generate a backup of your original firmware file: `make backup-firmware`
   * Install the patched firmware on your RPI3: `make install-firmware`
+* Install nexutil: from the root directory of our repository switch to the nexutil folder: `cd utilities/nexutil/`. Compile and install nexutil: `make && make install`.
 * *Optional*: remove wpa_supplicant for better control over the WiFi interface: `apt-get remove wpasupplicant`
-* *Optional*: install nexutil: from the root directory of our repository switch to the nexutil folder: `cd utilities/nexutil/`. Compile and install nexutil: `make && make install`.
 
 ### Using the Monitor Mode patch
-* Our modified driver sets the interface in monitor mode as soon as the interface goes up: `ifconfig wlan0 up`
+* ~~~Our modified driver sets the interface in monitor mode as soon as the interface goes up: `ifconfig wlan0 up`~~~
+* In the default setting the brcmfmac driver can be used regularly as a WiFi station with out firmware. To activate monitor mode execute `nexutil -m2`
 * At this point the monitor mode is active. There is no need to call *airmon-ng*. 
 * The interface already set the Radiotap header, therefore, tools like *tcpdump* or *airodump-ng* can be used out of the box: `tcpdump -i wlan0`
 * **Note:** It is not possible to connect to an access point anymore using our modified driver and firmware, if you whant to go back to the default behaviour you will need to load the original driver and firmware.
