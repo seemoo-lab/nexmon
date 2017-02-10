@@ -730,7 +730,7 @@ RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x18BB6C)
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x18BC5C)
-AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x82ABEC)
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x9264)
 int 
 wlc_iovar_op(void *wlc, char *varname, void *params, int p_len, void *arg, int len, char set, void *wlcif) 
 RETURN_DUMMY
@@ -752,7 +752,7 @@ VOID_DUMMY
 
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x2A174)
 void
-wlc_lcn40phy_start_tx_tone(void *pi, signed int f_Hz, int max_val, int unused, int deaf_set_to_1, int tx_pu_param)
+wlc_lcn40phy_start_tx_tone(void *pi, signed int f_Hz, int max_val, int iqcalmode, int deaf_set_to_1, int tx_pu_param)
 VOID_DUMMY
 
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x2A0EA)

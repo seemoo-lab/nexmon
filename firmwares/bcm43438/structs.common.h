@@ -90,12 +90,13 @@ struct wlc_hw_info {
     int vars;                   /* 0x7C */
     int vars_size;              /* 0x80 */
     int PAD;                    /* 0x84 */
-    struct d11regs* regs;       /* 0x88 */
+    struct d11regs* regs;       /* 0x88 CHECKED */
 //    int physhim;                /* 0x88 */
     int phy_sh;                 /* 0x8C */
-    struct wlc_hwband *band;     /* 0x90 */
-    int PAD[6];                 /* 0x94 */
-    char up;                    /* 0x98 CHECKED */
+    int PAD;                    /* 0x90 */
+    struct wlc_hwband *band;    /* 0x94 CHECKED */
+    int PAD[5];                 /* 0x98 */
+    char up;                    /* 0x98 */
     char PAD;                   /* 0x9a */
     int PAD[19];                /* 0x9c */
     int maccontrol;
