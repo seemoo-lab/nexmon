@@ -429,6 +429,11 @@ void *
 wlc_get_txh_info(void *wlc, void *p, void *txh)
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x7ef8)
+int
+wl_send(void *src, void *dev, void *p)
+RETURN_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8c79c)
 //AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x90AEC)
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x1997A6)

@@ -90,14 +90,17 @@ inject_frame(struct wl_info *wl, sk_buff *p) {
 }
 
 int
-wlc_sdio_hook(int a1, struct hndrte_dev *dev, struct sk_buff *p)
+wl_send_hook(struct hndrte_dev *src, struct hndrte_dev *dev, struct sk_buff *p)
 {
     struct wl_info *wl = (struct wl_info *) dev->softc;
+    struct wlc_info *wlc = wl->wlc;
 
-    inject_frame(wl, p);
-
-    return 0;
+    if (wlc->monitor && p != 0 && p->data != 0 && ((short *) p->data)[0] == 0) {
+        return inject_frame(wl, p);
+    } else {
+        return wl_send(src, dev, p);
+    }
 }
 
-__attribute__((at(0x7EF8, "", CHIP_VER_BCM43438, FW_VER_ALL)))
-BPatch(wlc_sdio_hook, wlc_sdio_hook);
+__attribute__((at(0x38f3c, "", CHIP_VER_BCM43438, FW_VER_ALL)))
+GenericPatch4(wl_send_hook, wl_send_hook + 1);
