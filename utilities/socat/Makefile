@@ -5,13 +5,12 @@ libs/armeabi/socat: FORCE
 
 install: libs/armeabi/socat
 	adb push $< /sdcard/
-	adb shell su -c "mount -o remount,rw /system"
-	adb shell su -c "cp /sdcard/socat /system/bin/socat"
-	adb shell su -c "chmod +x /system/bin/socat"
+	adb shell 'su -c "mount -o remount,rw /system"'
+	adb shell 'su -c "cp /sdcard/socat /system/bin/socat"'
+	adb shell 'su -c "chmod +x /system/bin/socat"'
 
 clean:
 	rm -Rf libs
 	rm -Rf local
 
 FORCE:
-	

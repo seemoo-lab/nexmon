@@ -19,9 +19,9 @@ libs/armeabi/aircrack-ng: Android.mk ../libsqlite/local/armeabi/libsqlite.a ../l
 
 install: libs/armeabi/aircrack-ng
 	adb push libs/armeabi/aireplay-ng /sdcard/
-	adb shell su -c "mount -o remount,rw /system"
-	adb shell su -c "cp /sdcard/aireplay-ng /system/bin/aireplay-ng"
-	
+	adb shell 'su -c "mount -o remount,rw /system"'
+	adb shell 'su -c "cp /sdcard/aireplay-ng /system/bin/aireplay-ng"'
+
 FORCE:
 
 clean:
