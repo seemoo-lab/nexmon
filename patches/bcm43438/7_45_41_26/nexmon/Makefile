@@ -1,3 +1,4 @@
+SHELL = /bin/bash
 GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
 FW_PATH=$(NEXMON_ROOT)/firmwares/bcm43438/7_45_41_26
 include $(FW_PATH)/definitions.mk
@@ -176,10 +177,12 @@ endif
 install-remote-firmware: brcmfmac43430-sdio.bin brcmfmac.ko
 	@printf "\033[0;31m  COPYING\033[0m brcmfmac43430-sdio.bin => /lib/firmware/brcm/brcmfmac43430-sdio.bin\n"
 	$(Q)sshpass -p nexmon scp brcmfmac43430-sdio.bin root@192.168.1.231:/lib/firmware/brcm/brcmfmac43430-sdio.bin
-ifeq ($(shell sshpass -p nexmon ssh root@192.168.1.231 'lsmod | grep "^brcmfmac" | wc -l'), 1)
-	@printf "\033[0;31m  UNLOADING\033[0m brcmfmac\n"
-	$(Q)sshpass -p nexmon ssh root@192.168.1.231 'rmmod brcmfmac'
-endif
+#ifeq ($(shell sshpass -p nexmon ssh root@192.168.1.231 'lsmod | grep "^brcmfmac" | wc -l'), 1)
+	@if [ `sshpass -p nexmon ssh root@192.168.1.231 'lsmod | grep "^brcmfmac" | wc -l'` -eq 1 ]; then \
+		printf "\033[0;31m  UNLOADING\033[0m brcmfmac\n"; \
+		sshpass -p nexmon ssh root@192.168.1.231 'rmmod brcmfmac'; \
+	fi
+#endif
 	$(Q)sshpass -p nexmon ssh root@192.168.1.231 'modprobe brcmutil'
 	@printf "\033[0;31m  RELOADING\033[0m brcmfmac\n"
 	$(Q)sshpass -p nexmon ssh root@192.168.1.231 'insmod /root/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/brcmfmac.ko'
