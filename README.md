@@ -70,7 +70,7 @@ To be able to communicate with the firmware without root priviledges, we created
 ## Build patches for bcm43438 on the RPI3 using Raspbian 8 (recommended)
 * Make sure the following commands are executed as `root`
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
-* Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk`
+* Install the kernel headers to build the driver and some dependencies: `apt install raspberrypi-kernel-headers git libgmp3-dev gawk`
 * Clone our repository: `git clone https://github.com/seemoo-lab/nexmon.git`
 * Go into the root directory of our repository: `cd nexmon`
   * Setup the build environment: `source setup_env.sh`
@@ -79,7 +79,9 @@ To be able to communicate with the firmware without root priviledges, we created
   * Compile a patched firmware: `make`
   * Generate a backup of your original firmware file: `make backup-firmware`
   * Install the patched firmware on your RPI3: `make install-firmware`
-* Install nexutil: from the root directory of our repository switch to the nexutil folder: `cd utilities/nexutil/`. Compile and install nexutil: `make && make install`.
+* Install nexutil:
+  * From the root directory of our repository switch to the libnexio folder `cd utilities/libnexio`. Compile libnexio: `make`.
+  * From the root directory of our repository switch to the nexutil folder: `cd utilities/nexutil/`. Compile and install nexutil: `make && make install`.
 * *Optional*: remove wpa_supplicant for better control over the WiFi interface: `apt-get remove wpasupplicant`
 
 ### Using the Monitor Mode patch
