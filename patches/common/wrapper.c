@@ -195,10 +195,12 @@ osl_malloc(void *osh, unsigned int size)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C48DE)
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x22BCA)
 void
 phy_reg_mod(void *pi, unsigned short addr, unsigned short mask, unsigned short val)
 VOID_DUMMY
 
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x225AE)
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1C3D32) 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C3F7E) 
 int 
@@ -237,12 +239,22 @@ RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x1d474) 
 unsigned int 
-si_getcuridx(void *sii) 
+si_getcuridx(void *sih) 
 RETURN_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8BBAC)
+void
+si_pmu_pllcontrol(void *sih, int addr, int mask, int data)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x184AEC)
+void
+si_pmu_pllupd(void *sih)
+VOID_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x1DCBC) 
 void 
-si_setcore(void *sii, int coreid, int coreunit) 
+si_setcore(void *sih, int coreid, int coreunit) 
 VOID_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x12794) 
@@ -301,6 +313,16 @@ void
 wlc_bmac_set_chanspec(void *wlc_hw, int chanspec, int mute, void *txpwr)
 VOID_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C6666)
+void
+wlc_phy_btcx_override_disable(void *pi)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C65AA)
+void
+wlc_btcx_override_enable(void *pi)
+VOID_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x37070) 
 unsigned short 
 wlc_read_shm(void *wlc, unsigned int offset) 
@@ -312,8 +334,14 @@ void
 wlc_suspend_mac_and_wait(void *wlc) 
 VOID_DUMMY
 
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x1BE5E)
+void
+wlc_bmac_enable_mac(void *wlc_hw)
+VOID_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x4FC88)
 AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x449FC)
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x1C1C8)
 void 
 wlc_bmac_suspend_mac_and_wait(void *wlc_hw) 
 VOID_DUMMY
@@ -740,6 +768,11 @@ void
 wlc_lcn40phy_deaf_mode(void *pi, unsigned char mode)
 VOID_DUMMY
 
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x2561E)
+void
+wlc_lcn40phy_force_pwr_index(void *pi, int indx)
+VOID_DUMMY
+
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x24818)
 unsigned short
 wlc_lcn40phy_num_samples(void *pi, int f_Hz, unsigned int phy_bw)
@@ -748,6 +781,31 @@ RETURN_DUMMY
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x26384)
 void
 wlc_lcn40phy_run_samples(void *pi, unsigned short num_samps, unsigned short num_loops, unsigned short wait, unsigned char iqcalmode, unsigned char tx_pu_param)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x254D8)
+void
+wlc_lcn40phy_set_bbmult(void *pi, uint8 m0)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x24A08)
+void
+wlc_lcn40phy_set_pa_gain(void *pi, uint16 gain)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x24F22)
+void
+wlc_lcn40phy_set_tx_gain(void *pi,  void *target_gains)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x29442)
+void
+wlc_lcn40phy_set_tx_pwr_by_index(void *pi, int indx)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x25A82)
+void
+wlc_lcn40phy_set_tx_pwr_ctrl(void *pi, uint16 mode)
 VOID_DUMMY
 
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x2A174)
@@ -856,6 +914,21 @@ void
 wlc_phy_runsamples_acphy(void *pi, unsigned short num_samps, unsigned short loops, unsigned short wait, unsigned char iqmode, unsigned char mac_based)
 VOID_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1BB68C)
+void
+wlc_phy_get_tx_bbmult_acphy(void *pi, unsigned short *bb_mult, unsigned short core)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1B9904)
+void
+wlc_phy_set_tx_bbmult_acphy(void *pi, unsigned short *bb_mult, unsigned short core)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1BB502)
+void
+wlc_phy_get_txgain_settings_by_index_acphy(void *pi, void *txgain_settings, int8 txpwrindex)
+VOID_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1BE636) 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1BE882)
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x1C68D8)
@@ -885,7 +958,42 @@ VOID_DUMMY
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1BE876)
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1BEAC2)
 int 
-wlc_phy_tx_tone_acphy(void *pi, int f_kHz, int max_val, char iqmode, char dac_test_mode, char modify_bbmult) 
+wlc_phy_tx_tone_acphy(void *pi, int f_kHz, int max_val, char iqmode, char dac_test_mode, char modify_bbmult)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1B998C)
+void
+wlc_phy_txcal_txgain_cleanup_acphy(void *pi, void *orig_txgain)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1BE156)
+void
+wlc_phy_txpwr_by_index_acphy(void *pi, uint8 core_mask, int8 txpwrindex)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1B4608)
+unsigned char
+wlc_phy_txpwrctrl_get_cur_index_acphy(void *pi, unsigned char core)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1B4C1E)
+void
+wlc_phy_txpwrctrl_set_cur_index_acphy(void *pi, unsigned char idx, unsigned char core)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C0192)
+void
+wlc_phy_txpwrctrl_set_target_acphy(void *pi, unsigned char pwr_qtrdbm, unsigned char core)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C01B4)
+void
+wlc_phy_txpwrctrl_enable_acphy(void *pi, unsigned char ctrl_type)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1B45F0)
+unsigned char
+wlc_phy_txpwrctrl_ison_acphy(void *pi)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x191654) 
