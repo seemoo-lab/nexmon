@@ -14,6 +14,7 @@ CFLAGS= \
 	-fplugin-arg-nexmon-prefile=gen/nexmon.pre \
 	-fplugin-arg-nexmon-chipver=$(NEXMON_CHIP_NUM) \
 	-fplugin-arg-nexmon-fwver=$(NEXMON_FW_VERSION_NUM) \
+	-fno-strict-aliasing \
 	-DNEXMON_CHIP=$(NEXMON_CHIP) \
 	-DNEXMON_FW_VERSION=$(NEXMON_FW_VERSION) \
 	-DPATCHSTART=$(PATCHSTART) \
