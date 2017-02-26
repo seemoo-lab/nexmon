@@ -15,6 +15,14 @@
 #define	PAD		_XSTR(__LINE__)
 #endif
 
+struct phytbl_info {
+    const void   *tbl_ptr;
+    uint32  tbl_len;
+    uint32  tbl_id;
+    uint32  tbl_offset;
+    uint32  tbl_width;
+};
+
 struct wl_rxsts {
     uint8 PAD[8];
     uint16 chanspec;
@@ -60,6 +68,128 @@ struct tunables {
     short rxbnd; // @ 0x40
 };
 
+typedef void (*initfn_t)(void *);
+typedef void (*chansetfn_t)(void *, unsigned hosrt);
+typedef int (*longtrnfn_t)(void *, int);
+typedef void (*txiqccgetfn_t)(void *, uint16 *, uint16 *);
+typedef void (*txiqccmimogetfn_t)(void *, uint16 *, uint16 *, uint16 *, uint16 *);
+typedef void (*txiqccsetfn_t)(void *, uint16, uint16);
+typedef void (*txiqccmimosetfn_t)(void *, uint16, uint16, uint16, uint16);
+typedef uint16 (*txloccgetfn_t)(void *);
+typedef void (*txloccsetfn_t)(void *pi, uint16 didq);
+typedef void (*txloccmimosetfn_t)(void *pi, uint16 diq0, uint16 diq1);
+typedef void (*txloccmimogetfn_t)(void *, uint16 *, uint16 *);
+typedef void (*radioloftgetfn_t)(void *, uint8 *, uint8 *, uint8 *, uint8 *);
+typedef void (*radioloftsetfn_t)(void *, uint8, uint8, uint8, uint8);
+typedef void (*radioloftmimogetfn_t)(void *, uint8 *, uint8 *, uint8 *, uint8 *, uint8 *, uint8 *, uint8 *, uint8 *);
+typedef void (*radioloftmimosetfn_t)(void *, uint8, uint8, uint8, uint8, uint8, uint8, uint8, uint8);
+typedef int32 (*rxsigpwrfn_t)(void *, int32);
+typedef void (*detachfn_t)(void *);
+typedef int (*txcorepwroffsetfn_t)(void *, void *);
+typedef void (*settxpwrctrlfn_t)(void *, uint16);
+typedef uint16 (*gettxpwrctrlfn_t)(void *);
+typedef void (*settxpwrbyindexfn_t)(void *, int);
+typedef bool (*ishwtxpwrctrlfn_t)(void *);
+typedef void (*phywatchdogfn_t)(void *);
+typedef void (*btcadjustfn_t)(void *, bool);
+typedef uint16 (*tssicalsweepfn_t)(void *, int8 *, uint8 *);
+typedef void (*switchradiofn_t)(void *, bool);
+typedef void (*anacorefn_t)(void *, bool);
+typedef void (*phywritetablefn_t)(void *pi, const void *pti);
+typedef void (*phyreadtablefn_t)(void *pi, void *pti);
+typedef void (*calibmodesfn_t)(void *pi, uint mode);
+typedef void (*lowpowerbeaconmodefn_t)(void *pi, int lowpower_beacon_mode);
+typedef bool (*fcbsinitfn_t)(void *pi, int chanidx, unsigned short chanspec);
+typedef bool (*fcbsinitprefn_t)(void *pi, int chanidx);
+typedef bool (*fcbsinitpostfn_t)(void *pi, int chanidx);
+typedef bool (*fcbsfn_t)(void *pi, int chanidx);
+typedef bool (*fcbsprefn_t)(void *pi, int chanidx);
+typedef bool (*fcbspostfn_t)(void *pi, int chanidx);
+typedef void (*fcbsreadtblfn_t) (void *pi, uint32 id, uint32 len, uint32 offset, uint32 width, void *data);
+typedef uint8 (*lpcgetminidx_t)(void);
+typedef void (*lpcsetmode_t)(void *pi, bool enable);
+typedef uint8 (*lpcgetpwros_t)(uint8 index);
+typedef uint8 (*lpcgettxcpwrval_t)(uint16 phytxctrlword);
+typedef void (*lpcsettxcpwrval_t)(uint16 *phytxctrlword, uint8 txcpwrval);
+typedef uint8 (*lpccalcpwroffset_t) (uint8 total_offset, uint8 rate_offset);
+typedef uint8 (*lpcgetpwridx_t) (uint8 pwr_offset);
+typedef uint8 * (*lpcgetpwrlevelptr_t) (void);
+
+struct phy_func_ptr {
+    initfn_t init;
+    initfn_t calinit;
+    chansetfn_t chanset;
+    initfn_t txpwrrecalc;
+    longtrnfn_t longtrn;
+    txiqccgetfn_t txiqccget;
+    txiqccmimogetfn_t txiqccmimoget;
+    txiqccsetfn_t txiqccset;
+    txiqccmimosetfn_t txiqccmimoset;
+    txloccgetfn_t txloccget;
+    txloccsetfn_t txloccset;
+    txloccmimogetfn_t txloccmimoget;
+    txloccmimosetfn_t txloccmimoset;
+    radioloftgetfn_t radioloftget;
+    radioloftsetfn_t radioloftset;
+    radioloftmimogetfn_t radioloftmimoget;
+    radioloftmimosetfn_t radioloftmimoset;
+    initfn_t carrsuppr;
+    rxsigpwrfn_t rxsigpwr;
+    detachfn_t detach;
+    txcorepwroffsetfn_t txcorepwroffsetget;
+    txcorepwroffsetfn_t txcorepwroffsetset;
+    settxpwrctrlfn_t    settxpwrctrl;
+    gettxpwrctrlfn_t    gettxpwrctrl;
+    ishwtxpwrctrlfn_t   ishwtxpwrctrl;
+    settxpwrbyindexfn_t settxpwrbyindex;
+    btcadjustfn_t       phybtcadjust;
+    phywatchdogfn_t    phywatchdog;
+    tssicalsweepfn_t   tssicalsweep;
+    switchradiofn_t    switchradio;
+    anacorefn_t        anacore;
+    phywritetablefn_t  phywritetable;
+    phyreadtablefn_t   phyreadtable;
+    calibmodesfn_t     calibmodes;
+    lpcgetminidx_t      lpcgetminidx;
+    lpcgetpwros_t       lpcgetpwros;
+    lpcgettxcpwrval_t   lpcgettxcpwrval;
+    lpcsettxcpwrval_t   lpcsettxcpwrval;
+    lpcsetmode_t        lpcsetmode;
+};
+typedef struct phy_func_ptr phy_func_ptr_t;
+
+struct phy_info {
+    int PAD;                            // 0x000
+    int PAD;                            // 0x004
+    int PAD;                            // 0x008
+    int PAD;                            // 0x00c
+    int PAD;                            // 0x010
+    int PAD;                            // 0x014
+    int PAD;                            // 0x018
+    int PAD;                            // 0x01c
+    int PAD;                            // 0x020
+    int PAD;                            // 0x024
+    int PAD;                            // 0x028
+    int PAD;                            // 0x02c
+    int PAD;                            // 0x030
+    int PAD;                            // 0x034
+    void *sh;                           // 0x038
+    struct phy_func_ptr pi_fptr;        // 0x03c - 0xd4
+    int PAD;                            // 0x0d8
+    int PAD;                            // 0x0dc
+    int PAD;                            // 0x0e0
+    int PAD;                            // 0x0e4
+    volatile struct d11regs *regs;      // 0x0e8
+    int PAD;                            // 0x0ec
+    int PAD;                            // 0x0f0
+    short PAD;                          // 0x0f4
+    short radio_chanspec;               // 0x0f6
+    int PAD;                            // 0x0f8
+    int PAD;                            // 0x0fc
+    int PAD;                            // 0x100
+    int PAD;                            // 0x104
+};
+
 struct wlc_hwband {
     int bandtype;               /* 0x00 */
     int bandunit;               /* 0x04 */
@@ -73,7 +203,7 @@ struct wlc_hwband {
     short phyrev;               /* 0x1E */
     short radioid;              /* 0x20 */
     short radiorev;             /* 0x22 */
-    void *pi;                   /* 0x24 */
+    struct phy_info *pi;        /* 0x24 */
     char abgphy_encore;         /* 0x25 */
 };
 
