@@ -435,7 +435,10 @@ struct wlc_info {
     volatile struct d11regs *regs;      /* 0x00C */
     struct wlc_hw_info *hw;             /* 0x010 */
     int PAD;                            /* 0x014 */
-    int PAD;                            /* 0x018 */
+    char PAD;                           /* 0x018 */
+    char clk;                           /* 0x019 */
+    char PAD;                           /* 0x01A */
+    char PAD;                           /* 0x01B */
     void *core;                         /* 0x01C */
     struct wlcband *band;               /* 0x020 */
     int PAD;                            /* 0x024 */
