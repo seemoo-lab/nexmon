@@ -333,11 +333,19 @@ main(int argc, char **argv)
 
         memset(custom_cmd_buf, 0, custom_cmd_buf_len);
 
-        if (custom_cmd_value)
-            if (custom_cmd_value_int)
-                *(int *) custom_cmd_buf = strtol(custom_cmd_value, NULL, 0);
+        if (custom_cmd_set == 1 && raw_output) { // set command using raw input
+            //freopen(NULL, "rb", stdin);
+            fread(custom_cmd_buf, 1, custom_cmd_buf_len, stdin);
+        } else {
+            if (custom_cmd_value)
+                if (custom_cmd_value_int)
+                    *(int *) custom_cmd_buf = strtol(custom_cmd_value, NULL, 0);
+                else
+                    strncpy(custom_cmd_buf, custom_cmd_value, custom_cmd_buf_len);
             else
-                strncpy(custom_cmd_buf, custom_cmd_value, custom_cmd_buf_len);
+                if (custom_cmd_value_int)
+                    *(int *) custom_cmd_buf = strtol(custom_cmd_value, NULL, 0);
+        }
 
         ret = nex_ioctl(nexio, custom_cmd, custom_cmd_buf, custom_cmd_buf_len, custom_cmd_set);
 
