@@ -347,6 +347,12 @@ main(int argc, char **argv)
                     *(int *) custom_cmd_buf = strtol(custom_cmd_value, NULL, 0);
         }
 
+        /* NOTICE: Using SDIO to communicate to the firmware, the maximum CDC message length 
+         * is limited to CDC_MAX_MSG_SIZE = ETHER_MAX_LEN = 1518, however only 1502 bytes 
+         * arrive in the ioctl function, the rest might be used for the ioctl header.
+         */
+        if (custom_cmd_buf_len > 1502)
+            fprintf(stderr, "WARN: Using SDIO, the ioctl payload length is limited to 1502 bytes.\n");
         ret = nex_ioctl(nexio, custom_cmd, custom_cmd_buf, custom_cmd_buf_len, custom_cmd_set);
 
         if (custom_cmd_set == false)
