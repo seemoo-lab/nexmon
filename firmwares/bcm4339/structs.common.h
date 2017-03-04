@@ -340,6 +340,15 @@ struct phy_pub {
     bool        abgphy_encore;          /* true if chipset is encore enabled */
 };
 
+struct phy_info_acphy {
+    uint8  dac_mode;                    // 0x000
+    uint8 PAD;                          // 0x001
+    uint16 bb_mult_save[1];             // 0x002
+    uint8  bb_mult_save_valid;          // 0x004
+    uint8 PAD;                          // 0x005
+    uint16 deaf_count;                  // 0x006
+} __attribute__((packed));
+
 struct phy_info {
     struct phy_pub pubpi_ro;            // 0x000
     struct shared_phy *sh;              // 0x01c
@@ -382,7 +391,7 @@ struct phy_info {
     int PAD;                            // 0x0b0
     int PAD;                            // 0x0b4
     int PAD;                            // 0x0b8
-    int PAD;                            // 0x0bc
+    struct phy_info_acphy *pi_ac;       // 0x0bc
     int PAD;                            // 0x0c0
     struct d11regs *regs;               // 0x0c4
     int PAD;                            // 0x0c8
@@ -404,7 +413,7 @@ struct phy_info {
     int PAD;                            // 0x118
     int PAD;                            // 0x11c
     int PAD;                            // 0x120
-};
+} __attribute__((packed));
 
 struct wlcband {
     int bandtype;                       /* 0x000 */
