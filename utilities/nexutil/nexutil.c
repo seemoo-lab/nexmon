@@ -57,7 +57,7 @@
 
 #include <nexioctls.h>
 
-#define HEXDUMP_COLS 8
+#define HEXDUMP_COLS 16
 
 #define IPADDR(a,b,c,d) ((d) << 24 | (c) << 16 | (b) << 8 | (a))
 
