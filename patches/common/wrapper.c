@@ -879,6 +879,16 @@ int
 wlc_phy_chan2freq_nphy_plus6(void *pi, int a2, int a3, int a4) 
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1BE12C)
+uint16
+wlc_phy_classifier_acphy(void *pi, uint16 mask, uint16 val)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1B89DE)
+void
+wlc_phy_clip_det_acphy(void *pi, uint8 enable)
+VOID_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1C5744)
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C5990)
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x23F3C)
@@ -896,6 +906,11 @@ AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1B9A3A)
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1B9C86)
 void
 wlc_phy_loadsampletable_acphy(void *pi, void *tone_buf, unsigned short num_samps)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1BE80C)
+void
+wlc_phy_ofdm_crs_acphy(void *pi, uint8 enable)
 VOID_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1BCA64)
