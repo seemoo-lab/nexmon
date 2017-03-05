@@ -5,5 +5,6 @@ MEMORY
 
 SECTIONS
 {
-	INCLUDE gen/merged.ld
+	INCLUDE gen/flashpatches.ld
+	INCLUDE gen/nexmon.ld
 }
