@@ -92,7 +92,15 @@ gen/memory.ld: $(FW_PATH)/definitions.mk
 	$(Q)printf "ucode : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(UCODESTART) $$(($(FP_CONFIG_BASE) - $(UCODESTART))) >> $@
 	$(Q)printf "fpconfig : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(FP_CONFIG_BASE) $(FP_CONFIG_SIZE) >> $@
 
-gen/patch.elf: patch.ld gen/nexmon.ld gen/flashpatches.ld gen/memory.ld $(OBJS)
+gen/merged.ld: gen/nexmon.ld gen/flashpatches.ld
+	@printf "\033[0;31m  MERGING LINKER FILES\033[0m %s, %s => %s\n" $^ $@
+	$(Q)cat gen/nexmon.ld | grep -v ".text.dummy" | awk '{ if ($$2 != ":") { print $$0 } }' > tmp
+	$(Q)cat gen/nexmon.ld | grep ".text.dummy" >> tmp
+	$(Q)cat gen/flashpatches.ld >> tmp
+	$(Q)cat tmp | awk '{ if ($$1 ~ /^.text.dummy/ || $$1 ~ /^.text.b_flash_patch/) { if (!x[$$2]) { print $$0; } } else { if (!x[$$2]++) { print $$0; } } }' > $@
+	$(Q)cat gen/nexmon.ld | awk '{ if ($$2 == ":") { print $$0 } }' >> $@
+
+gen/patch.elf: patch.ld gen/merged.ld gen/memory.ld $(OBJS)
 	@printf "\033[0;31m  LINKING OBJECTS\033[0m => %s (details: log/linker.log, log/linker.err)\n" $@
 	$(Q)$(CC)ld -T $< -o $@ --gc-sections --print-gc-sections -M >>log/linker.log 2>>log/linker.err
 

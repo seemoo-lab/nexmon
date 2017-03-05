@@ -43,7 +43,7 @@
     #define VOID_DUMMY { ; }
     #define RETURN_DUMMY { ; return 0; }
 
-    #define AT(CHIPVER, FWVER, ADDR) __attribute__((at(ADDR, "dummy", CHIPVER, FWVER)))
+    #define AT(CHIPVER, FWVER, ADDR) __attribute__((weak, at(ADDR, "dummy", CHIPVER, FWVER)))
 #else
     // if this file is included in the wrapper.h file, create prototypes
     #define VOID_DUMMY ;
