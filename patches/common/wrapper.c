@@ -1091,7 +1091,8 @@ void
 wlc_ucode_download(void *wlc_hw) 
 VOID_DUMMY
 
-AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x5BA28) 
+//AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x5BA28) 
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x01ADBB4) 
 int 
 wlc_valid_chanspec_ext(void *wlc_cm, unsigned short chanspec, int dualband) 
 RETURN_DUMMY

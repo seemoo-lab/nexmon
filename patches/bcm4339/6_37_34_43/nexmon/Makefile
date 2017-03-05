@@ -51,27 +51,33 @@ obj/%.o: $(FW_PATH)/%.c
 	$(Q)cat gen/nexmon.pre 2>>log/error.log | gawk '{ if ($$3 != "$@") print; }' > tmp && mv tmp gen/nexmon.pre
 	$(Q)$(CC)gcc $(CFLAGS) -c $< -o $@ >>log/compiler.log
 
-gen/nexmon.ld: $(OBJS)
-	@printf "\033[0;31m  GENERATING LINKER FILE\033[0m gen/nexmon.pre => %s\n" $@
-	$(Q)sort gen/nexmon.pre | gawk -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.ld.awk > $@
+gen/nexmon2.pre: $(OBJS)
+	@printf "\033[0;31m  PREPARING\033[0m %s => %s\n" "gen/nexmon.pre" $@
+	$(Q)cat gen/nexmon.pre | awk '{ if ($$3 != "obj/flashpatches.o" && $$3 != "obj/wrapper.o") { print $$0; } }' > tmp
+	$(Q)cat gen/nexmon.pre | awk '{ if ($$3 == "obj/flashpatches.o" || $$3 == "obj/wrapper.o") { print $$0; } }' >> tmp
+	$(Q)cat tmp | awk '{ if ($$1 ~ /^0x/) { if ($$3 != "obj/flashpatches.o" && $$3 != "obj/wrapper.o") { if (!x[$$1]++) { print $$0; } } else { if (!x[$$1]) { print $$0; } } } else { print $$0; } }' > gen/nexmon2.pre
 
-gen/nexmon.mk: $(OBJS) $(FW_PATH)/definitions.mk
+gen/nexmon.ld: gen/nexmon2.pre $(OBJS)
+	@printf "\033[0;31m  GENERATING LINKER FILE\033[0m gen/nexmon.pre => %s\n" $@
+	$(Q)sort gen/nexmon2.pre | gawk -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.ld.awk > $@
+
+gen/nexmon.mk: gen/nexmon2.pre $(OBJS) $(FW_PATH)/definitions.mk
 	@printf "\033[0;31m  GENERATING MAKE FILE\033[0m gen/nexmon.pre => %s\n" $@
 	$(Q)printf "fw_bcmdhd.bin: gen/patch.elf FORCE\n" > $@
-	$(Q)sort gen/nexmon.pre | \
+	$(Q)sort gen/nexmon2.pre | \
 		gawk -v src_file=gen/patch.elf -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.mk.1.awk | \
 		gawk -v ramstart=$(RAMSTART) -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.mk.2.awk >> $@
 	$(Q)printf "\nFORCE:\n" >> $@
 	$(Q)gawk '!a[$$0]++' $@ > tmp && mv tmp $@
 
-gen/flashpatches.ld: $(OBJS)
+gen/flashpatches.ld: gen/nexmon2.pre $(OBJS)
 	@printf "\033[0;31m  GENERATING LINKER FILE\033[0m gen/nexmon.pre => %s\n" $@
-	$(Q)sort gen/nexmon.pre | \
+	$(Q)sort gen/nexmon2.pre | \
 		gawk -f $(NEXMON_ROOT)/buildtools/scripts/flashpatches.ld.awk > $@
 
-gen/flashpatches.mk: $(OBJS) $(FW_PATH)/definitions.mk
+gen/flashpatches.mk: gen/nexmon2.pre $(OBJS) $(FW_PATH)/definitions.mk
 	@printf "\033[0;31m  GENERATING MAKE FILE\033[0m gen/nexmon.pre => %s\n" $@
-	$(Q)cat gen/nexmon.pre | gawk \
+	$(Q)cat gen/nexmon2.pre | gawk \
 		-v fp_data_base=$(FP_DATA_BASE) \
 		-v fp_config_base=$(FP_CONFIG_BASE) \
 		-v fp_data_end_ptr=$(FP_DATA_END_PTR) \
@@ -92,15 +98,7 @@ gen/memory.ld: $(FW_PATH)/definitions.mk
 	$(Q)printf "ucode : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(UCODESTART) $$(($(FP_CONFIG_BASE) - $(UCODESTART))) >> $@
 	$(Q)printf "fpconfig : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(FP_CONFIG_BASE) $(FP_CONFIG_SIZE) >> $@
 
-gen/merged.ld: gen/nexmon.ld gen/flashpatches.ld
-	@printf "\033[0;31m  MERGING LINKER FILES\033[0m %s, %s => %s\n" $^ $@
-	$(Q)cat gen/nexmon.ld | grep -v ".text.dummy" | awk '{ if ($$2 != ":") { print $$0 } }' > tmp
-	$(Q)cat gen/nexmon.ld | grep ".text.dummy" >> tmp
-	$(Q)cat gen/flashpatches.ld >> tmp
-	$(Q)cat tmp | awk '{ if ($$1 ~ /^.text.dummy/ || $$1 ~ /^.text.b_flash_patch/) { if (!x[$$2]) { print $$0; } } else { if (!x[$$2]++) { print $$0; } } }' > $@
-	$(Q)cat gen/nexmon.ld | awk '{ if ($$2 == ":") { print $$0 } }' >> $@
-
-gen/patch.elf: patch.ld gen/merged.ld gen/memory.ld $(OBJS)
+gen/patch.elf: patch.ld gen/nexmon.ld gen/flashpatches.ld gen/memory.ld $(OBJS)
 	@printf "\033[0;31m  LINKING OBJECTS\033[0m => %s (details: log/linker.log, log/linker.err)\n" $@
 	$(Q)$(CC)ld -T $< -o $@ --gc-sections --print-gc-sections -M >>log/linker.log 2>>log/linker.err
 
