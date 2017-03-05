@@ -426,6 +426,11 @@ int
 wlc_prec_enq(void *wlc, void *q, void *p, int preq)
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x75790)
+int
+wlc_scan_ioctl(void *wlc_scan_info, int cmd, void *arg, int len, void *wlcif)
+RETURN_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8CD4C) 
 void *
 __wlc_scb_lookup(void *wlc, void *bsscfg, char *ea, int bandunit) 
