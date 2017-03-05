@@ -351,7 +351,7 @@ main(int argc, char **argv)
          * is limited to CDC_MAX_MSG_SIZE = ETHER_MAX_LEN = 1518, however only 1502 bytes 
          * arrive in the ioctl function, the rest might be used for the ioctl header.
          */
-        if (custom_cmd_buf_len > 1502)
+        if (custom_cmd_buf_len > 1502 && custom_cmd_set)
             fprintf(stderr, "WARN: Using SDIO, the ioctl payload length is limited to 1502 bytes.\n");
         ret = nex_ioctl(nexio, custom_cmd, custom_cmd_buf, custom_cmd_buf_len, custom_cmd_set);
 
