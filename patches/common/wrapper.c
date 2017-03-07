@@ -37,6 +37,7 @@
 
 #include <firmware_version.h>
 #include <structs.h>
+#include <stdarg.h>
 
 #ifndef WRAPPER_H
     // if this file is not included in the wrapper.h file, create dummy functions
@@ -290,6 +291,11 @@ RETURN_DUMMY
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x39DCC) 
 void *
 sub_39DCC(void *wlc, int chanspec) 
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x12978)
+int
+vsnprintf(char *buf, unsigned int n, const char *format, va_list ap)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x4F080)
