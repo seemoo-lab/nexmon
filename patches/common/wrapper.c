@@ -258,6 +258,11 @@ void
 si_setcore(void *sih, int coreid, int coreunit) 
 VOID_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x12778) 
+int 
+snprintf(char *buf, unsigned int n, const char *format, ...)
+RETURN_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x12794) 
 int 
 sprintf(char *buf, const char *format, ...) 
@@ -1113,10 +1118,45 @@ void *
 wlc_wlc_txq_enq(void *wlc, void *scb, void *p, int prec) 
 RETURN_DUMMY
 
-AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x3BF28) 
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x3BF28)
 void
 wlc_write_shm(void *wlc, unsigned int offset, unsigned short value) 
 VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1B47EC)
+void
+wlc_phy_tssi_phy_setup_acphy(void *pi, uint8 for_iqcal)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1B6884)
+void
+wlc_phy_tssi_radio_setup_acphy(void *pi, uint8 core_mask, uint8 for_iqcal)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1BEB3E)
+void
+wlc_phy_poll_samps_WAR_acphy(void *pi, int16 *samp, bool is_tssi, bool for_idle, void *target_gains, bool for_iqcal, bool init_adc_inside, uint16 core)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C0868)
+uint8
+wlc_phy_get_chan_freq_range_acphy(void *pi, uint channel)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C091C)
+void
+wlc_phy_get_paparams_for_band_acphy(void *pi, int16 *a1, int16 *b0, int16 *b1)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1B3DB4)
+uint8
+wlc_phy_tssi2dbm_acphy(void *pi, int32 tssi, int32 a1, int32 b0, int32 b1)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C10C2)
+uint8
+wlc_phy_set_txpwr_clamp_acphy(void *pi)
+RETURN_DUMMY
 
 #undef VOID_DUMMY
 #undef RETURN_DUMMY
