@@ -31,6 +31,7 @@ else
 fi
 fi
 fi
+fi
 
 export Q=@
 export NEXMON_SETUP_ENV=1
