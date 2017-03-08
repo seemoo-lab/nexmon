@@ -37,7 +37,7 @@ init: FORCE
 	$(Q)mkdir -p obj gen log
 
 brcmfmac.ko: check-nexmon-setup-env
-ifeq ($(shell uname -m),armv7l)
+ifeq ($(shell uname -m),armv7l || armv6l)
 	@printf "\033[0;31m  BUILDING DRIVER \033[0m brcmfmac/brcmfmac.ko (details: log/driver.log)\n" $@
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac -j2 >log/driver.log
 else
@@ -153,14 +153,14 @@ ifndef NEXMON_SETUP_ENV
 endif
 
 backup-firmware:
-ifeq ($(shell uname -m),armv7l)
+ifeq ($(shell uname -m),armv7l || armv6l)
 	cp /lib/firmware/brcm/brcmfmac43430-sdio.bin brcmfmac43430-sdio.bin.orig
 else
 	$(warning Warning: Cannot backup the original firmware on this arch.)
 endif
 
 install-firmware: brcmfmac43430-sdio.bin brcmfmac.ko
-ifeq ($(shell uname -m),armv7l)
+ifeq ($(shell uname -m),armv7l || armv6l)
 	@printf "\033[0;31m  COPYING\033[0m brcmfmac43430-sdio.bin => /lib/firmware/brcm/brcmfmac43430-sdio.bin\n"
 	$(Q)cp brcmfmac43430-sdio.bin /lib/firmware/brcm/brcmfmac43430-sdio.bin
 ifeq ($(shell lsmod | grep "^brcmfmac" | wc -l), 1)
