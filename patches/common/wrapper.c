@@ -93,7 +93,7 @@ RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x166B4)
 void 
-enable_interrupts_and_wait(void)
+enable_interrupts_and_wait(int a1)
 VOID_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x16620)
