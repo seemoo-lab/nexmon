@@ -284,6 +284,7 @@ get_mpc(struct wlc_info *wlc)
     return mpc;
 }
 
+#if NEXMON_CHIP == CHIP_VER_BCM4339
 void
 set_scansuppress(struct wlc_info *wlc, uint32 scansuppress)
 {
@@ -299,3 +300,4 @@ get_scansuppress(struct wlc_info *wlc)
     
     return scansuppress;
 }
+#endif
