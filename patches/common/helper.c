@@ -41,6 +41,7 @@
 #include <helper.h>             // useful helper functions
 #include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
 #include <rates.h>              // rates used to build the ratespec for frame injection
+#include <nexioctls.h>          // ioctls added in the nexmon patch
 
 /**
  *  Setup a timer to schedule a function call
@@ -265,4 +266,36 @@ get_chanspec(struct wlc_info *wlc)
     unsigned int chanspec = 0;
     wlc_iovar_op(wlc, "chanspec", 0, 0, &chanspec, 4, 0, 0);
     return chanspec;
+}
+
+void
+set_mpc(struct wlc_info *wlc, uint32 mpc)
+{
+    wlc_iovar_op(wlc, "mpc", 0, 0, &mpc, 4, 1, 0);
+}
+
+uint32
+get_mpc(struct wlc_info *wlc)
+{
+    uint32 mpc = 0;
+
+    wlc_iovar_op(wlc, "mpc", 0, 0, &mpc, 4, 0, 0);
+    
+    return mpc;
+}
+
+void
+set_scansuppress(struct wlc_info *wlc, uint32 scansuppress)
+{
+    wlc_scan_ioctl(wlc->scan, WLC_SET_SCANSUPPRESS, &scansuppress, 4, 0);
+}
+
+uint32
+get_scansuppress(struct wlc_info *wlc)
+{
+    uint32 scansuppress = 0;
+
+    wlc_scan_ioctl(wlc->scan, WLC_GET_SCANSUPPRESS, &scansuppress, 4, 0);
+    
+    return scansuppress;
 }

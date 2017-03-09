@@ -3,32 +3,44 @@
 
 #include "types.h"
 
-struct hndrte_timer *
+extern struct hndrte_timer *
 schedule_work(void *context, void *data, void *mainfn, int ms, int periodic);
 
-struct hndrte_timer *
+extern struct hndrte_timer *
 schedule_delayed_work(void *context, void *data, void *mainfn, int ms, int periodic, int delay_ms);
 
-void *
+extern void *
 skb_push(sk_buff *p, unsigned int len);
 
-void *
+extern void *
 skb_pull(sk_buff *p, unsigned int len);
 
-void
+extern void
 hexdump(char *desc, void *addr, int len);
 
-unsigned short
+extern unsigned short
 bcm_qdbm_to_mw(unsigned char qdbm);
 
-unsigned char
+extern unsigned char
 bcm_mw_to_qdbm(unsigned short mw);
 
-void
+extern void
 set_chanspec(struct wlc_info *wlc, unsigned short chanspec);
 
-unsigned int
+extern unsigned int
 get_chanspec(struct wlc_info *wlc);
+
+extern void
+set_mpc(struct wlc_info *wlc, uint32 mpc);
+
+extern uint32
+get_mpc(struct wlc_info *wlc);
+
+extern void
+set_scansuppress(struct wlc_info *wlc, uint32 scansuppress);
+
+extern uint32
+get_scansuppress(struct wlc_info *wlc);
 
 #define HTONS(A) ((((uint16)(A) & 0xff00) >> 8) | (((uint16)(A) & 0x00ff) << 8))
 

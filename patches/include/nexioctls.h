@@ -33,7 +33,7 @@
  **************************************************************************/
 
 #define IOCTL_ERROR                     -23
-#define IOCTL_SUCCESS                   0
+#define IOCTL_SUCCESS                     0
 
 // IOCTLs used by Nexmon
 #define NEX_GET_CAPABILITIES            400
@@ -50,6 +50,7 @@
 #define NEX_SET_SECURITYCOOKIE          411
 #define NEX_GET_WL_CNT                  412
 #define NEX_GET_VERSION_STRING          413
+#define NEX_TEST_ARGPRINTF              414
 
 // IOCTLs used in original firmware
 #define WLC_GET_MAGIC                     0
