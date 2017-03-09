@@ -6,6 +6,9 @@
 struct hndrte_timer *
 schedule_work(void *context, void *data, void *mainfn, int ms, int periodic);
 
+struct hndrte_timer *
+schedule_delayed_work(void *context, void *data, void *mainfn, int ms, int periodic, int delay_ms);
+
 void *
 skb_push(sk_buff *p, unsigned int len);
 
@@ -20,6 +23,12 @@ bcm_qdbm_to_mw(unsigned char qdbm);
 
 unsigned char
 bcm_mw_to_qdbm(unsigned short mw);
+
+void
+set_chanspec(struct wlc_info *wlc, unsigned short chanspec);
+
+unsigned int
+get_chanspec(struct wlc_info *wlc);
 
 #define HTONS(A) ((((uint16)(A) & 0xff00) >> 8) | (((uint16)(A) & 0x00ff) << 8))
 

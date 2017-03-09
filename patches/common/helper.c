@@ -57,6 +57,44 @@ schedule_work(void *context, void *data, void *mainfn, int ms, int periodic)
     return task;
 }
 
+struct delayed_task {
+    void *context;
+    void *data;
+    void *mainfn;
+    int ms;
+    int periodic;
+};
+
+static void
+perform_delayed_task(struct hndrte_timer *t)
+{
+    struct delayed_task *delayed_task = (struct delayed_task *) t->data;
+
+    schedule_work(delayed_task->context, delayed_task->data, delayed_task->mainfn, delayed_task->ms, delayed_task->periodic);
+    
+    free(t->data);
+}
+
+struct hndrte_timer *
+schedule_delayed_work(void *context, void *data, void *mainfn, int ms, int periodic, int delay_ms)
+{
+    struct hndrte_timer *task;
+    struct delayed_task *delayed_task = malloc(sizeof(struct delayed_task), 0);
+    
+    delayed_task->context = context;
+    delayed_task->data = data;
+    delayed_task->mainfn = mainfn;
+    delayed_task->ms = ms;
+    delayed_task->periodic = periodic;
+
+    task = hndrte_init_timer(context, delayed_task, perform_delayed_task, 0);
+    if (task) {
+        if(!hndrte_add_timer(task, delay_ms, 0))
+            hndrte_free_timer(task);
+    }
+    return task;
+}
+
 /**
  *  add data to the start of a buffer
  */
@@ -212,4 +250,19 @@ bcm_mw_to_qdbm(unsigned short mw)
     qdbm += (uint8)offset;
 
     return (qdbm);
+}
+
+void
+set_chanspec(struct wlc_info *wlc, unsigned short chanspec)
+{
+    unsigned int local_chanspec = chanspec;
+    wlc_iovar_op(wlc, "chanspec", 0, 0, &local_chanspec, 4, 1, 0);
+}
+
+unsigned int
+get_chanspec(struct wlc_info *wlc)
+{
+    unsigned int chanspec = 0;
+    wlc_iovar_op(wlc, "chanspec", 0, 0, &chanspec, 4, 0, 0);
+    return chanspec;
 }
