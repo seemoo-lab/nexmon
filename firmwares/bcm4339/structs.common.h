@@ -1290,8 +1290,11 @@ struct wlc_pub {
     char associated;                    /* 0x04C */
     char PAD;                           /* 0x04D */
     char PAD;                           /* 0x04E */
-    char PAD;                           /* 0x04F */
-    int PAD;                            /* 0x050 */
+    bool _ampdu_tx;                     /* 0x04F */
+    bool _ampdu_rx;                     /* 0x050 */
+    bool _amsdu_tx;                     /* 0x051 */
+    bool PAD;                           /* 0x052 */
+    bool PAD;                           /* 0x053 */
     int PAD;                            /* 0x054 */
     int PAD;                            /* 0x058 */
     int PAD;                            /* 0x05C */
