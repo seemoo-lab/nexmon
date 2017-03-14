@@ -51,6 +51,8 @@
 #define NEX_GET_WL_CNT                  412
 #define NEX_GET_VERSION_STRING          413
 #define NEX_TEST_ARGPRINTF              414
+#define NEX_GET_RSPEC_OVERRIDE          415
+#define NEX_SET_RSPEC_OVERRIDE          416
 
 // IOCTLs used in original firmware
 #define WLC_GET_MAGIC                     0

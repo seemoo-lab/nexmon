@@ -56,7 +56,7 @@ typedef struct {
     uint16 bbmult;   /* BBmult */
 } txgain_setting_t;
 
-typedef struct {
+typedef struct { /* wlc_phy_write_tx_gain_acphy */
     uint8 txlpf; /* Radio gains */
     uint8 ipa;
     uint8 pad; /* Radio gains [16:31] */
