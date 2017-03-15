@@ -1,7 +1,0 @@
-language: c
-compiler:
-   - gcc
-   - clang
-os: linux
- 
-script: ./configure && make && make check
