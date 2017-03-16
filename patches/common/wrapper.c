@@ -106,6 +106,12 @@ int
 fw_wf_chspec_ctlchan(unsigned short chanspec) 
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x181C4C)
+void *
+get_printf_config_location(void)
+RETURN_DUMMY
+
+
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x2BDBC)
 int 
 handle_ioctl_cmd(void *wlc, int cmd, void *buf, int len)
