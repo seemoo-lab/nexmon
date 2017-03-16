@@ -51,11 +51,15 @@
 #include <net/if.h>
 #endif
 #include <stdbool.h>
+#define TYPEDEF_BOOL
 #include <errno.h>
 
 #include <wlcnt.h>
 
 #include <nexioctls.h>
+
+#include <typedefs.h>
+#include <bcmwifi_channels.h>
 
 #define HEXDUMP_COLS 16
 
@@ -93,6 +97,9 @@ signed char     custom_cmd_set = -1;
 unsigned int    custom_cmd_buf_len = 4;
 void            *custom_cmd_buf = NULL;
 char            *custom_cmd_value = NULL;
+unsigned char   get_chanspec = 0;
+unsigned char   set_chanspec = 0;
+char            *set_chanspec_value = NULL;
 unsigned char   custom_cmd_value_int = false;
 unsigned char   raw_output = false;
 unsigned int    dump_objmem_addr = 0;
@@ -119,6 +126,7 @@ static struct argp_option options[] = {
     {"raw-output", 'r', 0, 0, "Write raw output to stdout instead of hex dumping"},
     {"dump-wl_cnt", 'w', 0, 0, "Dump WL counters"},
     {"dump-objmem", 'o', "INT", 0, "Dumps objmem at addr INT"},
+    {"chanspec", 'k', "CHAR/INT", OPTION_ARG_OPTIONAL, "Set chanspec either as integer (e.g., 0x1001, set -i) or as string (e.g., 64/80)."},
     {"security-cookie", 'x', "INT", OPTION_ARG_OPTIONAL, "Set/Get security cookie"},
     {"use-udp-tunneling", 'X', "INT", 0, "Use UDP tunneling with security cookie INT"},
     {"broadcast-ip", 'B', "CHAR", 0, "Broadcast IP to use for UDP tunneling (default: 192.168.222.255)"},
@@ -176,6 +184,15 @@ parse_opt(int key, char *arg, struct argp_state *state)
         
         case 'l':
             custom_cmd_buf_len = strtol(arg, NULL, 0);
+            break;
+
+        case 'k':
+            if (arg) {
+                set_chanspec = true;
+                set_chanspec_value = arg;
+            } else {
+                get_chanspec = true;
+            }
             break;
 
         case 'v':
@@ -324,6 +341,29 @@ main(int argc, char **argv)
     if (get_securitycookie) {
         ret = nex_ioctl(nexio, NEX_GET_SECURITYCOOKIE, &buf, 4, false);
         printf("securitycookie: %d\n", buf);
+    }
+
+    if (get_chanspec) {
+        char charbuf[9] = "chanspec";
+        uint16 chanspec = 0;
+        ret = nex_ioctl(nexio, WLC_GET_VAR, charbuf, 9, false);
+        chanspec = *(uint16 *) charbuf;
+        printf("chanspec: 0x%04x, %s\n", chanspec, wf_chspec_ntoa(chanspec, charbuf));
+    }
+
+    if (set_chanspec) {
+        char charbuf[13] = "chanspec";
+        uint32 *chanspec = (uint32 *) &charbuf[9];
+
+        if (custom_cmd_value_int)
+            *chanspec = strtol(set_chanspec_value, NULL, 0);
+        else
+            *chanspec = wf_chspec_aton(set_chanspec_value);
+
+        if (*chanspec == 0)
+            printf("invalid chanspec\n");
+        else
+            ret = nex_ioctl(nexio, WLC_SET_VAR, charbuf, 13, true);
     }
 
     if (custom_cmd_set != -1) {

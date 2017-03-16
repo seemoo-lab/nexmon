@@ -3,14 +3,15 @@ PATCHES_PATH := $(LOCAL_PATH)/../../patches
 
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES := \
-	nexutil.c
+	nexutil.c \
+	bcmwifi_channels.c
 
 LOCAL_MODULE := nexutil
 
 LOCAL_STATIC_LIBRARIES  += libnexio
 LOCAL_STATIC_LIBRARIES  += libargp
 
-LOCAL_CFLAGS += -DVERSION=\"$(GIT_VERSION)\"
+LOCAL_CFLAGS += -DVERSION=\"$(GIT_VERSION)\" -DD11AC_IOTYPES -DCHANSPEC_NEW_40MHZ_FORMAT
 
 LOCAL_C_INCLUDES += $(PATCHES_PATH)/include
 
