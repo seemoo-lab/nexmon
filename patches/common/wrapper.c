@@ -201,6 +201,16 @@ void *
 osl_malloc(void *osh, unsigned int size) 
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C48A8)
+void
+phy_reg_and(void *pi, uint16 addr, uint16 val)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C48C2)
+void
+phy_reg_or(void *pi, uint16 addr, uint16 val)
+VOID_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C48DE)
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x22BCA)
 void
@@ -309,6 +319,11 @@ int
 vsnprintf(char *buf, unsigned int n, const char *format, va_list ap)
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1A0E7E)
+int
+wlc_ampdu_tx_set(void *ampdu_tx, bool on)
+RETURN_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x4F080)
 AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x8457F4)
 void 
@@ -405,6 +420,7 @@ void
 wlc_custom_scan_complete(void *wlc, int status, void *cfg)
 VOID_DUMMY
 
+/* supposed to be wlc_d11ac_hdrs */
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x18C5B8)
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x18C4C8)
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x9F38)
@@ -415,7 +431,7 @@ RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8C97C) 
 int 
-wlc_d11hdrs_ext(void *wlc, void *p, void *scb, int short_preamble, unsigned int frag, unsigned int nfrag, unsigned int queue, int next_frag_len, int key, int rspec_override, short *ext)
+wlc_d11hdrs_ext(void *wlc, void *p, void *scb, int short_preamble, unsigned int frag, unsigned int nfrag, unsigned int queue, int next_frag_len, int key, int rspec_override, short *txh_off)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x3352C) 

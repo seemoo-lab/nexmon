@@ -676,8 +676,8 @@ struct wlc_info {
     int PAD;                            /* 0x128 */
     int PAD;                            /* 0x12C */
     int PAD;                            /* 0x130 */
-    int PAD;                            /* 0x134 */
-    int PAD;                            /* 0x138 */
+    void *ampdu_tx;                     /* 0x134 */
+    void *ampdu_rx;                     /* 0x138 */
     int PAD;                            /* 0x13C */
     int PAD;                            /* 0x140 */
     int PAD;                            /* 0x144 */
@@ -2511,6 +2511,64 @@ struct d11regs {
             uint16  PAD[511];       /* 0xb02 - 0xEFE */
         } d11acregs;
     } u;
+} __attribute__((packed));
+
+/* 11AC TX DMA buffer header */
+#define D11_PHY_HDR_LEN     6
+#define D11AC_TXH_NUM_RATES 4
+/* per rate info */
+typedef struct d11actxh_rate d11actxh_rate_t;
+struct d11actxh_rate {
+    uint16  PhyTxControlWord_0;             /* 0 - 1 */
+    uint16  PhyTxControlWord_1;             /* 2 - 3 */
+    uint16  PhyTxControlWord_2;             /* 4 - 5 */
+    uint8   plcp[D11_PHY_HDR_LEN];          /* 6 - 11 */
+    uint16  FbwInfo;                        /* 12 -13 */
+    uint16  TxRate;                         /* 14 */
+    uint16  RtsCtsControl;                  /* 16 */
+    uint16  Bfm0;                            /* 18 */
+} __attribute__((packed));
+
+/* per packet info */
+typedef struct d11actxh_pkt d11actxh_pkt_t;
+struct d11actxh_pkt {
+    /* Per pkt info */
+    uint16  TSOInfo;                        /* 0 */
+    uint16  MacTxControlLow;                /* 2 */
+    uint16  MacTxControlHigh;               /* 4 */
+    uint16  Chanspec;                       /* 6 */
+    uint8   IVOffset;                       /* 8 */
+    uint8   PktCacheLen;                    /* 9 */
+    uint16  FrameLen;                       /* 10 */
+    uint16  TxFrameID;                      /* 12 */
+    uint16  Seq;                            /* 14 */
+    uint16  Tstamp;                         /* 16 */
+    uint16  TxStatus;                       /* 18 */
+} __attribute__((packed));
+
+/* Per cache info */
+typedef struct d11actxh_cache d11actxh_cache_t;
+struct d11actxh_cache {
+    uint8   BssIdEncAlg;                    /* 0 */
+    uint8   KeyIdx;                         /* 1 */
+    uint8   PrimeMpduMax;                   /* 2 */
+    uint8   FallbackMpduMax;                /* 3 */
+    uint16  AmpduDur;                       /* 4 - 5 */
+    uint8   BAWin;                          /* 6 */
+    uint8   MaxAggLen;                      /* 7 */
+    uint8   TkipPH1Key[10];                 /*  8 - 17 */
+    uint8   TSCPN[6];                       /* 18 - 23 */
+} __attribute__((packed));
+
+/* Long format tx descriptor */
+typedef struct d11actxh d11actxh_t;
+struct d11actxh {
+    /* Per pkt info */
+    d11actxh_pkt_t  PktInfo;            /* 0 - 19 */
+    /* Per rate info */
+    d11actxh_rate_t RateInfo[D11AC_TXH_NUM_RATES];  /* 20 - 99 */
+    /* Per cache info */
+    d11actxh_cache_t    CacheInfo;      /* 100 - 123 */
 } __attribute__((packed));
 
 typedef void (*to_fun_t)(void *arg);
