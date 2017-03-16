@@ -54,6 +54,8 @@
 #define NEX_GET_RSPEC_OVERRIDE          415
 #define NEX_SET_RSPEC_OVERRIDE          416
 #define NEX_CLEAR_CONSOLE               417
+#define NEX_GET_CHANSPEC_OVERRIDE       418
+#define NEX_SET_CHANSPEC_OVERRIDE       419
 
 // IOCTLs used in original firmware
 #define WLC_GET_MAGIC                     0
