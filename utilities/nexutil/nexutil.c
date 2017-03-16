@@ -356,7 +356,7 @@ main(int argc, char **argv)
         uint32 *chanspec = (uint32 *) &charbuf[9];
 
         if (custom_cmd_value_int)
-            *chanspec = strtol(set_chanspec_value, NULL, 0);
+            *chanspec = strtoul(set_chanspec_value, NULL, 0);
         else
             *chanspec = wf_chspec_aton(set_chanspec_value);
 
@@ -379,12 +379,12 @@ main(int argc, char **argv)
         } else {
             if (custom_cmd_value)
                 if (custom_cmd_value_int)
-                    *(int *) custom_cmd_buf = strtol(custom_cmd_value, NULL, 0);
+                    *(uint32 *) custom_cmd_buf = strtoul(custom_cmd_value, NULL, 0);
                 else
                     strncpy(custom_cmd_buf, custom_cmd_value, custom_cmd_buf_len);
             else
                 if (custom_cmd_value_int)
-                    *(int *) custom_cmd_buf = strtol(custom_cmd_value, NULL, 0);
+                    *(uint32 *) custom_cmd_buf = strtoul(custom_cmd_value, NULL, 0);
         }
 
         /* NOTICE: Using SDIO to communicate to the firmware, the maximum CDC message length 

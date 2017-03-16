@@ -291,3 +291,5 @@
 #define WLC_GET_PUB                     232
 #define WLC_GET_KEY_PRIMARY             235
 #define WLC_SET_KEY_PRIMARY             236
+#define WLC_GET_VAR                     262     /* get value of named variable */
+#define WLC_SET_VAR                     263     /* set named variable to value */
