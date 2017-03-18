@@ -156,6 +156,7 @@ typedef struct sk_buff {
     int PAD;                    /* 0x28 */
     int lifetime_end;           /* 0x2C */
     void *scb;                  /* 0x30 */
+    uint32 rspec;               // 0x34
 } __attribute__((packed)) sk_buff;
 
 #define HNDRTE_DEV_NAME_MAX 16
@@ -587,13 +588,42 @@ struct wlcband {
     char PAD;                           /* 0x016 */
     char PAD;                           /* 0x017 */
     void *hwrs_scb;                     /* 0x018 */
-    int defrateset;                     /* 0x01C */
-    int rspec_override;                 /* 0x020 */
-    int mrspec_override;                /* 0x024 */
-    char band_stf_ss_mode;              /* 0x028 */
-    char band_stf_stbc_tx;              /* 0x029 */
-    int hw_rateset;                     /* 0x030 */
-    char basic_rate;                    /* 0x034 */
+    int PAD;                            // 0x01c
+    uint32 rspec_override_alt;          // 0x020
+    uint32 mrspec_override_alt;         // 0x024
+    int PAD;                            // 0x028
+    int PAD;                            // 0x02c
+    int PAD;                            // 0x030
+    int PAD;                            // 0x034
+    int PAD;                            // 0x038
+    int PAD;                            // 0x03c
+    int PAD;                            // 0x040
+    uint32 rspec_override;              // 0x044
+    uint32 mrspec_override;             // 0x048
+    int PAD;                            // 0x04c
+    int PAD;                            // 0x050
+//    int defrateset;                     /* 0x01C */
+//    int rspec_override;                 /* 0x020 */
+//    int mrspec_override;                /* 0x024 */
+//    char band_stf_ss_mode;              /* 0x028 */
+//    char band_stf_stbc_tx;              /* 0x029 */
+//    int hw_rateset;                     /* 0x030 */
+//    char basic_rate;                    /* 0x034 */
+} __attribute__((packed));
+
+struct wlc_stf {
+    int PAD;                            // 0x000
+    int PAD;                            // 0x004
+    int PAD;                            // 0x008
+    int PAD;                            // 0x00c
+    uint8 PAD;                          // 0x010
+    uint8 PAD;                          // 0x011
+    int8 ldpc;                          // 0x012
+    int8 ldpc_tx;                       // 0x013
+    int PAD;                            // 0x014
+    int PAD;                            // 0x018
+    int PAD;                            // 0x01c
+    int PAD;                            // 0x020
 } __attribute__((packed));
 
 struct wlc_info {
@@ -908,7 +938,7 @@ struct wlc_info {
     int PAD;                            /* 0X494 */
     int PAD;                            /* 0X498 */
     int PAD;                            /* 0X49C */
-    int PAD;                            /* 0X4A0 */
+    struct wlc_stf *stf;                /* 0X4A0 */
     int PAD;                            /* 0X4A4 */
     int PAD;                            /* 0X4A8 */
     int PAD;                            /* 0X4AC */

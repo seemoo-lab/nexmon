@@ -324,6 +324,16 @@ int
 wlc_ampdu_tx_set(void *ampdu_tx, bool on)
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x34D68)
+void
+wlc_mctrl(void *wlc, uint32 mask, uint32 val)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C8620)
+bool
+wlc_valid_vht_mcs(uint8 mcs, uint8 nss, uint8 bw, uint8 ratemask, bool ldpc, uint8 mcscode)
+RETURN_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x4F080)
 AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x8457F4)
 void 

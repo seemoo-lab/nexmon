@@ -37,10 +37,19 @@ extern uint32
 get_mpc(struct wlc_info *wlc);
 
 extern void
+set_monitormode(struct wlc_info *wlc, uint32 monitor);
+
+extern void
 set_scansuppress(struct wlc_info *wlc, uint32 scansuppress);
 
 extern uint32
 get_scansuppress(struct wlc_info *wlc);
+
+extern void
+set_intioctl(struct wlc_info *wlc, uint32 cmd, uint32 arg);
+
+extern uint32
+get_intioctl(struct wlc_info *wlc, uint32 cmd);
 
 #define HTONS(A) ((((uint16)(A) & 0xff00) >> 8) | (((uint16)(A) & 0x00ff) << 8))
 

@@ -284,6 +284,26 @@ get_mpc(struct wlc_info *wlc)
     return mpc;
 }
 
+void
+set_monitormode(struct wlc_info *wlc, uint32 monitor)
+{
+    wlc_ioctl(wlc, WLC_SET_MONITOR, &monitor, 4, 0);
+}
+
+void
+set_intioctl(struct wlc_info *wlc, uint32 cmd, uint32 arg)
+{
+    wlc_ioctl(wlc, cmd, &arg, 4, 0);
+}
+
+uint32
+get_intioctl(struct wlc_info *wlc, uint32 cmd)
+{
+    uint32 arg;
+    wlc_ioctl(wlc, cmd, &arg, 4, 0);
+    return arg;
+}
+
 #if NEXMON_CHIP == CHIP_VER_BCM4339
 void
 set_scansuppress(struct wlc_info *wlc, uint32 scansuppress)
