@@ -67,6 +67,12 @@ typedef struct { /* wlc_phy_write_tx_gain_acphy */
     uint16 bbmult;   /* BBmult */
 } ac_txgain_setting_t;
 
+struct ratesel_txparams {
+    uint32 rspec[4];
+    uint8 antselid[4];
+    uint8 num;
+};
+
 struct wl_rxsts {
     uint32      pkterror;       /* error flags per pkt */
     uint32      phytype;        /* 802.11 A/B/G ... */
@@ -86,6 +92,17 @@ struct wl_rxsts {
     uint32      encoding;       /* Unknown, CCK, PBCC, OFDM, HT */
     uint32      nfrmtype;       /* special 802.11n frames(AMPDU, AMSDU) */
     void        *wlif;          /* wl interface */
+    uint8       nss;            /* Number of spatial streams for VHT frame */
+    uint8       coding;
+    uint16      aid;            /* Partial AID for VHT frame */
+    uint8       gid;            /* Group ID for VHT frame */
+    uint8       bw;             /* Bandwidth for VHT frame */
+    uint16      vhtflags;       /* VHT modulation flags */
+    uint8       bw_nonht;       /* non-HT bw advertised in rts/cts */
+    uint8       PAD;
+    uint8       PAD;
+    uint8       PAD;
+    uint32      ampdu_counter;  /* AMPDU counter for sniffer */
 } __attribute__((packed));
 
 /* status per error RX pkt */
@@ -1031,6 +1048,38 @@ struct wlc_info {
     int PAD;                            /* 0X604 */
     int PAD;                            /* 0X608 */
     int hwrxoff;                        /* 0X60C */
+    int PAD;                            /* 0X610 */
+    int PAD;                            /* 0X614 */
+    int PAD;                            /* 0X618 */
+    int PAD;                            /* 0X61C */
+    int PAD;                            /* 0X620 */
+    int PAD;                            /* 0X624 */
+    int PAD;                            /* 0X628 */
+    int PAD;                            /* 0X62C */
+    int PAD;                            /* 0X630 */
+    int PAD;                            /* 0X634 */
+    int PAD;                            /* 0X638 */
+    int PAD;                            /* 0X63C */
+    int PAD;                            /* 0X640 */
+    int PAD;                            /* 0X644 */
+    int PAD;                            /* 0X648 */
+    int PAD;                            /* 0X64C */
+    int PAD;                            /* 0X650 */
+    int PAD;                            /* 0X654 */
+    int PAD;                            /* 0X658 */
+    int PAD;                            /* 0X65C */
+    int PAD;                            /* 0X660 */
+    int PAD;                            /* 0X664 */
+    int PAD;                            /* 0X668 */
+    int PAD;                            /* 0X66C */
+    int PAD;                            /* 0X670 */
+    int PAD;                            /* 0X674 */
+    int PAD;                            /* 0X678 */
+    uint8 PAD;                          /* 0X67C */
+    uint8 toe_bypass;                   /* 0X67D */
+    uint8 toe_capable;                  /* 0X67E */
+    uint8 PAD;                          /* 0X67F */
+    int PAD;                            /* 0X680 */
 };
 
 // source of wl_cnt_t: http://svn.dd-wrt.com/browser/src/linux/universal/linux-3.10/brcm/arm/include/wlioctl.h?rev=23022

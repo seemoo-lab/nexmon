@@ -334,13 +334,23 @@ bool
 wlc_valid_vht_mcs(uint8 mcs, uint8 nss, uint8 bw, uint8 ratemask, bool ldpc, uint8 mcscode)
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x3E4F8)
+void
+wlc_antsel_antcfg_get(void *asi, bool usedef, bool sel, uint8 antselid, uint8 fbantselid, uint8 *antcfg, uint8 *fbantcfg)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x774A4)
+void
+wlc_scb_ratesel_gettxrate(void *wrsi, void *scb, uint16 *frameid, void *cur_rate, uint16 *flags)
+VOID_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x4F080)
 AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x8457F4)
 void 
 wlc_bmac_mctrl(void *wlc_hw, int mask, int val) 
 VOID_DUMMY
 
-AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x4DB68) 
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x4DB68)
 short 
 wlc_bmac_read_objmem(void *wlc_hw, unsigned int offset, int sel) 
 RETURN_DUMMY
