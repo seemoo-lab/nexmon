@@ -15,6 +15,10 @@ flashpatches.c: $(RAM_FILE) definitions.mk
 	$(Q)printf "#include <patcher.h>\n\n" > flashpatches.c
 	$(Q)$(NEXMON_ROOT)/buildtools/flash_patch_extractor/fpext -r $< -s $(RAMSTART) -b $(FP_CONFIG_ORIGBASE) -e $(FP_CONFIG_ORIGEND) >> $@
 
+rom.bin: ../rom.bin
+	@printf "\033[0;31m  APPLYING FLASHPATCHES TO CLEAN ROM\033[0m\n"
+	$(Q)$(NEXMON_ROOT)/buildtools/flash_patch_extractor/fpext -r $(RAM_FILE) -s $(RAMSTART) -b $(FP_CONFIG_ORIGBASE) -e $(FP_CONFIG_ORIGEND) -i $< -o $@ -t $(ROMSTART) > /dev/null
+
 clean:
 	@printf "\033[0;31m  CLEANING\033[0m\n"
-	$(Q)rm -f ucode.bin templateram.bin flashpatches.c
+	$(Q)rm -f ucode.bin templateram.bin flashpatches.c rom.bin
