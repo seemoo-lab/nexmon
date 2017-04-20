@@ -44,7 +44,7 @@ copy_hook(void) {
 	int *ram_dest = (int *) 0x181000;
 	int *rom_src = (int *) 0;
 
-    while(rom_src <= (int *) (768*1024)) {
+    while(rom_src <= (int *) (640*1024)) {
         *ram_dest++ = *rom_src++;
     }
 

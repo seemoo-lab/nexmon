@@ -155,8 +155,10 @@ dump-rom: fw_bcmdhd.bin
 	$(Q)adb push $< /sdcard/ >> log/adb.log 2>> log/adb.log
 	@printf "\033[0;31m  LOADING FIRMWARE\033[0m /sdcard/fw_bcmdhd.bin\n"
 	$(Q)adb shell 'su -c "dhdutil download /sdcard/fw_bcmdhd.bin"'
-	@printf "\033[0;31m  DUMPING ROM\033[0m ROM => rom.bin\n"
-	$(Q)adb shell 'su -c "dhdutil membytes -r 0x181000 $(ROMSIZE)"' > rom.bin
+	@printf "\033[0;31m  DUMPING ROM\033[0m ROM => /sdcard/rom.bin\n"
+	$(Q)adb shell 'su -c "dhdutil membytes -r 0x181000 $(ROMSIZE) > /sdcard/rom.bin"'
+	@printf "\033[0;31m  PULLING\033[0m /sdcard/rom.bin => rom.bin\n"
+	$(Q)adb pull /sdcard/rom.bin rom.bin
 	@printf "\033[0;31m  RELOADING PREVIOUS FIRMWARE\033[0m\n"
 	$(Q)adb shell 'su -c "ifconfig wlan0 down && ifconfig wlan0 up"'
 	@printf "\033[0;31m  COPYING ROM\033[0m rom.bin => $(NEXMON_ROOT)/firmwares/bcm4358/rom.bin\n"
