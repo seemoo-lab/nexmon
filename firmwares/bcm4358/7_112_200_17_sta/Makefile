@@ -1,10 +1,14 @@
 include definitions.mk
 
-all: ucode.bin flashpatches.c
+all: ucode.bin templateram.bin flashpatches.c
 
 ucode.bin: $(RAM_FILE) definitions.mk
 	@printf "\033[0;31m  EXTRACTING UCODE\033[0m\n"
 	$(Q)dd if=$< of=$@ bs=1 skip=$$(($(UCODESTART)-$(RAMSTART))) count=$$(($(UCODESIZE))) 2>/dev/null
+
+templateram.bin: $(RAM_FILE) definitions.mk
+	@printf "\033[0;31m  EXTRACTING TEMPLATERAM\033[0m\n"
+	$(Q)dd if=$< of=$@ bs=1 skip=$$(($(TEMPLATERAMSTART)-$(RAMSTART))) count=$$(($(TEMPLATERAMSIZE))) 2>/dev/null
 
 flashpatches.c: $(RAM_FILE) definitions.mk
 	@printf "\033[0;31m  EXTRACTING FLASHPATCHES\033[0m\n"
@@ -13,4 +17,4 @@ flashpatches.c: $(RAM_FILE) definitions.mk
 
 clean:
 	@printf "\033[0;31m  CLEANING\033[0m\n"
-	$(Q)rm -f ucode.bin flashpatches.c
+	$(Q)rm -f ucode.bin templateram.bin flashpatches.c

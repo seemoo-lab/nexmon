@@ -2,7 +2,7 @@ GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
 FW_PATH=$(NEXMON_ROOT)/firmwares/bcm4358/7_112_200_17_sta
 include $(FW_PATH)/definitions.mk
 
-LOCAL_SRCS=$(wildcard src/*.c) src/ucode_compressed.c
+LOCAL_SRCS=$(wildcard src/*.c) src/ucode_compressed.c src/templateram.c
 COMMON_SRCS=$(wildcard $(NEXMON_ROOT)/patches/common/*.c)
 FW_SRCS=$(wildcard $(FW_PATH)/*.c)
 
@@ -14,13 +14,17 @@ CFLAGS= \
 	-fplugin-arg-nexmon-prefile=gen/nexmon.pre \
 	-fplugin-arg-nexmon-chipver=$(NEXMON_CHIP_NUM) \
 	-fplugin-arg-nexmon-fwver=$(NEXMON_FW_VERSION_NUM) \
+	-fno-strict-aliasing \
 	-DNEXMON_CHIP=$(NEXMON_CHIP) \
 	-DNEXMON_FW_VERSION=$(NEXMON_FW_VERSION) \
+	-DPATCHSTART=$(PATCHSTART) \
+	-DUCODESIZE=$(UCODESIZE) \
 	-DGIT_VERSION=\"$(GIT_VERSION)\" \
 	-DBUILD_NUMBER=\"$$(cat BUILD_NUMBER)\" \
 	-Wall -Werror -O2 -nostdlib -nostartfiles -ffreestanding -mthumb -march=$(NEXMON_ARCH) \
 	-ffunction-sections -fdata-sections \
 	-I$(NEXMON_ROOT)/patches/include \
+	-Iinclude \
 	-I$(FW_PATH)
 
 all: fw_bcmdhd.bin
@@ -47,27 +51,33 @@ obj/%.o: $(FW_PATH)/%.c
 	$(Q)cat gen/nexmon.pre 2>>log/error.log | gawk '{ if ($$3 != "$@") print; }' > tmp && mv tmp gen/nexmon.pre
 	$(Q)$(CC)gcc $(CFLAGS) -c $< -o $@ >>log/compiler.log
 
-gen/nexmon.ld: $(OBJS)
-	@printf "\033[0;31m  GENERATING LINKER FILE\033[0m gen/nexmon.pre => %s\n" $@
-	$(Q)sort gen/nexmon.pre | gawk -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.ld.awk > $@
+gen/nexmon2.pre: $(OBJS)
+	@printf "\033[0;31m  PREPARING\033[0m %s => %s\n" "gen/nexmon.pre" $@
+	$(Q)cat gen/nexmon.pre | awk '{ if ($$3 != "obj/flashpatches.o" && $$3 != "obj/wrapper.o") { print $$0; } }' > tmp
+	$(Q)cat gen/nexmon.pre | awk '{ if ($$3 == "obj/flashpatches.o" || $$3 == "obj/wrapper.o") { print $$0; } }' >> tmp
+	$(Q)cat tmp | awk '{ if ($$1 ~ /^0x/) { if ($$3 != "obj/flashpatches.o" && $$3 != "obj/wrapper.o") { if (!x[$$1]++) { print $$0; } } else { if (!x[$$1]) { print $$0; } } } else { print $$0; } }' > gen/nexmon2.pre
 
-gen/nexmon.mk: $(OBJS) $(FW_PATH)/definitions.mk
+gen/nexmon.ld: gen/nexmon2.pre $(OBJS)
+	@printf "\033[0;31m  GENERATING LINKER FILE\033[0m gen/nexmon.pre => %s\n" $@
+	$(Q)sort gen/nexmon2.pre | gawk -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.ld.awk > $@
+
+gen/nexmon.mk: gen/nexmon2.pre $(OBJS) $(FW_PATH)/definitions.mk
 	@printf "\033[0;31m  GENERATING MAKE FILE\033[0m gen/nexmon.pre => %s\n" $@
 	$(Q)printf "fw_bcmdhd.bin: gen/patch.elf FORCE\n" > $@
-	$(Q)sort gen/nexmon.pre | \
+	$(Q)sort gen/nexmon2.pre | \
 		gawk -v src_file=gen/patch.elf -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.mk.1.awk | \
 		gawk -v ramstart=$(RAMSTART) -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.mk.2.awk >> $@
 	$(Q)printf "\nFORCE:\n" >> $@
 	$(Q)gawk '!a[$$0]++' $@ > tmp && mv tmp $@
 
-gen/flashpatches.ld: $(OBJS)
+gen/flashpatches.ld: gen/nexmon2.pre $(OBJS)
 	@printf "\033[0;31m  GENERATING LINKER FILE\033[0m gen/nexmon.pre => %s\n" $@
-	$(Q)sort gen/nexmon.pre | \
+	$(Q)sort gen/nexmon2.pre | \
 		gawk -f $(NEXMON_ROOT)/buildtools/scripts/flashpatches.ld.awk > $@
 
-gen/flashpatches.mk: $(OBJS) $(FW_PATH)/definitions.mk
+gen/flashpatches.mk: gen/nexmon2.pre $(OBJS) $(FW_PATH)/definitions.mk
 	@printf "\033[0;31m  GENERATING MAKE FILE\033[0m gen/nexmon.pre => %s\n" $@
-	$(Q)cat gen/nexmon.pre | gawk \
+	$(Q)cat gen/nexmon2.pre | gawk \
 		-v fp_data_base=$(FP_DATA_BASE) \
 		-v fp_config_base=$(FP_CONFIG_BASE) \
 		-v fp_data_end_ptr=$(FP_DATA_END_PTR) \
@@ -103,14 +113,35 @@ fw_bcmdhd.bin: init gen/patch.elf $(FW_PATH)/$(RAM_FILE) gen/nexmon.mk gen/flash
 # ucode compression related
 ###################################################################
 
-ucode_compressed.bin: $(FW_PATH)/ucode.bin
+ifneq ($(wildcard src/ucode.asm), )
+gen/ucode.bin: src/ucode.asm
+	@printf "\033[0;31m  ASSEMBLING UCODE\033[0m %s => %s\n" $< $@
+
+ifneq ($(wildcard $(NEXMON_ROOT)/buildtools/b43/assembler/b43-asm.bin), )
+	$(Q)PATH=$(PATH):$(NEXMON_ROOT)/buildtools/b43/assembler $(NEXMON_ROOT)/buildtools/b43/assembler/b43-asm $< $@ --format raw-le32
+else
+	$(error Warning: please compile b43-asm.bin first)
+endif
+
+else
+gen/ucode.bin: $(FW_PATH)/ucode.bin
+	@printf "\033[0;31m  COPYING UCODE\033[0m %s => %s\n" $< $@
+	$(Q)cp $< $@
+endif
+
+gen/ucode_compressed.bin: gen/ucode.bin
 	@printf "\033[0;31m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
 	$(Q)cat $< | $(ZLIBFLATE) > $@
 
-src/ucode_compressed.c: ucode_compressed.bin
+src/ucode_compressed.c: gen/ucode_compressed.bin
 	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@
 	$(Q)printf "#pragma NEXMON targetregion \"ucode\"\n\n" > $@
-	$(Q)xxd -i $< >> $@
+	$(Q)cd $(dir $<) && xxd -i $(notdir $<) >> $(shell pwd)/$@
+
+src/templateram.c: $(FW_PATH)/templateram.bin
+	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@
+	$(Q)printf "#pragma NEXMON targetregion \"ucode\"\n\n" > $@
+	$(Q)cd $(dir $<) && xxd -i $(notdir $<) >> $(shell pwd)/$@
 
 ###################################################################
 
@@ -141,7 +172,7 @@ install-backup: fw_bcmdhd.orig.bin
 
 clean-firmware: FORCE
 	@printf "\033[0;31m  CLEANING\033[0m\n"
-	$(Q)rm -fr fw_bcmdhd.bin obj gen log src/ucode_compressed.c ucode_compressed.bin
+	$(Q)rm -fr fw_bcmdhd.bin obj gen log src/ucode_compressed.c src/templateram.c
 
 clean: clean-firmware
 	$(Q)rm -f BUILD_NUMBER
