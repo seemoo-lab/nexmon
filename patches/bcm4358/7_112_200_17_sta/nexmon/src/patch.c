@@ -45,15 +45,13 @@
 
 int capabilities = NEX_CAP_MONITOR_MODE | NEX_CAP_MONITOR_MODE_RADIOTAP;
 
-// Normally the former space of the flash patching config will be freed and added to the
-// heap. We intend to place our "patch" memory region there, so that we can store our
-// patch code, hence, we nop the call to the function that adds the fp config space to the heap
-__attribute__((at(0x18AA58, "", CHIP_VER_BCM4358, FW_VER_7_112_200_17)))
-GenericPatch4(nop_freeing_fp_config, 0x00000000);
-
 // Hook the call to wlc_ucode_write in wlc_ucode_download
 __attribute__((at(0x1F485C, "", CHIP_VER_BCM4358, FW_VER_7_112_200_17)))
 BLPatch(wlc_ucode_write_compressed, wlc_ucode_write_compressed);
+
+// reduce the amount of ucode memory freed to become part of the heap
+__attribute__((at(0x18235C, "", CHIP_VER_BCM4358, FW_VER_7_112_200_17)))
+GenericPatch4(hndrte_reclaim_0_end, PATCHSTART);
 
 extern unsigned char templateram_bin[];
 
