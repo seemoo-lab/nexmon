@@ -139,6 +139,12 @@ To be able to communicate with the firmware without root priviledges, we created
 * [monmob](https://github.com/tuter/monmob): Monitor Mode and Frame Injection for the bcm4325, bcm4329 and bcm4330
 * [imon](https://imon.site/): Penetration Testing for Apple devices with Broadcom WiFi Chip
 
+# Projects using nexmon
+If you know more projects that use nexmon, let us know and we will add a link.
+
+* [Project Zero](https://googleprojectzero.blogspot.de/2017/04/over-air-exploiting-broadcoms-wi-fi_4.html): Over The Air: Exploiting Broadcom's Wi-Fi Stack (Part 1)
+* [Project Zero](https://googleprojectzero.blogspot.de/2017/04/over-air-exploiting-broadcoms-wi-fi_11.html): Over The Air: Exploiting Broadcom's Wi-Fi Stack (Part 2) 
+
 # Read our papers
 * M. Schulz. [Nexmon - Wie man die eigene WLAN-Firmware hackt]
 (http://heise.de/-3538660), c't 26/2016, S. 168, Heise Verlag, 2016.
