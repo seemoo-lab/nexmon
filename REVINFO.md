@@ -1,3 +1,4 @@
-platform | firmware        | vendorid | deviceid | radiorev | chipnum | chiprev | chippackage | corerev | boardid | boardvendor | boardrev | driverrev | ucoderev  | bus | phytype | phyrev | anarev | nvramrev
--------- | --------------- | -------- | -------- | -------- | ------- | ------- | ----------- | ------- | ------- | ----------- | -------- | --------- | --------- | --- | ------- | ------ | ------ | --------
-Nexus 6P | 7_112_201_3_sta | 0x14e4   | 0x43e9   | 0x2e2069 |  0x4358 |     0x3 |         0x2 |    0x30 |   0x7a1 |      0x14e4 |     P100 | 0x770c903 | 0x3c3013d | 0x0 |     0xb |   0x11 |    0x0 |   500210
+platform | firmware        | vendorid | deviceid | radiorev   | chipnum | chiprev | chippackage | corerev | boardid | boardvendor | boardrev | driverrev | ucoderev  | bus | phytype | phyrev | anarev | nvramrev
+-------- | --------------- | -------- | -------- | ---------- | ------- | ------- | ----------- | ------- | ------- | ----------- | -------- | --------- | --------- | --- | ------- | ------ | ------ | --------
+Nexus 6P | 7_112_201_3_sta | 0x14e4   | 0x43e9   | 0x2e2069   | 0x4358  |     0x3 |         0x2 |    0x30 |   0x7a1 |      0x14e4 |     P100 | 0x770c903 | 0x3c3013d | 0x0 |     0xb |   0x11 |    0x0 |   500210
+Nexus 5  | 6_37_34_43      | 0x14e4   | 0x43ae   | 0x92069000 | 0x4339  |     0x1 |         0x2 |    0x2e |   0x6b6 |      0x14e4 |     P106 | 0x625222b | 0x3570411 | 0x0 |     0xb |    0x6 |    0x0 |        0
