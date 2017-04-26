@@ -1,4 +1,13 @@
-![NexMon logo](https://github.com/seemoo-lab/bcm-public/raw/master/logo/nexmon-logo-color.png)
+![NexMon logo](https://github.com/seemoo-lab/nexmon/raw/master/gfx/nexmon.png)
+
+powered by:
+
+<a href="https://www.seemoo.tu-darmstadt.de"><img src="https://github.com/seemoo-lab/nexmon/raw/master/gfx/seemoo.png"
+align="left" width="150" ></a>
+<a href="https://www.nicer.tu-darmstadt.de"><img src="https://github.com/seemoo-lab/nexmon/raw/master/gfx/nicer.png" 
+align="left" width="120"></a>
+<a href="http://www.maki.tu-darmstadt.de/"><img src="https://github.com/seemoo-lab/nexmon/raw/master/gfx/maki.png" align="left" width="200"></a>
+<br /><br />
 
 # What is nexmon?
 Nexmon is our C-based firmware patching framework for Broadcom/Cypress WiFi chips 
