@@ -184,8 +184,8 @@ If you know more projects that use nexmon, let us know and we will add a link.
 * [Project Zero](https://googleprojectzero.blogspot.de/2017/04/over-air-exploiting-broadcoms-wi-fi_11.html): Over The Air: Exploiting Broadcom's Wi-Fi Stack (Part 2) 
 
 # Read our papers
-* M. Schulz. [Nexmon - Wie man die eigene WLAN-Firmware hackt]
-(http://heise.de/-3538660), c't 26/2016, S. 168, Heise Verlag, 2016.
+* M. Schulz. [Nexmon - Wie man die eigene WLAN-Firmware hackt](http://heise.de/-3538660), 
+c't 26/2016, S. 168, Heise Verlag, 2016.
 * M. Schulz, D. Wegemer, M. Hollick. [DEMO: Using NexMon, the C-based WiFi 
 firmware modification framework](https://dl.acm.org/citation.cfm?id=2942419), 
 Proceedings of the 9th ACM Conference on Security and Privacy in Wireless and 
