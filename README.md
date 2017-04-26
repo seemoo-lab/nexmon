@@ -201,6 +201,5 @@ Modifications on Smartphones to Enable Monitor Mode]
 
 # Powered By
 * <a href="https://www.seemoo.tu-darmstadt.de">![SEEMOO logo](https://github.com/seemoo-lab/nexmon/raw/master/gfx/seemoo.png)</a>
-* <a href="https://www.nicer.tu-darmstadt.de"><img src="https://github.com/seemoo-lab/nexmon/raw/master/gfx/nicer.png" 
-align="left" width="120"></a>
-* <a href="http://www.maki.tu-darmstadt.de/"><img src="https://github.com/seemoo-lab/nexmon/raw/master/gfx/maki.png" align="left" width="200"></a>
+* <a href="https://www.nicer.tu-darmstadt.de">![NICER logo](https://github.com/seemoo-lab/nexmon/raw/master/gfx/nicer.png)</a>
+* <a href="http://www.maki.tu-darmstadt.de/">![MAKI logo](https://github.com/seemoo-lab/nexmon/raw/master/gfx/maki.png)</a>
