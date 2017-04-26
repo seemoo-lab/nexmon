@@ -71,6 +71,7 @@ To be able to communicate with the firmware without root priviledges, we created
 ## Build patches for bcm43438 on the RPI3 using Raspbian 8 (recommended)
 * Make sure the following commands are executed as `root`
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
+* If the kernel has been updated by the previous step, reboot now. If you're unsure, reboot now.
 * Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk`
 * Clone our repository: `git clone https://github.com/seemoo-lab/nexmon.git`
 * Go into the root directory of our repository: `cd nexmon`
