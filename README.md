@@ -1,14 +1,5 @@
 ![NexMon logo](https://github.com/seemoo-lab/nexmon/raw/master/gfx/nexmon.png)
 
-powered by:
-
-<a href="https://www.seemoo.tu-darmstadt.de"><img src="https://github.com/seemoo-lab/nexmon/raw/master/gfx/seemoo.png"
-align="left" width="150" ></a>
-<a href="https://www.nicer.tu-darmstadt.de"><img src="https://github.com/seemoo-lab/nexmon/raw/master/gfx/nicer.png" 
-align="left" width="120"></a>
-<a href="http://www.maki.tu-darmstadt.de/"><img src="https://github.com/seemoo-lab/nexmon/raw/master/gfx/maki.png" align="left" width="200"></a>
-<br /><br />
-
 # What is nexmon?
 Nexmon is our C-based firmware patching framework for Broadcom/Cypress WiFi chips 
 that enables you to write your own firmware patches, for example, to enable monitor
@@ -207,3 +198,10 @@ Modifications on Smartphones to Enable Monitor Mode]
 # Contact
 * [Matthias Schulz](https://seemoo.tu-darmstadt.de/mschulz) <mschulz@seemoo.tu-darmstadt.de>
 * Daniel Wegemer <dwegemer@seemoo.tu-darmstadt.de>
+
+# Powered By
+* <a href="https://www.seemoo.tu-darmstadt.de"><img src="https://github.com/seemoo-lab/nexmon/raw/master/gfx/seemoo.png"
+align="left" width="150" ></a>
+* <a href="https://www.nicer.tu-darmstadt.de"><img src="https://github.com/seemoo-lab/nexmon/raw/master/gfx/nicer.png" 
+align="left" width="120"></a>
+* <a href="http://www.maki.tu-darmstadt.de/"><img src="https://github.com/seemoo-lab/nexmon/raw/master/gfx/maki.png" align="left" width="200"></a>
