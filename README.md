@@ -200,6 +200,9 @@ Modifications on Smartphones to Enable Monitor Mode]
 * Daniel Wegemer <dwegemer@seemoo.tu-darmstadt.de>
 
 # Powered By
-* <a href="https://www.seemoo.tu-darmstadt.de">![SEEMOO logo](https://github.com/seemoo-lab/nexmon/raw/master/gfx/seemoo.png)</a>
-* <a href="https://www.nicer.tu-darmstadt.de">![NICER logo](https://github.com/seemoo-lab/nexmon/raw/master/gfx/nicer.png)</a>
-* <a href="http://www.maki.tu-darmstadt.de/">![MAKI logo](https://github.com/seemoo-lab/nexmon/raw/master/gfx/maki.png)</a>
+## Secure Mobile Networking Lab (SEEMOO)
+<a href="https://www.seemoo.tu-darmstadt.de">![SEEMOO logo](https://github.com/seemoo-lab/nexmon/raw/master/gfx/seemoo.png)</a>
+## Networked Infrastructureless Cooperation for Emergency Response (NICER)
+<a href="https://www.nicer.tu-darmstadt.de">![NICER logo](https://github.com/seemoo-lab/nexmon/raw/master/gfx/nicer.png)</a>
+## Multi-Mechanisms Adaptation for the Future Internet (MAKI)
+<a href="http://www.maki.tu-darmstadt.de/">![MAKI logo](https://github.com/seemoo-lab/nexmon/raw/master/gfx/maki.png)</a>
