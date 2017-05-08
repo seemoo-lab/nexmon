@@ -45,6 +45,7 @@
 #include <unistd.h>
 
 #include <sys/ioctl.h>
+#include <sys/socket.h>
 #ifdef BUILD_ON_RPI
 #include <linux/if.h>
 #else
