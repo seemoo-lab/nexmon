@@ -46,38 +46,13 @@
 #include <sendframe.h>          // sendframe functionality
 #include <version.h>            // version information
 #include <bcmpcie.h>
-
-int argprintf_written = 0;
-char *argprintf_arg = 0;
-int argprintf_len = 0;
-bool argprintf_first_call = 1;
-
-int
-argprintf(const char *format, ...)
-{
-    va_list args;
-    int rc;
-
-    if (argprintf_first_call) {
-        memset(argprintf_arg, 0, argprintf_len);
-        argprintf_first_call = 0;
-    }
-
-    va_start(args, format);
-    rc = vsnprintf(argprintf_arg + argprintf_written, argprintf_len - argprintf_written, format, args);
-    argprintf_written += rc;
-    va_end(args);
-    return (rc);
-}
+#include <argprintf.h>          // allows to execute argprintf to print into the arg buffer
 
 int 
 wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 {
     int ret = IOCTL_ERROR;
-    argprintf_written = 0;
-    argprintf_first_call = 1;
-    argprintf_arg = arg;
-    argprintf_len = len;
+    argprintf_init(arg, len);
 
     switch (cmd) {
         case NEX_GET_CAPABILITIES:

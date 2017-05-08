@@ -48,6 +48,7 @@
 #include <ieee80211_radiotap.h> // Radiotap header related
 #include <securitycookie.h>     // Security cookie related
 #include <version.h>            // version information
+#include <argprintf.h>          // allows to execute argprintf to print into the arg buffer
 
 extern void *inject_frame(struct wlc_info *wlc, struct sk_buff *p);
 
@@ -62,6 +63,7 @@ int
 wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 {
     int ret = IOCTL_ERROR;
+    argprintf_init(arg, len);
 
     switch (cmd) {
         case NEX_GET_CAPABILITIES:
@@ -260,6 +262,11 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
                 printf("chain limit 5g: %02x %02x %02x %02x\n", chain_limit_5g[0], chain_limit_5g[1], chain_limit_5g[2], chain_limit_5g[3]);
             }
 
+            ret = IOCTL_SUCCESS;
+            break;
+
+        case 503:
+            argprintf("hello argprintf\n");
             ret = IOCTL_SUCCESS;
             break;
 
