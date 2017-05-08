@@ -1,4 +1,4 @@
-![NexMon logo](https://github.com/seemoo-lab/bcm-public/raw/master/logo/nexmon-logo-color.png)
+![NexMon logo](https://github.com/seemoo-lab/nexmon/raw/master/gfx/nexmon.png)
 
 # What is nexmon?
 Nexmon is our C-based firmware patching framework for Broadcom/Cypress WiFi chips 
@@ -69,9 +69,9 @@ To be able to communicate with the firmware without root priviledges, we created
 * Start a UDP connection for example to activate monitor mode: `nexutil -X<cookie> -m1`
 
 ## Build patches for bcm43438 on the RPI3 using Raspbian 8 (recommended)
-* Make sure the following commands are executed as `root`
+* Make sure the following commands are executed as root: `sudo su`
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
-* Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk`
+* Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk qpdf`
 * Clone our repository: `git clone https://github.com/seemoo-lab/nexmon.git`
 * Go into the root directory of our repository: `cd nexmon`
   * Setup the build environment: `source setup_env.sh`
@@ -88,7 +88,14 @@ To be able to communicate with the firmware without root priviledges, we created
 * In the default setting the brcmfmac driver can be used regularly as a WiFi station with out firmware. To activate monitor mode, execute `nexutil -m2`.
 * At this point the monitor mode is active. There is no need to call *airmon-ng*. 
 * The interface already set the Radiotap header, therefore, tools like *tcpdump* or *airodump-ng* can be used out of the box: `tcpdump -i wlan0`
-* **Note:** It is not possible to connect to an access point anymore using our modified driver and firmware, if you whant to go back to the default behaviour you will need to load the original driver and firmware.
+* *Optional*: To make the RPI3 load the modified driver after reboot:
+  * Find the path of the default driver at reboot: `modinfo brcmfmac` #the first line should be the full path
+  * Backup the original driver: `mv "<PATH TO THE DRIVER>/brcmfmac.ko" "<PATH TO THE DRIVER>/brcmfmac.ko.orig"`
+  * Copy the modified driver: `cp /home/pi/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/brcmfmac.ko "<PATH TO THE DRIVER>/"`
+  * Probe all modules and generate new dependency: `depmod -a`
+  * The new driver should be loaded by default after reboot: `reboot`
+  * **Note:** With this setting, you can toggle between Monitor mode and Managed mode with: `nexutil -m2` and `nexutil -m0`
+  * **Note:** It is possible to connect to an access point using our modified driver and firmware, just set the wireless interface in Managed mode.
 
 # How to extract the ROM
 
@@ -184,8 +191,8 @@ If you know more projects that use nexmon, let us know and we will add a link.
 * [Project Zero](https://googleprojectzero.blogspot.de/2017/04/over-air-exploiting-broadcoms-wi-fi_11.html): Over The Air: Exploiting Broadcom's Wi-Fi Stack (Part 2) 
 
 # Read our papers
-* M. Schulz. [Nexmon - Wie man die eigene WLAN-Firmware hackt]
-(http://heise.de/-3538660), c't 26/2016, S. 168, Heise Verlag, 2016.
+* M. Schulz. [Nexmon - Wie man die eigene WLAN-Firmware hackt](http://heise.de/-3538660), 
+c't 26/2016, S. 168, Heise Verlag, 2016.
 * M. Schulz, D. Wegemer, M. Hollick. [DEMO: Using NexMon, the C-based WiFi 
 firmware modification framework](https://dl.acm.org/citation.cfm?id=2942419), 
 Proceedings of the 9th ACM Conference on Security and Privacy in Wireless and 
@@ -198,3 +205,11 @@ Modifications on Smartphones to Enable Monitor Mode]
 # Contact
 * [Matthias Schulz](https://seemoo.tu-darmstadt.de/mschulz) <mschulz@seemoo.tu-darmstadt.de>
 * Daniel Wegemer <dwegemer@seemoo.tu-darmstadt.de>
+
+# Powered By
+## Secure Mobile Networking Lab (SEEMOO)
+<a href="https://www.seemoo.tu-darmstadt.de">![SEEMOO logo](https://github.com/seemoo-lab/nexmon/raw/master/gfx/seemoo.png)</a>
+## Networked Infrastructureless Cooperation for Emergency Response (NICER)
+<a href="https://www.nicer.tu-darmstadt.de">![NICER logo](https://github.com/seemoo-lab/nexmon/raw/master/gfx/nicer.png)</a>
+## Multi-Mechanisms Adaptation for the Future Internet (MAKI)
+<a href="http://www.maki.tu-darmstadt.de/">![MAKI logo](https://github.com/seemoo-lab/nexmon/raw/master/gfx/maki.png)</a>
