@@ -45,6 +45,7 @@
 #include <unistd.h>
 
 #include <sys/ioctl.h>
+#include <arpa/inet.h>
 #ifdef BUILD_ON_RPI
 #include <linux/if.h>
 #else
@@ -395,13 +396,14 @@ main(int argc, char **argv)
             fprintf(stderr, "WARN: Using SDIO, the ioctl payload length is limited to 1502 bytes.\n");
         ret = nex_ioctl(nexio, custom_cmd, custom_cmd_buf, custom_cmd_buf_len, custom_cmd_set);
 
-        if (custom_cmd_set == false)
+        if (custom_cmd_set == false) {
             if (raw_output) {
                 fwrite(custom_cmd_buf, sizeof(char), custom_cmd_buf_len, stdout);
                 fflush(stdout);
             } else {
                 hexdump(custom_cmd_buf, custom_cmd_buf_len);
             }
+        }
     }
 
     if (dump_objmem) {
