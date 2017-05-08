@@ -45,11 +45,39 @@
 #include <capabilities.h>       // capabilities included in a nexmon patch
 #include <sendframe.h>          // sendframe functionality
 #include <version.h>            // version information
+#include <bcmpcie.h>
+
+int argprintf_written = 0;
+char *argprintf_arg = 0;
+int argprintf_len = 0;
+bool argprintf_first_call = 1;
+
+int
+argprintf(const char *format, ...)
+{
+    va_list args;
+    int rc;
+
+    if (argprintf_first_call) {
+        memset(argprintf_arg, 0, argprintf_len);
+        argprintf_first_call = 0;
+    }
+
+    va_start(args, format);
+    rc = vsnprintf(argprintf_arg + argprintf_written, argprintf_len - argprintf_written, format, args);
+    argprintf_written += rc;
+    va_end(args);
+    return (rc);
+}
 
 int 
 wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 {
     int ret = IOCTL_ERROR;
+    argprintf_written = 0;
+    argprintf_first_call = 1;
+    argprintf_arg = arg;
+    argprintf_len = len;
 
     switch (cmd) {
         case NEX_GET_CAPABILITIES:
@@ -75,6 +103,76 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
                     memcpy(arg, version, strlen);
                     ret = IOCTL_SUCCESS;
                 }
+            }
+            break;
+
+        case 0x700: // reading the address of the shared structure (pciedev_shared_t)
+            {
+                pciedev_shared_t *pcie = *(pciedev_shared_t **) 0x23FFFC;
+                
+                argprintf("flags: %08x\n", pcie->flags);
+                argprintf("trap_addr: %08x\n", pcie->trap_addr);
+                argprintf("assert_exp_addr: %08x\n", pcie->assert_exp_addr);
+                argprintf("assert_file_addr: %08x\n", pcie->assert_file_addr);
+                argprintf("assert_line: %08x\n", pcie->assert_line);
+                argprintf("console_addr: %08x\n", pcie->console_addr);
+                argprintf("msgtrace_addr: %08x\n", pcie->msgtrace_addr);
+                argprintf("fwid: %08x\n", pcie->fwid);
+                argprintf("total_lfrag_pkt_cnt: %04x\n", pcie->total_lfrag_pkt_cnt);
+                argprintf("max_host_rxbufs: %04x\n", pcie->max_host_rxbufs);
+                argprintf("dma_rxoffset: %08x\n", pcie->dma_rxoffset);
+                argprintf("h2d_mb_data_ptr: %08x\n", pcie->h2d_mb_data_ptr);
+                argprintf("d2h_mb_data_ptr: %08x\n", pcie->d2h_mb_data_ptr);
+                argprintf("rings_info_ptr: %08x\n", pcie->rings_info_ptr);
+                argprintf("host_dma_scratch_buffer_len: %08x\n", pcie->host_dma_scratch_buffer_len);
+                argprintf("host_dma_scratch_buffer: %08x %08x\n", pcie->host_dma_scratch_buffer.high_addr, pcie->host_dma_scratch_buffer.low_addr);
+                argprintf("device_rings_stsblk_len: %08x\n", pcie->device_rings_stsblk_len);
+                argprintf("device_rings_stsblk: %08x %08x\n", pcie->device_rings_stsblk.high_addr, pcie->device_rings_stsblk.low_addr);
+                
+                ret = IOCTL_SUCCESS;
+            }
+            break;
+
+        case 0x701: // dumping the ring buffer physical addresses (ring_info_t)
+            {
+                pciedev_shared_t *pcie = *(pciedev_shared_t **) 0x23FFFC;
+                ring_info_t *ring = pcie->rings_info_ptr;
+
+                argprintf("ringmem_ptr: %08x\n", ring->ringmem_ptr);
+                argprintf("h2d_w_idx_ptr: %08x\n", ring->h2d_w_idx_ptr);
+                argprintf("h2d_r_idx_ptr: %08x\n", ring->h2d_r_idx_ptr);
+                argprintf("d2h_w_idx_ptr: %08x\n", ring->d2h_w_idx_ptr);
+                argprintf("d2h_r_idx_ptr: %08x\n", ring->d2h_r_idx_ptr);
+
+                argprintf("h2d_w_idx_hostaddr: %08x %08x\n", ring->h2d_w_idx_hostaddr.high_addr, ring->h2d_w_idx_hostaddr.low_addr);
+                argprintf("h2d_r_idx_hostaddr: %08x %08x\n", ring->h2d_r_idx_hostaddr.high_addr, ring->h2d_r_idx_hostaddr.low_addr);
+                argprintf("d2h_w_idx_hostaddr: %08x %08x\n", ring->d2h_w_idx_hostaddr.high_addr, ring->d2h_w_idx_hostaddr.low_addr);
+                argprintf("d2h_r_idx_hostaddr: %08x %08x\n", ring->d2h_r_idx_hostaddr.high_addr, ring->d2h_r_idx_hostaddr.low_addr);
+
+                argprintf("max_sub_queues: %04x\n", ring->max_sub_queues);
+                argprintf("rsvd: %04x\n", ring->rsvd);
+                
+                ret = IOCTL_SUCCESS;
+            }
+            break;
+
+        case 0x702: // Dumping each of the rings metadata (ring_mem_t)
+            {
+                pciedev_shared_t *pcie = *(pciedev_shared_t **) 0x23FFFC;
+                ring_info_t *ring = pcie->rings_info_ptr;
+                ring_mem_t *mem = ring->ringmem_ptr;
+
+                int i = 0;
+                for (i = 0; i < BCMPCIE_COMMON_MSGRING_MAX_ID; i++) {
+                    argprintf("ring: %d\n", i);
+                    argprintf("idx: %04x\n", mem[i].idx);
+                    argprintf("type: %02x\n", mem[i].type);
+                    argprintf("max_item: %d\n", mem[i].max_item);
+                    argprintf("len_items: %d\n", mem[i].len_items);
+                    argprintf("base_addr: %08x %08x\n", mem[i].base_addr.high_addr, mem[i].base_addr.low_addr);
+                }
+
+                ret = IOCTL_SUCCESS;
             }
             break;
 
