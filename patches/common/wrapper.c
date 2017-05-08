@@ -315,6 +315,7 @@ sub_39DCC(void *wlc, int chanspec)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x12978)
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x39AC)
 int
 vsnprintf(char *buf, unsigned int n, const char *format, va_list ap)
 RETURN_DUMMY
