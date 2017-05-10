@@ -1,0 +1,1 @@
+FW_PATH=$(NEXMON_ROOT)/firmwares/bcm4339/6_37_34_43
