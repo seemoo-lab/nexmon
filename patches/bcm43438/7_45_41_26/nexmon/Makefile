@@ -1,6 +1,6 @@
 SHELL = /bin/bash
 GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
-FW_PATH=$(NEXMON_ROOT)/firmwares/bcm43438/7_45_41_26
+include ../version.mk
 include $(FW_PATH)/definitions.mk
 
 LOCAL_SRCS=$(wildcard src/*.c) src/ucode_compressed.c src/templateram.c
