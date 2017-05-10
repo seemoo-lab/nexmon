@@ -246,6 +246,11 @@ void *
 pkt_buf_free_skb(void *osh, void *p, int send) 
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8C72C)
+void *
+pkt_buf_dup_skb(void *osh, void *p)
+RETURN_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x126f0)
 AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x374C)
 AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x803B60)
