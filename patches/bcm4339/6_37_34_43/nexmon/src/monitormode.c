@@ -42,6 +42,7 @@
 #include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
 #include <rates.h>              // rates used to build the ratespec for frame injection
 #include <bcmwifi_channels.h>
+#include <monitormode.h>        // defitionons such as MONITOR_...
 
 #define RADIOTAP_MCS
 #define RADIOTAP_VENDOR
@@ -49,13 +50,6 @@
 
 // plcp length in bytes
 #define PLCP_LEN 6
-
-#define MONITOR_DISABLED  0
-#define MONITOR_IEEE80211 1
-#define MONITOR_RADIOTAP  2
-#define MONITOR_LOG_ONLY  3
-#define MONITOR_DROP_FRM  4
-#define MONITOR_IPV4_UDP  5
 
 extern void prepend_ethernet_ipv4_udp_header(struct sk_buff *p);
 
@@ -185,25 +179,26 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p,
 
 void
 wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
-    switch(wl->wlc->monitor & 0xFF) {
-        case MONITOR_RADIOTAP:
-                wl_monitor_radiotap(wl, sts, p, 0);
-            break;
+    unsigned char monitor = wl->wlc->monitor & 0xFF;
 
-        case MONITOR_IEEE80211:
-                wl_monitor(wl, sts, p);
-            break;
+    if (monitor & MONITOR_RADIOTAP) {
+        wl_monitor_radiotap(wl, sts, p, 0);
+    }
 
-        case MONITOR_LOG_ONLY:
-                printf("frame received\n");
-            break;
+    if (monitor & MONITOR_IEEE80211) {
+        wl_monitor(wl, sts, p);
+    }
 
-        case MONITOR_DROP_FRM:
-            break;
+    if (monitor & MONITOR_LOG_ONLY) {
+        printf("frame received\n");
+    }
 
-        case MONITOR_IPV4_UDP:
-                wl_monitor_radiotap(wl, sts, p, 1);
-            break;
+    if (monitor & MONITOR_DROP_FRM) {
+        ;
+    }
+
+    if (monitor & MONITOR_IPV4_UDP) {
+        wl_monitor_radiotap(wl, sts, p, 1);
     }
 }
 
@@ -211,3 +206,16 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
 __attribute__((at(0x18DA30, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243)))
 __attribute__((at(0x18DB20, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704)))
 BLPatch(wl_monitor_hook, wl_monitor_hook);
+
+// activate badfcs, if MONITOR_ACTIVATE_BADFCS is set
+void
+wlc_mctrl_hook(struct wlc_info *wlc, uint32 mask, uint32 val)
+{
+    if (wlc->monitor & MONITOR_ACTIVATE_BADFCS)
+        wlc_mctrl(wlc, MCTL_PROMISC | MCTL_KEEPBADFCS | MCTL_KEEPCONTROL, MCTL_PROMISC | MCTL_KEEPBADFCS | MCTL_KEEPCONTROL);
+    else
+        wlc_mctrl(wlc, mask, val);
+}
+
+__attribute__((at(0x34CB6, "flashpatch", CHIP_VER_BCM4339, FW_VER_ALL)))
+BLPatch(wlc_mctrl_hook, wlc_mctrl_hook);

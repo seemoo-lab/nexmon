@@ -48,13 +48,7 @@
 #include <linux/if_arp.h>
 #include <linux/sockios.h>
 #include <linux/wireless.h>
-
-#define MONITOR_DISABLED  0
-#define MONITOR_IEEE80211 1
-#define MONITOR_RADIOTAP  2
-#define MONITOR_LOG_ONLY  3
-#define MONITOR_DROP_FRM  4
-#define MONITOR_IPV4_UDP  5
+#include <monitormode.h>
 
 #define WLC_GET_MONITOR                 107
 #define WLC_SET_MONITOR                 108
@@ -111,22 +105,10 @@ int ioctl (int fd, request_t request, ...){
                 if (!strncmp(p_ifr->ifr_ifrn.ifrn_name, ifname, strlen(ifname))) {
                     nex_ioctl(nexio, WLC_GET_MONITOR, &buf, 4, false);
                     
-                    switch(buf) {
-                        case MONITOR_IEEE80211:
-                            p_ifr->ifr_hwaddr.sa_family = ARPHRD_IEEE80211;
-                            break;
-
-                        case MONITOR_RADIOTAP:
-                            p_ifr->ifr_hwaddr.sa_family = ARPHRD_IEEE80211_RADIOTAP;
-                            break;
-
-                        case MONITOR_DISABLED:
-                        case MONITOR_LOG_ONLY:
-                        case MONITOR_DROP_FRM:
-                        case MONITOR_IPV4_UDP:
-                            p_ifr->ifr_hwaddr.sa_family = ARPHRD_ETHER;
-                            break;
-                    }
+                    if (buf & MONITOR_IEEE80211) p_ifr->ifr_hwaddr.sa_family = ARPHRD_IEEE80211;
+                    else if (buf & MONITOR_RADIOTAP) p_ifr->ifr_hwaddr.sa_family = ARPHRD_IEEE80211_RADIOTAP;
+                    else if (buf & MONITOR_DISABLED || buf & MONITOR_LOG_ONLY || buf & MONITOR_DROP_FRM || buf & MONITOR_IPV4_UDP)
+                        p_ifr->ifr_hwaddr.sa_family = ARPHRD_ETHER;
                 }
             }
             break;
@@ -139,14 +121,8 @@ int ioctl (int fd, request_t request, ...){
                 if (!strncmp(p_wrq->ifr_ifrn.ifrn_name, ifname, strlen(ifname))) {
                     nex_ioctl(nexio, WLC_GET_MONITOR, &buf, 4, false);
 
-                    switch(buf) {
-                        case MONITOR_RADIOTAP:
-                        case MONITOR_IEEE80211:
-                        case MONITOR_LOG_ONLY:
-                        case MONITOR_DROP_FRM:
-                        case MONITOR_IPV4_UDP:
-                            p_wrq->u.mode = IW_MODE_MONITOR;
-                            break;
+                    if (buf & MONITOR_RADIOTAP || buf & MONITOR_IEEE80211 || buf & MONITOR_LOG_ONLY || buf & MONITOR_DROP_FRM || buf & MONITOR_IPV4_UDP) {
+                        p_wrq->u.mode = IW_MODE_MONITOR;
                     }
                 }
             }
