@@ -202,6 +202,18 @@ Modifications on Smartphones to Enable Monitor Mode]
 (http://arxiv.org/abs/1601.07077), CoRR, vol. abs/1601.07077, December 2015. 
 [bibtex](http://dblp.uni-trier.de/rec/bibtex/journals/corr/SchulzWH16)
 
+# Reference our project
+Any use of this project which results in an academic publication or other publication 
+which includes a bibliography should include a citation to the Nexmon project:
+```
+@electronic{nexmon:project,
+	author = {Schulz, Matthias and Wegemer, Daniel and Hollick, Matthias},
+	title = {Nexmon: The C-based Firmware Patching Framework},
+	url = {https://nexmon.org},
+	year = {2017}
+}
+```
+
 # Contact
 * [Matthias Schulz](https://seemoo.tu-darmstadt.de/mschulz) <mschulz@seemoo.tu-darmstadt.de>
 * Daniel Wegemer <dwegemer@seemoo.tu-darmstadt.de>
