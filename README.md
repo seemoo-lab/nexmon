@@ -7,6 +7,9 @@ mode with radiotap headers and frame injection.
 
 Before we started to work on this repository, we developed patches for the Nexus 5 (with bcm4339 WiFi chip) in the [bcm-public](https://github.com/seemoo-lab/bcm-public)  repository and those for the Raspberry Pi 3 (with bcm43438 WiFi chip) in the [bcm-rpi3](https://github.com/seemoo-lab/bcm-rpi3) repository. To remove the development overhead of maintaining multiple separate repositories, we decided to merge them in this repository and add support for some additional devices. In contrast to the former repositories, here, you can only build the firmware patch without drivers and kernels. The Raspberry Pi 3 makes an exception, as here it is always required to also build the driver.
 
+# Give Feedback
+We setup a survey to learn about who uses Nexmon to which purpose and how we could improve Nexmon. We would be happy if every Nexmon user filled out this survey: https://nexmon.org/survey
+
 # WARNING
 Our software may damage your hardware and may void your hardware’s warranty! You use our tools at your own risk and responsibility! If you don't like these terms, don't use nexmon!
 
@@ -55,7 +58,7 @@ bcm4358   | 7_112_201_3_sta  | Nexus 6P          | Android 7.1.2 Stock  |  X  | 
   * Install the patched firmware on your smartphone: `make install-firmware` (make sure your smartphone is connected to your machine beforehand)
 
 ### Using the Monitor Mode patch
-* Install at least *nexutil* and *libfakeioctl* from our utilities. The easiest way to do this is by using this app: https://play.google.com/store/apps/details?id=de.tu_darmstadt.seemoo.nexmon. But you can also build it from the source by executing `make` in the *utilties* folder (Note: you will need the Android NDK properly installed for this).
+* Install at least *nexutil* and *libfakeioctl* from our utilities. The easiest way to do this is by using this app: https://nexmon.org/app. But you can also build it from the source by executing `make` in the *utilties* folder (Note: you will need the Android NDK properly installed for this).
 * Connect to your Android phone using the ADB tools: `adb shell`
 * Make sure you are **not** connected to an access point
 * Use *nexutil* to enable monitor mode: `nexutil -m2`
@@ -201,6 +204,17 @@ Mobile Networks, WiSec 2016, July 2016.
 Modifications on Smartphones to Enable Monitor Mode]
 (http://arxiv.org/abs/1601.07077), CoRR, vol. abs/1601.07077, December 2015. 
 [bibtex](http://dblp.uni-trier.de/rec/bibtex/journals/corr/SchulzWH16)
+
+# Reference our project
+Any use of this project which results in an academic publication or other publication which includes a bibliography should include a citation to the Nexmon project:
+```
+@electronic{nexmon:project,
+	author = {Schulz, Matthias and Wegemer, Daniel and Hollick, Matthias},
+	title = {Nexmon: The C-based Firmware Patching Framework},
+	url = {https://nexmon.org},
+	year = {2017}
+}
+```
 
 # Contact
 * [Matthias Schulz](https://seemoo.tu-darmstadt.de/mschulz) <mschulz@seemoo.tu-darmstadt.de>
