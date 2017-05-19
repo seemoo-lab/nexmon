@@ -549,6 +549,7 @@ int
 wlc_recvdata(void *wlc, void *osh, void *rxh, void *p)
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x19B138)
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x12A0C)
 void *
 wlc_recv(void *wlc, void *p)
@@ -987,7 +988,8 @@ void
 wlc_phy_resetcca_acphy(void *pi)
 VOID_DUMMY
 
-AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1C553C) 
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C5788)
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1C553C)
 void 
 wlc_phy_rssi_compute(void *pih, void *ctx) 
 VOID_DUMMY
