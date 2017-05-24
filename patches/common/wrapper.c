@@ -555,6 +555,11 @@ void *
 wlc_recv(void *wlc, void *p)
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C8540)
+unsigned int
+wlc_recv_compute_rspec(void *wrxh, void *plcp)
+RETURN_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x399FC) 
 void 
 wlc_set_chanspec(void *wlc, unsigned short chanspec) 
