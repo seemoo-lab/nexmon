@@ -84,6 +84,8 @@ get_stack_ptr() {
     return stack;
 }
 
+#define ARRAYSIZE(a) (sizeof(a)/sizeof(a[0]))
+
 /*
 inline int
 get_register(int reg_nr) {
