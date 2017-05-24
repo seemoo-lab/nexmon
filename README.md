@@ -64,6 +64,7 @@ bcm4358   | 7_112_201_3_sta  | Nexus 6P          | Android 7.1.2 Stock  |  X  | 
 * Use *nexutil* to enable monitor mode: `nexutil -m2`
 * At this point the monitor mode is active. There is no need to call *airmon-ng*. 
 * **Important:** Most tools need a Radiotap interface to work properly. *libfakeioctl* emulates this type of interface for you, therefore, use LD_PRELOAD to load this library when you call the favourite tool (e.g. tcpdump or airodump-ng): `LD_PRELOAD=libfakeioctl.so tcpdump -i wlan0`
+* *untested hint:* Thanks to XDA member ruleh, there is a bcmdhd driver patch to activate native monitor mode, see: https://github.com/ruleh/misc/tree/master/monitor
 
 ### Using nexutil over UDP on Nexus 5
 To be able to communicate with the firmware without root priviledges, we created a UDP interface accessible through the `libnexio`, which is also used by `nexutil`. You first have to prove to the firmware that you generally have root priviledges by setting a securtiy cookie. Then you can use it for UDP based connections. Your wlan0 interface also needs an IP address in the 192.168.222.0/24 range or you have to change the default nexutil `broadcast-ip`:
