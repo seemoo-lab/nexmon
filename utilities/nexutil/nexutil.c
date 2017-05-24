@@ -43,6 +43,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <sys/param.h> // for MIN macro
 
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
@@ -61,6 +62,7 @@
 
 #include <typedefs.h>
 #include <bcmwifi_channels.h>
+#include <b64.h>
 
 #define HEXDUMP_COLS 16
 
@@ -102,6 +104,7 @@ unsigned char   get_chanspec = 0;
 unsigned char   set_chanspec = 0;
 char            *set_chanspec_value = NULL;
 unsigned char   custom_cmd_value_int = false;
+unsigned char   custom_cmd_value_base64 = false;
 unsigned char   raw_output = false;
 unsigned int    dump_objmem_addr = 0;
 unsigned char   dump_objmem = false;
@@ -124,6 +127,7 @@ static struct argp_option options[] = {
     {"custom-cmd-buf-len", 'l', "INT", 0, "Custom command buffer length (default: 4)"},
     {"custom-cmd-value", 'v', "CHAR/INT", 0, "Initialization value for the buffer used by custom command"},
     {"custom-cmd-value-int", 'i', 0, 0, "Define that custom-cmd-value should be interpreted as integer"},
+    {"custom-cmd-value-base64", 'b', 0, 0, "Define that custom-cmd-value should be interpreted as base64 string"},
     {"raw-output", 'r', 0, 0, "Write raw output to stdout instead of hex dumping"},
     {"dump-wl_cnt", 'w', 0, 0, "Dump WL counters"},
     {"dump-objmem", 'o', "INT", 0, "Dumps objmem at addr INT"},
@@ -201,7 +205,17 @@ parse_opt(int key, char *arg, struct argp_state *state)
             break;
 
         case 'i':
-            custom_cmd_value_int = true;
+            if (!custom_cmd_value_base64)
+                custom_cmd_value_int = true;
+            else
+                printf("ERR: you can only either use base64 or integer encoding.");
+            break;
+
+        case 'b':
+            if (!custom_cmd_value_int)
+                custom_cmd_value_base64 = true;
+            else
+                printf("ERR: you can only either use base64 or integer encoding.");
             break;
 
         case 'r':
@@ -378,14 +392,21 @@ main(int argc, char **argv)
             //freopen(NULL, "rb", stdin);
             fread(custom_cmd_buf, 1, custom_cmd_buf_len, stdin);
         } else {
-            if (custom_cmd_value)
-                if (custom_cmd_value_int)
+            if (custom_cmd_value) {
+                if (custom_cmd_value_int) {
                     *(uint32 *) custom_cmd_buf = strtoul(custom_cmd_value, NULL, 0);
-                else
+                } else if (custom_cmd_value_base64) {
+                    size_t decoded_len = 0;
+                    unsigned char *decoded = b64_decode_ex(custom_cmd_value, strlen(custom_cmd_value), &decoded_len);
+                    memcpy(custom_cmd_buf, decoded, MIN(decoded_len, custom_cmd_buf_len));
+                } else {
                     strncpy(custom_cmd_buf, custom_cmd_value, custom_cmd_buf_len);
-            else
-                if (custom_cmd_value_int)
+                }
+            } else {
+                if (custom_cmd_value_int) {
                     *(uint32 *) custom_cmd_buf = strtoul(custom_cmd_value, NULL, 0);
+                }
+            }
         }
 
         /* NOTICE: Using SDIO to communicate to the firmware, the maximum CDC message length 
