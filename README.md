@@ -101,8 +101,12 @@ To be able to communicate with the firmware without root priviledges, we created
   * **Note:** With this setting, you can toggle between Monitor mode and Managed mode with: `nexutil -m2` and `nexutil -m0`
   * **Note:** It is possible to connect to an access point using our modified driver and firmware, just set the wireless interface in Managed mode.
 
-# How to extract the ROM
+# How to build the utilities
+To build the utilities such as nexmon or dhdutil for Android, you need to download the **old** NDK version 11c,
+extract it and export the environment variable `NDK_ROOT` pointing to the directory where you extracted the NDK 
+files.
 
+# How to extract the ROM
 The Wi-Fi firmware consists of a read-only part stored in the ROM of every Wi-Fi chip and another part that is 
 loaded by the driver into the RAM. To analyze the whole firmware, one needs to extract the ROM. There are two 
 options to do this. Either you write a firmware patch that simply copies the contents of the ROM to RAM and then 
@@ -114,7 +118,6 @@ dumped again for every RAM firmware update to be consistent. As a conclusion, we
 copying it to RAM.
 
 ## Dumping the ROM directly
-
 To dump the ROM directly, you need to know, where to find it and how large it is. On chips with Cortex-M3 it is 
 usually at upper addresses such as 0x800000, while on chips with Cortex-R4 it is likely at 0x0. Run dhdutil to 
 perform the dump:
@@ -123,7 +126,6 @@ dhdutil membytes -r 0x0 0xA0000 > rom.bin
 ```
 
 ## Dumping a clean ROM after copying to RAM
-
 For the BCM4339 and BCM4358, we created `rom_extraction` projects` that load a firmware patch that copies ROM to 
 RAM and them dumps it using dhdutil. To dump the ROM simply execute the following in the project directory:
 ```
@@ -139,7 +141,6 @@ make rom.bin
 
 
 # Structure of this repository
-
 * `buildtools`: Contains compilers and other tools to build the firmware
 * `firmwares`
   * `<chip version>`
