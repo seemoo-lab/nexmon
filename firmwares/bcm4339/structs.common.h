@@ -1342,8 +1342,8 @@ typedef struct {
 
 struct wlc_pub {
     struct wlc_info *wlc;               /* 0x000 */
-    int PAD;                            /* 0x004 */
-    int PAD;                            /* 0x008 */
+    char cur_etheraddr[6];              /* 0x004 */
+    short PAD;                          /* 0x00A */
     int PAD;                            /* 0x00C */
     int PAD;                            /* 0x010 */
     int osh;                            /* 0x014 */
