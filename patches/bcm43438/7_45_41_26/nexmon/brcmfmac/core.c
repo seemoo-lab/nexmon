@@ -100,6 +100,11 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
         return;
     }
 
+    if (ifp == NULL) {
+        brcmf_err("NEXMON: %s: ifp is NULL\n", __FUNCTION__);
+        return;
+    }
+
     if (frame->set) {
         brcmf_err("NEXMON: %s: calling brcmf_fil_cmd_data_set, cmd: %d\n", __FUNCTION__, frame->cmd);
         brcmf_fil_cmd_data_set(ifp, frame->cmd, frame->payload, nlmsg_len(nlh) - sizeof(struct nexudp_ioctl_header) + sizeof(char));
@@ -608,6 +613,9 @@ int brcmf_net_attach(struct brcmf_if *ifp, bool rtnl_locked)
 	brcmf_dbg(TRACE, "Enter, bsscfgidx=%d mac=%pM\n", ifp->bsscfgidx,
 		  ifp->mac_addr);
 	ndev = ifp->ndev;
+
+	/* NEXMON */
+	ndev_global = ndev;
 
 	/* set appropriate operations */
 	ndev->netdev_ops = &brcmf_netdev_ops_pri;
@@ -1305,8 +1313,19 @@ static DECLARE_WORK(brcmf_driver_work, brcmf_driver_register);
 
 int __init brcmf_core_init(void)
 {
+	/* NEXMON procfs */
+	proc_create("nexmon_consoledump", 0, NULL, &rom_proc_dump_fops);
+
 	if (!schedule_work(&brcmf_driver_work))
 		return -EBUSY;
+
+	/* NEXMON netlink init */
+	cfg.input = nexmon_nl_ioctl_handler;
+	nl_sock = netlink_kernel_create(&init_net, NETLINK_USER, &cfg);
+	if (!nl_sock) {
+		brcmf_err("NEXMON: %s: Error creating netlink socket, &init_net: 0x%x, &cfg: 0x%x\n", __FUNCTION__, &init_net, &cfg);
+		return -1;
+	}
 
 	return 0;
 }
