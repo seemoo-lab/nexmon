@@ -150,7 +150,7 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
     brcmf_err("NEXMON: %s: Exit\n", __FUNCTION__);
 }
 
-char *brcmf_ifname(struct brcmf_pub *drvr, int ifidx)
+char *brcmf_ifname(struct brcmf_if *ifp)
 {
 	if (!ifp)
 		return "<if_null>";
