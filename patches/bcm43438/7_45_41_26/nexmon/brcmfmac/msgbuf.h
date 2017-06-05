@@ -31,9 +31,13 @@
 #define BRCMF_D2H_MSGRING_RX_COMPLETE_ITEMSIZE		32
 #define BRCMF_H2D_TXFLOWRING_ITEMSIZE			48
 
+struct msgbuf_buf_addr {
+	__le32		low_addr;
+	__le32		high_addr;
+};
 
 int brcmf_proto_msgbuf_rx_trigger(struct device *dev);
-void brcmf_msgbuf_delete_flowring(struct brcmf_pub *drvr, u8 flowid);
+void brcmf_msgbuf_delete_flowring(struct brcmf_pub *drvr, u16 flowid);
 int brcmf_proto_msgbuf_attach(struct brcmf_pub *drvr);
 void brcmf_proto_msgbuf_detach(struct brcmf_pub *drvr);
 #else

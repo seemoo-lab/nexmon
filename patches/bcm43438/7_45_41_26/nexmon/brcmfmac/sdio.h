@@ -152,8 +152,8 @@
 /* Packet alignment for most efficient SDIO (can change based on platform) */
 #define BRCMF_SDALIGN	(1 << 6)
 
-/* watchdog polling interval in ms */
-#define BRCMF_WD_POLL_MS	10
+/* watchdog polling interval */
+#define BRCMF_WD_POLL	msecs_to_jiffies(10)
 
 /**
  * enum brcmf_sdiod_state - the state of the bus.
@@ -184,8 +184,9 @@ struct brcmf_sdio_dev {
 	struct brcmf_sdio *bus;
 	struct device *dev;
 	struct brcmf_bus *bus_if;
-	struct brcmfmac_sdio_platform_data *pdata;
+	struct brcmf_mp_device *settings;
 	bool oob_irq_requested;
+	bool sd_irq_requested;
 	bool irq_en;			/* irq enable flags */
 	spinlock_t irq_en_lock;
 	bool irq_wake;			/* irq wake enable flags */
@@ -195,8 +196,8 @@ struct brcmf_sdio_dev {
 	uint max_segment_size;
 	uint txglomsz;
 	struct sg_table sgtable;
-	char fw_name[BRCMF_FW_PATH_LEN + BRCMF_FW_NAME_LEN];
-	char nvram_name[BRCMF_FW_PATH_LEN + BRCMF_FW_NAME_LEN];
+	char fw_name[BRCMF_FW_NAME_LEN];
+	char nvram_name[BRCMF_FW_NAME_LEN];
 	bool wowl_enabled;
 	enum brcmf_sdiod_state state;
 	struct brcmf_sdiod_freezer *freezer;
@@ -293,7 +294,7 @@ struct sdpcmd_regs {
 
 /* Register/deregister interrupt handler. */
 int brcmf_sdiod_intr_register(struct brcmf_sdio_dev *sdiodev);
-int brcmf_sdiod_intr_unregister(struct brcmf_sdio_dev *sdiodev);
+void brcmf_sdiod_intr_unregister(struct brcmf_sdio_dev *sdiodev);
 
 /* sdio device register access interface */
 u8 brcmf_sdiod_regrb(struct brcmf_sdio_dev *sdiodev, u32 addr, int *ret);
@@ -342,6 +343,7 @@ int brcmf_sdiod_ramrw(struct brcmf_sdio_dev *sdiodev, bool write, u32 address,
 
 /* Issue an abort to the specified function */
 int brcmf_sdiod_abort(struct brcmf_sdio_dev *sdiodev, uint fn);
+void brcmf_sdiod_sgtable_alloc(struct brcmf_sdio_dev *sdiodev);
 void brcmf_sdiod_change_state(struct brcmf_sdio_dev *sdiodev,
 			      enum brcmf_sdiod_state state);
 #ifdef CONFIG_PM_SLEEP
@@ -369,7 +371,7 @@ struct brcmf_sdio *brcmf_sdio_probe(struct brcmf_sdio_dev *sdiodev);
 void brcmf_sdio_remove(struct brcmf_sdio *bus);
 void brcmf_sdio_isr(struct brcmf_sdio *bus);
 
-void brcmf_sdio_wd_timer(struct brcmf_sdio *bus, uint wdtick);
+void brcmf_sdio_wd_timer(struct brcmf_sdio *bus, bool active);
 void brcmf_sdio_wowl_config(struct device *dev, bool enabled);
 int brcmf_sdio_sleep(struct brcmf_sdio *bus, bool sleep);
 void brcmf_sdio_trigger_dpc(struct brcmf_sdio *bus);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Broadcom Corporation
+ * Copyright (c) 2016 Broadcom
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -13,10 +13,28 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-#ifdef CONFIG_OF
-void brcmf_of_probe(struct device *dev, struct brcmfmac_sdio_pd *sdio);
-#else
-static void brcmf_of_probe(struct device *dev, struct brcmfmac_sdio_pd *sdio)
-{
-}
-#endif /* CONFIG_OF */
+#ifndef _BRCMF_PNO_H
+#define _BRCMF_PNO_H
+
+#define BRCMF_PNO_SCAN_COMPLETE			1
+#define BRCMF_PNO_MAX_PFN_COUNT			16
+#define BRCMF_PNO_SCHED_SCAN_MIN_PERIOD	10
+#define BRCMF_PNO_SCHED_SCAN_MAX_PERIOD	508
+
+/**
+ * brcmf_pno_clean - disable and clear pno in firmware.
+ *
+ * @ifp: interface object used.
+ */
+int brcmf_pno_clean(struct brcmf_if *ifp);
+
+/**
+ * brcmf_pno_start_sched_scan - initiate scheduled scan on device.
+ *
+ * @ifp: interface object used.
+ * @req: configuration parameters for scheduled scan.
+ */
+int brcmf_pno_start_sched_scan(struct brcmf_if *ifp,
+			       struct cfg80211_sched_scan_request *req);
+
+#endif /* _BRCMF_PNO_H */

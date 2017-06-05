@@ -36,6 +36,7 @@
 #include "p2p.h"
 #include "cfg80211.h"
 #include "proto.h"
+#include "common.h"
 
 /**
  * DOC: Firmware Signalling
@@ -90,6 +91,19 @@ enum brcmf_fws_tlv_len {
 	BRCMF_FWS_TLV_DEFLIST
 };
 #undef BRCMF_FWS_TLV_DEF
+
+/* AMPDU rx reordering definitions */
+#define BRCMF_RXREORDER_FLOWID_OFFSET		0
+#define BRCMF_RXREORDER_MAXIDX_OFFSET		2
+#define BRCMF_RXREORDER_FLAGS_OFFSET		4
+#define BRCMF_RXREORDER_CURIDX_OFFSET		6
+#define BRCMF_RXREORDER_EXPIDX_OFFSET		8
+
+#define BRCMF_RXREORDER_DEL_FLOW		0x01
+#define BRCMF_RXREORDER_FLUSH_ALL		0x02
+#define BRCMF_RXREORDER_CURIDX_VALID		0x04
+#define BRCMF_RXREORDER_EXPIDX_VALID		0x08
+#define BRCMF_RXREORDER_NEW_HOLE		0x10
 
 #ifdef DEBUG
 /*
@@ -521,10 +535,6 @@ static const int brcmf_fws_prio2fifo[] = {
 	BRCMF_FWS_FIFO_AC_VO
 };
 
-static int fcmode;
-module_param(fcmode, int, S_IRUSR);
-MODULE_PARM_DESC(fcmode, "mode of firmware signalled flow control");
-
 #define BRCMF_FWS_TLV_DEF(name, id, len) \
 	case BRCMF_FWS_TYPE_ ## name: \
 		return len;
@@ -719,7 +729,7 @@ static void brcmf_fws_macdesc_init(struct brcmf_fws_mac_descriptor *desc,
 	desc->state = BRCMF_FWS_STATE_OPEN;
 	desc->requested_credit = 0;
 	desc->requested_packet = 0;
-	/* depending on use may need ifp->bssidx instead */
+	/* depending on use may need ifp->bsscfgidx instead */
 	desc->interface_id = ifidx;
 	desc->ac_bitmap = 0xff; /* update this when handling APSD */
 	if (addr)
@@ -1609,11 +1619,208 @@ static int brcmf_fws_notify_bcmc_credit_support(struct brcmf_if *ifp,
 {
 	struct brcmf_fws_info *fws = ifp->drvr->fws;
 
-	brcmf_fws_lock(fws);
-	if (fws)
+	if (fws) {
+		brcmf_fws_lock(fws);
 		fws->bcmc_credit_check = true;
-	brcmf_fws_unlock(fws);
+		brcmf_fws_unlock(fws);
+	}
 	return 0;
+}
+
+static void brcmf_rxreorder_get_skb_list(struct brcmf_ampdu_rx_reorder *rfi,
+					 u8 start, u8 end,
+					 struct sk_buff_head *skb_list)
+{
+	/* initialize return list */
+	__skb_queue_head_init(skb_list);
+
+	if (rfi->pend_pkts == 0) {
+		brcmf_dbg(INFO, "no packets in reorder queue\n");
+		return;
+	}
+
+	do {
+		if (rfi->pktslots[start]) {
+			__skb_queue_tail(skb_list, rfi->pktslots[start]);
+			rfi->pktslots[start] = NULL;
+		}
+		start++;
+		if (start > rfi->max_idx)
+			start = 0;
+	} while (start != end);
+	rfi->pend_pkts -= skb_queue_len(skb_list);
+}
+
+void brcmf_fws_rxreorder(struct brcmf_if *ifp, struct sk_buff *pkt)
+{
+	u8 *reorder_data;
+	u8 flow_id, max_idx, cur_idx, exp_idx, end_idx;
+	struct brcmf_ampdu_rx_reorder *rfi;
+	struct sk_buff_head reorder_list;
+	struct sk_buff *pnext;
+	u8 flags;
+	u32 buf_size;
+
+	reorder_data = ((struct brcmf_skb_reorder_data *)pkt->cb)->reorder;
+	flow_id = reorder_data[BRCMF_RXREORDER_FLOWID_OFFSET];
+	flags = reorder_data[BRCMF_RXREORDER_FLAGS_OFFSET];
+
+	/* validate flags and flow id */
+	if (flags == 0xFF) {
+		brcmf_err("invalid flags...so ignore this packet\n");
+		brcmf_netif_rx(ifp, pkt);
+		return;
+	}
+
+	rfi = ifp->drvr->reorder_flows[flow_id];
+	if (flags & BRCMF_RXREORDER_DEL_FLOW) {
+		brcmf_dbg(INFO, "flow-%d: delete\n",
+			  flow_id);
+
+		if (rfi == NULL) {
+			brcmf_dbg(INFO, "received flags to cleanup, but no flow (%d) yet\n",
+				  flow_id);
+			brcmf_netif_rx(ifp, pkt);
+			return;
+		}
+
+		brcmf_rxreorder_get_skb_list(rfi, rfi->exp_idx, rfi->exp_idx,
+					     &reorder_list);
+		/* add the last packet */
+		__skb_queue_tail(&reorder_list, pkt);
+		kfree(rfi);
+		ifp->drvr->reorder_flows[flow_id] = NULL;
+		goto netif_rx;
+	}
+	/* from here on we need a flow reorder instance */
+	if (rfi == NULL) {
+		buf_size = sizeof(*rfi);
+		max_idx = reorder_data[BRCMF_RXREORDER_MAXIDX_OFFSET];
+
+		buf_size += (max_idx + 1) * sizeof(pkt);
+
+		/* allocate space for flow reorder info */
+		brcmf_dbg(INFO, "flow-%d: start, maxidx %d\n",
+			  flow_id, max_idx);
+		rfi = kzalloc(buf_size, GFP_ATOMIC);
+		if (rfi == NULL) {
+			brcmf_err("failed to alloc buffer\n");
+			brcmf_netif_rx(ifp, pkt);
+			return;
+		}
+
+		ifp->drvr->reorder_flows[flow_id] = rfi;
+		rfi->pktslots = (struct sk_buff **)(rfi + 1);
+		rfi->max_idx = max_idx;
+	}
+	if (flags & BRCMF_RXREORDER_NEW_HOLE)  {
+		if (rfi->pend_pkts) {
+			brcmf_rxreorder_get_skb_list(rfi, rfi->exp_idx,
+						     rfi->exp_idx,
+						     &reorder_list);
+			WARN_ON(rfi->pend_pkts);
+		} else {
+			__skb_queue_head_init(&reorder_list);
+		}
+		rfi->cur_idx = reorder_data[BRCMF_RXREORDER_CURIDX_OFFSET];
+		rfi->exp_idx = reorder_data[BRCMF_RXREORDER_EXPIDX_OFFSET];
+		rfi->max_idx = reorder_data[BRCMF_RXREORDER_MAXIDX_OFFSET];
+		rfi->pktslots[rfi->cur_idx] = pkt;
+		rfi->pend_pkts++;
+		brcmf_dbg(DATA, "flow-%d: new hole %d (%d), pending %d\n",
+			  flow_id, rfi->cur_idx, rfi->exp_idx, rfi->pend_pkts);
+	} else if (flags & BRCMF_RXREORDER_CURIDX_VALID) {
+		cur_idx = reorder_data[BRCMF_RXREORDER_CURIDX_OFFSET];
+		exp_idx = reorder_data[BRCMF_RXREORDER_EXPIDX_OFFSET];
+
+		if ((exp_idx == rfi->exp_idx) && (cur_idx != rfi->exp_idx)) {
+			/* still in the current hole */
+			/* enqueue the current on the buffer chain */
+			if (rfi->pktslots[cur_idx] != NULL) {
+				brcmf_dbg(INFO, "HOLE: ERROR buffer pending..free it\n");
+				brcmu_pkt_buf_free_skb(rfi->pktslots[cur_idx]);
+				rfi->pktslots[cur_idx] = NULL;
+			}
+			rfi->pktslots[cur_idx] = pkt;
+			rfi->pend_pkts++;
+			rfi->cur_idx = cur_idx;
+			brcmf_dbg(DATA, "flow-%d: store pkt %d (%d), pending %d\n",
+				  flow_id, cur_idx, exp_idx, rfi->pend_pkts);
+
+			/* can return now as there is no reorder
+			 * list to process.
+			 */
+			return;
+		}
+		if (rfi->exp_idx == cur_idx) {
+			if (rfi->pktslots[cur_idx] != NULL) {
+				brcmf_dbg(INFO, "error buffer pending..free it\n");
+				brcmu_pkt_buf_free_skb(rfi->pktslots[cur_idx]);
+				rfi->pktslots[cur_idx] = NULL;
+			}
+			rfi->pktslots[cur_idx] = pkt;
+			rfi->pend_pkts++;
+
+			/* got the expected one. flush from current to expected
+			 * and update expected
+			 */
+			brcmf_dbg(DATA, "flow-%d: expected %d (%d), pending %d\n",
+				  flow_id, cur_idx, exp_idx, rfi->pend_pkts);
+
+			rfi->cur_idx = cur_idx;
+			rfi->exp_idx = exp_idx;
+
+			brcmf_rxreorder_get_skb_list(rfi, cur_idx, exp_idx,
+						     &reorder_list);
+			brcmf_dbg(DATA, "flow-%d: freeing buffers %d, pending %d\n",
+				  flow_id, skb_queue_len(&reorder_list),
+				  rfi->pend_pkts);
+		} else {
+			u8 end_idx;
+
+			brcmf_dbg(DATA, "flow-%d (0x%x): both moved, old %d/%d, new %d/%d\n",
+				  flow_id, flags, rfi->cur_idx, rfi->exp_idx,
+				  cur_idx, exp_idx);
+			if (flags & BRCMF_RXREORDER_FLUSH_ALL)
+				end_idx = rfi->exp_idx;
+			else
+				end_idx = exp_idx;
+
+			/* flush pkts first */
+			brcmf_rxreorder_get_skb_list(rfi, rfi->exp_idx, end_idx,
+						     &reorder_list);
+
+			if (exp_idx == ((cur_idx + 1) % (rfi->max_idx + 1))) {
+				__skb_queue_tail(&reorder_list, pkt);
+			} else {
+				rfi->pktslots[cur_idx] = pkt;
+				rfi->pend_pkts++;
+			}
+			rfi->exp_idx = exp_idx;
+			rfi->cur_idx = cur_idx;
+		}
+	} else {
+		/* explicity window move updating the expected index */
+		exp_idx = reorder_data[BRCMF_RXREORDER_EXPIDX_OFFSET];
+
+		brcmf_dbg(DATA, "flow-%d (0x%x): change expected: %d -> %d\n",
+			  flow_id, flags, rfi->exp_idx, exp_idx);
+		if (flags & BRCMF_RXREORDER_FLUSH_ALL)
+			end_idx =  rfi->exp_idx;
+		else
+			end_idx =  exp_idx;
+
+		brcmf_rxreorder_get_skb_list(rfi, rfi->exp_idx, end_idx,
+					     &reorder_list);
+		__skb_queue_tail(&reorder_list, pkt);
+		/* set the new expected idx */
+		rfi->exp_idx = exp_idx;
+	}
+netif_rx:
+	skb_queue_walk_safe(&reorder_list, pkt, pnext) {
+		__skb_unlink(pkt, &reorder_list);
+		brcmf_netif_rx(ifp, pkt);
+	}
 }
 
 void brcmf_fws_hdrpull(struct brcmf_if *ifp, s16 siglen, struct sk_buff *skb)
@@ -1893,18 +2100,6 @@ int brcmf_fws_process_skb(struct brcmf_if *ifp, struct sk_buff *skb)
 	int rc = 0;
 
 	brcmf_dbg(DATA, "tx proto=0x%X\n", ntohs(eh->h_proto));
-	/* determine the priority */
-	if (!skb->priority)
-		skb->priority = cfg80211_classify8021d(skb, NULL);
-
-	drvr->tx_multicast += !!multicast;
-
-	if (fws->avoid_queueing) {
-		rc = brcmf_proto_txdata(drvr, ifp->ifidx, 0, skb);
-		if (rc < 0)
-			brcmf_txfinalize(ifp, skb, false);
-		return rc;
-	}
 
 	/* set control buffer information */
 	skcb->if_flags = 0;
@@ -1938,7 +2133,7 @@ void brcmf_fws_reset_interface(struct brcmf_if *ifp)
 {
 	struct brcmf_fws_mac_descriptor *entry = ifp->fws_desc;
 
-	brcmf_dbg(TRACE, "enter: idx=%d\n", ifp->bssidx);
+	brcmf_dbg(TRACE, "enter: bsscfgidx=%d\n", ifp->bsscfgidx);
 	if (!entry)
 		return;
 
@@ -2133,10 +2328,10 @@ int brcmf_fws_init(struct brcmf_pub *drvr)
 
 	/* set linkage back */
 	fws->drvr = drvr;
-	fws->fcmode = fcmode;
+	fws->fcmode = drvr->settings->fcmode;
 
 	if ((drvr->bus_if->always_use_fws_queue == false) &&
-	    (fcmode == BRCMF_FWS_FCMODE_NONE)) {
+	    (fws->fcmode == BRCMF_FWS_FCMODE_NONE)) {
 		fws->avoid_queueing = true;
 		brcmf_dbg(INFO, "FWS queueing will be avoided\n");
 		return 0;
@@ -2237,6 +2432,11 @@ void brcmf_fws_deinit(struct brcmf_pub *drvr)
 	kfree(fws);
 }
 
+bool brcmf_fws_queue_skbs(struct brcmf_fws_info *fws)
+{
+	return !fws->avoid_queueing;
+}
+
 bool brcmf_fws_fc_active(struct brcmf_fws_info *fws)
 {
 	if (!fws->creditmap_received)
@@ -2262,10 +2462,22 @@ void brcmf_fws_bustxfail(struct brcmf_fws_info *fws, struct sk_buff *skb)
 void brcmf_fws_bus_blocked(struct brcmf_pub *drvr, bool flow_blocked)
 {
 	struct brcmf_fws_info *fws = drvr->fws;
+	struct brcmf_if *ifp;
+	int i;
 
-	fws->bus_flow_blocked = flow_blocked;
-	if (!flow_blocked)
-		brcmf_fws_schedule_deq(fws);
-	else
-		fws->stats.bus_flow_block++;
+	if (fws->avoid_queueing) {
+		for (i = 0; i < BRCMF_MAX_IFS; i++) {
+			ifp = drvr->iflist[i];
+			if (!ifp || !ifp->ndev)
+				continue;
+			brcmf_txflowblock_if(ifp, BRCMF_NETIF_STOP_REASON_FLOW,
+					     flow_blocked);
+		}
+	} else {
+		fws->bus_flow_blocked = flow_blocked;
+		if (!flow_blocked)
+			brcmf_fws_schedule_deq(fws);
+		else
+			fws->stats.bus_flow_block++;
+	}
 }

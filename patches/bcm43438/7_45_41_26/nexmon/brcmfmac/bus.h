@@ -22,9 +22,11 @@
 /* IDs of the 6 default common rings of msgbuf protocol */
 #define BRCMF_H2D_MSGRING_CONTROL_SUBMIT	0
 #define BRCMF_H2D_MSGRING_RXPOST_SUBMIT		1
+#define BRCMF_H2D_MSGRING_FLOWRING_IDSTART	2
 #define BRCMF_D2H_MSGRING_CONTROL_COMPLETE	2
 #define BRCMF_D2H_MSGRING_TX_COMPLETE		3
 #define BRCMF_D2H_MSGRING_RX_COMPLETE		4
+
 
 #define BRCMF_NROF_H2D_COMMON_MSGRINGS		2
 #define BRCMF_NROF_D2H_COMMON_MSGRINGS		3
@@ -42,6 +44,8 @@ enum brcmf_bus_protocol_type {
 	BRCMF_PROTO_BCDC,
 	BRCMF_PROTO_MSGBUF
 };
+
+struct brcmf_mp_device;
 
 struct brcmf_bus_dcmd {
 	char *name;
@@ -93,14 +97,18 @@ struct brcmf_bus_ops {
  * @flowrings: commonrings which are dynamically created and destroyed for data.
  * @rx_dataoffset: if set then all rx data has this this offset.
  * @max_rxbufpost: maximum number of buffers to post for rx.
- * @nrof_flowrings: number of flowrings.
+ * @max_flowrings: maximum number of tx flow rings supported.
+ * @max_submissionrings: maximum number of submission rings(h2d) supported.
+ * @max_completionrings: maximum number of completion rings(d2h) supported.
  */
 struct brcmf_bus_msgbuf {
 	struct brcmf_commonring *commonrings[BRCMF_NROF_COMMON_MSGRINGS];
 	struct brcmf_commonring **flowrings;
 	u32 rx_dataoffset;
 	u32 max_rxbufpost;
-	u32 nrof_flowrings;
+	u16 max_flowrings;
+	u16 max_submissionrings;
+	u16 max_completionrings;
 };
 
 
@@ -137,7 +145,7 @@ struct brcmf_bus {
 	bool always_use_fws_queue;
 	bool wowl_supported;
 
-	struct brcmf_bus_ops *ops;
+	const struct brcmf_bus_ops *ops;
 	struct brcmf_bus_msgbuf *msgbuf;
 };
 
@@ -214,10 +222,12 @@ bool brcmf_c_prec_enq(struct device *dev, struct pktq *q, struct sk_buff *pkt,
 		      int prec);
 
 /* Receive frame for delivery to OS.  Callee disposes of rxp. */
-void brcmf_rx_frame(struct device *dev, struct sk_buff *rxp);
+void brcmf_rx_frame(struct device *dev, struct sk_buff *rxp, bool handle_event);
+/* Receive async event packet from firmware. Callee disposes of rxp. */
+void brcmf_rx_event(struct device *dev, struct sk_buff *rxp);
 
 /* Indication from bus module regarding presence/insertion of dongle. */
-int brcmf_attach(struct device *dev);
+int brcmf_attach(struct device *dev, struct brcmf_mp_device *settings);
 /* Indication from bus module regarding removal/absence of dongle */
 void brcmf_detach(struct device *dev);
 /* Indication from bus module that dongle should be reset */

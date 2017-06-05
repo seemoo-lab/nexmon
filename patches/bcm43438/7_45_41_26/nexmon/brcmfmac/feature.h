@@ -24,13 +24,28 @@
  * PNO: preferred network offload.
  * WOWL: Wake-On-WLAN.
  * P2P: peer-to-peer
+ * RSDB: Real Simultaneous Dual Band
+ * TDLS: Tunneled Direct Link Setup
+ * SCAN_RANDOM_MAC: Random MAC during (net detect) scheduled scan.
+ * WOWL_ND: WOWL net detect (PNO)
+ * WOWL_GTK: (WOWL) GTK rekeying offload
+ * WOWL_ARP_ND: ARP and Neighbor Discovery offload support during WOWL.
+ * MFP: 802.11w Management Frame Protection.
  */
 #define BRCMF_FEAT_LIST \
 	BRCMF_FEAT_DEF(MBSS) \
 	BRCMF_FEAT_DEF(MCHAN) \
 	BRCMF_FEAT_DEF(PNO) \
 	BRCMF_FEAT_DEF(WOWL) \
-	BRCMF_FEAT_DEF(P2P)
+	BRCMF_FEAT_DEF(P2P) \
+	BRCMF_FEAT_DEF(RSDB) \
+	BRCMF_FEAT_DEF(TDLS) \
+	BRCMF_FEAT_DEF(SCAN_RANDOM_MAC) \
+	BRCMF_FEAT_DEF(WOWL_ND) \
+	BRCMF_FEAT_DEF(WOWL_GTK) \
+	BRCMF_FEAT_DEF(WOWL_ARP_ND) \
+	BRCMF_FEAT_DEF(MFP)
+
 /*
  * Quirks:
  *

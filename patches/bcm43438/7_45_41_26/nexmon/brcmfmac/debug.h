@@ -17,6 +17,8 @@
 #ifndef BRCMFMAC_DEBUG_H
 #define BRCMFMAC_DEBUG_H
 
+#include <linux/net.h>	/* net_ratelimit() */
+
 /* message levels */
 #define BRCMF_TRACE_VAL		0x00000002
 #define BRCMF_INFO_VAL		0x00000004
@@ -68,7 +70,7 @@ void __brcmf_err(const char *func, const char *fmt, ...);
 __printf(3, 4)
 void __brcmf_dbg(u32 level, const char *func, const char *fmt, ...);
 #define brcmf_dbg(level, fmt, ...)				\
-do {                                    \
+do {								\
 	__brcmf_dbg(BRCMF_##level##_VAL, __func__,		\
 		    fmt, ##__VA_ARGS__);			\
 } while (0)
@@ -83,15 +85,7 @@ do {                                    \
 
 #else /* defined(DEBUG) || defined(CONFIG_BRCM_TRACING) */
 
-/* NEXMON */
 #define brcmf_dbg(level, fmt, ...) no_printk(fmt, ##__VA_ARGS__)
-/*
-#define brcmf_dbg(level, fmt, ...) \
-do {            \
-    printk("lvl: %s at %s:%d:: ", #level, __FUNCTION__, __LINE__);       \
-    printk(fmt, ##__VA_ARGS__); \
-} while(0)
-*/
 
 #define BRCMF_DATA_ON()		0
 #define BRCMF_CTL_ON()		0

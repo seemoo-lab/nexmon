@@ -112,7 +112,6 @@ struct afx_hdl {
  * @int_addr: P2P interface address.
  * @bss_idx: informate for P2P bss types.
  * @listen_timer: timer for @WL_P2P_DISC_ST_LISTEN discover state.
- * @ssid: ssid for P2P GO.
  * @listen_channel: channel for @WL_P2P_DISC_ST_LISTEN discover state.
  * @remain_on_channel: contains copy of struct used by cfg80211.
  * @remain_on_channel_cookie: cookie counter for remain on channel cmd
@@ -133,7 +132,6 @@ struct brcmf_p2p_info {
 	u8 int_addr[ETH_ALEN];
 	struct p2p_bss bss_idx[P2PAPI_BSSCFG_MAX];
 	struct timer_list listen_timer;
-	struct brcmf_ssid ssid;
 	u8 listen_channel;
 	struct ieee80211_channel remain_on_channel;
 	u32 remain_on_channel_cookie;
@@ -157,7 +155,7 @@ struct wireless_dev *brcmf_p2p_add_vif(struct wiphy *wiphy, const char *name,
 int brcmf_p2p_del_vif(struct wiphy *wiphy, struct wireless_dev *wdev);
 int brcmf_p2p_ifchange(struct brcmf_cfg80211_info *cfg,
 		       enum brcmf_fil_p2p_if_types if_type);
-void brcmf_p2p_ifp_removed(struct brcmf_if *ifp);
+void brcmf_p2p_ifp_removed(struct brcmf_if *ifp, bool rtnl_locked);
 int brcmf_p2p_start_device(struct wiphy *wiphy, struct wireless_dev *wdev);
 void brcmf_p2p_stop_device(struct wiphy *wiphy, struct wireless_dev *wdev);
 int brcmf_p2p_scan_prep(struct wiphy *wiphy,
