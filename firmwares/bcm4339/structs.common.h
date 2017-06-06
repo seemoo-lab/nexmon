@@ -291,8 +291,8 @@ struct wlc_hw_info {
     int PAD;                    // 0xec
     int PAD;                    // 0xf0
     int PAD;                    // 0xf4
-    int PAD;                    // 0xf8
-    int PAD;                    // 0xfc
+    char etheraddr[6];          // 0xf8
+    short PAD;                  // 0xfe
     int PAD[18];
     sk_buff *some_skbuff_ptr;
 
@@ -759,8 +759,7 @@ struct wlc_info {
     int PAD;                            /* 0x1B8 */
     int PAD;                            /* 0x1BC */
     int PAD;                            /* 0x1C0 */
-    int PAD;                            /* 0x1C4 */
-    short PAD;                          /* 0x1C8 */
+    char perm_etheraddr[6];             /* 0x1C4 */
     char bandlocked;                    /* 0x1CA */
     char field_1CB;                     /* 0x1CB */
     int PAD;                            /* 0x1CC */
@@ -1342,8 +1341,8 @@ typedef struct {
 
 struct wlc_pub {
     struct wlc_info *wlc;               /* 0x000 */
-    int PAD;                            /* 0x004 */
-    int PAD;                            /* 0x008 */
+    char cur_etheraddr[6];              /* 0x004 */
+    short PAD;                          /* 0x00A */
     int PAD;                            /* 0x00C */
     int PAD;                            /* 0x010 */
     int osh;                            /* 0x014 */
