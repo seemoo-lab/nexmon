@@ -1323,7 +1323,7 @@ int __init brcmf_core_init(void)
 	cfg.input = nexmon_nl_ioctl_handler;
 	nl_sock = netlink_kernel_create(&init_net, NETLINK_USER, &cfg);
 	if (!nl_sock) {
-		brcmf_err("NEXMON: %s: Error creating netlink socket, &init_net: 0x%x, &cfg: 0x%x\n", __FUNCTION__, &init_net, &cfg);
+		brcmf_err("NEXMON: %s: Error creating netlink socket\n", __FUNCTION__);
 		return -1;
 	}
 
