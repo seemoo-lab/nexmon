@@ -174,7 +174,11 @@ ifeq ($(shell lsmod | grep "^brcmfmac" | wc -l), 1)
 endif
 	$(Q)modprobe brcmutil
 	@printf "\033[0;31m  RELOADING\033[0m brcmfmac\n"
+ifeq ($(shell uname -r),4.9.24-v7+)
+	$(Q)insmod brcmfmac_kernel49/brcmfmac.ko
+else
 	$(Q)insmod brcmfmac/brcmfmac.ko
+endif
 else
 	$(warning Warning: Cannot install firmware on this arch., bcm43430-sdio.bin needs to be copied manually into /lib/firmware/brcm/ on your RPI3)
 endif
