@@ -115,6 +115,10 @@ $(RAM_FILE): init gen/patch.elf $(FW_PATH)/$(RAM_FILE) gen/nexmon.mk gen/flashpa
 # ucode compression related
 ###################################################################
 
+gen/ucode.asm: $(FW_PATH)/ucode.bin
+	$(NEXMON_ROOT)/buildtools/b43/disassembler/b43-dasm $< $@ --arch 15 --format raw-le32
+#	$(NEXMON_ROOT)/buildtools/b43/debug/b43-beautifier --asmfile $@ --defs $(NEXMON_ROOT)/buildtools/b43/debug/include > tmp && mv tmp $@
+
 ifneq ($(wildcard src/ucode.asm), )
 gen/ucode.bin: src/ucode.asm
 	@printf "\033[0;31m  ASSEMBLING UCODE\033[0m %s => %s\n" $< $@
