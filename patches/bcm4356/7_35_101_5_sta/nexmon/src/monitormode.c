@@ -152,10 +152,10 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
 
 // Hook the call to wl_monitor in wlc_monitor
 __attribute__((at(0x1f0a6, "flashpatch", CHIP_VER_BCM4358, FW_VER_ALL)))
-__attribute__((at(0x19CE86, "", CHIP_VER_BCM4358, FW_VER_ALL)))
+__attribute__((at(0x19CE86, "", CHIP_VER_BCM4356, FW_VER_ALL)))
 BLPatch(wl_monitor_hook, wl_monitor_hook);
 //GenericPatch4(xxx, 0x0);
 
-__attribute__((at(0x739DC, "flashpatch", CHIP_VER_BCM4358, FW_VER_ALL)))
-__attribute__((at(0x6CAE0, "flashpatch", CHIP_VER_BCM4358, FW_VER_ALL)))
-GenericPatch4(xxxx, 0x0);
+//__attribute__((at(0x739DC, "flashpatch", CHIP_VER_BCM4358, FW_VER_ALL)))
+//__attribute__((at(0x6CAE0, "flashpatch", CHIP_VER_BCM4356, FW_VER_ALL)))
+//GenericPatch4(xxxx, 0x0);
