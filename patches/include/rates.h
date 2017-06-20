@@ -11,6 +11,8 @@
  * and 5MHz, {1.5, 2.25, 3, 4.5, 13.5}, which are not supported by Broadcom devices.
  */
 
+#define RATES_RATE_6M_5GHZ   12 /* 6  Mbps in 500kbps units OFDM */
+
 #define RATES_RATE_1M   2       /* 1  Mbps in 500kbps units DSSS */
 #define RATES_RATE_2M   4       /* 2  Mbps in 500kbps units DSSS */
 #define RATES_RATE_5M5  11      /* 5.5 Mbps in 500kbps units DSSS */

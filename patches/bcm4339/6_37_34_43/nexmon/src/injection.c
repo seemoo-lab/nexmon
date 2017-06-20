@@ -146,6 +146,11 @@ inject_frame(struct wlc_info *wlc, struct sk_buff *p)
     // remove radiotap header
     skb_pull(p, rtap_len);
 
+    // Fix data rate for 5Ghz injection
+    if (wlc->band->bandtype == WLC_BAND_5G && data_rate < RATES_RATE_6M_5GHZ) {
+    	data_rate = RATES_RATE_6M_5GHZ;
+    }
+
     wlc_d11hdrs_ext(wlc, p, wlc->band->hwrs_scb, 0, 0, 1, 1, 0, 0, data_rate, 0);
     p->scb = wlc->band->hwrs_scb;
     
