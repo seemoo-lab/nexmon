@@ -1899,7 +1899,7 @@ struct d11regs {
     unsigned int tplatewrdata;   /* 0x134 */
     unsigned int PAD[2];     /* 0x138 - 0x13C */
 
-    /* PMQ registers */
+    /* Power Management Queue (PMQ) registers */
     union pmqreg pmqreg;    /* 0x140 */
     unsigned int pmqpatl;        /* 0x144 */
     unsigned int pmqpath;        /* 0x148 */
@@ -2739,6 +2739,25 @@ struct udp_header {
         uint16 checksum_coverage;   /* UDPLITE: checksum_coverage */
     } len_chk_cov;
     uint16 checksum;
+} __attribute__((packed));
+
+struct icmp_header {
+    uint8 type;
+    uint8 code;
+    uint16 checksum;
+} __attribute__((packed));
+
+struct icmp_ping_header {
+    uint16 identifier;
+    uint16 sequence_number;
+} __attribute__((packed));
+
+struct ethernet_ip_icmp_ping_header {
+    struct ethernet_header ethernet;
+    struct ip_header ip;
+    struct icmp_header icmp;
+    struct icmp_ping_header ping;
+    uint8 payload[];
 } __attribute__((packed));
 
 struct ethernet_ip_udp_header {

@@ -586,6 +586,11 @@ void
 wlc_set_chanspec(void *wlc, unsigned short chanspec) 
 VOID_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x18E490)
+int
+wlc_set_ratespec_override(void *wlc, int band_id, unsigned int rspec, bool mcast)
+RETURN_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x4E0C8)
 AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x42B94)
 AT(CHIP_VER_BCM4356, FW_VER_ALL, 0x43E44)
@@ -611,6 +616,11 @@ RETURN_DUMMY
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x271B0) 
 void *
 wl_alloc_if(void *wl, int iftype, int unit, int wlc_if) 
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x185A2C)
+int
+wl_arp_recv_proc(void *arpi, void *sdu)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x2716C) 
@@ -1155,7 +1165,8 @@ void *
 __wlc_scb_lookup_ram(void *wlc, void *bsscfg, char *ea, int bandunit) 
 RETURN_DUMMY
 
-AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x197A18) 
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x197A18)
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x197B08)
 int 
 wlc_sendpkt(void *wlc, void *p, int wlcif) 
 RETURN_DUMMY
