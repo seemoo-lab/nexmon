@@ -56,9 +56,13 @@ struct tx_task {
 void
 sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned int rate)
 {
+
     if (wlc->band->bandtype == WLC_BAND_5G && rate < RATES_RATE_6M) {
         rate = RATES_RATE_6M;
     }
+
+    wlc_d11hdrs_ext(wlc, p, wlc->band->hwrs_scb, 0, 0, 1, 1, 0, 0, rate, 0);
+    p->scb = wlc->band->hwrs_scb;
 
     if (wlc->hw->up) {
         if (p->flags & 0x80) { // WLF_TXHDR = 0x80
