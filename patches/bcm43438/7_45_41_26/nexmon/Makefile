@@ -39,11 +39,11 @@ init: FORCE
 brcmfmac.ko: check-nexmon-setup-env
 ifeq ($(shell uname -m),armv7l)
 ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
-	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.9\033[0m brcmfmac/brcmfmac.ko (details: log/driver.log)\n" $@
+	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.9\033[0m brcmfmac_kernel49/brcmfmac.ko (details: log/driver.log)\n" $@
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel49 -j2 >log/driver.log
 else ifeq ($(findstring 4.4,$(shell uname -r)),4.4)
-	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.4\033[0m brcmfmac/brcmfmac.ko (details: log/driver.log)\n" $@
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac -j2 >log/driver.log
+	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.4\033[0m brcmfmac_kernel44/brcmfmac.ko (details: log/driver.log)\n" $@
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel44 -j2 >log/driver.log
 endif
 else
 	$(warning Warning: Driver can not be compiled on this platform, execute the make command on a raspberry pi)
@@ -180,8 +180,8 @@ endif
 	@printf "\033[0;31m  RELOADING\033[0m brcmfmac\n"
 ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
 	$(Q)insmod brcmfmac_kernel49/brcmfmac.ko
-else
-	$(Q)insmod brcmfmac/brcmfmac.ko
+else ifeq ($(findstring 4.4,$(shell uname -r)),4.4)
+	$(Q)insmod brcmfmac_kernel44/brcmfmac.ko
 endif
 else
 	$(warning Warning: Cannot install firmware on this arch., bcm43430-sdio.bin needs to be copied manually into /lib/firmware/brcm/ on your RPI3)
@@ -211,7 +211,7 @@ ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel49 clean
 else ifeq ($(findstring 4.4,$(shell uname -r)),4.4)
 	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac clean
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel44 clean
 endif
 endif
 	$(Q)rm -f BUILD_NUMBER
