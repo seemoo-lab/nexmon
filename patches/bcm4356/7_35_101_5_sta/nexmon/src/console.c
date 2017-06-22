@@ -32,36 +32,25 @@
  *                                                                         *
  **************************************************************************/
 
-#ifndef FIRMWARE_VERSION_H
-#define FIRMWARE_VERSION_H
+#include <firmware_version.h>   // definition of firmware version macros
+#include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
 
-#define CHIP_VER_ALL                        0
-#define CHIP_VER_BCM4339                    1
-#define CHIP_VER_BCM4330                    2
-#define CHIP_VER_BCM4358                    3
-#define CHIP_VER_BCM43438                   4
-#define CHIP_VER_BCM4356                    5
+__attribute__((at(0x1E9418, "", CHIP_VER_BCM4358, FW_VER_7_112_200_17)))
+__attribute__((at(0x1E9518, "", CHIP_VER_BCM4358, FW_VER_7_112_201_3)))
+__attribute__((at(0x1F24D8, "", CHIP_VER_BCM4356, FW_VER_7_35_101_5_sta)))
+__attribute__((naked))
+void
+patch_console_size_1(void)
+{
+	asm("mov r0, 0x800\n");
+}
 
-#define FW_VER_ALL                          0
-
-// for CHIP_VER_BCM4339
-#define FW_VER_6_37_32_RC23_34_40_r581243   10
-#define FW_VER_6_37_32_RC23_34_43_r639704   11
-
-// for CHIP_VER_BCM4330
-#define FW_VER_5_90_195_114                 20
-#define FW_VER_5_90_100_41                  21
-
-// for CHIP_VER_BCM4358
-#define FW_VER_7_112_200_17                 30
-#define FW_VER_7_112_201_3                  31
-
-// for CHIP_VER_BCM43438
-#define FW_VER_7_45_41_26_r640327           40
-
-// for CHIP_VER_BCM4356
-#define FW_VER_7_35_101_5_sta               50
-#define FW_VER_7_35_101_5_apsta             51
-
-
-#endif /*FIRMWARE_VERSION_H*/
+__attribute__((at(0x1E9434, "", CHIP_VER_BCM4358, FW_VER_7_112_200_17)))
+__attribute__((at(0x1E9534, "", CHIP_VER_BCM4358, FW_VER_7_112_201_3)))
+__attribute__((at(0x1F24F4, "", CHIP_VER_BCM4356, FW_VER_7_35_101_5_sta)))
+__attribute__((naked))
+void
+patch_console_size_2(void)
+{
+	asm("mov r2, 0x800\n");
+}
