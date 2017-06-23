@@ -28,6 +28,7 @@ bcm4339   | 6_37_34_43       | Nexus 5           | Android 6 Stock      |  X  | 
 bcm43438  | 7_45_41_26       | Raspberry Pi 3    | Raspbian 8           |  X  |  X  |  X  |  X  |  X  |  O 
 bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock      |  X  |  X  |     |  X  |  X  |  O 
 bcm4358   | 7_112_201_3_sta  | Nexus 6P          | Android 7.1.2 Stock  |  X  |  X  |     |  X  |  X  |  O 
+bcm4356   | 7_35_101_5_sta   | Nexus 6           | Android 7.1.2        |  X  |  X  |     |  X  |  X  |  O 
 
 ## Legend
 - M = Monitor Mode
@@ -73,6 +74,7 @@ To be able to communicate with the firmware without root priviledges, we created
 * Start a UDP connection for example to activate monitor mode: `nexutil -X<cookie> -m1`
 
 ## Build patches for bcm43438 on the RPI3 using Raspbian 8 (recommended)
+**Note:** We currently support Kernel Version 4.4 and 4.9
 * Make sure the following commands are executed as root: `sudo su`
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
 * Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk qpdf bison flex`
