@@ -37,7 +37,7 @@ init: FORCE
 	$(Q)mkdir -p obj gen log
 
 brcmfmac.ko: check-nexmon-setup-env
-ifeq ($(shell uname -m),armv7l)
+ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
 ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
 	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.9\033[0m brcmfmac_kernel49/brcmfmac.ko (details: log/driver.log)\n" $@
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel49 -j2 >log/driver.log
@@ -162,14 +162,14 @@ ifndef NEXMON_SETUP_ENV
 endif
 
 backup-firmware:
-ifeq ($(shell uname -m),armv7l)
+ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
 	cp /lib/firmware/brcm/brcmfmac43430-sdio.bin brcmfmac43430-sdio.bin.orig
 else
 	$(warning Warning: Cannot backup the original firmware on this arch.)
 endif
 
 install-firmware: brcmfmac43430-sdio.bin brcmfmac.ko
-ifeq ($(shell uname -m),armv7l)
+ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
 	@printf "\033[0;31m  COPYING\033[0m brcmfmac43430-sdio.bin => /lib/firmware/brcm/brcmfmac43430-sdio.bin\n"
 	$(Q)cp brcmfmac43430-sdio.bin /lib/firmware/brcm/brcmfmac43430-sdio.bin
 ifeq ($(shell lsmod | grep "^brcmfmac" | wc -l), 1)
@@ -205,7 +205,7 @@ clean-firmware: FORCE
 	$(Q)rm -fr $(RAM_FILE) obj gen log src/ucode_compressed.c ucode_compressed.bin
 
 clean: clean-firmware
-ifeq ($(shell uname -m),armv7l)
+ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
 ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
 	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel49 clean
