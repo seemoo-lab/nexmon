@@ -592,7 +592,8 @@ static int brcmf_netdev_open(struct net_device *ndev)
 	}
 
 	/* Clear, carrier, set when connected or AP mode. */
-	netif_carrier_off(ndev);
+	/*NEXMON*/
+	//netif_carrier_off(ndev);
 	return 0;
 }
 
@@ -623,6 +624,12 @@ int brcmf_net_attach(struct brcmf_if *ifp, bool rtnl_locked)
 
 	ndev->needed_headroom += drvr->hdrlen;
 	ndev->ethtool_ops = &brcmf_ethtool_ops;
+
+
+	/* NEXMON */
+	ndev->type = ARPHRD_IEEE80211_RADIOTAP;
+	ndev->ieee80211_ptr->iftype = NL80211_IFTYPE_MONITOR;
+	ndev->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_MONITOR);
 
 	/* set the mac address */
 	memcpy(ndev->dev_addr, ifp->mac_addr, ETH_ALEN);
