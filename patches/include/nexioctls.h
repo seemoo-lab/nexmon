@@ -56,6 +56,8 @@
 #define NEX_CLEAR_CONSOLE               417
 #define NEX_GET_CHANSPEC_OVERRIDE       418
 #define NEX_SET_CHANSPEC_OVERRIDE       419
+#define NEX_GET_AMPDU_TX				420
+#define NEX_SET_AMPDU_TX				421
 
 // IOCTLs used in original firmware
 #define WLC_GET_MAGIC                     0

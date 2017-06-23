@@ -34,6 +34,7 @@ init: FORCE
 	$(Q)echo $$(($$(cat BUILD_NUMBER) + 1)) > BUILD_NUMBER
 	$(Q)touch src/version.c
 	$(Q)make -s -f $(NEXMON_ROOT)/patches/common/header.mk
+	@printf "\033[0;31m  CREATING DIRECTORIES\033[0m obj, gen, log\n"
 	$(Q)mkdir -p obj gen log
 
 obj/%.o: src/%.c

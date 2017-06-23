@@ -27,7 +27,7 @@ header: FORCE
 	@printf "    Our software may damage your hardware and may void your hardware’s    \n"
 	@printf "     warranty! You use our tools at your own risk and responsibility      \n"
 	@printf "\n\n"
-	@printf "\033[0;31m  CREATING DIRECTORIES\033[0m obj, gen, log\n" $< $@
+
 
 FORCE:
 	
