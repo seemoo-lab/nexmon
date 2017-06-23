@@ -60,6 +60,7 @@
 #define MONITOR_DROP_FRM  4
 #define MONITOR_IPV4_UDP  5
 
+/*NEXMON*/
 static struct netlink_kernel_cfg cfg = {0};
 static struct sock *nl_sock = NULL;
 static struct net_device *ndev_global = NULL;
@@ -1332,6 +1333,12 @@ int __init brcmf_core_init(void)
 
 void __exit brcmf_core_exit(void)
 {
+	/*NEXMON netlink */
+	netlink_kernel_release(nl_sock);
+
+	/*NEXMON procfs*/
+  	remove_proc_entry("nexmon_consoledump", NULL);
+
 	cancel_work_sync(&brcmf_driver_work);
 
 #ifdef CONFIG_BRCMFMAC_SDIO
