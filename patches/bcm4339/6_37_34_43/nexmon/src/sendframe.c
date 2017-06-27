@@ -63,6 +63,7 @@ sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned i
     if (wlc->hw->up) {
         if (p->flags & 0x80) { // WLF_TXHDR = 0x80
             if (wlc_prec_enq(wlc, wlc->active_queue + 4, p, 5)) {
+            	p->scb = wlc->band->hwrs_scb;
             	wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 0);
             } else {
                 pkt_buf_free_skb(wlc->osh, p, 0);
