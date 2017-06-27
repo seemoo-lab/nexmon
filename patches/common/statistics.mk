@@ -8,7 +8,7 @@ endif
 STAT_UNAME := $(shell uname -srmp | base64)
 STAT_PATH := $(shell git rev-parse --show-prefix | base64)
 ifeq ("$(STAT_PATH)","Cg==")
-STAT_PATH := $(shell cd .. && git rev-parse --show-prefix | base64)
+STAT_PATH := $(shell echo $$(cd .. && git rev-parse --show-prefix)$$(basename `pwd`) | base64)
 endif
 STAT_GIT_VERSION := $(shell git describe --abbrev=8 --dirty --always --tags | base64)
 STAT_GIT_REMOTE := $(shell git config --get remote.origin.url | base64)
