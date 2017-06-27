@@ -56,10 +56,8 @@ struct tx_task {
 void
 sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned int rate)
 {
-
     if (wlc->band->bandtype == WLC_BAND_5G && rate < RATES_RATE_6M) {
         rate = RATES_RATE_6M;
-
     }
 
     if (wlc->hw->up) {
