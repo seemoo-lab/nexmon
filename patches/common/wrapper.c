@@ -439,7 +439,7 @@ RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x046E88)
 int
-wlc_bsscfg_tdls_init(void *wlc_info_t, void *bsscfg_t, uint8 initiator)
+wlc_bsscfg_tdls_init(void *wlc, void *bsscfg_t, uint8 initiator)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1AE014)
@@ -875,7 +875,7 @@ RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x058B44)
 int
-wlc_l2_filter_tdls(void *wlc_info_t, void *sdu)
+wlc_l2_filter_tdls(void *wlc, void *sdu)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x2A0A2)
@@ -1193,137 +1193,137 @@ RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x07A448)
 int
-wlc_tdls_bsscfg_create(void *wlc_info_t, void *sdu, uint8 initiator)
+wlc_tdls_bsscfg_create(void *wlc, void *sdu, uint8 initiator)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x07A5E0)
 int
-wlc_tdls_buffer_rom(void *wlc_info_t, void *bsscfg, int a3)
+wlc_tdls_buffer_rom(void *wlc, void *bsscfg, int a3)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x07A814)
 int
-wlc_tdls_cal_mic_chk(void *wlc_info_t, int a2, void* buf, int buflen, uint8 a5)
+wlc_tdls_cal_mic_chk(void *wlc, int a2, void* buf, int buflen, uint8 a5)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x07A9F8)
 int
-wlc_tdls_cal_teardown_mic_chk(void *wlc_info_t, int a2, void* buf, int buflen, int16 a5, uint8 a6)
+wlc_tdls_cal_teardown_mic_chk(void *wlc, int a2, void* buf, int buflen, int16 a5, uint8 a6)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x1DA82A)
 int
-wlc_tdls_endpoint_op(void *wlc_info_t, uint a2, int a3)
+wlc_tdls_endpoint_op(void *wlc, uint a2, int a3)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x07B2F4)
 int
-wlc_tdls_endpoint_op_rom(void *wlc_info_t, uint a2, int a3)
+wlc_tdls_endpoint_op_rom(void *wlc, uint a2, int a3)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x07B700)
 int
-wlc_tdls_get_pkt(void *wlc_info_t, int a2, int a3)
+wlc_tdls_get_pkt(void *wlc, int a2, int a3)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x07B73C)
 int
-wlc_tdls_join(void *wlc_info_t, int a2, int a3, uint a4, uint a5)
+wlc_tdls_join(void *wlc, int a2, int a3, uint a4, uint a5)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x07F8D0)
 int
-wlc_tdls_port_open(void *wlc_info_t, uint8 a2)
+wlc_tdls_port_open(void *wlc, uint8 a2)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x07C1C4)
 int
-wlc_tdls_process_chsw_req(void *tdls_info_t, void *scb, void *wlc_frminfo, int offset)
+wlc_tdls_process_chsw_req(void *tdls, void *scb, void *wlc_frminfo, int offset)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x07C3B8)
 int
-wlc_tdls_process_chsw_resp(void *tdls_info_t, void *scb, void *wlc_frminfo, int offset)
+wlc_tdls_process_chsw_resp(void *tdls, void *scb, void *wlc_frminfo, int offset)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x1DAFD4)
 int
-wlc_tdls_process_discovery_req(void *tdls_info_t, void *scb, void *wlc_frminfo, int offset)
+wlc_tdls_process_discovery_req(void *tdls, void *scb, void *wlc_frminfo, int offset)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x07F954)
 int
-wlc_tdls_process_discovery_req_rom(void *tdls_info_t, void *scb, void *wlc_frminfo, int offset)
+wlc_tdls_process_discovery_req_rom(void *tdls, void *scb, void *wlc_frminfo, int offset)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x07C6EC)
 int
-wlc_tdls_process_pti(void *tdls_info_t, void *scb, void *wlc_frminfo, int offset)
+wlc_tdls_process_pti(void *tdls, void *scb, void *wlc_frminfo, int offset)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x07C7F8)
 int
-wlc_tdls_process_pti_resp(void *tdls_info_t, void *scb, void *wlc_frminfo, int offset)
+wlc_tdls_process_pti_resp(void *tdls, void *scb, void *wlc_frminfo, int offset)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x1DA350)
 int
-wlc_tdls_process_setup_cfm(void *tdls_info_t, void *scb, void *wlc_frminfo, int offset)
+wlc_tdls_process_setup_cfm(void *tdls, void *scb, void *wlc_frminfo, int offset)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x07C954)
 int
-wlc_tdls_process_setup_cfm_rom(void *tdls_info_t, void *scb, void *wlc_frminfo, int offset)
+wlc_tdls_process_setup_cfm_rom(void *tdls, void *scb, void *wlc_frminfo, int offset)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x1D9D46)
 int
-wlc_tdls_process_setup_req(void *tdls_info_t, void *scb, void *wlc_frminfo, int offset)
+wlc_tdls_process_setup_req(void *tdls, void *scb, void *wlc_frminfo, int offset)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x07CBF0)
 int
-wlc_tdls_process_setup_req_rom(void *tdls_info_t, void *scb, void *wlc_frminfo, int offset)
+wlc_tdls_process_setup_req_rom(void *tdls, void *scb, void *wlc_frminfo, int offset)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x1DA032)
 int
-wlc_tdls_process_setup_resp(void *tdls_info_t, void *scb, void *wlc_frminfo, int offset)
+wlc_tdls_process_setup_resp(void *tdls, void *scb, void *wlc_frminfo, int offset)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x07CEC0)
 int
-wlc_tdls_process_setup_resp_rom(void *tdls_info_t, void *scb, void *wlc_frminfo, int offset)
+wlc_tdls_process_setup_resp_rom(void *tdls, void *scb, void *wlc_frminfo, int offset)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x1DA608)
 int
-wlc_tdls_process_setup_teardown(void *tdls_info_t, void *scb, void *wlc_frminfo, int offset)
+wlc_tdls_process_setup_teardown(void *tdls, void *scb, void *wlc_frminfo, int offset)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x07D160)
 int
-wlc_tdls_process_setup_teardown_rom(void *tdls_info_t, void *scb, void *wlc_frminfo, int offset)
+wlc_tdls_process_setup_teardown_rom(void *tdls, void *scb, void *wlc_frminfo, int offset)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x1D9908)
 int
-wlc_tdls_process_vendor_specific(void *tdls_info_t, void *scb, void *wlc_frminfo, int offset)
+wlc_tdls_process_vendor_specific(void *tdls, void *scb, void *wlc_frminfo, int offset)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x07D28C)
 int
-wlc_tdls_process_vendor_specific_rom(void *tdls_info_t, void *scb, void *wlc_frminfo, int offset)
+wlc_tdls_process_vendor_specific_rom(void *tdls, void *scb, void *wlc_frminfo, int offset)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x07FB18)
 int
-wlc_tdls_rcv_action_frame(void *wlc_info_t, void *scb, void *wlc_frminfo, int pdata_offset)
+wlc_tdls_rcv_action_frame(void *wlc, void *scb, void *wlc_frminfo, int pdata_offset)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x07D4F8)
 int
-wlc_tdls_scb_lookup(void *wlc_info_t, int a2, int a3, void *a4, uint8 a5)
+wlc_tdls_scb_lookup(void *wlc, int a2, int a3, void *a4, uint8 a5)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x193744)
