@@ -251,7 +251,7 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
 
                 break;
             case "switch_survey_notification":
-                MyApplication.showSurveyNotification();
+                //MyApplication.showSurveyNotification();
                 break;
 
             default:

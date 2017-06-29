@@ -269,7 +269,7 @@ public class AirdecapFragment extends TrackingFragment {
                     guiHandler.sendEmptyMessage(SHOW_LOADING);
 
                     // TODO should be static access.
-                    Packet packet = new Packet(23);
+                    Packet packet = new Packet(Packet.LinkType.IEEE_802_11_WLAN_RADIOTAP);
                     packet.decrypt(bssid, ssid, passphrase, fileDir, encryption);
 
                     guiHandler.sendEmptyMessage(DISMISS_LOADING);

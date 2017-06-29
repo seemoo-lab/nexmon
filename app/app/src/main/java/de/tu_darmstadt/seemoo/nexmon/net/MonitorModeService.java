@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import com.stericson.RootShell.execution.Command;
 import com.stericson.RootTools.RootTools;
@@ -14,6 +15,9 @@ import com.stericson.RootTools.RootTools;
 import java.util.HashMap;
 
 import de.tu_darmstadt.seemoo.nexmon.MyApplication;
+import de.tu_darmstadt.seemoo.nexmon.utils.Assets;
+import de.tu_darmstadt.seemoo.nexmon.utils.Nexutil;
+import eu.chainfire.libsuperuser.Shell;
 
 /**
  * Created by fabian on 11/25/16.
@@ -28,10 +32,24 @@ public class MonitorModeService extends Service {
     public static final String MONITOR_MODE_ID = "nameid";
     public static final String MONITOR_MODE_NEED = "need";
 
-    public static final int COMMAND_CHECK_MONITOR = 30;
-
-
     public static final String INTENT_RECEIVER = "de.tu_darmstadt.seemoo.nexmon.MONITOR_MODE";
+
+    public enum MonitorModeType {
+        MONITOR_DISABLED(0),
+        MONITOR_IEEE80211(1),
+        MONITOR_RADIOTAP(2),
+        MONITOR_IEEE80211_BADFCS(33),
+        MONITOR_RADIOTAP_BADFCS(34);
+
+        private final int value;
+
+        private MonitorModeType(int value) {
+            this.value = value;
+        }
+
+        public int getInt() { return value; }
+    }
+    public static MonitorModeType monitorModeType = MonitorModeType.MONITOR_DISABLED;
 
 
     private HashMap<Integer, Boolean> monitorModeRequested;
@@ -77,62 +95,30 @@ public class MonitorModeService extends Service {
     }
 
     private void startMonitorMode() {
+        String line = Nexutil.getInstance().getIoctl(Nexutil.WLC_GET_MONITOR);
+        Log.d("SU", "startMonitorMode");
 
-        final Command command = new Command(COMMAND_CHECK_MONITOR, "nexutil -m", "nexutil -n") {
-            @Override
-            public void commandOutput(int id, String line) {
-                if(id == COMMAND_CHECK_MONITOR) {
-                    if(line.contains("monitor: 0")) {
-                        try {
-                            RootTools.getShell(true).add(new StartMonitorModeCommand());
-
-
-
-                        } catch(Exception e) {e.printStackTrace();}
-                    }
-                }
-
-                super.commandOutput(id, line);
-            }
-        };
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    RootTools.getShell(true).add(command);
-                } catch(Exception e) {e.printStackTrace();}
-            }
-        }).start();
+        if(line.contains("00 00 00 00")) {
+            Log.d("SU", "startMonitorMode: activate");
+            //monitorModeType = MonitorModeType.MONITOR_RADIOTAP;
+            monitorModeType = MonitorModeType.MONITOR_IEEE80211;
+            Shell.SU.run(Assets.getAssetsPath(getApplicationContext(), "nexutil") + " -s52 -v1 -c1 -m" + monitorModeType.getInt());
+            Shell.SU.run(Assets.getAssetsPath(getApplicationContext(), "rawproxy") + " -i wlan0 -p " + android.os.Process.myPid() + " &");
+            Shell.SU.run(Assets.getAssetsPath(getApplicationContext(), "rawproxyreverse") + " -i wlan0 -p " + android.os.Process.myPid() + " &");
+        }
     }
 
     private void stopMonitorMode() {
+        String line = Nexutil.getInstance().getIoctl(Nexutil.WLC_GET_MONITOR);
+        Log.d("SU", "stopMonitorMode");
 
-        final Command command = new Command(COMMAND_CHECK_MONITOR, "nexutil -m", "nexutil -n") {
-            @Override
-            public void commandOutput(int id, String line) {
-                if(id == COMMAND_CHECK_MONITOR) {
-                    if(line.contains("monitor: 2")) {
-                        try {
-                            RootTools.getShell(true).add(new StopMonitorModeCommand());
-
-
-                        } catch(Exception e) {e.printStackTrace();}
-                    }
-                }
-
-                super.commandOutput(id, line);
-            }
-        };
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    RootTools.getShell(true).add(command);
-                } catch(Exception e) {e.printStackTrace();}
-            }
-        }).start();
+        if(line.contains("02 00 00 00") || line.contains("01 00 00 00")) {
+            Log.d("SU", "stopMonitorMode: deactivate");
+            Shell.SU.run(Assets.getAssetsPath(getApplicationContext(), "nexutil") + " -c0 -m0");
+            Shell.SU.run("pkill rawproxy");
+            Shell.SU.run("pkill rawproxyreverse");
+            monitorModeType = MonitorModeType.MONITOR_DISABLED;
+        }
     }
 
 
@@ -141,22 +127,6 @@ public class MonitorModeService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null;
-    }
-
-    private class StartMonitorModeCommand extends Command {
-        public static final int COMMAND_START_MONITOR = 31;
-
-        public StartMonitorModeCommand() {
-            super(COMMAND_START_MONITOR, "nexutil -s 52 -v 1 -c1 -m2", "rawproxy -i wlan0 -p " + android.os.Process.myPid() + " &", "rawproxyreverse -i wlan0 -p " + android.os.Process.myPid() + " &");
-        }
-    }
-
-    private class StopMonitorModeCommand extends Command {
-        public static final int COMMAND_STOP_MONITOR = 32;
-
-        public StopMonitorModeCommand() {
-            super(COMMAND_STOP_MONITOR, "nexutil -c0 -m0", "pkill rawproxy", "pkill rawproxyreverse");
-        }
     }
 
 }
