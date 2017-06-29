@@ -63,6 +63,7 @@ bus_binddev_rom(void *sdiodev, void *d11dev)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x16284)
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x7E00)
 int
 dma64_txunframed(void *di, void *data, unsigned int len, char commit)
 RETURN_DUMMY
@@ -649,6 +650,7 @@ bus_binddev(void *sdio_hw, void *sdiodev, void *d11dev)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1844B2)
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x7770)
 void *
 dma_txfast(void *di, void *p, int commit)
 RETURN_DUMMY
