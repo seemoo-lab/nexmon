@@ -14,7 +14,7 @@ We setup a survey to learn about who uses Nexmon to which purpose and how we cou
 Our software may damage your hardware and may void your hardware’s warranty! You use our tools at your own risk and responsibility! If you don't like these terms, don't use nexmon!
 
 # Important changes
-* We started to collect usage statistics. In the file [STATISTICS.md](https://github.com/seemoo-lab/nexmon/STATISTICS.mk), you can find information on which data we collect and how you can opt-out of the statistics collection
+* We started to collect usage statistics. In the file [STATISTICS.md](STATISTICS.md), you can find information on which data we collect and how you can opt-out of the statistics collection
 * Starting with commit 4f8697743dc46ffc37d87d960825367531baeef9 the brcmfmac driver for the RPi3 can now be used as a regular interface. You need to use nexutil to activate monitor mode (`nexutil -m2` for monitor mode with radiotap headers), which will automtically adjust the interface type.
 * Starting with commit 184480edd6696392aae5f818f305f244606f2d17 you can choose different monitor mode options using nexutil. Use `nexutil -m1` to activate monitor mode without radiotap headers, `nexutil -m2` to activate it with radiotap headers. The numbers were chosen as non-Nexmon firmwares also support native monitor mode without radiotap headers by activating monitor mode with `nexutil -m1`.
 * Starting with commit 1bcfdc95b4395c2e8bdd962791ae20c4ba602f5b we changed the nexutil interface. Instead of calling `nexutil -m true` to activate monitor mode, you should now write `nexutil -m1`. To get the current monitor mode state execute `nexutil -m` instead of `nexutil -n`.

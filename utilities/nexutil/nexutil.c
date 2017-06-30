@@ -107,6 +107,7 @@ char            *set_chanspec_value = NULL;
 unsigned char   custom_cmd_value_int = false;
 unsigned char   custom_cmd_value_base64 = false;
 unsigned char   raw_output = false;
+unsigned char   base64_output = false;
 unsigned int    dump_objmem_addr = 0;
 unsigned char   dump_objmem = false;
 unsigned char   disassociate = false;
@@ -129,6 +130,7 @@ static struct argp_option options[] = {
     {"custom-cmd-value", 'v', "CHAR/INT", 0, "Initialization value for the buffer used by custom command"},
     {"custom-cmd-value-int", 'i', 0, 0, "Define that custom-cmd-value should be interpreted as integer"},
     {"custom-cmd-value-base64", 'b', 0, 0, "Define that custom-cmd-value should be interpreted as base64 string"},
+    {"base64-output", 'R', 0, 0, "Write base64 encoded strings to stdout instead of hex dumping"},
     {"raw-output", 'r', 0, 0, "Write raw output to stdout instead of hex dumping"},
     {"dump-wl_cnt", 'w', 0, 0, "Dump WL counters"},
     {"dump-objmem", 'o', "INT", 0, "Dumps objmem at addr INT"},
@@ -220,7 +222,17 @@ parse_opt(int key, char *arg, struct argp_state *state)
             break;
 
         case 'r':
-            raw_output = true;
+            if (!base64_output)
+                raw_output = true;
+            else
+                printf("ERR: you can only either use base64 or raw output.");
+            break;
+
+        case 'R':
+            if (!raw_output)
+                base64_output = true;
+            else
+                printf("ERR: you can only either use base64 or raw output.");
             break;
 
         case 'o':
@@ -421,6 +433,10 @@ main(int argc, char **argv)
         if (custom_cmd_set == false) {
             if (raw_output) {
                 fwrite(custom_cmd_buf, sizeof(char), custom_cmd_buf_len, stdout);
+                fflush(stdout);
+            } else if (base64_output) {
+                char *encoded = b64_encode(custom_cmd_buf, custom_cmd_buf_len);
+                fwrite(encoded, sizeof(char), strlen(encoded), stdout);
                 fflush(stdout);
             } else {
                 hexdump(custom_cmd_buf, custom_cmd_buf_len);
