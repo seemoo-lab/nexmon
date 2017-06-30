@@ -73,18 +73,6 @@ void *
 dma_attach(void *osh, char *name, void* sih, unsigned int dmaregstx, unsigned int dmaregsrx, unsigned int ntxd, unsigned int nrxd, unsigned int rxbufsize, int rxextheadroom, unsigned int nrxpost, unsigned int rxoffset, void *msg_level)
 RETURN_DUMMY
 
-AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8c69c)
-AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x4E44)
-void *
-dma_rx(void *di)
-RETURN_DUMMY
-
-AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8c6cc)
-AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x5070)
-void *
-dma_rxfill(void *di)
-RETURN_DUMMY
-
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8C49C)
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x3520)
 AT(CHIP_VER_BCM4330, FW_VER_ALL, 0x80B9C8)
@@ -295,6 +283,11 @@ RETURN_DUMMY
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x12794)
 int
 sprintf(char *buf, const char *format, ...)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x3818)
+int
+strcmp(char *str1, char *str2)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x12824)
@@ -649,6 +642,169 @@ int
 bus_binddev(void *sdio_hw, void *sdiodev, void *d11dev)
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x6BD8)
+void *
+dma_active_rxbuf(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x6C0C)
+int
+dma_avoidancecnt(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x6C20)
+struct hnddma_pub *
+dma_counter_reset(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x6C2C)
+int
+dma_ctrlflags(struct hnddma_pub *dmah, int mask, int flags)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x6CE0)
+int
+dma_detach(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x6D38)
+void *
+dma_getnextrxp(struct hnddma_pub *dmah, bool forceall)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x75A8)
+void *
+dma_getnexttxp(struct hnddma_pub *dmah, txd_range_t range)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x7670)
+void *
+dma_getpos(struct hnddma_pub *dmah, bool direction)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x6D48)
+void *
+dma_getvar(struct hnddma_pub *dmah, char* name) //bcm4358: name is either ""&txavail" or "&rxavail"
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x6DAC)
+void *
+dma_param_set(struct hnddma_pub *dmah, uint paramid, char paramval)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x6E14)
+void *
+dma_peeknextrxp(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x6E5C)
+void *
+dma_peeknexttxp(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x6EA0)
+void *
+dma_peekntxp(struct hnddma_pub *dmah, int *len, void *txps[], txd_range_t range)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x6F4C)
+void *
+dma_pktpool_set(struct hnddma_pub *dmah, pktpool_t *pool)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8c69c)
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x4E44)
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x6F54)
+void *
+dma_rx(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x7050)
+int
+dma_rxactive(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x7068)
+struct hnddma_pub *
+dma_rxenable(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x76E4)
+int
+dma_rxenabled(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x6D2C)
+struct hnddma_pub *
+dma_rxfifoloopback_enable(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x18B6FC)
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8c6cc)
+void
+dma_rxfill(struct hnddma_pub *dmah)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x5070)
+int
+dma_rxfill_bcm43438(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x76F4)
+bool
+dma_rxidle(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x7268)
+struct hnddma_pub *
+dma_rxinit(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x7040)
+int
+dma_rxparam_get(struct hnddma_pub *dmah, uint16 *rxoffset, uint16 *rxbufsize)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x72FC)
+int
+dma_rxreclaim(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x7714)
+int
+dma_rxreset(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x774C)
+bool
+dma_rxstopped(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x734C)
+int
+dma_rxtxerror(struct hnddma_pub *dmah, bool istx)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x73D0)
+int
+dma_txactive(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x73E8)
+struct hnddma_pub *
+dma_txblock(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x73F0)
+int
+dma_txcommited(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x7760)
+int
+dma_txenabled(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1844B2)
 AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x7770)
 void *
@@ -658,6 +814,61 @@ RETURN_DUMMY
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1844B6)
 void *
 dma_txfast_plus_4(void *di, void *p, int commit)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x7AC4)
+struct hnddma_pub *
+dma_txflush_clear(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x7B00)
+struct hnddma_pub *
+dma_txinit(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x7418)
+int
+dma_txpending(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x7B00)
+struct hnddma_pub *
+dma_txreclaim(struct hnddma_pub *dmah, txd_range_t range)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x7BD8)
+bool
+dma_txreset(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x7C60)
+struct hnddma_pub *
+dma_txresume(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x7C74)
+int
+dma_txrotate(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x7D9C)
+bool
+dma_txstopped(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x7DB0)
+struct hnddma_pub *
+dma_txsuspend(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x7DC4)
+int
+dma_txsuspended(struct hnddma_pub *dmah)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x7DD8)
+int
+dma_txsuspended_idle(struct hnddma_pub *dmah)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x182750)
