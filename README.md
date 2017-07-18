@@ -211,7 +211,7 @@ Modifications on Smartphones to Enable Monitor Mode]
 [bibtex](http://dblp.uni-trier.de/rec/bibtex/journals/corr/SchulzWH16)
 
 # Reference our project
-Any use of this project which results in an academic publication or other publication which includes a bibliography should include a citation to the Nexmon project:
+Any use of this project which results in an academic publication or other publication which includes a bibliography should include a citation to the Nexmon project and probably one of our papers depending on the code you use. Find all references in our [bibtex file](nexmon.bib). Here is the reference for the project only:
 ```
 @electronic{nexmon:project,
 	author = {Schulz, Matthias and Wegemer, Daniel and Hollick, Matthias},
