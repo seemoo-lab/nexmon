@@ -42,8 +42,11 @@ import com.stericson.RootTools.RootTools;
 
 import de.tu_darmstadt.seemoo.nexmon.MyApplication;
 import de.tu_darmstadt.seemoo.nexmon.R;
+import de.tu_darmstadt.seemoo.nexmon.utils.Assets;
 import de.tu_darmstadt.seemoo.nexmon.utils.Dhdutil;
+import de.tu_darmstadt.seemoo.nexmon.utils.FirmwareUtil;
 import de.tu_darmstadt.seemoo.nexmon.utils.Nexutil;
+import eu.chainfire.libsuperuser.Shell;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -117,8 +120,15 @@ public class StartFragment extends TrackingFragment {
         btnRoot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(getContext(), Dhdutil.getInstance().dumpConsole(), Toast.LENGTH_LONG).show();
-                Log.d("DHDUTIL", Dhdutil.getInstance().dumpConsole());
+                String x = "isbroadcomchip: " + FirmwareUtil.getInstance().isBroadcomChip() + "\n";
+                //x += " capabilities: " + FirmwareUtil.getInstance().getCapabilities();
+                //x += " magic: " + String.format("%08x", Nexutil.getInstance().getIntIoctl(0)) + "\n";
+                //x += " magic: " + String.format("%08x", 0x11223344) + "\n";
+                //x += " test: " + String.format("%08x", (new Nexutil()).get(0).executeInt());
+                x += " ver:" + (new Nexutil()).getIovar("ver", 256);
+                Toast.makeText(getContext(), x, Toast.LENGTH_SHORT).show();
+                //Toast.makeText(getContext(), Dhdutil.getInstance().dumpConsole(), Toast.LENGTH_LONG).show();
+                //Log.d("DHDUTIL", Dhdutil.getInstance().dumpConsole());
             }
         });
 

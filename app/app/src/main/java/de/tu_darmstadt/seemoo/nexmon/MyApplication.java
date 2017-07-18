@@ -373,8 +373,8 @@ public class MyApplication extends Application {
 
         super.onCreate();
         MyApplication.context = getApplicationContext();
-        Nexutil.getInstance(getApplicationContext());
-        Dhdutil.getInstance(getApplicationContext());
+        Nexutil.getInstance();
+        Dhdutil.getInstance();
         activityManager = (ActivityManager) MyApplication.getAppContext().getSystemService(Context.ACTIVITY_SERVICE);
         packageManager = MyApplication.getAppContext().getPackageManager();
         windowManager = (WindowManager) MyApplication.getAppContext().getSystemService(Context.WINDOW_SERVICE);
