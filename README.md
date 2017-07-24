@@ -26,7 +26,7 @@ WiFi Chip | Firmware Version | Used in           | Operating System     |  M  | 
 --------- | ---------------- | ----------------- | -------------------- | --- | --- | --- | --- | --- | ---
 bcm4330   | 5_90_100_41_sta  | Samsung Galaxy S2 | Cyanogenmod 13.0     |  X  |  X  |     |  X  |  X  |  O 
 bcm4339   | 6_37_34_43       | Nexus 5           | Android 6 Stock      |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43438  | 7_45_41_26       | Raspberry Pi 3    | Raspbian 8           |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43438  | 7_45_41_26       | Raspberry Pi 3 and Zero W   | Raspbian 8           |  X  |  X  |  X  |  X  |  X  |  O 
 bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock      |  X  |  X  |     |  X  |  X  |  O 
 bcm4358   | 7_112_201_3_sta  | Nexus 6P          | Android 7.1.2 Stock  |  X  |  X  |     |  X  |  X  |  O 
 bcm4356   | 7_35_101_5_sta   | Nexus 6           | Android 7.1.2        |  X  |  X  |     |  X  |  X  |  O 
@@ -74,7 +74,7 @@ To be able to communicate with the firmware without root priviledges, we created
 * Set the security cookie as root: `nexutil -x<cookie (uint)>`
 * Start a UDP connection for example to activate monitor mode: `nexutil -X<cookie> -m1`
 
-## Build patches for bcm43438 on the RPI3 using Raspbian 8 (recommended)
+## Build patches for bcm43438 on the RPI3/Zero W using Raspbian 8 (recommended)
 **Note:** We currently support Kernel Version 4.4 and 4.9
 * Make sure the following commands are executed as root: `sudo su`
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
