@@ -44,7 +44,7 @@ public class SharkListElement {
                 Thread.sleep(5);
             } catch(Exception e) {e.printStackTrace();}
 
-        if(packet._encap == Packet.WTAP_LINKTYPE_RADIOTAP) {
+        if(packet._encap.equals(Packet.LinkType.IEEE_802_11_WLAN_RADIOTAP) || packet._encap.equals(Packet.LinkType.IEEE_802_11)) {
             value = packet.getField(DissectionStrings.DISS_DST_ADDR);
             if (value != null)
                 element.setDest(value);

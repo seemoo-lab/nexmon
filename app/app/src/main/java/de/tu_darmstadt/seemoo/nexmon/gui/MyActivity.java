@@ -225,71 +225,42 @@ public class MyActivity extends Activity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 drawerLayout.closeDrawers();
 
-                try {
-                    if(position != 0 && (getStoragePermission(activity) != PackageManager.PERMISSION_GRANTED)) {
-                        toast("We need permission to read from / write to your storage!");
-                        return;
-                    }
-                } catch(Exception e) {e.printStackTrace();}
-
-
                 switch (position) {
                     case 0:
                         getFragmentManager().beginTransaction().replace(R.id.contentFragment, startFragment).addToBackStack(null).commit();
                         break;
                     case 1:
-                        if(isAccessable())
-                            getFragmentManager().beginTransaction().replace(R.id.contentFragment, sharkFragment).addToBackStack(null).commit();
-
+                        getFragmentManager().beginTransaction().replace(R.id.contentFragment, sharkFragment).addToBackStack(null).commit();
                         break;
                     case 2:
-                        if(isAccessable())
-                            getFragmentManager().beginTransaction().replace(R.id.contentFragment, airodumpFragment).addToBackStack(null).commit();
+                        getFragmentManager().beginTransaction().replace(R.id.contentFragment, airodumpFragment).addToBackStack(null).commit();
                         break;
                     case 3:
-                        if(isLibsLoaded())
-                            getFragmentManager().beginTransaction().replace(R.id.contentFragment, airdecapFragment).addToBackStack(null).commit();
+                        getFragmentManager().beginTransaction().replace(R.id.contentFragment, airdecapFragment).addToBackStack(null).commit();
                         break;
                     case 4:
-                        if(isLibsLoaded())
-                            getFragmentManager().beginTransaction().replace(R.id.contentFragment, aircrackWepFragment).addToBackStack(null).commit();
+                        getFragmentManager().beginTransaction().replace(R.id.contentFragment, aircrackWepFragment).addToBackStack(null).commit();
                         break;
                     case 5:
-                        if(isLibsLoaded())
-                            getFragmentManager().beginTransaction().replace(R.id.contentFragment, pcapConcatFragment).addToBackStack(null).commit();
+                        getFragmentManager().beginTransaction().replace(R.id.contentFragment, pcapConcatFragment).addToBackStack(null).commit();
                         break;
                     case 6:
-                        if(isLibsLoaded())
-                            getFragmentManager().beginTransaction().replace(R.id.contentFragment, ivsMergeFragment).addToBackStack(null).commit();
+                        getFragmentManager().beginTransaction().replace(R.id.contentFragment, ivsMergeFragment).addToBackStack(null).commit();
                         break;
                     case 7:
-                        if(isLibsLoaded())
-                            getFragmentManager().beginTransaction().replace(R.id.contentFragment, pcapToIvsFragment).addToBackStack(null).commit();
+                        getFragmentManager().beginTransaction().replace(R.id.contentFragment, pcapToIvsFragment).addToBackStack(null).commit();
                         break;
                     case 8:
-                        if(isLibsLoaded())
-                            getFragmentManager().beginTransaction().replace(R.id.contentFragment, wpaDictFragment).addToBackStack(null).commit();
+                        getFragmentManager().beginTransaction().replace(R.id.contentFragment, wpaDictFragment).addToBackStack(null).commit();
                         break;
                     case 9:
-                        if(isAccessable())
-                            getFragmentManager().beginTransaction().replace(R.id.contentFragment, settingsFragment).addToBackStack(null).commit();
+                        getFragmentManager().beginTransaction().replace(R.id.contentFragment, settingsFragment).addToBackStack(null).commit();
                         break;
                     case 10:
-                        if(!MyApplication.isRootGranted) {
-                            toast("We need root access to proceed!");
-                        } else if(!MyApplication.isNexutilAvailable()) {
-                            toast("Please install nexutil from \"Tools\" first.");
-                        } else if(!MyApplication.isBcmFirmwareAvailable()) {
-                            toast("Your device is not supported, sorry!");
-                        } else
-                            getFragmentManager().beginTransaction().replace(R.id.contentFragment, firmwareFragment).addToBackStack(null).commit();
-
+                        getFragmentManager().beginTransaction().replace(R.id.contentFragment, firmwareFragment).addToBackStack(null).commit();
                         break;
                     case 11:
-                        if(MyApplication.isRootGranted)
-                            getFragmentManager().beginTransaction().replace(R.id.contentFragment, toolsFragment).addToBackStack(null).commit();
-                        else
-                            toast("We need root access to proceed!");
+                        getFragmentManager().beginTransaction().replace(R.id.contentFragment, toolsFragment).addToBackStack(null).commit();
                         break;
                     case 12:
                         getFragmentManager().beginTransaction().replace(R.id.contentFragment, aboutFragment).addToBackStack(null).commit();
@@ -317,27 +288,7 @@ public class MyActivity extends Activity {
     }
 
     private boolean isAccessable() {
-        if(!MyApplication.isLibInstalledCorrectly()) {
-            toast("We could not load all libraries. However, you should be able to install the Nexmon firmware and tools at least.");
-        } else if(!MyApplication.isRootGranted) {
-            toast("We need root access to proceed!");
-        } else if(!MyApplication.isNexutilAvailable()) {
-            toast("Please install nexutil from \"Tools\" first.");
-        } else if(!MyApplication.isNexutilNew()) {
-            toast("Please update nexutil from \"Tools\" first.");
-        } else if(!MyApplication.isBcmFirmwareAvailable()) {
-            toast("Your device is not supported, sorry!");
-        } else if(!MyApplication.isNexmonFirmwareAvailable()) {
-            toast("Please install the nexmon firmware from \"Firmware\" first.");
-        } else if(!MyApplication.isMonitorModeAvailable()) {
-            toast("Your device has no monitor mode support!");
-        } else if(!MyApplication.isRawproxyAvailable()) {
-            toast("Please install rawproxy from \"Tools\" first.");
-        } else {
-            return true;
-        }
-
-        return false;
+        return true;
     }
 
     private void attackInfoEvaluate(Intent intent) {
@@ -377,7 +328,6 @@ public class MyActivity extends Activity {
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-
     }
 
     private void toast(String msg) {
@@ -390,14 +340,14 @@ public class MyActivity extends Activity {
     protected void onStart() {
         super.onStart();
         MyApplication.isAppVisible = true;
-        MyApplication.showSurveyNotification();
+        //MyApplication.showSurveyNotification();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         MyApplication.isAppVisible = false;
-        MyApplication.dismissSurveyNotification();
+        //MyApplication.dismissSurveyNotification();
     }
 
     public void setPermissionListener(IPermissionListener permissionListener) {

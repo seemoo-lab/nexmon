@@ -26,7 +26,7 @@ WiFi Chip | Firmware Version | Used in           | Operating System     |  M  | 
 --------- | ---------------- | ----------------- | -------------------- | --- | --- | --- | --- | --- | ---
 bcm4330   | 5_90_100_41_sta  | Samsung Galaxy S2 | Cyanogenmod 13.0     |  X  |  X  |     |  X  |  X  |  O 
 bcm4339   | 6_37_34_43       | Nexus 5           | Android 6 Stock      |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43438  | 7_45_41_26       | Raspberry Pi 3    | Raspbian 8           |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43438  | 7_45_41_26       | Raspberry Pi 3 and Zero W   | Raspbian 8           |  X  |  X  |  X  |  X  |  X  |  O 
 bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock      |  X  |  X  |     |  X  |  X  |  O 
 bcm4358   | 7_112_201_3_sta  | Nexus 6P          | Android 7.1.2 Stock  |  X  |  X  |     |  X  |  X  |  O 
 bcm4356   | 7_35_101_5_sta   | Nexus 6           | Android 7.1.2        |  X  |  X  |     |  X  |  X  |  O 
@@ -74,7 +74,7 @@ To be able to communicate with the firmware without root priviledges, we created
 * Set the security cookie as root: `nexutil -x<cookie (uint)>`
 * Start a UDP connection for example to activate monitor mode: `nexutil -X<cookie> -m1`
 
-## Build patches for bcm43438 on the RPI3 using Raspbian 8 (recommended)
+## Build patches for bcm43438 on the RPI3/Zero W using Raspbian 8 (recommended)
 **Note:** We currently support Kernel Version 4.4 and 4.9
 * Make sure the following commands are executed as root: `sudo su`
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
@@ -199,19 +199,24 @@ If you know more projects that use nexmon, let us know and we will add a link.
 * [Project Zero](https://googleprojectzero.blogspot.de/2017/04/over-air-exploiting-broadcoms-wi-fi_11.html): Over The Air: Exploiting Broadcom's Wi-Fi Stack (Part 2) 
 
 # Read our papers
-* M. Schulz. [Nexmon - Wie man die eigene WLAN-Firmware hackt](http://heise.de/-3538660), 
+
+* M. Schulz, F. Gringoli, D. Steinmetzer, M. Koch and M. Hollick. **Massive Reactive Smartphone-Based Jamming using Arbitrary Waveforms and Adaptive Power Control**. Proceedings of the *10th ACM Conference on Security and Privacy in Wireless and Mobile Networks (WiSec 2017)*, July 2017.
+* M. Schulz, E. Deligeorgopoulos, M. Hollick and F. Gringoli. **DEMO: Demonstrating Reactive Smartphone-Based Jamming**. Proceedings of the *10th ACM Conference on Security and Privacy in Wireless and Mobile Networks (WiSec 2017)*, July 2017.
+* M. Schulz. [**Nexmon - Wie man die eigene WLAN-Firmware hackt**](http://heise.de/-3538660), 
 c't 26/2016, S. 168, Heise Verlag, 2016.
-* M. Schulz, D. Wegemer, M. Hollick. [DEMO: Using NexMon, the C-based WiFi 
-firmware modification framework](https://dl.acm.org/citation.cfm?id=2942419), 
-Proceedings of the 9th ACM Conference on Security and Privacy in Wireless and 
-Mobile Networks, WiSec 2016, July 2016.
-* M. Schulz, D. Wegemer and M. Hollick. [NexMon: A Cookbook for Firmware 
-Modifications on Smartphones to Enable Monitor Mode]
-(http://arxiv.org/abs/1601.07077), CoRR, vol. abs/1601.07077, December 2015. 
+* M. Schulz, D. Wegemer, M. Hollick. [**DEMO: Using NexMon, the C-based WiFi 
+firmware modification framework**](https://dl.acm.org/citation.cfm?id=2942419), 
+Proceedings of the *9th ACM Conference on Security and Privacy in Wireless and 
+Mobile Networks (WiSec 2016)*, July 2016.
+* M. Schulz, D. Wegemer and M. Hollick. [**NexMon: A Cookbook for Firmware 
+Modifications on Smartphones to Enable Monitor Mode**](http://arxiv.org/abs/1601.07077), 
+CoRR, vol. abs/1601.07077, December 2015. 
 [bibtex](http://dblp.uni-trier.de/rec/bibtex/journals/corr/SchulzWH16)
 
+[Get references as bibtex file](https://nexmon.org/bib)
+
 # Reference our project
-Any use of this project which results in an academic publication or other publication which includes a bibliography should include a citation to the Nexmon project:
+Any use of this project which results in an academic publication or other publication which includes a bibliography should include a citation to the Nexmon project and probably one of our papers depending on the code you use. Find all references in our [bibtex file](nexmon.bib). Here is the reference for the project only:
 ```
 @electronic{nexmon:project,
 	author = {Schulz, Matthias and Wegemer, Daniel and Hollick, Matthias},
@@ -232,3 +237,5 @@ Any use of this project which results in an academic publication or other public
 <a href="https://www.nicer.tu-darmstadt.de">![NICER logo](https://github.com/seemoo-lab/nexmon/raw/master/gfx/nicer.png)</a>
 ## Multi-Mechanisms Adaptation for the Future Internet (MAKI)
 <a href="http://www.maki.tu-darmstadt.de/">![MAKI logo](https://github.com/seemoo-lab/nexmon/raw/master/gfx/maki.png)</a>
+## Technische Universität Darmstadt
+<a href="https://www.tu-darmstadt.de/index.en.jsp">![TU Darmstadt logo](https://github.com/seemoo-lab/nexmon/raw/master/gfx/tudarmstadt.png)</a>

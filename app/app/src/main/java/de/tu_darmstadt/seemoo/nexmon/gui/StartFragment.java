@@ -28,25 +28,32 @@ import android.os.Handler;
 import android.os.Message;
 import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.roger.catloadinglibrary.CatLoadingView;
 import com.stericson.RootTools.RootTools;
 
 import de.tu_darmstadt.seemoo.nexmon.MyApplication;
 import de.tu_darmstadt.seemoo.nexmon.R;
+import de.tu_darmstadt.seemoo.nexmon.utils.Assets;
+import de.tu_darmstadt.seemoo.nexmon.utils.Dhdutil;
+import de.tu_darmstadt.seemoo.nexmon.utils.FirmwareUtil;
+import de.tu_darmstadt.seemoo.nexmon.utils.Nexutil;
+import eu.chainfire.libsuperuser.Shell;
 
 /**
  * A simple {@link Fragment} subclass.
  * Use the {@link StartFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class StartFragment extends TrackingFragment implements MyActivity.IPermissionListener {
+public class StartFragment extends TrackingFragment {
 
     TextView tvNexmonInfo;
     ImageView ivNexmon;
@@ -75,15 +82,11 @@ public class StartFragment extends TrackingFragment implements MyActivity.IPermi
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        setupHandler();
     }
 
     @Override
     public void onStart() {
         super.onStart();
-
-        ((MyActivity) getActivity()).setPermissionListener(this);
     }
 
 
@@ -98,51 +101,6 @@ public class StartFragment extends TrackingFragment implements MyActivity.IPermi
     @Override
     public String getTrackingName() {
         return "Screen: Start";
-    }
-
-    private void setupHandler() {
-        guiHandler = new Handler() {
-
-            @SuppressWarnings("unchecked")
-            public void handleMessage(Message msg) {
-                super.handleMessage(msg);
-                try {
-                    switch (msg.what) {
-                        case GUI_SHOW_LOADING:
-                            loadingView = new CatLoadingView();
-                            loadingView.setCancelable(false);
-                            loadingView.show(getFragmentManager(), "");
-                            break;
-                        case GUI_DISMISS_LOADING:
-                            loadingView.dismiss();
-                            break;
-                        case GUI_UPDATE_TEXT:
-                            tvNexmonInfo.setText((SpannableStringBuilder) msg.obj);
-                            break;
-                        case ROOT_DENIED:
-                            tvNexmonInfo.setText(getRootDeniedText());
-                            Intent intent = MyApplication.getPackManager().getLaunchIntentForPackage("eu.chainfire.supersu");
-                            if (intent != null) {
-                                // We found the activity now start the activity
-                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                                startActivity(intent);
-                            }
-                            break;
-                        case ROOT_GRANTED:
-                            checkInstallation();
-                            break;
-                    }
-                } catch(Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-    }
-
-    private SpannableStringBuilder getRootDeniedText() {
-        SpannableStringBuilder infoString = new SpannableStringBuilder();
-        infoString.append("\n\n\nSorry, we need root access to check the Nexmon installation status.", new ForegroundColorSpan(Color.RED), 0);
-        return infoString;
     }
 
     @Override
@@ -162,19 +120,15 @@ public class StartFragment extends TrackingFragment implements MyActivity.IPermi
         btnRoot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if(RootTools.isRootAvailable() && RootTools.isAccessGiven()) {
-                            MyApplication.isRootGranted = true;
-                            guiHandler.sendEmptyMessage(ROOT_GRANTED);
-                            MyActivity.verifyStoragePermissions(getActivity());
-                        } else {
-                            guiHandler.sendEmptyMessage(ROOT_DENIED);
-                            MyApplication.isRootGranted = false;
-                        }
-                    }
-                }).start();
+                String x = "isbroadcomchip: " + FirmwareUtil.getInstance().isBroadcomChip() + "\n";
+                //x += " capabilities: " + FirmwareUtil.getInstance().getCapabilities();
+                //x += " magic: " + String.format("%08x", Nexutil.getInstance().getIntIoctl(0)) + "\n";
+                //x += " magic: " + String.format("%08x", 0x11223344) + "\n";
+                //x += " test: " + String.format("%08x", (new Nexutil()).get(0).executeInt());
+                x += " ver:" + (new Nexutil()).getIovar("ver", 256);
+                Toast.makeText(getContext(), x, Toast.LENGTH_SHORT).show();
+                //Toast.makeText(getContext(), Dhdutil.getInstance().dumpConsole(), Toast.LENGTH_LONG).show();
+                //Log.d("DHDUTIL", Dhdutil.getInstance().dumpConsole());
             }
         });
 
@@ -189,37 +143,8 @@ public class StartFragment extends TrackingFragment implements MyActivity.IPermi
             getActivity().setTitle("Nexmon: Start");
         } catch(Exception e) {e.printStackTrace();}
 
-        showInstallInfo();
-
-
         return view;
 
-    }
-
-
-    private void checkInstallation() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                guiHandler.sendEmptyMessage(GUI_SHOW_LOADING);
-                MyApplication.evaluateAll();
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-                showInstallInfo();
-                guiHandler.sendEmptyMessage(GUI_DISMISS_LOADING);
-
-
-            }
-        }).start();
-    }
-
-    private void showInstallInfo() {
-        Message msg = guiHandler.obtainMessage(GUI_UPDATE_TEXT, MyApplication.getInstallInfo());
-        guiHandler.sendMessage(msg);
     }
 
 
@@ -229,10 +154,5 @@ public class StartFragment extends TrackingFragment implements MyActivity.IPermi
         intent.addCategory(Intent.CATEGORY_BROWSABLE);
         intent.setData(Uri.parse("https://nexmon.org"));
         startActivity(intent);
-    }
-
-    @Override
-    public void onPermissionResult(int requestCode, String[] permissions, int[] grantResults) {
-        showInstallInfo();
     }
 }

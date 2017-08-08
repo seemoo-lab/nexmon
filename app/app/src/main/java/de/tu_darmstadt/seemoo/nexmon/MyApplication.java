@@ -54,23 +54,24 @@ import android.widget.Toast;
 import com.google.android.gms.analytics.GoogleAnalytics;
 import com.google.android.gms.analytics.HitBuilders;
 import com.google.android.gms.analytics.Tracker;
-import com.stericson.RootShell.execution.Command;
-import com.stericson.RootTools.RootTools;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
-import de.tu_darmstadt.seemoo.nexmon.gui.SurveyNotificationActivity;
 import de.tu_darmstadt.seemoo.nexmon.net.FrameReceiver;
 import de.tu_darmstadt.seemoo.nexmon.net.MonitorModeService;
 import de.tu_darmstadt.seemoo.nexmon.net.RawSocketReceiveService;
 import de.tu_darmstadt.seemoo.nexmon.sharky.WiresharkService;
 import de.tu_darmstadt.seemoo.nexmon.stations.APfinderService;
 import de.tu_darmstadt.seemoo.nexmon.stations.AttackService;
+import de.tu_darmstadt.seemoo.nexmon.utils.Dhdutil;
+import de.tu_darmstadt.seemoo.nexmon.utils.Nexutil;
+import eu.chainfire.libsuperuser.Shell;
 
 
 public class MyApplication extends Application {
@@ -372,10 +373,12 @@ public class MyApplication extends Application {
 
         super.onCreate();
         MyApplication.context = getApplicationContext();
+        Nexutil.getInstance();
+        Dhdutil.getInstance();
         activityManager = (ActivityManager) MyApplication.getAppContext().getSystemService(Context.ACTIVITY_SERVICE);
         packageManager = MyApplication.getAppContext().getPackageManager();
         windowManager = (WindowManager) MyApplication.getAppContext().getSystemService(Context.WINDOW_SERVICE);
-        wifiManager = (WifiManager) MyApplication.getAppContext().getSystemService(WIFI_SERVICE);
+        wifiManager = (WifiManager) MyApplication.getAppContext().getApplicationContext().getSystemService(WIFI_SERVICE);
         locationManager = (LocationManager) MyApplication.getAppContext().getSystemService(LOCATION_SERVICE);
         telephonyManager = (TelephonyManager) MyApplication.getAppContext().getSystemService(Context.TELEPHONY_SERVICE);
         layoutInflater = (LayoutInflater) MyApplication.getAppContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -404,7 +407,6 @@ public class MyApplication extends Application {
         startService(new Intent(getAppContext(), APfinderService.class));
         startService(new Intent(getAppContext(), AttackService.class));
         startService(new Intent(getAppContext(), RawSocketReceiveService.class));
-
     }
 
     public void initLibs() {
@@ -444,191 +446,53 @@ public class MyApplication extends Application {
     }
 
     private static void evaluateCapabilities() {
+        boolean tempMonitor = false;
+        boolean tempInjection = false;
+        boolean tempNexmonFirmware = false;
 
-        try {
-            Command command = new Command(0, "ifconfig wlan0 up", "nexutil -g 400") {
+        Shell.SU.run("ifconfig wlan0 up");
+        String line = Nexutil.getInstance().getIoctl(400);
 
-                boolean tempMonitor = false;
-                boolean tempInjection = false;
-                boolean tempNexmonFirmware = false;
-                @Override
-                public void commandOutput(int id, String line) {
-                    if(line.contains("0x000000: 07")) {
-                        tempMonitor = true;
-                        tempInjection = true;
-                        tempNexmonFirmware = true;
-                    } else if(line.contains("0x000000: 03") || line.contains("0x000000: 01")) {
-                        tempMonitor = true;
-                        tempInjection = false;
-                        tempNexmonFirmware = true;
-                    } else if(line.contains("__nex_driver_io: error")) {
-                        tempMonitor = false;
-                        tempInjection = false;
-                        tempNexmonFirmware = false;
-                    }
+        if(line.contains("0x000000: 07")) {
+            tempMonitor = true;
+            tempInjection = true;
+            tempNexmonFirmware = true;
+        } else if(line.contains("0x000000: 03") || line.contains("0x000000: 01")) {
+            tempMonitor = true;
+            tempInjection = false;
+            tempNexmonFirmware = true;
+        } else if(line.contains("__nex_driver_io: error")) {
+            tempMonitor = false;
+            tempInjection = false;
+            tempNexmonFirmware = false;
+        }
 
-                    super.commandOutput(id, line);
-                }
-
-
-                @Override
-                public void commandCompleted(int id, int exitcode) {
-                    isMonitorModeAvailable = tempMonitor;
-                    isInjectionAvailable = tempInjection;
-                    isNexmonFirmwareAvailable = tempNexmonFirmware;
-                    super.commandCompleted(id, exitcode);
-                }
-            };
-            RootTools.getShell(true).add(command);
-        } catch(Exception e) {e.printStackTrace();}
-
-
+        isMonitorModeAvailable = tempMonitor;
+        isInjectionAvailable = tempInjection;
+        isNexmonFirmwareAvailable = tempNexmonFirmware;
     }
 
     public static void evaluateBCMfirmware() {
-        try {
-            Command command = new Command(0, "ifconfig wlan0 up", "nexutil -g 0") {
-
-                boolean temp = false;
-                @Override
-                public void commandOutput(int id, String line) {
-                    if(line.contains("77 6c e4 14"))
-                        temp = true;
-
-                    super.commandOutput(id, line);
-                }
-
-                @Override
-                public void commandCompleted(int id, int exitCode) {
-                    isBcmFirmwareAvailable = temp;
-                    evaluateCapabilities();
-                    super.commandCompleted(id, exitCode);
-                }
-            };
-            RootTools.getShell(true).add(command);
-        } catch(Exception e) {e.printStackTrace();}
+        Shell.SU.run("ifconfig wlan0 up");
+        isBcmFirmwareAvailable = Nexutil.getInstance().getIoctl(0).contains("77 6c e4 14");
+        evaluateCapabilities();
     }
 
     public static void evaluateFirmwareVersion() {
-        try {
-            Command command = new Command(0, "ifconfig wlan0 up", "nexutil -g 413 -l 100 -r") {
-                @Override
-                public void commandOutput(int id, String line) {
-                    if (line.contains("nexmon_ver")) {
-                        try {
-                            firmwareVersion = line.substring(12, line.lastIndexOf('-'));
-                        } catch (Exception e) {
-                        }
-                    }
+        Shell.SU.run("ifconfig wlan0 up");
+        String line = Nexutil.getInstance().getIoctl(413);
 
-                    super.commandOutput(id, line);
-                }
-            };
-            RootTools.getShell(true).add(command);
-        } catch(Exception e) {e.printStackTrace();}
+        if (line.contains("nexmon_ver")) {
+            try {
+                firmwareVersion = line.substring(12, line.lastIndexOf('-'));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public static String getFirmwareVersion() {
         return firmwareVersion;
-    }
-    
-
-    public static SpannableStringBuilder getInstallInfo() {
-        SpannableStringBuilder ssBuilder = new SpannableStringBuilder();
-
-        if(!isRootGranted) {
-            ssBuilder.append("We need root to proceed!", new ForegroundColorSpan(Color.RED), 0);
-            return ssBuilder;
-        }
-
-        if(MyApplication.getAppContext().checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ssBuilder.append("We need read / write permission for your storage!", new ForegroundColorSpan(Color.RED), 0);
-            return ssBuilder;
-        }
-
-        ssBuilder.append("App Version:\n\n", new StyleSpan(Typeface.BOLD), 0);
-        ssBuilder.append(BuildConfig.VERSION_NAME + "\n", new ForegroundColorSpan(Color.GREEN), 0);
-
-        ssBuilder.append("\nTool installation status:\n\n", new StyleSpan(Typeface.BOLD), 0);
-
-        if(isNexutilAvailable) {
-            if (nexutilVersion != null) {
-                if (nexutilVersion.equals(BuildConfig.VERSION_NAME)) {
-                    ssBuilder.append("nexutil (" + nexutilVersion + ")\n", new ForegroundColorSpan(Color.GREEN), 0);
-                } else {
-                    ssBuilder.append("nexutil (" + nexutilVersion + " => upgrade to app version)\n", new ForegroundColorSpan(Color.YELLOW), 0);
-                }
-            } else {
-                ssBuilder.append("nexutil (outdated => upgrade to app version)\n", new ForegroundColorSpan(Color.RED), 0);
-            }
-        } else {
-            ssBuilder.append("nexutil (missing => install from tools menu)\n", new ForegroundColorSpan(Color.RED), 0);
-        }
-
-        if(isRawproxyAvailable) {
-            if (rawproxyVersion != null) {
-                if (rawproxyVersion.equals(BuildConfig.VERSION_NAME)) {
-                    ssBuilder.append("rawproxy (" + rawproxyVersion + ")\n", new ForegroundColorSpan(Color.GREEN), 0);
-                } else {
-                    ssBuilder.append("rawproxy (" + rawproxyVersion + " => upgrade to app version)\n", new ForegroundColorSpan(Color.YELLOW), 0);
-                }
-            } else {
-                ssBuilder.append("rawproxy (outdated => upgrade to app version)\n", new ForegroundColorSpan(Color.RED), 0);
-            }
-        } else {
-            ssBuilder.append("rawproxy (missing => install from tools menu)\n", new ForegroundColorSpan(Color.RED), 0);
-        }
-
-        if(isRawproxyreverseAvailable) {
-            if (rawproxyreverseVersion != null) {
-                if (rawproxyreverseVersion.equals(BuildConfig.VERSION_NAME)) {
-                    ssBuilder.append("rawproxyreverse (" + rawproxyreverseVersion + ")\n", new ForegroundColorSpan(Color.GREEN), 0);
-                } else {
-                    ssBuilder.append("rawproxyreverse (" + rawproxyreverseVersion + " => upgrade to app version)\n", new ForegroundColorSpan(Color.YELLOW), 0);
-                }
-            } else {
-                ssBuilder.append("rawproxyreverse (outdated => upgrade to app version)\n", new ForegroundColorSpan(Color.RED), 0);
-            }
-        } else {
-            ssBuilder.append("rawproxyreverse (missing => install from tools menu)\n", new ForegroundColorSpan(Color.RED), 0);
-        }
-
-        if(!isNexutilAvailable || !isRawproxyAvailable || !isRawproxyreverseAvailable)
-            ssBuilder.append("You have to install all required tools in order to use nexmon. You can do so by clicking the menu button at the upper left corner and select \"Tools\".\n\n");
-
-        ssBuilder.append("\nFirmware installation status:\n\n", new StyleSpan(Typeface.BOLD), 0);
-
-
-
-        if(isNexutilAvailable) {
-
-            if(isBcmFirmwareAvailable) {
-                if(isNexmonFirmwareAvailable) {
-                    String version = getFirmwareVersion();
-                    if (version != null) {
-                        if (version.equals(BuildConfig.VERSION_NAME)) {
-                            ssBuilder.append("Nexmon Firmware (" + version + ")\n", new ForegroundColorSpan(Color.GREEN), 0);
-                        } else {
-                            ssBuilder.append("Nexmon Firmware (" + version + " => upgrade to app version)\n", new ForegroundColorSpan(Color.YELLOW), 0);
-                        }
-                    } else {
-                        ssBuilder.append("Nexmon Firmware (outdated => upgrade to app version)\n", new ForegroundColorSpan(Color.RED), 0);
-                    }
-                } else {
-                    ssBuilder.append("Standard Firmware (install Nexmon firmware for additional features from the firmware menu)\n", new ForegroundColorSpan(Color.YELLOW), 0);
-                }
-            } else {
-                ssBuilder.append("Sorry, your device is not supported by Nexmon, as we require a Broadcom WiFi chip that is missing in your smartphone!\n", new ForegroundColorSpan(Color.RED), 0);
-            }
-
-
-        } else {
-            ssBuilder.append("Please install nexutil to search for a supported firmware.\n", new ForegroundColorSpan(Color.RED), 0);
-        }
-
-        ssBuilder.append("\n");
-
-        return ssBuilder;
     }
 
     public static void evaluateInstallation() {
@@ -719,30 +583,5 @@ public class MyApplication extends Application {
         try {
             Toast.makeText(MyApplication.getAppContext(), msg, Toast.LENGTH_SHORT).show();
         } catch(Exception e) {e.printStackTrace();}
-    }
-
-    public static void showSurveyNotification() {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(MyApplication.getAppContext());
-        boolean showNotification = prefs.getBoolean("switch_survey_notification", true);
-        if(showNotification) {
-            Intent intent = new Intent(getAppContext(), SurveyNotificationActivity.class);
-            PendingIntent pendingIntent = PendingIntent.getActivity(getAppContext(), 99999, intent, 0);
-
-            Notification n = new Notification.Builder(getAppContext())
-                    .setContentTitle("Nexmon Survey")
-                    .setContentText("Help us to improve Nexmon and take a short survey!")
-                    .setAutoCancel(false)
-                    .setSmallIcon(R.drawable.x_logo)
-                    .setOngoing(false)
-                    .setContentIntent(pendingIntent)
-                    .build();
-
-            getNotificationManager().notify(SURVEY_NOTIFICATION_ID, n);
-        } else
-            dismissSurveyNotification();
-    }
-
-    public static void dismissSurveyNotification() {
-        MyApplication.getNotificationManager().cancel(SURVEY_NOTIFICATION_ID);
     }
 }
