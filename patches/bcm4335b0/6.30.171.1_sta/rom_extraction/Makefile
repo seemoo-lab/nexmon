@@ -90,7 +90,7 @@ dump-rom: fw_bcmdhd.bin
 	@printf "\033[0;31m  RELOADING PREVIOUS FIRMWARE\033[0m\n"
 	$(Q)adb shell 'su -c "ifconfig wlan0 down && ifconfig wlan0 up"'
 	@printf "\033[0;31m  COPYING ROM\033[0m rom.bin => $(NEXMON_ROOT)/firmwares/bcm4356/rom.bin\n"
-	$(Q)cp rom.bin $(NEXMON_ROOT)/firmwares/bcm4356/rom.bin
+	$(Q)cp rom.bin $(NEXMON_ROOT)/firmwares/bcm4335b0/rom.bin
 
 backup-firmware: FORCE
 	adb shell 'su -c "cp /vendor/firmware/fw_bcmdhd.bin /sdcard/fw_bcmdhd.orig.bin"'
