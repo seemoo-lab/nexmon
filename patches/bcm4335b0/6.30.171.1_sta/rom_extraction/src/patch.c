@@ -32,39 +32,24 @@
  *                                                                         *
  **************************************************************************/
 
-#ifndef FIRMWARE_VERSION_H
-#define FIRMWARE_VERSION_H
+#pragma NEXMON targetregion "patch"
 
-#define CHIP_VER_ALL                        0
-#define CHIP_VER_BCM4339                    1
-#define CHIP_VER_BCM4330                    2
-#define CHIP_VER_BCM4358                    3
-#define CHIP_VER_BCM43438                   4
-#define CHIP_VER_BCM4356                    5
-#define CHIP_VER_BCM4335b0                  6
+#include <firmware_version.h>   // definition of firmware version macros
+#include <patcher.h>
 
-#define FW_VER_ALL                          0
+__attribute__((at(0x180200, "", CHIP_VER_BCM4335b0, FW_VER_6_30_171_1_sta)))
+__attribute__((optimize("O0")))
+void
+copy_hook(void) {
+	int *ram_dest = (int *) 0x185000;
+	int *rom_src = (int *) 0;
 
-// for CHIP_VER_BCM4339
-#define FW_VER_6_37_32_RC23_34_40_r581243   10
-#define FW_VER_6_37_32_RC23_34_43_r639704   11
+    while(rom_src <= (int *) (640*1024)) {
+        *ram_dest++ = *rom_src++;
+    }
 
-// for CHIP_VER_BCM4330
-#define FW_VER_5_90_195_114                 20
-#define FW_VER_5_90_100_41                  21
+    while(1);
+}
 
-// for CHIP_VER_BCM4358
-#define FW_VER_7_112_200_17                 30
-#define FW_VER_7_112_201_3                  31
-
-// for CHIP_VER_BCM43438
-#define FW_VER_7_45_41_26_r640327           40
-
-// for CHIP_VER_BCM4356
-#define FW_VER_7_35_101_5_sta               50
-#define FW_VER_7_35_101_5_apsta             51
-
-// for CHIP_VER_BCM4335b0
-#define FW_VER_6_30_171_1_sta               60
-
-#endif /*FIRMWARE_VERSION_H*/
+__attribute__((at(0x184104, "", CHIP_VER_BCM4335b0, FW_VER_6_30_171_1_sta)))
+GenericPatch4(copy_hook, copy_hook + 1);

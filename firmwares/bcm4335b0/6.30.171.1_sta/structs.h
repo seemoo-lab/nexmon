@@ -32,39 +32,21 @@
  *                                                                         *
  **************************************************************************/
 
-#ifndef FIRMWARE_VERSION_H
-#define FIRMWARE_VERSION_H
+#ifndef STRUCTS_H
+#define STRUCTS_H
 
-#define CHIP_VER_ALL                        0
-#define CHIP_VER_BCM4339                    1
-#define CHIP_VER_BCM4330                    2
-#define CHIP_VER_BCM4358                    3
-#define CHIP_VER_BCM43438                   4
-#define CHIP_VER_BCM4356                    5
-#define CHIP_VER_BCM4335b0                  6
+/* band types */
+#define WLC_BAND_AUTO       0   /* auto-select */
+#define WLC_BAND_5G     	1   /* 5 Ghz */
+#define WLC_BAND_2G     	2   /* 2.4 Ghz */
+#define WLC_BAND_ALL        3   /* all bands */
 
-#define FW_VER_ALL                          0
+#ifndef	PAD
+#define	_PADLINE(line)	pad ## line
+#define	_XSTR(line)	_PADLINE(line)
+#define	PAD		_XSTR(__LINE__)
+#endif
 
-// for CHIP_VER_BCM4339
-#define FW_VER_6_37_32_RC23_34_40_r581243   10
-#define FW_VER_6_37_32_RC23_34_43_r639704   11
+#include "../structs.common.h"
 
-// for CHIP_VER_BCM4330
-#define FW_VER_5_90_195_114                 20
-#define FW_VER_5_90_100_41                  21
-
-// for CHIP_VER_BCM4358
-#define FW_VER_7_112_200_17                 30
-#define FW_VER_7_112_201_3                  31
-
-// for CHIP_VER_BCM43438
-#define FW_VER_7_45_41_26_r640327           40
-
-// for CHIP_VER_BCM4356
-#define FW_VER_7_35_101_5_sta               50
-#define FW_VER_7_35_101_5_apsta             51
-
-// for CHIP_VER_BCM4335b0
-#define FW_VER_6_30_171_1_sta               60
-
-#endif /*FIRMWARE_VERSION_H*/
+#endif /*STRUCTS_H */
