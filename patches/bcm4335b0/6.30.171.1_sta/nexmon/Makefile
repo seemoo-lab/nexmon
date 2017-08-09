@@ -154,8 +154,8 @@ install-firmware: fw_bcmdhd.bin
 	$(Q)adb shell 'su -c "mount -o rw,remount /system"'
 	@printf "\033[0;31m  COPYING TO PHONE\033[0m %s => /sdcard/%s\n" $< $<
 	$(Q)adb push $< /sdcard/ >> log/adb.log 2>> log/adb.log
-	@printf "\033[0;31m  COPYING\033[0m /sdcard/fw_bcmdhd.bin => /vendor/firmware/fw_bcmdhd.bin\n"
-	$(Q)adb shell 'su -c "cp /sdcard/fw_bcmdhd.bin /vendor/firmware/fw_bcmdhd.bin"'
+	@printf "\033[0;31m  COPYING\033[0m /sdcard/fw_bcmdhd.bin => /system/etc/wifi/bcmdhd_sta.bin\n"
+	$(Q)adb shell 'su -c "cp /sdcard/fw_bcmdhd.bin /system/etc/wifi/bcmdhd_sta.bin"'
 	@printf "\033[0;31m  RELOADING FIRMWARE\033[0m\n"
 	$(Q)adb shell 'su -c "ifconfig wlan0 down && ifconfig wlan0 up"'
 
