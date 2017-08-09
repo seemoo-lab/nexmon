@@ -81,16 +81,22 @@ endif
 dump-rom: fw_bcmdhd.bin
 	@printf "\033[0;31m  COPYING TO PHONE\033[0m %s => /sdcard/%s\n" $< $<
 	$(Q)adb push $< /sdcard/ >> log/adb.log 2>> log/adb.log
+	@printf "\033[0;31m  DUMPING PATCHED ROM\033[0m ROM => /sdcard/patchedrom.bin\n"
+	$(Q)adb shell 'su -c "dhdutil membytes -r 0x0 $(ROMSIZE) > /sdcard/patchedrom.bin"'
 	@printf "\033[0;31m  LOADING FIRMWARE\033[0m /sdcard/fw_bcmdhd.bin\n"
 	$(Q)adb shell 'su -c "dhdutil download /sdcard/fw_bcmdhd.bin"'
 	@printf "\033[0;31m  DUMPING ROM\033[0m ROM => /sdcard/rom.bin\n"
 	$(Q)adb shell 'su -c "dhdutil membytes -r 0x185000 $(ROMSIZE) > /sdcard/rom.bin"'
 	@printf "\033[0;31m  PULLING\033[0m /sdcard/rom.bin => rom.bin\n"
 	$(Q)adb pull /sdcard/rom.bin rom.bin
+	@printf "\033[0;31m  PULLING\033[0m /sdcard/rom.bin => rom.bin\n"
+	$(Q)adb pull /sdcard/patchedrom.bin patchedrom.bin
 	@printf "\033[0;31m  RELOADING PREVIOUS FIRMWARE\033[0m\n"
 	$(Q)adb shell 'su -c "ifconfig wlan0 down && ifconfig wlan0 up"'
 	@printf "\033[0;31m  COPYING ROM\033[0m rom.bin => $(NEXMON_ROOT)/firmwares/bcm4335b0/rom.bin\n"
 	$(Q)cp rom.bin $(NEXMON_ROOT)/firmwares/bcm4335b0/rom.bin
+	@printf "\033[0;31m  COPYING PATCHED ROM\033[0m rom.bin => $(NEXMON_ROOT)/firmwares/bcm4335b0/patchedrom.bin\n"
+	$(Q)cp patchedrom.bin $(NEXMON_ROOT)/firmwares/bcm4335b0/patchedrom.bin
 
 backup-firmware: FORCE
 	adb shell 'su -c "cp /vendor/firmware/fw_bcmdhd.bin /sdcard/fw_bcmdhd.orig.bin"'
