@@ -2,11 +2,11 @@ GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
 include ../version.mk
 include $(FW_PATH)/definitions.mk
 
-LOCAL_SRCS=$(wildcard src/*.c)
+LOCAL_SRCS=$(wildcard src/*.c) src/ucode_compressed.c
 COMMON_SRCS=$(wildcard $(NEXMON_ROOT)/patches/common/*.c)
 FW_SRCS=$(wildcard $(FW_PATH)/*.c)
 
-OBJS=$(addprefix obj/,$(notdir $(LOCAL_SRCS:.c=.o)) $(notdir $(FW_SRCS:.c=.o)))
+OBJS=$(addprefix obj/,$(notdir $(LOCAL_SRCS:.c=.o)) $(notdir $(COMMON_SRCS:.c=.o)) $(notdir $(FW_SRCS:.c=.o)))
 
 CFLAGS= \
 	-fplugin=$(CCPLUGIN) \
@@ -96,7 +96,7 @@ gen/memory.ld: $(FW_PATH)/definitions.mk
 	$(Q)printf "rom : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(ROMSTART) $(ROMSIZE) > $@
 	$(Q)printf "ram : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(RAMSTART) $(RAMSIZE) >> $@
 	$(Q)printf "patch : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(PATCHSTART) $(PATCHSIZE) >> $@
-#	$(Q)printf "ucode : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(UCODESTART) $$(($(FP_CONFIG_BASE) - $(UCODESTART))) >> $@
+	$(Q)printf "ucode : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(UCODESTART) $$(($(PATCHSTART) - $(UCODESTART))) >> $@
 #	$(Q)printf "fpconfig : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(FP_CONFIG_BASE) $(FP_CONFIG_SIZE) >> $@
 
 gen/patch.elf: patch.ld gen/nexmon.ld gen/memory.ld $(OBJS)
