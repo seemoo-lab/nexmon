@@ -112,6 +112,7 @@ unsigned int    dump_objmem_addr = 0;
 unsigned char   dump_objmem = false;
 unsigned char   disassociate = false;
 unsigned char   dump_wl_cnt = false;
+unsigned char   revinfo = false;
 
 const char *argp_program_version = VERSION;
 const char *argp_program_bug_address = "<mschulz@seemoo.tu-darmstadt.de>";
@@ -138,6 +139,7 @@ static struct argp_option options[] = {
     {"security-cookie", 'x', "INT", OPTION_ARG_OPTIONAL, "Set/Get security cookie"},
     {"use-udp-tunneling", 'X', "INT", 0, "Use UDP tunneling with security cookie INT"},
     {"broadcast-ip", 'B', "CHAR", 0, "Broadcast IP to use for UDP tunneling (default: 192.168.222.255)"},
+    {"revinfo", 'V', 0, 0, "Dump revision information of the Wi-Fi chip"},
     { 0 }
 };
 
@@ -268,6 +270,10 @@ parse_opt(int key, char *arg, struct argp_state *state)
                 txip = inet_addr(arg);
             }
             break;
+
+        case 'V':
+            revinfo = true;
+            break;
         
         default:
             return ARGP_ERR_UNKNOWN;
@@ -308,6 +314,18 @@ hexdump(void *mem, unsigned int len)
             putchar('\n');
         }
     }
+}
+
+/* Produce a human-readable string for boardrev */
+char *
+bcm_brev_str(uint32 brev, char *buf)
+{
+    if (brev < 0x100)
+        snprintf(buf, 8, "%d.%d", (brev & 0xf0) >> 4, brev & 0xf);
+    else
+        snprintf(buf, 8, "%c%03x", ((brev & 0xf000) == 0x1000) ? 'P' : 'A', brev & 0xfff);
+
+    return (buf);
 }
 
 int
@@ -490,6 +508,78 @@ main(int argc, char **argv)
             printf("%s: %d (%s)\n", wl_cnt_varname[i], ((uint32 *) _cnt)[i], wl_cnt_description[i]);
         }
         //hexdump(_cnt, sizeof(_cnt)); 
+    }
+
+    if (revinfo) {
+        typedef struct wlc_rev_info {
+            uint        vendorid;   /* PCI vendor id */
+            uint        deviceid;   /* device id of chip */
+            uint        radiorev;   /* radio revision */
+            uint        chiprev;    /* chip revision */
+            uint        corerev;    /* core revision */
+            uint        boardid;    /* board identifier (usu. PCI sub-device id) */
+            uint        boardvendor;    /* board vendor (usu. PCI sub-vendor id) */
+            uint        boardrev;   /* board revision */
+            uint        driverrev;  /* driver version */
+            uint        ucoderev;   /* microcode version */
+            uint        bus;        /* bus type */
+            uint        chipnum;    /* chip number */
+            uint        phytype;    /* phy type */
+            uint        phyrev;     /* phy revision */
+            uint        anarev;     /* anacore rev */
+            uint        chippkg;    /* chip package info */
+            uint        nvramrev;   /* nvram revision number */
+        } wlc_rev_info_t;
+
+        char b[8];
+        char str[17][32] = { 0 };
+        wlc_rev_info_t revinfo;
+        
+        memset(&revinfo, 0, sizeof(revinfo));
+
+        ret = nex_ioctl(nexio, WLC_GET_REVINFO, &revinfo, sizeof(revinfo), false);
+
+        snprintf(str[0], sizeof(str[0]), "0x%x", revinfo.vendorid);
+        snprintf(str[1], sizeof(str[0]), "0x%x", revinfo.deviceid);
+        snprintf(str[2], sizeof(str[0]), "0x%x", revinfo.radiorev);
+        snprintf(str[3], sizeof(str[0]), "0x%x", revinfo.chipnum);
+        snprintf(str[4], sizeof(str[0]), "0x%x", revinfo.chiprev);
+        snprintf(str[5], sizeof(str[0]), "0x%x", revinfo.chippkg);
+        snprintf(str[6], sizeof(str[0]), "0x%x", revinfo.corerev);
+        snprintf(str[7], sizeof(str[0]), "0x%x", revinfo.boardid);
+        snprintf(str[8], sizeof(str[0]), "0x%x", revinfo.boardvendor);
+        snprintf(str[9], sizeof(str[0]), "%s", bcm_brev_str(revinfo.boardrev, b));
+        snprintf(str[10], sizeof(str[0]), "0x%x", revinfo.driverrev);
+        snprintf(str[11], sizeof(str[0]), "0x%x", revinfo.ucoderev);
+        snprintf(str[12], sizeof(str[0]), "0x%x", revinfo.bus);
+        snprintf(str[13], sizeof(str[0]), "0x%x", revinfo.phytype);
+        snprintf(str[14], sizeof(str[0]), "0x%x", revinfo.phyrev);
+        snprintf(str[15], sizeof(str[0]), "0x%x", revinfo.anarev);
+        snprintf(str[16], sizeof(str[0]), "0x%x", revinfo.nvramrev);
+
+        printf("vendorid %s\n", str[0]);
+        printf("deviceid %s\n", str[1]);
+        printf("radiorev %s\n", str[2]);
+        printf("chipnum %s\n", str[3]);
+        printf("chiprev %s\n", str[4]);
+        printf("chippackage %s\n", str[5]);
+        printf("corerev %s\n", str[6]);
+        printf("boardid %s\n", str[7]);
+        printf("boardvendor %s\n", str[8]);
+        printf("boardrev %s\n", str[9]);
+        printf("driverrev %s\n", str[10]);
+        printf("ucoderev %s\n", str[11]);
+        printf("bus %s\n", str[12]);
+        printf("phytype %s\n", str[13]);
+        printf("phyrev %s\n", str[14]);
+        printf("anarev %s\n", str[15]);
+        printf("nvramrev %s\n", str[16]);
+
+        printf("\n");
+        printf("vendorid | deviceid | radiorev   | chipnum | chiprev | chippackage | corerev | boardid | boardvendor | boardrev | driverrev | ucoderev  | bus | phytype | phyrev | anarev | nvramrev\n");
+        printf("-------- | -------- | ---------- | ------- | ------- | ----------- | ------- | ------- | ----------- | -------- | --------- | --------- | --- | ------- | ------ | ------ | --------\n");
+        printf("%8s | %8s | %10s | %7s | %7s | %11s | %7s | %7s | %11s | %8s | %9s | %9s | %3s | %7s | %6s | %6s | %8s\n", 
+            str[0], str[1], str[2], str[3], str[4], str[5], str[6], str[7], str[8], str[9], str[10], str[11], str[12], str[13], str[14], str[15], str[16]);
     }
 
     return 0;
