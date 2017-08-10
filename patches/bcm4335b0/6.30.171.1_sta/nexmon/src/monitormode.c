@@ -206,7 +206,6 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
 __attribute__((at(0x19277A, "", CHIP_VER_BCM4335b0, FW_VER_6_30_171_1_sta)))
 BLPatch(wl_monitor_hook, wl_monitor_hook);
 
-/*
 // activate badfcs, if MONITOR_ACTIVATE_BADFCS is set
 void
 wlc_mctrl_hook(struct wlc_info *wlc, uint32 mask, uint32 val)
@@ -217,6 +216,5 @@ wlc_mctrl_hook(struct wlc_info *wlc, uint32 mask, uint32 val)
         wlc_mctrl(wlc, mask, val);
 }
 
-__attribute__((at(0x34CB6, "flashpatch", CHIP_VER_BCM4339, FW_VER_ALL)))
-BLPatch(wlc_mctrl_hook, wlc_mctrl_hook);
-*/
+__attribute__((at(0x181BEC, "", CHIP_VER_BCM4335b0, FW_VER_ALL)))
+GenericPatch4(wlc_mctrl_hook, wlc_mctrl_hook + 1);

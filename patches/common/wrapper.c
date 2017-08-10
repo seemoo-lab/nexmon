@@ -98,6 +98,7 @@ enable_interrupts_and_wait(int a1)
 VOID_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x16620)
+AT(CHIP_VER_BCM4335b0, FW_VER_ALL, 0x17F98)
 void
 free(void *p)
 VOID_DUMMY
@@ -128,6 +129,7 @@ RETURN_DUMMY
 // should be renamed to dngl_sendup_ram
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x183798)
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x183798)
+AT(CHIP_VER_BCM4335b0, FW_VER_6_30_171_1_sta, 0x186EE8)
 void *
 handle_sdio_xmit_request_ram(void *sdio_hw, void *p)
 RETURN_DUMMY
@@ -142,18 +144,21 @@ AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x807B24)
 AT(CHIP_VER_BCM4330, FW_VER_5_90_100_41, 0x80D800)
 AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x8290)
 AT(CHIP_VER_BCM4356, FW_VER_ALL, 0x80A4)
+AT(CHIP_VER_BCM4335b0, FW_VER_ALL, 0x17EA8)
 void *
 hndrte_add_timer(void *t, int ms, int periodic)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x16604)
 AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x807BD0)
+AT(CHIP_VER_BCM4335b0, FW_VER_ALL, 0x17F78)
 int
 hndrte_del_timer(void *t)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x16690)
 AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x807C24)
+AT(CHIP_VER_BCM4335b0, FW_VER_ALL, 0x18010)
 void
 hndrte_free_timer(void *t)
 VOID_DUMMY
@@ -163,12 +168,14 @@ AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x807CB4)
 AT(CHIP_VER_BCM4330, FW_VER_5_90_100_41, 0x80D9A0)
 AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x84A4)
 AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x8240)
+AT(CHIP_VER_BCM4335b0, FW_VER_ALL, 0x18060)
 void *
 hndrte_init_timer(void *context, void *data, void *mainfn, void *auxfn)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x168AC)
 AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x807E60)
+AT(CHIP_VER_BCM4335b0, FW_VER_ALL, 0x1826C)
 int
 hndrte_schedule_work(void *context, void *data, void *taskfn, int delay)
 RETURN_DUMMY
@@ -179,6 +186,7 @@ hndrte_time_ms()
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x1814f4)
+AT(CHIP_VER_BCM4335b0, FW_VER_ALL, 0x180E0)
 void *
 malloc(unsigned int size, char alignment)
 RETURN_DUMMY
@@ -345,6 +353,7 @@ wlc_ampdu_tx_set(void *ampdu_tx, bool on)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x34D68)
+AT(CHIP_VER_BCM4335b0, FW_VER_ALL, 0x3F468)
 void
 wlc_mctrl(void *wlc, uint32 mask, uint32 val)
 VOID_DUMMY
@@ -478,6 +487,7 @@ wlc_d11hdrs(void *wlc, void *p, void *scb, int short_preamble, unsigned int frag
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8C97C)
+AT(CHIP_VER_BCM4335b0, FW_VER_6_30_171_1_sta, 0x191C0C)
 int
 wlc_d11hdrs_ext(void *wlc, void *p, void *scb, int short_preamble, unsigned int frag, unsigned int nfrag, unsigned int queue, int next_frag_len, int key, int rspec_override, short *txh_off)
 RETURN_DUMMY
@@ -505,6 +515,7 @@ wlc_prec_enq_head(void *wlc, void *q, void *pkt, int prec, char head)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8C8EC)
+AT(CHIP_VER_BCM4335b0, FW_VER_ALL, 0x402E0)
 int
 wlc_prec_enq(void *wlc, void *q, void *p, int preq)
 RETURN_DUMMY
@@ -530,6 +541,7 @@ AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0xdc84)
 AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x2E4B0)
 AT(CHIP_VER_BCM4356, FW_VER_7_35_101_5_sta, 0x1A1658)
 AT(CHIP_VER_BCM4330, FW_VER_ALL, 0x832A48)
+AT(CHIP_VER_BCM4335b0, FW_VER_ALL, 0x38BB0)
 int
 wlc_sendctl(void *wlc, void *p, void *qi, void *scb, unsigned int fifo, unsigned int rate_override, char enq_only)
 RETURN_DUMMY
@@ -682,6 +694,7 @@ function_with_huge_jump_table(void *wlc, int a2, int cmd, int a4, int a5, unsign
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x08C3CC)
+AT(CHIP_VER_BCM4335b0, FW_VER_ALL, 0x12CEC)
 int
 memcmp(void *s1, void *s2, int n)
 RETURN_DUMMY
@@ -1191,6 +1204,7 @@ wlc_sendpkt(void *wlc, void *p, int wlcif)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8CA4C)
+AT(CHIP_VER_BCM4335b0, FW_VER_ALL, 0x42C18)
 void
 wlc_send_q(void *wlc, void *qi)
 VOID_DUMMY
