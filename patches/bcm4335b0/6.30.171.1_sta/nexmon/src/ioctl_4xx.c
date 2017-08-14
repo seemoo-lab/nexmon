@@ -54,7 +54,7 @@ wlc_ioctl_4xx(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
     int ret = IOCTL_ERROR;
 
     switch (cmd) {
-/*
+
         case NEX_GET_CAPABILITIES:
             // sends back the chips capabilities
             if (len == 4) {
@@ -62,7 +62,7 @@ wlc_ioctl_4xx(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
                 ret = IOCTL_SUCCESS;
             }
             break;
-*/
+
         case NEX_WRITE_TO_CONSOLE:
             // writes the string from arg to the console
             if (len > 0) {
@@ -208,16 +208,18 @@ wlc_ioctl_4xx(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
                 ret = IOCTL_SUCCESS;
             }
             break;
-
+*/
         case NEX_GET_VERSION_STRING:
             {
-                if (len >= strlen(version)) {
-                    memcpy(arg, version, strlen(version));
+                int strlen = 0;
+                for ( strlen = 0; version[strlen]; ++strlen );
+                if (len >= strlen) {
+                    memcpy(arg, version, strlen);
                     ret = IOCTL_SUCCESS;
                 }
             }
             break;
-*/
+
     }
 
     return ret;

@@ -43,8 +43,7 @@
 #include <rates.h>              // rates used to build the ratespec for frame injection
 #include <capabilities.h>		// capabilities included in a nexmon patch
 
-//int capabilities = NEX_CAP_MONITOR_MODE | NEX_CAP_MONITOR_MODE_RADIOTAP | NEX_CAP_FRAME_INJECTION;
-int capabilities = 0;
+int capabilities = NEX_CAP_MONITOR_MODE | NEX_CAP_MONITOR_MODE_RADIOTAP;
 
 // Hook the call to wlc_ucode_write in wlc_ucode_download
 __attribute__((at(0x203a98, "", CHIP_VER_BCM4335b0, FW_VER_6_30_171_1_sta)))
