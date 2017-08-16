@@ -32,39 +32,54 @@
  *                                                                         *
  **************************************************************************/
 
-#ifndef FIRMWARE_VERSION_H
-#define FIRMWARE_VERSION_H
+#include <firmware_version.h>   // definition of firmware version macros
+#include <debug.h>              // contains macros to access the debug hardware
+#include <wrapper.h>            // wrapper definitions for functions that already exist in the firmware
+#include <structs.h>            // structures that are used by the code in the firmware
+#include <helper.h>             // useful helper functions
+#include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
+#include <rates.h>              // rates used to build the ratespec for frame injection
 
-#define CHIP_VER_ALL                        0
-#define CHIP_VER_BCM4339                    1
-#define CHIP_VER_BCM4330                    2
-#define CHIP_VER_BCM4358                    3
-#define CHIP_VER_BCM43438                   4
-#define CHIP_VER_BCM4356                    5
-#define CHIP_VER_BCM4335b0                  6
+struct hndrte_debug {
+	uint32	magic;
+#define HNDRTE_DEBUG_MAGIC 0x47424544	/* 'DEBG' */
 
-#define FW_VER_ALL                          0
+	uint32	version;		/* Debug struct version */
+#define HNDRTE_DEBUG_VERSION 1
 
-// for CHIP_VER_BCM4339
-#define FW_VER_6_37_32_RC23_34_40_r581243   10
-#define FW_VER_6_37_32_RC23_34_43_r639704   11
+	uint32	fwid;			/* 4 bytes of fw info */
+	char	epivers[32];
 
-// for CHIP_VER_BCM4330
-#define FW_VER_5_90_195_114                 20
-#define FW_VER_5_90_100_41                  21
+	uint32  trap_ptr;		/* trap_t data struct */
+	uint32  console;		/* Console  */
 
-// for CHIP_VER_BCM4358
-#define FW_VER_7_112_200_17                 30
-#define FW_VER_7_112_201_3                  31
+	uint32	ram_base;
+	uint32	ram_size;
 
-// for CHIP_VER_BCM43438
-#define FW_VER_7_45_41_26_r640327           40
+	uint32	rom_base;
+	uint32	rom_size;
 
-// for CHIP_VER_BCM4356
-#define FW_VER_7_35_101_5_sta               50
-#define FW_VER_7_35_101_5_apsta             51
+	uint32  event_log_top;
 
-// for CHIP_VER_BCM4335b0
-#define FW_VER_6_30_171_1_sta               60
+};
 
-#endif /*FIRMWARE_VERSION_H*/
+__attribute__((at(0x180100, "", CHIP_VER_BCM4335b0, FW_VER_6_30_171_1_sta)))
+struct hndrte_debug dbg = {
+	.magic = HNDRTE_DEBUG_MAGIC,
+	.version = HNDRTE_DEBUG_VERSION,
+	.fwid = 0,
+	.epivers = { 0 },
+	.trap_ptr = 0,
+	.console = 0x1FB7D0,
+	.ram_base = 0x180000,
+	.ram_size = 768 * 1024,
+	.rom_base = 0,
+	.rom_size = 640 * 1024,
+	.event_log_top = 0x0
+};
+
+__attribute__((at(0x180878, "", CHIP_VER_BCM4335b0, FW_VER_6_30_171_1_sta)))
+GenericPatch4(dbpp, 0x50504244);
+
+__attribute__((at(0x18087C, "", CHIP_VER_BCM4335b0, FW_VER_6_30_171_1_sta)))
+GenericPatch4(dbppptr, &dbg);

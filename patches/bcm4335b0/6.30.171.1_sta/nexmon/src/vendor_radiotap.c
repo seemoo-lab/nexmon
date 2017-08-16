@@ -32,39 +32,28 @@
  *                                                                         *
  **************************************************************************/
 
-#ifndef FIRMWARE_VERSION_H
-#define FIRMWARE_VERSION_H
+#pragma NEXMON targetregion "patch"
 
-#define CHIP_VER_ALL                        0
-#define CHIP_VER_BCM4339                    1
-#define CHIP_VER_BCM4330                    2
-#define CHIP_VER_BCM4358                    3
-#define CHIP_VER_BCM43438                   4
-#define CHIP_VER_BCM4356                    5
-#define CHIP_VER_BCM4335b0                  6
+#include <ieee80211_radiotap.h>
+#include <vendor_radiotap.h>
 
-#define FW_VER_ALL                          0
+static const struct radiotap_align_size radiotap_nex_vendor_subns_0_sizes[] = {
+    [RADIOTAP_NEX_TXDELAY] = { .align = 4, .size = 4, },
+    [RADIOTAP_NEX_TXREPETITIONS] = { .align = 8, .size = 8, },
+    [RADIOTAP_NEX_RATESPEC] = { .align = 4, .size = 4, },
+};
 
-// for CHIP_VER_BCM4339
-#define FW_VER_6_37_32_RC23_34_40_r581243   10
-#define FW_VER_6_37_32_RC23_34_43_r639704   11
+static const struct ieee80211_radiotap_namespace radiotap_nex_vendor_ns[] = {
+    [0] = {
+        .n_bits = ARRAY_SIZE(radiotap_nex_vendor_subns_0_sizes),
+        .align_size = radiotap_nex_vendor_subns_0_sizes,
+        .oui = 0x004e4558, // NEX
+        .subns = 0
+    }
+};
 
-// for CHIP_VER_BCM4330
-#define FW_VER_5_90_195_114                 20
-#define FW_VER_5_90_100_41                  21
-
-// for CHIP_VER_BCM4358
-#define FW_VER_7_112_200_17                 30
-#define FW_VER_7_112_201_3                  31
-
-// for CHIP_VER_BCM43438
-#define FW_VER_7_45_41_26_r640327           40
-
-// for CHIP_VER_BCM4356
-#define FW_VER_7_35_101_5_sta               50
-#define FW_VER_7_35_101_5_apsta             51
-
-// for CHIP_VER_BCM4335b0
-#define FW_VER_6_30_171_1_sta               60
-
-#endif /*FIRMWARE_VERSION_H*/
+const struct ieee80211_radiotap_vendor_namespaces rtap_vendor_namespaces = {
+    .ns = radiotap_nex_vendor_ns,
+    .n_ns = ARRAY_SIZE(radiotap_nex_vendor_ns),
+};
+ 
