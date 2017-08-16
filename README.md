@@ -201,7 +201,7 @@ If you know more projects that use nexmon, let us know and we will add a link.
 
 # Read our papers
 
-* M. Schulz, F. Gringoli, D. Steinmetzer, M. Koch and M. Hollick. **Massive Reactive Smartphone-Based Jamming using Arbitrary Waveforms and Adaptive Power Control**. Proceedings of the *10th ACM Conference on Security and Privacy in Wireless and Mobile Networks (WiSec 2017)*, July 2017.
+* M. Schulz, F. Gringoli, D. Steinmetzer, M. Koch and M. Hollick. **Massive Reactive Smartphone-Based Jamming using Arbitrary Waveforms and Adaptive Power Control**. Proceedings of the *10th ACM Conference on Security and Privacy in Wireless and Mobile Networks (WiSec 2017)*, July 2017. [pdf](https://dl.acm.org/authorize?N34086)
 * M. Schulz, E. Deligeorgopoulos, M. Hollick and F. Gringoli. **DEMO: Demonstrating Reactive Smartphone-Based Jamming**. Proceedings of the *10th ACM Conference on Security and Privacy in Wireless and Mobile Networks (WiSec 2017)*, July 2017.
 * M. Schulz. [**Nexmon - Wie man die eigene WLAN-Firmware hackt**](http://heise.de/-3538660), 
 c't 26/2016, S. 168, Heise Verlag, 2016.
