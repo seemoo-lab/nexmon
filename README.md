@@ -38,7 +38,7 @@ bcm4356   | 7_35_101_5_sta   | Nexus 6                   | Android 7.1.2        
 - I = Frame Injection
 - FP = Flash Patching
 - UC = Ucode Compression
-- CT = c't Article Support (for consistend support, use our ct-artikel branch)
+- CT = c't Article Support (for consistent support, use our ct-artikel branch)
 
 # Steps to create your own firmware patches
 
@@ -130,7 +130,7 @@ dhdutil membytes -r 0x0 0xA0000 > rom.bin
 ```
 
 ## Dumping a clean ROM after copying to RAM
-For the BCM4339 and BCM4358, we created `rom_extraction` projects` that load a firmware patch that copies ROM to 
+For the BCM4339 and BCM4358, we created `rom_extraction` projects that load a firmware patch that copies ROM to 
 RAM and them dumps it using dhdutil. To dump the ROM simply execute the following in the project directory:
 ```
 make dump-rom
