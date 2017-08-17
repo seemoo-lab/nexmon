@@ -201,14 +201,14 @@ If you know more projects that use nexmon, let us know and we will add a link.
 
 # Read our papers
 
-* M. Schulz, F. Gringoli, D. Steinmetzer, M. Koch and M. Hollick. **Massive Reactive Smartphone-Based Jamming using Arbitrary Waveforms and Adaptive Power Control**. Proceedings of the *10th ACM Conference on Security and Privacy in Wireless and Mobile Networks (WiSec 2017)*, July 2017. [pdf](https://dl.acm.org/authorize?N34086)
-* M. Schulz, E. Deligeorgopoulos, M. Hollick and F. Gringoli. **DEMO: Demonstrating Reactive Smartphone-Based Jamming**. Proceedings of the *10th ACM Conference on Security and Privacy in Wireless and Mobile Networks (WiSec 2017)*, July 2017.
+* M. Schulz, F. Gringoli, D. Steinmetzer, M. Koch and M. Hollick. [**Massive Reactive Smartphone-Based Jamming using Arbitrary Waveforms and Adaptive Power Control**](https://dl.acm.org/citation.cfm?id=3098253). Proceedings of the *10th ACM Conference on Security and Privacy in Wireless and Mobile Networks (WiSec 2017)*, July 2017. [pdf](https://www.seemoo.tu-darmstadt.de/mschulz/wisec2017)
+* M. Schulz, E. Deligeorgopoulos, M. Hollick and F. Gringoli. [**DEMO: Demonstrating Reactive Smartphone-Based Jamming**](https://dl.acm.org/citation.cfm?id=3106022). Proceedings of the *10th ACM Conference on Security and Privacy in Wireless and Mobile Networks (WiSec 2017)*, July 2017. [pdf](https://www.seemoo.tu-darmstadt.de/mschulz/wisec2017demo)
 * M. Schulz. [**Nexmon - Wie man die eigene WLAN-Firmware hackt**](http://heise.de/-3538660), 
 c't 26/2016, S. 168, Heise Verlag, 2016.
 * M. Schulz, D. Wegemer, M. Hollick. [**DEMO: Using NexMon, the C-based WiFi 
 firmware modification framework**](https://dl.acm.org/citation.cfm?id=2942419), 
 Proceedings of the *9th ACM Conference on Security and Privacy in Wireless and 
-Mobile Networks (WiSec 2016)*, July 2016.
+Mobile Networks (WiSec 2016)*, July 2016. [pdf](https://www.seemoo.tu-darmstadt.de/mschulz/wisec2016demo1)
 * M. Schulz, D. Wegemer and M. Hollick. [**NexMon: A Cookbook for Firmware 
 Modifications on Smartphones to Enable Monitor Mode**](http://arxiv.org/abs/1601.07077), 
 CoRR, vol. abs/1601.07077, December 2015. 
