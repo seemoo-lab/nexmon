@@ -181,12 +181,14 @@ hndrte_schedule_work(void *context, void *data, void *taskfn, int delay)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x168F4)
+AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x807F24)
 unsigned int
 hndrte_time_ms()
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x1814f4)
 AT(CHIP_VER_BCM4335b0, FW_VER_ALL, 0x180E0)
+AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x880B80)
 void *
 malloc(unsigned int size, char alignment)
 RETURN_DUMMY
