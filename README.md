@@ -90,6 +90,7 @@ To be able to communicate with the firmware without root priviledges, we created
   * Install the patched firmware on your RPI3: `make install-firmware`
 * Install nexutil: from the root directory of our repository switch to the nexutil folder: `cd utilities/nexutil/`. Compile and install nexutil: `make && make install`.
 * *Optional*: remove wpa_supplicant for better control over the WiFi interface: `apt-get remove wpasupplicant`
+* **Note:** To connect to regular access points you have to execute `nexutil -m0` first
 
 ### Using the Monitor Mode patch
 * ~~Our modified driver sets the interface in monitor mode as soon as the interface goes up: `ifconfig wlan0 up`~~
