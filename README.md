@@ -5,7 +5,7 @@ Nexmon is our C-based firmware patching framework for Broadcom/Cypress WiFi chip
 that enables you to write your own firmware patches, for example, to enable monitor
 mode with radiotap headers and frame injection.
 
-Before we started to work on this repository, we developed patches for the Nexus 5 (with bcm4339 WiFi chip) in the [bcm-public](https://github.com/seemoo-lab/bcm-public)  repository and those for the Raspberry Pi 3 (with bcm43438 WiFi chip) in the [bcm-rpi3](https://github.com/seemoo-lab/bcm-rpi3) repository. To remove the development overhead of maintaining multiple separate repositories, we decided to merge them in this repository and add support for some additional devices. In contrast to the former repositories, here, you can only build the firmware patch without drivers and kernels. The Raspberry Pi 3 makes an exception, as here it is always required to also build the driver.
+Before we started to work on this repository, we developed patches for the Nexus 5 (with bcm4339 WiFi chip) in the [bcm-public](https://github.com/seemoo-lab/bcm-public)  repository and those for the Raspberry Pi 3 (with ~~bcm43438~~bcm43430a1 WiFi chip) in the [bcm-rpi3](https://github.com/seemoo-lab/bcm-rpi3) repository. To remove the development overhead of maintaining multiple separate repositories, we decided to merge them in this repository and add support for some additional devices. In contrast to the former repositories, here, you can only build the firmware patch without drivers and kernels. The Raspberry Pi 3 makes an exception, as here it is always required to also build the driver.
 
 # Give Feedback
 We setup a survey to learn about who uses Nexmon to which purpose and how we could improve Nexmon. We would be happy if every Nexmon user filled out this survey: https://nexmon.org/survey
@@ -77,7 +77,7 @@ To be able to communicate with the firmware without root priviledges, we created
 * Set the security cookie as root: `nexutil -x<cookie (uint)>`
 * Start a UDP connection for example to activate monitor mode: `nexutil -X<cookie> -m1`
 
-## Build patches for bcm43438 on the RPI3/Zero W using Raspbian 8 (recommended)
+## Build patches for ~~bcm43438~~bcm43430a1 on the RPI3/Zero W using Raspbian 8 (recommended)
 **Note:** We currently support Kernel Version 4.4 and 4.9
 * Make sure the following commands are executed as root: `sudo su`
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
