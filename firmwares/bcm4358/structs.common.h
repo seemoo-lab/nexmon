@@ -1094,8 +1094,166 @@ struct wlc_bsscfg {
     int PAD;                            /* 0X584 */
 } __attribute__((packed));
 
+/* dma function type
+typedef void (*di_detach_t)(hnddma_t *dmah);
+typedef bool (*di_txreset_t)(hnddma_t *dmah);
+typedef bool (*di_rxreset_t)(hnddma_t *dmah);
+typedef bool (*di_rxidle_t)(hnddma_t *dmah);
+typedef void (*di_txinit_t)(hnddma_t *dmah);
+typedef bool (*di_txenabled_t)(hnddma_t *dmah);
+typedef void (*di_rxinit_t)(hnddma_t *dmah);
+typedef void (*di_txsuspend_t)(hnddma_t *dmah);
+typedef void (*di_txresume_t)(hnddma_t *dmah);
+typedef bool (*di_txsuspended_t)(hnddma_t *dmah);
+typedef bool (*di_txsuspendedidle_t)(hnddma_t *dmah);
+typedef void (*di_txflush_t)(hnddma_t *dmah);
+typedef void (*di_txflush_clear_t)(hnddma_t *dmah);
+typedef int (*di_txfast_t)(hnddma_t *dmah, void *p, bool commit);
+typedef int (*di_txunframed_t)(hnddma_t *dmah, void *p, uint len, bool commit);
+typedef void* (*di_getpos_t)(hnddma_t *di, bool direction);
+typedef void (*di_fifoloopbackenable_t)(hnddma_t *dmah);
+typedef bool  (*di_txstopped_t)(hnddma_t *dmah);
+typedef bool  (*di_rxstopped_t)(hnddma_t *dmah);
+typedef bool  (*di_rxenable_t)(hnddma_t *dmah);
+typedef bool  (*di_rxenabled_t)(hnddma_t *dmah);
+typedef void* (*di_rx_t)(hnddma_t *dmah);
+typedef bool (*di_rxfill_t)(hnddma_t *dmah);
+typedef void (*di_txreclaim_t)(hnddma_t *dmah, txd_range_t range);
+typedef void (*di_rxreclaim_t)(hnddma_t *dmah);
+typedef	uintptr	(*di_getvar_t)(hnddma_t *dmah, const char *name);
+typedef void* (*di_getnexttxp_t)(hnddma_t *dmah, txd_range_t range);
+typedef void* (*di_getnextrxp_t)(hnddma_t *dmah, bool forceall);
+typedef void* (*di_peeknexttxp_t)(hnddma_t *dmah);
+typedef void* (*di_peekntxp_t)(hnddma_t *dmah, int *len, void *txps[], txd_range_t range);
+typedef void* (*di_peeknextrxp_t)(hnddma_t *dmah);
+typedef void (*di_rxparam_get_t)(hnddma_t *dmah, uint16 *rxoffset, uint16 *rxbufsize);
+typedef void (*di_txblock_t)(hnddma_t *dmah);
+typedef void (*di_txunblock_t)(hnddma_t *dmah);
+typedef uint (*di_txactive_t)(hnddma_t *dmah);
+typedef void (*di_txrotate_t)(hnddma_t *dmah);
+typedef void (*di_counterreset_t)(hnddma_t *dmah);
+typedef uint (*di_ctrlflags_t)(hnddma_t *dmah, uint mask, uint flags);
+typedef char* (*di_dump_t)(hnddma_t *dmah, struct bcmstrbuf *b, bool dumpring);
+typedef char* (*di_dumptx_t)(hnddma_t *dmah, struct bcmstrbuf *b, bool dumpring);
+typedef char* (*di_dumprx_t)(hnddma_t *dmah, struct bcmstrbuf *b, bool dumpring);
+typedef uint (*di_rxactive_t)(hnddma_t *dmah);
+typedef uint (*di_txpending_t)(hnddma_t *dmah);
+typedef uint (*di_txcommitted_t)(hnddma_t *dmah);
+typedef int (*di_pktpool_set_t)(hnddma_t *dmah, pktpool_t *pool);
+typedef bool (*di_rxtxerror_t)(hnddma_t *dmah, bool istx);
+typedef void (*di_burstlen_set_t)(hnddma_t *dmah, uint8 rxburstlen, uint8 txburstlen);
+typedef uint (*di_avoidancecnt_t)(hnddma_t *dmah);
+typedef void (*di_param_set_t)(hnddma_t *dmah, uint16 paramid, uint16 paramval);
+typedef bool (*dma_glom_enable_t) (hnddma_t *dmah, uint32 val);
+typedef uint (*dma_active_rxbuf_t) (hnddma_t *dmah);
+
+typedef struct di_fcn_s {
+	di_detach_t		detach;
+	di_txinit_t             txinit;
+	di_txreset_t		txreset;
+	di_txenabled_t          txenabled;
+	di_txsuspend_t          txsuspend;
+	di_txresume_t           txresume;
+	di_txsuspended_t        txsuspended;
+	di_txsuspendedidle_t    txsuspendedidle;
+	di_txflush_t            txflush;
+	di_txflush_clear_t      txflush_clear;
+	di_txfast_t             txfast;
+	di_txunframed_t         txunframed;
+	di_getpos_t             getpos;
+	di_txstopped_t		txstopped;
+	di_txreclaim_t          txreclaim;
+	di_getnexttxp_t         getnexttxp;
+	di_peeknexttxp_t        peeknexttxp;
+	di_peekntxp_t           peekntxp;
+	di_txblock_t            txblock;
+	di_txunblock_t          txunblock;
+	di_txactive_t           txactive;
+	di_txrotate_t           txrotate;
+
+	di_rxinit_t             rxinit;
+	di_rxreset_t            rxreset;
+	di_rxidle_t             rxidle;
+	di_rxstopped_t		rxstopped;
+	di_rxenable_t		rxenable;
+	di_rxenabled_t		rxenabled;
+	di_rx_t                 rx;
+	di_rxfill_t             rxfill;
+	di_rxreclaim_t          rxreclaim;
+	di_getnextrxp_t         getnextrxp;
+	di_peeknextrxp_t        peeknextrxp;
+	di_rxparam_get_t	rxparam_get;
+
+	di_fifoloopbackenable_t fifoloopbackenable;
+	di_getvar_t             d_getvar;
+	di_counterreset_t       counterreset;
+	di_ctrlflags_t          ctrlflags;
+	di_dump_t		dump;
+	di_dumptx_t		dumptx;
+	di_dumprx_t		dumprx;
+	di_rxactive_t		rxactive;
+	di_txpending_t		txpending;
+	di_txcommitted_t	txcommitted;
+	di_pktpool_set_t	pktpool_set;
+	di_rxtxerror_t		rxtxerror;
+	di_burstlen_set_t	burstlen_set;
+	di_avoidancecnt_t	avoidancecnt;
+	di_param_set_t		param_set;
+	dma_glom_enable_t	glom_enab;
+	dma_active_rxbuf_t	dma_activerxbuf;
+	uint			endnum;
+} di_fcn_t;
+
+*/
+/*
+ * DMA Descriptor
+ * Descriptors are only read by the hardware, never written back.
+ */
+typedef volatile struct {
+	uint32	ctrl1;		/* misc control bits */
+	uint32	ctrl2;		/* buffer count and address extension */
+	uint32	addrlow;	/* memory address of the date buffer, bits 31:0 */
+	uint32	addrhigh;	/* memory address of the date buffer, bits 63:32 */
+} dma64dd_t;
+
+/* range param for dma_getnexttxp() and dma_txreclaim */
+typedef enum txd_range {
+	HNDDMA_RANGE_ALL		= 1,
+	HNDDMA_RANGE_TRANSMITTED,
+	HNDDMA_RANGE_TRANSFERED
+} txd_range_t;
+
+struct pktpool;
+typedef void (*pktpool_cb_t)(struct pktpool *pool, void *arg);
+typedef struct {
+	pktpool_cb_t cb;
+	void *arg;
+} pktpool_cbinfo_t;
+
+#define PKTPOOL_LEN_MAX		40
+#define PKTPOOL_CB_MAX		3
+
+typedef struct pktpool {
+	bool inited;
+	uint16 r;
+	uint16 w;
+	uint16 len;
+	uint16 maxlen;
+	uint16 plen;
+	bool istx;
+	bool empty;
+	uint8 cbtoggle;
+	uint8 cbcnt;
+	uint8 ecbcnt;
+	bool emptycb_disable;
+	pktpool_cbinfo_t *availcb_excl;
+	pktpool_cbinfo_t cbs[PKTPOOL_CB_MAX];
+	pktpool_cbinfo_t ecbs[PKTPOOL_CB_MAX];
+	void *q[PKTPOOL_LEN_MAX + 1];
+} pktpool_t;
+
 struct hnddma_pub {
-    void *di_fn;                    /* DMA function pointers */
+    void *di_fn;                    /* DMA function pointers struct di_fcn_s*/
     unsigned int txavail;           /* # free tx descriptors */
     unsigned int dmactrlflags;      /* dma control flags */
     /* rx error counters */
@@ -1110,14 +1268,14 @@ struct dma_info {
     int msg_level;              /* message level pointer */
     int something;
     char name[8];               /* callers name for diag msgs */
-    void *osh;                  
-    void *sih;                  
+    void *osh;
+    void *sih;
     bool dma64;                 /* this dma engine is operating in 64-bit mode */
     bool addrext;               /* this dma engine supports DmaExtendedAddrChanges */
     char gap2[2];
     void *txregs;               /* 64-bit dma tx engine registers */
     void *rxregs;               /* 64-bit dma rx engine registers */
-    void *txd;                  /* pointer to dma64 tx descriptor ring */
+    dma64dd_t *txd;                  /* pointer to dma64 tx descriptor ring */
     void *rxd;                  /* pointer to dma64 rx descriptor ring */
     short dmadesc_align;        /* alignment requirement for dma descriptors */
     short ntxd;                 /* # tx descriptors tunable */
@@ -1125,7 +1283,7 @@ struct dma_info {
     short txout;                /* index of next descriptor to post */
     void **txp;                 /* pointer to parallel array of pointers to packets */
     void *tx_dmah;              /* DMA MAP meta-data handle */
-    int txp_dmah;               
+    int txp_dmah;
     int txdpa;                  /* Aligned physical address of descriptor ring */
     int txdpaorig;              /* Original physical address of descriptor ring */
     short txdalign;             /* #bytes added to alloc'd mem to align txd */
@@ -1406,7 +1564,7 @@ struct d11regs {
     unsigned short PAD;                 /* SPR_PSM_0x6a                     0x4EA */
     unsigned short PAD;                 /* SPR_PSM_0x6c                     0x4EC */
     unsigned short PAD;                 /* SPR_PSM_0x6e                     0x4EE */
-    unsigned short psm_corectlsts;      /* SPR_PSM_0x70                     0x4F0 *//* Corerev >= 13 */  
+    unsigned short psm_corectlsts;      /* SPR_PSM_0x70                     0x4F0 *//* Corerev >= 13 */
     unsigned short PAD;                 /* SPR_PSM_0x72                     0x4F2 */
     unsigned short PAD;                 /* SPR_PSM_0x74                     0x4F4 */
     unsigned short PAD;                 /* SPR_PSM_0x76                     0x4F6 */
@@ -1681,4 +1839,3 @@ struct nexmon_header {
     uint32 args[3];
     uint8 payload[1];
 } __attribute__((packed));
-
