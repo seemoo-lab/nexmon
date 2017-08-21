@@ -79,15 +79,18 @@ To be able to communicate with the firmware without root priviledges, we created
 * Start a UDP connection for example to activate monitor mode: `nexutil -X<cookie> -m1`
 
 ## Build patches for ~~bcm43438~~bcm43430a1 on the RPI3/Zero W using Raspbian 8 (recommended)
-**Note:** We currently support Kernel Version 4.4 and 4.9
+**Note:** We currently support Kernel Version 4.4 (depricated) and 4.9
 * Make sure the following commands are executed as root: `sudo su`
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
 * Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk qpdf bison flex`
 * Clone our repository: `git clone https://github.com/seemoo-lab/nexmon.git`
 * Go into the root directory of our repository: `cd nexmon`
+* Check if `/usr/lib/arm-linux-gnueabihf/libisl.so.10` exists, if not, compile it from source:
+  * `cd buildtools/isl-0.10`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libisl.so /usr/lib/arm-linux-gnueabihf/libisl.so.10`
+* Then you can setup the build environment for compiling firmware patches
   * Setup the build environment: `source setup_env.sh`
   * Compile some build tools and extract the ucode and flashpatches from the original firmware files: `make`
-* Go to the *patches* folder for the bcm43438 chipset: `cd patches/bcm43438/7_45_41_26/nexmon/`
+* Go to the *patches* folder for the bcm43430a1 chipset: `cd patches/bcm43430a1/7_45_41_46/nexmon/`
   * Compile a patched firmware: `make`
   * Generate a backup of your original firmware file: `make backup-firmware`
   * Install the patched firmware on your RPI3: `make install-firmware`
