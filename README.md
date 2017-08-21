@@ -22,18 +22,18 @@ Our software may damage your hardware and may void your hardware’s warranty! Y
 # Supported Devices
 The following devices are currently supported by our nexmon firmware patch.
 
-WiFi Chip   | Firmware Version | Used in                   | Operating System     |  M  | RT  |  I  | FP  | UC  | CT 
------------ | ---------------- | ------------------------- | -------------------- | --- | --- | --- | --- | --- | ---
-bcm4330     | 5_90_100_41_sta  | Samsung Galaxy S2         | Cyanogenmod 13.0     |  X  |  X  |     |  X  |  X  |  O 
-bcm4335b0   | 6.30.171.1_sta   | Samsung Galaxy S4         | LineageOS 14.1       |  X  |  X  |  X  |     |  X  |  O 
-bcm4339     | 6_37_34_43       | Nexus 5                   | Android 6 Stock      |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43430a1* | 7_45_41_26       | Raspberry Pi 3 and Zero W | Raspbian 8           |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43430a1  | 7_45_41_46       | Raspberry Pi 3 and Zero W | Raspbian ?           |     |     |     |     |     |    
-bcm4358     | 7_112_200_17_sta | Nexus 6P                  | Android 7 Stock      |  X  |  X  |     |  X  |  X  |  O 
-bcm4358     | 7_112_201_3_sta  | Nexus 6P                  | Android 7.1.2 Stock  |  X  |  X  |     |  X  |  X  |  O 
-bcm4356     | 7_35_101_5_sta   | Nexus 6                   | Android 7.1.2        |  X  |  X  |     |  X  |  X  |  O 
+WiFi Chip    | Firmware Version | Used in                   | Operating System     |  M  | RT  |  I  | FP  | UC  | CT 
+------------ | ---------------- | ------------------------- | -------------------- | --- | --- | --- | --- | --- | ---
+bcm4330      | 5_90_100_41_sta  | Samsung Galaxy S2         | Cyanogenmod 13.0     |  X  |  X  |     |  X  |  X  |  O 
+bcm4335b0    | 6.30.171.1_sta   | Samsung Galaxy S4         | LineageOS 14.1       |  X  |  X  |  X  |     |  X  |  O 
+bcm4339      | 6_37_34_43       | Nexus 5                   | Android 6 Stock      |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43430a1\* | 7_45_41_26       | Raspberry Pi 3 and Zero W | Raspbian 8           |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43430a1\* | 7_45_41_46       | Raspberry Pi 3 and Zero W | Raspbian ?           |  X  |  X  |  X  |  X  |  X  |  O 
+bcm4358      | 7_112_200_17_sta | Nexus 6P                  | Android 7 Stock      |  X  |  X  |     |  X  |  X  |  O 
+bcm4358      | 7_112_201_3_sta  | Nexus 6P                  | Android 7.1.2 Stock  |  X  |  X  |     |  X  |  X  |  O 
+bcm4356      | 7_35_101_5_sta   | Nexus 6                   | Android 7.1.2        |  X  |  X  |     |  X  |  X  |  O 
 
-* bcm43430a1 is wrongly labeled bcm43438 in this project.
+\* bcm43430a1 is wrongly labeled bcm43438 in this project.
 
 ## Legend
 - M = Monitor Mode
