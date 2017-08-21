@@ -102,5 +102,5 @@ wl_send_hook(struct hndrte_dev *src, struct hndrte_dev *dev, struct sk_buff *p)
     }
 }
 
-__attribute__((at(0x38f3c, "", CHIP_VER_BCM43430a1, FW_VER_ALL)))
+__attribute__((at(0x38f3c, "", CHIP_VER_BCM43430a1, FW_VER_7_45_41_26_r640327)))
 GenericPatch4(wl_send_hook, wl_send_hook + 1);
