@@ -33,7 +33,7 @@ bcm4358      | 7_112_200_17_sta | Nexus 6P                  | Android 7 Stock   
 bcm4358      | 7_112_201_3_sta  | Nexus 6P                  | Android 7.1.2 Stock  |  X  |  X  |     |  X  |  X  |  O 
 bcm4356      | 7_35_101_5_sta   | Nexus 6                   | Android 7.1.2        |  X  |  X  |     |  X  |  X  |  O 
 
-\* bcm43430a1 is wrongly labeled bcm43438 in this project.
+\* bcm43430a1 was wrongly labeled bcm43438 in the past.
 
 ## Legend
 - M = Monitor Mode
@@ -78,7 +78,7 @@ To be able to communicate with the firmware without root priviledges, we created
 * Set the security cookie as root: `nexutil -x<cookie (uint)>`
 * Start a UDP connection for example to activate monitor mode: `nexutil -X<cookie> -m1`
 
-## Build patches for ~~bcm43438~~bcm43430a1 on the RPI3/Zero W using Raspbian 8 (recommended)
+## Build patches for ~~bcm43438~~bcm43430a1 on the RPI3/Zero W using Raspbian Stretch (recommended)
 **Note:** We currently support Kernel Version 4.4 (depricated) and 4.9
 * Make sure the following commands are executed as root: `sudo su`
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
