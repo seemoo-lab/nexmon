@@ -519,6 +519,16 @@ void
 wlc_custom_scan_complete(void *wlc, int status, void *cfg)
 VOID_DUMMY
 
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x8517F4)
+void *
+wlc_event_alloc(void *eq)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x829D4C)
+void
+wlc_event_if(void *wlc, void *bsscfg, void *event, void *ether_addr)
+VOID_DUMMY
+
 /* supposed to be wlc_d11ac_hdrs */
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x18C5B8)
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x18C4C8)
@@ -1050,6 +1060,11 @@ AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_26_r640327, 0x253B0)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x257dc)
 void
 wlc_lcn40phy_write_table(void *pi, const void *pti)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x82C684)
+void
+wlc_process_event(void *wlc, void *e)
 VOID_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x191388)
