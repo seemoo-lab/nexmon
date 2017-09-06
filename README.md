@@ -203,6 +203,7 @@ make rom.bin
 # Projects using nexmon
 If you know more projects that use nexmon, let us know and we will add a link.
 
+* [broadpwn](https://blog.exodusintel.com/2017/07/26/broadpwn/): Remotely Compromising Android and IOS via a Bug in Broadcom's Wi-Fi Chipsets
 * [Project Zero](https://googleprojectzero.blogspot.de/2017/04/over-air-exploiting-broadcoms-wi-fi_4.html): Over The Air: Exploiting Broadcom's Wi-Fi Stack (Part 1)
 * [Project Zero](https://googleprojectzero.blogspot.de/2017/04/over-air-exploiting-broadcoms-wi-fi_11.html): Over The Air: Exploiting Broadcom's Wi-Fi Stack (Part 2) 
 
