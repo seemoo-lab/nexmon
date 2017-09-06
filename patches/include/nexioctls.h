@@ -58,6 +58,7 @@
 #define NEX_SET_CHANSPEC_OVERRIDE       419
 #define NEX_GET_AMPDU_TX				420
 #define NEX_SET_AMPDU_TX				421
+#define NEX_TRIGGER_EVENT               422
 
 // IOCTLs used in original firmware
 #define WLC_GET_MAGIC                     0

@@ -210,6 +210,11 @@ void *
 malloc(unsigned int size, char alignment)
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x880E20)
+void *
+calls_malloc_2nd_arg_zero(unsigned int len)
+RETURN_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8C3DC)
 AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x35F8)
 AT(CHIP_VER_BCM4356, FW_VER_ALL, 0x2E5C)
