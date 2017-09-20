@@ -123,12 +123,15 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p,
     }
 
     //wl_sendup(wl, 0, p_new);
-    wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p_new);
+// TODO: fix the structures to call the xmit function
+//    wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p_new);
 }
 
 void
 wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
-    switch(wl->wlc->monitor & 0xFF) {
+// TODO: fix the wlc_info structure
+//    switch(wl->wlc->monitor & 0xFF) {
+    switch(*(((char *) wl->wlc) + 0x250)) {
         case MONITOR_RADIOTAP:
                 wl_monitor_radiotap(wl, sts, p, 0);
             break;
@@ -154,8 +157,18 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
 __attribute__((at(0x1f0a6, "flashpatch", CHIP_VER_BCM4358, FW_VER_ALL)))
 __attribute__((at(0x19CE86, "", CHIP_VER_BCM4356, FW_VER_ALL)))
 BLPatch(wl_monitor_hook, wl_monitor_hook);
-//GenericPatch4(xxx, 0x0);
 
-//__attribute__((at(0x739DC, "flashpatch", CHIP_VER_BCM4358, FW_VER_ALL)))
-//__attribute__((at(0x6CAE0, "flashpatch", CHIP_VER_BCM4356, FW_VER_ALL)))
-//GenericPatch4(xxxx, 0x0);
+__attribute__((at(0xa67b0, "flashpatch", CHIP_VER_BCM43596a0, FW_VER_ALL)))
+__attribute__((naked))
+void
+wl_monitor_call(void)
+{
+// HINT: the flashpatches on the BCM43596 are always 8 byte long and also aligned
+// on an 8 byte boundary, hence, we need to add the bytes that will be overwritten
+// by the flashpatch
+    asm(
+        "bl wl_monitor_hook\n"
+        ".byte 0x15, 0xb0, 0xbd, 0xe8"
+    );
+}
+
