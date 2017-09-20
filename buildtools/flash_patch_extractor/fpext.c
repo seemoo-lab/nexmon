@@ -28,6 +28,7 @@ int fp_config_base = 0;
 int fp_config_end = 0;
 int ram_start = 0x180000;
 int rom_start = 0x0;
+char bcm43596 = 0;
 
 const char *argp_program_version = "fpext";
 const char *argp_program_bug_address = "<mschulz@seemoo.tu-darmstadt.de>";
@@ -42,6 +43,7 @@ static struct argp_option options[] = {
 	{"romfilein", 'i', "FILE", 0, "Apply patches to this ROM FILE"},
 	{"romfileout", 'o', "FILE", 0, "Save the patched ROM file as FILE"},
 	{"romstart", 't', "ADDR", 0, "ROM start address"},
+	{"bcm43596", 'x', 0, 0, "Select whether target chip has a flash patching unit similar to the bcm43596"},
 	{ 0 }
 };
 
@@ -76,6 +78,10 @@ parse_opt(int key, char *arg, struct argp_state *state)
 
 		case 't':
 			rom_start = strtol(arg, NULL, 0);
+			break;
+
+		case 'x':
+			bcm43596 = 1;
 			break;
 		
 		default:
@@ -163,6 +169,37 @@ analyse_ram()
 	}
 }
 
+struct fp_config_bcm43596 {
+	unsigned int target_addr;
+	unsigned int data_ptr;
+};
+
+void
+analyse_ram_bcm43596()
+{
+	darm_t d;
+	darm_t *dd = &d;
+	unsigned short low, high;
+	
+	struct fp_config_bcm43596 *fpc = (struct fp_config_bcm43596 *) (ram_array + fp_config_base - ram_start);
+
+	darm_init(&d);
+
+	for (int i = 0; i < (fp_config_end - fp_config_base) / sizeof(struct fp_config_bcm43596); i++) {
+		get_words(fpc[i].data_ptr, &low, &high);
+		darm_disasm(dd, low, high, 1);
+
+		printf("__attribute__((at(0x%08x, \"flashpatch\")))\n", fpc[i].target_addr);
+		printf("unsigned int flash_patch_%d[2] = {0x%08x, 0x%08x};\n\n", i, 
+			*((unsigned int *) (ram_array + fpc[i].data_ptr - ram_start)), 
+			*((unsigned int *) (ram_array + fpc[i].data_ptr + 4 - ram_start)));
+
+		if (rom_array != NULL && (fpc[i].target_addr - rom_start) < rom_len) {
+			memcpy(&rom_array[fpc[i].target_addr - rom_start], &ram_array[fpc[i].data_ptr - ram_start], 8);
+		}
+	}
+}
+
 int
 main(int argc, char **argv)
 {
@@ -180,7 +217,10 @@ main(int argc, char **argv)
 		}
 	}
 
-	analyse_ram();
+	if (bcm43596 == 1)
+		analyse_ram_bcm43596();
+	else
+		analyse_ram();
 
 	if (rom_file_in_name != NULL && rom_file_out_name != NULL) {
 		write_array_to_file(rom_file_out_name, rom_array, rom_len);
