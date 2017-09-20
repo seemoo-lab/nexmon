@@ -35,6 +35,7 @@ bcm4356        | 7_35_101_5_sta     | Nexus 6                   | Android 7.1.2 
 bcm43596a0\*\* | 9.75.155.45_sta_c0 | Samsung Galaxy S7         | Andriod 7 Stock      |  X  |     |     |  O  |  X  |    
 
 \* bcm43430a1 was wrongly labeled bcm43438 in the past.
+
 \*\* flash patches need to be 8 bytes long and aligned on an 8 byte boundary
 
 ## Legend
