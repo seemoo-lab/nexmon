@@ -33,11 +33,14 @@ bcm43451b1     | 7_63_43_0          | iPhone 6                  | iOS 10.1.1 (14
 bcm4358        | 7_112_200_17_sta   | Nexus 6P                  | Android 7 Stock      |  X  |  X  |     |  X  |  X  |  O 
 bcm4358        | 7_112_201_3_sta    | Nexus 6P                  | Android 7.1.2 Stock  |  X  |  X  |     |  X  |  X  |  O 
 bcm4356        | 7_35_101_5_sta     | Nexus 6                   | Android 7.1.2        |  X  |  X  |     |  X  |  X  |  O 
-bcm43596a0\*\* | 9_75_155_45_sta_c0 | Samsung Galaxy S7         | Andriod 7 Stock      |  X  |     |     |  O  |  X  |    
+bcm43596a0\*\* | 9_75_155_45_sta_c0 | Samsung Galaxy S7         | Android 7 Stock      |  X  |     |     |  O  |  X  |    
+qca9500\*\*\*  | 4-1-0_55           | TP-Link Talon AD7200      | Custom LEDE Image    |     |     |     |     |     |    
 
 \* bcm43430a1 was wrongly labeled bcm43438 in the past.
 
 \*\* flash patches need to be 8 bytes long and aligned on an 8 byte boundary
+
+\*\*\* 802.11ad Wi-Fi chip from first 60 GHz Wi-Fi router Talon AD7200. Patch your firmware using [nexmon-arc](https://github.com/seemoo-lab/nexmon-arc) and run it with our custom LEDE image [lede-ad7200](https://github.com/seemoo-lab/lede-ad7200)
 
 ## Legend
 - M = Monitor Mode
