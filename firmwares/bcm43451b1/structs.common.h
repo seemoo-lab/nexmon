@@ -265,13 +265,53 @@ struct device {
 
 /**
  *  Name might be inaccurate
+ *  BCM43451b1: size is 0xb0
  */
 struct wl_info {
-    int unit;
-    struct wlc_pub *pub;
-    struct wlc_info *wlc;
-    struct wlc_hw_info *wlc_hw;
+    int unit;                           // 0x00
+    struct wlc_pub *pub;                // 0x04
+    struct wlc_info *wlc;               // 0x08
+    struct wlc_hw_info *wlc_hw;         // 0x0C
     struct hndrte_dev *dev;             // 0x10
+    int PAD;                            // 0x14
+    int PAD;                            // 0x18
+    int PAD;                            // 0x1C
+    int PAD;                            // 0x20
+    int PAD;                            // 0x24
+    int PAD;                            // 0x28
+    int PAD;                            // 0x2C
+    int PAD;                            // 0x30
+    int PAD;                            // 0x34
+    int PAD;                            // 0x38
+    int PAD;                            // 0x3C
+    int PAD;                            // 0x40
+    int PAD;                            // 0x44
+    int PAD;                            // 0x48
+    int PAD;                            // 0x4C
+    int PAD;                            // 0x50
+    int PAD;                            // 0x54
+    int PAD;                            // 0x58
+    int PAD;                            // 0x5C
+    int PAD;                            // 0x60
+    int PAD;                            // 0x64
+    int PAD;                            // 0x68
+    int PAD;                            // 0x6C
+    int PAD;                            // 0x70
+    int PAD;                            // 0x74
+    int PAD;                            // 0x78
+    int PAD;                            // 0x7C
+    int PAD;                            // 0x80
+    int PAD;                            // 0x84
+    int PAD;                            // 0x88
+    int PAD;                            // 0x8C
+    int PAD;                            // 0x90
+    int PAD;                            // 0x94
+    int PAD;                            // 0x98
+    int PAD;                            // 0x9C
+    int PAD;                            // 0xA0
+    int PAD;                            // 0xA4
+    int PAD;                            // 0xA8
+    int PAD;                            // 0xAC
 };
 
 /**

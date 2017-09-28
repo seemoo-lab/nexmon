@@ -99,21 +99,45 @@ prepend_ethernet_ipv4_udp_header(struct sk_buff *p)
 }
 
 void
+udpnprintf(struct wl_info *wl, unsigned int n, const char *format, ...)
+{
+    va_list args;
+    int len = 0;
+    struct sk_buff *p = pkt_buf_get_skb(wl->wlc->osh, sizeof(struct ethernet_ip_udp_header) + n);
+
+    if (p != 0) {
+        skb_pull(p, sizeof(struct ethernet_ip_udp_header));
+
+        va_start(args, format);
+        len = vsnprintf(p->data, n, format, args);
+        va_end(args);
+
+        p->len = len;
+
+        prepend_ethernet_ipv4_udp_header(p);
+
+        wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p);
+    }
+}
+
+void
 udpprintf(struct wl_info *wl, const char *format, ...)
 {
     va_list args;
     int len = 0;
     struct sk_buff *p = pkt_buf_get_skb(wl->wlc->osh, sizeof(struct ethernet_ip_udp_header) + 1000);
-    
-    skb_pull(p, sizeof(struct ethernet_ip_udp_header));
 
-    va_start(args, format);
-    len = vsnprintf(p->data, 1000, format, args);
-    va_end(args);
+    if (p != 0) {
+        skb_pull(p, sizeof(struct ethernet_ip_udp_header));
 
-    p->len = len;
+        va_start(args, format);
+        len = vsnprintf(p->data, 1000, format, args);
+        va_end(args);
 
-    prepend_ethernet_ipv4_udp_header(p);
+        p->len = len;
 
-    wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p);
+        prepend_ethernet_ipv4_udp_header(p);
+
+        wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p);
+    }
 }
