@@ -207,8 +207,8 @@ make rom.bin
 * [monmob](https://github.com/tuter/monmob): Monitor Mode and Frame Injection for the bcm4325, bcm4329 and bcm4330
 * [imon](https://imon.site/): Penetration Testing for Apple devices with Broadcom WiFi Chip
 
-# Projects using nexmon
-If you know more projects that use nexmon, let us know and we will add a link.
+# Interesting articles on firmware hacks
+If you know more projects that use nexmon or perform similar firmware hacks, let us know and we will add a link.
 
 * [Project Zero](https://googleprojectzero.blogspot.de/2017/09/over-air-vol-2-pt-1-exploiting-wi-fi.html): Over The Air - Vol. 2, Pt. 1: Exploiting The Wi-Fi Stack on Apple Devices
 * [broadpwn](https://blog.exodusintel.com/2017/07/26/broadpwn/): Remotely Compromising Android and IOS via a Bug in Broadcom's Wi-Fi Chipsets
