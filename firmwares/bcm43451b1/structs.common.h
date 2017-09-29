@@ -720,11 +720,11 @@ struct wlc_info {
     int PAD;                            /* 0X5B4 */
     int PAD;                            /* 0X5B8 */
     int PAD;                            /* 0X5BC */
-    void *active_queue;                 /* 0X5C0 verified */
+    void *active_queue;                 /* 0X5C0 */
     int PAD;                            /* 0X5C4 */
     int PAD;                            /* 0X5C8 */
     int PAD;                            /* 0X5CC */
-    int PAD;                            /* 0X5D0 */
+    void *hwtimer_stuff;                /* 0X5D0 verified for BCM43451b1 */
     int PAD;                            /* 0X5D4 */
     int PAD;                            /* 0X5D8 */
     int PAD;                            /* 0X5DC */
