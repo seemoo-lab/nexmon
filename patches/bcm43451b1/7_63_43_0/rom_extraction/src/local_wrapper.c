@@ -32,14 +32,33 @@
  *                                                                         *
  **************************************************************************/
 
-#pragma NEXMON targetregion "patch"
+#ifndef LOCAL_WRAPPER_C
+#define LOCAL_WRAPPER_C
 
-#include <firmware_version.h>   // definition of firmware version macros
-#include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
+#include <firmware_version.h>
+#include <structs.h>
+#include <stdarg.h>
 
-__attribute__((weak, at(0x20a584, "dummy", CHIP_VER_BCM43451b1, FW_VER_7_63_43_0)))
+#ifndef WRAPPER_H
+    // if this file is not included in the wrapper.h file, create dummy functions
+    #define VOID_DUMMY { ; }
+    #define RETURN_DUMMY { ; return 0; }
+
+    #define AT(CHIPVER, FWVER, ADDR) __attribute__((weak, at(ADDR, "dummy", CHIPVER, FWVER)))
+#else
+    // if this file is included in the wrapper.h file, create prototypes
+    #define VOID_DUMMY ;
+    #define RETURN_DUMMY ;
+    #define AT(CHIPVER, FWVER, ADDR)
+#endif
+
+AT(CHIP_VER_BCM43451b1, FW_VER_7_63_43_0, 0x20a584)
 int
 fp_apply_patches(void)
-{
-	return 0;
-}
+RETURN_DUMMY
+
+#undef VOID_DUMMY
+#undef RETURN_DUMMY
+#undef AT
+
+#endif /*LOCAL_WRAPPER_C*/

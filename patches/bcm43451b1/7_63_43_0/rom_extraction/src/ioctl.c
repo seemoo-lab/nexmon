@@ -86,6 +86,32 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
             break;
         }
 
+        case 0x603: // read from memory
+        {
+            memcpy(arg, *(char **) arg, len);
+            ret = IOCTL_SUCCESS;
+            break;
+        }
+
+        case 0x604: // write to console
+        {
+            arg[len-1] = 0;
+            printf("%s\n", arg);
+            ret = IOCTL_SUCCESS;
+            break;
+        }
+
+        case 0x605: // dump console
+        {
+            unsigned int *config = *(unsigned int **) 0x208e38;
+            if (len >= config[3]) {
+                memcpy(arg, (char *) (config[2] + config[4]), config[3] - config[4]);
+                memcpy(arg + config[3] - config[4], (char *) config[2], config[4]);
+                ret = IOCTL_SUCCESS;
+            }
+            break;
+        }
+
         default:
             ret = wlc_ioctl(wlc, cmd, arg, len, wlc_if);
     }

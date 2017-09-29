@@ -32,40 +32,9 @@
  *                                                                         *
  **************************************************************************/
 
-#pragma NEXMON targetregion "patch"
+#ifndef LOCAL_WRAPPER_H
+#define LOCAL_WRAPPER_H
 
-#include <firmware_version.h>   // definition of firmware version macros
-#include <debug.h>              // contains macros to access the debug hardware
-#include <wrapper.h>            // wrapper definitions for functions that already exist in the firmware
-#include <structs.h>            // structures that are used by the code in the firmware
-#include <helper.h>             // useful helper functions
-#include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
-#include <rates.h>              // rates used to build the ratespec for frame injection
-#include <local_wrapper.h>
+#include "../src/local_wrapper.c"        // wrapper definitions for functions that already exist in the firmware
 
-unsigned int fp_orig_data[183][2] = { 0 };
-unsigned int fp_orig_data_len = 183;
-
-struct fp_config {
-	unsigned int *target_addr;
-	unsigned int size;
-	unsigned int data_ptr;
-};
-
-int
-fp_apply_patches_hook(void)
-{
-	struct fp_config *fpc = (struct fp_config *) 0x1B1800;
-	int i;
-
-	for (i = 0; i < fp_orig_data_len; i++) {
-		fp_orig_data[i][0] = (unsigned int) (fpc)->target_addr;
-		fp_orig_data[i][1] = *((fpc++)->target_addr);
-	}
-
-	return fp_apply_patches();
-}
-
-// Hook call to fp_apply_patches in c_main
-__attribute__((at(0x1bc51a, "", CHIP_VER_BCM43451b1, FW_VER_7_63_43_0)))
-BLPatch(fp_apply_patches, fp_apply_patches_hook);
+#endif /*LOCAL_WRAPPER_H*/

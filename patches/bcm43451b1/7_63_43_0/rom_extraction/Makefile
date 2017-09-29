@@ -160,15 +160,15 @@ endif
 
 dump-rom: FORCE
 	@printf "\033[0;31m  DUMPING ROM TO\033[0m /var/root/romdump.bin\n"
-	$(Q)ssh -p 2222 root@localhost 'nexutil -g0x602 -l1024 -i -v0x0 -r > /var/root/romdump.bin && for n in {1..447}; do nexutil -g0x602 -l1024 -i -v$$(($$n*1024)) -r >> /var/root/romdump.bin; done'
-	@printf "\033[0;31m  DOWNLOADING ROM DUMP\033[0m /var/root/rumdump.bin => romdump.bin\n"
-	$(Q)scp -P 2222 root@localhost:/var/root/romdump.bin rom.bin
+	$(Q)ssh local 'nexutil -g0x602 -l1024 -i -v0x0 -r > /var/root/romdump.bin && for n in {1..447}; do nexutil -g0x602 -l1024 -i -v$$(($$n*1024)) -r >> /var/root/romdump.bin; done'
+	@printf "\033[0;31m  DOWNLOADING ROM DUMP\033[0m /var/root/romdump.bin => rom.bin\n"
+	$(Q)scp local:/var/root/romdump.bin rom.bin
 
 install-firmware: tempranillo.trx
 	@printf "\033[0;31m  COPYING TO PHONE\033[0m %s => /sdcard/%s\n" $< $<
-	$(Q)scp -P 2222 tempranillo.trx root@localhost:/usr/share/firmware/wifi/C-4345__s-B1/
+	$(Q)scp tempranillo.trx local:/usr/share/firmware/wifi/C-4345__s-B1/
 	@printf "\033[0;31m  RELOADING FIRMWARE\033[0m\n"
-	$(Q)ssh -p 2222 root@localhost '/usr/libexec/wifiFirmwareLoader -F /usr/share/firmware/wifi/C-4345__s-B1/tempranillo.trx'
+	$(Q)ssh local '/usr/libexec/wifiFirmwareLoader -F /usr/share/firmware/wifi/C-4345__s-B1/tempranillo.trx'
 
 install-original: $(FW_PATH)/$(RAM_FILE)
 	@printf "\033[0;31m  REMOUNTING /vendor\033[0m\n"
