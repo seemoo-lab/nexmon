@@ -27,3 +27,7 @@ RTE (SDIO-MSG_BUF) 7.63.43 (r653088) on BCM4345 r5 @ 37.4/160.5/160.5MHz
 000004.389 Hello World
 000004.776 wl0: link up (wl0)
 ```
+
+# Using precompiled tools
+
+If you only want to extract the ROM without having to compile the firmware patch and nexutil on your own, you can simply use our precompiled binaries from https://github.com/seemoo-lab/nexmon/releases/download/2.2.2/rom_extraction.zip. Keep in mind to execute `ldid -Sent.xml /usr/bin/nexutil` to give nexutil the entitlement to control the Wi-Fi interface.
