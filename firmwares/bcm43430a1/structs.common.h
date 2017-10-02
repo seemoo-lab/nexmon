@@ -699,7 +699,7 @@ struct wlc_info {
     int PAD;                            /* 0X5C4 */
     int PAD;                            /* 0X5C8 */
     int PAD;                            /* 0X5CC */
-    int PAD;                            /* 0X5D0 */
+    void *hrti;                         /* 0X5D0 */
     int PAD;                            /* 0X5D4 */
     int PAD;                            /* 0X5D8 */
     int PAD;                            /* 0X5DC */
