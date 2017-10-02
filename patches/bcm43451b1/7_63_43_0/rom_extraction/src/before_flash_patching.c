@@ -32,49 +32,40 @@
  *                                                                         *
  **************************************************************************/
 
-#ifndef FIRMWARE_VERSION_H
-#define FIRMWARE_VERSION_H
+#pragma NEXMON targetregion "patch"
 
-#define CHIP_VER_ALL                        0
-#define CHIP_VER_BCM4339                    1
-#define CHIP_VER_BCM4330                    2
-#define CHIP_VER_BCM4358                    3
-#define CHIP_VER_BCM43438                   4
-#define CHIP_VER_BCM43430a1                 4
-#define CHIP_VER_BCM4356                    5
-#define CHIP_VER_BCM4335b0                  6
-#define CHIP_VER_BCM43596a0                 7
-#define CHIP_VER_BCM43451b1                 8
+#include <firmware_version.h>   // definition of firmware version macros
+#include <debug.h>              // contains macros to access the debug hardware
+#include <wrapper.h>            // wrapper definitions for functions that already exist in the firmware
+#include <structs.h>            // structures that are used by the code in the firmware
+#include <helper.h>             // useful helper functions
+#include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
+#include <rates.h>              // rates used to build the ratespec for frame injection
+#include <local_wrapper.h>
 
-#define FW_VER_ALL                          0
+unsigned int fp_orig_data[183][2] = { 0 };
+unsigned int fp_orig_data_len = 183;
 
-// for CHIP_VER_BCM4339
-#define FW_VER_6_37_32_RC23_34_40_r581243   10
-#define FW_VER_6_37_32_RC23_34_43_r639704   11
+struct fp_config {
+	unsigned int *target_addr;
+	unsigned int size;
+	unsigned int data_ptr;
+};
 
-// for CHIP_VER_BCM4330
-#define FW_VER_5_90_195_114                 20
-#define FW_VER_5_90_100_41                  21
+int
+fp_apply_patches_hook(void)
+{
+	struct fp_config *fpc = (struct fp_config *) 0x1B1800;
+	int i;
 
-// for CHIP_VER_BCM4358
-#define FW_VER_7_112_200_17                 30
-#define FW_VER_7_112_201_3                  31
+	for (i = 0; i < fp_orig_data_len; i++) {
+		fp_orig_data[i][0] = (unsigned int) (fpc)->target_addr;
+		fp_orig_data[i][1] = *((fpc++)->target_addr);
+	}
 
-// for CHIP_VER_BCM43438 (wrongly labled) BCM43430a1
-#define FW_VER_7_45_41_26_r640327           40
-#define FW_VER_7_45_41_46                   41
+	return fp_apply_patches();
+}
 
-// for CHIP_VER_BCM4356
-#define FW_VER_7_35_101_5_sta               50
-#define FW_VER_7_35_101_5_apsta             51
-
-// for CHIP_VER_BCM4335b0
-#define FW_VER_6_30_171_1_sta               60
-
-// for CHIP_VER_BCM43596a0
-#define FW_VER_9_75_155_45_sta_c0           70
-
-// for CHIP_VER_BCM43451b1
-#define FW_VER_7_63_43_0                    80
-
-#endif /*FIRMWARE_VERSION_H*/
+// Hook call to fp_apply_patches in c_main
+__attribute__((at(0x1bc51a, "", CHIP_VER_BCM43451b1, FW_VER_7_63_43_0)))
+BLPatch(fp_apply_patches, fp_apply_patches_hook);

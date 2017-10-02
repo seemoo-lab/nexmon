@@ -32,49 +32,33 @@
  *                                                                         *
  **************************************************************************/
 
-#ifndef FIRMWARE_VERSION_H
-#define FIRMWARE_VERSION_H
+#ifndef LOCAL_WRAPPER_C
+#define LOCAL_WRAPPER_C
 
-#define CHIP_VER_ALL                        0
-#define CHIP_VER_BCM4339                    1
-#define CHIP_VER_BCM4330                    2
-#define CHIP_VER_BCM4358                    3
-#define CHIP_VER_BCM43438                   4
-#define CHIP_VER_BCM43430a1                 4
-#define CHIP_VER_BCM4356                    5
-#define CHIP_VER_BCM4335b0                  6
-#define CHIP_VER_BCM43596a0                 7
-#define CHIP_VER_BCM43451b1                 8
+#include <firmware_version.h>
+#include <structs.h>
+#include <stdarg.h>
 
-#define FW_VER_ALL                          0
+#ifndef WRAPPER_H
+    // if this file is not included in the wrapper.h file, create dummy functions
+    #define VOID_DUMMY { ; }
+    #define RETURN_DUMMY { ; return 0; }
 
-// for CHIP_VER_BCM4339
-#define FW_VER_6_37_32_RC23_34_40_r581243   10
-#define FW_VER_6_37_32_RC23_34_43_r639704   11
+    #define AT(CHIPVER, FWVER, ADDR) __attribute__((weak, at(ADDR, "dummy", CHIPVER, FWVER)))
+#else
+    // if this file is included in the wrapper.h file, create prototypes
+    #define VOID_DUMMY ;
+    #define RETURN_DUMMY ;
+    #define AT(CHIPVER, FWVER, ADDR)
+#endif
 
-// for CHIP_VER_BCM4330
-#define FW_VER_5_90_195_114                 20
-#define FW_VER_5_90_100_41                  21
+AT(CHIP_VER_BCM43451b1, FW_VER_7_63_43_0, 0x20a584)
+int
+fp_apply_patches(void)
+RETURN_DUMMY
 
-// for CHIP_VER_BCM4358
-#define FW_VER_7_112_200_17                 30
-#define FW_VER_7_112_201_3                  31
+#undef VOID_DUMMY
+#undef RETURN_DUMMY
+#undef AT
 
-// for CHIP_VER_BCM43438 (wrongly labled) BCM43430a1
-#define FW_VER_7_45_41_26_r640327           40
-#define FW_VER_7_45_41_46                   41
-
-// for CHIP_VER_BCM4356
-#define FW_VER_7_35_101_5_sta               50
-#define FW_VER_7_35_101_5_apsta             51
-
-// for CHIP_VER_BCM4335b0
-#define FW_VER_6_30_171_1_sta               60
-
-// for CHIP_VER_BCM43596a0
-#define FW_VER_9_75_155_45_sta_c0           70
-
-// for CHIP_VER_BCM43451b1
-#define FW_VER_7_63_43_0                    80
-
-#endif /*FIRMWARE_VERSION_H*/
+#endif /*LOCAL_WRAPPER_C*/

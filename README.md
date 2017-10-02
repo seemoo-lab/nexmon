@@ -22,18 +22,25 @@ Our software may damage your hardware and may void your hardware’s warranty! Y
 # Supported Devices
 The following devices are currently supported by our nexmon firmware patch.
 
-WiFi Chip    | Firmware Version | Used in                   | Operating System     |  M  | RT  |  I  | FP  | UC  | CT 
------------- | ---------------- | ------------------------- | -------------------- | --- | --- | --- | --- | --- | ---
-bcm4330      | 5_90_100_41_sta  | Samsung Galaxy S2         | Cyanogenmod 13.0     |  X  |  X  |     |  X  |  X  |  O 
-bcm4335b0    | 6.30.171.1_sta   | Samsung Galaxy S4         | LineageOS 14.1       |  X  |  X  |  X  |     |  X  |  O 
-bcm4339      | 6_37_34_43       | Nexus 5                   | Android 6 Stock      |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43430a1\* | 7_45_41_26       | Raspberry Pi 3 and Zero W | Raspbian 8           |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43430a1\* | 7_45_41_46       | Raspberry Pi 3 and Zero W | Raspbian Stretch     |  X  |  X  |  X  |  X  |  X  |  O 
-bcm4358      | 7_112_200_17_sta | Nexus 6P                  | Android 7 Stock      |  X  |  X  |     |  X  |  X  |  O 
-bcm4358      | 7_112_201_3_sta  | Nexus 6P                  | Android 7.1.2 Stock  |  X  |  X  |     |  X  |  X  |  O 
-bcm4356      | 7_35_101_5_sta   | Nexus 6                   | Android 7.1.2        |  X  |  X  |     |  X  |  X  |  O 
+WiFi Chip      | Firmware Version   | Used in                   | Operating System     |  M  | RT  |  I  | FP  | UC  | CT 
+-------------- | ------------------ | ------------------------- | -------------------- | --- | --- | --- | --- | --- | ---
+bcm4330        | 5_90_100_41_sta    | Samsung Galaxy S2         | Cyanogenmod 13.0     |  X  |  X  |     |  X  |  X  |  O 
+bcm4335b0      | 6.30.171.1_sta     | Samsung Galaxy S4         | LineageOS 14.1       |  X  |  X  |  X  |     |  X  |  O 
+bcm4339        | 6_37_34_43         | Nexus 5                   | Android 6 Stock      |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43430a1\*   | 7_45_41_26         | Raspberry Pi 3 and Zero W | Raspbian 8           |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43430a1\*   | 7_45_41_46         | Raspberry Pi 3 and Zero W | Raspbian Stretch     |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43451b1     | 7_63_43_0          | iPhone 6                  | iOS 10.1.1 (14B100)  |     |     |     |  X  |  X  |    
+bcm4358        | 7_112_200_17_sta   | Nexus 6P                  | Android 7 Stock      |  X  |  X  |     |  X  |  X  |  O 
+bcm4358        | 7_112_201_3_sta    | Nexus 6P                  | Android 7.1.2 Stock  |  X  |  X  |     |  X  |  X  |  O 
+bcm4356        | 7_35_101_5_sta     | Nexus 6                   | Android 7.1.2        |  X  |  X  |     |  X  |  X  |  O 
+bcm43596a0\*\* | 9_75_155_45_sta_c0 | Samsung Galaxy S7         | Android 7 Stock      |  X  |     |     |  O  |  X  |    
+qca9500\*\*\*  | 4-1-0_55           | TP-Link Talon AD7200      | Custom LEDE Image    |     |     |     |     |     |    
 
 \* bcm43430a1 was wrongly labeled bcm43438 in the past.
+
+\*\* flash patches need to be 8 bytes long and aligned on an 8 byte boundary
+
+\*\*\* 802.11ad Wi-Fi chip from first 60 GHz Wi-Fi router Talon AD7200. Patch your firmware using [nexmon-arc](https://github.com/seemoo-lab/nexmon-arc) and run it with our custom LEDE image [lede-ad7200](https://github.com/seemoo-lab/lede-ad7200)
 
 ## Legend
 - M = Monitor Mode
@@ -200,9 +207,10 @@ make rom.bin
 * [monmob](https://github.com/tuter/monmob): Monitor Mode and Frame Injection for the bcm4325, bcm4329 and bcm4330
 * [imon](https://imon.site/): Penetration Testing for Apple devices with Broadcom WiFi Chip
 
-# Projects using nexmon
-If you know more projects that use nexmon, let us know and we will add a link.
+# Interesting articles on firmware hacks
+If you know more projects that use nexmon or perform similar firmware hacks, let us know and we will add a link.
 
+* [Project Zero](https://googleprojectzero.blogspot.de/2017/09/over-air-vol-2-pt-1-exploiting-wi-fi.html): Over The Air - Vol. 2, Pt. 1: Exploiting The Wi-Fi Stack on Apple Devices
 * [broadpwn](https://blog.exodusintel.com/2017/07/26/broadpwn/): Remotely Compromising Android and IOS via a Bug in Broadcom's Wi-Fi Chipsets
 * [Project Zero](https://googleprojectzero.blogspot.de/2017/04/over-air-exploiting-broadcoms-wi-fi_4.html): Over The Air: Exploiting Broadcom's Wi-Fi Stack (Part 1)
 * [Project Zero](https://googleprojectzero.blogspot.de/2017/04/over-air-exploiting-broadcoms-wi-fi_11.html): Over The Air: Exploiting Broadcom's Wi-Fi Stack (Part 2) 
