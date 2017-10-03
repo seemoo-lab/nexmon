@@ -59,6 +59,7 @@
 #define MONITOR_LOG_ONLY  3
 #define MONITOR_DROP_FRM  4
 #define MONITOR_IPV4_UDP  5
+#define MONITOR_STA_RADIOTAP  6
 
 /*NEXMON*/
 static struct netlink_kernel_cfg cfg = {0};
@@ -129,6 +130,12 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
                 case MONITOR_LOG_ONLY:
                 case MONITOR_DROP_FRM:
                 case MONITOR_IPV4_UDP:
+				case MONITOR_STA_RADIOTAP:
+				    ndev_global->type = ARPHRD_IEEE80211_RADIOTAP;
+                    ndev_global->ieee80211_ptr->iftype = NL80211_IFTYPE_MONITOR;
+                    ndev_global->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_MONITOR) | BIT(NL80211_IFTYPE_STATION); // | BIT(NL80211_IFTYPE_STATION);
+                    break;
+
                 default:
                     ndev_global->type = ARPHRD_ETHER;
                     ndev_global->ieee80211_ptr->iftype = NL80211_IFTYPE_STATION;
