@@ -441,11 +441,63 @@ static int brcmf_vif_add_validate(struct brcmf_cfg80211_info *cfg,
 	int iftype_num[NUM_NL80211_IFTYPES];
 	struct brcmf_cfg80211_vif *pos;
 
+	int i;
+	
+	brcmf_err("brcmf_vif_add_validate, NUM_NL80211_IFTYPES: (%d)\n", NUM_NL80211_IFTYPES);
+	
 	memset(&iftype_num[0], 0, sizeof(iftype_num));
-	list_for_each_entry(pos, &cfg->vif_list, list)
-		iftype_num[pos->wdev.iftype]++;
+	list_for_each_entry(pos, &cfg->vif_list, list) {
+		iftype_num[pos->wdev.iftype]++; //increase counter for respective iftype, for each vif using this type
+		brcmf_err("brcmf_vif_add_validate, pos->wdev.iftype: (%d)\n", pos->wdev.iftype);
+	}
 
+	/*
+	* At this point iftyp_num arrays holds a counter for every iftype, which represents 
+	* how many vif use this iftype.
+	
+	Example:
+	
+	enum nl80211_iftype {
+		NL80211_IFTYPE_UNSPECIFIED,
+		NL80211_IFTYPE_ADHOC,
+		NL80211_IFTYPE_STATION,
+		NL80211_IFTYPE_AP,
+		NL80211_IFTYPE_AP_VLAN,
+		NL80211_IFTYPE_WDS,
+		NL80211_IFTYPE_MONITOR,
+		NL80211_IFTYPE_MESH_POINT,
+		NL80211_IFTYPE_P2P_CLIENT,
+		NL80211_IFTYPE_P2P_GO,
+		NL80211_IFTYPE_P2P_DEVICE,
+		NL80211_IFTYPE_OCB,
+		NL80211_IFTYPE_NAN,
+
+		NUM_NL80211_IFTYPES,
+		NL80211_IFTYPE_MAX = NUM_NL80211_IFTYPES - 1
+	};
+	
+	There're 13 iftypes, thus iftype_num[] has a length of 13.
+	If there's one vif with monitor mode (NL80211_IFTYPE_MONITOR = 6),
+	iftype_num[6] will be 1, all other array entries will be 0.
+	*/
+	
+	
+	/*
+	Increase the counter for the desired interface type by one
+	If new_type is 6 (MONITOR) this will end up with iftype_num[6] == 2
+	for the xample above.
+	*/
 	iftype_num[new_type]++;
+	
+	
+	for (i=0; i<NUM_NL80211_IFTYPES; i++)
+	{
+		brcmf_err("brcmf_vif_add_validate, cfg80211_check_combinations for iftype_num: (%d)\tval:(%d)\n", i, iftype_num[i]);
+	}
+	/*
+	Check if this IF_TYPE counts are a valid combination.
+	*/
+	
 	return cfg80211_check_combinations(cfg->wiphy, 1, 0, iftype_num);
 }
 
@@ -579,6 +631,78 @@ static int brcmf_cfg80211_request_ap_if(struct brcmf_if *ifp)
 	return err;
 }
 
+
+/**
+ * brcmf_mon_add_vif() - create a new MONITOR virtual interface
+ *
+ * @wiphy: wiphy device of new interface.
+ * @name: name of the new interface.
+ * @flags: not used.
+ * @params: contains mac address for MONITOR device.
+ */
+static
+struct wireless_dev *brcmf_mon_add_vif(struct wiphy *wiphy, const char *name,
+				      u32 *flags, struct vif_params *params)
+{
+	//Code creates AP vif, needs to be modified for MONITOR vif
+	
+	struct brcmf_cfg80211_info *cfg = wiphy_to_cfg(wiphy);
+	struct brcmf_if *ifp = netdev_priv(cfg_to_ndev(cfg));
+	struct brcmf_cfg80211_vif *vif;
+	int err;
+
+	brcmf_err("brcmf_mon_add_vif called\n");
+	
+	if (brcmf_cfg80211_vif_event_armed(cfg))
+		return ERR_PTR(-EBUSY);
+
+	brcmf_err("Adding vif \"%s\"\n", name);
+
+	vif = brcmf_alloc_vif(cfg, NL80211_IFTYPE_MONITOR);
+	if (IS_ERR(vif))
+		return (struct wireless_dev *)vif;
+
+	brcmf_cfg80211_arm_vif_event(cfg, vif);
+
+	err = brcmf_cfg80211_request_ap_if(ifp); // ????? analyze
+	if (err) {
+		brcmf_cfg80211_arm_vif_event(cfg, NULL);
+		goto fail;
+	}
+
+	/* wait for firmware event */
+	err = brcmf_cfg80211_wait_vif_event(cfg, BRCMF_E_IF_ADD,
+					    BRCMF_VIF_EVENT_TIMEOUT);
+	brcmf_cfg80211_arm_vif_event(cfg, NULL);
+	if (!err) {
+		brcmf_err("timeout occurred\n");
+		err = -EIO;
+		goto fail;
+	}
+
+	/* interface created in firmware */
+	ifp = vif->ifp;
+	if (!ifp) {
+		brcmf_err("no if pointer provided\n");
+		err = -ENOENT;
+		goto fail;
+	}
+
+	strncpy(ifp->ndev->name, name, sizeof(ifp->ndev->name) - 1);
+	err = brcmf_net_attach(ifp, true);
+	if (err) {
+		brcmf_err("Registering netdevice failed\n");
+		goto fail;
+	}
+
+	return &ifp->vif->wdev;
+
+fail:
+	brcmf_free_vif(vif);
+	return ERR_PTR(err);
+}
+
+
 /**
  * brcmf_ap_add_vif() - create a new AP virtual interface for multiple BSS
  *
@@ -697,9 +821,13 @@ static struct wireless_dev *brcmf_cfg80211_add_iface(struct wiphy *wiphy,
 	case NL80211_IFTYPE_STATION:
 	case NL80211_IFTYPE_AP_VLAN:
 	case NL80211_IFTYPE_WDS:
-	case NL80211_IFTYPE_MONITOR:
 	case NL80211_IFTYPE_MESH_POINT:
 		return ERR_PTR(-EOPNOTSUPP);
+	case NL80211_IFTYPE_MONITOR:
+		//this should only be done for mode 6 (monitor + sta)
+		brcmf_err("brcmf_cfg80211_add_iface, tried to switch to NL80211_IFTYPE_MONITOR\n");
+		wdev = brcmf_mon_add_vif(wiphy, name, flags, params);
+		break;
 	case NL80211_IFTYPE_AP:
 		wdev = brcmf_ap_add_vif(wiphy, name, flags, params);
 		break;
@@ -6359,7 +6487,7 @@ static int brcmf_setup_ifmodes(struct wiphy *wiphy, struct brcmf_if *ifp)
 	bool mbss, p2p;
 	int i, c, n_combos;
 
-	mbss = brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MBSS);
+	mbss = brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MBSS); //Feature: Mesh Basic Service Set
 	p2p = brcmf_feat_is_enabled(ifp, BRCMF_FEAT_P2P);
 
 	n_combos = 1 + !!p2p + !!mbss;
@@ -6376,27 +6504,27 @@ static int brcmf_setup_ifmodes(struct wiphy *wiphy, struct brcmf_if *ifp)
 	c0_limits = kcalloc(p2p ? 3 : 2, sizeof(*c0_limits), GFP_KERNEL);
 	if (!c0_limits)
 		goto err;
-	c0_limits[i].max = 1;
-	c0_limits[i++].types = BIT(NL80211_IFTYPE_STATION);
+	c0_limits[i].max = 1;  //c0_limits[0]
+	c0_limits[i++].types = BIT(NL80211_IFTYPE_STATION); //c0_limits[0]
 	if (p2p) {
 		if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MCHAN))
 			combo[c].num_different_channels = 2;
 		wiphy->interface_modes |= BIT(NL80211_IFTYPE_P2P_CLIENT) |
 					  BIT(NL80211_IFTYPE_P2P_GO) |
 					  BIT(NL80211_IFTYPE_P2P_DEVICE);
-		c0_limits[i].max = 1;
-		c0_limits[i++].types = BIT(NL80211_IFTYPE_P2P_DEVICE);
-		c0_limits[i].max = 1;
+		c0_limits[i].max = 1; //c0_limits[1]
+		c0_limits[i++].types = BIT(NL80211_IFTYPE_P2P_DEVICE); //c0_limits[1]
+		c0_limits[i].max = 1; //c0_limits[2]
 		c0_limits[i++].types = BIT(NL80211_IFTYPE_P2P_CLIENT) |
-				       BIT(NL80211_IFTYPE_P2P_GO);
+				       BIT(NL80211_IFTYPE_P2P_GO); //c0_limits[2]
 	} else {
-		c0_limits[i].max = 1;
-		c0_limits[i++].types = BIT(NL80211_IFTYPE_AP);
+		c0_limits[i].max = 1; //c0_limits[1]
+		c0_limits[i++].types = BIT(NL80211_IFTYPE_AP); //c0_limits[1]
 	}
-	combo[c].num_different_channels = 1;
-	combo[c].max_interfaces = i;
-	combo[c].n_limits = i;
-	combo[c].limits = c0_limits;
+	combo[c].num_different_channels = 1; //combo[0]
+	combo[c].max_interfaces = i; //combo[0]
+	combo[c].n_limits = i; //combo[0]
+	combo[c].limits = c0_limits; //combo[0]
 
 	if (p2p) {
 		c++;
@@ -6412,10 +6540,10 @@ static int brcmf_setup_ifmodes(struct wiphy *wiphy, struct brcmf_if *ifp)
 		p2p_limits[i++].types = BIT(NL80211_IFTYPE_P2P_CLIENT);
 		p2p_limits[i].max = 1;
 		p2p_limits[i++].types = BIT(NL80211_IFTYPE_P2P_DEVICE);
-		combo[c].num_different_channels = 1;
-		combo[c].max_interfaces = i;
-		combo[c].n_limits = i;
-		combo[c].limits = p2p_limits;
+		combo[c].num_different_channels = 1; //combo[1]
+		combo[c].max_interfaces = i; //combo[1]
+		combo[c].n_limits = i; //combo[1]
+		combo[c].limits = p2p_limits; //combo[1]
 	}
 
 	if (mbss) {
@@ -6426,11 +6554,11 @@ static int brcmf_setup_ifmodes(struct wiphy *wiphy, struct brcmf_if *ifp)
 			goto err;
 		mbss_limits[i].max = 4;
 		mbss_limits[i++].types = BIT(NL80211_IFTYPE_AP);
-		combo[c].beacon_int_infra_match = true;
-		combo[c].num_different_channels = 1;
-		combo[c].max_interfaces = 4;
-		combo[c].n_limits = i;
-		combo[c].limits = mbss_limits;
+		combo[c].beacon_int_infra_match = true;  //combo[2]
+		combo[c].num_different_channels = 1;  //combo[2]
+		combo[c].max_interfaces = 4;  //combo[2]
+		combo[c].n_limits = i;  //combo[2]
+		combo[c].limits = mbss_limits;  //combo[2]
 	}
 
 	wiphy->n_iface_combinations = n_combos;
