@@ -22,6 +22,8 @@
 #include <linux/vmalloc.h>
 #include <net/cfg80211.h>
 #include <net/netlink.h>
+/* MaMe82 */
+#include <linux/if_arp.h>
 
 #include <brcmu_utils.h>
 #include <defs.h>
@@ -631,6 +633,11 @@ static int brcmf_cfg80211_request_ap_if(struct brcmf_if *ifp)
 	return err;
 }
 
+static void brcmf_init_prof(struct brcmf_cfg80211_profile *prof)
+{
+	memset(prof, 0, sizeof(*prof));
+}
+
 
 /**
  * brcmf_mon_add_vif() - create a new MONITOR virtual interface
@@ -640,7 +647,7 @@ static int brcmf_cfg80211_request_ap_if(struct brcmf_if *ifp)
  * @flags: not used.
  * @params: contains mac address for MONITOR device.
  */
-static
+//static
 struct wireless_dev *brcmf_mon_add_vif(struct wiphy *wiphy, const char *name,
 				      u32 *flags, struct vif_params *params)
 {
@@ -695,12 +702,39 @@ struct wireless_dev *brcmf_mon_add_vif(struct wiphy *wiphy, const char *name,
 		goto fail;
 	}
 
+	
+	//Try to change the ndev to be flagged with "monitor mode"  before going on
+	ifp->ndev->type = ARPHRD_IEEE80211_RADIOTAP;
+	ifp->ndev->ieee80211_ptr->iftype = NL80211_IFTYPE_MONITOR;
+	ifp->ndev->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_MONITOR);
+	
+	
 	return &ifp->vif->wdev;
 
+	/*
+	Trigger this by running:	nexutil -m6
+	
+	At this point a wlanNN device is present working in managed mode. It has only been tested with
+	"iwlist wlanNN scan" and is able to find networks and thus considered working.
+	
+	Additionally a monNN interface is added (on firmware end this is done utilizing the callbacks which are meant
+	to create a virtual interface in AP mode. Not using the callbacks, makes attaching of the new virtual interface
+	to wiphy impossible). The monNN interface has type MONITOR (radiotap) set.
+	The monitor interface isn't capable of receiving frames, which has been tested with "airodump-ng -i mon0".
+	Airodump reveals no results.
+	
+	Additional note:
+		Switching back to other firmware/driver modes once this mode is activated (nexutil -mX) shouldn't work
+		without errors, because disabeling the new virtual interface again hasn't been implemented. Trying to switch
+		back !without reloading the driver and firmware! can cause errors.
+	
+	*/
+	
 fail:
 	brcmf_free_vif(vif);
 	return ERR_PTR(err);
 }
+
 
 
 /**
@@ -731,15 +765,14 @@ struct wireless_dev *brcmf_ap_add_vif(struct wiphy *wiphy, const char *name,
 
 	brcmf_cfg80211_arm_vif_event(cfg, vif);
 
-	err = brcmf_cfg80211_request_ap_if(ifp);
+	err = brcmf_cfg80211_request_ap_if(ifp); // <-- it seems this function fills the vif (registered for arm_vif_event) structure with data (including wdev)
 	if (err) {
 		brcmf_cfg80211_arm_vif_event(cfg, NULL);
 		goto fail;
 	}
 
 	/* wait for firmware event */
-	err = brcmf_cfg80211_wait_vif_event(cfg, BRCMF_E_IF_ADD,
-					    BRCMF_VIF_EVENT_TIMEOUT);
+	err = brcmf_cfg80211_wait_vif_event(cfg, BRCMF_E_IF_ADD, BRCMF_VIF_EVENT_TIMEOUT);
 	brcmf_cfg80211_arm_vif_event(cfg, NULL);
 	if (!err) {
 		brcmf_err("timeout occurred\n");
@@ -756,12 +789,15 @@ struct wireless_dev *brcmf_ap_add_vif(struct wiphy *wiphy, const char *name,
 	}
 
 	strncpy(ifp->ndev->name, name, sizeof(ifp->ndev->name) - 1);
+	
+	
+	
 	err = brcmf_net_attach(ifp, true);
 	if (err) {
 		brcmf_err("Registering netdevice failed\n");
 		goto fail;
 	}
-
+	
 	return &ifp->vif->wdev;
 
 fail:
@@ -800,6 +836,7 @@ brcmf_cfg80211_nexmon_set_channel(struct wiphy *wiphy,struct cfg80211_chan_def *
     return 0;
 }
 
+//Method to add virtaul interfaces
 static struct wireless_dev *brcmf_cfg80211_add_iface(struct wiphy *wiphy,
 						     const char *name,
 						     unsigned char name_assign_type,
@@ -810,6 +847,8 @@ static struct wireless_dev *brcmf_cfg80211_add_iface(struct wiphy *wiphy,
 	struct wireless_dev *wdev;
 	int err;
 
+	brcmf_err("brcmf_cfg80211_add_iface enter: %s type %d\n", name, type);
+	
 	brcmf_dbg(TRACE, "enter: %s type %d\n", name, type);
 	err = brcmf_vif_add_validate(wiphy_to_cfg(wiphy), type);
 	if (err) {
@@ -825,7 +864,7 @@ static struct wireless_dev *brcmf_cfg80211_add_iface(struct wiphy *wiphy,
 		return ERR_PTR(-EOPNOTSUPP);
 	case NL80211_IFTYPE_MONITOR:
 		//this should only be done for mode 6 (monitor + sta)
-		brcmf_err("brcmf_cfg80211_add_iface, tried to switch to NL80211_IFTYPE_MONITOR\n");
+		brcmf_err("brcmf_cfg80211_add_iface, try to add vif with NL80211_IFTYPE_MONITOR\n");
 		wdev = brcmf_mon_add_vif(wiphy, name, flags, params);
 		break;
 	case NL80211_IFTYPE_AP:
@@ -1023,6 +1062,8 @@ brcmf_cfg80211_change_iface(struct wiphy *wiphy, struct net_device *ndev,
 	s32 ap = 0;
 	s32 err = 0;
 
+	brcmf_err("brcmf_cfg80211_change_iface, iftype: %d\n", type);
+	
 	brcmf_dbg(TRACE, "Enter, bsscfgidx=%d, type=%d\n", ifp->bsscfgidx,
 		  type);
 
@@ -1481,10 +1522,7 @@ done:
 	return err;
 }
 
-static void brcmf_init_prof(struct brcmf_cfg80211_profile *prof)
-{
-	memset(prof, 0, sizeof(*prof));
-}
+
 
 static u16 brcmf_map_fw_linkdown_reason(const struct brcmf_event_msg *e)
 {
@@ -5384,6 +5422,9 @@ static struct cfg80211_ops brcmf_cfg80211_ops = {
 	.set_monitor_channel = brcmf_cfg80211_nexmon_set_channel,
 };
 
+/*
+allocates the brcmf_cfg80211_vif struct and adds it to list_vif of the given cfg
+*/
 struct brcmf_cfg80211_vif *brcmf_alloc_vif(struct brcmf_cfg80211_info *cfg,
 					   enum nl80211_iftype type)
 {
@@ -5397,10 +5438,10 @@ struct brcmf_cfg80211_vif *brcmf_alloc_vif(struct brcmf_cfg80211_info *cfg,
 	if (!vif)
 		return ERR_PTR(-ENOMEM);
 
-	vif->wdev.wiphy = cfg->wiphy;
-	vif->wdev.iftype = type;
+	vif->wdev.wiphy = cfg->wiphy; //reference global WIPHY from this new VIF
+	vif->wdev.iftype = type; //set type for this new VIF
 
-	brcmf_init_prof(&vif->profile);
+	brcmf_init_prof(&vif->profile); //set new profile for VIF
 
 	if (type == NL80211_IFTYPE_AP) {
 		mbss = false;
@@ -5413,7 +5454,7 @@ struct brcmf_cfg80211_vif *brcmf_alloc_vif(struct brcmf_cfg80211_info *cfg,
 		vif->mbss = mbss;
 	}
 
-	list_add_tail(&vif->list, &cfg->vif_list);
+	list_add_tail(&vif->list, &cfg->vif_list); //add linked list pointer of new VIF to vif_list of cfg (global brcmf_cfg80211_info)
 	return vif;
 }
 
@@ -7009,7 +7050,7 @@ struct brcmf_cfg80211_info *brcmf_cfg80211_attach(struct brcmf_pub *drvr,
 						  struct device *busdev,
 						  bool p2pdev_forced)
 {
-	struct net_device *ndev = brcmf_get_ifp(drvr, 0)->ndev;
+	struct net_device *ndev = brcmf_get_ifp(drvr, 0)->ndev; //get reference to the first net_device from low level driver
 	struct brcmf_cfg80211_info *cfg;
 	struct wiphy *wiphy;
 	struct cfg80211_ops *ops;
@@ -7028,35 +7069,72 @@ struct brcmf_cfg80211_info *brcmf_cfg80211_attach(struct brcmf_pub *drvr,
 	if (!ops)
 		return NULL;
 
-	ifp = netdev_priv(ndev);
+	
+	ifp = netdev_priv(ndev); //fetch brcm_if structure from ndev private data
 #ifdef CONFIG_PM
 	if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_WOWL_GTK))
 		ops->set_rekey_data = brcmf_cfg80211_set_rekey_data;
 #endif
-	wiphy = wiphy_new(ops, sizeof(struct brcmf_cfg80211_info));
+	wiphy = wiphy_new(ops, sizeof(struct brcmf_cfg80211_info)); //create new WIPHY respecting the cfg80211 ops
 	if (!wiphy) {
 		brcmf_err("Could not allocate wiphy device\n");
 		return NULL;
 	}
-	memcpy(wiphy->perm_addr, drvr->mac, ETH_ALEN);
+	memcpy(wiphy->perm_addr, drvr->mac, ETH_ALEN); //copy MAC adress provided by driver to respective field of WIPHY structure
 	set_wiphy_dev(wiphy, busdev);
 
-	cfg = wiphy_priv(wiphy);
-	cfg->wiphy = wiphy;
+	cfg = wiphy_priv(wiphy); //reference private part of WIPHY (brcmf_cfg80211_info)
+	cfg->wiphy = wiphy; //set WIPHY of brcmf_cfg80211_info to newly created WIPHY
 	cfg->ops = ops;
 	cfg->pub = drvr;
-	init_vif_event(&cfg->vif_event);
-	INIT_LIST_HEAD(&cfg->vif_list);
+	init_vif_event(&cfg->vif_event); 
+	INIT_LIST_HEAD(&cfg->vif_list); //Initialize LIST for virtual interface on brcmf_cfg80211_info
 
-	vif = brcmf_alloc_vif(cfg, NL80211_IFTYPE_STATION);
+	vif = brcmf_alloc_vif(cfg, NL80211_IFTYPE_STATION); //allocates the brcmf_cfg80211_vif struct and adds it to list_vif of the given cfg
 	if (IS_ERR(vif))
 		goto wiphy_out;
 
-	vif->ifp = ifp;
-	vif->wdev.netdev = ndev;
-	ndev->ieee80211_ptr = &vif->wdev;
+	vif->ifp = ifp; //add pointer to the private part of the first ndev (brcmf_if) to the vif
+	vif->wdev.netdev = ndev; //add pointer to the first ndev (brcmf_if) to the wdev of vif
+	ndev->ieee80211_ptr = &vif->wdev; 
 	SET_NETDEV_DEV(ndev, wiphy_dev(cfg->wiphy));
 
+	/*
+	Steps:
+	1) Create new net_device:ndev (for now use the first existing one of the global driver)
+	
+		struct brcmf_cfg80211_info *cfg = wiphy_to_cfg(wiphy); //private part of global WIPHY
+		struct brcmf_if *ifp = netdev_priv(cfg_to_ndev(cfg)); //lower layer interface control information - ndev.priv part ? (drvr, vif, ndev, fws_desc ...)
+		struct net_device = ifp->ndev;
+		
+		if (!ndev) {
+		brcmf_err("ndev is invalid\n");
+		return NULL;
+		
+	2) Fetch IFP from the global netdev
+		- we already have ifp filled from step 1
+	
+	3) allocate struct fo a new VIF
+		struct brcmf_cfg80211_vif *vif;
+		vif = brcmf_alloc_vif(cfg, NL80211_IFTYPE_STATION); //allocates the brcmf_cfg80211_vif struct and adds it to list_vif of the given cfg
+		if (IS_ERR(vif))
+			goto wiphy_out;
+
+	4) Add reference to global brcm_if:ifp to new vif
+		vif->ifp = ifp; //add pointer to the private part of the first ndev (brcmf_if) to the vif
+		vif->wdev.netdev = ndev; //add pointer to the first ndev (brcmf_if) to the wdev of vif
+	
+	5) Point the ieee80211_ptr of the net_device to the new wireless_dev of the new vif (not sure if a new ndev should be used to add the pointer, as the old one of the global ndev gets overwritten now)
+		ndev->ieee80211_ptr = &vif->wdev; 
+	
+	6) Register new net_device with parent device 
+		SET_NETDEV_DEV(ndev, wiphy_dev(cfg->wiphy));
+	
+	7) Point VIF of the IFP (private part of the used ndev) to created VIF
+		ifp->vif = vif;
+	*/
+	
+	
 	err = wl_init_priv(cfg);
 	if (err) {
 		brcmf_err("Failed to init iwm_priv (%d)\n", err);

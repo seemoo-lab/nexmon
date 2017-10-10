@@ -91,6 +91,7 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
 	/*MaMe82*/
 	struct ieee80211_iface_combination *combo = NULL;
 	struct ieee80211_iface_limit *c0_limits = NULL;
+	struct wireless_dev *new_wdev = NULL;
 	
 	int i, c;
 	struct wiphy *wiphy = ndev_global->ieee80211_ptr->wiphy;
@@ -173,6 +174,16 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
 
 					wiphy->n_iface_combinations = 1;
 					wiphy->iface_combinations = combo;
+					
+					//try to add second interface and call it monXX
+					new_wdev = brcmf_mon_add_vif(wiphy, "mon%d", NULL, NULL);
+					
+					/*
+					//try to set ndev to MONITOR (ndev points to new VIF ??!)
+					ndev_global->type = ARPHRD_IEEE80211_RADIOTAP;
+                    ndev_global->ieee80211_ptr->iftype = NL80211_IFTYPE_MONITOR;
+                    ndev_global->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_MONITOR);
+					*/
 					break;
 
 					err:
