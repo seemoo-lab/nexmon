@@ -163,8 +163,8 @@ install-firmware: fw_bcmdhd.bin
 	$(Q)adb shell 'su -c "mount -o rw,remount /vendor"'
 	@printf "\033[0;31m  COPYING TO PHONE\033[0m %s => /sdcard/%s\n" $< $<
 	$(Q)adb push $< /sdcard/ >> log/adb.log 2>> log/adb.log
-	@printf "\033[0;31m  COPYING\033[0m /sdcard/fw_bcmdhd.bin => /vendor/firmware/fw_bcmdhd.bin\n"
-	$(Q)adb shell 'su -c "cp /sdcard/fw_bcmdhd.bin /vendor/firmware/fw_bcmdhd.bin"'
+	@printf "\033[0;31m  COPYING\033[0m /sdcard/fw_bcmdhd.bin => /vendor/firmware/fw_bcm43455_hw.bin\n"
+	$(Q)adb shell 'su -c "cp /sdcard/fw_bcmdhd.bin /vendor/firmware/fw_bcm43455_hw.bin"'
 	@printf "\033[0;31m  RELOADING FIRMWARE\033[0m\n"
 	$(Q)adb shell 'su -c "ifconfig wlan0 down && ifconfig wlan0 up"'
 
@@ -173,8 +173,8 @@ install-original: $(FW_PATH)/$(RAM_FILE)
 	$(Q)adb shell 'su -c "mount -o rw,remount /vendor"'
 	@printf "\033[0;31m  COPYING TO PHONE\033[0m %s => /sdcard/%s\n" $< $<
 	$(Q)adb push $< /sdcard/ >> log/adb.log 2>> log/adb.log
-	@printf "\033[0;31m  COPYING\033[0m /sdcard/fw_bcmdhd.bin => /vendor/firmware/fw_bcmdhd.bin\n"
-	$(Q)adb shell 'su -c "cp /sdcard/fw_bcmdhd.bin /vendor/firmware/fw_bcmdhd.bin"'
+	@printf "\033[0;31m  COPYING\033[0m /sdcard/fw_bcmdhd.bin => /vendor/firmware/fw_bcm43455_hw.bin\n"
+	$(Q)adb shell 'su -c "cp /sdcard/fw_bcmdhd.bin /vendor/firmware/fw_bcm43455_hw.bin"'
 	@printf "\033[0;31m  RELOADING FIRMWARE\033[0m\n"
 	$(Q)adb shell 'su -c "ifconfig wlan0 down && ifconfig wlan0 up"'
 
@@ -185,7 +185,7 @@ backup-firmware: FORCE
 install-backup: fw_bcmdhd.orig.bin
 	adb shell 'su -c "mount -o rw,remount /system"' && \
 	adb push $< /sdcard/ && \
-	adb shell 'su -c "cp /sdcard/fw_bcmdhd.bin /vendor/firmware/fw_bcmdhd.bin"'
+	adb shell 'su -c "cp /sdcard/fw_bcmdhd.bin /vendor/firmware/fw_bcm43455_hw.bin"'
 	adb shell 'su -c "ifconfig wlan0 down && ifconfig wlan0 up"'
 
 clean-firmware: FORCE
