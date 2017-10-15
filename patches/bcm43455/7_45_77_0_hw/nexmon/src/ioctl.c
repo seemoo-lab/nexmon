@@ -32,53 +32,58 @@
  *                                                                         *
  **************************************************************************/
 
-#ifndef FIRMWARE_VERSION_H
-#define FIRMWARE_VERSION_H
+#pragma NEXMON targetregion "patch"
 
-#define CHIP_VER_ALL                        0
-#define CHIP_VER_BCM4339                    1
-#define CHIP_VER_BCM4330                    2
-#define CHIP_VER_BCM4358                    3
-#define CHIP_VER_BCM43438                   4
-#define CHIP_VER_BCM43430a1                 4
-#define CHIP_VER_BCM4356                    5
-#define CHIP_VER_BCM4335b0                  6
-#define CHIP_VER_BCM43596a0                 7
-#define CHIP_VER_BCM43451b1                 8
-#define CHIP_VER_BCM43455                   9
+#include <firmware_version.h>   // definition of firmware version macros
+#include <debug.h>              // contains macros to access the debug hardware
+#include <wrapper.h>            // wrapper definitions for functions that already exist in the firmware
+#include <structs.h>            // structures that are used by the code in the firmware
+#include <helper.h>             // useful helper functions
+#include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
+#include <rates.h>              // rates used to build the ratespec for frame injection
+#include <nexioctls.h>          // ioctls added in the nexmon patch
+#include <capabilities.h>       // capabilities included in a nexmon patch
+#include <sendframe.h>          // sendframe functionality
+#include <version.h>            // version information
 
-#define FW_VER_ALL                          0
+int 
+wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
+{
+    int ret = IOCTL_ERROR;
 
-// for CHIP_VER_BCM4339
-#define FW_VER_6_37_32_RC23_34_40_r581243   10
-#define FW_VER_6_37_32_RC23_34_43_r639704   11
+    switch (cmd) {
+        case NEX_GET_CAPABILITIES:
+            if (len == 4) {
+                memcpy(arg, &capabilities, 4);
+                ret = IOCTL_SUCCESS;
+            }
+            break;
 
-// for CHIP_VER_BCM4330
-#define FW_VER_5_90_195_114                 20
-#define FW_VER_5_90_100_41                  21
+        case NEX_WRITE_TO_CONSOLE:
+            if (len > 0) {
+                arg[len-1] = 0;
+                printf("ioctl: %s\n", arg);
+                ret = IOCTL_SUCCESS; 
+            }
+            break;
 
-// for CHIP_VER_BCM4358
-#define FW_VER_7_112_200_17                 30
-#define FW_VER_7_112_201_3                  31
+        case NEX_GET_VERSION_STRING:
+            {
+                int strlen = 0;
+                for ( strlen = 0; version[strlen]; ++strlen );
+                if (len >= strlen) {
+                    memcpy(arg, version, strlen);
+                    ret = IOCTL_SUCCESS;
+                }
+            }
+            break;
 
-// for CHIP_VER_BCM43438 (wrongly labled) BCM43430a1
-#define FW_VER_7_45_41_26_r640327           40
-#define FW_VER_7_45_41_46                   41
+        default:
+            ret = wlc_ioctl(wlc, cmd, arg, len, wlc_if);
+    }
 
-// for CHIP_VER_BCM4356
-#define FW_VER_7_35_101_5_sta               50
-#define FW_VER_7_35_101_5_apsta             51
+    return ret;
+}
 
-// for CHIP_VER_BCM4335b0
-#define FW_VER_6_30_171_1_sta               60
-
-// for CHIP_VER_BCM43596a0
-#define FW_VER_9_75_155_45_sta_c0           70
-
-// for CHIP_VER_BCM43451b1
-#define FW_VER_7_63_43_0                    80
-
-// for CHIP_VER_BCM43455
-#define FW_VER_7_45_77_0					90
-
-#endif /*FIRMWARE_VERSION_H*/
+__attribute__((at(0x2054B0, "", CHIP_VER_BCM43455, FW_VER_7_45_77_0)))
+GenericPatch4(wlc_ioctl_hook, wlc_ioctl_hook + 1);
