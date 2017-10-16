@@ -30,9 +30,10 @@ bcm4339        | 6_37_34_43         | Nexus 5                   | Android 6 Stoc
 bcm43430a1\*   | 7_45_41_26         | Raspberry Pi 3 and Zero W | Raspbian 8           |  X  |  X  |  X  |  X  |  X  |  O 
 bcm43430a1\*   | 7_45_41_46         | Raspberry Pi 3 and Zero W | Raspbian Stretch     |  X  |  X  |  X  |  X  |  X  |  O 
 bcm43451b1     | 7_63_43_0          | iPhone 6                  | iOS 10.1.1 (14B100)  |     |     |     |  X  |  X  |    
+bcm4356        | 7_35_101_5_sta     | Nexus 6                   | Android 7.1.2        |  X  |  X  |     |  X  |  X  |  O 
 bcm4358        | 7_112_200_17_sta   | Nexus 6P                  | Android 7 Stock      |  X  |  X  |     |  X  |  X  |  O 
 bcm4358        | 7_112_201_3_sta    | Nexus 6P                  | Android 7.1.2 Stock  |  X  |  X  |     |  X  |  X  |  O 
-bcm4356        | 7_35_101_5_sta     | Nexus 6                   | Android 7.1.2        |  X  |  X  |     |  X  |  X  |  O 
+bcm4358        | 7_112_300_14_sta   | Nexus 6P                  | Android 8.0.0 Stock  |  X  |  X  |     |  X  |  X  |  O 
 bcm43596a0\*\* | 9_75_155_45_sta_c0 | Samsung Galaxy S7         | Android 7 Stock      |  X  |     |     |  O  |  X  |    
 qca9500\*\*\*  | 4-1-0_55           | TP-Link Talon AD7200      | Custom LEDE Image    |     |     |     |     |     |    
 
