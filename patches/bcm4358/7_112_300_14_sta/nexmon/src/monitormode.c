@@ -53,6 +53,8 @@ extern void prepend_ethernet_ipv4_udp_header(struct sk_buff *p);
 #define MONITOR_DROP_FRM  4
 #define MONITOR_IPV4_UDP  5
 
+static char call_original_wl_monitor = 0;
+
 int
 channel2freq(struct wl_info *wl, unsigned int channel)
 {
@@ -135,7 +137,9 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
             break;
 
         case MONITOR_IEEE80211:
+                call_original_wl_monitor = 1;
                 wl_monitor(wl, sts, p);
+                call_original_wl_monitor = 0;
             break;
 
         case MONITOR_LOG_ONLY:
@@ -189,7 +193,7 @@ _pkt_buf_get_skb(void *osh, unsigned int len)
     register void *p asm("r5");
     void *sts = sp + 56; // add this offset to the stack pointer to find the sts struct created in wlc_monitor
 
-    if (lr == 0x1863f) { // called from wl_monitor
+    if (lr == 0x1863f && !call_original_wl_monitor) { // called from wl_monitor
         wl_monitor_hook(wl, sts, p);
         return 0;
     } else {
