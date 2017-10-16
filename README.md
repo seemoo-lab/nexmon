@@ -36,6 +36,7 @@ bcm4358        | 7_112_201_3_sta    | Nexus 6P                  | Android 7.1.2 
 bcm4358        | 7_112_300_14_sta   | Nexus 6P                  | Android 8.0.0 Stock  |  X  |  X  |     |  X  |  X  |  O 
 bcm43596a0\*\* | 9_75_155_45_sta_c0 | Samsung Galaxy S7         | Android 7 Stock      |  X  |     |     |  O  |  X  |    
 qca9500\*\*\*  | 4-1-0_55           | TP-Link Talon AD7200      | Custom LEDE Image    |     |     |     |     |     |    
+bcm43455       | 7_45_77_0_hw       | Huawei P9                 | Android 7 Stock      |     |     |     |  X  |  X  |    
 
 \* bcm43430a1 was wrongly labeled bcm43438 in the past.
 
