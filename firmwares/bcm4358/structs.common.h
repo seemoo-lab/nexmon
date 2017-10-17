@@ -180,7 +180,7 @@ struct osl_info {
 
 typedef struct sk_buff {
 	int field0;                    /* 0x00 */
-	int field4;                    /* 0x04 */
+	void *head;                    /* 0x04 */
 	void *data;                 /* 0x08 */
 	short len;                  /* 0x0C */
     short fieldE;                  // 0x0E
