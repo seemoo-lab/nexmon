@@ -51,6 +51,7 @@
 #include <monitormode.h>
 #include <errno.h>
 #include <net/if.h>
+#include <nexioctls.h>
 
 #define WLC_GET_MONITOR                 107
 #define WLC_SET_MONITOR                 108
@@ -117,9 +118,9 @@ ioctl(int fd, request_t request, ...)
     va_end (args);
 
     ret = func_ioctl(fd, request, argp);
-    if (ret < 0) {
-        printf("LIBNEXMON: original response: %d, request: 0x%x\n", ret, request);
-    }
+    //if (ret < 0) {
+    //    printf("LIBNEXMON: original response: %d, request: 0x%x\n", ret, request);
+    //}
 
     switch (request) {
         case SIOCGIFHWADDR:
@@ -175,15 +176,15 @@ ioctl(int fd, request_t request, ...)
 
         case SIOCSIWFREQ: // set channel/frequency (Hz)
             {
-                if (ret < 0)
-                    printf("LIBNEXMON: SIOCSIWFREQ not implemented\n");
+                //if (ret < 0)
+                    //printf("LIBNEXMON: SIOCSIWFREQ not implemented\n");
             }
             break;
 
         case SIOCGIWFREQ: // get channel/frequency (Hz)
             {
-                if (ret < 0)
-                    printf("LIBNEXMON: SIOCGIWFREQ not implemented\n");
+                //if (ret < 0)
+                    //printf("LIBNEXMON: SIOCGIWFREQ not implemented\n");
             }
             break;
     }
@@ -304,8 +305,8 @@ socket(int domain, int type, int protocol)
     if (ret < sizeof(socket_to_type)/sizeof(socket_to_type[0]))
         socket_to_type[ret] = type;
 
-    if ((type - 1 < sizeof(sock_types)/sizeof(sock_types[0])) && (domain - 1 < sizeof(domain_types)/sizeof(domain_types[0])))
-        printf("LIBNEXMON: %d = %s(%s(%d), %s(%d), %d)\n", ret, __FUNCTION__, domain_types[domain], domain, sock_types[type - 1], type, protocol);
+    //if ((type - 1 < sizeof(sock_types)/sizeof(sock_types[0])) && (domain - 1 < sizeof(domain_types)/sizeof(domain_types[0])))
+    //    printf("LIBNEXMON: %d = %s(%s(%d), %s(%d), %d)\n", ret, __FUNCTION__, domain_types[domain], domain, sock_types[type - 1], type, protocol);
 
     return ret;
 }
@@ -324,42 +325,17 @@ bind(int sockfd, const struct sockaddr *addr, int addrlen)
     if ((sockfd < sizeof(bound_to_correct_if)/sizeof(bound_to_correct_if[0])) && !strncmp(ifname, sll_ifname, sizeof(ifname)))
         bound_to_correct_if[sockfd] = 1;
 
-    printf("LIBNEXMON: %d = %s(%d, 0x%p, %d) sll_ifindex=%d ifname=%s\n", ret, __FUNCTION__, sockfd, addr, addrlen, sll->sll_ifindex, sll_ifname);
+    //printf("LIBNEXMON: %d = %s(%d, 0x%p, %d) sll_ifindex=%d ifname=%s\n", ret, __FUNCTION__, sockfd, addr, addrlen, sll->sll_ifindex, sll_ifname);
 
     return ret;    
 }
 
-struct ieee80211_radiotap_header {
-    unsigned char it_version;
-    unsigned char it_pad;
-    unsigned short it_len;
-    unsigned int it_present;
-} __attribute__((packed));
-
-#define ETHERNET_HDR_SIZE 14
-
-// caller needs to free buf_dup and rtap_buf
-int
-prepare_frame_for_injection(const void *buf, size_t count, void **buf_dup, size_t *count_dup, void **rtap_buf, size_t *count_rtap)
-{
-    // remove the radiotap header and create a new ethernet frame with 802.11 payload and write it to the socket
-    struct ieee80211_radiotap_header *rtap = (struct ieee80211_radiotap_header *) buf;
-    *count_dup = count - rtap->it_len + ETHERNET_HDR_SIZE;
-    
-    *buf_dup = malloc(*count_dup);
-    *rtap_buf = malloc(rtap->it_len);
-
-    if (buf_dup == NULL || rtap_buf == NULL) {
-        printf("LIBNEXMON: malloc problem\n");
-        return -1;
-    }
-
-    memcpy(*buf_dup, "NEXMONNEXMON00", ETHERNET_HDR_SIZE);
-    memcpy(*buf_dup + ETHERNET_HDR_SIZE, buf + rtap->it_len, count - rtap->it_len);
-    memcpy(*rtap_buf, rtap, rtap->it_len);
-
-    return 0;
-}
+struct inject_frame {
+    unsigned short len;
+    unsigned char pad;
+    unsigned char type;
+    char data[];
+};
 
 ssize_t
 write(int fd, const void *buf, size_t count)
@@ -368,23 +344,18 @@ write(int fd, const void *buf, size_t count)
 
     // check if the user wants to write on a raw socket
     if ((fd > 2) && (fd < sizeof(socket_to_type)/sizeof(socket_to_type[0])) && (socket_to_type[fd] == SOCK_RAW) && (bound_to_correct_if[fd] == 1)) {
-        void *buf_dup;
-        size_t count_dup;
-        void *rtap_buf;
-        size_t count_rtap;
-        prepare_frame_for_injection(buf, count, &buf_dup, &count_dup, &rtap_buf, &count_rtap);
+        struct inject_frame *buf_dup = (struct inject_frame *) malloc(count + sizeof(struct inject_frame));
 
-        //memcpy(buf_dup + ETHERNET_HDR_SIZE + 4, "NEXMON", 6);
-        ret = func_write(fd, buf_dup, count_dup);
+        buf_dup->len = count + sizeof(struct inject_frame);
+        buf_dup->pad = 0;
+        buf_dup->type = 1;
+        memcpy(buf_dup->data, buf, count);
 
-        char text[16] = "frame";
-        nex_ioctl(nexio, 401, text, 16, true);
-
-        printf("LIBNEXMON: %d(%d) = %s(%d, 0x%p, %d)\n", (unsigned int) ret, errno, __FUNCTION__, fd, buf_dup, (unsigned int) count_dup);
-        hexdump(__FUNCTION__, buf, count);
+        nex_ioctl(nexio, NEX_INJECT_FRAME, buf_dup, count + sizeof(struct inject_frame), true);
 
         free(buf_dup);
-        free(rtap_buf);
+
+        ret = count;
     } else {
         // otherwise write the regular frame to the socket
         ret = func_write(fd, buf, count);
@@ -400,20 +371,18 @@ sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr
 
     // check if the user wants to write on a raw socket
     if ((sockfd > 2) && (sockfd < sizeof(socket_to_type)/sizeof(socket_to_type[0])) && (socket_to_type[sockfd] == SOCK_RAW) && (bound_to_correct_if[sockfd] == 1)) {
-        void *buf_dup;
-        size_t count_dup;
-        void *rtap_buf;
-        size_t count_rtap;
-        prepare_frame_for_injection(buf, len, &buf_dup, &count_dup, &rtap_buf, &count_rtap);
+        struct inject_frame *buf_dup = (struct inject_frame *) malloc(len + sizeof(struct inject_frame));
 
-        //memcpy(buf_dup + ETHERNET_HDR_SIZE + 4, "NEXMON", 6);
-        ret = func_sendto(sockfd, buf_dup, count_dup, flags, dest_addr, addrlen);
+        buf_dup->len = len + sizeof(struct inject_frame);
+        buf_dup->pad = 0;
+        buf_dup->type = 1;
+        memcpy(buf_dup->data, buf, len);
 
-        printf("LIBNEXMON: %d = %s(%d, 0x%p, %d, %08x, %p, %d)\n", (unsigned int) ret, __FUNCTION__, sockfd, buf, (unsigned int) len, flags, dest_addr, (unsigned int) addrlen);
-        hexdump(__FUNCTION__, buf, len);
+        nex_ioctl(nexio, NEX_INJECT_FRAME, buf_dup, len + sizeof(struct inject_frame), true);
 
         free(buf_dup);
-        free(rtap_buf);
+
+        ret = len;
     } else {
         // otherwise write the regular frame to the socket
         ret = func_sendto(sockfd, buf, len, flags, dest_addr, addrlen);

@@ -45,8 +45,18 @@
 #include <capabilities.h>       // capabilities included in a nexmon patch
 #include <sendframe.h>          // sendframe functionality
 #include <version.h>            // version information
+#include <ieee80211_radiotap.h> // Radiotap header related
 #include <bcmpcie.h>
 #include <argprintf.h>          // allows to execute argprintf to print into the arg buffer
+
+extern void *inject_frame(struct wlc_info *wlc, struct sk_buff *p);
+
+struct inject_frame {
+    unsigned short len;
+    unsigned char pad;
+    unsigned char type;
+    char data[];
+};
 
 int 
 wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
@@ -78,6 +88,45 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
                     memcpy(arg, version, strlen);
                     ret = IOCTL_SUCCESS;
                 }
+            }
+            break;
+
+        case NEX_INJECT_FRAME:
+            {
+                sk_buff *p;
+                int bytes_used = 0;
+                struct inject_frame *frm = (struct inject_frame *) arg;
+
+                while ((frm->len > 0) && (bytes_used + frm->len <= len)) {
+                    // add a dummy radiotap header if frame does not contain one
+                    if (frm->type == 0) {
+                        p = pkt_buf_get_skb(wlc->osh, frm->len + 202 + 8 - 4);
+                        skb_pull(p, 202);
+                        struct ieee80211_radiotap_header *radiotap = 
+                            (struct ieee80211_radiotap_header *) p->data;
+                        
+                        memset(radiotap, 0, sizeof(struct ieee80211_radiotap_header));
+                        
+                        radiotap->it_len = 8;
+                        
+                        skb_pull(p, 8);
+                        memcpy(p->data, frm->data, frm->len - 4);
+                        skb_push(p, 8);
+                    } else {
+                        p = pkt_buf_get_skb(wlc->osh, frm->len + 202 - 4);
+                        skb_pull(p, 202);
+
+                        memcpy(p->data, frm->data, frm->len - 4);
+                    }
+
+                    inject_frame(wlc, p);
+
+                    bytes_used += frm->len;
+
+                    frm = (struct inject_frame *) (arg + bytes_used);
+                }
+
+                ret = IOCTL_SUCCESS;
             }
             break;
 
