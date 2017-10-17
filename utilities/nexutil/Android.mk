@@ -23,12 +23,12 @@ include $(BUILD_EXECUTABLE)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libnexio
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../libnexio/local/armeabi/libnexio.a
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../libnexio/local/$(TARGET_ARCH_ABI)/libnexio.a
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../libnexio
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libargp
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../libargp/local/armeabi/libargp.a
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../libargp/local/$(TARGET_ARCH_ABI)/libargp.a
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../libargp
 include $(PREBUILT_STATIC_LIBRARY)

@@ -27,7 +27,13 @@ endif
 ifneq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
 install: libs/armeabi/nexutil
 	adb push $< /sdcard/
-	adb shell 'su -c "mount -o remount,rw /system"'
+	adb shell 'su -c "mount -o rw,remount /system"'
+	adb shell 'su -c "cp /sdcard/nexutil /system/bin/nexutil"'
+	adb shell 'su -c "chmod +x /system/bin/nexutil"'
+
+install64: libs/arm64-v8a/nexutil
+	adb push $< /sdcard/
+	adb shell 'su -c "mount -o rw,remount /system"'
 	adb shell 'su -c "cp /sdcard/nexutil /system/bin/nexutil"'
 	adb shell 'su -c "chmod +x /system/bin/nexutil"'
 else

@@ -40,7 +40,7 @@
 #include <string.h>
 #include <byteswap.h>
 
-#include <types.h>
+//#include <types.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -474,7 +474,7 @@ main(int argc, char **argv)
         int i = 0;
         for (i = 0; i < custom_cmd_buf_len / 0x2000; i++) {
             *custom_cmd_buf_pos = dump_objmem_addr + i * 0x2000 / 4;
-            printf("%08x %08x\n", (int) custom_cmd_buf_pos, *custom_cmd_buf_pos);
+            printf("%8p %08x\n", custom_cmd_buf_pos, *custom_cmd_buf_pos);
             ret = nex_ioctl(nexio, 406, custom_cmd_buf_pos, 0x2000, false);    
             custom_cmd_buf_pos += 0x2000 / 4;
         }
