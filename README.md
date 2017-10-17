@@ -22,27 +22,29 @@ Our software may damage your hardware and may void your hardware’s warranty! Y
 # Supported Devices
 The following devices are currently supported by our nexmon firmware patch.
 
-WiFi Chip      | Firmware Version   | Used in                   | Operating System     |  M  | RT  |  I  | FP  | UC  | CT 
--------------- | ------------------ | ------------------------- | -------------------- | --- | --- | --- | --- | --- | ---
-bcm4330        | 5_90_100_41_sta    | Samsung Galaxy S2         | Cyanogenmod 13.0     |  X  |  X  |     |  X  |  X  |  O 
-bcm4335b0      | 6.30.171.1_sta     | Samsung Galaxy S4         | LineageOS 14.1       |  X  |  X  |  X  |     |  X  |  O 
-bcm4339        | 6_37_34_43         | Nexus 5                   | Android 6 Stock      |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43430a1\*   | 7_45_41_26         | Raspberry Pi 3 and Zero W | Raspbian 8           |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43430a1\*   | 7_45_41_46         | Raspberry Pi 3 and Zero W | Raspbian Stretch     |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43451b1     | 7_63_43_0          | iPhone 6                  | iOS 10.1.1 (14B100)  |     |     |     |  X  |  X  |    
-bcm4356        | 7_35_101_5_sta     | Nexus 6                   | Android 7.1.2        |  X  |  X  |     |  X  |  X  |  O 
-bcm4358        | 7_112_200_17_sta   | Nexus 6P                  | Android 7 Stock      |  X  |  X  |     |  X  |  X  |  O 
-bcm4358        | 7_112_201_3_sta    | Nexus 6P                  | Android 7.1.2 Stock  |  X  |  X  |     |  X  |  X  |  O 
-bcm4358        | 7_112_300_14_sta   | Nexus 6P                  | Android 8.0.0 Stock  |  X  |  X  |     |  X  |  X  |  O 
-bcm43596a0\*\* | 9_75_155_45_sta_c0 | Samsung Galaxy S7         | Android 7 Stock      |  X  |     |     |  O  |  X  |    
-qca9500\*\*\*  | 4-1-0_55           | TP-Link Talon AD7200      | Custom LEDE Image    |     |     |     |     |     |    
-bcm43455       | 7_45_77_0_hw       | Huawei P9                 | Android 7 Stock      |     |     |     |  X  |  X  |    
+WiFi Chip              | Firmware Version   | Used in                   | Operating System     |  M  | RT  |  I  | FP  | UC  | CT 
+---------------------- | ------------------ | ------------------------- | -------------------- | --- | --- | --- | --- | --- | ---
+bcm4330                | 5_90_100_41_sta    | Samsung Galaxy S2         | Cyanogenmod 13.0     |  X  |  X  |     |  X  |  X  |  O 
+bcm4335b0              | 6.30.171.1_sta     | Samsung Galaxy S4         | LineageOS 14.1       |  X  |  X  |  X  |     |  X  |  O 
+bcm4339                | 6_37_34_43         | Nexus 5                   | Android 6 Stock      |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43430a1<sup>1</sup> | 7_45_41_26         | Raspberry Pi 3 and Zero W | Raspbian 8           |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43430a1<sup>1</sup> | 7_45_41_46         | Raspberry Pi 3 and Zero W | Raspbian Stretch     |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43451b1             | 7_63_43_0          | iPhone 6                  | iOS 10.1.1 (14B100)  |     |     |     |  X  |  X  |    
+bcm43455               | 7_45_77_0_hw       | Huawei P9                 | Android 7 Stock      |     |     |     |  X  |  X  |    
+bcm4356                | 7_35_101_5_sta     | Nexus 6                   | Android 7.1.2        |  X  |  X  |     |  X  |  X  |  O 
+bcm4358                | 7_112_200_17_sta   | Nexus 6P                  | Android 7 Stock      |  X  |  X  |     |  X  |  X  |  O 
+bcm4358                | 7_112_201_3_sta    | Nexus 6P                  | Android 7.1.2 Stock  |  X  |  X  |     |  X  |  X  |  O 
+bcm4358<sup>2</sup>    | 7_112_300_14_sta   | Nexus 6P                  | Android 8.0.0 Stock  |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43596a0<sup>3</sup> | 9_75_155_45_sta_c0 | Samsung Galaxy S7         | Android 7 Stock      |  X  |     |     |  O  |  X  |    
+qca9500<sup>4</sup>    | 4-1-0_55           | TP-Link Talon AD7200      | Custom LEDE Image    |     |     |     |     |     |    
 
-\* bcm43430a1 was wrongly labeled bcm43438 in the past.
+<sup>1</sup> bcm43430a1 was wrongly labeled bcm43438 in the past.
 
-\*\* flash patches need to be 8 bytes long and aligned on an 8 byte boundary
+<sup>2</sup> use LD_PRELOAD=libnexmon.so instead of LD_PRELOAD=libfakeioctl.so to inject frames through ioctls
 
-\*\*\* 802.11ad Wi-Fi chip from first 60 GHz Wi-Fi router Talon AD7200. Patch your firmware using [nexmon-arc](https://github.com/seemoo-lab/nexmon-arc) and run it with our custom LEDE image [lede-ad7200](https://github.com/seemoo-lab/lede-ad7200)
+<sup>3</sup> flash patches need to be 8 bytes long and aligned on an 8 byte boundary
+
+<sup>4</sup> 802.11ad Wi-Fi chip from first 60 GHz Wi-Fi router Talon AD7200. Patch your firmware using [nexmon-arc](https://github.com/seemoo-lab/nexmon-arc) and run it with our custom LEDE image [lede-ad7200](https://github.com/seemoo-lab/lede-ad7200)
 
 ## Legend
 - M = Monitor Mode
