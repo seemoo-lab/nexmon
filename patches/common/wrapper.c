@@ -309,6 +309,7 @@ AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_26_r640327, 0x62A0)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x638C)
 AT(CHIP_VER_BCM4330, FW_VER_ALL, 0x80E300)
 AT(CHIP_VER_BCM4335b0, FW_VER_ALL, 0x18A98)
+AT(CHIP_VER_BCM43455, FW_VER_ALL, 0x9C05C)
 void *
 pkt_buf_free_skb(void *osh, void *p, int send)
 RETURN_DUMMY
@@ -573,6 +574,7 @@ RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8C97C)
 AT(CHIP_VER_BCM4335b0, FW_VER_6_30_171_1_sta, 0x191C0C)
+AT(CHIP_VER_BCM43455, FW_VER_ALL, 0x9C2FC)
 int
 wlc_d11hdrs_ext(void *wlc, void *p, void *scb, int short_preamble, unsigned int frag, unsigned int nfrag, unsigned int queue, int next_frag_len, int key, int rspec_override, short *txh_off)
 RETURN_DUMMY
@@ -601,6 +603,7 @@ RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8C8EC)
 AT(CHIP_VER_BCM4335b0, FW_VER_ALL, 0x402E0)
+AT(CHIP_VER_BCM43455, FW_VER_ALL, 0x9C26C)
 int
 wlc_prec_enq(void *wlc, void *q, void *p, int preq)
 RETURN_DUMMY
@@ -630,6 +633,7 @@ AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x2E4B0)
 AT(CHIP_VER_BCM4356, FW_VER_7_35_101_5_sta, 0x1A1658)
 AT(CHIP_VER_BCM4330, FW_VER_ALL, 0x832A48)
 AT(CHIP_VER_BCM4335b0, FW_VER_ALL, 0x38BB0)
+AT(CHIP_VER_BCM43455, FW_VER_ALL, 0x31CE8)
 int
 wlc_sendctl(void *wlc, void *p, void *qi, void *scb, unsigned int fifo, unsigned int rate_override, char enq_only)
 RETURN_DUMMY
@@ -649,6 +653,7 @@ RETURN_DUMMY
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x9DEA)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_26_r640327, 0x9DEA)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x9ED6)
+AT(CHIP_VER_BCM43455, FW_VER_7_45_77_0, 0x1ABB98)
 void *
 wlc_get_txh_info(void *wlc, void *p, void *txh)
 RETURN_DUMMY
@@ -1355,6 +1360,7 @@ RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8CA4C)
 AT(CHIP_VER_BCM4335b0, FW_VER_ALL, 0x42C18)
+AT(CHIP_VER_BCM43455, FW_VER_ALL, 0x9C49C)
 void
 wlc_send_q(void *wlc, void *qi)
 VOID_DUMMY
@@ -1504,6 +1510,7 @@ AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x193834)
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0xF4A8)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_26_r640327, 0xF4A8)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0xf680)
+AT(CHIP_VER_BCM43455, FW_VER_7_45_77_0, 0x1B3634)
 void
 wlc_txfifo(void *wlc, int fifo, void *p, void *txh, unsigned char commit, char txpktpend)
 VOID_DUMMY
