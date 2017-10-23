@@ -52,6 +52,7 @@
 // for CHIP_VER_BCM4339
 #define FW_VER_6_37_32_RC23_34_40_r581243   10
 #define FW_VER_6_37_32_RC23_34_43_r639704   11
+#define FW_VER_6_37_32_34_1_mfg             12
 
 // for CHIP_VER_BCM4330
 #define FW_VER_5_90_195_114                 20

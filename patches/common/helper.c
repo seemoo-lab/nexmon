@@ -42,6 +42,7 @@
 #include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
 #include <rates.h>              // rates used to build the ratespec for frame injection
 #include <nexioctls.h>          // ioctls added in the nexmon patch
+#include <argprintf.h>
 
 /**
  *  Setup a timer to schedule a function call
@@ -124,7 +125,7 @@ skb_pull(sk_buff *p, unsigned int len)
 }
 
 void
-hexdump(char *desc, void *addr, int len)
+_hexdump(char *desc, void *addr, int len, int (*_printf)(const char *, ...))
 {
     int i;
     unsigned char buff[17];
@@ -132,7 +133,7 @@ hexdump(char *desc, void *addr, int len)
 
     // Output description if given.
     if (desc != 0)
-        printf ("%s:\n", desc);
+        _printf("%s:\n", desc);
 
     // Process every byte in the data.
     for (i = 0; i < len; i++) {
@@ -141,14 +142,14 @@ hexdump(char *desc, void *addr, int len)
         if ((i % 16) == 0) {
             // Just don't print ASCII for the zeroth line.
             if (i != 0)
-                printf ("  %s\n", buff);
+                _printf("  %s\n", buff);
 
             // Output the offset.
-            printf ("  %04x ", i);
+            _printf("  %04x ", i);
         }
 
         // Now the hex code for the specific character.
-        printf (" %02x", pc[i]);
+        _printf(" %02x", pc[i]);
 
         // And store a printable ASCII character for later.
         if ((pc[i] < 0x20) || (pc[i] > 0x7e))
@@ -160,13 +161,20 @@ hexdump(char *desc, void *addr, int len)
 
     // Pad out last line if not exactly 16 characters.
     while ((i % 16) != 0) {
-        printf ("   ");
+        _printf("   ");
         i++;
     }
 
     // And print the final ASCII bit.
-    printf ("  %s\n", buff);
+    _printf("  %s\n", buff);
 }
+
+void
+hexdump(char *desc, void *addr, int len)
+{
+    _hexdump(desc, addr, len, printf);
+}
+
 
 /* Quarter dBm units to mW
  * Table starts at QDBM_OFFSET, so the first entry is mW for qdBm=153
