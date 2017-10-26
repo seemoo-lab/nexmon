@@ -468,10 +468,10 @@ struct phy_info_acphy {
     int PAD;                            // 0x104
     int PAD;                            // 0x108
     int PAD;                            // 0x10c
-    int PAD;                            // 0x110
-    int PAD;                            // 0x114
-    int PAD;                            // 0x118
-    int PAD;                            // 0x11c
+    uint32 pstart;                      // 0x110
+    uint32 pstop;                       // 0x114
+    uint32 pfirst;                      // 0x118
+    uint32 plast;                       // 0x11c
     int PAD;                            // 0x120
     int PAD;                            // 0x124
     int PAD;                            // 0x128
