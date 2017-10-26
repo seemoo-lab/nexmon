@@ -687,7 +687,7 @@ struct wlc_info {
     int PAD;                            /* 0X594 */
     int PAD;                            /* 0X598 */
     int PAD;                            /* 0X59C */
-    void *wlcif_list                    /* 0X5A0 CHECKED for 7.45.41.26*/
+    void *wlcif_list;                   /* 0X5A0 CHECKED for 7.45.41.26*/
     int PAD;                            /* 0X5A4 */
     int PAD;                            /* 0X5A8 */
     int PAD;                            /* 0X5AC */
