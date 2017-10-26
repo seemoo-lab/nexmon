@@ -59,6 +59,7 @@
 #define MONITOR_LOG_ONLY  3
 #define MONITOR_DROP_FRM  4
 #define MONITOR_IPV4_UDP  5
+#define MONITOR_STA_RADIOTAP  6
 
 /*NEXMON*/
 static struct netlink_kernel_cfg cfg = {0};
@@ -87,6 +88,15 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
     struct sk_buff *skb_out;
     struct nlmsghdr *nlh_tx;
 
+	/*MaMe82*/
+	struct ieee80211_iface_combination *combo = NULL;
+	struct ieee80211_iface_limit *c0_limits = NULL;
+	struct wireless_dev *new_wdev = NULL;
+	
+	int i, c;
+	struct wiphy *wiphy = ndev_global->ieee80211_ptr->wiphy;
+	
+	
     brcmf_err("NEXMON: %s: Enter\n", __FUNCTION__);
 
     brcmf_err("NEXMON: %s: %08x %d %d\n", __FUNCTION__, *(int *) frame->nexudphdr.nex, nlmsg_len(nlh), skb->len);
@@ -129,6 +139,60 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
                 case MONITOR_LOG_ONLY:
                 case MONITOR_DROP_FRM:
                 case MONITOR_IPV4_UDP:
+				/* MaMe82 */
+				case MONITOR_STA_RADIOTAP:
+					// propagate support for MON + STA for wiphy
+					
+					
+				    ndev_global->type = ARPHRD_IEEE80211_RADIOTAP;
+                    ndev_global->ieee80211_ptr->iftype = NL80211_IFTYPE_STATION;
+                    
+
+					combo = kcalloc(1, sizeof(*combo), GFP_KERNEL);
+					if (!combo)
+						goto err;
+
+					wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION) |
+								 BIT(NL80211_IFTYPE_MONITOR) |
+								 BIT(NL80211_IFTYPE_AP);
+
+					c = 0;
+					i = 0;
+					c0_limits = kcalloc(3, sizeof(*c0_limits), GFP_KERNEL);
+					if (!c0_limits) goto err;
+					c0_limits[i].max = 1;  //c0_limits[0]
+					c0_limits[i++].types = BIT(NL80211_IFTYPE_STATION); //c0_limits[0]
+					c0_limits[i].max = 1; //c0_limits[1]
+					c0_limits[i++].types = BIT(NL80211_IFTYPE_AP); //c0_limits[1]
+					c0_limits[i].max = 1; //c0_limits[2]
+					c0_limits[i++].types = BIT(NL80211_IFTYPE_MONITOR); //c0_limits[2]
+
+					combo[c].num_different_channels = 1; //combo[0]
+					combo[c].max_interfaces = i; //combo[0] //3 interfaces (STATION, AP, MONITOR)
+					combo[c].n_limits = i; //combo[0]
+					combo[c].limits = c0_limits; //combo[0]
+
+					wiphy->n_iface_combinations = 1;
+					wiphy->iface_combinations = combo;
+					
+					//try to add second interface and call it monXX
+					new_wdev = brcmf_mon_add_vif(wiphy, "mon%d", NULL, NULL);
+					
+					/*
+					//try to set ndev to MONITOR (ndev points to new VIF ??!)
+					ndev_global->type = ARPHRD_IEEE80211_RADIOTAP;
+                    ndev_global->ieee80211_ptr->iftype = NL80211_IFTYPE_MONITOR;
+                    ndev_global->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_MONITOR);
+					*/
+					break;
+
+					err:
+						kfree(c0_limits);
+						kfree(combo);
+						brcmf_err("Error setting combined mode (MONITOR/STA/AP) in nexmon_nl_ioctl_handler: NOMEM\n");
+						//return -ENOMEM;
+                    break;
+
                 default:
                     ndev_global->type = ARPHRD_ETHER;
                     ndev_global->ieee80211_ptr->iftype = NL80211_IFTYPE_STATION;
