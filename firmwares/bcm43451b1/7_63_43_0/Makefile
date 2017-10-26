@@ -15,7 +15,7 @@ flashpatches.c: $(RAM_FILE) definitions.mk
 	$(Q)printf "#include <patcher.h>\n\n" > flashpatches.c
 	$(Q)$(NEXMON_ROOT)/buildtools/flash_patch_extractor/fpext -r $< -s $(RAMSTART) -b $(FP_CONFIG_ORIGBASE) -e $(FP_CONFIG_ORIGEND) >> $@
 	@printf "\033[0;31m  REMOVE PRINTF FLASHPATCH\033[0m to print to console buffer\n"
-	$(Q)sed -i '/__attribute__((at(0x00002504, "flashpatch")))/,+1 s/^/\/\//' flashpatches.c
+	$(Q)gsed -i '/__attribute__((at(0x00002504, "flashpatch")))/,+1 s/^/\/\//' flashpatches.c
 
 rom.bin: ../rom.bin
 	@printf "\033[0;31m  APPLYING FLASHPATCHES TO CLEAN ROM\033[0m\n"
