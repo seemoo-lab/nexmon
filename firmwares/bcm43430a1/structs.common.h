@@ -158,6 +158,48 @@ struct phy_func_ptr {
 };
 typedef struct phy_func_ptr phy_func_ptr_t;
 
+struct phy_info_lcn20phy {
+    int PAD;                            // 0x000
+    int PAD;                            // 0x004
+    int PAD;                            // 0x008
+    int PAD;                            // 0x00c
+    int PAD;                            // 0x010
+    int PAD;                            // 0x014
+    int PAD;                            // 0x018
+    int PAD;                            // 0x01c
+    int PAD;                            // 0x020
+    int PAD;                            // 0x024
+    int PAD;                            // 0x028
+    int PAD;                            // 0x02c
+    int PAD;                            // 0x030
+    int PAD;                            // 0x034
+};
+
+struct wlc_phy_shim_info {
+    struct wlc_hw_info *wlc_hw;  /* pointer to main wlc_hw structure */
+    struct wlc_info *wlc;  /* pointer to main wlc structure */
+    struct wl_info *wl;       /* pointer to os-specific private state */
+};
+
+struct shared_phy {
+    void *phy_head;                     // 0x000 /* head of phy list */
+    uint    unit;                       // 0x004 /* device instance number */
+    struct  osl_info *osh;              // 0x008 /* pointer to os handle */
+    void    *sih;                       // 0x00c /* si handle (cookie for siutils calls) */
+    void    *physhim;                   // 0x010 /* phy <-> wl shim layer for wlapi */
+    uint    corerev;                    // 0x014 /* d11corerev, shadow of wlc_hw->corerev */
+    uint32  machwcap;                   // 0x018 /* mac hw capability */
+    bool    up;                         // 0x01c /* main driver is up and running */
+    bool    clk;                        // 0x01d /* main driver make the clk available */
+    short PAD;                          // 0x01e
+    int PAD;                            // 0x020
+    int PAD;                            // 0x024
+    int PAD;                            // 0x028
+    int PAD;                            // 0x02c
+    int PAD;                            // 0x030
+    int PAD;                            // 0x034
+};
+
 struct phy_info {
     int PAD;                            // 0x000
     int PAD;                            // 0x004
@@ -173,12 +215,12 @@ struct phy_info {
     int PAD;                            // 0x02c
     int PAD;                            // 0x030
     int PAD;                            // 0x034
-    void *sh;                           // 0x038
+    struct shared_phy *sh;              // 0x038
     struct phy_func_ptr pi_fptr;        // 0x03c - 0xd4
     int PAD;                            // 0x0d8
     int PAD;                            // 0x0dc
     int PAD;                            // 0x0e0
-    int PAD;                            // 0x0e4
+    struct phy_info_lcn20phy *pi_lcn20phy;    // 0x0e4 // verified for bcm43430
     volatile struct d11regs *regs;      // 0x0e8
     int PAD;                            // 0x0ec
     int PAD;                            // 0x0f0
@@ -321,6 +363,48 @@ struct wlcband {
     int hw_rateset;
     char basic_rate;
 } __attribute__((packed));
+
+/* per interface counters */
+struct wlc_if_stats {
+    /* transmit stat counters */
+    uint32  txframe;        /* tx data frames */
+    uint32  txbyte;         /* tx data bytes */
+    uint32  txerror;        /* tx data errors (derived: sum of others) */
+    uint32  txnobuf;        /* tx out of buffer errors */
+    uint32  txrunt;         /* tx runt frames */
+    uint32  txfail;         /* tx failed frames */
+    uint32  rxframe;        /* rx data frames */
+    uint32  rxbyte;         /* rx data bytes */
+    uint32  rxerror;        /* rx data errors (derived: sum of others) */
+    uint32  rxnobuf;        /* rx out of buffer errors */
+    uint32  rxrunt;         /* rx runt frames */
+    uint32  rxfragerr;      /* rx fragment errors */
+    uint32  txretry;        /* tx retry frames */
+    uint32  txretrie;       /* tx multiple retry frames */
+    uint32  txfrmsnt;       /* tx sent frames */
+    uint32  txmulti;        /* tx mulitcast sent frames */
+    uint32  txfrag;         /* tx fragments sent */
+    uint32  rxmulti;        /* rx multicast frames */
+};
+
+struct wl_if {
+    struct wlc_if *wlcif;
+    struct hndrte_dev *dev;
+};
+
+struct wlc_if {
+    struct wlc_if    *next;
+    uint8       type;
+    uint8       index;
+    uint8       flags;
+    struct wl_if     *wlif;
+    void *qi;
+    union {
+        struct scb *scb;
+        struct wlc_bsscfg *bsscfg;
+    } u;
+    struct wlc_if_stats  _cnt;
+};
 
 struct wlc_info {
     struct wlc_pub *pub;                /* 0x000 */
@@ -687,7 +771,7 @@ struct wlc_info {
     int PAD;                            /* 0X594 */
     int PAD;                            /* 0X598 */
     int PAD;                            /* 0X59C */
-    void *wlcif_list;                   /* 0X5A0 CHECKED for 7.45.41.26*/
+    struct wlc_if *wlcif_list;          /* 0X5A0 CHECKED for 7.45.41.26*/
     int PAD;                            /* 0X5A4 */
     int PAD;                            /* 0X5A8 */
     int PAD;                            /* 0X5AC */
