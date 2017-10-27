@@ -138,9 +138,12 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
                 /* MaMe82 */
                 case MONITOR_STA_RADIOTAP:
                     // propagate support for MON + STA for wiphy
-                    ndev_global->type = ARPHRD_IEEE80211_RADIOTAP;
+                    //ndev_global->type = ARPHRD_IEEE80211_RADIOTAP;
+                    //ndev_global->ieee80211_ptr->iftype = NL80211_IFTYPE_STATION;
+                    ndev_global->type = ARPHRD_ETHER;
                     ndev_global->ieee80211_ptr->iftype = NL80211_IFTYPE_STATION;
-                    
+                    ndev_global->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION);
+
                     combo = kcalloc(1, sizeof(*combo), GFP_KERNEL);
                     if (!combo)
                         goto err;
