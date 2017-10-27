@@ -384,6 +384,7 @@ strncmp(char *str1, char *str2, unsigned int num)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM43451b1, FW_VER_ALL, 0x265C)
+AT(CHIP_VER_BCM43430a1, FW_VER_ALL, 0x803cd4)
 char *
 strncpy(char *dst, char *src, unsigned int num)
 RETURN_DUMMY
