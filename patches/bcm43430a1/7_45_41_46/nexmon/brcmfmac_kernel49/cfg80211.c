@@ -582,18 +582,25 @@ brcmf_cfg80211_update_proto_addr_mode(struct wireless_dev *wdev)
 	struct brcmf_cfg80211_vif *vif;
 	struct brcmf_if *ifp;
 
+	
+	
 	vif = container_of(wdev, struct brcmf_cfg80211_vif, wdev);
 	ifp = vif->ifp;
 
 	if ((wdev->iftype == NL80211_IFTYPE_ADHOC) ||
 	    (wdev->iftype == NL80211_IFTYPE_AP) ||
 	    (wdev->iftype == NL80211_IFTYPE_P2P_GO))
-		brcmf_proto_configure_addr_mode(ifp->drvr, ifp->ifidx,
-						ADDR_DIRECT);
+	{
+		brcmf_err("brcmf_cfg80211_update_proto_addr_mode: ADDR_DIRECT (ADHOC || AP || P2P_GO)\n");
+		brcmf_proto_configure_addr_mode(ifp->drvr, ifp->ifidx, ADDR_DIRECT);
+	}
 	else
-		brcmf_proto_configure_addr_mode(ifp->drvr, ifp->ifidx,
-						ADDR_INDIRECT);
+	{
+		brcmf_proto_configure_addr_mode(ifp->drvr, ifp->ifidx, ADDR_INDIRECT);
+		brcmf_err("brcmf_cfg80211_update_proto_addr_mode: ADDR_INDIRECT\n");
+	}
 }
+
 
 static int brcmf_get_first_free_bsscfgidx(struct brcmf_pub *drvr)
 {
@@ -706,7 +713,18 @@ struct wireless_dev *brcmf_mon_add_vif(struct wiphy *wiphy, const char *name,
 	//Try to change the ndev to be flagged with "monitor mode"  before going on
 	ifp->ndev->type = ARPHRD_IEEE80211_RADIOTAP;
 	ifp->ndev->ieee80211_ptr->iftype = NL80211_IFTYPE_MONITOR;
-	ifp->ndev->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_MONITOR);
+	
+	/* MaMe82 */
+	/*
+		Inform the kernel that the PHY interface supports STA and AP.
+		MONITOR support isn't propagated anymore, as we already have a MONITOR VIF up
+		and we want to avoid that hostapd tries to open a second monitor interface
+		(mimic the behavior of default driver, which isn't able to bring up an additional
+		monitor interface for hostapd)
+	*/
+	//ifp->ndev->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_MONITOR);
+	ifp->ndev->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION) |
+                                 BIT(NL80211_IFTYPE_AP);
 	
 	
 	return &ifp->vif->wdev;
