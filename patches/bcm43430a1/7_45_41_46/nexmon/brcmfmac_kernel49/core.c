@@ -59,7 +59,8 @@
 #define MONITOR_LOG_ONLY  3
 #define MONITOR_DROP_FRM  4
 #define MONITOR_IPV4_UDP  5
-#define MONITOR_STA_RADIOTAP  6
+#define MONITOR_ENABLED_DUAL_INTERFACE  6
+#define MONITOR_DISABLED_DUAL_INTERFACE  7
 
 /*NEXMON*/
 static struct netlink_kernel_cfg cfg = {0};
@@ -136,7 +137,8 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
                     break;
 
                 /* MaMe82 */
-                case MONITOR_STA_RADIOTAP:
+				case MONITOR_DISABLED_DUAL_INTERFACE:
+                case MONITOR_ENABLED_DUAL_INTERFACE:
                     // propagate support for MON + STA for wiphy
                     //ndev_global->type = ARPHRD_IEEE80211_RADIOTAP;
                     //ndev_global->ieee80211_ptr->iftype = NL80211_IFTYPE_STATION;
@@ -164,22 +166,20 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
                     c0_limits[i++].types = BIT(NL80211_IFTYPE_MONITOR); //c0_limits[2]
 
                     combo[c].num_different_channels = 1; //combo[0]
-                    combo[c].max_interfaces = i; //combo[0] //3 interfaces (STATION, AP, MONITOR)
+                    combo[c].max_interfaces = 2; //combo[0] //2 interfaces (1* STATION / AP + 1 * MONITOR)
                     combo[c].n_limits = i; //combo[0]
                     combo[c].limits = c0_limits; //combo[0]
 
                     wiphy->n_iface_combinations = 1;
                     wiphy->iface_combinations = combo;
                     
-                    //try to add second interface and call it monXX
-                    new_wdev = brcmf_mon_add_vif(wiphy, "mon%d", NULL, NULL);
+					// add the monitor interface only for mode 6 (has to be disabled manually to switch to mode 0 to 5)
+					// mode 7 doesn't add the interface, so hostapd / hostapd-mana could be used as intended
+					if (*(unsigned int *) frame->payload == MONITOR_ENABLED_DUAL_INTERFACE)
+						//try to add second interface and call it monXX
+						new_wdev = brcmf_mon_add_vif(wiphy, "mon%d", NULL, NULL);
+                   
                     
-                    /*
-                    //try to set ndev to MONITOR (ndev points to new VIF ??!)
-                    ndev_global->type = ARPHRD_IEEE80211_RADIOTAP;
-                    ndev_global->ieee80211_ptr->iftype = NL80211_IFTYPE_MONITOR;
-                    ndev_global->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_MONITOR);
-                    */
                     break;
 
                     err:
