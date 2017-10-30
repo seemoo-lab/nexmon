@@ -40,7 +40,7 @@
 #include <string.h>
 #include <byteswap.h>
 
-//#include <types.h>
+#include <types.h> //not sure why it was removed, but it is needed for typedefs like `uint`
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>

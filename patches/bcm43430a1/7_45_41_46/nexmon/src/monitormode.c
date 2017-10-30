@@ -87,6 +87,7 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p)
 void
 wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
     switch(wl->wlc->monitor & 0xFF) {
+        case 7:
         case 6:
         case MONITOR_RADIOTAP:
                 wl_monitor_radiotap(wl, sts, p);

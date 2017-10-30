@@ -496,6 +496,18 @@ static int brcmf_vif_add_validate(struct brcmf_cfg80211_info *cfg,
 	{
 		brcmf_err("brcmf_vif_add_validate, cfg80211_check_combinations for iftype_num: (%d)\tval:(%d)\n", i, iftype_num[i]);
 	}
+	
+	//Return not supported if hostapd tries to add a second monitor interface
+	if (new_type == NL80211_IFTYPE_MONITOR)
+	{
+		brcmf_err("Attempt to add a MONITOR interface...\n");
+		if (iftype_num[new_type] > 1)
+		{
+			brcmf_err("... there is already a monitor interface, returning EOPNOTSUPP\n");
+			return -EOPNOTSUPP;
+		}
+	}
+	
 	/*
 	Check if this IF_TYPE counts are a valid combination.
 	*/
@@ -582,18 +594,25 @@ brcmf_cfg80211_update_proto_addr_mode(struct wireless_dev *wdev)
 	struct brcmf_cfg80211_vif *vif;
 	struct brcmf_if *ifp;
 
+	
+	
 	vif = container_of(wdev, struct brcmf_cfg80211_vif, wdev);
 	ifp = vif->ifp;
 
 	if ((wdev->iftype == NL80211_IFTYPE_ADHOC) ||
 	    (wdev->iftype == NL80211_IFTYPE_AP) ||
 	    (wdev->iftype == NL80211_IFTYPE_P2P_GO))
-		brcmf_proto_configure_addr_mode(ifp->drvr, ifp->ifidx,
-						ADDR_DIRECT);
+	{
+		brcmf_err("brcmf_cfg80211_update_proto_addr_mode: ADDR_DIRECT (ADHOC || AP || P2P_GO)\n");
+		brcmf_proto_configure_addr_mode(ifp->drvr, ifp->ifidx, ADDR_DIRECT);
+	}
 	else
-		brcmf_proto_configure_addr_mode(ifp->drvr, ifp->ifidx,
-						ADDR_INDIRECT);
+	{
+		brcmf_proto_configure_addr_mode(ifp->drvr, ifp->ifidx, ADDR_INDIRECT);
+		brcmf_err("brcmf_cfg80211_update_proto_addr_mode: ADDR_INDIRECT\n");
+	}
 }
+
 
 static int brcmf_get_first_free_bsscfgidx(struct brcmf_pub *drvr)
 {
@@ -706,7 +725,34 @@ struct wireless_dev *brcmf_mon_add_vif(struct wiphy *wiphy, const char *name,
 	//Try to change the ndev to be flagged with "monitor mode"  before going on
 	ifp->ndev->type = ARPHRD_IEEE80211_RADIOTAP;
 	ifp->ndev->ieee80211_ptr->iftype = NL80211_IFTYPE_MONITOR;
-	ifp->ndev->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_MONITOR);
+	
+	/* MaMe82 */
+	/*
+		Inform the kernel that the PHY interface supports STA, MONITOR and AP.
+		
+		Problem: hostapd tries to setup an additional monitor interface (default
+		driver doesn't allow this and returns ERROR NOT SUPPORTED). 
+		We can't disable the NL80211_IFTYPE_MONITOR bit to mimic the default driver, 
+		because airodump-ng wouldn't recognize the interface as "monitor capable" anymore. 
+		Allowing an additional monitor interface on the other hand, would result in a timeout
+		when hostapd tries to add a second monitor interface.
+		
+		Solution:
+		We use brcmf_vif_add_validate to return EOPNOTSUPP in case a second monitor interface
+		should be added.
+		
+		Result:
+		Hostapd tries to add two new interfaces one with MONITORMODE (mode 6), the other with
+		AP mode (mode 3). In result brcmf_vif_add_validate returns EOPNOTSUPP.
+		Now hostapd fails over to call brcmf_cfg80211_change_iface with mode 3 (AP) in order
+		to reconfigure the existing interface to MASTER mode, which ultimatly works and
+		we have an access point running with an additional monitor interface.
+		
+	*/
+	//ifp->ndev->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_MONITOR);
+	ifp->ndev->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION) |
+								BIT(NL80211_IFTYPE_MONITOR) |
+                                BIT(NL80211_IFTYPE_AP);
 	
 	
 	return &ifp->vif->wdev;
@@ -1034,9 +1080,9 @@ int brcmf_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	case NL80211_IFTYPE_STATION:
 	case NL80211_IFTYPE_AP_VLAN:
 	case NL80211_IFTYPE_WDS:
-	case NL80211_IFTYPE_MONITOR:
 	case NL80211_IFTYPE_MESH_POINT:
 		return -EOPNOTSUPP;
+	case NL80211_IFTYPE_MONITOR:
 	case NL80211_IFTYPE_AP:
 		return brcmf_cfg80211_del_ap_iface(wiphy, wdev);
 	case NL80211_IFTYPE_P2P_CLIENT:
