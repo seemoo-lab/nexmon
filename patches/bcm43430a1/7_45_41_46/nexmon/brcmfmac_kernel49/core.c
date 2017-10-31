@@ -691,9 +691,9 @@ int brcmf_net_attach(struct brcmf_if *ifp, bool rtnl_locked)
 
 
     /* NEXMON */
-    ndev->type = ARPHRD_IEEE80211_RADIOTAP;
-    ndev->ieee80211_ptr->iftype = NL80211_IFTYPE_MONITOR;
-    ndev->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_MONITOR);
+//    ndev->type = ARPHRD_IEEE80211_RADIOTAP;
+//    ndev->ieee80211_ptr->iftype = NL80211_IFTYPE_MONITOR;
+//    ndev->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_MONITOR);
 
     /* set the mac address */
     memcpy(ndev->dev_addr, ifp->mac_addr, ETH_ALEN);
@@ -713,9 +713,9 @@ int brcmf_net_attach(struct brcmf_if *ifp, bool rtnl_locked)
     brcmf_dbg(INFO, "%s: Broadcom Dongle Host Driver\n", ndev->name);
 
     /* NEXMON set default interface type to Ethernet interface */
-    ndev_global->type = ARPHRD_ETHER;
-    ndev_global->ieee80211_ptr->iftype = NL80211_IFTYPE_STATION;
-    ndev_global->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION);
+//    ndev_global->type = ARPHRD_ETHER;
+//    ndev_global->ieee80211_ptr->iftype = NL80211_IFTYPE_STATION;
+//    ndev_global->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION);
 
     return 0;
 

@@ -55,7 +55,7 @@
 #else
 #define brcmf_err(fmt, ...)						\
 	do {								\
-		if (net_ratelimit())					\
+		if (net_ratelimit() || 1)				\
 			pr_err("%s: " fmt, __func__, ##__VA_ARGS__);	\
 	} while (0)
 #endif

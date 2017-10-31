@@ -749,11 +749,13 @@ struct wireless_dev *brcmf_mon_add_vif(struct wiphy *wiphy, const char *name,
 		we have an access point running with an additional monitor interface.
 		
 	*/
+        brcmf_err("4 modes=%04x\n", ifp->ndev->ieee80211_ptr->wiphy->interface_modes);
 	//ifp->ndev->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_MONITOR);
 	ifp->ndev->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION) |
 								BIT(NL80211_IFTYPE_MONITOR) |
                                 BIT(NL80211_IFTYPE_AP);
 	
+        brcmf_err("5 modes=%04x\n", ifp->ndev->ieee80211_ptr->wiphy->interface_modes);
 	
 	return &ifp->vif->wdev;
 
@@ -6532,7 +6534,11 @@ brcmf_txrx_stypes[NUM_NL80211_IFTYPES] = {
 		.tx = 0xffff,
 		.rx = BIT(IEEE80211_STYPE_ACTION >> 4) |
 		      BIT(IEEE80211_STYPE_PROBE_REQ >> 4)
-	}
+	},
+        [NL80211_IFTYPE_MONITOR] = {
+                .tx = 0xffff,
+                .rx = 0xffff
+        }
 };
 
 /**
@@ -6577,6 +6583,8 @@ static int brcmf_setup_ifmodes(struct wiphy *wiphy, struct brcmf_if *ifp)
 	mbss = brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MBSS); //Feature: Mesh Basic Service Set
 	p2p = brcmf_feat_is_enabled(ifp, BRCMF_FEAT_P2P);
 
+        brcmf_err("%s: p2p=%d, mbss=%d\n", __FUNCTION__, p2p, mbss);
+
 	n_combos = 1 + !!p2p + !!mbss;
 	combo = kcalloc(n_combos, sizeof(*combo), GFP_KERNEL);
 	if (!combo)
@@ -6584,7 +6592,8 @@ static int brcmf_setup_ifmodes(struct wiphy *wiphy, struct brcmf_if *ifp)
 
 	wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION) |
 				 BIT(NL80211_IFTYPE_ADHOC) |
-				 BIT(NL80211_IFTYPE_AP);
+				 BIT(NL80211_IFTYPE_AP) |
+                                 BIT(NL80211_IFTYPE_MONITOR);
 
 	c = 0;
 	i = 0;
@@ -6593,6 +6602,8 @@ static int brcmf_setup_ifmodes(struct wiphy *wiphy, struct brcmf_if *ifp)
 		goto err;
 	c0_limits[i].max = 1;  //c0_limits[0]
 	c0_limits[i++].types = BIT(NL80211_IFTYPE_STATION); //c0_limits[0]
+        c0_limits[i].max = 1;  //c0_limits[0]
+        c0_limits[i++].types = BIT(NL80211_IFTYPE_MONITOR); //c0_limits[0]
 	if (p2p) {
 		if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MCHAN))
 			combo[c].num_different_channels = 2;
@@ -6624,6 +6635,8 @@ static int brcmf_setup_ifmodes(struct wiphy *wiphy, struct brcmf_if *ifp)
 		p2p_limits[i].max = 1;
 		p2p_limits[i++].types = BIT(NL80211_IFTYPE_AP);
 		p2p_limits[i].max = 1;
+                p2p_limits[i++].types = BIT(NL80211_IFTYPE_MONITOR);
+                p2p_limits[i].max = 1;
 		p2p_limits[i++].types = BIT(NL80211_IFTYPE_P2P_CLIENT);
 		p2p_limits[i].max = 1;
 		p2p_limits[i++].types = BIT(NL80211_IFTYPE_P2P_DEVICE);
@@ -6650,6 +6663,7 @@ static int brcmf_setup_ifmodes(struct wiphy *wiphy, struct brcmf_if *ifp)
 
 	wiphy->n_iface_combinations = n_combos;
 	wiphy->iface_combinations = combo;
+        brcmf_err("%s: wiphy->interface_modes=%04x\n", __FUNCTION__, ifp->ndev->ieee80211_ptr->wiphy->interface_modes);
 	return 0;
 
 err:
@@ -6891,6 +6905,8 @@ s32 brcmf_cfg80211_up(struct net_device *ndev)
 	struct brcmf_cfg80211_info *cfg = ifp->drvr->config;
 	s32 err = 0;
 
+        brcmf_err("7 modes=%04x\n", ifp->ndev->ieee80211_ptr->wiphy->interface_modes);
+
 	mutex_lock(&cfg->usr_sync);
 	err = __brcmf_cfg80211_up(ifp);
 	mutex_unlock(&cfg->usr_sync);
@@ -6903,6 +6919,8 @@ s32 brcmf_cfg80211_down(struct net_device *ndev)
 	struct brcmf_if *ifp = netdev_priv(ndev);
 	struct brcmf_cfg80211_info *cfg = ifp->drvr->config;
 	s32 err = 0;
+
+        brcmf_err("6 modes=%04x\n", ifp->ndev->ieee80211_ptr->wiphy->interface_modes);
 
 	mutex_lock(&cfg->usr_sync);
 	err = __brcmf_cfg80211_down(ifp);
@@ -7073,6 +7091,8 @@ static void brcmf_free_wiphy(struct wiphy *wiphy)
 {
 	int i;
 
+        brcmf_err("%s: enter\n", __FUNCTION__);
+
 	if (!wiphy)
 		return;
 
@@ -7105,6 +7125,8 @@ struct brcmf_cfg80211_info *brcmf_cfg80211_attach(struct brcmf_pub *drvr,
 	s32 err = 0;
 	s32 io_type;
 	u16 *cap = NULL;
+
+        brcmf_err("%s: enter\n", __FUNCTION__);
 
 	if (!ndev) {
 		brcmf_err("ndev is invalid\n");
@@ -7215,7 +7237,9 @@ struct brcmf_cfg80211_info *brcmf_cfg80211_attach(struct brcmf_pub *drvr,
 		cap = &wiphy->bands[NL80211_BAND_2GHZ]->ht_cap.cap;
 		*cap |= IEEE80211_HT_CAP_SUP_WIDTH_20_40;
 	}
+        brcmf_err("1 modes=%04x", wiphy->interface_modes);
 	err = wiphy_register(wiphy);
+        brcmf_err("2 modes=%04x", wiphy->interface_modes);
 	if (err < 0) {
 		brcmf_err("Could not register wiphy device (%d)\n", err);
 		goto priv_out;
@@ -7283,6 +7307,8 @@ struct brcmf_cfg80211_info *brcmf_cfg80211_attach(struct brcmf_pub *drvr,
 			wiphy->features |= NL80211_FEATURE_ND_RANDOM_MAC_ADDR;
 #endif
 	}
+
+        brcmf_err("3 modes=%04x", wiphy->interface_modes);
 
 	return cfg;
 
