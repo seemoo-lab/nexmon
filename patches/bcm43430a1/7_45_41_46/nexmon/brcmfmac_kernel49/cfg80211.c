@@ -749,34 +749,13 @@ struct wireless_dev *brcmf_mon_add_vif(struct wiphy *wiphy, const char *name,
 		we have an access point running with an additional monitor interface.
 		
 	*/
-        brcmf_err("4 modes=%04x\n", ifp->ndev->ieee80211_ptr->wiphy->interface_modes);
+
 	//ifp->ndev->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_MONITOR);
-	ifp->ndev->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION) |
-								BIT(NL80211_IFTYPE_MONITOR) |
-                                BIT(NL80211_IFTYPE_AP);
-	
-        brcmf_err("5 modes=%04x\n", ifp->ndev->ieee80211_ptr->wiphy->interface_modes);
+//	ifp->ndev->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION) |
+//								BIT(NL80211_IFTYPE_MONITOR) |
+//                                BIT(NL80211_IFTYPE_AP);
 	
 	return &ifp->vif->wdev;
-
-	/*
-	Trigger this by running:	nexutil -m6
-	
-	At this point a wlanNN device is present working in managed mode. It has only been tested with
-	"iwlist wlanNN scan" and is able to find networks and thus considered working.
-	
-	Additionally a monNN interface is added (on firmware end this is done utilizing the callbacks which are meant
-	to create a virtual interface in AP mode. Not using the callbacks, makes attaching of the new virtual interface
-	to wiphy impossible). The monNN interface has type MONITOR (radiotap) set.
-	The monitor interface isn't capable of receiving frames, which has been tested with "airodump-ng -i mon0".
-	Airodump reveals no results.
-	
-	Additional note:
-		Switching back to other firmware/driver modes once this mode is activated (nexutil -mX) shouldn't work
-		without errors, because disabeling the new virtual interface again hasn't been implemented. Trying to switch
-		back !without reloading the driver and firmware! can cause errors.
-	
-	*/
 	
 fail:
 	brcmf_free_vif(vif);
@@ -6663,7 +6642,6 @@ static int brcmf_setup_ifmodes(struct wiphy *wiphy, struct brcmf_if *ifp)
 
 	wiphy->n_iface_combinations = n_combos;
 	wiphy->iface_combinations = combo;
-        brcmf_err("%s: wiphy->interface_modes=%04x\n", __FUNCTION__, ifp->ndev->ieee80211_ptr->wiphy->interface_modes);
 	return 0;
 
 err:
@@ -6905,11 +6883,27 @@ s32 brcmf_cfg80211_up(struct net_device *ndev)
 	struct brcmf_cfg80211_info *cfg = ifp->drvr->config;
 	s32 err = 0;
 
-        brcmf_err("7 modes=%04x\n", ifp->ndev->ieee80211_ptr->wiphy->interface_modes);
-
 	mutex_lock(&cfg->usr_sync);
 	err = __brcmf_cfg80211_up(ifp);
 	mutex_unlock(&cfg->usr_sync);
+
+	// Enable monitor mode
+	if (ifp->ndev->ieee80211_ptr->iftype == NL80211_IFTYPE_MONITOR) {
+		unsigned int monitormode;
+
+		switch(ifp->ndev->type) {
+			case ARPHRD_IEEE80211_RADIOTAP:
+				monitormode = 2; // RADIOTAP ENABLED MONITOR MODE
+				break;
+			case ARPHDR_IEEE80211:
+				monitormode = 1; // MONITOR MODE WITHOUT RADIOTAP
+				break;
+			default:
+				monitormode = 0;
+		}
+
+		brcmf_fil_cmd_data_set(ifp, 108, &monitormode, 4);
+	}
 
 	return err;
 }
@@ -6920,11 +6914,15 @@ s32 brcmf_cfg80211_down(struct net_device *ndev)
 	struct brcmf_cfg80211_info *cfg = ifp->drvr->config;
 	s32 err = 0;
 
-        brcmf_err("6 modes=%04x\n", ifp->ndev->ieee80211_ptr->wiphy->interface_modes);
-
 	mutex_lock(&cfg->usr_sync);
 	err = __brcmf_cfg80211_down(ifp);
 	mutex_unlock(&cfg->usr_sync);
+
+	// Disable monitor mode
+	if (ifp->ndev->ieee80211_ptr->iftype == NL80211_IFTYPE_MONITOR) {
+		unsigned int monitormode = 0; // DISABLED MONITOR MODE
+		brcmf_fil_cmd_data_set(ifp, 108, &monitormode, 4);
+	}
 
 	return err;
 }
@@ -7237,9 +7235,7 @@ struct brcmf_cfg80211_info *brcmf_cfg80211_attach(struct brcmf_pub *drvr,
 		cap = &wiphy->bands[NL80211_BAND_2GHZ]->ht_cap.cap;
 		*cap |= IEEE80211_HT_CAP_SUP_WIDTH_20_40;
 	}
-        brcmf_err("1 modes=%04x", wiphy->interface_modes);
 	err = wiphy_register(wiphy);
-        brcmf_err("2 modes=%04x", wiphy->interface_modes);
 	if (err < 0) {
 		brcmf_err("Could not register wiphy device (%d)\n", err);
 		goto priv_out;
@@ -7307,8 +7303,6 @@ struct brcmf_cfg80211_info *brcmf_cfg80211_attach(struct brcmf_pub *drvr,
 			wiphy->features |= NL80211_FEATURE_ND_RANDOM_MAC_ADDR;
 #endif
 	}
-
-        brcmf_err("3 modes=%04x", wiphy->interface_modes);
 
 	return cfg;
 

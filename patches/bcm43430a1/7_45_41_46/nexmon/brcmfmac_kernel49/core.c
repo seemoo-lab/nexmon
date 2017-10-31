@@ -59,8 +59,6 @@
 #define MONITOR_LOG_ONLY  3
 #define MONITOR_DROP_FRM  4
 #define MONITOR_IPV4_UDP  5
-#define MONITOR_ENABLED_DUAL_INTERFACE  6
-#define MONITOR_DISABLED_DUAL_INTERFACE  7
 
 /*NEXMON*/
 static struct netlink_kernel_cfg cfg = {0};
@@ -121,87 +119,7 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
         brcmf_err("NEXMON: %s: calling brcmf_fil_cmd_data_set, cmd: %d\n", __FUNCTION__, frame->cmd);
         brcmf_fil_cmd_data_set(ifp, frame->cmd, frame->payload, nlmsg_len(nlh) - sizeof(struct nexudp_ioctl_header) + sizeof(char));
 
-        if (frame->cmd == 108) { // WLC_SET_MONITOR
-            brcmf_err("NEXMON: %s: WLC_SET_MONITOR = %d\n", __FUNCTION__, *(unsigned int *) frame->payload);
-            switch(*(unsigned int *) frame->payload) {
-                case MONITOR_IEEE80211:
-                    ndev_global->type = ARPHRD_IEEE80211;
-                    ndev_global->ieee80211_ptr->iftype = NL80211_IFTYPE_MONITOR;
-                    ndev_global->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_MONITOR);
-                    break;
-
-                case MONITOR_RADIOTAP:
-                    ndev_global->type = ARPHRD_IEEE80211_RADIOTAP;
-                    ndev_global->ieee80211_ptr->iftype = NL80211_IFTYPE_MONITOR;
-                    ndev_global->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_MONITOR);
-                    break;
-
-                /* MaMe82 */
-				case MONITOR_DISABLED_DUAL_INTERFACE:
-                case MONITOR_ENABLED_DUAL_INTERFACE:
-                    // propagate support for MON + STA for wiphy
-                    //ndev_global->type = ARPHRD_IEEE80211_RADIOTAP;
-                    //ndev_global->ieee80211_ptr->iftype = NL80211_IFTYPE_STATION;
-                    ndev_global->type = ARPHRD_ETHER;
-                    ndev_global->ieee80211_ptr->iftype = NL80211_IFTYPE_STATION;
-                    ndev_global->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION);
-
-                    combo = kcalloc(1, sizeof(*combo), GFP_KERNEL);
-                    if (!combo)
-                        goto err;
-
-                    wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION) |
-                                 BIT(NL80211_IFTYPE_MONITOR) |
-                                 BIT(NL80211_IFTYPE_AP);
-
-                    c = 0;
-                    i = 0;
-                    c0_limits = kcalloc(3, sizeof(*c0_limits), GFP_KERNEL);
-                    if (!c0_limits) goto err;
-                    c0_limits[i].max = 1;  //c0_limits[0]
-                    c0_limits[i++].types = BIT(NL80211_IFTYPE_STATION); //c0_limits[0]
-                    c0_limits[i].max = 1; //c0_limits[1]
-                    c0_limits[i++].types = BIT(NL80211_IFTYPE_AP); //c0_limits[1]
-                    c0_limits[i].max = 1; //c0_limits[2]
-                    c0_limits[i++].types = BIT(NL80211_IFTYPE_MONITOR); //c0_limits[2]
-
-                    combo[c].num_different_channels = 1; //combo[0]
-                    combo[c].max_interfaces = 2; //combo[0] //2 interfaces (1* STATION / AP + 1 * MONITOR)
-                    combo[c].n_limits = i; //combo[0]
-                    combo[c].limits = c0_limits; //combo[0]
-
-                    wiphy->n_iface_combinations = 1;
-                    wiphy->iface_combinations = combo;
-                    
-					// add the monitor interface only for mode 6 (has to be disabled manually to switch to mode 0 to 5)
-					// mode 7 doesn't add the interface, so hostapd / hostapd-mana could be used as intended
-					if (*(unsigned int *) frame->payload == MONITOR_ENABLED_DUAL_INTERFACE)
-						//try to add second interface and call it monXX
-						new_wdev = brcmf_mon_add_vif(wiphy, "mon%d", NULL, NULL);
-                   
-                    
-                    break;
-
-                    err:
-                        kfree(c0_limits);
-                        kfree(combo);
-                        brcmf_err("Error setting combined mode (MONITOR/STA/AP) in nexmon_nl_ioctl_handler: NOMEM\n");
-                        //return -ENOMEM;
-                    break;
-
-                case MONITOR_DISABLED:
-                case MONITOR_LOG_ONLY:
-                case MONITOR_DROP_FRM:
-                case MONITOR_IPV4_UDP:
-                default:
-                    ndev_global->type = ARPHRD_ETHER;
-                    ndev_global->ieee80211_ptr->iftype = NL80211_IFTYPE_STATION;
-                    ndev_global->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION);
-                    break;
-            }
-        }
-
-    skb_out = nlmsg_new(4, 0);
+        skb_out = nlmsg_new(4, 0);
         nlh_tx = nlmsg_put(skb_out, 0, 0, NLMSG_DONE, 4, 0);
         NETLINK_CB(skb_out).dst_group = 0; /* not in mcast group */
         memcpy(nlmsg_data(nlh_tx), "ACK", 4);
