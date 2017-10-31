@@ -112,7 +112,7 @@ To be able to communicate with the firmware without root priviledges, we created
 ### Using the Monitor Mode patch
 * Thanks to the prior work of Mame82, you can setup a new monitor mode interface by executing `iw phy phy1 interface add mon0 type monitor`. `phy1` is chosen according to the `wiphy` index after executing `iw dev wlan0 info`.
 * To activate monitor mode in the firmware, simply set the interface up: `ifconfig mon0 up`.
-* At this point the monitor mode is active. There is no need to call *airmon-ng*. 
+* At this point, monitor mode is active. There is no need to call *airmon-ng*. 
 * The interface already set the Radiotap header, therefore, tools like *tcpdump* or *airodump-ng* can be used out of the box: `tcpdump -i mon0`
 * *Optional*: To make the RPI3 load the modified driver after reboot:
   * Find the path of the default driver at reboot: `modinfo brcmfmac` #the first line should be the full path
