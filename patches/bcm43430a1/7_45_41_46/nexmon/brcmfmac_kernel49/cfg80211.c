@@ -6895,7 +6895,7 @@ s32 brcmf_cfg80211_up(struct net_device *ndev)
 			case ARPHRD_IEEE80211_RADIOTAP:
 				monitormode = 2; // RADIOTAP ENABLED MONITOR MODE
 				break;
-			case ARPHDR_IEEE80211:
+			case ARPHRD_IEEE80211:
 				monitormode = 1; // MONITOR MODE WITHOUT RADIOTAP
 				break;
 			default:
