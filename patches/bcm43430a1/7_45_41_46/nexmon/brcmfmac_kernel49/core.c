@@ -87,15 +87,6 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
     struct sk_buff *skb_out;
     struct nlmsghdr *nlh_tx;
 
-    /*MaMe82*/
-    struct ieee80211_iface_combination *combo = NULL;
-    struct ieee80211_iface_limit *c0_limits = NULL;
-    struct wireless_dev *new_wdev = NULL;
-    
-    int i, c;
-    struct wiphy *wiphy = ndev_global->ieee80211_ptr->wiphy;
-    
-    
     brcmf_err("NEXMON: %s: Enter\n", __FUNCTION__);
 
     brcmf_err("NEXMON: %s: %08x %d %d\n", __FUNCTION__, *(int *) frame->nexudphdr.nex, nlmsg_len(nlh), skb->len);

@@ -5,7 +5,7 @@ Nexmon is our C-based firmware patching framework for Broadcom/Cypress WiFi chip
 that enables you to write your own firmware patches, for example, to enable monitor
 mode with radiotap headers and frame injection.
 
-Before we started to work on this repository, we developed patches for the Nexus 5 (with bcm4339 WiFi chip) in the [bcm-public](https://github.com/seemoo-lab/bcm-public)  repository and those for the Raspberry Pi 3 (with ~~bcm43438~~bcm43430a1 WiFi chip) in the [bcm-rpi3](https://github.com/seemoo-lab/bcm-rpi3) repository. To remove the development overhead of maintaining multiple separate repositories, we decided to merge them in this repository and add support for some additional devices. In contrast to the former repositories, here, you can only build the firmware patch without drivers and kernels. The Raspberry Pi 3 makes an exception, as here it is always required to also build the driver.
+Before we started to work on this repository, we developed patches for the Nexus 5 (with bcm4339 WiFi chip) in the [bcm-public](https://github.com/seemoo-lab/bcm-public)  repository and those for the Raspberry Pi 3 (with bcm43430a1 WiFi chip) in the [bcm-rpi3](https://github.com/seemoo-lab/bcm-rpi3) repository. To remove the development overhead of maintaining multiple separate repositories, we decided to merge them in this repository and add support for some additional devices. In contrast to the former repositories, here, you can only build the firmware patch without drivers and kernels. The Raspberry Pi 3 makes an exception, as here it is always required to also build the driver.
 
 # Give Feedback
 We setup a survey to learn about who uses Nexmon to which purpose and how we could improve Nexmon. We would be happy if every Nexmon user filled out this survey: https://nexmon.org/survey
@@ -89,7 +89,7 @@ To be able to communicate with the firmware without root priviledges, we created
 * Set the security cookie as root: `nexutil -x<cookie (uint)>`
 * Start a UDP connection for example to activate monitor mode: `nexutil -X<cookie> -m1`
 
-## Build patches for ~~bcm43438~~bcm43430a1 on the RPI3/Zero W using Raspbian Stretch (recommended)
+## Build patches for bcm43430a1 on the RPI3/Zero W using Raspbian Stretch (recommended)
 **Note:** We currently support Kernel Version 4.4 (depricated) and 4.9
 * Make sure the following commands are executed as root: `sudo su`
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
@@ -110,18 +110,17 @@ To be able to communicate with the firmware without root priviledges, we created
 * **Note:** To connect to regular access points you have to execute `nexutil -m0` first
 
 ### Using the Monitor Mode patch
-* ~~Our modified driver sets the interface in monitor mode as soon as the interface goes up: `ifconfig wlan0 up`~~
-* In the default setting the brcmfmac driver can be used regularly as a WiFi station with out firmware. To activate monitor mode, execute `nexutil -m2`.
-* At this point the monitor mode is active. There is no need to call *airmon-ng*. 
-* The interface already set the Radiotap header, therefore, tools like *tcpdump* or *airodump-ng* can be used out of the box: `tcpdump -i wlan0`
+* Thanks to the prior work of Mame82, you can setup a new monitor mode interface by executing `iw phy phy1 interface add mon0 type monitor`. `phy1` is chosen according to the `wiphy` index after executing `iw dev wlan0 info`.
+* To activate monitor mode in the firmware, simply set the interface up: `ifconfig mon0 up`.
+* At this point, monitor mode is active. There is no need to call *airmon-ng*. 
+* The interface already set the Radiotap header, therefore, tools like *tcpdump* or *airodump-ng* can be used out of the box: `tcpdump -i mon0`
 * *Optional*: To make the RPI3 load the modified driver after reboot:
   * Find the path of the default driver at reboot: `modinfo brcmfmac` #the first line should be the full path
   * Backup the original driver: `mv "<PATH TO THE DRIVER>/brcmfmac.ko" "<PATH TO THE DRIVER>/brcmfmac.ko.orig"`
   * Copy the modified driver: `cp /home/pi/nexmon/patches/bcm43430a1/7_45_41_46/nexmon/brcmfmac_kernel49/brcmfmac.ko "<PATH TO THE DRIVER>/"`
   * Probe all modules and generate new dependency: `depmod -a`
   * The new driver should be loaded by default after reboot: `reboot`
-  * **Note:** With this setting, you can toggle between Monitor mode and Managed mode with: `nexutil -m2` and `nexutil -m0`
-  * **Note:** It is possible to connect to an access point using our modified driver and firmware, just set the wireless interface in Managed mode.
+  * **Note:** It is possible to connect to an access point or run your own access point in parallel to the monitor mode interface on the `wlan0` interface.
 
 # How to build the utilities
 To build the utilities such as nexmon or dhdutil for Android, you need to download the **old** NDK version 11c,
