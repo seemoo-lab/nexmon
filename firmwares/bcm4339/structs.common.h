@@ -2104,7 +2104,7 @@ struct d11regs {
     unsigned short PAD;                 /* SPR_TX_STATUS3                   0x51e */
 
     union {
-        struct {
+        struct { // d11regs
             /* Transmit control */
             uint16  xmtfifodef;     /* 0x520 */
             uint16  xmtfifo_frame_cnt;      /* 0x522 */     /* Corerev >= 16 */
@@ -2261,7 +2261,7 @@ struct d11regs {
             uint16  PAD[0x380];     /* 0x800 - 0xEFE */
         } d11regs;
 
-        struct {
+        struct { // d11regs_nexmon_old
             /* Transmit control */
             unsigned short xmtfifodef;          /* SPR_TXE0_FIFO_Def                0x520 */
             unsigned short xmtfifo_frame_cnt;   /* SPR_TXE0_0x22                    0x522 *//* Corerev >= 16 */
@@ -2400,7 +2400,7 @@ struct d11regs {
             unsigned short PAD[0x380]; /* 0x800 - 0xEFE */
         } d11regs_nexmon_old;
 
-        struct {
+        struct { // d11acregs
             uint16  XmtFIFOFullThreshold;   /* 0x520 */
             uint16  XmtFifoFrameCnt;    /* 0x522 */
             uint16  PAD[1];

@@ -40,7 +40,6 @@
 #include <string.h>
 #include <byteswap.h>
 
-#include <types.h> //not sure why it was removed, but it is needed for typedefs like `uint`
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -49,6 +48,7 @@
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
 #ifdef BUILD_ON_RPI
+#include <types.h> //not sure why it was removed, but it is needed for typedefs like `uint`
 #include <linux/if.h>
 #else
 #include <net/if.h>
@@ -64,6 +64,10 @@
 #include <typedefs.h>
 #include <bcmwifi_channels.h>
 #include <b64.h>
+
+#if ANDROID
+#include <sys/system_properties.h>
+#endif
 
 #define HEXDUMP_COLS 16
 
@@ -539,6 +543,17 @@ main(int argc, char **argv)
 
         ret = nex_ioctl(nexio, WLC_GET_REVINFO, &revinfo, sizeof(revinfo), false);
 
+#ifdef ANDROID
+        char model_string[PROP_VALUE_MAX + 1];
+        __system_property_get("ro.product.model", model_string);
+#else
+        char model_string[] = "unknown";
+#endif
+        char fw_ver[256] = "ver\0";
+        nex_ioctl(nexio, WLC_GET_VAR, fw_ver, sizeof(fw_ver), false);
+        char *fw_ver2 = strstr(fw_ver, "version") + 8;
+        fw_ver2[strlen(fw_ver2) - 1] = 0;
+
         snprintf(str[0], sizeof(str[0]), "0x%x", revinfo.vendorid);
         snprintf(str[1], sizeof(str[0]), "0x%x", revinfo.deviceid);
         snprintf(str[2], sizeof(str[0]), "0x%x", revinfo.radiorev);
@@ -557,6 +572,10 @@ main(int argc, char **argv)
         snprintf(str[15], sizeof(str[0]), "0x%x", revinfo.anarev);
         snprintf(str[16], sizeof(str[0]), "0x%x", revinfo.nvramrev);
 
+#ifdef ANDROID
+        printf("platform %s\n", model_string);
+#endif
+        printf("firmware %s\n", fw_ver2);
         printf("vendorid %s\n", str[0]);
         printf("deviceid %s\n", str[1]);
         printf("radiorev %s\n", str[2]);
@@ -576,10 +595,10 @@ main(int argc, char **argv)
         printf("nvramrev %s\n", str[16]);
 
         printf("\n");
-        printf("vendorid | deviceid | radiorev   | chipnum | chiprev | chippackage | corerev | boardid | boardvendor | boardrev | driverrev | ucoderev  | bus | phytype | phyrev | anarev | nvramrev\n");
-        printf("-------- | -------- | ---------- | ------- | ------- | ----------- | ------- | ------- | ----------- | -------- | --------- | --------- | --- | ------- | ------ | ------ | --------\n");
-        printf("%8s | %8s | %10s | %7s | %7s | %11s | %7s | %7s | %11s | %8s | %9s | %9s | %3s | %7s | %6s | %6s | %8s\n", 
-            str[0], str[1], str[2], str[3], str[4], str[5], str[6], str[7], str[8], str[9], str[10], str[11], str[12], str[13], str[14], str[15], str[16]);
+        printf("platform             | firmware                         | vendorid | deviceid | radiorev   | chipnum | chiprev | chippackage | corerev | boardid | boardvendor | boardrev | driverrev | ucoderev  | bus | phytype | phyrev | anarev | nvramrev\n");
+        printf("-------------------- | -------------------------------- | -------- | -------- | ---------- | ------- | ------- | ----------- | ------- | ------- | ----------- | -------- | --------- | --------- | --- | ------- | ------ | ------ | --------\n");
+        printf("%-20s | %-32s | %8s | %8s | %10s | %7s | %7s | %11s | %7s | %7s | %11s | %8s | %9s | %9s | %3s | %7s | %6s | %6s | %8s\n", 
+            model_string, fw_ver2, str[0], str[1], str[2], str[3], str[4], str[5], str[6], str[7], str[8], str[9], str[10], str[11], str[12], str[13], str[14], str[15], str[16]);
     }
 
     return 0;
