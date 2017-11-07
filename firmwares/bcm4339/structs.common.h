@@ -529,17 +529,17 @@ struct phy_info_acphy {
 struct phy_info {
     struct phy_pub pubpi_ro;            // 0x000
     struct shared_phy *sh;              // 0x01c
-    int PAD;                            // 0x020
-    int PAD;                            // 0x024
-    int PAD;                            // 0x028
-    int PAD;                            // 0x02c
-    int PAD;                            // 0x030
-    int PAD;                            // 0x034
-    int PAD;                            // 0x038
-    int PAD;                            // 0x03c
-    int PAD;                            // 0x040
-    int PAD;                            // 0x044
-    int PAD;                            // 0x048
+    void   (*fn_init)(void *);                                                      // 0x020
+    void   (*fn_calinit)(void *);                                                   // 0x024
+    void   (*fn_chanset)(void *, uint16);                                           // 0x028
+    void   (*fn_txpwrrecalc)(void *);                                               // 0x02c
+    int    (*fn_longtrn)(void *, int);                                              // 0x030
+    void   (*fn_txiqccget)(void *, uint16 *, uint16 *);                             // 0x034
+    void   (*fn_txiqccmimoget)(void *, uint16 *, uint16 *, uint16 *, uint16 *);     // 0x038
+    void   (*fn_txiqccset)(void *, uint16, uint16);                                 // 0x03c
+    void   (*fn_txiqccmimoset)(void *, uint16, uint16, uint16, uint16);             // 0x040
+    uint16 (*fn_txloccget)(void *);                                                 // 0x044
+    void   (*fn_txloccset)(void *pi, uint16 didq);                            // 0x048
     int PAD;                            // 0x04c
     int PAD;                            // 0x050
     int PAD;                            // 0x054
