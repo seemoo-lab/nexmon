@@ -14,3 +14,64 @@ Galaxy S7 (SM-G930T) | 9.75.155.45_sta_C0 |   0x14e4 |   0x4415 |   0x1903eb |  
 MacbookPro12,1       | 7.21.171.130.1a1   |   0x14e4 |   0x43ba |    0x72069 |  0xaa52 |     0x1 |         0x0 |    0x31 |   0x133 |      0x106b |     P318 | 0x715ab82 |  0x3a9cd71 | 0x1 |     0xb |   0x12 |    0x0 |        0
 MacBookPro13,2       | 7.21.171.130.1a1   |   0x14e4 |   0x43ba |    0xd2069 |  0xaa52 |     0x2 |         0x1 |    0x31 |   0x157 |      0x106b |     P108 | 0x715ab82 |  0x3a9cd71 | 0x1 |     0xb |   0x12 |    0x0 |        0
 Huawei P9            | 7.45.77.0_hw       |   0x14e4 |   0x43ab |   0x58030b |  0x4345 |     0x6 |         0x2 |    0x36 |   0x6e4 |      0x14e4 |     P304 | 0x72d4d00 |  0x4130810 | 0x0 |     0xb |   0x14 |    0x0 |  0x79ac5
+
+## BCM4325
+
+- Acer Liquid
+- Apple iPhone 3GS
+- Apple iPod 2G
+- Ford Edge (it’s a car)
+- HTC Droid Incredible
+- HTC Touch Pro 2
+- Motorola Devour
+- Samsung Spica
+
+## BCM4329
+
+- Apple iPad 2
+- Apple iPad 3G
+- Apple iPad Wi-Fi
+- Apple iPhone 4
+- Apple iPhone 4 Verizon
+- Apple iPod 3G
+- Apple Tv 2G
+- Asus Transformer Prime
+- HTC Droid Incredible 2
+- HTC Evo 4G
+- HTC Nexus One
+- HTC ThunderBolt
+- Kyocera Echo
+- LG Revolution
+- Malata ZPad
+- Motorola Atrix
+- Motorola Droid X2
+- Motorola Xoom
+- Nokia Lumina 800
+- Pantech Breakout
+- Samsung Fascinate
+- Samsung Galaxy S 4G
+- Samsung Galaxy Tab
+- Samsung Nexus S
+- Samsung Stratosphere
+- Sony Ericsson Xperia Play
+
+```bash
+dmesg | grep -i dhd  # Broadcom chip
+```
+
+## WCN36xx (Qualcomm)
+
+- LG Nexus 4
+
+```bash
+dmesg | grep -i wcn  # WCNxxx chip (wcnss) Qualcomm
+```
+
+## QCA (Qualcomm Atheros)
+
+- Oneplus 3/3T
+
+```bash
+dmesg | grep -i cnss  # Qualcomm Atheros (QCA6174 etc)
+lspci -k   # 168c:003e cnss_wlan_pci  # Qualcomm Atheros
+```
