@@ -5652,6 +5652,14 @@ brcmf_notify_mic_status(struct brcmf_if *ifp,
 	return 0;
 }
 
+//NEXMON
+static s32
+brcmf_nexmon_event_handler(struct brcmf_if *ifp,const struct brcmf_event_msg *e, void *data) 
+{
+    brcmf_err("Got Event (len: %d): %s\n", e->datalen, (char *) data);
+    return 0;
+}
+
 static s32 brcmf_notify_vif_event(struct brcmf_if *ifp,
 				  const struct brcmf_event_msg *e, void *data)
 {
@@ -5748,6 +5756,8 @@ static void brcmf_register_event_handlers(struct brcmf_cfg80211_info *cfg)
 			    brcmf_p2p_notify_action_tx_complete);
 	brcmf_fweh_register(cfg->pub, BRCMF_E_ACTION_FRAME_OFF_CHAN_COMPLETE,
 			    brcmf_p2p_notify_action_tx_complete);
+    brcmf_fweh_register(cfg->pub, BRCMF_E_NEXMON_EVENT,
+                brcmf_nexmon_event_handler);
 }
 
 static void brcmf_deinit_priv_mem(struct brcmf_cfg80211_info *cfg)
