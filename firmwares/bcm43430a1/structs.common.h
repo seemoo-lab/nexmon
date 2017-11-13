@@ -1805,6 +1805,19 @@ struct hndrte_timer
     bool    _freedone;
 } __attribute__((packed));
 
+struct tdls_iovar {
+    uint8 ea[6];
+    uint8 mode;         /* mode: depends on iovar */
+    uint8 chanspec[2];
+    uint8 PAD;
+    uint8 PAD;
+    uint8 PAD;
+    uint8 PAD;
+    uint8 PAD;
+    uint8 PAD;
+    uint8 PAD;
+} __attribute__((packed));
+
 /*
 struct bdc_ethernet_ip_udp_header {
     struct bdc_header bdc;
