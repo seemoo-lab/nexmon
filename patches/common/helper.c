@@ -312,7 +312,7 @@ get_intioctl(struct wlc_info *wlc, uint32 cmd)
     return arg;
 }
 
-#if NEXMON_CHIP == CHIP_VER_BCM4339
+#if (NEXMON_CHIP == CHIP_VER_BCM4339 || NEXMON_CHIP == CHIP_VER_BCM4358)
 void
 set_scansuppress(struct wlc_info *wlc, uint32 scansuppress)
 {

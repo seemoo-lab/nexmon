@@ -37,6 +37,35 @@
 
 /* Most of these structs are taken from the bcm4339 includes file and might currently be wrong */
 
+/* used for PAPD cal */
+typedef struct _acphy_txgains {
+    uint16 txlpf;
+    uint16 txgm;
+    uint16 pga;
+    uint16 pad;
+    uint16 ipa;
+} acphy_txgains_t;
+
+/* htphy: tx gain settings */
+typedef struct {
+    uint16 rad_gain; /* Radio gains */
+    uint16 rad_gain_mi; /* Radio gains [16:31] */
+    uint16 rad_gain_hi; /* Radio gains [32:47] */
+    uint16 dac_gain; /* DAC attenuation */
+    uint16 bbmult;   /* BBmult */
+} txgain_setting_t;
+
+typedef struct { /* wlc_phy_write_tx_gain_acphy */
+    uint8 txlpf; /* Radio gains */
+    uint8 ipa;
+    uint8 pad; /* Radio gains [16:31] */
+    uint8 pga;
+    uint8 txgm; /* Radio gains [32:47] */
+    uint8 unknown;
+    uint16 dac_gain; /* DAC attenuation */
+    uint16 bbmult;   /* BBmult */
+} ac_txgain_setting_t;
+
 struct phy_pub {
     uint        phy_type;       /* PHY_TYPE_XX */
     uint        phy_rev;        /* phy revision */
@@ -543,7 +572,7 @@ struct wlc_info {
     void *cmi;                          /* 0x15C */
     int PAD;                            /* 0x160 */
     int PAD;                            /* 0x164 */
-    int PAD;                            /* 0x168 */
+    void *scan;                         /* 0x168 */ // verified for bcm4358
     int PAD;                            /* 0x16C */
     int PAD;                            /* 0x170 */
     int PAD;                            /* 0x174 */
