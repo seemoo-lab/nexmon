@@ -2672,6 +2672,19 @@ struct hndrte_timer
     bool    _freedone;
 } __attribute__((packed));
 
+struct tdls_iovar {
+    uint8 ea[6];
+    uint8 mode;         /* mode: depends on iovar */
+    uint8 chanspec[2];
+    uint8 PAD;
+    uint8 PAD;
+    uint8 PAD;
+    uint8 PAD;
+    uint8 PAD;
+    uint8 PAD;
+    uint8 PAD;
+} __attribute__((packed));
+
 /*== maccontrol register ==*/
 #define MCTL_GMODE      (1U << 31)
 #define MCTL_DISCARD_PMQ    (1 << 30)
