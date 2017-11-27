@@ -1774,6 +1774,15 @@ struct hnddma_pub {
     unsigned int txnobuf;           /* tx out of dma descriptors */
 } __attribute__((packed));
 
+typedef volatile struct {
+    uint32 control;
+    uint32 ptr;
+    uint32 addrlow;
+    uint32 addrhigh;
+    uint32 status0;
+    uint32 status1;
+} dma64regs_t;
+
 struct dma_info {
     struct hnddma_pub hnddma;   /* exported structure */
     int msg_level;              /* message level pointer */
@@ -1784,8 +1793,8 @@ struct dma_info {
     bool dma64;                 /* this dma engine is operating in 64-bit mode */
     bool addrext;               /* this dma engine supports DmaExtendedAddrChanges */
     char gap2[2];
-    void *txregs;               /* 64-bit dma tx engine registers */
-    void *rxregs;               /* 64-bit dma rx engine registers */
+    dma64regs_t *txregs;        /* 64-bit dma tx engine registers */
+    dma64regs_t *rxregs;        /* 64-bit dma rx engine registers */
     void *txd;                  /* pointer to dma64 tx descriptor ring */
     void *rxd;                  /* pointer to dma64 rx descriptor ring */
     short dmadesc_align;        /* alignment requirement for dma descriptors */

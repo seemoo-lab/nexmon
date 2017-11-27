@@ -785,7 +785,7 @@ RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8c6bc)
 AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x7770)
-void *
+int
 dma_txfast(void *di, void *p, int commit)
 RETURN_DUMMY
 
