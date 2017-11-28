@@ -31,4 +31,4 @@ complete_sta.bin: bcmdhd_sta.bin_c0 rom.bin
 
 clean:
 	@printf "\033[0;31m  CLEANING\033[0m\n"
-	$(Q)rm -f ucode.bin templateram.bin flashpatches.c rom.bin
+	$(Q)rm -f ucode.bin templateram.bin flashpatches.c rom.bin complete_sta.bin complete_mfg.bin
