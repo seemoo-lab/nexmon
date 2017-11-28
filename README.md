@@ -31,11 +31,13 @@ bcm43430a1<sup>1</sup> | 7_45_41_26         | Raspberry Pi 3 and Zero W | Ras
 bcm43430a1<sup>1</sup> | 7_45_41_46         | Raspberry Pi 3 and Zero W | Raspbian Stretch     |  X  |  X  |  X  |  X  |  X  |  O 
 bcm43451b1             | 7_63_43_0          | iPhone 6                  | iOS 10.1.1 (14B100)  |     |     |     |  X  |  X  |    
 bcm43455               | 7_45_77_0_hw       | Huawei P9                 | Android 7 Stock      |  X  |  X  |     |  X  |  X  |    
+bcm43455               | 7_120_5_1_sta_C0   | Galaxy J7 2017            | ?                    |     |     |     |  ?  |  ?  |    
 bcm4356                | 7_35_101_5_sta     | Nexus 6                   | Android 7.1.2        |  X  |  X  |     |  X  |  X  |  O 
 bcm4358                | 7_112_200_17_sta   | Nexus 6P                  | Android 7 Stock      |  X  |  X  |     |  X  |  X  |  O 
 bcm4358                | 7_112_201_3_sta    | Nexus 6P                  | Android 7.1.2 Stock  |  X  |  X  |     |  X  |  X  |  O 
 bcm4358<sup>2</sup>    | 7_112_300_14_sta   | Nexus 6P                  | Android 8.0.0 Stock  |  X  |  X  |  X  |  X  |  X  |  O 
 bcm43596a0<sup>3</sup> | 9_75_155_45_sta_c0 | Samsung Galaxy S7         | Android 7 Stock      |  X  |     |     |  O  |  X  |    
+bcm43596a0<sup>3</sup> | 9_96_4_sta_c0      | Samsung Galaxy S7         | LineageOS 14.1       |  X  |     |     |  O  |  X  |    
 qca9500<sup>4</sup>    | 4-1-0_55           | TP-Link Talon AD7200      | Custom LEDE Image    |     |     |     |     |     |    
 
 <sup>1</sup> bcm43430a1 was wrongly labeled bcm43438 in the past.
