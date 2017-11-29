@@ -56,12 +56,12 @@ extern void prepend_ethernet_ipv4_udp_header(struct sk_buff *p);
 int
 channel2freq(struct wl_info *wl, unsigned int channel)
 {
-    int freq = 0;
-    void *ci = 0;
+    int xx = 0;
+    short *ci = 0;
 
-    wlc_phy_chan2freq_acphy(wl->wlc->band->pi, channel, &freq, &ci);
+    wlc_phy_chan2freq_acphy_newdvr(wl->wlc->band->pi, channel, (void **) &ci, &xx);
 
-    return freq;
+    return ci[1];
 }
 
 void
@@ -122,6 +122,7 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p,
         prepend_ethernet_ipv4_udp_header(p_new);
     }
 
+    wl_sendup_newdrv(wl, 0, p_new, 1);
     //wl_sendup(wl, 0, p_new);
 // TODO: fix the structures to call the xmit function
 //    wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p_new);

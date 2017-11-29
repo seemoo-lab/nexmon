@@ -689,6 +689,11 @@ int
 wl_sendup(void *wl, void *wlif, void *p)
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM43596a0, FW_VER_9_96_4_sta_c0, 0x1624AC)
+void
+wl_sendup_newdrv(void *wl, void *wlif, void *p, int numpkt)
+VOID_DUMMY
+
 AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x18628)
 AT(CHIP_VER_BCM4356, FW_VER_7_35_101_5_sta, 0x199112)
 AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x819510)
@@ -1182,11 +1187,15 @@ AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x1BB96A)
 AT(CHIP_VER_BCM4358, FW_VER_7_112_201_3, 0x1BBA56)
 AT(CHIP_VER_BCM4358, FW_VER_7_112_300_14, 0x1bcafa)
 AT(CHIP_VER_BCM4356, FW_VER_7_35_101_5_sta, 0x1C469A)
-AT(CHIP_VER_BCM43596a0, FW_VER_9_75_155_45_sta_c0, 0x1727b4)
-AT(CHIP_VER_BCM43596a0, FW_VER_9_96_4_sta_c0, 0x172EAC)
 AT(CHIP_VER_BCM43455, FW_VER_7_45_77_0, 0x1D0DFC)
 int
 wlc_phy_chan2freq_acphy(void *pi, int chanspec, int *freq, void **chan_info_ptr)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM43596a0, FW_VER_9_75_155_45_sta_c0, 0x1727b4)
+AT(CHIP_VER_BCM43596a0, FW_VER_9_96_4_sta_c0, 0x172EAC)
+int
+wlc_phy_chan2freq_acphy_newdvr(void *pi, int chanspec, void **chan_info_ptr, int *xxx)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1B39FE)
