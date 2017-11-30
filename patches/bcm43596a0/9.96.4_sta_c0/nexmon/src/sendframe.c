@@ -51,8 +51,8 @@ sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned i
         rate = RATES_RATE_6M;
     }
 
-    if (wlc->hw->up) {
-    	// TODO: need to find wlc->band->hwrs_scb
+    if (wlc->wl->wlc_hw->up) {
+    	// wlc->band->hwrs_scb found in wlc_recvfilter
         wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 0);
     } else {
         wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 1);

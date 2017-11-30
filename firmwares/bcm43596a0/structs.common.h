@@ -252,7 +252,7 @@ struct wl_info {
     int unit;
     struct wlc_pub *pub;
     struct wlc_info *wlc;
-    struct wlc_hw_info *wlc_hw;
+    struct wlc_hw_info *wlc_hw;         // 0xC
     struct hndrte_dev *dev;             // 0x10
 };
 
@@ -292,15 +292,16 @@ struct wlcband {
 struct wlc_info {
     struct wlc_pub *pub;                /* 0x000 */
     struct osl_info *osh;               /* 0x004 */
-    void *wl;                           /* 0x008 */
+    struct wl_info *wl;                 /* 0x008 */
     volatile struct d11regs *regs;      /* 0x00C */
     struct wlc_hw_info *hw;             /* 0x010 */
     int PAD;                            /* 0x014 */
     int PAD;                            /* 0x018 */
     void *core;                         /* 0x01C */
-    struct wlcband *band;               /* 0x020 verified */
+    int PAD;                            /* 0x020 */
     int PAD;                            /* 0x024 */
-    struct wlcband *bandstate[2];       /* 0x028 */
+    int PAD;                            /* 0x028 */
+    struct wlcband *band;               /* 0x02C */
     int PAD;                            /* 0x030 */
     int PAD;                            /* 0x034 */
     int PAD;                            /* 0x038 */
