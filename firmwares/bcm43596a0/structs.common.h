@@ -634,9 +634,9 @@ struct wlc_info {
     int PAD;                            /* 0X544 */
     int PAD;                            /* 0X548 */
     int PAD;                            /* 0X54C */
-    int PAD;                            /* 0X550 */
-    int PAD;                            /* 0X554 */
-    int PAD;                            /* 0X558 */
+    void *active_queue;                 /* 0X550 veryfied for bcm43596a0 by seraching for "Active Q" */
+    void *primary_queue;                /* 0X554 veryfied for bcm43596a0 by seraching for "Active Q" */
+    void *excursion_queue;              /* 0X558 veryfied for bcm43596a0 by seraching for "Active Q" */
     int PAD;                            /* 0X55C */
     int PAD;                            /* 0X560 */
     int PAD;                            /* 0X564 */
@@ -662,7 +662,7 @@ struct wlc_info {
     int PAD;                            /* 0X5B4 */
     int PAD;                            /* 0X5B8 */
     int PAD;                            /* 0X5BC */
-    void *active_queue;                 /* 0X5C0 verified */
+    int PAD;                            /* 0X5C0 */
     int PAD;                            /* 0X5C4 */
     int PAD;                            /* 0X5C8 */
     int PAD;                            /* 0X5CC */

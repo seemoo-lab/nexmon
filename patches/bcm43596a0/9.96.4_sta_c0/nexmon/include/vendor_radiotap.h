@@ -32,30 +32,36 @@
  *                                                                         *
  **************************************************************************/
 
-#pragma NEXMON targetregion "patch"
+#ifndef VENDOR_RADIOTAP_H
+#define VENDOR_RADIOTAP_H
 
-#include <firmware_version.h>   // definition of firmware version macros
-#include <debug.h>              // contains macros to access the debug hardware
-#include <wrapper.h>            // wrapper definitions for functions that already exist in the firmware
-#include <structs.h>            // structures that are used by the code in the firmware
-#include <helper.h>             // useful helper functions
-#include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
-#include <rates.h>              // rates used to build the ratespec for frame injection
-#include <nexioctls.h>          // ioctls added in the nexmon patch
-#include <capabilities.h>       // capabilities included in a nexmon patch
+extern const struct ieee80211_radiotap_vendor_namespaces rtap_vendor_namespaces;
 
-void
-sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned int rate)
-{
-    if (wlc->band->bandtype == WLC_BAND_5G && rate < RATES_RATE_6M) {
-        rate = RATES_RATE_6M;
-    }
+/* Name                                 Data type    	Units
+ * ----                                 ---------    	-----
+ *
+ * RADIOTAP_NEX_TXDELAY               	s32	    		milliseconds
+ *
+ *      Value in milliseconds to wait before transmitting this frame
+ *		for the first time
+ *
+ * RADIOTAP_NEX_TXREPETITIONS        	2 x s32    		unitless, milliseconds
+ *
+ *      Amount of how often this frame should be transmitted and the
+ *		periodicity in milliseconds of the retransmissions. Setting
+ *		the number of retransmissions to -1 leads to infinite 
+ *		retransmissions
+ *
+ * RADIOTAP_NEX_RATESPEC               	u32	    		unitless
+ *
+ *      Define the ratespec according to the definitions in rates.h
+ *		This value overrides the rate settings in the regular 
+ *		radiotap header
+ */
+enum radiotap_nex_vendor_subns_0_type {
+    RADIOTAP_NEX_TXDELAY = 0,
+    RADIOTAP_NEX_TXREPETITIONS = 1,
+    RADIOTAP_NEX_RATESPEC = 2
+};
 
-    if (wlc->hw->up) {
-    	// TODO: need to find wlc->band->hwrs_scb
-        wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 0);
-    } else {
-        wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 1);
-        printf("ERR: wlc down\n");
-    }
-}
+#endif /* VENDOR_RADIOTAP_H */

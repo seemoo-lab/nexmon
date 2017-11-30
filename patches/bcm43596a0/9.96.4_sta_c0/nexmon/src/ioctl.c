@@ -47,6 +47,16 @@
 #include <version.h>            // version information
 #include <bcmpcie.h>
 #include <argprintf.h>          // allows to execute argprintf to print into the arg buffer
+#include <ieee80211_radiotap.h> // Radiotap header related
+
+extern void *inject_frame(struct wlc_info *wlc, struct sk_buff *p);
+
+struct inject_frame {
+    unsigned short len;
+    unsigned char pad;
+    unsigned char type;
+    char data[];
+};
 
 int 
 wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
@@ -81,6 +91,45 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
             }
             break;
 
+                case NEX_INJECT_FRAME:
+            {
+                sk_buff *p;
+                int bytes_used = 0;
+                struct inject_frame *frm = (struct inject_frame *) arg;
+
+                while ((frm->len > 0) && (bytes_used + frm->len <= len)) {
+                    // add a dummy radiotap header if frame does not contain one
+                    if (frm->type == 0) {
+                        p = pkt_buf_get_skb(wlc->osh, frm->len + 202 + 8 - 4);
+                        skb_pull(p, 202);
+                        struct ieee80211_radiotap_header *radiotap = 
+                            (struct ieee80211_radiotap_header *) p->data;
+                        
+                        memset(radiotap, 0, sizeof(struct ieee80211_radiotap_header));
+                        
+                        radiotap->it_len = 8;
+                        
+                        skb_pull(p, 8);
+                        memcpy(p->data, frm->data, frm->len - 4);
+                        skb_push(p, 8);
+                    } else {
+                        p = pkt_buf_get_skb(wlc->osh, frm->len + 202 - 4);
+                        skb_pull(p, 202);
+
+                        memcpy(p->data, frm->data, frm->len - 4);
+                    }
+
+                    inject_frame(wlc, p);
+
+                    bytes_used += frm->len;
+
+                    frm = (struct inject_frame *) (arg + bytes_used);
+                }
+
+                ret = IOCTL_SUCCESS;
+            }
+            break;
+
         default:
             ret = wlc_ioctl(wlc, cmd, arg, len, wlc_if);
     }
@@ -91,4 +140,5 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 __attribute__((at(0x1F1DE8, "", CHIP_VER_BCM4358, FW_VER_7_112_200_17)))
 __attribute__((at(0x1F1EE8, "", CHIP_VER_BCM4358, FW_VER_7_112_201_3)))
 __attribute__((at(0x1FA9E4, "", CHIP_VER_BCM4356, FW_VER_7_35_101_5_sta)))
+__attribute__((at(0x1C3CE4, "", CHIP_VER_BCM43596a0, FW_VER_9_96_4_sta_c0)))
 GenericPatch4(wlc_ioctl_hook, wlc_ioctl_hook + 1);

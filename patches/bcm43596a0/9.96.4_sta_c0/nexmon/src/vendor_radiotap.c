@@ -34,28 +34,26 @@
 
 #pragma NEXMON targetregion "patch"
 
-#include <firmware_version.h>   // definition of firmware version macros
-#include <debug.h>              // contains macros to access the debug hardware
-#include <wrapper.h>            // wrapper definitions for functions that already exist in the firmware
-#include <structs.h>            // structures that are used by the code in the firmware
-#include <helper.h>             // useful helper functions
-#include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
-#include <rates.h>              // rates used to build the ratespec for frame injection
-#include <nexioctls.h>          // ioctls added in the nexmon patch
-#include <capabilities.h>       // capabilities included in a nexmon patch
+#include <ieee80211_radiotap.h>
+#include <vendor_radiotap.h>
 
-void
-sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned int rate)
-{
-    if (wlc->band->bandtype == WLC_BAND_5G && rate < RATES_RATE_6M) {
-        rate = RATES_RATE_6M;
-    }
+static const struct radiotap_align_size radiotap_nex_vendor_subns_0_sizes[] = {
+    [RADIOTAP_NEX_TXDELAY] = { .align = 4, .size = 4, },
+    [RADIOTAP_NEX_TXREPETITIONS] = { .align = 8, .size = 8, },
+    [RADIOTAP_NEX_RATESPEC] = { .align = 4, .size = 4, },
+};
 
-    if (wlc->hw->up) {
-    	// TODO: need to find wlc->band->hwrs_scb
-        wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 0);
-    } else {
-        wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 1);
-        printf("ERR: wlc down\n");
+static const struct ieee80211_radiotap_namespace radiotap_nex_vendor_ns[] = {
+    [0] = {
+        .n_bits = ARRAY_SIZE(radiotap_nex_vendor_subns_0_sizes),
+        .align_size = radiotap_nex_vendor_subns_0_sizes,
+        .oui = 0x004e4558, // NEX
+        .subns = 0
     }
-}
+};
+
+const struct ieee80211_radiotap_vendor_namespaces rtap_vendor_namespaces = {
+    .ns = radiotap_nex_vendor_ns,
+    .n_ns = ARRAY_SIZE(radiotap_nex_vendor_ns),
+};
+ 
