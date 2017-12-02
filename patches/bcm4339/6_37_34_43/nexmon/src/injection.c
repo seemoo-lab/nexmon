@@ -146,9 +146,6 @@ inject_frame(struct wlc_info *wlc, struct sk_buff *p)
     // remove radiotap header
     skb_pull(p, rtap_len);
 
-    wlc_d11hdrs_ext(wlc, p, wlc->band->hwrs_scb, 0, 0, 1, 1, 0, 0, data_rate, 0);
-    p->scb = wlc->band->hwrs_scb;
-    
     // 124 bytes is d11txh length
     // 4 bytes are added in wlc_d11hdrs_ext
     // 16 bytes just for fun
