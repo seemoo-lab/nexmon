@@ -1632,6 +1632,23 @@ uint8
 wlc_phy_set_txpwr_clamp_acphy(void *pi)
 RETURN_DUMMY
 
+//static void wlc_recv_mgmt_ctl(wlc_info_t *wlc, osl_t *osh, wlc_d11rxhdr_t *wrxh, void *p);
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x008204ec)
+void wlc_recv_mgmt_ctl(void *wlc, void *osh, void *wrxh, void *p)
+VOID_DUMMY
+
+//char *bcm_ether_ntoa(const struct ether_addr *ea, char *buf)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x008040ec)
+char* bcm_ether_ntoa(const struct ether_addr *ea, char *buf)
+RETURN_DUMMY
+
+//bcm_tlv_t *bcm_parse_tlvs(void *buf, int buflen, uint key);
+//0x00804318
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x008040ec)
+void* bcm_parse_tlvs(void *buf, int buflen, uint key)
+RETURN_DUMMY
+
+ 
 #undef VOID_DUMMY
 #undef RETURN_DUMMY
 #undef AT

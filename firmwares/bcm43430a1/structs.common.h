@@ -797,12 +797,18 @@ struct wlc_info {
     int PAD;                            /* 0X5FC */
 };
 
+#define ETHER_ADDR_LEN      6              /* d11 management header length */
+struct ether_addr {
+        uint8 octet[ETHER_ADDR_LEN];
+};
+
+
 /* partly CHECKED */
 struct wlc_pub {
     struct wlc_info *wlc;               /* 0x000 */
-    int PAD;                            /* 0x004 */
-    int PAD;                            /* 0x008 */
-    int PAD;                            /* 0x00C */
+    struct ether_addr cur_etheraddr;    /* 0x004 */
+    uint32 unit;                          /* 0x00A */ //uint device instance num
+    short PAD;                            /* 0x00E */
     int PAD;                            /* 0x010 */
     int PAD;                            /* 0x014 */
     int PAD;                            /* 0x018 */
