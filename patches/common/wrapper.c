@@ -1678,6 +1678,20 @@ AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x0082dff0)
 bool wlc_sendmgmt(wlc_info_t *wlc, void *p, void *qi, struct scb *scb)
 RETURN_DUMMY
 
+/*
+//0x00839398
+//void wlc_ap_process_assocreq(wlc_ap_info_t *ap, wlc_bsscfg_t *bsscfg, struct dot11_management_header *hdr, uint8 *body, uint body_len, struct scb *scb, bool short_preamble)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x00839398)
+void wlc_ap_process_assocreq(void *ap, wlc_bsscfg_t *bsscfg, void *hdr, uint8 *body, uint body_len, struct scb *scb, bool short_preamble)
+VOID_DUMMY
+*/
+
+//legacy address 0x00839398 overwritten by flashpatch 53 with "b.w loc._ABS_0x18994"
+//void wlc_ap_process_assocreq(wlc_ap_info_t *ap, wlc_bsscfg_t *bsscfg, struct dot11_management_header *hdr, uint8 *body, uint body_len, struct scb *scb, bool short_preamble)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x18994)
+void wlc_ap_process_assocreq(void *ap, wlc_bsscfg_t *bsscfg, void *hdr, uint8 *body, uint body_len, struct scb *scb, bool short_preamble)
+VOID_DUMMY
+
 
 #undef VOID_DUMMY
 #undef RETURN_DUMMY

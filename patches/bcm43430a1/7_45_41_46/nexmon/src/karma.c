@@ -33,6 +33,8 @@ void print_mem(void* p, uint32 len)
 	printf("\n");
 }
 
+
+
 //Not really a hook, as the legacy method has no implementation (this is why we don't call back to the umodified method)
 void wlc_recv_process_prbreq_hook(struct wlc_info *wlc, void *wrxh, uint8 *plcp, struct dot11_management_header *hdr, uint8 *body, int body_len)
 {
@@ -154,8 +156,6 @@ void wlc_recv_mgmt_ctl_hook(struct wlc_info *wlc, void *osh, void *wrxh, void *p
 	struct dot11_management_header *hdr;
 	uint16 fc, ft, fk;
 	char eabuf[ETHER_ADDR_STR_LEN];
-//	wlc_bsscfg *bsscfg = NULL;
-	//uint8 *body;
 
 	plcp = PKTDATA(osh, p);
 
@@ -206,9 +206,71 @@ void wlc_recv_mgmt_ctl_hook(struct wlc_info *wlc, void *osh, void *wrxh, void *p
 	wlc_recv_mgmt_ctl(wlc, osh, wrxh, p);
 }
 
+void wlc_ap_process_assocreq_hook(void *ap, wlc_bsscfg_t *bsscfg, struct dot11_management_header *hdr, uint8 *body, uint body_len, struct scb *scb, bool short_preamble)
+{
+	int ie_offset = 4;
+
+        bcm_tlv_t *ssid;
+        uint8 *SSID_ASC[32]; //ssid of received probe request
+        uint8 *SSID_BSS[32]; //ssid of bsscfg used
+        uint8 SSID_ASC_LEN, SSID_BSS_LEN;
+
+	printf("wlc_ap_process_assocreq_hook called\n---------------------\n");
+
+
+        if ((ssid = bcm_parse_tlvs(body + ie_offset, body_len - ie_offset, DOT11_MNG_SSID_ID)) != NULL)
+        {
+		//Copy SSID of ASSOC
+		memset(SSID_ASC, 0, 32);
+                memcpy(SSID_ASC, ssid->data, ssid->len);
+                SSID_ASC_LEN = (*ssid).len;
+
+		//Copy SSID of BSSCFG SSID
+		memcpy(SSID_BSS, bsscfg->SSID, 32); 
+		SSID_BSS_LEN = (*bsscfg).SSID_len;
+
+
+
+		printf("ASSOC REQ for SSID '%s' (%d), AP has SSID '%s' (%d)\n", SSID_ASC, SSID_ASC_LEN, SSID_BSS, SSID_BSS_LEN);
+
+		//Exchange SSID of BSS with the one from ASSOC before handling the frame
+                memcpy(bsscfg->SSID, SSID_ASC, 32);
+                bsscfg->SSID_len = SSID_ASC_LEN;
+
+                //generate frame 
+		wlc_ap_process_assocreq(ap, bsscfg, hdr, body, body_len, scb, short_preamble);
+
+                //Restore SSID of bsscfg
+                memcpy(bsscfg->SSID, SSID_BSS, 32);
+                bsscfg->SSID_len = SSID_BSS_LEN;
+
+
+
+	}
+	else
+	{
+		printf("SSID couldn't be extracted from ASSOC REQ\n");
+		print_mem(body, 30);
+
+		//The legacy method is already overwritten by a flaspatch (53)
+		wlc_ap_process_assocreq(ap, bsscfg, hdr, body, body_len, scb, short_preamble);
+
+	}
+
+}
+
 __attribute__((at(0x012da2, "", CHIP_VER_BCM43430a1, FW_VER_7_45_41_46)))
 BPatch(wlc_recv_mgmt_ctl_hook, wlc_recv_mgmt_ctl_hook);
 
 
 __attribute__((at(0x00820b9a, "flashpatch", CHIP_VER_BCM43430a1, FW_VER_7_45_41_46)))
 BLPatch(wlc_recv_process_prbreq_hook, wlc_recv_process_prbreq_hook);
+
+
+//hook the call to wlc_ap_process_assocreq in wlc_recv_mgmt_ctl (0x00820f2e   bl wlc_ap_process_assocreq)
+__attribute__((at(0x00820f2e, "flashpatch", CHIP_VER_BCM43430a1, FW_VER_7_45_41_46)))
+BLPatch(wlc_ap_process_assocreq_hook, wlc_ap_process_assocreq_hook);
+
+
+
+
