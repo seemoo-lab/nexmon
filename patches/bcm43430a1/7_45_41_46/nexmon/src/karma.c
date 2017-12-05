@@ -24,22 +24,131 @@ void print_mac(struct ether_addr addr)
 	);
 }
 
+void print_mem(void* p, uint32 len)
+{
+	uint32 i;
+	printf("HEXDUMP:\n");
+	//for(i = 0; i < len; i++) printf("%d:%02x ", i, ((char*) p)[i]);
+	for(i = 0; i < len; i++) printf("%02x ", ((char*) p)[i]);
+	printf("\n");
+}
 
 //Not really a hook, as the legacy method has no implementation (this is why we don't call back to the umodified method)
 void wlc_recv_process_prbreq_hook(struct wlc_info *wlc, void *wrxh, uint8 *plcp, struct dot11_management_header *hdr, uint8 *body, int body_len)
 {
-	uint8 i;
+	/* ToDo:
+		- check if used bsscfg is in AP mode before sending probe responses (struct wlc_bsscfg field _ap has to be validated first)
+		- don't send responses for PROBES to empty SSID (len == 0)
+		- don't send PROBE RESPONSES for own SSID (this is already done by the PRQ Fifo)
+		- optionally send BEACONS for seen PROBE REQUESTS as broadcast (like KARMA LOUD to open new networks to possible STAs)
+		- handle Association (incoming SSID has to be exchanged or bsscfg altered once more) - NOte AUTH is working as there's no SSID involved
+	*/
+
+
+	uint8 *SSID_PRQ[32]; //ssid of received probe request
+	uint8 *SSID_BSS[32]; //ssid of bsscfg used
+	uint8 SSID_PRQ_LEN, SSID_BSS_LEN;
+
+        wlc_bsscfg_t *cfg;
+        bcm_tlv_t *ssid;
+
+	int len; //stores beacon template length
+
 
 	printf("Entered wlc_recv_process_prbreq_hook\n");
-	
-	for (i = 0; i < body_len; i++)
+
+
+        if ((ssid = bcm_parse_tlvs(body, body_len, DOT11_MNG_SSID_ID)) != NULL)
 	{
-		printf("0x%02x ", body[i]);
-	}
+		void *p;
+		uint8 *pbody;
+
+		//store recieved SSID
+		memset(SSID_PRQ, 0, 32);
+		memcpy(SSID_PRQ, ssid->data, ssid->len);
+		SSID_PRQ_LEN = (*ssid).len;
+
+		printf("Probe Request received for SSID %s\n", SSID_PRQ);
+
+//                bsscfg_hwaddr = wlc_bsscfg_find_by_hwaddr(wlc, &hdr->da);
+//                bsscfg = wlc_bsscfg_find_by_bssid(wlc, &hdr->bssid);
+
+		//Use current address as BSSID when searching for BSSCFG
+		cfg = wlc_bsscfg_find_by_bssid(wlc, &wlc->pub->cur_etheraddr);
+
+		if (cfg == NULL)
+		{
+			printf("Invalid bsscfg %p, aborting...", cfg);
+			return;
+		}
+		else printf("Using bsscfg at: %p\n", cfg); //Structs have to be update to fetch index of bsscfg + wlc_if + (bool) _ap
+
+		//backup original SSID
+		memcpy(SSID_BSS, cfg->SSID, 32); //Padding 0x00 bytes are already included
+		SSID_BSS_LEN = (*cfg).SSID_len;
+
+		printf("PRQ SSID %s (%d), BSS SSID %s (%d)\n", SSID_PRQ, SSID_PRQ_LEN, SSID_BSS, SSID_BSS_LEN);
+
+//print_mem(cfg, 30); //for analysis of bsscfg fields
+
+		len = wlc->pub->bcn_tmpl_len; //should be 512
+		printf("bcn_tmpl_len %d\n", len);
+
+		/* build pkt buf with 802.11 MGMT frame HDR, based on current ethernet address (for SA/BSSID) and PRQ SA as DA*/
+		//p = wlc_frame_get_mgmt(wlc, FC_PROBE_RESP, &hdr->sa, &bsscfg->cur_etheraddr, &bsscfg->BSSID, len, &pbody)
+		p = wlc_frame_get_mgmt(wlc, FC_PROBE_RESP, &hdr->sa, &wlc->pub->cur_etheraddr, &wlc->pub->cur_etheraddr, len, &pbody);
+
+
+
+		if (p == NULL)
+		{
+                	printf("PROBE_RESP_GEN: wlc_frame_get_mgmt failed\n");
+		}
+		else
+		{
+			/*
+			* The frame body (payload with IEs including SSID) is build based on the given bsscfg.
+			* This means the resulting PROBERESP wouldn't contain the SSID of the PROBEREQUEST, but
+			* the one of the sscfg in use.
+			* To overcome this, the're two ways:
+			*	1) Generate the PRBRESP with wlc_bcn_prb_body and modify the packet afterwards
+			*	(complicated as SSID IE len would likely change)
+			*
+			*	2) Temp. change the SSID of the current bsscfg to match the PROBE REQUEST
+			*	befor calling wlc_bcn_prb_body. (Easy, but dirty ... anyway, preferred solution)
+			*/
+
+
+			//Exchange SSID of bsscfg
+			memcpy(cfg->SSID, SSID_PRQ, 32);
+			cfg->SSID_len = SSID_PRQ_LEN;
+
+			//generate frame body
+			wlc_bcn_prb_body(wlc, FC_PROBE_RESP, cfg, pbody, &len, FALSE);
+
+			//Restore SSID of bsscfg
+			memcpy(cfg->SSID, SSID_BSS, 32);
+			cfg->SSID_len = SSID_BSS_LEN;
+
+			//set PKT len
+			((sk_buff*) p)->len = len + DOT11_MGMT_HDR_LEN;
+
+			printf("PRBRES len %d\nSending Probe Response for %s..\n", len, SSID_PRQ);
+
+			wlc_sendmgmt(wlc, p, wlc->wlcif_list->qi, NULL);
+
+			//print_mem(pbody, 80);
+		}
+
+        }
 }
 
 void wlc_recv_mgmt_ctl_hook(struct wlc_info *wlc, void *osh, void *wrxh, void *p)
 {
+	/*
+	* This hook does nothing but printing debug output for MGMT / CONTROL frames
+	*/
+
 	struct ether_addr cur_addr = wlc->pub->cur_etheraddr;
 	uint8 *plcp;
 	struct dot11_management_header *hdr;
@@ -56,6 +165,12 @@ void wlc_recv_mgmt_ctl_hook(struct wlc_info *wlc, void *osh, void *wrxh, void *p
         ft = FC_TYPE(fc); //Frame Type (MGMT / CTL / DATA)
         fk = (fc & FC_KIND_MASK); //Frame Kind (ASSOC; PROBEREQUEST etc.)
 
+	//early out on none PROBE frames
+	if (fk != FC_PROBE_REQ)
+	{
+		wlc_recv_mgmt_ctl(wlc, osh, wrxh, p);
+		return;
+	}
 
 
 	printf("wl%d ether %x:%x:%x:%x:%x:%x: wlc_recv_mgmt_ctl\n", 
