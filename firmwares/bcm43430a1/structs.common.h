@@ -697,7 +697,7 @@ struct wlc_info {
     int PAD;                            /* 0X46C */
     int PAD;                            /* 0X470 */
     int PAD;                            /* 0X474 */
-    void *pcb;                            /* 0X478 */
+    void *pcb;                            /* 0X478 */ /*MaMe82 not verified */
     int PAD;                            /* 0X47C */
     int PAD;                            /* 0X480 */
     int PAD;                            /* 0X484 */
@@ -807,8 +807,8 @@ struct ether_addr {
 /* partly CHECKED */
 struct wlc_pub {
     struct wlc_info *wlc;               /* 0x000 */
-    struct ether_addr cur_etheraddr;    /* 0x004 */
-    uint32 unit;                          /* 0x00A */ //uint device instance num
+    struct ether_addr cur_etheraddr;    /* 0x004 */ /*MaMe82 verified */
+    uint32 unit;                          /* 0x00A */ /*MaMe82 not verified */
     short PAD;                            /* 0x00E */
     int PAD;                            /* 0x010 */
     int PAD;                            /* 0x014 */
@@ -839,13 +839,12 @@ struct wlc_pub {
     char gap2[147];
     char is_amsdu; // @ 0xe7
     char gap3[4];
-    uint32 bcn_tmpl_len; //0xEC
-
-	//0xec --> bcn_tmpl_len ??
+    uint32 bcn_tmpl_len; //0xEC		/*MaMe82 verified */
 } __attribute__((packed));
 
 struct wlc_bsscfg {
     void *wlc;                          /* 0x000 */
+	/*MaMe82 0x04 to 0x10 not verified */
     bool up;		                    /* 0x004 */ //up
     bool enable;                           /* 0x005 */ //enable
     bool _ap;                           /* 0x006 */ //_ap
@@ -860,6 +859,7 @@ struct wlc_bsscfg {
     bool PAD;                            /* 0x012 */
     bool PAD;                            /* 0x013 */
     int PAD;                            /* 0x014 */
+	/*MaMe82 0x18 and 0x19 verified */
     uint8 SSID_len;                     /* 0x018 */
     uint8 SSID[32];                            /* 0x019 */
     uint8 PAD;                            /* 0x039 */
@@ -1831,6 +1831,7 @@ struct tdls_iovar {
     uint8 PAD;
 } __attribute__((packed));
 
+/*MaMe82 add typedefs to allow correct function headers + declarations */
 typedef struct wlc_bsscfg wlc_bsscfg_t;
 typedef struct wlc_info wlc_info_t;
 

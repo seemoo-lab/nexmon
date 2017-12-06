@@ -1632,6 +1632,10 @@ uint8
 wlc_phy_set_txpwr_clamp_acphy(void *pi)
 RETURN_DUMMY
 
+/* MaMe82: Added functions needed for KARMA patch on bcm43430a1 FW 7.45.41.46 
+see patches/bcm43430a1/7_45_41_46/nexmon/functions.txt for details
+*/
+
 //static void wlc_recv_mgmt_ctl(wlc_info_t *wlc, osl_t *osh, wlc_d11rxhdr_t *wrxh, void *p);
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x008204ec)
 void wlc_recv_mgmt_ctl(void *wlc, void *osh, void *wrxh, void *p)
@@ -1692,6 +1696,7 @@ AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x18994)
 void wlc_ap_process_assocreq(void *ap, wlc_bsscfg_t *bsscfg, void *hdr, uint8 *body, uint body_len, struct scb *scb, bool short_preamble)
 VOID_DUMMY
 
+/* MaMe82: end of additions */
 
 #undef VOID_DUMMY
 #undef RETURN_DUMMY

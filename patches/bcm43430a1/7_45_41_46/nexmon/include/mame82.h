@@ -1,3 +1,5 @@
+/* MaMe82: some additional structs/types/defines used in KARMA patch */
+
 /*
 #define PKTPULL(sk_buff, _len) ({ \
 	uint __len = (_len); \
