@@ -52,7 +52,10 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
     argprintf_init(arg, len);
     int ret = IOCTL_ERROR;
 
-    switch (cmd) {
+	printf("received ioctl cmd %d with arg %s\n", cmd, arg);
+
+    switch (cmd) 
+    {
         case NEX_GET_CAPABILITIES:
             if (len == 4) {
                 memcpy(arg, &capabilities, 4);
@@ -72,18 +75,42 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
             {
                 struct wlc_if *wlcif = wlc->wlcif_list;
 
-                for (wlcif = wlc->wlcif_list;  wlcif != 0; wlcif = wlcif->next) {
+                for (wlcif = wlc->wlcif_list;  wlcif != 0; wlcif = wlcif->next) 
+                {
                     char ifname[32];
 
                     strncpy(ifname, wlcif->wlif == 0 ? wlc->wl->dev->name : wlcif->wlif->dev->name, sizeof(ifname));
                     ifname[sizeof(ifname) - 1] = '\0';
 
                     argprintf(" \"%s\" 0x%p type=%02x index=%02x flags=%02x\n", ifname, wlcif, wlcif->type, wlcif->index, wlcif->flags);
-		}
+				}
 
                 ret = IOCTL_SUCCESS;
             }
             break;
+		case 666:
+			//enable KARMA:
+			//	$ nexutil -i -s 666 -v 1 
+			//disable KARMA:
+			//	$ nexutil -i -s 666 -v 0
+		
+			printf("666 (KARMA) called, arg %x\n", *arg);
+		
+			if (((int) *arg) == 1)
+			{
+				//enable KARMA
+				wlc->FW_PAD_UNUSED[0] |= 0x01;
+				printf("KARMA mode enabled\n");
+			}
+			else
+			{
+				//disable KARMA
+				wlc->FW_PAD_UNUSED[0] &= ~0x01;
+				printf("KARMA mode disabled\n");
+			}
+			
+			ret = IOCTL_SUCCESS;
+			break;
 
         default:
             ret = wlc_ioctl(wlc, cmd, arg, len, wlc_if);

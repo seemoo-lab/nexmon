@@ -33,14 +33,12 @@ void print_mem(void* p, uint32 len)
 	printf("\n");
 }
 
-
-
 //Not really a hook, as the legacy method has no implementation (this is why we don't call back to the umodified method)
 void wlc_recv_process_prbreq_hook(struct wlc_info *wlc, void *wrxh, uint8 *plcp, struct dot11_management_header *hdr, uint8 *body, int body_len)
 {
 	/* ToDo:
 		- check if used bsscfg is in AP mode before sending probe responses (struct wlc_bsscfg field _ap has to be validated first)
-		- don't send responses for PROBES to empty SSID (len == 0)
+		- don't send responses for PROBES to empty SSID (len == 0) Note: According to the hint from @Singe broadcast probes should be answered for iPhones
 		- don't send PROBE RESPONSES for own SSID (this is already done by the PRQ Fifo)
 		- optionally send BEACONS for seen PROBE REQUESTS as broadcast (like KARMA LOUD to open new networks to possible STAs)
 		- handle Association (incoming SSID has to be exchanged or bsscfg altered once more) - NOte AUTH is working as there's no SSID involved
@@ -51,16 +49,24 @@ void wlc_recv_process_prbreq_hook(struct wlc_info *wlc, void *wrxh, uint8 *plcp,
 	uint8 *SSID_BSS[32]; //ssid of bsscfg used
 	uint8 SSID_PRQ_LEN, SSID_BSS_LEN;
 
-        wlc_bsscfg_t *cfg;
-        bcm_tlv_t *ssid;
+	//uint32 *ui_debug = (uint32*) &(wlc->eventq);
+
+	wlc_bsscfg_t *cfg;
+	bcm_tlv_t *ssid;
 
 	int len; //stores beacon template length
 
 
+	//early out if KARMA disabled
+	if (!wlc->FW_PAD_UNUSED[0]) return;
+
 	printf("Entered wlc_recv_process_prbreq_hook\n");
+	printf("Fw Pad 0x%02x 0x%02x 0x%02x 0x%02x\n", wlc->FW_PAD_UNUSED[0], wlc->FW_PAD_UNUSED[1], wlc->FW_PAD_UNUSED[2], wlc->FW_PAD_UNUSED[3]);
+	
+	
 
 
-        if ((ssid = bcm_parse_tlvs(body, body_len, DOT11_MNG_SSID_ID)) != NULL)
+	if ((ssid = bcm_parse_tlvs(body, body_len, DOT11_MNG_SSID_ID)) != NULL)
 	{
 		void *p;
 		uint8 *pbody;
@@ -104,7 +110,7 @@ void wlc_recv_process_prbreq_hook(struct wlc_info *wlc, void *wrxh, uint8 *plcp,
 
 		if (p == NULL)
 		{
-                	printf("PROBE_RESP_GEN: wlc_frame_get_mgmt failed\n");
+			printf("PROBE_RESP_GEN: wlc_frame_get_mgmt failed\n");
 		}
 		else
 		{
@@ -142,7 +148,7 @@ void wlc_recv_process_prbreq_hook(struct wlc_info *wlc, void *wrxh, uint8 *plcp,
 			//print_mem(pbody, 80);
 		}
 
-        }
+	} //end of if SSID
 }
 
 void wlc_recv_mgmt_ctl_hook(struct wlc_info *wlc, void *osh, void *wrxh, void *p)
@@ -156,6 +162,13 @@ void wlc_recv_mgmt_ctl_hook(struct wlc_info *wlc, void *osh, void *wrxh, void *p
 	struct dot11_management_header *hdr;
 	uint16 fc, ft, fk;
 	char eabuf[ETHER_ADDR_STR_LEN];
+
+	//early out if KARMA disabled
+	if (!wlc->FW_PAD_UNUSED[0])
+	{
+		wlc_recv_mgmt_ctl(wlc, osh, wrxh, p);
+		return;
+	}
 
 	plcp = PKTDATA(osh, p);
 
@@ -210,42 +223,44 @@ void wlc_ap_process_assocreq_hook(void *ap, wlc_bsscfg_t *bsscfg, struct dot11_m
 {
 	int ie_offset = 4;
 
-        bcm_tlv_t *ssid;
-        uint8 *SSID_ASC[32]; //ssid of received probe request
-        uint8 *SSID_BSS[32]; //ssid of bsscfg used
-        uint8 SSID_ASC_LEN, SSID_BSS_LEN;
+	bcm_tlv_t *ssid;
+	uint8 *SSID_ASC[32]; //ssid of received probe request
+	uint8 *SSID_BSS[32]; //ssid of bsscfg used
+	uint8 SSID_ASC_LEN, SSID_BSS_LEN;
+	
+	//early out if KARMA disabled
+	if (!bsscfg->wlc->FW_PAD_UNUSED[0])
+	{
+		wlc_ap_process_assocreq(ap, bsscfg, hdr, body, body_len, scb, short_preamble);
+		return;
+	}
 
 	printf("wlc_ap_process_assocreq_hook called\n---------------------\n");
 
 
-        if ((ssid = bcm_parse_tlvs(body + ie_offset, body_len - ie_offset, DOT11_MNG_SSID_ID)) != NULL)
-        {
+	if ((ssid = bcm_parse_tlvs(body + ie_offset, body_len - ie_offset, DOT11_MNG_SSID_ID)) != NULL)
+	{
 		//Copy SSID of ASSOC
 		memset(SSID_ASC, 0, 32);
-                memcpy(SSID_ASC, ssid->data, ssid->len);
-                SSID_ASC_LEN = (*ssid).len;
+		memcpy(SSID_ASC, ssid->data, ssid->len);
+		SSID_ASC_LEN = (*ssid).len;
 
 		//Copy SSID of BSSCFG SSID
 		memcpy(SSID_BSS, bsscfg->SSID, 32); 
 		SSID_BSS_LEN = (*bsscfg).SSID_len;
 
-
-
 		printf("ASSOC REQ for SSID '%s' (%d), AP has SSID '%s' (%d)\n", SSID_ASC, SSID_ASC_LEN, SSID_BSS, SSID_BSS_LEN);
 
 		//Exchange SSID of BSS with the one from ASSOC before handling the frame
-                memcpy(bsscfg->SSID, SSID_ASC, 32);
-                bsscfg->SSID_len = SSID_ASC_LEN;
+		memcpy(bsscfg->SSID, SSID_ASC, 32);
+		bsscfg->SSID_len = SSID_ASC_LEN;
 
-                //generate frame 
+		//generate frame 
 		wlc_ap_process_assocreq(ap, bsscfg, hdr, body, body_len, scb, short_preamble);
 
-                //Restore SSID of bsscfg
-                memcpy(bsscfg->SSID, SSID_BSS, 32);
-                bsscfg->SSID_len = SSID_BSS_LEN;
-
-
-
+		//Restore SSID of bsscfg
+		memcpy(bsscfg->SSID, SSID_BSS, 32);
+		bsscfg->SSID_len = SSID_BSS_LEN;
 	}
 	else
 	{
@@ -254,7 +269,6 @@ void wlc_ap_process_assocreq_hook(void *ap, wlc_bsscfg_t *bsscfg, struct dot11_m
 
 		//The legacy method is already overwritten by a flaspatch (53)
 		wlc_ap_process_assocreq(ap, bsscfg, hdr, body, body_len, scb, short_preamble);
-
 	}
 
 }

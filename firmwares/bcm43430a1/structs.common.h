@@ -577,7 +577,7 @@ struct wlc_info {
     int PAD;                            /* 0x28C */
     int PAD;                            /* 0x290 */
     int PAD;                            /* 0x294 */
-    int PAD;                            /* 0x298 */
+    uint8 FW_PAD_UNUSED[4];                  /* 0x298 */ //Dangerous, needs to be validated to avoid hitting channel_quality or *txmod_fs
     int PAD;                            /* 0x29C */
     int PAD;                            /* 0x2A0 */
     int PAD;                            /* 0x2A4 */
@@ -845,7 +845,7 @@ struct wlc_pub {
 } __attribute__((packed));
 
 struct wlc_bsscfg {
-    void *wlc;                          /* 0x000 */
+    struct wlc_info *wlc;                          /* 0x000 */
     bool up;		                    /* 0x004 */ //up
     bool enable;                           /* 0x005 */ //enable
     bool _ap;                           /* 0x006 */ //_ap
