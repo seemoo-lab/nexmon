@@ -12,6 +12,8 @@
 
 #include "karma.h"
 
+extern uint32 mame82_opts;
+
 void print_mac(struct ether_addr addr)
 {
 	printf("%x:%x:%x:%x:%x:%x", 
@@ -57,8 +59,8 @@ void wlc_recv_process_prbreq_hook(struct wlc_info *wlc, void *wrxh, uint8 *plcp,
 	int len; //stores beacon template length
 
 
-	//early out if KARMA disabled
-	if (!wlc->FW_PAD_UNUSED[0]) return;
+	//early out if KARMA probe responding disabled
+	if (!MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_PROBE_RESP)) return;
 
 	printf("Entered wlc_recv_process_prbreq_hook\n");
 	printf("Fw Pad 0x%02x 0x%02x 0x%02x 0x%02x\n", wlc->FW_PAD_UNUSED[0], wlc->FW_PAD_UNUSED[1], wlc->FW_PAD_UNUSED[2], wlc->FW_PAD_UNUSED[3]);
@@ -162,21 +164,27 @@ void wlc_recv_mgmt_ctl_hook(struct wlc_info *wlc, void *osh, void *wrxh, void *p
 	struct dot11_management_header *hdr;
 	uint16 fc, ft, fk;
 	char eabuf[ETHER_ADDR_STR_LEN];
+	
+	printf("mame82_opts %x\n", mame82_opts);
+	if (MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_PROBE_RESP)) printf("Karma probe responding enabled\n");
+	else  printf("Karma probe responding disabled\n");
+	if (MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_ASSOC_RESP)) printf("Karma assoc responding enabled\n");
+	else  printf("Karma assoc responding disabled\n");
 
-	//early out if KARMA disabled
-	if (!wlc->FW_PAD_UNUSED[0])
+	//early out if neither KARMA ASSOC responding nor probe respondin is enabled
+	if (!(MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_PROBE_RESP) || MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_ASSOC_RESP)))
 	{
 		wlc_recv_mgmt_ctl(wlc, osh, wrxh, p);
 		return;
 	}
 
-	plcp = PKTDATA(osh, p);
+	plcp = PKTDATA(osh, p); //fetch packet
 
-	hdr = (struct dot11_management_header*)(plcp + D11_PHY_HDR_LEN);
+	hdr = (struct dot11_management_header*)(plcp + D11_PHY_HDR_LEN); //offset behind D11 header and cast to 802.11 header struct
 
-        fc = ltoh16(hdr->fc); //Account for endianess of frames FC field
-        ft = FC_TYPE(fc); //Frame Type (MGMT / CTL / DATA)
-        fk = (fc & FC_KIND_MASK); //Frame Kind (ASSOC; PROBEREQUEST etc.)
+	fc = ltoh16(hdr->fc); //Account for endianess of frames FC field
+	ft = FC_TYPE(fc); //Frame Type (MGMT / CTL / DATA)
+	fk = (fc & FC_KIND_MASK); //Frame Kind (ASSOC; PROBEREQUEST etc.)
 
 	//early out on none PROBE frames
 	if (fk != FC_PROBE_REQ)
@@ -228,8 +236,8 @@ void wlc_ap_process_assocreq_hook(void *ap, wlc_bsscfg_t *bsscfg, struct dot11_m
 	uint8 *SSID_BSS[32]; //ssid of bsscfg used
 	uint8 SSID_ASC_LEN, SSID_BSS_LEN;
 	
-	//early out if KARMA disabled
-	if (!bsscfg->wlc->FW_PAD_UNUSED[0])
+	//early out if KARMA association responding disabled
+	if (!MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_ASSOC_RESP))
 	{
 		wlc_ap_process_assocreq(ap, bsscfg, hdr, body, body_len, scb, short_preamble);
 		return;

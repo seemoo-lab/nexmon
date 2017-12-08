@@ -45,6 +45,9 @@
 #include <capabilities.h>       // capabilities included in a nexmon patch
 #include <sendframe.h>          // sendframe functionality
 #include <argprintf.h>
+#include "karma.h"
+
+uint32 mame82_opts = 0;
 
 int 
 wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
@@ -99,14 +102,22 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 			if (((int) *arg) == 1)
 			{
 				//enable KARMA
-				wlc->FW_PAD_UNUSED[0] |= 0x01;
+				//wlc->FW_PAD_UNUSED[0] |= 0x01;
 				printf("KARMA mode enabled\n");
+				
+				MAME82_ENABLE_OPTION(mame82_opts, MAME82_KARMA_PROBE_RESP);
+				MAME82_ENABLE_OPTION(mame82_opts, MAME82_KARMA_ASSOC_RESP);
+				
 			}
 			else
 			{
 				//disable KARMA
-				wlc->FW_PAD_UNUSED[0] &= ~0x01;
+				//wlc->FW_PAD_UNUSED[0] &= ~0x01;
 				printf("KARMA mode disabled\n");
+				
+				MAME82_DISABLE_OPTION(mame82_opts, MAME82_KARMA_PROBE_RESP);
+				MAME82_DISABLE_OPTION(mame82_opts, MAME82_KARMA_ASSOC_RESP);
+				
 			}
 			
 			ret = IOCTL_SUCCESS;

@@ -23,6 +23,13 @@
 #define NULL ((void *)0)
 #define FALSE 0
 
+#define MAME82_KARMA_PROBE_RESP	(1 << 0)
+#define MAME82_KARMA_ASSOC_RESP	(1 << 1)
+#define MAME82_KARMA_BEACONING	(1 << 2)
+#define MAME82_ENABLE_OPTION(var, opt) ({ uint32 _opt = (opt); (var) |= _opt; })
+#define MAME82_DISABLE_OPTION(var, opt) ({ uint32 _opt = (opt); (var) &= ~_opt; })
+#define MAME82_IS_ENABLED_OPTION(var, opt) ({ uint32 _opt = (opt); (var) & _opt; })
+
 #define DOT11_MGMT_HDR_LEN	24              /* d11 management header length */
 #define	D11_PHY_HDR_LEN		6
 #define OSL_PKTTAG_SZ 32
