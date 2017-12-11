@@ -48,6 +48,7 @@
 #include <ieee80211_radiotap.h> // Radiotap header related
 #include <bcmpcie.h>
 #include <argprintf.h>          // allows to execute argprintf to print into the arg buffer
+#include <channels.h>
 
 extern void *inject_frame(struct wlc_info *wlc, struct sk_buff *p);
 
@@ -130,7 +131,7 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
             }
             break;
 
-        case 0x700: // reading the address of the shared structure (pciedev_shared_t)
+        case 700: // reading the address of the shared structure (pciedev_shared_t)
             {
                 pciedev_shared_t *pcie = *(pciedev_shared_t **) 0x23FFFC;
                 
@@ -157,7 +158,7 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
             }
             break;
 
-        case 0x701: // dumping the ring buffer physical addresses (ring_info_t)
+        case 701: // dumping the ring buffer physical addresses (ring_info_t)
             {
                 pciedev_shared_t *pcie = *(pciedev_shared_t **) 0x23FFFC;
                 ring_info_t *ring = pcie->rings_info_ptr;
@@ -180,7 +181,7 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
             }
             break;
 
-        case 0x702: // Dumping each of the rings metadata (ring_mem_t)
+        case 702: // Dumping each of the rings metadata (ring_mem_t)
             {
                 pciedev_shared_t *pcie = *(pciedev_shared_t **) 0x23FFFC;
                 ring_info_t *ring = pcie->rings_info_ptr;
@@ -199,6 +200,15 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
                 ret = IOCTL_SUCCESS;
             }
             break;
+
+        case 703:
+        {
+            set_scansuppress(wlc, 1);
+            set_mpc(wlc, 0);
+            set_chanspec(wlc, CH20MHZ_CHSPEC(3));
+            ret = IOCTL_SUCCESS;
+        }
+        break;
 
         default:
             ret = wlc_ioctl(wlc, cmd, arg, len, wlc_if);
