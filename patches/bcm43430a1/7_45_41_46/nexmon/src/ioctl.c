@@ -49,6 +49,7 @@
 
 uint32 mame82_opts = 0;
 
+
 int 
 wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 {

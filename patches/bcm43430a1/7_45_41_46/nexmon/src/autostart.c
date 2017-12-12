@@ -39,11 +39,24 @@
 #include <structs.h>            // structures that are used by the code in the firmware
 #include <helper.h>             // useful helper functions
 #include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
+#include "karma.h"
+
+ssid_list_t* ssids_to_beacon = NULL;
+extern uint32 mame82_opts; //decalred in ioctl.c
 
 void
 autostart(void)
 {
 	printf("autostart\n");
+	
+	/*** startup settings for KARMA mode ***/
+	MAME82_ENABLE_OPTION(mame82_opts, MAME82_KARMA_PROBE_RESP); //Enable responding foreign probe requests
+	MAME82_ENABLE_OPTION(mame82_opts, MAME82_KARMA_ASSOC_RESP); //Enable responding foreign ASSOC REQUESTS
+	MAME82_ENABLE_OPTION(mame82_opts, MAME82_KARMA_BEACONING); //enable beaconing for already responded foreign probe requests (KARMA loud)
+	
+	ssids_to_beacon = (ssid_list_t*) malloc(sizeof(ssid_list_t), 4); //allignment needed ?
+	printf("Pointer to SSID list %p\n", ssids_to_beacon);
+	
 }
 
 __attribute__((at(0x2a94, "", CHIP_VER_BCM43430a1, FW_VER_7_45_41_46)))

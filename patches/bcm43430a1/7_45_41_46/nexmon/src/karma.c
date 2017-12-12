@@ -5,11 +5,6 @@
 #include <structs.h>    // structures that are used by the code in the firmware
 #include <patcher.h>
 #include <helper.h>
-
-//#include "d11.h"
-//#include "brcm.h"
-
-
 #include "karma.h"
 
 #define KARMA_DEBUG			MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_DEBUG)
@@ -17,7 +12,89 @@
 #define print_ndbg(...) 	if(!MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_DEBUG)) printf(__VA_ARGS__)
 
 
-extern uint32 mame82_opts;
+extern uint32 mame82_opts; //decalred in ioctl.c
+extern ssid_list_t* ssids_to_beacon; //declared in autostart.c, as the header is allocated there
+
+//check if an SSID is worth adding to an existing SSID list
+int validate_ssid(ssid_list_t *head, char* ssid, uint8 ssid_len)
+{
+	char *cur_ssid;
+	uint8 cur_ssid_len;
+	int i, j, match;
+	
+	if (ssid_len == 0) return 0; // we don't add empty SSIDs to the list
+	
+	// Went through list
+	ssid_list_t *current = head;
+	i = -1; //used for loop count and increased at loop entry (to avoid inc in branches), thus -1
+    while (current->next != NULL) 
+    {	
+		i++;
+        current = current->next;
+		cur_ssid_len = current->len_ssid;
+		cur_ssid = current->ssid;
+		
+		//printf("Checking %s against list pos %d (%s)\n", ssid, i, cur_ssid);
+		
+		// if length doesn't equal, we check next
+		if (cur_ssid_len != ssid_len) continue;
+		
+		//if length equals, we check char by char
+		match = 1;
+		for (j = 0; j < MIN(ssid_len, MIN(cur_ssid_len, 32)); j++)
+		{
+			if (cur_ssid[j] != ssid[j])
+			{
+				match = 0;
+				break; // we don't have to check further
+			}
+		}
+		
+		if (match)
+		{
+			//printf("The SSID %s is already in the list at pos %d\n", ssid, i);
+			return 0;
+		}
+    }
+	
+	return 1;
+}
+
+void push_ssid(ssid_list_t *head, char* ssid, uint8 ssid_len)
+{
+	//This method doesn't account for duplicates
+	
+	int i = 0;
+	int upper_bound = 200; //hardcoded for now
+	
+    ssid_list_t *current = head;
+    while (current->next != NULL) 
+    {
+        current = current->next;
+        i++;
+    }
+    
+    if (i >= upper_bound)
+    {
+		printf("Not adding SSID %s because list contains max elements %d\n", ssid, i);
+		return; //abort appending to list
+	}
+
+    current->next = (ssid_list_t*) malloc(sizeof(ssid_list_t), 4);
+    if (current->next == NULL)
+    {
+		printf("Malloc error, not able to add SSID %s to list at pos %d\n", ssid, i);
+	}
+	else
+	{
+		printf("Added SSID %s at list pos %d\n", ssid, i);
+	}
+    current->next->len_ssid = ssid_len;
+    memset(current->next->ssid, 0, 32);
+    memcpy(current->next->ssid, ssid, ssid_len);
+    current->next->next = NULL;
+}
+
 
 void print_mac(struct ether_addr addr)
 {
@@ -142,6 +219,14 @@ void wlc_recv_process_prbreq_hook(struct wlc_info *wlc, void *wrxh, uint8 *plcp,
 			print_dbg("PRBRES len %d\nSending Probe Response for %s..\n", len, SSID_PRQ);
 
 			wlc_sendmgmt(wlc, p, wlc->wlcif_list->qi, NULL);
+			
+			//If beaconing enabled, add to SSID list
+			if (MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_BEACONING))
+			{
+				if (validate_ssid(ssids_to_beacon, (char*) SSID_PRQ, SSID_PRQ_LEN)) push_ssid(ssids_to_beacon, (char*) SSID_PRQ, SSID_PRQ_LEN);
+				else printf("SSID '%s' not added to the beaconing list\n");
+			}
+			
 
 			//print_mem(pbody, 80);
 		}

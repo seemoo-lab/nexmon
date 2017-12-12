@@ -1,27 +1,7 @@
-/*
-#define PKTPULL(sk_buff, _len) ({ \
-	uint __len = (_len); \
-	(sk_buff)->data += __len; \
-	(sk_buff)->len -= __len; \
-	(sk_buff)->data; \
-})
-
-#define PKTSETLEN(sk_buff, _len) ({ \
-	uint __len = (_len); \
-	(sk_buff)->len = __len; \
-})
-
-#define PKTPUSH(sk_buff, _len) ({ \
-	uint __len = (_len); \
-	(sk_buff)->data -= __len; \
-	(sk_buff)->len += __len; \
-	(sk_buff)->data; \
-})
-
-*/
-
 #define NULL ((void *)0)
 #define FALSE 0
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
 
 #define MAME82_KARMA_PROBE_RESP	(1 << 0)
 #define MAME82_KARMA_ASSOC_RESP	(1 << 1)
@@ -83,8 +63,18 @@
 #define DOT11_MNG_SSID_ID	0
 
 
+/*** Custom structs ***/
+typedef struct ssid_list
+{
+	struct ssid_list *next;
+	char ssid[32];
+	uint8 len_ssid;
+} ssid_list_t;
 
 
+void push_ssid(ssid_list_t *head, char* ssid, uint8 ssid_len);
+int validate_ssid(ssid_list_t *head, char* ssid, uint8 ssid_len);
+/*** End custom structs ***/
 
 typedef uint8 uchar;
 
