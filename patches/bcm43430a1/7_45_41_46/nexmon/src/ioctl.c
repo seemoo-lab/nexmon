@@ -55,7 +55,7 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
     argprintf_init(arg, len);
     int ret = IOCTL_ERROR;
 
-	printf("received ioctl cmd %d with arg %s\n", cmd, arg);
+	//printf("received ioctl cmd %d with arg %s\n", cmd, arg);
 
     switch (cmd) 
     {
