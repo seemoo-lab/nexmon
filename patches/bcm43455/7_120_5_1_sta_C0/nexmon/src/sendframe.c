@@ -43,96 +43,22 @@
 #include <rates.h>              // rates used to build the ratespec for frame injection
 #include <nexioctls.h>          // ioctls added in the nexmon patch
 #include <capabilities.h>       // capabilities included in a nexmon patch
-#include <sendframe.h>          // sendframe functionality
-#include <version.h>            // version information
-#include <ieee80211_radiotap.h> // Radiotap header relateds
 
-extern void *inject_frame(struct wlc_info *wlc, struct sk_buff *p);
-
-struct inject_frame {
-    unsigned short len;
-    unsigned char pad;
-    unsigned char type;
-    char data[];
-};
-
-int 
-wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
+char
+sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned int rate)
 {
-    int ret = IOCTL_ERROR;
+    char ret;
 
-    switch (cmd) {
-        case NEX_GET_CAPABILITIES:
-            if (len == 4) {
-                memcpy(arg, &capabilities, 4);
-                ret = IOCTL_SUCCESS;
-            }
-            break;
+    if (wlc->band->bandtype == WLC_BAND_5G && rate < RATES_RATE_6M) {
+        rate = RATES_RATE_6M;
+    }
 
-        case NEX_WRITE_TO_CONSOLE:
-            if (len > 0) {
-                arg[len-1] = 0;
-                printf("ioctl: %s\n", arg);
-                ret = IOCTL_SUCCESS; 
-            }
-            break;
-
-        case NEX_GET_VERSION_STRING:
-            {
-                int strlen = 0;
-                for ( strlen = 0; version[strlen]; ++strlen );
-                if (len >= strlen) {
-                    memcpy(arg, version, strlen);
-                    ret = IOCTL_SUCCESS;
-                }
-            }
-            break;
-
-        case NEX_INJECT_FRAME:
-            {
-                sk_buff *p;
-                int bytes_used = 0;
-                struct inject_frame *frm = (struct inject_frame *) arg;
-
-                while ((frm->len > 0) && (bytes_used + frm->len <= len)) {
-                    // add a dummy radiotap header if frame does not contain one
-                    if (frm->type == 0) {
-                        p = pkt_buf_get_skb(wlc->osh, frm->len + 202 + 8 - 4);
-                        skb_pull(p, 202);
-                        struct ieee80211_radiotap_header *radiotap = 
-                            (struct ieee80211_radiotap_header *) p->data;
-                        
-                        memset(radiotap, 0, sizeof(struct ieee80211_radiotap_header));
-                        
-                        radiotap->it_len = 8;
-                        
-                        skb_pull(p, 8);
-                        memcpy(p->data, frm->data, frm->len - 4);
-                        skb_push(p, 8);
-                    } else {
-                        p = pkt_buf_get_skb(wlc->osh, frm->len + 202 - 4);
-                        skb_pull(p, 202);
-
-                        memcpy(p->data, frm->data, frm->len - 4);
-                    }
-
-                    inject_frame(wlc, p);
-
-                    bytes_used += frm->len;
-
-                    frm = (struct inject_frame *) (arg + bytes_used);
-                }
-
-                ret = IOCTL_SUCCESS;
-            }
-            break;
-
-        default:
-            ret = wlc_ioctl(wlc, cmd, arg, len, wlc_if);
+    if (wlc->hw->up) {
+        ret = wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 0);
+    } else {
+        ret = wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 1);
+        printf("ERR: wlc down\n");
     }
 
     return ret;
 }
-
-__attribute__((at(0x2054B0, "", CHIP_VER_BCM43455, FW_VER_7_120_5_1_sta_C0)))
-GenericPatch4(wlc_ioctl_hook, wlc_ioctl_hook + 1);
