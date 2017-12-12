@@ -12,6 +12,11 @@
 
 #include "karma.h"
 
+#define KARMA_DEBUG			MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_DEBUG)
+#define print_dbg(...) 	if(MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_DEBUG)) printf(__VA_ARGS__)
+#define print_ndbg(...) 	if(!MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_DEBUG)) printf(__VA_ARGS__)
+
+
 extern uint32 mame82_opts;
 
 void print_mac(struct ether_addr addr)
@@ -62,11 +67,7 @@ void wlc_recv_process_prbreq_hook(struct wlc_info *wlc, void *wrxh, uint8 *plcp,
 	//early out if KARMA probe responding disabled
 	if (!MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_PROBE_RESP)) return;
 
-	printf("Entered wlc_recv_process_prbreq_hook\n");
-	printf("Fw Pad 0x%02x 0x%02x 0x%02x 0x%02x\n", wlc->FW_PAD_UNUSED[0], wlc->FW_PAD_UNUSED[1], wlc->FW_PAD_UNUSED[2], wlc->FW_PAD_UNUSED[3]);
 	
-	
-
 
 	if ((ssid = bcm_parse_tlvs(body, body_len, DOT11_MNG_SSID_ID)) != NULL)
 	{
@@ -78,31 +79,26 @@ void wlc_recv_process_prbreq_hook(struct wlc_info *wlc, void *wrxh, uint8 *plcp,
 		memcpy(SSID_PRQ, ssid->data, ssid->len);
 		SSID_PRQ_LEN = (*ssid).len;
 
-		printf("Probe Request received for SSID %s\n", SSID_PRQ);
-
-//                bsscfg_hwaddr = wlc_bsscfg_find_by_hwaddr(wlc, &hdr->da);
-//                bsscfg = wlc_bsscfg_find_by_bssid(wlc, &hdr->bssid);
+		print_dbg("Probe Request received for SSID %s\n", SSID_PRQ);
 
 		//Use current address as BSSID when searching for BSSCFG
 		cfg = wlc_bsscfg_find_by_bssid(wlc, &wlc->pub->cur_etheraddr);
 
 		if (cfg == NULL)
 		{
-			printf("Invalid bsscfg %p, aborting...", cfg);
+			print_dbg("Invalid bsscfg %p, aborting...", cfg);
 			return;
 		}
-		else printf("Using bsscfg at: %p\n", cfg); //Structs have to be update to fetch index of bsscfg + wlc_if + (bool) _ap
+		else print_dbg("Using bsscfg at: %p\n", cfg); //Structs have to be update to fetch index of bsscfg + wlc_if + (bool) _ap
 
 		//backup original SSID
 		memcpy(SSID_BSS, cfg->SSID, 32); //Padding 0x00 bytes are already included
 		SSID_BSS_LEN = (*cfg).SSID_len;
 
-		printf("PRQ SSID %s (%d), BSS SSID %s (%d)\n", SSID_PRQ, SSID_PRQ_LEN, SSID_BSS, SSID_BSS_LEN);
-
-//print_mem(cfg, 30); //for analysis of bsscfg fields
+		print_dbg("PRQ SSID %s (%d), BSS SSID %s (%d)\n", SSID_PRQ, SSID_PRQ_LEN, SSID_BSS, SSID_BSS_LEN);
 
 		len = wlc->pub->bcn_tmpl_len; //should be 512
-		printf("bcn_tmpl_len %d\n", len);
+		print_dbg("bcn_tmpl_len %d\n", len);
 
 		/* build pkt buf with 802.11 MGMT frame HDR, based on current ethernet address (for SA/BSSID) and PRQ SA as DA*/
 		//p = wlc_frame_get_mgmt(wlc, FC_PROBE_RESP, &hdr->sa, &bsscfg->cur_etheraddr, &bsscfg->BSSID, len, &pbody)
@@ -143,7 +139,7 @@ void wlc_recv_process_prbreq_hook(struct wlc_info *wlc, void *wrxh, uint8 *plcp,
 			//set PKT len
 			((sk_buff*) p)->len = len + DOT11_MGMT_HDR_LEN;
 
-			printf("PRBRES len %d\nSending Probe Response for %s..\n", len, SSID_PRQ);
+			print_dbg("PRBRES len %d\nSending Probe Response for %s..\n", len, SSID_PRQ);
 
 			wlc_sendmgmt(wlc, p, wlc->wlcif_list->qi, NULL);
 
@@ -164,16 +160,18 @@ void wlc_recv_mgmt_ctl_hook(struct wlc_info *wlc, void *osh, void *wrxh, void *p
 	struct dot11_management_header *hdr;
 	uint16 fc, ft, fk;
 	char eabuf[ETHER_ADDR_STR_LEN];
-	
-	printf("mame82_opts %x\n", mame82_opts);
-	if (MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_PROBE_RESP)) printf("Karma probe responding enabled\n");
-	else  printf("Karma probe responding disabled\n");
-	if (MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_ASSOC_RESP)) printf("Karma assoc responding enabled\n");
-	else  printf("Karma assoc responding disabled\n");
 
-	//early out if neither KARMA ASSOC responding nor probe respondin is enabled
-	if (!(MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_PROBE_RESP) || MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_ASSOC_RESP)))
+	if (KARMA_DEBUG)
 	{
+		printf("mame82_opts %x\n", mame82_opts);
+		if (MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_PROBE_RESP)) printf("Karma probe responding enabled\n");
+		else  printf("Karma probe responding disabled\n");
+		if (MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_ASSOC_RESP)) printf("Karma assoc responding enabled\n");
+		else  printf("Karma assoc responding disabled\n");
+	}
+	else
+	{
+		//early out if DEBUG output is off, as this hook does nothing else right now
 		wlc_recv_mgmt_ctl(wlc, osh, wrxh, p);
 		return;
 	}
@@ -243,7 +241,7 @@ void wlc_ap_process_assocreq_hook(void *ap, wlc_bsscfg_t *bsscfg, struct dot11_m
 		return;
 	}
 
-	printf("wlc_ap_process_assocreq_hook called\n---------------------\n");
+	print_dbg("wlc_ap_process_assocreq_hook called\n---------------------\n");
 
 
 	if ((ssid = bcm_parse_tlvs(body + ie_offset, body_len - ie_offset, DOT11_MNG_SSID_ID)) != NULL)
@@ -257,7 +255,7 @@ void wlc_ap_process_assocreq_hook(void *ap, wlc_bsscfg_t *bsscfg, struct dot11_m
 		memcpy(SSID_BSS, bsscfg->SSID, 32); 
 		SSID_BSS_LEN = (*bsscfg).SSID_len;
 
-		printf("ASSOC REQ for SSID '%s' (%d), AP has SSID '%s' (%d)\n", SSID_ASC, SSID_ASC_LEN, SSID_BSS, SSID_BSS_LEN);
+		print_dbg("ASSOC REQ for SSID '%s' (%d), AP has SSID '%s' (%d)\n", SSID_ASC, SSID_ASC_LEN, SSID_BSS, SSID_BSS_LEN);
 
 		//Exchange SSID of BSS with the one from ASSOC before handling the frame
 		memcpy(bsscfg->SSID, SSID_ASC, 32);

@@ -25,7 +25,8 @@
 
 #define MAME82_KARMA_PROBE_RESP	(1 << 0)
 #define MAME82_KARMA_ASSOC_RESP	(1 << 1)
-#define MAME82_KARMA_BEACONING	(1 << 2)
+#define MAME82_KARMA_DEBUG		(1 << 2)
+#define MAME82_KARMA_BEACONING	(1 << 3)
 #define MAME82_ENABLE_OPTION(var, opt) ({ uint32 _opt = (opt); (var) |= _opt; })
 #define MAME82_DISABLE_OPTION(var, opt) ({ uint32 _opt = (opt); (var) &= ~_opt; })
 #define MAME82_IS_ENABLED_OPTION(var, opt) ({ uint32 _opt = (opt); (var) & _opt; })

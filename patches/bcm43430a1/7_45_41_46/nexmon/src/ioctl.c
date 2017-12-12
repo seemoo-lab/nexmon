@@ -107,7 +107,7 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 				
 				MAME82_ENABLE_OPTION(mame82_opts, MAME82_KARMA_PROBE_RESP);
 				MAME82_ENABLE_OPTION(mame82_opts, MAME82_KARMA_ASSOC_RESP);
-				
+				MAME82_DISABLE_OPTION(mame82_opts, MAME82_KARMA_DEBUG); // always off
 			}
 			else
 			{
@@ -117,7 +117,7 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 				
 				MAME82_DISABLE_OPTION(mame82_opts, MAME82_KARMA_PROBE_RESP);
 				MAME82_DISABLE_OPTION(mame82_opts, MAME82_KARMA_ASSOC_RESP);
-				
+				MAME82_DISABLE_OPTION(mame82_opts, MAME82_KARMA_DEBUG); // always off
 			}
 			
 			ret = IOCTL_SUCCESS;
