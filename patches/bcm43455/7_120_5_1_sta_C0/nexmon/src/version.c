@@ -39,5 +39,5 @@
 
 char version[] = "nexmon_ver: " GIT_VERSION "-" BUILD_NUMBER "\n";
 
-__attribute__((at(0x21A7FC, "", CHIP_VER_BCM43455, FW_VER_7_120_5_1_sta_C0)))
+__attribute__((at(0x2088B8, "", CHIP_VER_BCM43455, FW_VER_7_120_5_1_sta_C0)))
 GenericPatch4(version_patch, version);
