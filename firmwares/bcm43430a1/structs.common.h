@@ -405,7 +405,59 @@ struct wlc_if {
     } u;
     struct wlc_if_stats  _cnt;
 };
+
+#define ETHER_ADDR_LEN      6              /* d11 management header length */
+struct ether_addr {
+        uint8 octet[ETHER_ADDR_LEN];
+};
+
 typedef struct wlc_if wlc_if_t;
+typedef struct wlc_bsscfg wlc_bsscfg_t;
+typedef struct wlc_info wlc_info_t;
+typedef struct wl_info wl_info_t;
+typedef struct hnd_dev hnd_dev_t;
+
+#define HND_DEV_NAME_MAX 16
+
+/* Device instance */
+struct hnd_dev {
+        char            name[HND_DEV_NAME_MAX];
+        uint32          devid;
+        uint32          flags;  
+        //hnd_dev_ops_t   *ops;
+        void			*ops;
+        void            *softc; 
+        hnd_dev_t       *next;
+        hnd_dev_t       *chained;
+        //hnd_dev_stats_t *stats; 
+        void 			*stats; 
+        void            *commondata;
+        void            *pdev;
+};
+
+
+typedef struct hnd_timer hnd_timer_t;
+typedef struct hnd_timer hnd_task_t;
+typedef hnd_timer_t wl_timer;
+typedef struct wlc_ap_info wlc_ap_info_t;
+
+struct wlc_ap_info {
+    int PAD;
+};
+
+struct hnd_timer
+{
+	int PAD;
+};
+
+typedef struct wlc_assoc {
+	/* MaMe82: struct not verified */
+	
+	struct wl_timer *timer; //0x00
+	char gap[0x44];
+	bool	rt; //0x48
+	
+} wlc_assoc_t;
 
 struct wlc_info {
     struct wlc_pub *pub;                /* 0x000 */
@@ -565,8 +617,18 @@ struct wlc_info {
     int PAD;                            /* 0x25C */
     int PAD;                            /* 0x260 */
     int PAD;                            /* 0x264 */
-    int PAD;                            /* 0x268 */
-    int PAD;                            /* 0x26C */
+/*
+ * MaMe82:
+ * 
+ * The code @0x1d23a shows how the bsscfg array of wlc_info struct is iterated and reveals:
+ * 	offset 0x268:	wlc_bsscfg_t    **bsscfg //array of pointers to bsscfg structs in use, max length is 0x20
+ *  offset 0x26C:	wlc_bsscfg_t    *cfg //pointer to primary bsscfg 
+ * 
+ * The observations have been verified on FW version 7.45.41.46
+ */
+    
+    wlc_bsscfg_t **bsscfg;              /* 0x268 */ //MaMe82: checked, see comments above
+    wlc_bsscfg_t *cfg;                  /* 0x26C */ //MaMe82: checked, see comments above
     int PAD;                            /* 0x270 */
     int PAD;                            /* 0x274 */
     int PAD;                            /* 0x278 */
@@ -733,7 +795,8 @@ struct wlc_info {
     int PAD;                            /* 0X4FC */
     int PAD;                            /* 0X500 */
     int PAD;                            /* 0X504 */
-    int PAD;                            /* 0X508 */
+    //MaMe82: see code @ 0x0083f0cc
+    int ap;                            /* 0X508 */
     int PAD;                            /* 0X50C */
     short some_chanspec;                /* 0X510 */
     short PAD;                          /* 0X512 */
@@ -798,11 +861,6 @@ struct wlc_info {
     int PAD;                            /* 0X5FC */
 };
 
-#define ETHER_ADDR_LEN      6              /* d11 management header length */
-struct ether_addr {
-        uint8 octet[ETHER_ADDR_LEN];
-};
-
 
 /* partly CHECKED */
 struct wlc_pub {
@@ -820,8 +878,18 @@ struct wlc_pub {
     char field_26;                      /* 0x026 */
     char field_27;                      /* 0x027 */
     int PAD;                            /* 0x028 */
-    int PAD;                            /* 0x02C */
-    int field_30;                       /* 0x030 */
+    //MaMe82 see code @ 0x0083f0be
+//    int PAD;                            /* 0x02C */
+    bool PAD;	//0x02c
+    bool PAD;	//0x02d
+    bool PAD;	//0x02e
+    bool _ap;	//0x02f is AP
+//    int field_30;                       /* 0x030 */
+    bool _apsta;	//0x030	is APSTA
+    bool PAD;	//0x031
+    bool PAD;	//0x032
+    bool PAD;	//0x033
+
     int PAD;                            /* 0x034 */
     int PAD;                            /* 0x038 */
     int PAD;                            /* 0x03C */
@@ -843,6 +911,28 @@ struct wlc_pub {
 
 	//0xec --> bcn_tmpl_len ??
 } __attribute__((packed));
+
+
+#define	WLC_NUMRATES	16
+#define MCSSET_LEN		16
+
+typedef uint32	ratespec_t;
+
+typedef struct wlc_rateset {
+        uint32  count;                  //likely to be uint16
+        uint8   rates[WLC_NUMRATES];    
+        //uint8   htphy_membership; 
+        //uint8   mcs[MCSSET_LEN];
+        //uint16  vht_mcsmap;
+        //uint16  vht_mcsmap_prop;
+} wlc_rateset_t;
+
+typedef struct wlc_bss_info {
+        struct ether_addr BSSID;  //0x00
+        uint8 GAP[0x32]; //0x06
+        wlc_rateset_t   rateset; //0x38 MaMe82 : see code @ 0x008377fa 
+        uint8 TAIL[1];
+} wlc_bss_info_t;
 
 struct wlc_bsscfg {
     struct wlc_info *wlc;                          /* 0x000 */
@@ -911,8 +1001,10 @@ struct wlc_bsscfg {
     int PAD;                            /* 0x0E8 */
     int PAD;                            /* 0x0EC */
     int PAD;                            /* 0x0F0 */
-    int PAD;                            /* 0x0F4 */
-    int PAD;                            /* 0x0F8 */
+    //int PAD;                            /* 0x0F4 */
+    wlc_bss_info_t	*current_bss;		/* 0x0F4 */  //MaMe82:	see code @ 0x008377f4
+    //int PAD;                            /* 0x0F8 */
+    wlc_assoc_t     *assoc;             /* 0x0F8 */ //MaMe82:	see code @ 0x00847840
     int PAD;                            /* 0x0FC */
     int PAD;                            /* 0x100 */
     int PAD;                            /* 0x104 */
@@ -1831,8 +1923,6 @@ struct tdls_iovar {
     uint8 PAD;
 } __attribute__((packed));
 
-typedef struct wlc_bsscfg wlc_bsscfg_t;
-typedef struct wlc_info wlc_info_t;
 
 /*
 struct bdc_ethernet_ip_udp_header {

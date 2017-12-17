@@ -1692,6 +1692,40 @@ AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x18994)
 void wlc_ap_process_assocreq(void *ap, wlc_bsscfg_t *bsscfg, void *hdr, uint8 *body, uint body_len, struct scb *scb, bool short_preamble)
 VOID_DUMMY
 
+//no hook call so far, as called by driver
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x819aec)
+int wl_open(hnd_dev_t *dev)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x848154)
+int wlc_bsscfg_up(wlc_info_t *wlc, wlc_bsscfg_t *cfg)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x839CC4)
+void wlc_bss_up(wlc_ap_info_t *ap, wlc_bsscfg_t *bsscfg)
+VOID_DUMMY
+
+
+//0x0082b1d4 wlc_lowest_basic_rspec
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x82b1d4)
+ratespec_t wlc_lowest_basic_rspec(wlc_info_t *wlc, wlc_rateset_t *rs)
+RETURN_DUMMY
+
+//0x00824820 wlc_bcn_prb_template
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x824820)
+void wlc_bcn_prb_template(wlc_info_t *wlc, uint type, ratespec_t bcn_rate, wlc_bsscfg_t *cfg, uint16 *buf, int *len)
+VOID_DUMMY
+//--> example usage @0x008377f4 (wlc_ap_doiovar)
+
+//0x00803acc memmove (untested)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x803acc)
+void *memmove(void *dst, void *src, int len)
+RETURN_DUMMY
+
+//0x00880e60 PKTFREE
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x803acc)
+void PKTFREE(void *osh, void* p, int send)
+VOID_DUMMY
 
 #undef VOID_DUMMY
 #undef RETURN_DUMMY
