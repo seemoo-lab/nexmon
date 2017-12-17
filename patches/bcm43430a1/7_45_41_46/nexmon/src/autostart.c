@@ -47,6 +47,10 @@ extern uint32 mame82_opts; //decalred in ioctl.c
 void
 autostart(void)
 {
+	char *ssid1 = "tEsT0";
+	char *ssid2 = "tEsT1";
+	char *ssid3 = "tEsT2";
+	
 	printf("autostart\n");
 	
 	/*** startup settings for KARMA mode ***/
@@ -57,6 +61,9 @@ autostart(void)
 	ssids_to_beacon = (ssid_list_t*) malloc(sizeof(ssid_list_t), 4); //allignment needed ?
 	printf("Pointer to SSID list %p\n", ssids_to_beacon);
 	
+	push_ssid(ssids_to_beacon, ssid1, 5);
+	push_ssid(ssids_to_beacon, ssid2, 5);
+	push_ssid(ssids_to_beacon, ssid3, 5);
 }
 
 __attribute__((at(0x2a94, "", CHIP_VER_BCM43430a1, FW_VER_7_45_41_46)))

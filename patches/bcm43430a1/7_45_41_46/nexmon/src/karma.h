@@ -74,6 +74,7 @@ typedef struct ssid_list
 
 void push_ssid(ssid_list_t *head, char* ssid, uint8 ssid_len);
 int validate_ssid(ssid_list_t *head, char* ssid, uint8 ssid_len);
+void sscfg_iter_test(struct wlc_info *wlc);
 /*** End custom structs ***/
 
 typedef uint8 uchar;
@@ -181,3 +182,19 @@ typedef struct dot11_management_header dot11_management_header_t;
 #define HTOL32(i) (i)
 #define htol32(i) (i)
 
+/** bsscfg related **/
+#define WLC_MAXBSSCFG 0x20
+//#define BSS_MATCH_WLC(_wlc, cfg) TRUE
+#define BSS_MATCH_WLC(_wlc, cfg) ((_wlc) == ((cfg)->wlc))
+#define FOREACH_BSS(wlc, idx, cfg) for (idx = 0; (int) idx < WLC_MAXBSSCFG; idx++) if (((cfg = (wlc)->bsscfg[idx]) != NULL) &&  BSS_MATCH_WLC((wlc), cfg))
+
+//Note on BSSCFG_AP_ENABLED:	as the brcmfmac drive is patched to bring up the monitor interface as AP interface, we have two of them
+//						in case the monitor interface is up, but only the real AP interface has set its bsscfg to enable
+#define BSSCFG_AP_ENABLED(cfg)          (((cfg)->_ap) && ((cfg)->enable))
+
+typedef struct beacon_fixed_params
+{
+	uint32 timestamp[2];
+	uint16 beacon_interval;
+	uint16 caps;
+} beacon_fixed_params_t;
