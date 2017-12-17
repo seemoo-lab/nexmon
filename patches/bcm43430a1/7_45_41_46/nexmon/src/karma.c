@@ -215,32 +215,8 @@ void wlc_recv_process_prbreq_hook(struct wlc_info *wlc, void *wrxh, uint8 *plcp,
 			print_dbg("Invalid bsscfg %p, aborting...", cfg);
 			return;
 		}
-//		else print_dbg("Using bsscfg at: %p\n", cfg); //Structs have to be update to fetch index of bsscfg + wlc_if + (bool) _ap
-		else printf("Using bsscfg at: %p\n", cfg); //Structs have to be update to fetch index of bsscfg + wlc_if + (bool) _ap
+		else print_dbg("Using bsscfg at: %p\n", cfg); //Structs have to be update to fetch index of bsscfg + wlc_if + (bool) _ap
 
-
-
-
-
-
-send_beacons(wlc, g_AP_bsscfg, g_beacon_template_head, g_beacon_template_tail, g_beacon_template_tail_len, ssids_to_beacon);			
-/*
- * wlc holds a pointer to an bsscfg pointer array (wlc_bsscfg_t    **bsscfg) followed by a pointer to the primary
- * bsscfg (wlc_bsscfg_t    *cfg)
- * 
- * From fw reversing, it seems to be the offset to **bsscfg from the beginning of wlc_info_t is 0x268 (see code at 0x1d250 which should
- * iterate over this list) ... if this is correct, the number of bsscfg is 0x20 (see code at 0x1d282)
- * 
- * To validate these assumptions, we print some test data
- */
-
-/* 
-//print_mem(((void*) wlc) + 0x268, 0x84); //looks good 0x26C seems to point to primary bsscfg, thus 0x268 is likely the list pointer
-pdebug = ((void*) wlc) + 0x268;
-print_mem((void*) *pdebug, 0x84); //deref list pointer and dump data (the primary bsscfg should be part of the array
-								//That's a hit, too. The array contains only one bsscfg pointer (in the tests) and is terminated with a 0x00000000 pointer
-sscfg_iter_test(wlc);
-*/
 
 		//backup original SSID
 		memcpy(SSID_BSS, cfg->SSID, 32); //Padding 0x00 bytes are already included
