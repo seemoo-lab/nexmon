@@ -380,6 +380,7 @@ sprintf(char *buf, const char *format, ...)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x12824)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x803c7c)
 int
 strlen(char *str)
 RETURN_DUMMY

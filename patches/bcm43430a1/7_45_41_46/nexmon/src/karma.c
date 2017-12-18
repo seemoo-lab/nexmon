@@ -8,21 +8,12 @@
 #include "karma.h"
 #include "sendframe.h"
 
-#define KARMA_DEBUG			MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_DEBUG)
-#define print_dbg(...) 	if(MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_DEBUG)) printf(__VA_ARGS__)
-#define print_ndbg(...) 	if(!MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_DEBUG)) printf(__VA_ARGS__)
+#define print_dbg(...) 	if(g_mame82_conf->debug_out) printf(__VA_ARGS__)
+#define print_ndbg(...) 	if(!g_mame82_conf->debug_out) printf(__VA_ARGS__)
 
 
-extern uint32 mame82_opts; //decalred in ioctl.c
-extern ssid_list_t* ssids_to_beacon; //declared in autostart.c, as the header is allocated there
+extern mame82_config_t *g_mame82_conf;
 
-
-
-/*
-void			*g_beacon_template_frame = NULL;
-uint8			*g_beacon_template_frame_body = NULL;
-int				g_beacon_template_frame_len = 0;
-*/
 
 wlc_bsscfg_t	*g_AP_bsscfg = NULL;
 beacon_fixed_params_t	*g_beacon_template_head = NULL;
@@ -37,7 +28,24 @@ void send_beacons(struct wlc_info *wlc, wlc_bsscfg_t *bsscfg, beacon_fixed_param
 /** Timer based beaconing **/
 void bcn_tmr_hndl(struct hndrte_timer *t)
 {
-	send_beacons(t->data, g_AP_bsscfg, g_beacon_template_head, g_beacon_template_tail, g_beacon_template_tail_len, ssids_to_beacon); 
+	if (g_mame82_conf->karma_beacons)
+		send_beacons(t->data, g_AP_bsscfg, g_beacon_template_head, g_beacon_template_tail, g_beacon_template_tail_len, g_mame82_conf->ssids_karma); 
+	
+	if (g_mame82_conf->custom_beacons)
+		send_beacons(t->data, g_AP_bsscfg, g_beacon_template_head, g_beacon_template_tail, g_beacon_template_tail_len, g_mame82_conf->ssids_custom);
+	
+	//Autoremove SSIDs which haven't seen an assoc request after 3000 beacons (roughly 5 minutes)
+	//-------------------------------------------------------------------------------------------
+	
+	//custom SSIDs which have been beaconed, because they have been manually added, but didn't receive an assoc request
+	if (g_mame82_conf->custom_beacon_autoremove) //if 0, none gets removed
+		remove_entries_without_assoc_after_beacons(g_mame82_conf->ssids_custom, g_mame82_conf->custom_beacon_autoremove); 
+	
+	//karma SSIDs which have been beaconed after a spotted probed, but never received an association (f.e. if a WPA2 AP was probed, but an open AP advertised)
+	//	Note: if a probed SSID gets deleted, it is added back in as soon as a new probe is spotted
+	if (g_mame82_conf->karma_beacon_autoremove) //if 0, none gets removed (not recommended, list fills too fast)
+		remove_entries_without_assoc_after_beacons(g_mame82_conf->ssids_karma, g_mame82_conf->karma_beacon_autoremove); 
+	
 }
 
 /** end Timer based beaconing **/
@@ -88,12 +96,97 @@ int validate_ssid(ssid_list_t *head, char* ssid, uint8 ssid_len)
 	return 1;
 }
 
-void push_ssid(ssid_list_t *head, char* ssid, uint8 ssid_len)
+//get pointer to the given SSID from given list
+ssid_list_t* get_ssid_entry(ssid_list_t *head, char* ssid, uint8 ssid_len)
+{
+	char *cur_ssid;
+	uint8 cur_ssid_len;
+	int i, j, match;
+	
+	if (ssid_len == 0) return NULL; // list shouldn't contain empty SSIDs
+	
+	// Went through list
+	ssid_list_t *current = head;
+	i = -1; //used for loop count and increased at loop entry (to avoid inc in branches), thus -1
+    while (current->next != NULL) 
+    {	
+		i++;
+        current = current->next;
+		cur_ssid_len = current->len_ssid;
+		cur_ssid = current->ssid;
+		
+		//printf("Checking %s against list pos %d (%s)\n", ssid, i, cur_ssid);
+		
+		// if length doesn't equal, we check next
+		if (cur_ssid_len != ssid_len) continue;
+		
+		//if length equals, we check char by char
+		match = 1;
+		for (j = 0; j < MIN(ssid_len, MIN(cur_ssid_len, 32)); j++)
+		{
+			if (cur_ssid[j] != ssid[j])
+			{
+				match = 0;
+				break; // we don't have to check further
+			}
+		}
+		
+		if (match)
+		{
+			return current;
+		}
+    }
+	
+	return NULL;
+}
+
+//Removes every SSID entry from the list, which hasn't seen an assoc request after beacon_limit beacons have been send already
+void remove_entries_without_assoc_after_beacons(ssid_list_t *head, uint beacon_limit)
+{
+	// Went through list
+	ssid_list_t *current = head;
+	ssid_list_t *remove;
+	
+    while (current->next != NULL) 
+    {	
+		//check if assoc requests for next entry are at 0 and beacon count limit is reached
+		if ((!current->next->assoc_req) & (current->next->bcn_snd >= beacon_limit))
+		{
+			//adjust pointer to next
+			remove = current->next;
+			current->next = remove->next;
+	
+			printf("Removed SSID '%s' from beaconing list, because there was no assoc request after %d beacons have been tx\n", remove->ssid, beacon_limit);
+				
+			free(remove);
+		}
+	
+		current = current->next;
+		if (current == NULL) break;//last element removed, abort loop
+    }
+}
+
+void clear_ssids(ssid_list_t *head)
+{
+	ssid_list_t *cur;
+	ssid_list_t *next;
+	
+	cur = head->next;
+	while (cur != NULL)
+	{
+		next = cur->next;
+		free(cur);
+		printf("Removed SSID '%s' from beaconing list\n", cur->ssid);
+		cur = next;
+	}
+	head->next = NULL;
+}
+
+ssid_list_t* append_ssid(ssid_list_t *head, char* ssid, uint8 ssid_len, uint8 upper_bound)
 {
 	//This method doesn't account for duplicates
 	
 	int i = 0;
-	int upper_bound = 40; //hardcoded for now (see performance meassurement comments on send_beacons)
 	
     ssid_list_t *current = head;
     while (current->next != NULL) 
@@ -105,22 +198,26 @@ void push_ssid(ssid_list_t *head, char* ssid, uint8 ssid_len)
     if (i >= upper_bound)
     {
 		printf("Not adding SSID %s because list contains max elements %d\n", ssid, i);
-		return; //abort appending to list
+		return NULL; //abort appending to list
 	}
 
     current->next = (ssid_list_t*) malloc(sizeof(ssid_list_t), 4);
+    
     if (current->next == NULL)
     {
 		printf("Malloc error, not able to add SSID %s to list at pos %d\n", ssid, i);
+		return NULL;
 	}
 	else
 	{
 		printf("Added SSID %s at list pos %d\n", ssid, i);
 	}
+	memset(current->next, 0, sizeof(ssid_list_t));
     current->next->len_ssid = ssid_len;
     memset(current->next->ssid, 0, 32);
     memcpy(current->next->ssid, ssid, ssid_len);
     current->next->next = NULL;
+    return current->next;
 }
 
 
@@ -189,16 +286,14 @@ void wlc_recv_process_prbreq_hook(struct wlc_info *wlc, void *wrxh, uint8 *plcp,
 
 
 	//early out if KARMA probe responding disabled
-	if (!MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_PROBE_RESP)) return;
+	if (!g_mame82_conf->karma_probes) return;
 
-	
 
 	if ((ssid = bcm_parse_tlvs(body, body_len, DOT11_MNG_SSID_ID)) != NULL)
 	{
 		void *p;
 		uint8 *pbody;
 
-//void **pdebug;
 
 		//store recieved SSID
 		memset(SSID_PRQ, 0, 32);
@@ -269,13 +364,20 @@ void wlc_recv_process_prbreq_hook(struct wlc_info *wlc, void *wrxh, uint8 *plcp,
 			print_dbg("PRBRES len %d\nSending Probe Response for %s..\n", ((sk_buff*) p)->len, SSID_PRQ);
 //			print_mem(((sk_buff*) p)->data, 60);
 
+			
 			wlc_sendmgmt(wlc, p, wlc->wlcif_list->qi, NULL);
+			//sendframe(wlc, p, 1, 0); //sends the packets without crashing for new sk_buff allocs by wlc_frame_get_mgmt
+			
+			
 			
 			//If beaconing enabled, add to SSID list
-			if (MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_BEACONING))
+			if (g_mame82_conf->karma_beacons)
 			{
-				if (validate_ssid(ssids_to_beacon, (char*) SSID_PRQ, SSID_PRQ_LEN)) push_ssid(ssids_to_beacon, (char*) SSID_PRQ, SSID_PRQ_LEN);
-				else printf("SSID '%s' not added to the beaconing list\n");
+				if (validate_ssid(g_mame82_conf->ssids_karma, (char*) SSID_PRQ, SSID_PRQ_LEN))
+				{
+					append_ssid(g_mame82_conf->ssids_karma, (char*) SSID_PRQ, SSID_PRQ_LEN, g_mame82_conf->max_karma_beacon_ssids);
+				}
+				else print_dbg("SSID '%s' already present or empty, not added to beaconing list\n");
 			}
 			
 
@@ -297,13 +399,15 @@ void wlc_recv_mgmt_ctl_hook(struct wlc_info *wlc, void *osh, void *wrxh, void *p
 	uint16 fc, ft, fk;
 	char eabuf[ETHER_ADDR_STR_LEN];
 
-	if (KARMA_DEBUG)
+	if (g_mame82_conf->debug_out)
 	{
-		printf("mame82_opts %x\n", mame82_opts);
-		if (MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_PROBE_RESP)) printf("Karma probe responding enabled\n");
+		
+		if (g_mame82_conf->karma_probes) printf("Karma probe responding enabled\n");
 		else  printf("Karma probe responding disabled\n");
-		if (MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_ASSOC_RESP)) printf("Karma assoc responding enabled\n");
+		if (g_mame82_conf->karma_assocs) printf("Karma assoc responding enabled\n");
 		else  printf("Karma assoc responding disabled\n");
+		if (g_mame82_conf->karma_beacons) printf("Karma beaconing enabled\n");
+		else  printf("Karma beaconing disabled\n");
 	}
 	else
 	{
@@ -371,8 +475,10 @@ void wlc_ap_process_assocreq_hook(void *ap, wlc_bsscfg_t *bsscfg, struct dot11_m
 	uint8 SSID_ASC_LEN, SSID_BSS_LEN;
 	
 	
+	ssid_list_t* ssid_list_entry;
+	
 	//early out if KARMA association responding disabled
-	if (!MAME82_IS_ENABLED_OPTION(mame82_opts, MAME82_KARMA_ASSOC_RESP))
+	if (!g_mame82_conf->karma_assocs)
 	{
 		wlc_ap_process_assocreq(ap, bsscfg, hdr, body, body_len, scb, short_preamble);
 		return;
@@ -401,6 +507,12 @@ void wlc_ap_process_assocreq_hook(void *ap, wlc_bsscfg_t *bsscfg, struct dot11_m
 		//generate frame 
 		wlc_ap_process_assocreq(ap, bsscfg, hdr, body, body_len, scb, short_preamble);
 
+		//in case the SSID is listed for beaconing, inc the assoc_req count
+		ssid_list_entry = get_ssid_entry(g_mame82_conf->ssids_custom, (char*) SSID_ASC, SSID_ASC_LEN);
+		if (ssid_list_entry) ssid_list_entry->assoc_req++;
+		ssid_list_entry = get_ssid_entry(g_mame82_conf->ssids_karma, (char*) SSID_ASC, SSID_ASC_LEN);
+		if (ssid_list_entry) ssid_list_entry->assoc_req++;
+
 		//Restore SSID of bsscfg
 		memcpy(bsscfg->SSID, SSID_BSS, 32);
 		bsscfg->SSID_len = SSID_BSS_LEN;
@@ -421,31 +533,12 @@ void hook_wlc_bss_up_from_wlc_bsscfg_up(wlc_ap_info_t *ap, wlc_bsscfg_t *bsscfg)
 {
 	struct wlc_info *wlc;
 
-/*	
-	struct ether_addr broadcast_mac = { .octet = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF } };
-	uint8 ssid_fill[32] = { 
-		0x41, 0x41, 0x41, 0x41,
-		0x41, 0x41, 0x41, 0x41,
-		0x41, 0x41, 0x41, 0x41,
-		0x41, 0x41, 0x41, 0x41,
-		0x41, 0x41, 0x41, 0x41,
-		0x41, 0x41, 0x41, 0x41,
-		0x41, 0x41, 0x41, 0x41,
-		0x41, 0x41, 0x41, 0x41
-		};	
-	uint8 orig_ssid_len = 0;
-*/
-	
-	//For method2
 	uint8 *pkt_data = NULL;
 	int pkt_len = 0;
 	uint16 *template = NULL;
 	uint8 skip_ssid_len = 0;
 	
 	printf("Called hook for 'wlc_bss_up' from 'wlc_bsscfg_up'\n");
-	
-//	printf("before wlc_bss_up\n");
-//	print_bsscfg(bsscfg);
 	
 	wlc_bss_up(ap, bsscfg);
 	
@@ -455,7 +548,7 @@ void hook_wlc_bss_up_from_wlc_bsscfg_up(wlc_ap_info_t *ap, wlc_bsscfg_t *bsscfg)
 	 *  - the code creates a template for a beacon frame according to the APs bsscfg (fixed parameters + tagged params like supported rates
 	 * 	  only the IE of the SSID isn't stored)
 	 *  - a timer is added to beacon every 100ms (loops through list of ssids and dynamically creates sk_buff from the template + ssid entry of the list and sends it)
-	 *  - SSIDs for beaconing are stored in the list 'ssids_to_beacon'
+	 *  - SSIDs for beaconing are stored in the list 'g_mame82_conf->ssids_karma'
 	 * 		- autostart.c adds 3 static SSIDs to the list ("tEst0", "tEst1" and "tEst2")
 	 * 		- the rest of the list is filled with SSIDs from received probe requests (KARMA LOUD)
 	 * 		- the list is limited to 40 entries right now (see send_beacons for details on performance)
@@ -463,7 +556,7 @@ void hook_wlc_bss_up_from_wlc_bsscfg_up(wlc_ap_info_t *ap, wlc_bsscfg_t *bsscfg)
 	 *  Stopping the AP, doesn't remove the timer right now.
 	 *  Stop / Restart of AP doesn't free used ressources, right now
 	 * 
-	 *  There's no thread synchronization on the list 'ssids_to_beacon', which could be a problem
+	 *  There's no thread synchronization on the list 'g_mame82_conf->ssids_karma', which could be a problem
 	 * because it is likely that the code adding list entries and the code of the timer (iterates over the list)
 	 * don't use the same thread context. The variables in use are global.
 	 * 
@@ -501,33 +594,6 @@ void hook_wlc_bss_up_from_wlc_bsscfg_up(wlc_ap_info_t *ap, wlc_bsscfg_t *bsscfg)
 		wlc = bsscfg->wlc;
 		
 		
-/*		
-		g_beacon_template_frame_len = wlc->pub->bcn_tmpl_len;
-
-		//METHOD 1 (generates full sk_buff with BEACON frame payload)
-		//void* wlc_frame_get_mgmt(wlc_info_t *wlc, uint16 fc, const struct ether_addr *da, const struct ether_addr *sa, const struct ether_addr *bssid, uint body_len, uint8 **pbody)
-		g_beacon_template_frame = wlc_frame_get_mgmt(wlc, FC_BEACON, &broadcast_mac, &wlc->pub->cur_etheraddr, &wlc->pub->cur_etheraddr, g_beacon_template_frame_len, &g_beacon_template_frame_body);
-		
-		
-		//Exchange SSID of bsscfg to a SSID of len 32
-		orig_ssid_len = g_AP_bsscfg->SSID_len;
-		memcpy(g_AP_bsscfg->SSID + orig_ssid_len, &ssid_fill, 32 - orig_ssid_len);
-		g_AP_bsscfg->SSID_len = 32;
-		//generate frame body
-		wlc_bcn_prb_body(wlc, FC_BEACON, g_AP_bsscfg, g_beacon_template_frame_body, &g_beacon_template_frame_len, FALSE);
-		//restore bsscfg SSID
-		memset(g_AP_bsscfg->SSID + orig_ssid_len, 0x00, 32 - orig_ssid_len);
-		g_AP_bsscfg->SSID_len = orig_ssid_len;
-
-		((sk_buff*) g_beacon_template_frame)->len = g_beacon_template_frame_len + DOT11_MGMT_HDR_LEN; //correct fram len to contain 80211 header + bcn body
-
-
-		printf("%d pkt 1 len\n", g_beacon_template_frame_len);
-		printf("body addr: %x\n", g_beacon_template_frame_body);
-		print_mem((void*) g_beacon_template_frame_body, 40);
-*/
-		
-		//METHOD2 (generates normal unit8* buffer, containing raw BEACON payload and PHY + 80211 headers (which are stripped off))
 		pkt_len = wlc->pub->bcn_tmpl_len;
 		template = (uint16 *) malloc(pkt_len, 2);
 		pkt_data = (uint8 *) template;
@@ -542,10 +608,6 @@ void hook_wlc_bss_up_from_wlc_bsscfg_up(wlc_ap_info_t *ap, wlc_bsscfg_t *bsscfg)
 		pkt_data += DOT11_MGMT_HDR_LEN;
 		pkt_len -= DOT11_MGMT_HDR_LEN;
 		
-		
-		
-		
-
 		//store head part of beacon payload (up till first IE, which should be the SSID)
 		g_beacon_template_head = (void*) pkt_data;
 		pkt_data += sizeof(beacon_fixed_params_t);
@@ -566,27 +628,22 @@ void hook_wlc_bss_up_from_wlc_bsscfg_up(wlc_ap_info_t *ap, wlc_bsscfg_t *bsscfg)
 		//store tail + remaining length
 		g_beacon_template_tail = pkt_data;
 		g_beacon_template_tail_len = pkt_len; 
-		
-		
-		print_mem((void*) pkt_data, 20);
-		printf("%d pkt 2 len\n", pkt_len);
-		
-		//TEST (assure we are able to send twice)
-//		send_beacons(wlc, g_AP_bsscfg, g_beacon_template_head, g_beacon_template_tail, g_beacon_template_tail_len);
-//		send_beacons(wlc, g_AP_bsscfg, g_beacon_template_head, g_beacon_template_tail, g_beacon_template_tail_len);
-
-
-
+				
 		/** Prepare beaconing timer **/
 		if (!g_bcn_tmr)
 		{
 			g_bcn_tmr = hndrte_init_timer(0, wlc, bcn_tmr_hndl, 0);
 			hndrte_add_timer(g_bcn_tmr, 100, 1);
+			
+			//Note: we could remove the timer, when the AP is "downed" and add it again on up,
+			//		but we keep it running always. This is because the timer isn't only used to send beacons for 
+			//		spotted probe requests (KARMA LOUD), we additionally use it for sending user defined SSIDs.
 		}
 		
 	}
 }
 
+struct ether_addr broadcast_mac = { .octet = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF } };
 
 void send_beacons(struct wlc_info *wlc, wlc_bsscfg_t *bsscfg, beacon_fixed_params_t *beacon_template_head, uint8 *beacon_template_tail, uint beacon_template_tail_len, ssid_list_t *ssids)
 {
@@ -610,7 +667,7 @@ void send_beacons(struct wlc_info *wlc, wlc_bsscfg_t *bsscfg, beacon_fixed_param
     bcm_tlv_t *inject_ssid;
     
     
-    struct ether_addr broadcast_mac = { .octet = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF } }; // should be globally initialized
+
     sk_buff* beacon;
     uint8* beacon_body; //points to data part of sk_buff where BEACON body starts
     void *buf_pos; //points to current pos in data part of sk_buff
@@ -666,6 +723,11 @@ void send_beacons(struct wlc_info *wlc, wlc_bsscfg_t *bsscfg, beacon_fixed_param
 		
 		
 //		PKTFREE(wlc->osh, beacon, 1); //free sk_buff of beacon, but send it first
+
+		//increase counter for beacon tx (we don't care about uint overflow)
+		current->bcn_snd++;
+		
+		if (!(current->bcn_snd % 100)) printf("Beacon tx count for '%s' is %d, assoc_req count is %d\n", inject_ssid->data, current->bcn_snd, current->assoc_req);
 	}
 	
 }
@@ -686,7 +748,3 @@ BLPatch(wlc_recv_process_prbreq_hook, wlc_recv_process_prbreq_hook);
 //hook the call to wlc_ap_process_assocreq in wlc_recv_mgmt_ctl (0x00820f2e   bl wlc_ap_process_assocreq)
 __attribute__((at(0x00820f2e, "flashpatch", CHIP_VER_BCM43430a1, FW_VER_7_45_41_46)))
 BLPatch(wlc_ap_process_assocreq_hook, wlc_ap_process_assocreq_hook);
-
-
-
-

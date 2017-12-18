@@ -3,6 +3,7 @@
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
+/*
 #define MAME82_KARMA_PROBE_RESP	(1 << 0)
 #define MAME82_KARMA_ASSOC_RESP	(1 << 1)
 #define MAME82_KARMA_DEBUG		(1 << 2)
@@ -10,6 +11,7 @@
 #define MAME82_ENABLE_OPTION(var, opt) ({ uint32 _opt = (opt); (var) |= _opt; })
 #define MAME82_DISABLE_OPTION(var, opt) ({ uint32 _opt = (opt); (var) &= ~_opt; })
 #define MAME82_IS_ENABLED_OPTION(var, opt) ({ uint32 _opt = (opt); (var) & _opt; })
+*/
 
 #define DOT11_MGMT_HDR_LEN	24              /* d11 management header length */
 #define	D11_PHY_HDR_LEN		6
@@ -67,13 +69,59 @@
 typedef struct ssid_list
 {
 	struct ssid_list *next;
-	char ssid[32];
+	char ssid[33]; //max len is 32, one additional byte to assure null termination in case we gonna use printf
 	uint8 len_ssid;
+	uint assoc_req; // spotted assoc requests for this SSID (only incremented if MAME82_KARMA_ASSOC_RESP enabled)
+	uint bcn_snd; // count of transmitted beacons for this ssid
 } ssid_list_t;
 
+#define MAME82_IOCTL_ARG_TYPE_SET_ENABLE_KARMA_PROBE 1	//answer every spotted probe request with a corresponding probe response (matching SSID)
+#define MAME82_IOCTL_ARG_TYPE_SET_ENABLE_KARMA_ASSOC 2	//answer every spotted association request with a corresponding association response (matching SSID)
+#define MAME82_IOCTL_ARG_TYPE_SET_ENABLE_KARMA 3		//enable KARMA PROBE and ASSOC
+#define MAME82_IOCTL_ARG_TYPE_SET_ENABLE_KARMA_BEACON 4 //Start BEACONING for spotted probe requests (if one STA probes for an SSID, other STAs see the same AP)
 
-void push_ssid(ssid_list_t *head, char* ssid, uint8 ssid_len);
+//uint32 defining how many beacons are sent for an SSID spotted in a probe request (KARMA_BEACON) without receiving an association request, before beaconing is stopped
+//a value of 0 means beacons are sent forever
+#define MAME82_IOCTL_ARG_TYPE_SET_KARMA_BEACON_AUTO_REMOVE_COUNT 5
+//uint32 defining how many beacons are sent for a custom SSID without receiving an association request, before beaconing is stopped
+//a value of 0 means beacons are sent forever
+#define MAME82_IOCTL_ARG_TYPE_SET_CUSTOM_BEACON_AUTO_REMOVE_COUNT 6
+
+#define MAME82_IOCTL_ARG_TYPE_ADD_CUSTOM_SSID 7 //Add a custom SSID for which beacons should be send
+#define MAME82_IOCTL_ARG_TYPE_DEL_CUSTOM_SSID 8 //Delete the given custom SSID (stop sending beacons), the default SSID used by hostapd always remains
+#define MAME82_IOCTL_ARG_TYPE_CLEAR_CUSTOM_SSIDS 9 //Delete all custom SSID (stop sending beacons), the default SSID used by hostapd always remains
+#define MAME82_IOCTL_ARG_TYPE_CLEAR_KARMA_SSIDS 10 //Delete all SSIDs added for spotted probe requests (stop sending beacons for them), the default SSID used by hostapd always remains
+#define MAME82_IOCTL_ARG_TYPE_SET_ENABLE_CUSTOM_BEACONS 11 //allow sending user specified beacons (not from probes)
+
+
+typedef struct mame82_config
+{
+	bool karma_probes;
+	bool karma_assocs;
+	bool karma_beacons;
+	bool custom_beacons;
+	bool debug_out;
+	ssid_list_t *ssids_custom;
+	ssid_list_t *ssids_karma;
+	uint32 karma_beacon_autoremove;
+	uint32 custom_beacon_autoremove;
+	uint8 max_karma_beacon_ssids;
+	uint8 max_custom_beacon_ssids;
+} mame82_config_t;
+
+
+typedef struct mame82_ioctl_arg
+{
+	uint32 type;
+	uint32 len;
+	uint8 val[1];
+} mame82_ioctl_arg_t;
+
+void clear_ssids(ssid_list_t *head);
+ssid_list_t* append_ssid(ssid_list_t *head, char* ssid, uint8 ssid_len, uint8 upper_bound);
+ssid_list_t* get_ssid_entry(ssid_list_t *head, char* ssid, uint8 ssid_len);
 int validate_ssid(ssid_list_t *head, char* ssid, uint8 ssid_len);
+void remove_entries_without_assoc_after_beacons(ssid_list_t *head, uint beacon_limit);
 void sscfg_iter_test(struct wlc_info *wlc);
 /*** End custom structs ***/
 

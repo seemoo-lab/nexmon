@@ -49,10 +49,14 @@
 
 uint32 mame82_opts = 0;
 
+extern mame82_config_t *g_mame82_conf;
+
 
 int 
 wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 {
+	mame82_ioctl_arg_t *mame82_arg = NULL;
+	
     argprintf_init(arg, len);
     int ret = IOCTL_ERROR;
 
@@ -93,33 +97,66 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
             }
             break;
 		case 666:
-			//enable KARMA:
-			//	$ nexutil -i -s 666 -v 1 
-			//disable KARMA:
-			//	$ nexutil -i -s 666 -v 0
+			printf("666 (MaMe82) called, arg %x\n", *arg);
 		
-			printf("666 (KARMA) called, arg %x\n", *arg);
+			mame82_arg = (mame82_ioctl_arg_t *) arg;
+			uint32 tmp = 0;
+			
+			switch(mame82_arg->type)
+			{
+				case MAME82_IOCTL_ARG_TYPE_SET_ENABLE_KARMA_PROBE:
+					printf("Enable KARMA probe: %d\n", *mame82_arg->val);
+					g_mame82_conf->karma_probes = *mame82_arg->val;
+					break;
+				case MAME82_IOCTL_ARG_TYPE_SET_ENABLE_KARMA_ASSOC:
+					printf("Enable KARMA assoc: %d\n", *mame82_arg->val);
+					g_mame82_conf->karma_assocs = *mame82_arg->val;
+					break;
+				case MAME82_IOCTL_ARG_TYPE_SET_ENABLE_KARMA_BEACON:
+					printf("Enable KARMA beaconing: %d\n", *mame82_arg->val);
+					g_mame82_conf->karma_beacons = *mame82_arg->val;
+					
+					//clear SSID list (filled from probes) in case KARMA beaconing gets disabled
+					if (!(*mame82_arg->val)) clear_ssids(g_mame82_conf->ssids_karma);
+					break;
+				case MAME82_IOCTL_ARG_TYPE_SET_ENABLE_CUSTOM_BEACONS:
+					printf("Enable custom beaconing: %d\n", *mame82_arg->val);
+					g_mame82_conf->custom_beacons = *mame82_arg->val;
+					break;	
+				case MAME82_IOCTL_ARG_TYPE_SET_ENABLE_KARMA:
+					printf("Enable KARMA (probe and assoc responses): %d\n", *mame82_arg->val);
+					g_mame82_conf->karma_probes = *mame82_arg->val;
+					g_mame82_conf->karma_assocs = *mame82_arg->val;
+					
+					//If Karma gets disabled, we clear the list of SSIDs which have been spotted from "old" probe requests
+					if (!(*mame82_arg->val)) clear_ssids(g_mame82_conf->ssids_karma);
+					break;
+				case MAME82_IOCTL_ARG_TYPE_ADD_CUSTOM_SSID:
+					printf("Add custom SSID len %d: %s\n", mame82_arg->len, mame82_arg->val);
+					append_ssid(g_mame82_conf->ssids_custom, (char*) mame82_arg->val, MIN(mame82_arg->len, 32), g_mame82_conf->max_custom_beacon_ssids);
+					break;
+				case MAME82_IOCTL_ARG_TYPE_CLEAR_CUSTOM_SSIDS:
+					printf("Clear custom SSIDs\n");
+					clear_ssids(g_mame82_conf->ssids_custom);
+					break;
+				case MAME82_IOCTL_ARG_TYPE_CLEAR_KARMA_SSIDS:
+					printf("Clear karma SSIDs\n");
+					clear_ssids(g_mame82_conf->ssids_karma);
+					break;
+				case MAME82_IOCTL_ARG_TYPE_SET_CUSTOM_BEACON_AUTO_REMOVE_COUNT:
+					memcpy(&tmp, mame82_arg->val, mame82_arg->len);
+					g_mame82_conf->custom_beacon_autoremove = tmp;
+					printf("Send a maximum of %d custom beacons without association request per SSID\n", g_mame82_conf->custom_beacon_autoremove);
+					break;
+				case MAME82_IOCTL_ARG_TYPE_SET_KARMA_BEACON_AUTO_REMOVE_COUNT:
+					memcpy(&tmp, mame82_arg->val, mame82_arg->len);
+					g_mame82_conf->karma_beacon_autoremove = tmp;
+					printf("Send a maximum of %d karma beacons without association request per SSID\n", g_mame82_conf->karma_beacon_autoremove);
+					break;
+				default:
+					printf("Unknown command type %d, len %d, val %d\n", mame82_arg->type, mame82_arg->len, mame82_arg->val);
+			}
 		
-			if (((int) *arg) == 1)
-			{
-				//enable KARMA
-				//wlc->FW_PAD_UNUSED[0] |= 0x01;
-				printf("KARMA mode enabled\n");
-				
-				MAME82_ENABLE_OPTION(mame82_opts, MAME82_KARMA_PROBE_RESP);
-				MAME82_ENABLE_OPTION(mame82_opts, MAME82_KARMA_ASSOC_RESP);
-				MAME82_DISABLE_OPTION(mame82_opts, MAME82_KARMA_DEBUG); // always off
-			}
-			else
-			{
-				//disable KARMA
-				//wlc->FW_PAD_UNUSED[0] &= ~0x01;
-				printf("KARMA mode disabled\n");
-				
-				MAME82_DISABLE_OPTION(mame82_opts, MAME82_KARMA_PROBE_RESP);
-				MAME82_DISABLE_OPTION(mame82_opts, MAME82_KARMA_ASSOC_RESP);
-				MAME82_DISABLE_OPTION(mame82_opts, MAME82_KARMA_DEBUG); // always off
-			}
 			
 			ret = IOCTL_SUCCESS;
 			break;
