@@ -94,6 +94,10 @@ typedef struct ssid_list
 #define MAME82_IOCTL_ARG_TYPE_SET_ENABLE_CUSTOM_BEACONS 11 //allow sending user specified beacons (not from probes)
 
 
+#define MAME82_IOCTL_ARG_TYPE_GET_CONFIG 100 //dump the config struct
+#define MAME82_IOCTL_ARG_TYPE_GET_MEM 101 //dump the config struct
+
+
 typedef struct mame82_config
 {
 	bool karma_probes;

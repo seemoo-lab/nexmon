@@ -27,6 +27,19 @@ import os
 from ctypes import *
 import struct
 
+class struct_mame82_config(Structure):
+	_fields_ = [("karma_probes", c_bool),
+				("karma_assocs", c_bool),
+				("karma_beacons", c_bool),
+				("custom_beacons", c_bool),
+				("debug_out", c_bool),
+				("ssids_custom", c_void_p),
+				("ssids_karma", c_void_p),
+				("karma_beacon_autoremove", c_uint),
+				("custom_beacon_autoremove", c_uint),
+				("max_karma_beacon_ssids", c_ubyte),
+				("max_custom_beacon_ssids", c_ubyte)]
+
 class struct_nlmsghdr(Structure):
 	_fields_ = [("nlmsg_len", c_uint),
 				("nlmsg_type", c_ushort),
@@ -132,10 +145,11 @@ class nexconf:
 		return c
 	
 	@staticmethod	
-	def sendNL_IOCTL(ioc):
+	def sendNL_IOCTL(ioc, debug=False):
 		### NETLINK test ####
 		
-		print "Sending NL IOCTL\n\tcmd: {0}\n\tset_enabled: {1}\n\tpayload: {2}".format(ioc.cmd, ioc.set, repr(nexconf.ptr2str(ioc.buf, ioc.len)))
+		if debug:
+			print "Sending NL IOCTL\n\tcmd: {0}\n\tset_enabled: {1}\n\tpayload: {2}".format(ioc.cmd, ioc.set, repr(nexconf.ptr2str(ioc.buf, ioc.len)))
 		
 
 
@@ -219,11 +233,11 @@ class nexconf:
 			
 			payload = res_frame[offset_payload:]
 			
-			nexconf.print_struct(p_nlh.contents, "\t")
-			nexconf.print_struct(p_nld.contents, "\t")
-			nexconf.print_struct(p_nld.contents.nexudphdr, "\t")
-			print "\tpayload:\t" + repr(payload)
-			
+			if debug:
+				nexconf.print_struct(p_nlh.contents, "\t")
+				nexconf.print_struct(p_nld.contents, "\t")
+				nexconf.print_struct(p_nld.contents.nexudphdr, "\t")
+				print "\tpayload:\t" + repr(payload)
 			
 			
 			#return only payload part of res frame
@@ -271,6 +285,13 @@ class MaMe82_IO:
 	MAME82_IOCTL_ARG_TYPE_CLEAR_CUSTOM_SSIDS = 9
 	MAME82_IOCTL_ARG_TYPE_CLEAR_KARMA_SSIDS = 10
 	MAME82_IOCTL_ARG_TYPE_SET_ENABLE_CUSTOM_BEACONS = 11
+	
+	MAME82_IOCTL_ARG_TYPE_GET_CONFIG = 100
+	MAME82_IOCTL_ARG_TYPE_GET_MEM = 101
+
+	@staticmethod
+	def s2hex(s):
+		return "".join(map("0x%2.2x ".__mod__, map(ord, s)))
 
 	@staticmethod
 	def add_custom_ssid(ssid):
@@ -340,6 +361,35 @@ class MaMe82_IO:
 	def set_autoremove_karma_ssids(beacon_count):
 		ioctl = nexconf.create_cmd_ioctl(MaMe82_IO.CMD, struct.pack("III", MaMe82_IO.MAME82_IOCTL_ARG_TYPE_SET_KARMA_BEACON_AUTO_REMOVE_COUNT, 4, beacon_count), True)
 		nexconf.sendNL_IOCTL(ioctl)
+		
+	@staticmethod
+	def dump_conf(print_res=True):
+		ioctl = nexconf.create_cmd_ioctl(MaMe82_IO.CMD, struct.pack("II40s", MaMe82_IO.MAME82_IOCTL_ARG_TYPE_GET_CONFIG, 4, ""), False)
+		res = nexconf.sendNL_IOCTL(ioctl)
+		
+		mame82_config = struct_mame82_config()
+		memmove(addressof(mame82_config), res, min(len(res), sizeof(struct_mame82_config)))
+		
+		if print_res:
+			print "KARMA PROBES - Answer probe requests for foreign SSIDs [{0}]".format("On" if mame82_config.karma_probes else "Off")
+			print "KARMA ASSOCS - Answer association requests for foreign SSIDs [{0}]".format("On" if mame82_config.karma_assocs else "Off")
+			print "KARMA SSIDs - Broadcast beacons for foreigin SSIDs after probe request [{0}]".format("On" if mame82_config.karma_beacons else "Off")
+			print "CUSTOM SSIDs - Broadcast beacons for custom SSIDs (added by user) [{0}]".format("On" if mame82_config.custom_beacons else "Off")
+			print "(unused for now) Print debug messages to BCM43430a1 internal console [{0}]".format("On" if mame82_config.debug_out else "Off")
+			
+			print "Stop sending more beacons for KARMA SSIDs if no association request is received after [{0}] beacons (0 send forever)".format(mame82_config.karma_beacon_autoremove)
+			print "Stop sending more beacons for CUSTOM SSIDs if no association request is received after [{0}] beacons (0 send forever)".format(mame82_config.custom_beacon_autoremove)
+
+			print "Maximum allowed KARMA SSIDs for beaconing (no influence on assocs / probes): [{0}]".format(mame82_config.max_karma_beacon_ssids)
+			print "Maximum allowed CUSTOM SSIDs: [{0}]".format(mame82_config.max_custom_beacon_ssids)
+			
+		return mame82_config
+		
+	@staticmethod
+	def dump_mem(dump_addr, dump_len):
+		ioctl = nexconf.create_cmd_ioctl(MaMe82_IO.CMD, struct.pack("III{0}s".format(dump_len - 8), MaMe82_IO.MAME82_IOCTL_ARG_TYPE_GET_MEM, 4, dump_addr, ""), False)
+		res = nexconf.sendNL_IOCTL(ioctl)
+		print MaMe82_IO.s2hex(res)
 			
 def ioctl_get_test():
 	### Send ioctl comand via netlink: test of GET (cmd 262, value 'bsscfg:ssid' in a buffer large enough to receive the response) ######
@@ -422,10 +472,10 @@ MaMe82_IO.add_custom_ssid("freifunk")
 
 MaMe82_IO.set_enable_karma(True) # send probe responses and association responses for foreign SSIDs
 
-MaMe82_IO.set_enable_karma_beaconing(True) # send beacons for SSIDs seen in probe requests
+MaMe82_IO.set_enable_karma_beaconing(False) # send beacons for SSIDs seen in probe requests (we better don't enable this by default)
 MaMe82_IO.set_autoremove_karma_ssids(600) # remove SSIDs from karma beaconing, which didn't received an assoc request after 600 beacons (1 minute)
 
 MaMe82_IO.set_enable_custom_beaconing(True) # send beacons for the custom SSIDs set with 'add_custom_ssid'
 MaMe82_IO.set_autoremove_custom_ssids(1800) # remove custom  SSIDs from beaconing list, if they didn't received an assoc request after 1800 beacons (3 minute)
 
-
+MaMe82_IO.dump_conf(print_res=True)

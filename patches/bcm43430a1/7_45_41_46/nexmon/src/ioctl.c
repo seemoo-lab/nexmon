@@ -56,6 +56,7 @@ int
 wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 {
 	mame82_ioctl_arg_t *mame82_arg = NULL;
+	void *dump_addr = NULL;
 	
     argprintf_init(arg, len);
     int ret = IOCTL_ERROR;
@@ -152,6 +153,25 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 					memcpy(&tmp, mame82_arg->val, mame82_arg->len);
 					g_mame82_conf->karma_beacon_autoremove = tmp;
 					printf("Send a maximum of %d karma beacons without association request per SSID\n", g_mame82_conf->karma_beacon_autoremove);
+					break;
+				case MAME82_IOCTL_ARG_TYPE_GET_CONFIG:
+					//assure buffer is large enough
+					if (len < sizeof(mame82_config_t))
+					{
+						printf("Tried to read mame82_config in buf of size %d, but %d needed\n", len, sizeof(mame82_config_t));
+						return IOCTL_ERROR;
+					}
+					else printf("Dumping %d bytes of mame82_config to buf of size %d\n", sizeof(mame82_config_t), len);
+					//cp back config struct (leaking list pointers ;-))
+					memcpy(arg, g_mame82_conf, sizeof(mame82_config_t));
+					break;
+				case MAME82_IOCTL_ARG_TYPE_GET_MEM:
+					
+					dump_addr = (void*) tmp;
+					//dump as many bytes as the buffer can hold of the address given as argument
+					memcpy(&tmp, mame82_arg->val, mame82_arg->len);
+					printf("Dumping %d bytes from %x\n", len - 12, dump_addr);
+					memcpy(arg, dump_addr, len - 12);
 					break;
 				default:
 					printf("Unknown command type %d, len %d, val %d\n", mame82_arg->type, mame82_arg->len, mame82_arg->val);
