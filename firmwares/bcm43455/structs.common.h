@@ -680,12 +680,12 @@ struct wlc_info {
     int PAD;                            /* 0X5B4 */
     int PAD;                            /* 0X5B8 */
     int PAD;                            /* 0X5BC */
-    void *active_queue;                 /* 0X5C0 verified */
+    int PAD;                            /* 0X5C0 */
     int PAD;                            /* 0X5C4 */
     int PAD;                            /* 0X5C8 */
     int PAD;                            /* 0X5CC */
-    int PAD;                            /* 0X5D0 */
-    int PAD;                            /* 0X5D4 */
+    void *active_queue;                 /* 0X5D0 verified */
+    int PAD;                            /* 0X5D4 */ //active_queue duplicate
     int PAD;                            /* 0X5D8 */
     int PAD;                            /* 0X5DC */
     int PAD;                            /* 0X5E0 */
