@@ -1636,6 +1636,72 @@ uint8
 wlc_phy_set_txpwr_clamp_acphy(void *pi)
 RETURN_DUMMY
 
+/* MaMe82: Added functions needed for KARMA patch on bcm43430a1 FW 7.45.41.46 
+see patches/bcm43430a1/7_45_41_46/nexmon/functions.txt for details
+*/
+
+//static void wlc_recv_mgmt_ctl(wlc_info_t *wlc, osl_t *osh, wlc_d11rxhdr_t *wrxh, void *p);
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x008204ec)
+void wlc_recv_mgmt_ctl(void *wlc, void *osh, void *wrxh, void *p)
+VOID_DUMMY
+
+//char *bcm_ether_ntoa(const struct ether_addr *ea, char *buf)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x008040ec)
+char* bcm_ether_ntoa(const struct ether_addr *ea, char *buf)
+RETURN_DUMMY
+
+//bcm_tlv_t *bcm_parse_tlvs(void *buf, int buflen, uint key);
+//0x00804318
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x00804318)
+void* bcm_parse_tlvs(void *buf, int buflen, uint key)
+RETURN_DUMMY
+
+//0x00881350
+//wlc_bsscfg_t *wlc_bsscfg_find_by_hwaddr(wlc_info_t *wlc, struct ether_addr *hwaddr)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x00881350)
+wlc_bsscfg_t *wlc_bsscfg_find_by_hwaddr(wlc_info_t *wlc, struct ether_addr *hwaddr)
+RETURN_DUMMY
+
+//0x00881360
+//wlc_bsscfg_t *wlc_bsscfg_find_by_bssid(wlc_info_t *wlc, const struct ether_addr *bssid)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x00881360)
+wlc_bsscfg_t *wlc_bsscfg_find_by_bssid(wlc_info_t *wlc, const struct ether_addr *bssid)
+RETURN_DUMMY
+
+//0x00829f70
+//void* wlc_frame_get_mgmt(wlc_info_t *wlc, uint16 fc, const struct ether_addr *da, const struct ether_addr *sa, const struct ether_addr *bssid, uint body_len, uint8 **pbody)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x00829f70)
+void* wlc_frame_get_mgmt(wlc_info_t *wlc, uint16 fc, const struct ether_addr *da, const struct ether_addr *sa, const struct ether_addr *bssid, uint body_len, uint8 **pbody)
+RETURN_DUMMY
+
+//0x008245e4
+//void wlc_bcn_prb_body(wlc_info_t *wlc, uint type, wlc_bsscfg_t *bsscfg, uint8 *bcn, int *len, bool legacy_tpl)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x008245e4)
+void wlc_bcn_prb_body(wlc_info_t *wlc, uint type, wlc_bsscfg_t *bsscfg, uint8 *bcn, int *len, bool legacy_tpl)
+VOID_DUMMY
+
+//0x0082dff0
+//bool wlc_sendmgmt(wlc_info_t *wlc, void *p, wlc_txq_info_t *qi, struct scb *scb)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x0082dff0)
+bool wlc_sendmgmt(wlc_info_t *wlc, void *p, void *qi, struct scb *scb)
+RETURN_DUMMY
+
+/*
+//0x00839398
+//void wlc_ap_process_assocreq(wlc_ap_info_t *ap, wlc_bsscfg_t *bsscfg, struct dot11_management_header *hdr, uint8 *body, uint body_len, struct scb *scb, bool short_preamble)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x00839398)
+void wlc_ap_process_assocreq(void *ap, wlc_bsscfg_t *bsscfg, void *hdr, uint8 *body, uint body_len, struct scb *scb, bool short_preamble)
+VOID_DUMMY
+*/
+
+//legacy address 0x00839398 overwritten by flashpatch 53 with "b.w loc._ABS_0x18994"
+//void wlc_ap_process_assocreq(wlc_ap_info_t *ap, wlc_bsscfg_t *bsscfg, struct dot11_management_header *hdr, uint8 *body, uint body_len, struct scb *scb, bool short_preamble)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x18994)
+void wlc_ap_process_assocreq(void *ap, wlc_bsscfg_t *bsscfg, void *hdr, uint8 *body, uint body_len, struct scb *scb, bool short_preamble)
+VOID_DUMMY
+
+/* MaMe82: end of additions */
+
 #undef VOID_DUMMY
 #undef RETURN_DUMMY
 #undef AT

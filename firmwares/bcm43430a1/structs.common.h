@@ -405,6 +405,7 @@ struct wlc_if {
     } u;
     struct wlc_if_stats  _cnt;
 };
+typedef struct wlc_if wlc_if_t;
 
 struct wlc_info {
     struct wlc_pub *pub;                /* 0x000 */
@@ -696,7 +697,7 @@ struct wlc_info {
     int PAD;                            /* 0X46C */
     int PAD;                            /* 0X470 */
     int PAD;                            /* 0X474 */
-    int PAD;                            /* 0X478 */
+    void *pcb;                            /* 0X478 */ /*MaMe82 not verified */
     int PAD;                            /* 0X47C */
     int PAD;                            /* 0X480 */
     int PAD;                            /* 0X484 */
@@ -797,12 +798,18 @@ struct wlc_info {
     int PAD;                            /* 0X5FC */
 };
 
+#define ETHER_ADDR_LEN      6              /* d11 management header length */
+struct ether_addr {
+        uint8 octet[ETHER_ADDR_LEN];
+};
+
+
 /* partly CHECKED */
 struct wlc_pub {
     struct wlc_info *wlc;               /* 0x000 */
-    int PAD;                            /* 0x004 */
-    int PAD;                            /* 0x008 */
-    int PAD;                            /* 0x00C */
+    struct ether_addr cur_etheraddr;    /* 0x004 */ /*MaMe82 verified */
+    uint32 unit;                          /* 0x00A */ /*MaMe82 not verified */
+    short PAD;                            /* 0x00E */
     int PAD;                            /* 0x010 */
     int PAD;                            /* 0x014 */
     int PAD;                            /* 0x018 */
@@ -831,27 +838,33 @@ struct wlc_pub {
     int PAD;                            /* 0x050 */
     char gap2[147];
     char is_amsdu; // @ 0xe7
+    char gap3[4];
+    uint32 bcn_tmpl_len; //0xEC		/*MaMe82 verified */
 } __attribute__((packed));
 
 struct wlc_bsscfg {
     void *wlc;                          /* 0x000 */
-    char associated;                    /* 0x004 */
-    char PAD;                           /* 0x005 */
-    char PAD;                           /* 0x006 */
-    char PAD;                           /* 0x007 */
-    int PAD;                            /* 0x008 */
-    int PAD;                            /* 0x00C */
-    int PAD;                            /* 0x010 */
+	/*MaMe82 0x04 to 0x10 not verified */
+    bool up;		                    /* 0x004 */ //up
+    bool enable;                           /* 0x005 */ //enable
+    bool _ap;                           /* 0x006 */ //_ap
+    bool _psta;                           /* 0x007 */ //_psta
+    bool associated;                            /* 0x008 */
+    bool PAD;                            /* 0x009 */
+    bool PAD;                            /* 0x00a */
+    bool PAD;                            /* 0x00b */
+    wlc_if_t *wlcif;                            /* 0x00C */
+    bool BSS;                            /* 0x010 */
+    bool PAD;                            /* 0x011 */
+    bool PAD;                            /* 0x012 */
+    bool PAD;                            /* 0x013 */
     int PAD;                            /* 0x014 */
-    int PAD;                            /* 0x018 */
-    int PAD;                            /* 0x01C */
-    int PAD;                            /* 0x020 */
-    int PAD;                            /* 0x024 */
-    int PAD;                            /* 0x028 */
-    int PAD;                            /* 0x02C */
-    int PAD;                            /* 0x030 */
-    int PAD;                            /* 0x034 */
-    int PAD;                            /* 0x038 */
+	/*MaMe82 0x18 and 0x19 verified */
+    uint8 SSID_len;                     /* 0x018 */
+    uint8 SSID[32];                            /* 0x019 */
+    uint8 PAD;                            /* 0x039 */
+    uint8 PAD;                            /* 0x03A */
+    uint8 PAD;                            /* 0x03B */
     int PAD;                            /* 0x03C */
     int PAD;                            /* 0x040 */
     int PAD;                            /* 0x044 */
@@ -1817,6 +1830,10 @@ struct tdls_iovar {
     uint8 PAD;
     uint8 PAD;
 } __attribute__((packed));
+
+/*MaMe82 add typedefs to allow correct function headers + declarations */
+typedef struct wlc_bsscfg wlc_bsscfg_t;
+typedef struct wlc_info wlc_info_t;
 
 /*
 struct bdc_ethernet_ip_udp_header {
