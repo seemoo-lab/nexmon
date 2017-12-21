@@ -126,6 +126,7 @@ ssid_list_t* append_ssid(ssid_list_t *head, char* ssid, uint8 ssid_len, uint8 up
 ssid_list_t* get_ssid_entry(ssid_list_t *head, char* ssid, uint8 ssid_len);
 int validate_ssid(ssid_list_t *head, char* ssid, uint8 ssid_len);
 void remove_entries_without_assoc_after_beacons(ssid_list_t *head, uint beacon_limit);
+void remove_entries_with_ssid(ssid_list_t *head, char* ssid, uint8 ssid_len);
 void sscfg_iter_test(struct wlc_info *wlc);
 /*** End custom structs ***/
 

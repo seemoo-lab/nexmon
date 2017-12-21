@@ -47,28 +47,6 @@ mame82_config_t *g_mame82_conf = NULL;
 void
 autostart(void)
 {
-	/*
-	char *custom_ssids[] = {
-			"linksys",
-			"NETGEAR",
-			"dlink",
-			"AndroidAP",
-			"default",
-			"cablewifi",
-			"asus",
-			"Guest",
-			"Telekom",
-			"xerox",
-			"tmobile",
-			"Telekom_FON",
-			"freifunk"
-			, NULL
-		};
-	char **cur_ssid_ptr;
-	
-	ssid_list_t* access_test;
-	*/
-	
 	printf("autostart\n");
 	
 	
@@ -77,13 +55,15 @@ autostart(void)
 	g_mame82_conf->ssids_custom = (ssid_list_t*) malloc(sizeof(ssid_list_t), 4);
 	g_mame82_conf->ssids_karma = (ssid_list_t*) malloc(sizeof(ssid_list_t), 4);
 	
+	/* Disable all KARMA related stuff by default, to avoid changing legacy nexmon default behavior */
+	
 	//startup (default) config
-	g_mame82_conf->karma_probes = 1;
-	g_mame82_conf->karma_assocs = 1;			
+	g_mame82_conf->karma_probes = 0;
+	g_mame82_conf->karma_assocs = 0;			
 	g_mame82_conf->debug_out = 0;
 	g_mame82_conf->karma_beacons = 0;
-	g_mame82_conf->custom_beacons = 1;
-	g_mame82_conf->custom_beacon_autoremove = 3000; //remove custom SSIDs after sending 3000 beacons (5 minutes) without receiving an assoc req
+	g_mame82_conf->custom_beacons = 0;
+	g_mame82_conf->custom_beacon_autoremove = 0; //never remove custom SSIDs after if they don't receive an assoc req
 	g_mame82_conf->karma_beacon_autoremove = 600; //remove SSIDs extracted from received probe requests after sending 600 beacons (1 minute) without receiving an assoc req
 	
 	/*

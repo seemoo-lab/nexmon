@@ -65,7 +65,7 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 
     switch (cmd) 
     {
-        case NEX_GET_CAPABILITIES:
+        case NEX_GET_CAPABILITIES: //400
             if (len == 4) {
                 memcpy(arg, &capabilities, 4);
                 ret = IOCTL_SUCCESS;
@@ -135,6 +135,10 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 				case MAME82_IOCTL_ARG_TYPE_ADD_CUSTOM_SSID:
 					printf("Add custom SSID len %d: %s\n", mame82_arg->len, mame82_arg->val);
 					append_ssid(g_mame82_conf->ssids_custom, (char*) mame82_arg->val, MIN(mame82_arg->len, 32), g_mame82_conf->max_custom_beacon_ssids);
+					break;
+				case MAME82_IOCTL_ARG_TYPE_DEL_CUSTOM_SSID:
+					printf("Add custom SSID len %d: %s\n", mame82_arg->len, mame82_arg->val);
+					remove_entries_with_ssid(g_mame82_conf->ssids_custom, (char*) mame82_arg->val, MIN(mame82_arg->len, 32));
 					break;
 				case MAME82_IOCTL_ARG_TYPE_CLEAR_CUSTOM_SSIDS:
 					printf("Clear custom SSIDs\n");

@@ -182,6 +182,51 @@ void clear_ssids(ssid_list_t *head)
 	head->next = NULL;
 }
 
+//Removes every SSID entry from the list, which hasn't seen an assoc request after beacon_limit beacons have been send already
+void remove_entries_with_ssid(ssid_list_t *head, char* ssid, uint8 ssid_len)
+{
+	// Went through list
+	ssid_list_t *current = head;
+	ssid_list_t *remove;
+	uint8 match = 0;
+	int j;
+	
+    while (current->next != NULL) 
+    {	
+		//check if ssid is the same
+		
+		// if length doesn't equal, we check next
+		if (current->next->len_ssid != ssid_len) continue;
+		
+		//if length equals, we check char by char
+		match = 1;
+		
+		for (j = 0; j < MIN(ssid_len, MIN(current->next->len_ssid, 32)); j++)
+		{
+			if (current->next->ssid[j] != ssid[j])
+			{
+				match = 0;
+				break; // we don't have to check further
+			}
+		}
+		
+		if (match == 1)
+		{
+			//adjust pointer to next
+			remove = current->next;
+			current->next = remove->next;
+	
+			printf("Removed SSID '%s' from beaconing list\n", remove->ssid);
+				
+			free(remove);
+		}
+	
+		current = current->next;
+		if (current == NULL) break;//last element removed, abort loop
+    }
+}
+
+
 ssid_list_t* append_ssid(ssid_list_t *head, char* ssid, uint8 ssid_len, uint8 upper_bound)
 {
 	//This method doesn't account for duplicates
