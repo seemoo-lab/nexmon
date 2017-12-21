@@ -166,12 +166,25 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 					memcpy(arg, g_mame82_conf, sizeof(mame82_config_t));
 					break;
 				case MAME82_IOCTL_ARG_TYPE_GET_MEM:
-					
-					dump_addr = (void*) tmp;
 					//dump as many bytes as the buffer can hold of the address given as argument
 					memcpy(&tmp, mame82_arg->val, mame82_arg->len);
-					printf("Dumping %d bytes from %x\n", len - 12, dump_addr);
-					memcpy(arg, dump_addr, len - 12);
+					
+					
+					dump_addr = (void*) tmp;
+					printf("Dumping %d bytes from %x\n", len, dump_addr);
+					//Assure we're not dumping from regions causing a crash
+					//valid 0x80 - 0x07ffff
+					//valid 0x800000 - 0x89ffff
+					if (!(
+						((0x80 <= tmp) && (tmp < 0x080000) && (0x80 <= (tmp+len)) && ((tmp+len) < 0x080000)) ||
+						((0x800000 <= tmp) && (tmp < 0x8A0000) && (0x800000 <= (tmp+len)) && ((tmp+len) < 0x8A0000))
+					))
+					{
+						printf("Couldn't dump from this region, valid are [0x80 to 0x080000] and [0x800000 to 0x8A0000]\n");
+						return IOCTL_ERROR;
+					}
+					
+					memmove(arg, dump_addr, len);
 					break;
 				default:
 					printf("Unknown command type %d, len %d, val %d\n", mame82_arg->type, mame82_arg->len, mame82_arg->val);
