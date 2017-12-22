@@ -59,8 +59,13 @@ Arguments:
                         which have been added by the user with '--addssid=' when enabled)
    --addssid="test"     Add SSID "test" to custom SSID list (max 20 SSIDs)
    --remssid="test"     Remove SSID "test" from custom SSID list
-   --clearssids			Clear list of custom SSIDs
-   --clearkarma			Clear list of karma SSIDs (only influences beaconing, not probes)
+   --clearssids         Clear list of custom SSIDs
+   --clearkarma         Clear list of karma SSIDs (only influences beaconing, not probes)
+   --autoremkarma=600   Auto remove KARMA SSIDs from beaconing list after sending 600 beacons
+                        without receiving an association (about 60 seconds, 0 = beacon forever)
+   --autoremcustom=3000    Auto remove custom SSIDs from beaconing list after sending 3000
+                        beacons without receiving an association (about 5 minutes, 0 = beacon
+                        forever)
    
 Example:
    python karmatool.py -k 1 -b 0    Enables KARMA (probe and association responses)
@@ -91,7 +96,7 @@ def check_bool_arg(arg):
 
 def main(argv):
 	try:
-		opts, args = getopt.getopt(argv, "hicdk:p:a:b:s:", ["help", "interactive", "currentconfig", "setdefault", "clearkarma", "clearssids", "addssid=", "remssid="])
+		opts, args = getopt.getopt(argv, "hicdk:p:a:b:s:", ["help", "interactive", "currentconfig", "setdefault", "clearkarma", "clearssids", "addssid=", "remssid=", "autoremkarma=", "autoremcustom="])
 	except getopt.GetoptError:
 		print "ERROR: Wrong command line argument(s)"
 		print "-------------------------------------\n"
@@ -164,6 +169,30 @@ def main(argv):
 		elif opt == "--clearkarma":
 			print "Removing all KARMA SSIDs (no influence on probe / assoc responses)"
 			MaMe82_IO.clear_karma_ssids()
+		elif opt == "--autoremkarma":
+			error="An integer value >=0 is needed for autoremkarma ... ignoring option"
+			try:
+				val = int(arg)
+				if (val < 0):
+					print error
+				else:
+					print "Removing KARMA SSIDs after sending {0} beacons without occuring association".format(val)
+					MaMe82_IO.set_autoremove_karma_ssids(val)
+			except ValueError:
+				print error
+		elif opt == "--autoremcustom":
+			error="An integer value >=0 is needed for autoremcustom ... ignoring option"
+			try:
+				val = int(arg)
+				if (val < 0):
+					print error
+				else:
+					print "Removing custom SSIDs after sending {0} beacons without occuring association".format(val)
+					MaMe82_IO.set_autoremove_custom_ssids(val)
+			except ValueError:
+				print error
+			
+			
 		
 	print ""
 	print_conf()
