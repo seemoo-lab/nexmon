@@ -84,5 +84,6 @@
 // for CHIP_VER_BCM43455
 #define FW_VER_7_45_77_0                    90
 #define FW_VER_7_120_5_1_sta_C0             91
+#define FW_VER_7_120_7_1_sta_C0             92
 
 #endif /*FIRMWARE_VERSION_H*/

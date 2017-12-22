@@ -32,29 +32,21 @@
  *                                                                         *
  **************************************************************************/
 
-#pragma NEXMON targetregion "patch"
+#ifndef STRUCTS_H
+#define STRUCTS_H
 
-#include <firmware_version.h>   // definition of firmware version macros
-#include <wrapper.h>            // wrapper definitions for functions that already exist in the firmware
-#include <structs.h>            // structures that are used by the code in the firmware
-#include <helper.h>             // useful helper functions
-#include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
-#include <nexioctls.h>          // ioctls added in the nexmon patch
-#include <argprintf.h>          // allows to execute argprintf to print into the arg buffer
+/* band types */
+#define WLC_BAND_AUTO       0   /* auto-select */
+#define WLC_BAND_5G     	1   /* 5 Ghz */
+#define WLC_BAND_2G     	2   /* 2.4 Ghz */
+#define WLC_BAND_ALL        3   /* all bands */
 
-int
-wlc_ioctl_7xx(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
-{
-    int ret = IOCTL_ERROR;
+#ifndef	PAD
+#define	_PADLINE(line)	pad ## line
+#define	_XSTR(line)	_PADLINE(line)
+#define	PAD		_XSTR(__LINE__)
+#endif
 
-    switch (cmd) {
-    	case 700:
-    	{
-    		printf("d11regs %08x\n", wlc->band->pi->regs);
-    		ret = IOCTL_SUCCESS;
-    	}
-    	break;
-    }
+#include "../structs.common.h"
 
-    return ret;
-}
+#endif /*STRUCTS_H */
