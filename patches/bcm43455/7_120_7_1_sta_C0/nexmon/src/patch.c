@@ -46,15 +46,15 @@
 int capabilities = NEX_CAP_MONITOR_MODE | NEX_CAP_MONITOR_MODE_RADIOTAP;
 
 // Hook the call to wlc_ucode_write in wlc_ucode_download
-__attribute__((at(0x20CA68, "", CHIP_VER_BCM43455, FW_VER_7_120_5_1_sta_C0)))
+__attribute__((at(0x20CA68, "", CHIP_VER_BCM43455, FW_VER_7_120_7_1_sta_C0)))
 BLPatch(wlc_ucode_write_compressed, wlc_ucode_write_compressed);
 
 // reduce the amount of ucode memory freed to become part of the heap
-__attribute__((at(0x19A3D8, "", CHIP_VER_BCM43455, FW_VER_7_120_5_1_sta_C0)))
+__attribute__((at(0x19A3D8, "", CHIP_VER_BCM43455, FW_VER_7_120_7_1_sta_C0)))
 GenericPatch4(hndrte_reclaim_0_end, PATCHSTART);
 
 extern unsigned char templateram_bin[];
 
 // Moving template ram to another place in the ucode region
-__attribute__((at(0x21FF28, "", CHIP_VER_BCM43455, FW_VER_7_120_5_1_sta_C0)))
+__attribute__((at(0x21FF28, "", CHIP_VER_BCM43455, FW_VER_7_120_7_1_sta_C0)))
 GenericPatch4(templateram_bin, templateram_bin);
