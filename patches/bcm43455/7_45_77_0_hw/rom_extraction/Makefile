@@ -27,7 +27,7 @@ CFLAGS= \
 	-Iinclude \
 	-I$(FW_PATH)
 
-all: fw_bcmdhd.bin
+all: fw_bcm43455_hw.bin
 
 init: FORCE
 	$(Q)if ! test -f BUILD_NUMBER; then echo 0 > BUILD_NUMBER; fi
@@ -63,7 +63,7 @@ gen/nexmon.ld: gen/nexmon2.pre $(OBJS)
 
 gen/nexmon.mk: gen/nexmon2.pre $(OBJS) $(FW_PATH)/definitions.mk
 	@printf "\033[0;31m  GENERATING MAKE FILE\033[0m gen/nexmon.pre => %s\n" $@
-	$(Q)printf "fw_bcmdhd.bin: gen/patch.elf FORCE\n" > $@
+	$(Q)printf "fw_bcm43455_hw.bin: gen/patch.elf FORCE\n" > $@
 	$(Q)sort gen/nexmon2.pre | \
 		gawk -v src_file=gen/patch.elf -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.mk.1.awk | \
 		gawk -v ramstart=$(RAMSTART) -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.mk.2.awk >> $@
@@ -86,7 +86,7 @@ gen/flashpatches.mk: gen/nexmon2.pre $(OBJS) $(FW_PATH)/definitions.mk
 		-v fp_config_base_ptr_2=$(FP_CONFIG_BASE_PTR_2) \
 		-v fp_config_end_ptr_2=$(FP_CONFIG_END_PTR_2) \
 		-v ramstart=$(RAMSTART) \
-		-v out_file=fw_bcmdhd.bin \
+		-v out_file=fw_bcm43455_hw.bin \
 		-v src_file=gen/patch.elf \
 		-f $(NEXMON_ROOT)/buildtools/scripts/flashpatches.mk.awk > $@
 
@@ -102,7 +102,7 @@ gen/patch.elf: patch.ld gen/nexmon.ld gen/flashpatches.ld gen/memory.ld $(OBJS)
 	@printf "\033[0;31m  LINKING OBJECTS\033[0m => %s (details: log/linker.log, log/linker.err)\n" $@
 	$(Q)$(CC)ld -T $< -o $@ --gc-sections --print-gc-sections -M >>log/linker.log 2>>log/linker.err
 
-fw_bcmdhd.bin: init gen/patch.elf $(FW_PATH)/$(RAM_FILE) gen/nexmon.mk gen/flashpatches.mk
+fw_bcm43455_hw.bin: init gen/patch.elf $(FW_PATH)/$(RAM_FILE) gen/nexmon.mk gen/flashpatches.mk
 	$(Q)cp $(FW_PATH)/$(RAM_FILE) $@
 	@printf "\033[0;31m  APPLYING FLASHPATCHES\033[0m gen/flashpatches.mk => %s (details: log/flashpatches.log)\n" $@
 	$(Q)make -f gen/flashpatches.mk >>log/flashpatches.log 2>>log/flashpatches.log
@@ -150,7 +150,7 @@ ifndef NEXMON_SETUP_ENV
 	$(error run 'source setup_env.sh' first in the repository\'s root directory)
 endif
 
-dump-rom: fw_bcmdhd.bin
+dump-rom: fw_bcm43455_hw.bin
 	@printf "\033[0;31m  COPYING TO PHONE\033[0m %s => /sdcard/%s\n" $< $<
 	$(Q)adb push $< /sdcard/ >> log/adb.log 2>> log/adb.log
 	@printf "\033[0;31m  Stopping wifi service and killing wpa_supplicant\033[0m\n"
@@ -160,8 +160,8 @@ dump-rom: fw_bcmdhd.bin
 	$(Q)adb shell 'su -c "killall wpa_supplicant"'
 	$(Q)adb shell 'su -c "mv /system/bin/wpa_supplicant /system/bin/wpa_supplicant.backup"'
 	$(Q)adb shell 'su -c "killall wpa_supplicant"'
-	@printf "\033[0;31m  LOADING FIRMWARE\033[0m /sdcard/fw_bcmdhd.bin\n"
-	$(Q)adb shell 'su -c "dhdutil download /sdcard/fw_bcmdhd.bin"'
+	@printf "\033[0;31m  LOADING FIRMWARE\033[0m /sdcard/fw_bcm43455_hw.bin\n"
+	$(Q)adb shell 'su -c "dhdutil download /sdcard/fw_bcm43455_hw.bin"'
 	@printf "\033[0;31m  DUMPING ROM\033[0m ROM => /sdcard/rom.bin\n"
 	$(Q)adb shell 'su -c "dhdutil membytes -r 0x199000 $(ROMSIZE) > /sdcard/rom.bin"'
 	@printf "\033[0;31m  PULLING\033[0m /sdcard/rom.bin => rom.bin\n"
@@ -174,18 +174,18 @@ dump-rom: fw_bcmdhd.bin
 	$(Q)cp rom.bin $(NEXMON_ROOT)/firmwares/bcm43455/rom.bin
 
 backup-firmware: FORCE
-	adb shell 'su -c "cp /vendor/firmware/fw_bcmdhd.bin /sdcard/fw_bcmdhd.orig.bin"'
-	adb pull /sdcard/fw_bcmdhd.orig.bin
+	adb shell 'su -c "cp /vendor/firmware/fw_bcm43455_hw.bin /sdcard/fw_bcm43455_hw.orig.bin"'
+	adb pull /sdcard/fw_bcm43455_hw.orig.bin
 
-install-backup: fw_bcmdhd.orig.bin
+install-backup: fw_bcm43455_hw.orig.bin
 	adb shell 'su -c "mount -o rw,remount /system"' && \
 	adb push $< /sdcard/ && \
-	adb shell 'su -c "cp /sdcard/fw_bcmdhd.bin /vendor/firmware/fw_bcmdhd.bin"'
+	adb shell 'su -c "cp /sdcard/fw_bcm43455_hw.bin /vendor/firmware/fw_bcm43455_hw.bin"'
 	adb shell 'su -c "ifconfig wlan0 down && ifconfig wlan0 up"'
 
 clean-firmware: FORCE
 	@printf "\033[0;31m  CLEANING\033[0m\n"
-	$(Q)rm -fr fw_bcmdhd.bin obj gen log src/ucode_compressed.c src/templateram.c
+	$(Q)rm -fr fw_bcm43455_hw.bin obj gen log src/ucode_compressed.c src/templateram.c
 
 clean: clean-firmware
 	$(Q)rm -f BUILD_NUMBER rom.bin
