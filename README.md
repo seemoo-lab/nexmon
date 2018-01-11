@@ -211,7 +211,8 @@ make rom.bin
 # Related projects
 * [bcmon](https://bcmon.blogspot.de/): Monitor Mode and Frame Injection for the bcm4329 and bcm4330
 * [monmob](https://github.com/tuter/monmob): Monitor Mode and Frame Injection for the bcm4325, bcm4329 and bcm4330
-* [imon](https://imon.site/): Penetration Testing for Apple devices with Broadcom WiFi Chip
+* [P4wnP1](https://github.com/mame82/P4wnP1): Highly customizable attack platform, based on Raspberry Pi Zero W and Nexmon
+* [kali Nethunter OS](https://github.com/nethunteros): ROM that brings Kali Linux to smartphones with Nexmon support
 
 # Interesting articles on firmware hacks
 If you know more projects that use nexmon or perform similar firmware hacks, let us know and we will add a link.
