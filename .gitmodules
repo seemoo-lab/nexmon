@@ -1,0 +1,3 @@
+[submodule "utilities/hcxtools"]
+	path = utilities/hcxtools
+	url = https://github.com/JuniorJPDJ/hcxtools-android
