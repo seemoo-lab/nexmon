@@ -787,9 +787,15 @@ int
 wl_reset(void *wl)
 RETURN_DUMMY
 
+// is the c_main function
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x183886)
 void
 before_before_initialize_memory(void)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x183886)
+void
+c_main(void)
 VOID_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1837F8)
@@ -814,6 +820,7 @@ dngl_sendpkt_ram(void *sdio, void *p, int chan)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x181E48)
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x181E48)
 void *
 dump_stack_print_dbg_stuff_intr_handler(void)
 RETURN_DUMMY
