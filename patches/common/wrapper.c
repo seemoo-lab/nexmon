@@ -364,6 +364,11 @@ void
 si_pmu_pllupd(void *sih)
 VOID_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x184968)
+unsigned int
+si_pmu_chipcontrol(void *sih, unsigned int reg, unsigned int mask, unsigned int val)
+RETURN_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x1DCBC)
 void
 si_setcore(void *sih, int coreid, int coreunit)
@@ -428,6 +433,21 @@ int
 vsnprintf(char *buf, unsigned int n, const char *format, va_list ap)
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1c6e7e)
+void
+wlapi_bmac_write_shm(void *physhim, unsigned int offset, unsigned short v)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1c6ea2)
+void
+wlapi_enable_mac(void *physhim)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1c6e96)
+void
+wlapi_suspend_mac_and_wait(void *physhim)
+VOID_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1A0E7E)
 int
 wlc_ampdu_tx_set(void *ampdu_tx, bool on)
@@ -439,6 +459,26 @@ AT(CHIP_VER_BCM43455, FW_VER_ALL, 0x2FC50)
 void
 wlc_mctrl(void *wlc, uint32 mask, uint32 val)
 VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1c53d6)
+bool
+wlc_phy_get_rxgainerr_phy(void *pi, int16 *gainerr)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x4fad8)
+void
+wlc_bmac_set_clk(void *wlc_hw, bool on)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1c6962)
+int
+wlc_phy_iovar_dispatch(void *pi, uint32 actionid, uint16 type, void *p, uint plen, void *a, int alen, int vsize)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x35094)
+int
+wlc_module_register(void *pub, const void *iovars, const char *name, void *hdl, void *iovar_fn, void *watchdog_fn, void *up_fn, void *down_fn)
+RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C8620)
 bool
@@ -480,6 +520,11 @@ VOID_DUMMY
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C6666)
 void
 wlc_phy_btcx_override_disable(void *pi)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1c1dba)
+void
+wlc_phy_lpf_hpc_override_acphy(void *pi, bool setup_not_cleanup)
 VOID_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C65AA)
