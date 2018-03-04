@@ -199,7 +199,7 @@
                     android:id="@+id/btnInstallNexmonFirmware"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Install Nexmon Firmware" />
+                    android:text="Install Selected Firmware" />
 
 
 
