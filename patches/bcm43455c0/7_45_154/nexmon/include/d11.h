@@ -32,63 +32,57 @@
  *                                                                         *
  **************************************************************************/
 
-#ifndef FIRMWARE_VERSION_H
-#define FIRMWARE_VERSION_H
+#pragma once
 
-#define CHIP_VER_ALL                        0
-#define CHIP_VER_BCM4339                    1
-#define CHIP_VER_BCM4330                    2
-#define CHIP_VER_BCM4358                    3
-#define CHIP_VER_BCM43438                   4
-#define CHIP_VER_BCM43430a1                 4
-#define CHIP_VER_BCM4356                    5
-#define CHIP_VER_BCM4335b0                  6
-#define CHIP_VER_BCM43596a0                 7
-#define CHIP_VER_BCM43451b1                 8
-#define CHIP_VER_BCM43455                   9
-#define CHIP_VER_BCM43455c0               101
+struct d11rxhdr {
+	unsigned short RxFrameSize;			/* Actual byte length of the frame data received */
+	unsigned short PAD;
+	unsigned short PhyRxStatus_0;		/* PhyRxStatus 15:0 */
+	unsigned short PhyRxStatus_1;		/* PhyRxStatus 31:16 */
+	unsigned short PhyRxStatus_2;		/* PhyRxStatus 47:32 */
+	unsigned short PhyRxStatus_3;		/* PhyRxStatus 63:48 */
+	unsigned short PhyRxStatus_4;		/* PhyRxStatus 79:64 */
+	unsigned short PhyRxStatus_5;		/* PhyRxStatus 95:80 */
+	unsigned short RxStatus1;			/* MAC Rx status */
+	unsigned short RxStatus2;			/* extended MAC Rx status */
+	unsigned short RxTSFTime;			/* RxTSFTime time of first MAC symbol + M_PHY_PLCPRX_DLY */
+	unsigned short RxChan;				/* gain code, channel radio code, and phy type -> looks like chanspec */
+} __attribute__((packed));
 
-#define FW_VER_ALL                          0
+ /* ucode RxStatus1: */
+#define RXS_BCNSENT             0x8000
+#define RXS_SECKINDX_MASK       0x07e0
+#define RXS_SECKINDX_SHIFT      5
+#define RXS_DECERR              (1 << 4)
+#define RXS_DECATMPT            (1 << 3)
+/* PAD bytes to make IP data 4 bytes aligned */
+#define RXS_PBPRES              (1 << 2)
+#define RXS_RESPFRAMETX         (1 << 1)
+#define RXS_FCSERR              (1 << 0)
 
-// for CHIP_VER_BCM4339
-#define FW_VER_6_37_32_RC23_34_40_r581243   10
-#define FW_VER_6_37_32_RC23_34_43_r639704   11
-#define FW_VER_6_37_32_34_1_mfg             12
+/* ucode RxStatus2: */
+#define RXS_AMSDU_MASK          1
+#define RXS_AGGTYPE_MASK        0x6
+#define RXS_AGGTYPE_SHIFT       1
+#define RXS_PHYRXST_VALID       (1 << 8)
+#define RXS_RXANT_MASK          0x3
+#define RXS_RXANT_SHIFT         12
 
-// for CHIP_VER_BCM4330
-#define FW_VER_5_90_195_114                 20
-#define FW_VER_5_90_100_41                  21
+/* RxChan */
+#define RXS_CHAN_40             0x1000
+#define RXS_CHAN_5G             0x0800
+#define RXS_CHAN_ID_MASK        0x07f8
+#define RXS_CHAN_ID_SHIFT       3
+#define RXS_CHAN_PHYTYPE_MASK   0x0007
+#define RXS_CHAN_PHYTYPE_SHIFT  0
 
-// for CHIP_VER_BCM4358
-#define FW_VER_7_112_200_17                 30
-#define FW_VER_7_112_201_3                  31
-#define FW_VER_7_112_300_14                 32
+struct wlc_d11rxhdr {
+	struct d11rxhdr rxhdr;
+	unsigned int tsf_l;
+	char rssi;							/* computed instanteneous RSSI in BMAC */
+	char rxpwr0;
+	char rxpwr1;
+	char do_rssi_ma;					/* do per-pkt sampling for per-antenna ma in HIGH */
+	char rxpwr[4];						/* rssi for supported antennas */
+} __attribute__((packed));
 
-// for CHIP_VER_BCM43438 (wrongly labled) BCM43430a1
-#define FW_VER_7_45_41_26_r640327           40
-#define FW_VER_7_45_41_46                   41
-
-// for CHIP_VER_BCM4356
-#define FW_VER_7_35_101_5_sta               50
-#define FW_VER_7_35_101_5_apsta             51
-
-// for CHIP_VER_BCM4335b0
-#define FW_VER_6_30_171_1_sta               60
-
-// for CHIP_VER_BCM43596a0
-#define FW_VER_9_75_155_45_sta_c0           70
-#define FW_VER_9_96_4_sta_c0                71
-
-// for CHIP_VER_BCM43451b1
-#define FW_VER_7_63_43_0                    80
-
-// for CHIP_VER_BCM43455
-#define FW_VER_7_45_77_0                    90
-#define FW_VER_7_120_5_1_sta_C0             91
-#define FW_VER_7_120_7_1_sta_C0             92
-#define FW_VER_7_45_77_0_23_8_2017          93
-
-// for CHIP_VER_BCM43455c0
-#define FW_VER_7_45_154                    110
-
-#endif /*FIRMWARE_VERSION_H*/

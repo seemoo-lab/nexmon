@@ -1,6 +1,6 @@
 include definitions.mk
 
-all: ucode.bin templateram.bin flashpatches.c
+all: ucode.bin flashpatches.c
 
 ucode.bin: $(RAM_FILE) definitions.mk
 	@printf "\033[0;31m  EXTRACTING UCODE\033[0m\n"
