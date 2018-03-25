@@ -307,6 +307,48 @@ struct wlcband {
     char basic_rate;                    /* 0x034 */
 } __attribute__((packed));
 
+/* per interface counters */
+struct wlc_if_stats {
+    /* transmit stat counters */
+    uint32  txframe;        /* tx data frames */
+    uint32  txbyte;         /* tx data bytes */
+    uint32  txerror;        /* tx data errors (derived: sum of others) */
+    uint32  txnobuf;        /* tx out of buffer errors */
+    uint32  txrunt;         /* tx runt frames */
+    uint32  txfail;         /* tx failed frames */
+    uint32  rxframe;        /* rx data frames */
+    uint32  rxbyte;         /* rx data bytes */
+    uint32  rxerror;        /* rx data errors (derived: sum of others) */
+    uint32  rxnobuf;        /* rx out of buffer errors */
+    uint32  rxrunt;         /* rx runt frames */
+    uint32  rxfragerr;      /* rx fragment errors */
+    uint32  txretry;        /* tx retry frames */
+    uint32  txretrie;       /* tx multiple retry frames */
+    uint32  txfrmsnt;       /* tx sent frames */
+    uint32  txmulti;        /* tx mulitcast sent frames */
+    uint32  txfrag;         /* tx fragments sent */
+    uint32  rxmulti;        /* rx multicast frames */
+};
+
+struct wl_if {
+    struct wlc_if *wlcif;
+    struct hndrte_dev *dev;
+};
+
+struct wlc_if {
+    struct wlc_if    *next;
+    uint8       type;
+    uint8       index;
+    uint8       flags;
+    struct wl_if     *wlif;
+    void *qi;
+    union {
+        struct scb *scb;
+        struct wlc_bsscfg *bsscfg;
+    } u;
+    struct wlc_if_stats  _cnt;
+};
+
 struct wlc_info {
     struct wlc_pub *pub;                /* 0x000 */
     struct osl_info *osh;               /* 0x004 */
@@ -683,8 +725,8 @@ struct wlc_info {
     int PAD;                            /* 0X5C0 */
     int PAD;                            /* 0X5C4 */
     int PAD;                            /* 0X5C8 */
-    int PAD;                            /* 0X5CC */
-    void *active_queue;                 /* 0X5D0 verified */
+    struct wlc_if *wlcif_list;          /* 0X5CC NOT CHECKED for 7.45.154 */
+    void *active_queue;                 /* 0X5D0 */
     int PAD;                            /* 0X5D4 */ //active_queue duplicate
     int PAD;                            /* 0X5D8 */
     int PAD;                            /* 0X5DC */
