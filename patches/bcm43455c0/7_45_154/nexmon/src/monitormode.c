@@ -64,18 +64,13 @@ channel2freq(struct wl_info *wl, unsigned int channel)
 }
 
 static void
-wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p, unsigned char tunnel_over_udp)
+wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p)
 {
     struct osl_info *osh = wl->wlc->osh;
     unsigned int p_len_new;
     struct sk_buff *p_new;
 
-    if (tunnel_over_udp) {
-        p_len_new = p->len + sizeof(struct ethernet_ip_udp_header) + 
-            sizeof(struct nexmon_radiotap_header);
-    } else {
-        p_len_new = p->len + sizeof(struct nexmon_radiotap_header);
-    }
+    p_len_new = p->len + sizeof(struct nexmon_radiotap_header);
 
     // We figured out that frames larger than 2032 will not arrive in user space
     if (p_len_new > 2032) {
@@ -90,9 +85,6 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p,
         return;
     }
 
-    if (tunnel_over_udp)
-        skb_pull(p_new, sizeof(struct ethernet_ip_udp_header));
-
     struct nexmon_radiotap_header *frame = (struct nexmon_radiotap_header *) p_new->data;
 
     memset(p_new->data, 0, sizeof(struct nexmon_radiotap_header));
@@ -100,8 +92,8 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p,
     frame->header.it_version = 0;
     frame->header.it_pad = 0;
     frame->header.it_len = sizeof(struct nexmon_radiotap_header) + PLCP_LEN;
-    frame->header.it_present = 
-          (1<<IEEE80211_RADIOTAP_TSFT) 
+    frame->header.it_present =
+          (1<<IEEE80211_RADIOTAP_TSFT)
         | (1<<IEEE80211_RADIOTAP_FLAGS)
         | (1<<IEEE80211_RADIOTAP_RATE)
         | (1<<IEEE80211_RADIOTAP_CHANNEL)
@@ -113,7 +105,7 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p,
     frame->tsf.tsf_h = 0;
     frame->flags = IEEE80211_RADIOTAP_F_FCS;
     frame->chan_freq = channel2freq(wl, CHSPEC_CHANNEL(sts->chanspec));
-    
+
     if (frame->chan_freq > 3000)
         frame->chan_flags |= IEEE80211_CHAN_5GHZ;
     else
@@ -130,7 +122,7 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p,
     frame->dbm_antnoise = sts->noise;
 
     if (sts->encoding == WL_RXS_ENCODING_HT) {
-        frame->mcs[0] = 
+        frame->mcs[0] =
               IEEE80211_RADIOTAP_MCS_HAVE_BW
             | IEEE80211_RADIOTAP_MCS_HAVE_MCS
             | IEEE80211_RADIOTAP_MCS_HAVE_GI
@@ -167,10 +159,6 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p,
     frame->vendor_skip_length = PLCP_LEN;
 
     memcpy(p_new->data + sizeof(struct nexmon_radiotap_header), p->data, p->len);
-
-    if (tunnel_over_udp) {
-        prepend_ethernet_ipv4_udp_header(p_new);
-    }
 
     if (wl->wlc->wlcif_list->next)
         wl->wlc->wlcif_list->wlif->dev->chained->funcs->xmit(wl->wlc->wlcif_list->wlif->dev, wl->wlc->wlcif_list->wlif->dev->chained, p_new);
