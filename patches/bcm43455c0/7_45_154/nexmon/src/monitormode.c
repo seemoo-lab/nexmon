@@ -35,6 +35,7 @@
 #pragma NEXMON targetregion "patch"
 
 #include <firmware_version.h>   // definition of firmware version macros
+#include <debug.h>              // contains macros to access the debug hardware
 #include <wrapper.h>            // wrapper definitions for functions that already exist in the firmware
 #include <structs.h>            // structures that are used by the code in the firmware
 #include <helper.h>             // useful helper functions
@@ -64,18 +65,14 @@ channel2freq(struct wl_info *wl, unsigned int channel)
 }
 
 static void
-wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p, unsigned char tunnel_over_udp)
+wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p)
 {
     struct osl_info *osh = wl->wlc->osh;
     unsigned int p_len_new;
     struct sk_buff *p_new;
 
-    if (tunnel_over_udp) {
-        p_len_new = p->len + sizeof(struct ethernet_ip_udp_header) + 
-            sizeof(struct nexmon_radiotap_header);
-    } else {
-        p_len_new = p->len + sizeof(struct nexmon_radiotap_header);
-    }
+    
+    p_len_new = p->len + sizeof(struct nexmon_radiotap_header);
 
     // We figured out that frames larger than 2032 will not arrive in user space
     if (p_len_new > 2032) {
@@ -89,9 +86,6 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p,
         printf("ERR: no free sk_buff\n");
         return;
     }
-
-    if (tunnel_over_udp)
-        skb_pull(p_new, sizeof(struct ethernet_ip_udp_header));
 
     struct nexmon_radiotap_header *frame = (struct nexmon_radiotap_header *) p_new->data;
 
@@ -168,40 +162,51 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p,
 
     memcpy(p_new->data + sizeof(struct nexmon_radiotap_header), p->data, p->len);
 
-    if (tunnel_over_udp) {
-        prepend_ethernet_ipv4_udp_header(p_new);
-    }
-
-    if (wl->wlc->wlcif_list->next)
-        wl->wlc->wlcif_list->wlif->dev->chained->funcs->xmit(wl->wlc->wlcif_list->wlif->dev, wl->wlc->wlcif_list->wlif->dev->chained, p_new);
-    else
-        wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p_new);
+    //wl_sendup(wl, 0, p_new);
+    wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p_new);
 }
 
 void
 wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
-    switch(wl->wlc->monitor & 0xFF) {
-        case MONITOR_RADIOTAP:
-                wl_monitor_radiotap(wl, sts, p);
-            break;
+    unsigned char monitor = wl->wlc->monitor & 0xFF;
 
-        case MONITOR_IEEE80211:
-                wl_monitor(wl, sts, p);
-            break;
+    if (monitor & MONITOR_RADIOTAP) {
+        wl_monitor_radiotap(wl, sts, p);
+    }
 
-        case MONITOR_LOG_ONLY:
-                printf("frame received\n");
-            break;
+    if (monitor & MONITOR_IEEE80211) {
+        wl_monitor(wl, sts, p);
+    }
 
-        case MONITOR_DROP_FRM:
-            break;
+    if (monitor & MONITOR_LOG_ONLY) {
+        printf("frame received\n");
+    }
 
-        case MONITOR_IPV4_UDP:
-                printf("%s: udp tunneling not implemented\n");
-                // not implemented yet
-            break;
+    if (monitor & MONITOR_DROP_FRM) {
+        ;
+    }
+
+    if (monitor & MONITOR_IPV4_UDP) {
+        printf("MONITOR over udp is not supported!\n");
     }
 }
 
+// Hook the call to wl_monitor in wlc_monitor
 __attribute__((at(0x1a6928, "", CHIP_VER_BCM43455c0, FW_VER_7_45_154)))
+__attribute__((at(0x1AD75E, "", CHIP_VER_BCM43455, FW_VER_7_45_77_0_23_8_2017)))
 BLPatch(wl_monitor_hook, wl_monitor_hook);
+
+/* // no flashpatches left
+// activate badfcs, if MONITOR_ACTIVATE_BADFCS is set
+void
+wlc_mctrl_hook(struct wlc_info *wlc, uint32 mask, uint32 val)
+{
+    if (wlc->monitor & MONITOR_ACTIVATE_BADFCS)
+        wlc_mctrl(wlc, MCTL_PROMISC | MCTL_KEEPBADFCS | MCTL_KEEPCONTROL, MCTL_PROMISC | MCTL_KEEPBADFCS | MCTL_KEEPCONTROL);
+    else
+        wlc_mctrl(wlc, mask, val);
+}
+
+__attribute__((at(0x2FB9A, "flashpatch", CHIP_VER_BCM43455, FW_VER_ALL)))
+BLPatch(wlc_mctrl_hook, wlc_mctrl_hook);
+*/
