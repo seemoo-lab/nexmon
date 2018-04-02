@@ -71,7 +71,6 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p)
     unsigned int p_len_new;
     struct sk_buff *p_new;
 
-    
     p_len_new = p->len + sizeof(struct nexmon_radiotap_header);
 
     // We figured out that frames larger than 2032 will not arrive in user space
@@ -94,8 +93,8 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p)
     frame->header.it_version = 0;
     frame->header.it_pad = 0;
     frame->header.it_len = sizeof(struct nexmon_radiotap_header) + PLCP_LEN;
-    frame->header.it_present = 
-          (1<<IEEE80211_RADIOTAP_TSFT) 
+    frame->header.it_present =
+          (1<<IEEE80211_RADIOTAP_TSFT)
         | (1<<IEEE80211_RADIOTAP_FLAGS)
         | (1<<IEEE80211_RADIOTAP_RATE)
         | (1<<IEEE80211_RADIOTAP_CHANNEL)
@@ -107,7 +106,7 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p)
     frame->tsf.tsf_h = 0;
     frame->flags = IEEE80211_RADIOTAP_F_FCS;
     frame->chan_freq = channel2freq(wl, CHSPEC_CHANNEL(sts->chanspec));
-    
+
     if (frame->chan_freq > 3000)
         frame->chan_flags |= IEEE80211_CHAN_5GHZ;
     else
@@ -124,7 +123,7 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p)
     frame->dbm_antnoise = sts->noise;
 
     if (sts->encoding == WL_RXS_ENCODING_HT) {
-        frame->mcs[0] = 
+        frame->mcs[0] =
               IEEE80211_RADIOTAP_MCS_HAVE_BW
             | IEEE80211_RADIOTAP_MCS_HAVE_MCS
             | IEEE80211_RADIOTAP_MCS_HAVE_GI
@@ -162,7 +161,6 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p)
 
     memcpy(p_new->data + sizeof(struct nexmon_radiotap_header), p->data, p->len);
 
-    //wl_sendup(wl, 0, p_new);
     wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p_new);
 }
 
