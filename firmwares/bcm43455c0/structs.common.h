@@ -124,6 +124,17 @@ struct wl_rxsts {
     uint32      encoding;       /* Unknown, CCK, PBCC, OFDM, HT */
     uint32      nfrmtype;       /* special 802.11n frames(AMPDU, AMSDU) */
     void        *wlif;          /* wl interface */
+    uint8       nss;            /* Number of spatial streams for VHT frame */
+    uint8       coding;
+    uint16      aid;            /* Partial AID for VHT frame */
+    uint8       gid;            /* Group ID for VHT frame */
+    uint8       bw;         /* Bandwidth for VHT frame */
+    uint16      vhtflags;       /* VHT modulation flags */
+    uint8       bw_nonht;       /* non-HT bw advertised in rts/cts */
+    uint8       PAD;
+    uint8       PAD;
+    uint8       PAD;
+    uint32      ampdu_counter;      /* AMPDU counter for sniffer */
 } __attribute__((packed));
 
 /* status per error RX pkt */
