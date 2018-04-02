@@ -750,6 +750,7 @@ wl_sendup(void *wl, void *wlif, void *p)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM43596a0, FW_VER_9_96_4_sta_c0, 0x1624AC)
+AT(CHIP_VER_BCM43455c0, FW_VER_7_45_154, 0x1a2438)
 void
 wl_sendup_newdrv(void *wl, void *wlif, void *p, int numpkt)
 VOID_DUMMY

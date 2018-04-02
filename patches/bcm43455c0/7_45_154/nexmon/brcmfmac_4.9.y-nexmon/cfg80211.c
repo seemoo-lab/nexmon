@@ -6872,6 +6872,7 @@ s32 brcmf_cfg80211_up(struct net_device *ndev)
 		switch(ifp->ndev->type) {
 			case ARPHRD_IEEE80211_RADIOTAP:
 				monitormode = 2; // RADIOTAP ENABLED MONITOR MODE
+				//monitormode = 64; // bcm43455c0 does not send radio tap headers but wl_rxsts headers instead -> need conversion
 				break;
 			case ARPHRD_IEEE80211:
 				monitormode = 1; // MONITOR MODE WITHOUT RADIOTAP
