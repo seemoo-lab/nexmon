@@ -44,6 +44,9 @@ ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
 ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
 	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.9\033[0m brcmfmac_4.9.y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_4.9.y-nexmon -j2 >log/driver.log
+else ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
+	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.14\033[0m brcmfmac_4.14.y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_4.14.y-nexmon -j2 >log/driver.log
 endif
 else
 	$(warning Warning: Driver can not be compiled on this platform, execute the make command on a raspberry pi)
@@ -184,6 +187,8 @@ endif
 	@printf "\033[0;31m  RELOADING\033[0m brcmfmac\n"
 ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
 	$(Q)insmod brcmfmac_4.9.y-nexmon/brcmfmac.ko
+else ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
+	$(Q)insmod brcmfmac_4.14.y-nexmon/brcmfmac.ko
 endif
 else
 	$(warning Warning: Cannot install firmware on this arch., bcm43430-sdio.bin needs to be copied manually into /lib/firmware/brcm/ on your RPI3)
@@ -211,6 +216,9 @@ ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
 ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
 	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_4.9.y-nexmon clean
+else ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
+	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_4.14.y-nexmon clean
 endif
 endif
 	$(Q)rm -f BUILD_NUMBER

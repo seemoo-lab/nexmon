@@ -16,8 +16,10 @@
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ccflags-y += \
-	-Idrivers/net/wireless/broadcom/brcm80211/brcmfmac	\
-	-Idrivers/net/wireless/broadcom/brcm80211/include
+	-I$(NEXMON_ROOT)/patches/bcm43455c0/7_45_154/nexmon/brcmfmac_4.14.y-nexmon	\
+	-I$(NEXMON_ROOT)/patches/bcm43455c0/7_45_154/nexmon/brcmfmac_4.14.y-nexmon/include
+
+ccflags-$(CONFIG_BRCMDBG)	+= -DDEBUG
 
 obj-$(CONFIG_BRCMFMAC) += brcmfmac.o
 brcmfmac-objs += \
