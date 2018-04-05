@@ -114,7 +114,8 @@ To be able to communicate with the firmware without root priviledges, we created
 * **Note:** To connect to regular access points you have to execute `nexutil -m0` first
 
 ### Using the Monitor Mode patch
-* Thanks to the prior work of Mame82, you can setup a new monitor mode interface by executing `iw phy phy1 interface add mon0 type monitor`. `phy1` is chosen according to the `wiphy` index after executing `iw dev wlan0 info`.
+* Thanks to the prior work of Mame82, you can setup a new monitor mode interface by executing:
+```iw phy `iw dev wlan0 info | gawk '/wiphy/ {printf "phy" $2}'` interface add mon0 type monitor```
 * To activate monitor mode in the firmware, simply set the interface up: `ifconfig mon0 up`.
 * At this point, monitor mode is active. There is no need to call *airmon-ng*. 
 * The interface already set the Radiotap header, therefore, tools like *tcpdump* or *airodump-ng* can be used out of the box: `tcpdump -i mon0`
