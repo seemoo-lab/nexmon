@@ -32,8 +32,46 @@
  *                                                                         *
  **************************************************************************/
 
+#ifndef STRUCTS_COMMON_H
+#define STRUCTS_COMMON_H
+
 #include <types.h>
 #include <bcmcdc.h>
+
+/* used for PAPD cal */
+typedef struct _acphy_txgains {
+    uint16 txlpf;
+    uint16 txgm;
+    uint16 pga;
+    uint16 pad;
+    uint16 ipa;
+} acphy_txgains_t;
+
+/* htphy: tx gain settings */
+typedef struct {
+    uint16 rad_gain; /* Radio gains */
+    uint16 rad_gain_mi; /* Radio gains [16:31] */
+    uint16 rad_gain_hi; /* Radio gains [32:47] */
+    uint16 dac_gain; /* DAC attenuation */
+    uint16 bbmult;   /* BBmult */
+} txgain_setting_t;
+
+typedef struct { /* wlc_phy_write_tx_gain_acphy */
+    uint8 txlpf; /* Radio gains */
+    uint8 ipa;
+    uint8 pad; /* Radio gains [16:31] */
+    uint8 pga;
+    uint8 txgm; /* Radio gains [32:47] */
+    uint8 unknown;
+    uint16 dac_gain; /* DAC attenuation */
+    uint16 bbmult;   /* BBmult */
+} ac_txgain_setting_t;
+
+struct ratesel_txparams {
+    uint32 rspec[4];
+    uint8 antselid[4];
+    uint8 num;
+};
 
 /* Most of these structs are taken from the bcm4339 includes file and might currently be wrong */
 
@@ -257,7 +295,7 @@ struct wlc_hwband {
     short phyrev;               /* 0x1E */
     short radioid;              /* 0x20 */
     short radiorev;             /* 0x22 */
-    void *pi;                   /* 0x24 */
+    struct phy_info *pi;        /* 0x24 */
     char abgphy_encore;         /* 0x25 */
 };
 
@@ -296,6 +334,266 @@ struct sdiox_info {
     void *device_address;
 } __attribute__((packed));
 
+struct shared_phy {
+    struct  phy_info *phy_head;         // 0x000 /* head of phy list */
+    uint    unit;                       // 0x004 /* device instance number */
+    struct  osl_info *osh;              // 0x008 /* pointer to os handle */
+    void    *sih;                       // 0x00c /* si handle (cookie for siutils calls) */
+    void    *physhim;                   // 0x010 /* phy <-> wl shim layer for wlapi */
+    uint    corerev;                    // 0x014 /* d11corerev, shadow of wlc_hw->corerev */
+    uint32  machwcap;                   // 0x018 /* mac hw capability */
+    bool    up;                         // 0x01c /* main driver is up and running */
+    bool    clk;                        // 0x01d /* main driver make the clk available */
+    uint8   PAD;                        // 0x01e
+    uint8   PAD;                        // 0x01f
+    uint32  PAD;                        // 0x020
+    uint32  PAD;                        // 0x024
+    uint32  PAD;                        // 0x028
+    uint32  PAD;                        // 0x02C
+    uint32  PAD;                        // 0x030
+    uint32  PAD;                        // 0x034
+    uint32  PAD;                        // 0x038
+    uint32  PAD;                        // 0x03C
+    uint32  PAD;                        // 0x040
+    uint32  PAD;                        // 0x044
+    uint32  PAD;                        // 0x048
+    uint32  PAD;                        // 0x04C
+    uint32  PAD;                        // 0x050
+    uint32  PAD;                        // 0x054
+    uint32  PAD;                        // 0x058
+    uint32  PAD;                        // 0x05C
+    uint32  PAD;                        // 0x060
+    uint32  PAD;                        // 0x064
+    uint32  PAD;                        // 0x068
+    uint32  PAD;                        // 0x06C
+    uint32  PAD;                        // 0x070
+    uint32  PAD;                        // 0x074
+    uint32  PAD;                        // 0x078
+    uint32  PAD;                        // 0x07C
+    uint32  PAD;                        // 0x080
+    uint32  PAD;                        // 0x084
+    uint32  PAD;                        // 0x088
+    uint32  PAD;                        // 0x08C
+    uint8   PAD;                        // 0x090
+    uint8   hw_phyrxchain;              // 0x091
+    uint8   PAD;                        // 0x092
+    uint8   PAD;                        // 0x093
+    uint32  PAD;                        // 0x094
+    uint32  PAD;                        // 0x098
+    uint32  PAD;                        // 0x09C
+} __attribute__((packed));
+
+struct phy_pub {
+    uint        phy_type;       /* PHY_TYPE_XX */
+    uint        phy_rev;        /* phy revision */
+    uint8       phy_corenum;        /* number of cores */
+    uint16      radioid;        /* radio id */
+    uint8       radiorev;       /* radio revision */
+    uint8       radiover;       /* radio version */
+    uint8       radiomajorrev;      /* radio major revision */
+    uint8       radiominorrev;      /* radio minor revision */
+    uint        coreflags;      /* sbtml core/phy specific flags */
+    uint        ana_rev;        /* analog core revision */
+    bool        abgphy_encore;          /* true if chipset is encore enabled */
+};
+
+struct phy_info_acphy {
+    uint8  dac_mode;                    // 0x000
+    uint8 PAD;                          // 0x001
+    uint16 bb_mult_save[1];             // 0x002
+    uint8  bb_mult_save_valid;          // 0x004
+    uint8 PAD;                          // 0x005
+    uint16 deaf_count;                  // 0x006
+    uint32 PAD;                         // 0x008
+    uint32 PAD;                         // 0x00C
+    uint32 PAD;                         // 0x010
+    uint32 PAD;                         // 0x014
+    uint32 PAD;                         // 0x018
+    uint32 PAD;                         // 0x01C
+    int PAD;                            // 0x020
+    int PAD;                            // 0x024
+    int PAD;                            // 0x028
+    int PAD;                            // 0x02c
+    int PAD;                            // 0x030
+    int PAD;                            // 0x034
+    int PAD;                            // 0x038
+    int PAD;                            // 0x03c
+    int PAD;                            // 0x040
+    int PAD;                            // 0x044
+    int PAD;                            // 0x048
+    int PAD;                            // 0x04c
+    int PAD;                            // 0x050
+    int PAD;                            // 0x054
+    int PAD;                            // 0x058
+    int PAD;                            // 0x05c
+    int PAD;                            // 0x060
+    int PAD;                            // 0x064
+    int PAD;                            // 0x068
+    int PAD;                            // 0x06c
+    int PAD;                            // 0x070
+    int PAD;                            // 0x074
+    int PAD;                            // 0x078
+    int PAD;                            // 0x07c
+    int PAD;                            // 0x080
+    int PAD;                            // 0x084
+    int PAD;                            // 0x088
+    int PAD;                            // 0x08c
+    int PAD;                            // 0x090
+    int PAD;                            // 0x094
+    int PAD;                            // 0x098
+    int PAD;                            // 0x09c
+    int PAD;                            // 0x0a0
+    int PAD;                            // 0x0a4
+    int PAD;                            // 0x0a8
+    int PAD;                            // 0x0ac
+    int PAD;                            // 0x0b0
+    int PAD;                            // 0x0b4
+    int PAD;                            // 0x0b8
+    int PAD;                            // 0x0bc
+    int PAD;                            // 0x0c0
+    int PAD;                            // 0x0c4
+    int PAD;                            // 0x0c8
+    int PAD;                            // 0x0cc
+    int PAD;                            // 0x0d0
+    int PAD;                            // 0x0d4
+    int PAD;                            // 0x0d8
+    int PAD;                            // 0x0dc
+    int PAD;                            // 0x0e0
+    int PAD;                            // 0x0e4
+    int PAD;                            // 0x0e8
+    int PAD;                            // 0x0ec
+    int PAD;                            // 0x0f0
+    int PAD;                            // 0x0f4
+    int PAD;                            // 0x0f8
+    int PAD;                            // 0x0fc
+    int PAD;                            // 0x100
+    int PAD;                            // 0x104
+    int PAD;                            // 0x108
+    int PAD;                            // 0x10c
+    uint32 pstart;                      // 0x110
+    uint32 pstop;                       // 0x114
+    uint32 pfirst;                      // 0x118
+    uint32 plast;                       // 0x11c
+    int PAD;                            // 0x120
+    int PAD;                            // 0x124
+    int PAD;                            // 0x128
+    int PAD;                            // 0x12c
+    int PAD;                            // 0x130
+    int PAD;                            // 0x134
+    int PAD;                            // 0x138
+    int PAD;                            // 0x13c
+    int PAD;                            // 0x140
+    int PAD;                            // 0x144
+    int PAD;                            // 0x148
+    int PAD;                            // 0x14c
+    int PAD;                            // 0x150
+    int PAD;                            // 0x154
+    int PAD;                            // 0x158
+    int PAD;                            // 0x15c
+    int PAD;                            // 0x160
+    int PAD;                            // 0x164
+    int PAD;                            // 0x168
+    int PAD;                            // 0x16c
+    int PAD;                            // 0x170
+    int PAD;                            // 0x174
+    int PAD;                            // 0x178
+    int PAD;                            // 0x17c
+    int PAD;                            // 0x180
+    int PAD;                            // 0x184
+    int PAD;                            // 0x188
+    int PAD;                            // 0x18c
+    int PAD;                            // 0x190
+    int PAD;                            // 0x194
+    int PAD;                            // 0x198
+    int PAD;                            // 0x19c
+    int PAD;                            // 0x1a0
+    int PAD;                            // 0x1a4
+    int PAD;                            // 0x1a8
+    int PAD;                            // 0x1ac
+    int PAD;                            // 0x1b0
+    int PAD;                            // 0x1b4
+    int PAD;                            // 0x1b8
+    int PAD;                            // 0x1bc
+    int PAD;                            // 0x1c0
+    int PAD;                            // 0x1c4
+    int PAD;                            // 0x1c8
+    int PAD;                            // 0x1cc
+    int PAD;                            // 0x1d0
+    int PAD;                            // 0x1d4
+    int PAD;                            // 0x1d8
+    int PAD;                            // 0x1dc
+    int PAD;                            // 0x1e0
+    int PAD;                            // 0x1e4
+    int PAD;                            // 0x1e8
+    int16 idle_tssi[1];                 // 0x1ec
+} __attribute__((packed));
+
+struct phy_info {
+    struct phy_pub pubpi_ro;            // 0x000
+    struct shared_phy *sh;              // 0x01c
+    void   (*fn_init)(void *);                                                      // 0x020
+    void   (*fn_calinit)(void *);                                                   // 0x024
+    void   (*fn_chanset)(void *, uint16);                                           // 0x028
+    void   (*fn_txpwrrecalc)(void *);                                               // 0x02c
+    int    (*fn_longtrn)(void *, int);                                              // 0x030
+    void   (*fn_txiqccget)(void *, uint16 *, uint16 *);                             // 0x034
+    void   (*fn_txiqccmimoget)(void *, uint16 *, uint16 *, uint16 *, uint16 *);     // 0x038
+    void   (*fn_txiqccset)(void *, uint16, uint16);                                 // 0x03c
+    void   (*fn_txiqccmimoset)(void *, uint16, uint16, uint16, uint16);             // 0x040
+    uint16 (*fn_txloccget)(void *);                                                 // 0x044
+    void   (*fn_txloccset)(void *pi, uint16 didq);                            // 0x048
+    int PAD;                            // 0x04c
+    int PAD;                            // 0x050
+    int PAD;                            // 0x054
+    int PAD;                            // 0x058
+    int PAD;                            // 0x05c
+    int PAD;                            // 0x060
+    int PAD;                            // 0x064
+    int PAD;                            // 0x068
+    int PAD;                            // 0x06c
+    int PAD;                            // 0x070
+    int PAD;                            // 0x074
+    int PAD;                            // 0x078
+    int PAD;                            // 0x07c
+    int PAD;                            // 0x080
+    int PAD;                            // 0x084
+    int PAD;                            // 0x088
+    int PAD;                            // 0x08c
+    int PAD;                            // 0x090
+    int PAD;                            // 0x094
+    int PAD;                            // 0x098
+    int PAD;                            // 0x09c
+    int PAD;                            // 0x0a0
+    int PAD;                            // 0x0a4
+    int PAD;                            // 0x0a8
+    int PAD;                            // 0x0ac
+    int PAD;                            // 0x0b0
+    int PAD;                            // 0x0b4
+    int PAD;                            // 0x0b8
+    struct phy_info_acphy *pi_ac;       // 0x0bc
+    int PAD;                            // 0x0c0
+    struct d11regs *regs;               // 0x0c4
+    int PAD;                            // 0x0c8
+    int PAD;                            // 0x0cc
+    struct phy_pub pubpi;               // 0x0d0
+    short PAD;                          // 0x0ec
+    short radio_chanspec;               // 0x0ee
+    short PAD;                          // 0x0f0
+    short bw;                           // 0x0f2
+    int PAD;                            // 0x0f4
+    int PAD;                            // 0x0f8
+    int PAD;                            // 0x0fc
+    int PAD;                            // 0x100
+    int PAD;                            // 0x104
+    int PAD;                            // 0x108
+    int PAD;                            // 0x10c
+    int PAD;                            // 0x110
+    int PAD;                            // 0x114
+    int PAD;                            // 0x118
+    int PAD;                            // 0x11c
+    int PAD;                            // 0x120
+} __attribute__((packed));
+
 struct wlcband {
     int bandtype;                       /* 0x000 */
     int bandunit;                       /* 0x004 */
@@ -303,7 +601,7 @@ struct wlcband {
     short phyrev;                       /* 0x00A */
     short radioid;                      /* 0x00C */
     short radiorev;                     /* 0x00E */
-    void *pi;                           /* 0x010 */
+    struct phy_info *pi;                /* 0x010 */
     char abgphy_encore;                 /* 0x014 */
     char gmode;                         /* 0x015 */
     char PAD;                           /* 0x016 */
@@ -1735,3 +2033,4 @@ struct nexmon_header {
     uint8 payload[1];
 } __attribute__((packed));
 
+#endif /*STRUCTS_COMMON_H */
