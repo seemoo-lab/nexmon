@@ -1581,7 +1581,7 @@ struct d11regs {
     unsigned int tplatewrdata;   /* 0x134 */
     unsigned int PAD[2];     /* 0x138 - 0x13C */
 
-    /* PMQ registers */
+    /* Power Management Queue (PMQ) registers */
     union pmqreg pmqreg;    /* 0x140 */
     unsigned int pmqpatl;        /* 0x144 */
     unsigned int pmqpath;        /* 0x148 */
@@ -1785,142 +1785,550 @@ struct d11regs {
     unsigned short PAD;                 /* SPR_TX_STATUS2                   0x51c */
     unsigned short PAD;                 /* SPR_TX_STATUS3                   0x51e */
 
-    /* Transmit control */
-    unsigned short xmtfifodef;          /* SPR_TXE0_FIFO_Def                0x520 */
-    unsigned short xmtfifo_frame_cnt;   /* SPR_TXE0_0x22                    0x522 *//* Corerev >= 16 */
-    unsigned short xmtfifo_byte_cnt;    /* SPR_TXE0_0x24                    0x524 *//* Corerev >= 16 */
-    unsigned short xmtfifo_head;        /* SPR_TXE0_0x26                    0x526 *//* Corerev >= 16 */
-    unsigned short xmtfifo_rd_ptr;      /* SPR_TXE0_0x28                    0x528 *//* Corerev >= 16 */
-    unsigned short xmtfifo_wr_ptr;      /* SPR_TXE0_0x2a                    0x52A *//* Corerev >= 16 */
-    unsigned short xmtfifodef1;         /* SPR_TXE0_0x2c                    0x52C *//* Corerev >= 16 */
+    union {
+        struct { // d11regs
+            /* Transmit control */
+            uint16  xmtfifodef;     /* 0x520 */
+            uint16  xmtfifo_frame_cnt;      /* 0x522 */     /* Corerev >= 16 */
+            uint16  xmtfifo_byte_cnt;       /* 0x524 */     /* Corerev >= 16 */
+            uint16  xmtfifo_head;           /* 0x526 */     /* Corerev >= 16 */
+            uint16  xmtfifo_rd_ptr;         /* 0x528 */     /* Corerev >= 16 */
+            uint16  xmtfifo_wr_ptr;         /* 0x52A */     /* Corerev >= 16 */
+            uint16  xmtfifodef1;            /* 0x52C */     /* Corerev >= 16 */
 
-    unsigned short PAD;                 /* SPR_TXE0_0x2e                    0x52E */
-    unsigned short PAD;                 /* SPR_TXE0_0x30                    0x530 */
-    unsigned short PAD;                 /* SPR_TXE0_0x32                    0x532 */
-    unsigned short PAD;                 /* SPR_TXE0_0x34                    0x534 */
-    unsigned short PAD;                 /* SPR_TXE0_0x36                    0x536 */
-    unsigned short PAD;                 /* SPR_TXE0_0x38                    0x538 */
-    unsigned short PAD;                 /* SPR_TXE0_0x3a                    0x53A */
-    unsigned short PAD;                 /* SPR_TXE0_0x3c                    0x53C */
-    unsigned short PAD;                 /* SPR_TXE0_0x3e                    0x53E */
+            /* AggFifo */
+            uint16  aggfifo_cmd;            /* 0x52e */
+            uint16  aggfifo_stat;           /* 0x530 */
+            uint16  aggfifo_cfgctl;         /* 0x532 */
+            uint16  aggfifo_cfgdata;        /* 0x534 */
+            uint16  aggfifo_mpdunum;        /* 0x536 */
+            uint16  aggfifo_len;            /* 0x538 */
+            uint16  aggfifo_bmp;            /* 0x53A */
+            uint16  aggfifo_ackedcnt;       /* 0x53C */
+            uint16  aggfifo_sel;            /* 0x53E */
 
-    unsigned short xmtfifocmd;          /* SPR_TXE0_FIFO_CMD                0x540 */
-    unsigned short xmtfifoflush;        /* SPR_TXE0_FIFO_FLUSH              0x542 */
-    unsigned short xmtfifothresh;       /* SPR_TXE0_FIFO_THRES              0x544 */
-    unsigned short xmtfifordy;          /* SPR_TXE0_FIFO_RDY                0x546 */
-    unsigned short xmtfifoprirdy;       /* SPR_TXE0_FIFO_PRI_RDY            0x548 */
-    unsigned short xmtfiforqpri;        /* SPR_TXE0_FIFO_RQ_PRI             0x54A */
-    unsigned short xmttplatetxptr;      /* SPR_TXE0_Template_TX_Pointer     0x54C */
-    unsigned short PAD;                 /* SPR_TXE0_0x4e                    0x54E */
-    unsigned short xmttplateptr;        /* SPR_TXE0_Template_Pointer        0x550 */
-    unsigned short smpl_clct_strptr;    /* SPR_TXE0_0x52                    0x552 *//* Corerev >= 22 */
-    unsigned short smpl_clct_stpptr;    /* SPR_TXE0_0x54                    0x554 *//* Corerev >= 22 */
-    unsigned short smpl_clct_curptr;    /* SPR_TXE0_0x56                    0x556 *//* Corerev >= 22 */
-    unsigned short PAD;                 /* SPR_TXE0_0x58                    0x558 */
-    unsigned short PAD;                 /* SPR_TXE0_0x5a                    0x55A */
-    unsigned short PAD;                 /* SPR_TXE0_0x5c                    0x55C */
-    unsigned short PAD;                 /* SPR_TXE0_0x5e                    0x55E */
-    unsigned short xmttplatedatalo;     /* SPR_TXE0_Template_Data_Low       0x560 */
-    unsigned short xmttplatedatahi;     /* SPR_TXE0_Template_Data_High      0x562 */
+            uint16  xmtfifocmd;     /* 0x540 */
+            uint16  xmtfifoflush;       /* 0x542 */
+            uint16  xmtfifothresh;      /* 0x544 */
+            uint16  xmtfifordy;     /* 0x546 */
+            uint16  xmtfifoprirdy;      /* 0x548 */
+            uint16  xmtfiforqpri;       /* 0x54A */
+            uint16  xmttplatetxptr;     /* 0x54C */
+            uint16  PAD;            /* 0x54E */
+            uint16  xmttplateptr;       /* 0x550 */
+            uint16  smpl_clct_strptr;       /* 0x552 */ /* Corerev >= 22 */
+            uint16  smpl_clct_stpptr;       /* 0x554 */ /* Corerev >= 22 */
+            uint16  smpl_clct_curptr;       /* 0x556 */ /* Corerev >= 22 */
+            uint16  aggfifo_data;           /* 0x558 */
+            uint16  PAD[0x03];      /* 0x55A - 0x55E */
+            uint16  xmttplatedatalo;    /* 0x560 */
+            uint16  xmttplatedatahi;    /* 0x562 */
 
-    unsigned short PAD;                 /* SPR_TXE0_0x64                    0x564 */
-    unsigned short PAD;                 /* SPR_TXE0_0x66                    0x566 */
+            uint16  PAD[2];         /* 0x564 - 0x566 */
 
-    unsigned short xmtsel;              /* SPR_TXE0_SELECT                  0x568 */
-    unsigned short xmttxcnt;            /* 0x56A */
-    unsigned short xmttxshmaddr;        /* 0x56C */
+            uint16  xmtsel;         /* 0x568 */
+            uint16  xmttxcnt;       /* 0x56A */
+            uint16  xmttxshmaddr;       /* 0x56C */
 
-    unsigned short PAD[0x09];  /* 0x56E - 0x57E */
+            uint16  PAD[0x09];      /* 0x56E - 0x57E */
 
-    /* TXE1 Block */
-    unsigned short PAD[0x40];  /* 0x580 - 0x5FE */
+            /* TXE1 Block */
+            uint16  PAD[0x40];      /* 0x580 - 0x5FE */
 
-    /* TSF Block */
-    unsigned short PAD[0X02];  /* 0x600 - 0x602 */
-    unsigned short tsf_cfpstrt_l;  /* 0x604 */
-    unsigned short tsf_cfpstrt_h;  /* 0x606 */
-    unsigned short PAD[0X05];  /* 0x608 - 0x610 */
-    unsigned short tsf_cfppretbtt; /* 0x612 */
-    unsigned short PAD[0XD];   /* 0x614 - 0x62C */
-    unsigned short tsf_clk_frac_l; /* 0x62E */
-    unsigned short tsf_clk_frac_h; /* 0x630 */
-    unsigned short PAD[0X14];  /* 0x632 - 0x658 */
-    unsigned short tsf_random; /* 0x65A */
-    unsigned short PAD[0x05];  /* 0x65C - 0x664 */
-    /* GPTimer 2 registers */
-    unsigned short tsf_gpt2_stat;  /* 0x666 */
-    unsigned short tsf_gpt2_ctr_l; /* 0x668 */
-    unsigned short tsf_gpt2_ctr_h; /* 0x66A */
-    unsigned short tsf_gpt2_val_l; /* 0x66C */
-    unsigned short tsf_gpt2_val_h; /* 0x66E */
-    unsigned short tsf_gptall_stat;    /* 0x670 */
-    unsigned short PAD[0x07];  /* 0x672 - 0x67E */
+            /* TSF Block */
+            uint16  PAD[0X02];      /* 0x600 - 0x602 */
+            uint16  tsf_cfpstrt_l;      /* 0x604 */
+            uint16  tsf_cfpstrt_h;      /* 0x606 */
+            uint16  PAD[0X05];      /* 0x608 - 0x610 */
+            uint16  tsf_cfppretbtt;     /* 0x612 */
+            uint16  PAD[0XD];       /* 0x614 - 0x62C */
+            uint16  tsf_clk_frac_l;         /* 0x62E */
+            uint16  tsf_clk_frac_h;         /* 0x630 */
+            uint16  PAD[0X14];      /* 0x632 - 0x658 */
+            uint16  tsf_random;     /* 0x65A */
+            uint16  PAD[0x05];      /* 0x65C - 0x664 */
+            /* GPTimer 2 registers are corerev >= 3 */
+            uint16  tsf_gpt2_stat;      /* 0x666 */
+            uint16  tsf_gpt2_ctr_l;     /* 0x668 */
+            uint16  tsf_gpt2_ctr_h;     /* 0x66A */
+            uint16  tsf_gpt2_val_l;     /* 0x66C */
+            uint16  tsf_gpt2_val_h;     /* 0x66E */
+            uint16  tsf_gptall_stat;    /* 0x670 */
+            uint16  PAD[0x07];      /* 0x672 - 0x67E */
 
-    /* IFS Block */
-    unsigned short ifs_sifs_rx_tx_tx;  /* 0x680 */
-    unsigned short ifs_sifs_nav_tx;    /* 0x682 */
-    unsigned short ifs_slot;   /* 0x684 */
-    unsigned short PAD;        /* 0x686 */
-    unsigned short ifs_ctl;        /* 0x688 */
-    unsigned short PAD[0x3];   /* 0x68a - 0x68F */
-    unsigned short ifsstat;        /* 0x690 */
-    unsigned short ifsmedbusyctl;  /* 0x692 */
-    unsigned short iftxdur;        /* 0x694 */
-    unsigned short PAD[0x3];   /* 0x696 - 0x69b */
-    /* EDCF support in dot11macs */
-    unsigned short ifs_aifsn;  /* 0x69c */
-    unsigned short ifs_ctl1;   /* 0x69e */
+            /* IFS Block */
+            uint16  ifs_sifs_rx_tx_tx;  /* 0x680 */
+            uint16  ifs_sifs_nav_tx;    /* 0x682 */
+            uint16  ifs_slot;       /* 0x684 */
+            uint16  PAD;            /* 0x686 */
+            uint16  ifs_ctl;        /* 0x688 */
+            uint16  ifs_boff;       /* 0x68a */
+            uint16  PAD[0x2];       /* 0x68c - 0x68F */
+            uint16  ifsstat;        /* 0x690 */
+            uint16  ifsmedbusyctl;      /* 0x692 */
+            uint16  iftxdur;        /* 0x694 */
+            uint16  PAD[0x3];       /* 0x696 - 0x69b */
+            /* EDCF support in dot11macs with corerevs >= 16 */
+            uint16  ifs_aifsn;      /* 0x69c */
+            uint16  ifs_ctl1;       /* 0x69e */
 
-    /* slow clock registers */
-    unsigned short scc_ctl;        /* 0x6a0 */
-    unsigned short scc_timer_l;    /* 0x6a2 */
-    unsigned short scc_timer_h;    /* 0x6a4 */
-    unsigned short scc_frac;   /* 0x6a6 */
-    unsigned short scc_fastpwrup_dly;  /* 0x6a8 */
-    unsigned short scc_per;        /* 0x6aa */
-    unsigned short scc_per_frac;   /* 0x6ac */
-    unsigned short scc_cal_timer_l;    /* 0x6ae */
-    unsigned short scc_cal_timer_h;    /* 0x6b0 */
-    unsigned short PAD;        /* 0x6b2 */
+            /* New slow clock registers on corerev >= 5 */
+            uint16  scc_ctl;        /* 0x6a0 */
+            uint16  scc_timer_l;        /* 0x6a2 */
+            uint16  scc_timer_h;        /* 0x6a4 */
+            uint16  scc_frac;       /* 0x6a6 */
+            uint16  scc_fastpwrup_dly;  /* 0x6a8 */
+            uint16  scc_per;        /* 0x6aa */
+            uint16  scc_per_frac;       /* 0x6ac */
+            uint16  scc_cal_timer_l;    /* 0x6ae */
+            uint16  scc_cal_timer_h;    /* 0x6b0 */
+            uint16  PAD;            /* 0x6b2 */
 
-    unsigned short PAD[0x26];
+            /* BTCX block on corerev >=13 */
+            uint16  btcx_ctrl;      /* 0x6b4 */
+            uint16  btcx_stat;      /* 0x6b6 */
+            uint16  btcx_trans_ctrl;    /* 0x6b8 */
+            uint16  btcx_pri_win;       /* 0x6ba */
+            uint16  btcx_tx_conf_timer; /* 0x6bc */
+            uint16  btcx_ant_sw_timer;  /* 0x6be */
 
-    /* NAV Block */
-    unsigned short nav_ctl;        /* 0x700 */
-    unsigned short navstat;        /* 0x702 */
-    unsigned short PAD[0x3e];  /* 0x702 - 0x77E */
+            uint16  btcx_prv_rfact_timer;   /* 0x6c0 */
+            uint16  btcx_cur_rfact_timer;   /* 0x6c2 */
+            uint16  btcx_rfact_dur_timer;   /* 0x6c4 */
 
-    /* WEP/PMQ Block *//* 0x780 - 0x7FE */
-    unsigned short PAD[0x20];  /* 0x780 - 0x7BE */
+            uint16  ifs_ctl_sel_pricrs; /* 0x6c6 */
+            uint16  ifs_ctl_sel_seccrs; /* 0x6c8 */
+            uint16  PAD[19];        /* 0x6ca - 0x6ee */
 
-    unsigned short wepctl;     /* 0x7C0 */
-    unsigned short wepivloc;   /* 0x7C2 */
-    unsigned short wepivkey;   /* 0x7C4 */
-    unsigned short wepwkey;        /* 0x7C6 */
+            /* ECI regs on corerev >=14 */
+            uint16  btcx_eci_addr;      /* 0x6f0 */
+            uint16  btcx_eci_data;      /* 0x6f2 */
 
-    unsigned short PAD[4];     /* 0x7C8 - 0x7CE */
-    unsigned short pcmctl;     /* 0X7D0 */
-    unsigned short pcmstat;        /* 0X7D2 */
-    unsigned short PAD[6];     /* 0x7D4 - 0x7DE */
+            uint16  PAD[6];
 
-    unsigned short pmqctl;     /* 0x7E0 */
-    unsigned short pmqstatus;  /* 0x7E2 */
-    unsigned short pmqpat0;        /* 0x7E4 */
-    unsigned short pmqpat1;        /* 0x7E6 */
-    unsigned short pmqpat2;        /* 0x7E8 */
+            /* NAV Block */
+            uint16  nav_ctl;        /* 0x700 */
+            uint16  navstat;        /* 0x702 */
+            uint16  PAD[0x3e];      /* 0x702 - 0x77E */
 
-    unsigned short pmqdat;     /* 0x7EA */
-    unsigned short pmqdator;   /* 0x7EC */
-    unsigned short pmqhst;     /* 0x7EE */
-    unsigned short pmqpath0;   /* 0x7F0 */
-    unsigned short pmqpath1;   /* 0x7F2 */
-    unsigned short pmqpath2;   /* 0x7F4 */
-    unsigned short pmqdath;        /* 0x7F6 */
+            /* WEP/PMQ Block */     /* 0x780 - 0x7FE */
+            uint16 PAD[0x20];       /* 0x780 - 0x7BE */
 
-    unsigned short PAD[0x04];  /* 0x7F8 - 0x7FE */
+            uint16 wepctl;          /* 0x7C0 */
+            uint16 wepivloc;        /* 0x7C2 */
+            uint16 wepivkey;        /* 0x7C4 */
+            uint16 wepwkey;         /* 0x7C6 */
 
-    /* SHM *//* 0x800 - 0xEFE */
-    unsigned short PAD[0x380]; /* 0x800 - 0xEFE */
+            uint16 PAD[4];          /* 0x7C8 - 0x7CE */
+            uint16 pcmctl;          /* 0X7D0 */
+            uint16 pcmstat;         /* 0X7D2 */
+            uint16 PAD[6];          /* 0x7D4 - 0x7DE */
+
+            uint16 pmqctl;          /* 0x7E0 */
+            uint16 pmqstatus;       /* 0x7E2 */
+            uint16 pmqpat0;         /* 0x7E4 */
+            uint16 pmqpat1;         /* 0x7E6 */
+            uint16 pmqpat2;         /* 0x7E8 */
+
+            uint16 pmqdat;          /* 0x7EA */
+            uint16 pmqdator;        /* 0x7EC */
+            uint16 pmqhst;          /* 0x7EE */
+            uint16 pmqpath0;        /* 0x7F0 */
+            uint16 pmqpath1;        /* 0x7F2 */
+            uint16 pmqpath2;        /* 0x7F4 */
+            uint16 pmqdath;         /* 0x7F6 */
+
+            uint16 PAD[0x04];       /* 0x7F8 - 0x7FE */
+            /* SHM */           /* 0x800 - 0xEFE */
+            uint16  PAD[0x380];     /* 0x800 - 0xEFE */
+        } d11regs;
+
+        struct { // d11regs_nexmon_old
+            /* Transmit control */
+            unsigned short xmtfifodef;          /* SPR_TXE0_FIFO_Def                0x520 */
+            unsigned short xmtfifo_frame_cnt;   /* SPR_TXE0_0x22                    0x522 *//* Corerev >= 16 */
+            unsigned short xmtfifo_byte_cnt;    /* SPR_TXE0_0x24                    0x524 *//* Corerev >= 16 */
+            unsigned short xmtfifo_head;        /* SPR_TXE0_0x26                    0x526 *//* Corerev >= 16 */
+            unsigned short xmtfifo_rd_ptr;      /* SPR_TXE0_0x28                    0x528 *//* Corerev >= 16 */
+            unsigned short xmtfifo_wr_ptr;      /* SPR_TXE0_0x2a                    0x52A *//* Corerev >= 16 */
+            unsigned short xmtfifodef1;         /* SPR_TXE0_0x2c                    0x52C *//* Corerev >= 16 */
+
+            unsigned short PAD;                 /* SPR_TXE0_0x2e                    0x52E */
+            unsigned short PAD;                 /* SPR_TXE0_0x30                    0x530 */
+            unsigned short PAD;                 /* SPR_TXE0_0x32                    0x532 */
+            unsigned short PAD;                 /* SPR_TXE0_0x34                    0x534 */
+            unsigned short PAD;                 /* SPR_TXE0_0x36                    0x536 */
+            unsigned short PAD;                 /* SPR_TXE0_0x38                    0x538 */
+            unsigned short PAD;                 /* SPR_TXE0_0x3a                    0x53A */
+            unsigned short PAD;                 /* SPR_TXE0_0x3c                    0x53C */
+            unsigned short PAD;                 /* SPR_TXE0_0x3e                    0x53E */
+
+            unsigned short xmtfifocmd;          /* SPR_TXE0_FIFO_CMD                0x540 */
+            unsigned short xmtfifoflush;        /* SPR_TXE0_FIFO_FLUSH              0x542 */
+            unsigned short xmtfifothresh;       /* SPR_TXE0_FIFO_THRES              0x544 */
+            unsigned short xmtfifordy;          /* SPR_TXE0_FIFO_RDY                0x546 */
+            unsigned short xmtfifoprirdy;       /* SPR_TXE0_FIFO_PRI_RDY            0x548 */
+            unsigned short xmtfiforqpri;        /* SPR_TXE0_FIFO_RQ_PRI             0x54A */
+            unsigned short xmttplatetxptr;      /* SPR_TXE0_Template_TX_Pointer     0x54C */
+            unsigned short PAD;                 /* SPR_TXE0_0x4e                    0x54E */
+            unsigned short xmttplateptr;        /* SPR_TXE0_Template_Pointer        0x550 */
+            unsigned short smpl_clct_strptr;    /* SPR_TXE0_0x52                    0x552 *//* Corerev >= 22 */
+            unsigned short smpl_clct_stpptr;    /* SPR_TXE0_0x54                    0x554 *//* Corerev >= 22 */
+            unsigned short smpl_clct_curptr;    /* SPR_TXE0_0x56                    0x556 *//* Corerev >= 22 */
+            unsigned short PAD;                 /* SPR_TXE0_0x58                    0x558 */
+            unsigned short PAD;                 /* SPR_TXE0_0x5a                    0x55A */
+            unsigned short PAD;                 /* SPR_TXE0_0x5c                    0x55C */
+            unsigned short PAD;                 /* SPR_TXE0_0x5e                    0x55E */
+            unsigned short xmttplatedatalo;     /* SPR_TXE0_Template_Data_Low       0x560 */
+            unsigned short xmttplatedatahi;     /* SPR_TXE0_Template_Data_High      0x562 */
+
+            unsigned short PAD;                 /* SPR_TXE0_0x64                    0x564 */
+            unsigned short PAD;                 /* SPR_TXE0_0x66                    0x566 */
+
+            unsigned short xmtsel;              /* SPR_TXE0_SELECT                  0x568 */
+            unsigned short xmttxcnt;            /* 0x56A */
+            unsigned short xmttxshmaddr;        /* 0x56C */
+
+            unsigned short PAD[0x09];  /* 0x56E - 0x57E */
+
+            /* TXE1 Block */
+            unsigned short PAD[0x40];  /* 0x580 - 0x5FE */
+
+            /* TSF Block */
+            unsigned short PAD[0X02];  /* 0x600 - 0x602 */
+            unsigned short tsf_cfpstrt_l;  /* 0x604 */
+            unsigned short tsf_cfpstrt_h;  /* 0x606 */
+            unsigned short PAD[0X05];  /* 0x608 - 0x610 */
+            unsigned short tsf_cfppretbtt; /* 0x612 */
+            unsigned short PAD[0XD];   /* 0x614 - 0x62C */
+            unsigned short tsf_clk_frac_l; /* 0x62E */
+            unsigned short tsf_clk_frac_h; /* 0x630 */
+            unsigned short PAD[0X14];  /* 0x632 - 0x658 */
+            unsigned short tsf_random; /* 0x65A */
+            unsigned short PAD[0x05];  /* 0x65C - 0x664 */
+            /* GPTimer 2 registers */
+            unsigned short tsf_gpt2_stat;  /* 0x666 */
+            unsigned short tsf_gpt2_ctr_l; /* 0x668 */
+            unsigned short tsf_gpt2_ctr_h; /* 0x66A */
+            unsigned short tsf_gpt2_val_l; /* 0x66C */
+            unsigned short tsf_gpt2_val_h; /* 0x66E */
+            unsigned short tsf_gptall_stat;    /* 0x670 */
+            unsigned short PAD[0x07];  /* 0x672 - 0x67E */
+
+            /* IFS Block */
+            unsigned short ifs_sifs_rx_tx_tx;  /* 0x680 */
+            unsigned short ifs_sifs_nav_tx;    /* 0x682 */
+            unsigned short ifs_slot;   /* 0x684 */
+            unsigned short PAD;        /* 0x686 */
+            unsigned short ifs_ctl;        /* 0x688 */
+            unsigned short PAD[0x3];   /* 0x68a - 0x68F */
+            unsigned short ifsstat;        /* 0x690 */
+            unsigned short ifsmedbusyctl;  /* 0x692 */
+            unsigned short iftxdur;        /* 0x694 */
+            unsigned short PAD[0x3];   /* 0x696 - 0x69b */
+            /* EDCF support in dot11macs */
+            unsigned short ifs_aifsn;  /* 0x69c */
+            unsigned short ifs_ctl1;   /* 0x69e */
+
+            /* slow clock registers */
+            unsigned short scc_ctl;        /* 0x6a0 */
+            unsigned short scc_timer_l;    /* 0x6a2 */
+            unsigned short scc_timer_h;    /* 0x6a4 */
+            unsigned short scc_frac;   /* 0x6a6 */
+            unsigned short scc_fastpwrup_dly;  /* 0x6a8 */
+            unsigned short scc_per;        /* 0x6aa */
+            unsigned short scc_per_frac;   /* 0x6ac */
+            unsigned short scc_cal_timer_l;    /* 0x6ae */
+            unsigned short scc_cal_timer_h;    /* 0x6b0 */
+            unsigned short PAD;        /* 0x6b2 */
+
+            unsigned short PAD[0x26];
+
+            /* NAV Block */
+            unsigned short nav_ctl;        /* 0x700 */
+            unsigned short navstat;        /* 0x702 */
+            unsigned short PAD[0x3e];  /* 0x702 - 0x77E */
+
+            /* WEP/PMQ Block *//* 0x780 - 0x7FE */
+            unsigned short PAD[0x20];  /* 0x780 - 0x7BE */
+
+            unsigned short wepctl;     /* 0x7C0 */
+            unsigned short wepivloc;   /* 0x7C2 */
+            unsigned short wepivkey;   /* 0x7C4 */
+            unsigned short wepwkey;        /* 0x7C6 */
+
+            unsigned short PAD[4];     /* 0x7C8 - 0x7CE */
+            unsigned short pcmctl;     /* 0X7D0 */
+            unsigned short pcmstat;        /* 0X7D2 */
+            unsigned short PAD[6];     /* 0x7D4 - 0x7DE */
+
+            unsigned short pmqctl;     /* 0x7E0 */
+            unsigned short pmqstatus;  /* 0x7E2 */
+            unsigned short pmqpat0;        /* 0x7E4 */
+            unsigned short pmqpat1;        /* 0x7E6 */
+            unsigned short pmqpat2;        /* 0x7E8 */
+
+            unsigned short pmqdat;     /* 0x7EA */
+            unsigned short pmqdator;   /* 0x7EC */
+            unsigned short pmqhst;     /* 0x7EE */
+            unsigned short pmqpath0;   /* 0x7F0 */
+            unsigned short pmqpath1;   /* 0x7F2 */
+            unsigned short pmqpath2;   /* 0x7F4 */
+            unsigned short pmqdath;        /* 0x7F6 */
+
+            unsigned short PAD[0x04];  /* 0x7F8 - 0x7FE */
+
+            /* SHM *//* 0x800 - 0xEFE */
+            unsigned short PAD[0x380]; /* 0x800 - 0xEFE */
+        } d11regs_nexmon_old;
+
+        struct { // d11acregs
+            uint16  XmtFIFOFullThreshold;   /* 0x520 */
+            uint16  XmtFifoFrameCnt;    /* 0x522 */
+            uint16  PAD[1];
+            uint16  BMCReadReq;         /* 0x526 */
+            uint16  BMCReadOffset;      /* 0x528 */
+            uint16  BMCReadLength;      /* 0x52a */
+            uint16  BMCReadStatus;      /* 0x52c */
+            uint16  XmtShmAddr;         /* 0x52e */
+            uint16  PsmMSDUAccess;      /* 0x530 */
+            uint16  MSDUEntryBufCnt;    /* 0x532 */
+            uint16  MSDUEntryStartIdx;  /* 0x534 */
+            uint16  MSDUEntryEndIdx;    /* 0x536 */
+            uint16  SampleCollectPlayPtrHigh; /* 0x538 */
+            uint16  SampleCollectCurPtrHigh; /* 0x53a */
+            uint16  BMCCmd1;        /* 0x53c */
+            uint16  PAD[1];
+            uint16  BMCCTL;         /* 0x540 */
+            uint16  BMCConfig;      /* 0x542 */
+            uint16  BMCStartAddr;       /* 0x544 */
+            uint16  BMCSize;        /* 0x546 */
+            uint16  BMCCmd;         /* 0x548 */
+            uint16  BMCMaxBuffers;      /* 0x54a */
+            uint16  BMCMinBuffers;      /* 0x54c */
+            uint16  BMCAllocCtl;        /* 0x54e */
+            uint16  BMCDescrLen;        /* 0x550 */
+            uint16  SampleCollectStartPtr;  /* 0x552 */
+            uint16  SampleCollectStopPtr;   /* 0x554 */
+            uint16  SampleCollectCurPtr;    /* 0x556 */
+            uint16  SaveRestoreStartPtr;    /* 0x558 */
+            uint16  SamplePlayStartPtr;     /* 0x55a */
+            uint16  SamplePlayStopPtr;  /* 0x55c */
+            uint16  XmtDMABusy;         /* 0x55e */
+            uint16  XmtTemplateDataLo;  /* 0x560 */
+            uint16  XmtTemplateDataHi;  /* 0x562 */
+            uint16  XmtTemplatePtr;     /* 0x564 */
+            uint16  XmtSuspFlush;       /* 0x566 */
+            uint16  XmtFifoRqPrio;      /* 0x568 */
+            uint16  BMCStatCtl;         /* 0x56a */
+            uint16  BMCStatData;        /* 0x56c */
+            uint16  BMCMSDUFifoStat;    /* 0x56e */
+            uint16  PAD[4];         /* 0x570-576 */
+            uint16  txe_status1;        /* 0x578 */
+            uint16  PAD[323];       /* 0x57a - 0x800 */
+
+            /* AQM */
+            uint16  AQMConfig;      /* 0x800 */
+            uint16  AQMFifoDef;         /* 0x802 */
+            uint16  AQMMaxIdx;      /* 0x804 */
+            uint16  AQMRcvdBA0;         /* 0x806 */
+            uint16  AQMRcvdBA1;         /* 0x808 */
+            uint16  AQMRcvdBA2;         /* 0x80a */
+            uint16  AQMRcvdBA3;         /* 0x80c */
+            uint16  AQMBaSSN;       /* 0x80e */
+            uint16  AQMRefSN;       /* 0x810 */
+            uint16  AQMMaxAggLenLow;    /* 0x812 */
+            uint16  AQMMaxAggLenHi;     /* 0x814 */
+            uint16  AQMAggParams;       /* 0x816 */
+            uint16  AQMMinMpduLen;      /* 0x818 */
+            uint16  AQMMacAdjLen;       /* 0x81a */
+            uint16  DebugBusCtrl;       /* 0x81c */
+            uint16  PAD[1];
+            uint16  AQMAggStats;        /* 0x820 */
+            uint16  AQMAggLenLow;       /* 0x822 */
+            uint16  AQMAggLenHi;        /* 0x824 */
+            uint16  AQMIdxFifo;         /* 0x826 */
+            uint16  AQMMpduLenFifo;     /* 0x828 */
+            uint16  AQMTxCntFifo;       /* 0x82a */
+            uint16  AQMUpdBA0;      /* 0x82c */
+            uint16  AQMUpdBA1;      /* 0x82e */
+            uint16  AQMUpdBA2;      /* 0x830 */
+            uint16  AQMUpdBA3;      /* 0x832 */
+            uint16  AQMAckCnt;      /* 0x834 */
+            uint16  AQMConsCnt;         /* 0x836 */
+            uint16  AQMFifoReady;       /* 0x838 */
+            uint16  AQMStartLoc;        /* 0x83a */
+            uint16  PAD[2];
+            uint16  TDCCTL;         /* 0x840 */
+            uint16  TDC_Plcp0;      /* 0x842 */
+            uint16  TDC_Plcp1;      /* 0x844 */
+            uint16  TDC_FrmLen0;        /* 0x846 */
+            uint16  TDC_FrmLen1;        /* 0x848 */
+            uint16  TDC_Txtime;         /* 0x84a */
+            uint16  TDC_VhtSigB0;       /* 0x84c */
+            uint16  TDC_VhtSigB1;       /* 0x84e */
+            uint16  TDC_LSigLen;        /* 0x850 */
+            uint16  TDC_NSym0;      /* 0x852 */
+            uint16  TDC_NSym1;      /* 0x854 */
+            uint16  TDC_VhtPsduLen0;    /* 0x856 */
+            uint16  TDC_VhtPsduLen1;    /* 0x858 */
+            uint16  TDC_VhtMacPad;      /* 0x85a */
+            uint16  PAD[2];
+            uint16  ShmDma_Ctl;         /* 0x860 */
+            uint16  ShmDma_TxdcAddr;    /* 0x862 */
+            uint16  ShmDma_ShmAddr;     /* 0x864 */
+            uint16  ShmDma_XferCnt;     /* 0x866 */
+            uint16  Txdc_Addr;      /* 0x868 */
+            uint16  Txdc_Data;      /* 0x86a */
+            uint16  PAD[10];        /* 0x86c - 0x880 */
+
+            /* RXE Register */
+            uint16  MHP_Status;     /* 0x880 */
+            uint16  MHP_FC;         /* 0x882 */
+            uint16  MHP_DUR;        /* 0x884 */
+            uint16  MHP_SC;         /* 0x886 */
+            uint16  MHP_QOS;        /* 0x888 */
+            uint16  MHP_HTC_H;      /* 0x88a */
+            uint16  MHP_HTC_L;      /* 0x88c */
+            uint16  MHP_Addr1_H;        /* 0x88e */
+            uint16  MHP_Addr1_M;        /* 0x890 */
+            uint16  MHP_Addr1_L;        /* 0x892 */
+            uint16  PAD[6];         /* 0x894 - 0x8a0 */
+            uint16  MHP_Addr2_H;        /* 0x8a0 */
+            uint16  MHP_Addr2_M;        /* 0x8a2 */
+            uint16  MHP_Addr2_L;        /* 0x8a4 */
+            uint16  MHP_Addr3_H;        /* 0x8a6 */
+            uint16  MHP_Addr3_M;        /* 0x8a8 */
+            uint16  MHP_Addr3_L;        /* 0x8aa */
+            uint16  MHP_Addr4_H;        /* 0x8ac */
+            uint16  MHP_Addr4_M;        /* 0x8ae */
+            uint16  MHP_Addr4_L;        /* 0x8b0 */
+            uint16  MHP_CFC;        /* 0x8b2 */
+            uint16  PAD[6];         /* 0x8b4 - 0x8c0 */
+            uint16  DAGG_CTL2;      /* 0x8c0 */
+            uint16  DAGG_BYTESLEFT;     /* 0x8c2 */
+            uint16  DAGG_SH_OFFSET;     /* 0x8c4 */
+            uint16  DAGG_STAT;      /* 0x8c6 */
+            uint16  DAGG_LEN;       /* 0x8c8 */
+            uint16  TXBA_CTL;       /* 0x8ca */
+            uint16  TXBA_DataSel;       /* 0x8cc */
+            uint16  TXBA_Data;      /* 0x8ce */
+            uint16  PAD[8];         /* 0x8d0 - 0x8e0 */
+            uint16  AMT_CTL;        /* 0x8e0 */
+            uint16  AMT_Status;     /* 0x8e2 */
+            uint16  AMT_Limit;      /* 0x8e4 */
+            uint16  AMT_Attr;       /* 0x8e6 */
+            uint16  AMT_Match1;     /* 0x8e8 */
+            uint16  AMT_Match2;     /* 0x8ea */
+            uint16  AMT_Table_Addr;     /* 0x8ec */
+            uint16  AMT_Table_Data;     /* 0x8ee */
+            uint16  AMT_Table_Val;      /* 0x8f0 */
+            uint16  AMT_DBG_SEL;        /* 0x8f2 */
+            uint16  PAD[6];         /* 0x8f4 - 0x900 */
+            uint16  RoeCtrl;        /* 0x900 */
+            uint16  RoeStatus;      /* 0x902 */
+            uint16  RoeIPChkSum;        /* 0x904 */
+            uint16  RoeTCPUDPChkSum;    /* 0x906 */
+            uint16  PAD[12];        /* 0x908 - 0x920 */
+            uint16  PSOCtl;         /* 0x920 */
+            uint16  PSORxWordsWatermark;    /* 0x922 */
+            uint16  PSORxCntWatermark;  /* 0x924 */
+            uint16  PAD[5];         /* 0x926 - 0x930 */
+            uint16  OBFFCtl;        /* 0x930 */
+            uint16  OBFFRxWordsWatermark;   /* 0x932 */
+            uint16  OBFFRxCntWatermark; /* 0x934 */
+            uint16  PAD[101];       /* 0x936 - 0xa00 */
+
+            /* TOE */
+            uint16  ToECTL;         /* 0xa00 */
+            uint16  ToERst;         /* 0xa02 */
+            uint16  ToECSumNZ;      /* 0xa04 */
+            uint16  PAD[29];        /* 0xa06 - 0xa40 */
+
+            uint16  TxSerialCtl;        /* 0xa40 */
+            uint16  TxPlcpLSig0;        /* 0xa42 */
+            uint16  TxPlcpLSig1;        /* 0xa44 */
+            uint16  TxPlcpHtSig0;       /* 0xa46 */
+            uint16  TxPlcpHtSig1;       /* 0xa48 */
+            uint16  TxPlcpHtSig2;       /* 0xa4a */
+            uint16  TxPlcpVhtSigB0;     /* 0xa4c */
+            uint16  TxPlcpVhtSigB1;     /* 0xa4e */
+            uint16  PAD[1];
+
+            uint16  MacHdrFromShmLen;   /* 0xa52 */
+            uint16  TxPlcpLen;      /* 0xa54 */
+            uint16  PAD[1];
+
+            uint16  TxBFRptLen;         /* 0xa58 */
+            uint16  PAD[3];
+
+            uint16  TXBFCtl;        /* 0xa60 */
+            uint16  BfmRptOffset;       /* 0xa62 */
+            uint16  BfmRptLen;      /* 0xa64 */
+            uint16  TXBFBfeRptRdCnt;    /* 0xa66 */
+            uint16  PAD[76];        /* 0xa68 - 0xafe */
+            uint16  RXMapFifoSize;          /* 0xb00 */
+            uint16  PAD[511];       /* 0xb02 - 0xEFE */
+        } d11acregs;
+    } u;
+} __attribute__((packed));
+
+/* 11AC TX DMA buffer header */
+#define D11_PHY_HDR_LEN     6
+#define D11AC_TXH_NUM_RATES 4
+/* per rate info */
+typedef struct d11actxh_rate d11actxh_rate_t;
+struct d11actxh_rate {
+    uint16  PhyTxControlWord_0;             /* 0 - 1 */
+    uint16  PhyTxControlWord_1;             /* 2 - 3 */
+    uint16  PhyTxControlWord_2;             /* 4 - 5 */
+    uint8   plcp[D11_PHY_HDR_LEN];          /* 6 - 11 */
+    uint16  FbwInfo;                        /* 12 -13 */
+    uint16  TxRate;                         /* 14 */
+    uint16  RtsCtsControl;                  /* 16 */
+    uint16  Bfm0;                            /* 18 */
+} __attribute__((packed));
+
+/* per packet info */
+typedef struct d11actxh_pkt d11actxh_pkt_t;
+struct d11actxh_pkt {
+    /* Per pkt info */
+    uint16  TSOInfo;                        /* 0 */
+    uint16  MacTxControlLow;                /* 2 */
+    uint16  MacTxControlHigh;               /* 4 */
+    uint16  Chanspec;                       /* 6 */
+    uint8   IVOffset;                       /* 8 */
+    uint8   PktCacheLen;                    /* 9 */
+    uint16  FrameLen;                       /* 10 */
+    uint16  TxFrameID;                      /* 12 */
+    uint16  Seq;                            /* 14 */
+    uint16  Tstamp;                         /* 16 */
+    uint16  TxStatus;                       /* 18 */
+} __attribute__((packed));
+
+/* Per cache info */
+typedef struct d11actxh_cache d11actxh_cache_t;
+struct d11actxh_cache {
+    uint8   BssIdEncAlg;                    /* 0 */
+    uint8   KeyIdx;                         /* 1 */
+    uint8   PrimeMpduMax;                   /* 2 */
+    uint8   FallbackMpduMax;                /* 3 */
+    uint16  AmpduDur;                       /* 4 - 5 */
+    uint8   BAWin;                          /* 6 */
+    uint8   MaxAggLen;                      /* 7 */
+    uint8   TkipPH1Key[10];                 /*  8 - 17 */
+    uint8   TSCPN[6];                       /* 18 - 23 */
+} __attribute__((packed));
+
+/* Long format tx descriptor */
+typedef struct d11actxh d11actxh_t;
+struct d11actxh {
+    /* Per pkt info */
+    d11actxh_pkt_t  PktInfo;            /* 0 - 19 */
+    /* Per rate info */
+    d11actxh_rate_t RateInfo[D11AC_TXH_NUM_RATES];  /* 20 - 99 */
+    /* Per cache info */
+    d11actxh_cache_t    CacheInfo;      /* 100 - 123 */
 } __attribute__((packed));
 
 typedef void (*to_fun_t)(void *arg);
