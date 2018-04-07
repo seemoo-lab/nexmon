@@ -748,7 +748,7 @@ struct wlc_info {
     void *cmi;                          /* 0x15C */
     int PAD;                            /* 0x160 */
     int PAD;                            /* 0x164 */
-    int PAD;                            /* 0x168 */
+    void *scan;                         /* 0x168 */
     int PAD;                            /* 0x16C */
     int PAD;                            /* 0x170 */
     int PAD;                            /* 0x174 */
