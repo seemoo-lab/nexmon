@@ -585,6 +585,7 @@ RETURN_DUMMY
 // found by searching for 07 f4 80 37
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x504B0)
 AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x45218)
+AT(CHIP_VER_BCM43455c0, FW_VER_ALL, 0x4A8CC)
 void
 wlc_bmac_write_template_ram(void *wlc_hw, int offset, int len, void *buf)
 VOID_DUMMY
