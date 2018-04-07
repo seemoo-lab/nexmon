@@ -1068,6 +1068,7 @@ AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x8081F0)
 AT(CHIP_VER_BCM43430a1, FW_VER_ALL, 0x8081F0)
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x16A40)
 AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x8b58)
+AT(CHIP_VER_BCM43455c0, FW_VER_ALL, 0x891C)
 unsigned int
 udelay(int a1)
 RETURN_DUMMY
@@ -1105,6 +1106,7 @@ AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x9264)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_26_r640327, 0x9264)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x9350)
 AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x2b428)
+AT(CHIP_VER_BCM43455c0, FW_VER_ALL, 0x9C23C)
 int
 wlc_iovar_op(void *wlc, char *varname, void *params, int p_len, void *arg, int len, char set, void *wlcif)
 RETURN_DUMMY
@@ -1335,6 +1337,7 @@ VOID_DUMMY
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1BE6BC)
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1BE908)
 AT(CHIP_VER_BCM4358, FW_VER_7_112_300_14, 0x1c7e68)
+AT(CHIP_VER_BCM43455c0, FW_VER_7_45_154, 0x1D2C8C)
 void
 wlc_phy_runsamples_acphy(void *pi, unsigned short num_samps, unsigned short loops, unsigned short wait, unsigned char iqmode, unsigned char mac_based)
 VOID_DUMMY
@@ -1345,12 +1348,14 @@ wlc_phy_get_tx_bbmult_acphy(void *pi, unsigned short *bb_mult, unsigned short co
 VOID_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1B9904)
+AT(CHIP_VER_BCM43455c0, FW_VER_7_45_154, 0x1CDEA0)
 void
 wlc_phy_set_tx_bbmult_acphy(void *pi, unsigned short *bb_mult, unsigned short core)
 VOID_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1BB502)
 AT(CHIP_VER_BCM4358, FW_VER_7_112_300_14, 0x1c472c)
+AT(CHIP_VER_BCM43455c0, FW_VER_7_45_154, 0x1CF462)
 void
 wlc_phy_get_txgain_settings_by_index_acphy(void *pi, void *txgain_settings, int8 txpwrindex)
 VOID_DUMMY
@@ -1361,6 +1366,7 @@ AT(CHIP_VER_BCM4358, FW_VER_7_112_200_17, 0x1C68D8)
 AT(CHIP_VER_BCM4358, FW_VER_7_112_201_3, 0x1C69C4)
 AT(CHIP_VER_BCM4358, FW_VER_7_112_300_14, 0x1c7a68)
 AT(CHIP_VER_BCM4356, FW_VER_7_35_101_5_sta, 0x1CF5F4)
+AT(CHIP_VER_BCM43455c0, FW_VER_7_45_154, 0x1D2A04)
 void
 wlc_phy_stay_in_carriersearch_acphy(void *pi, int enable)
 VOID_DUMMY
@@ -1368,6 +1374,7 @@ VOID_DUMMY
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1BE562)
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1BE7AE)
 AT(CHIP_VER_BCM4358, FW_VER_7_112_300_14, 0x1c79a8)
+AT(CHIP_VER_BCM43455c0, FW_VER_7_45_154, 0x1D2964)
 void
 wlc_phy_stopplayback_acphy(void *pi)
 VOID_DUMMY
@@ -1398,6 +1405,7 @@ RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1B998C)
 AT(CHIP_VER_BCM4358, FW_VER_7_112_300_14, 0x1c3344)
+AT(CHIP_VER_BCM43455c0, FW_VER_7_45_154, 0x1CDF2C)
 void
 wlc_phy_txcal_txgain_cleanup_acphy(void *pi, void *orig_txgain)
 VOID_DUMMY
@@ -1424,6 +1432,7 @@ VOID_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C01B4)
 AT(CHIP_VER_BCM4358, FW_VER_7_112_300_14, 0x1cb57c)
+AT(CHIP_VER_BCM43455c0, FW_VER_7_45_154, 0x1D3AF8)
 void
 wlc_phy_txpwrctrl_enable_acphy(void *pi, unsigned char ctrl_type)
 VOID_DUMMY
