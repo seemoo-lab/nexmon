@@ -38,3 +38,11 @@ FP_CONFIG_ORIGBASE=0x1d2000
 FP_CONFIG_ORIGEND=0x1d2948
 
 INITVALS=0x1d4044
+
+##########################################
+# definitions for the nexmon patch       #
+##########################################
+# required by patch.c
+WLC_UCODE_WRITE_BL_HOOK_ADDR = 0x1F4F14
+HNDRTE_RECLAIM_0_END_PTR = 0x1816E0
+TEMPLATERAMSTART_PTR = 0x185544
