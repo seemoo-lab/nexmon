@@ -570,12 +570,21 @@ struct phy_info {
     int PAD;                            // 0x0b0
     int PAD;                            // 0x0b4
     int PAD;                            // 0x0b8
-    struct phy_info_acphy *pi_ac;       // 0x0bc
+//    struct phy_info_acphy *pi_ac;       // 0x0bc
+    int PAD;                            // 0x0bc
     int PAD;                            // 0x0c0
-    struct d11regs *regs;               // 0x0c4
+//    struct d11regs *regs;               // 0x0c4
+    int PAD;                            // 0x0c4
     int PAD;                            // 0x0c8
     int PAD;                            // 0x0cc
-    struct phy_pub pubpi;               // 0x0d0
+//    struct phy_pub pubpi;               // 0x0d0
+    int PAD;                            // 0x0d0
+    int PAD;                            // 0x0d4
+    int PAD;                            // 0x0d8
+    int PAD;                            // 0x0dc
+    int PAD;                            // 0x0e0
+    int PAD;                            // 0x0e4
+    struct d11regs *regs;               // 0x0e8
     short PAD;                          // 0x0ec
     short radio_chanspec;               // 0x0ee
     short PAD;                          // 0x0f0

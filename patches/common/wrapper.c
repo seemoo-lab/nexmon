@@ -681,6 +681,7 @@ RETURN_DUMMY
 // found after seraching for scan_assoc_time
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x75790)
 AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x70754)
+AT(CHIP_VER_BCM43455c0, FW_VER_ALL, 0x7D46C)
 int
 wlc_scan_ioctl(void *wlc_scan_info, int cmd, void *arg, int len, void *wlcif)
 RETURN_DUMMY
