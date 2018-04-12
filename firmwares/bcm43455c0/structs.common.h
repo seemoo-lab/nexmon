@@ -2264,20 +2264,57 @@ struct d11regs {
             uint16  TxPlcpVhtSigB1;     /* 0xa4e */
             uint16  PAD[1];
 
-            uint16  MacHdrFromShmLen;   /* 0xa52 */
-            uint16  TxPlcpLen;      /* 0xa54 */
+            uint16  MacHdrFromShmLen;           /* 0xa52 */
+            uint16  TxPlcpLen;                  /* 0xa54 */
             uint16  PAD[1];
 
-            uint16  TxBFRptLen;         /* 0xa58 */
+            uint16  TxBFRptLen;                 /* 0xa58 */
             uint16  PAD[3];
 
-            uint16  TXBFCtl;        /* 0xa60 */
-            uint16  BfmRptOffset;       /* 0xa62 */
-            uint16  BfmRptLen;      /* 0xa64 */
-            uint16  TXBFBfeRptRdCnt;    /* 0xa66 */
-            uint16  PAD[76];        /* 0xa68 - 0xafe */
-            uint16  RXMapFifoSize;          /* 0xb00 */
-            uint16  PAD[511];       /* 0xb02 - 0xEFE */
+            uint16  TXBFCtl;                    /* 0xa60 */
+            uint16  BfmRptOffset;               /* 0xa62 */
+            uint16  BfmRptLen;                  /* 0xa64 */
+            uint16  TXBFBfeRptRdCnt;            /* 0xa66 */
+            uint16  PAD[20];                    /* 0xa68 - 0xa8e */
+            uint16  psm_reg_mux;                /* 0xa90 */
+            uint16  PAD[7];                     /* 0xa92 - 0xa9e */
+            uint16  psm_base[14];               /* 0xaa0 - 0xaba */
+            uint16  psm_base_x;                 /* 0xabc */
+            uint16  PAD[33];                    /* 0xabe - 0xafe */
+            uint16  RXMapFifoSize;              /* 0xb00 */
+            uint16  RXMapStatus;                /* 0xb02 */
+            uint16  MsduThreshold;              /* 0xb04 */
+            uint16  PAD[4];                     /* 0xb06 - 0xb0c */
+            uint16  BMCCore0TXAllMaxBuffers;    /* 0xb0e */
+            uint16  BMCCore1TXAllMaxBuffers;    /* 0xb10 */
+            uint16  BMCDynAllocStatus1;         /* 0xb12 */
+
+            /* Corerev >= 50, empty otherwise */
+            uint16  TXE_DMAMaxOutStBuffers;     /* 0xb14 */
+            uint16  TXE_SCS_MASK_L;             /* 0xb16 - SampleCollectStoreMaskLo */
+            uint16  TXE_SCS_MASK_H;             /* 0xb18 - SampleCollectStoreMaskHi */
+            uint16  TXE_SCM_MASK_L;             /* 0xb1a - SampleCollectMatchMaskLo */
+            uint16  TXE_SCM_MASK_H;             /* 0xb1c - SampleCollectMatchMaskHi */
+            uint16  TXE_SCM_VAL_L;              /* 0xb1e - SampleCollectMatchValueLo */
+            uint16  TXE_SCM_VAL_H;              /* 0xb20 - SampleCollectMatchValueHi */
+            uint16  TXE_SCT_MASK_L;             /* 0xb22 - SampleCollectTriggerMaskLo */
+            uint16  TXE_SCT_MASK_H;             /* 0xb24 - SampleCollectTriggerMaskHi */
+            uint16  TXE_SCT_VAL_L;              /* 0xb26 - SampleCollectTriggerValueLo */
+            uint16  TXE_SCT_VAL_H;              /* 0xb28 - SampleCollectTriggerValueHi */
+            uint16  TXE_SCX_MASK_L;             /* 0xb2a - SampleCollectTransMaskLo */
+            uint16  TXE_SCX_MASK_H;             /* 0xb2c - SampleCollectTransMaskHi */
+            /* End CoreRev >= 50 Block */
+
+            uint16  SampleCollectPlayCtrl;      /* 0xb2e */
+            uint16  Core0BMCAllocStatusTID7;    /* b30 */
+            uint16  Core1BMCAllocStatusTID7;    /* b32 */
+            uint16  PAD[10];                    /* 0xb34 - 0xb46 */
+            uint16  SysMStartAddrHi;            /* 0xb48 */
+            uint16  SysMStartAddrLo;            /* 0xb4a */
+            uint16  PAD[12];                    /* 0xb4c - 0xb62 */
+
+            /* AQM block for corerev >= 64, empty otherwise */
+            uint16  PAD[462];                   /* 0xbfe b64 - 0xEFE */
         } d11acregs;
     } u;
 } __attribute__((packed));
