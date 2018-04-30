@@ -31,7 +31,7 @@ ifeq ("$(wildcard $(NEXMON_ROOT)/DISABLE_STATISTICS)","")
 	@printf "\033[0;31m  COLLECTING STATISTICS\033[0m read $(NEXMON_ROOT)/STATISTICS.md for more information\n"
 	@make -s -f $(NEXMON_ROOT)/patches/common/statistics.mk
 else
-	@printf "\033[0;31m  STATISTICS DISABLED\033[0m to enable: delete $(NEXMON_ROOT)/DISABLE_STATATISTICS\n"
+	@printf "\033[0;31m  STATISTICS DISABLED\033[0m to enable: delete $(NEXMON_ROOT)/DISABLE_STATISTICS\n"
 endif
 
 
