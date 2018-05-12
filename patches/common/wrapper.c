@@ -1109,6 +1109,7 @@ AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_26_r640327, 0x9264)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x9350)
 AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x2b428)
 AT(CHIP_VER_BCM43455c0, FW_VER_ALL, 0x9C23C)
+AT(CHIP_VER_BCM43909b0, FW_VER_ALL, 0x648A8)
 int
 wlc_iovar_op(void *wlc, char *varname, void *params, int p_len, void *arg, int len, char set, void *wlcif)
 RETURN_DUMMY
