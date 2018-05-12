@@ -122,7 +122,8 @@ To be able to communicate with the firmware without root priviledges, we created
 * *Optional*: To make the RPI3 load the modified driver after reboot:
   * Find the path of the default driver at reboot: `modinfo brcmfmac` #the first line should be the full path
   * Backup the original driver: `mv "<PATH TO THE DRIVER>/brcmfmac.ko" "<PATH TO THE DRIVER>/brcmfmac.ko.orig"`
-  * Copy the modified driver: `cp /home/pi/nexmon/patches/bcm43430a1/7_45_41_46/nexmon/brcmfmac_kernel49/brcmfmac.ko "<PATH TO THE DRIVER>/"`
+  * Copy the modified driver (Kernel 4.9): `cp /home/pi/nexmon/patches/bcm43430a1/7_45_41_46/nexmon/brcmfmac_kernel49/brcmfmac.ko "<PATH TO THE DRIVER>/"`
+  * Copy the modified driver (Kernel 4.14): `cp /home/pi/nexmon/patches/bcm43430a1/7_45_41_46/nexmon/brcmfmac_4.14.y-nexmon/brcmfmac.ko "<PATH TO THE DRIVER>/"`
   * Probe all modules and generate new dependency: `depmod -a`
   * The new driver should be loaded by default after reboot: `reboot`
   * **Note:** It is possible to connect to an access point or run your own access point in parallel to the monitor mode interface on the `wlan0` interface.
