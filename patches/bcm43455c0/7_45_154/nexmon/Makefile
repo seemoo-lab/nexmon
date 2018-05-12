@@ -128,8 +128,9 @@ gen/dummy.idc: $(RAM_FILE)
 ###################################################################
 
 gen/ucode.asm: $(FW_PATH)/ucode.bin
-	$(NEXMON_ROOT)/buildtools/b43/disassembler/b43-dasm $< $@ --arch 15 --format raw-le32
-#	$(NEXMON_ROOT)/buildtools/b43/debug/b43-beautifier --asmfile $@ --defs $(NEXMON_ROOT)/buildtools/b43/debug/include > tmp && mv tmp $@
+	@printf "\033[0;31m  DISASSEMBLING UCODE\033[0m %s => %s\n" $< $@
+	$(Q)$(NEXMON_ROOT)/buildtools/b43/disassembler/b43-dasm $< $@ --arch 15 --format raw-le32
+	$(Q)$(NEXMON_ROOT)/buildtools/b43/debug/b43-beautifier --asmfile $@ --defs $(NEXMON_ROOT)/buildtools/b43/debug/include > tmp && mv tmp $@
 
 ifneq ($(wildcard src/ucode.asm), )
 gen/ucode.bin: src/ucode.asm

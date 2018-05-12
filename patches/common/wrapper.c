@@ -401,6 +401,7 @@ strlen(char *str)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x1283C)
+AT(CHIP_VER_BCM43909b0, FW_VER_ALL, 0x279C)
 int
 strncmp(char *str1, char *str2, unsigned int num)
 RETURN_DUMMY
