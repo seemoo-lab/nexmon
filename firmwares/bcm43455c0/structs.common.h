@@ -150,8 +150,6 @@ struct wl_rxsts {
     uint16      datarate;       /* rate in 500kbps (0 for HT frame) */
     uint8       mcs;            /* MCS for HT frame */
     uint8       htflags;        /* HT modulation flags */
-    uint8       PAD;
-    uint8       PAD;
     uint32      antenna;        /* antenna pkts received on */
     uint32      pktlength;      /* pkt length minus bcm phy hdr */
     uint32      mactime;        /* time stamp from mac, count per 1us */
