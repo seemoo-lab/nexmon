@@ -29,6 +29,7 @@ int fp_config_end = 0;
 int ram_start = 0x180000;
 int rom_start = 0x0;
 char bcm43596 = 0;
+char bcm4366 = 0;
 
 const char *argp_program_version = "fpext";
 const char *argp_program_bug_address = "<mschulz@seemoo.tu-darmstadt.de>";
@@ -44,6 +45,7 @@ static struct argp_option options[] = {
 	{"romfileout", 'o', "FILE", 0, "Save the patched ROM file as FILE"},
 	{"romstart", 't', "ADDR", 0, "ROM start address"},
 	{"bcm43596", 'x', 0, 0, "Select whether target chip has a flash patching unit similar to the bcm43596"},
+	{"bcm4366", 'y', 0, 0, "Select whether target chip has a flash patching unit similar to the bcm4366"},
 	{ 0 }
 };
 
@@ -82,6 +84,10 @@ parse_opt(int key, char *arg, struct argp_state *state)
 
 		case 'x':
 			bcm43596 = 1;
+			break;
+
+		case 'y':
+			bcm4366 = 1;
 			break;
 		
 		default:
@@ -200,6 +206,34 @@ analyse_ram_bcm43596()
 	}
 }
 
+void
+analyse_ram_bcm4366()
+{
+	darm_t d;
+	darm_t *dd = &d;
+	unsigned short low, high;
+	
+	struct fp_config_bcm43596 *fpc = (struct fp_config_bcm43596 *) (ram_array + fp_config_base - ram_start);
+
+	darm_init(&d);
+
+	for (int i = 0; i < (fp_config_end - fp_config_base) / sizeof(struct fp_config_bcm43596); i++) {
+		get_words(fpc[i].data_ptr, &low, &high);
+		darm_disasm(dd, low, high, 1);
+
+		printf("__attribute__((at(0x%08x, \"flashpatch\")))\n", fpc[i].target_addr);
+		printf("unsigned int flash_patch_%d[4] = {0x%08x, 0x%08x, 0x%08x, 0x%08x};\n\n", i, 
+			*((unsigned int *) (ram_array + fpc[i].data_ptr - ram_start)), 
+			*((unsigned int *) (ram_array + fpc[i].data_ptr + 4 - ram_start)), 
+			*((unsigned int *) (ram_array + fpc[i].data_ptr + 8 - ram_start)), 
+			*((unsigned int *) (ram_array + fpc[i].data_ptr + 12 - ram_start)));
+
+		if (rom_array != NULL && (fpc[i].target_addr - rom_start) < rom_len) {
+			memcpy(&rom_array[fpc[i].target_addr - rom_start], &ram_array[fpc[i].data_ptr - ram_start], 16);
+		}
+	}
+}
+
 int
 main(int argc, char **argv)
 {
@@ -219,6 +253,8 @@ main(int argc, char **argv)
 
 	if (bcm43596 == 1)
 		analyse_ram_bcm43596();
+	if (bcm4366 == 1)
+		analyse_ram_bcm4366();
 	else
 		analyse_ram();
 
