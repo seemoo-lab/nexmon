@@ -98,6 +98,7 @@ To be able to communicate with the firmware without root priviledges, we created
 * Make sure the following commands are executed as root: `sudo su`
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
 * Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk qpdf bison flex make`
+* Reboot
 * Clone our repository: `git clone https://github.com/seemoo-lab/nexmon.git`
 * Go into the root directory of our repository: `cd nexmon`
 * Check if `/usr/lib/arm-linux-gnueabihf/libisl.so.10` exists, if not, compile it from source:
