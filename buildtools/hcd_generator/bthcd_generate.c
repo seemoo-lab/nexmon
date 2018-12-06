@@ -1,5 +1,3 @@
-// Originally developed by Dennis Mantz (https://github.com/demantz)
-
 #define _XOPEN_SOURCE 700
 
 #include <stdio.h>
