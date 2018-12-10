@@ -166,6 +166,7 @@ analyse_ram()
 		get_words(fpc[i].data_ptr, &low, &high);
 		darm_disasm(dd, low, high, 1);
 
+		printf("__attribute__((weak))\n");
 		printf("__attribute__((at(0x%08x, \"flashpatch\")))\n", fpc[i].target_addr);
 		printf("BPatch(flash_patch_%d, 0x%08x);\n\n", i, fpc[i].target_addr + dd->imm + 4);
 
@@ -195,6 +196,7 @@ analyse_ram_bcm43596()
 		get_words(fpc[i].data_ptr, &low, &high);
 		darm_disasm(dd, low, high, 1);
 
+		printf("__attribute__((weak))\n");
 		printf("__attribute__((at(0x%08x, \"flashpatch\")))\n", fpc[i].target_addr);
 		printf("unsigned int flash_patch_%d[2] = {0x%08x, 0x%08x};\n\n", i, 
 			*((unsigned int *) (ram_array + fpc[i].data_ptr - ram_start)), 
@@ -221,6 +223,7 @@ analyse_ram_bcm4366()
 		get_words(fpc[i].data_ptr, &low, &high);
 		darm_disasm(dd, low, high, 1);
 
+		printf("__attribute__((weak))\n");
 		printf("__attribute__((at(0x%08x, \"flashpatch\")))\n", fpc[i].target_addr);
 		printf("unsigned int flash_patch_%d[4] = {0x%08x, 0x%08x, 0x%08x, 0x%08x};\n\n", i, 
 			*((unsigned int *) (ram_array + fpc[i].data_ptr - ram_start)), 
