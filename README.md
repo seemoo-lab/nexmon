@@ -64,10 +64,23 @@ qca9500<sup>4</sup>      | 4-1-0_55             | TP-Link Talon AD7200      | Cu
 * Install some dependencies: `sudo apt-get install git gawk qpdf adb flex bison`
 * **Only necessary for x86_64 systems**, install i386 libs: 
 
+  On Debian-/Ubuntu-based systems:
   ```
   sudo dpkg --add-architecture i386
   sudo apt-get update
   sudo apt-get install libc6:i386 libncurses5:i386 libstdc++6:i386
+  ```
+  On Arch-based systems:
+  ```
+  # Enable multilib in the 
+  # /etc/pacman.conf
+  # by uncommenting the following two lines:
+  # [multilib]
+  # Include = /etc/pacman.d/mirrorlist
+  sudo pacman -Syu
+  # lib32-gcc-libs contains lib32-libstdc++6
+  # vim contains xxd
+  sudo pacman -S lib32-glibc lib32-ncurses lib32-gcc-libs vim
   ```
 * Clone our repository: `git clone https://github.com/seemoo-lab/nexmon.git`
 * In the root directory of the repository: `cd nexmon`
