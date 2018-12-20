@@ -5,3 +5,8 @@ log
 gen
 *.o
 *.elf
+
+// Clion
+.idea
+out/
+cmake-build-*/

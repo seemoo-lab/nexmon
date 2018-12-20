@@ -1,0 +1,41 @@
+all: bthcd bthcd_rompatches
+
+bthcd : bthcd.o darm/armv7.o darm/armv7-tbl.o darm/darm.o darm/darm-tbl.o darm/thumb2.o darm/thumb2-decoder.o darm/thumb2-tbl.o darm/thumb.o darm/thumb-tbl.o
+ifeq ($(HOSTUNAME),Darwin)
+	gcc-mp-5 -L/opt/local/lib -largp -o $@ $^
+else
+	gcc -o $@ $^
+endif
+
+bthcd_rompatches : bthcd_rompatches.o darm/armv7.o darm/armv7-tbl.o darm/darm.o darm/darm-tbl.o darm/thumb2.o darm/thumb2-decoder.o darm/thumb2-tbl.o darm/thumb.o darm/thumb-tbl.o
+ifeq ($(HOSTUNAME),Darwin)
+	gcc-mp-5 -L/opt/local/lib -largp -o $@ $^
+else
+	gcc -o $@ $^
+endif
+
+bthcd.o : bthcd.c
+ifeq ($(HOSTUNAME),Darwin)
+	gcc-mp-5 -std=c99 -Wall -Wno-unused-result -O0 -D_BSD_SOURCE -o $@ -c $<
+else
+	gcc -std=c99 -Wall -Wno-unused-result -O0 -D_BSD_SOURCE -o $@ -c $<
+endif
+
+bthcd_rompatches.o : bthcd_rompatches.c
+ifeq ($(HOSTUNAME),Darwin)
+	gcc-mp-5 -std=c99 -Wall -Wno-unused-result -O0 -D_BSD_SOURCE -o $@ -c $<
+else
+	gcc -std=c99 -Wall -Wno-unused-result -O0 -D_BSD_SOURCE -o $@ -c $<
+endif
+
+darm/%.o: darm/%.c
+ifeq ($(HOSTUNAME),Darwin)
+	gcc-mp-5 -std=c99 -Wall -O2 -Wextra -Wno-missing-field-initializers -o $@ -c $^
+else
+	gcc -std=c99 -Wall -O2 -Wextra -Wno-missing-field-initializers -o $@ -c $^
+endif
+
+clean: FORCE
+	rm -f *.o darm/*.o fpext
+
+FORCE:
