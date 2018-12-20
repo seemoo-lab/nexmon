@@ -23,10 +23,10 @@ FILE* hcdfile = NULL;
 char *out_file_name = NULL;
 char *indir_name = NULL;
 
-const char *argp_program_version = "fpext";
+const char *argp_program_version = "bthcd_generate";
 const char *argp_program_bug_address = "<mschulz@seemoo.tu-darmstadt.de>";
 
-static char doc[] = "fpext -- a program to extract flash patches form a firmware rom.";
+static char doc[] = "bthcd_generate -- Bluetooth HCD Generator";
 
 static struct argp_option options[] = {
 	{"hcdfile", 'o', "FILE", 0, "Output HCD file name"},

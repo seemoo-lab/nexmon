@@ -37,6 +37,11 @@ export PLATFORMUNAME=$(uname -m)
 
 export NEXMON_ROOT=$(pwd)
 echo "[*] Exported NEXMON_ROOT=$NEXMON_ROOT"
+alias cd-nex='cd $NEXMON_ROOT'
+echo "[*] Created alias to quickly cd to $NEXMON_ROOT: cd-nex"
+export NEXMON_FW_PATH=$(pwd)/firmwares
+echo "[*] Exported NEXMON_FW_PATH=$NEXMON_FW_PATH"
+
 
 
 if [ $HOSTUNAME = "Darwin" ]; 
