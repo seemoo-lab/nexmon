@@ -9,9 +9,9 @@ endif
 
 bthcd_generate.o : bthcd_generate.c
 ifeq ($(HOSTUNAME),Darwin)
-	gcc-mp-5 -std=c99 -Wall -Wno-unused-result -O0 -D_BSD_SOURCE -o $@ -c $<
+	gcc-mp-5 -I${NEXMON_ROOT}/patches/bluetooth/include -std=c99 -Wall -Wno-unused-result -O0 -D_BSD_SOURCE -o $@ -c $<
 else
-	gcc -std=c99 -Wall -Wno-unused-result -O0 -D_BSD_SOURCE -o $@ -c $<
+	gcc -std=c99 -I${NEXMON_ROOT}/patches/bluetooth/include -Wall -Wno-unused-result -O0 -D_BSD_SOURCE -o $@ -c $<
 endif
 
 

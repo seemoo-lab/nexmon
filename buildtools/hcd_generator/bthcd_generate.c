@@ -7,16 +7,7 @@
 #include <argp.h>
 #include <string.h>
 #include <dirent.h>
-
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <unistd.h>
-
-#define AS_STR2(TEXT) #TEXT
-#define AS_STR(TEXT) AS_STR2(TEXT)
+#include <hci.h>
 
 FILE* hcdfile = NULL;
 
@@ -24,7 +15,7 @@ char *out_file_name = NULL;
 char *indir_name = NULL;
 
 const char *argp_program_version = "bthcd_generate";
-const char *argp_program_bug_address = "<mschulz@seemoo.tu-darmstadt.de>";
+const char *argp_program_bug_address = "<https://github.com/seemoo-lab/nexmon>";
 
 static char doc[] = "bthcd_generate -- Bluetooth HCD Generator";
 
@@ -92,10 +83,16 @@ process_patch_section(char* section_file_name, uint32_t addr)
 		exit(EXIT_FAILURE);
 	}
 
+	// We're only able to write a maximum of 251 bytes payload using the WRITE_RAM
+	// HCI Command. Therefore we need to check wether the section is bigger than 
+	// 251 bytes. It this is the case we need to split the section into multiple 
+	// WRITE_RAM commands.
 	while(write_index < section_len) {
-		len = section_len-write_index <= 251 ? section_len-write_index : 251;
+		len = (section_len - write_index) <= 251 ? (asection_len - write_index) : 251;
 		hci_len = len + sizeof(addr);
-		fwrite("\x4c\xfc", 2, 1, hcdfile);
+		// HCI-Command: WRITE_RAM (0xFC_4C)
+		// WRITE_RAM <addr> <data>
+		fwrite(WRITE_RAM_STR, 2, 1, hcdfile);
 		fwrite(&hci_len, sizeof(hci_len), 1, hcdfile);
 		fwrite(&addr, sizeof(addr), 1, hcdfile);
 		fwrite(&section_array[write_index], len, 1, hcdfile);
@@ -147,8 +144,10 @@ main(int argc, char **argv)
 		free(file_list[i]);
 	}
 	free(file_list);
-
-	fwrite("\x4e\xfc\x04\xff\xff\xff\xff", 7, 1, hcdfile);
+	// HCD Command: LAUNCH_RAM (0xFC_4E)
+	// LAUNCH_RAM 0x04 0xff_ff_ff_ff 
+	// To issue the bluetooth-chip to reboot into the normal bluetooth mode
+	fwrite(LAUNCH_RAM_STR_NEXUS_5, 7, 1, hcdfile);
 	fclose(hcdfile);
 
 	exit(EXIT_SUCCESS);

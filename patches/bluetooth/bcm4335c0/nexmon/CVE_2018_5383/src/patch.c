@@ -50,8 +50,8 @@ void pk_send_hook(void){
 
 }
 
-__attribute__((at(PK_SEND_HOOK_ADDRESS, "", CHIP_VER_BCM4335C0_BT, FW_VER_1_BT)))
-BLPatch(pk_send_hook, pk_send_hook + 1)
+//__attribute__((at(PK_SEND_HOOK_ADDRESS, "", CHIP_VER_BCM4335C0_BT, FW_VER_1_BT)))
+//BLPatch(pk_send_hook, pk_send_hook + 1)
 
 
 __attribute__((at(HOOKS_LOCATION + 100, "", CHIP_VER_BCM4335C0_BT, FW_VER_1_BT)))
@@ -71,6 +71,6 @@ void gen_priv_key_hook(void){
 	   "pop  {r4,pc}\n\t");
 }
 
-__attribute__((at(GEN_PRIV_KEY_ADDRESS, "", CHIP_VER_BCM4335C0_BT, FW_VER_1_BT)))
-BLPatch(gen_priv_key_hook, gen_priv_key_hook + 1)
+//__attribute__((at(GEN_PRIV_KEY_ADDRESS, "", CHIP_VER_BCM4335C0_BT, FW_VER_1_BT)))
+//BLPatch(gen_priv_key_hook, gen_priv_key_hook + 1)
 

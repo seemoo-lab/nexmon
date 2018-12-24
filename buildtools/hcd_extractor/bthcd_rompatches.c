@@ -15,6 +15,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+// C preprocessor stringizing:
+// https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html
 #define AS_STR2(TEXT) #TEXT
 #define AS_STR(TEXT) AS_STR2(TEXT)
 
@@ -90,6 +92,7 @@ analyze_patch_file(void)
 		uint8_t type = *(uint8_t *) (void *) &patch_array[i];
 		uint16_t len = *(uint16_t *) (void *) &patch_array[i+1];
 
+		// 0xFE marks the end of the TLV-list
 		if ( type == 0xFE )
 			counter = 999;
 
