@@ -6,14 +6,9 @@
 #include <stdbool.h>
 #include <argp.h>
 #include <string.h>
-#include "darm/darm.h"
+#include <hci.h>
 
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/socket.h>
-#include <unistd.h>
 
 // C preprocessor stringizing:
 // https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html
@@ -26,7 +21,7 @@ long patch_len = 0;
 char *patch_file_name = AS_STR(RAM_FILE_NAME);
 char *outdir_name = 0;
 static const char *slots_file_name = "used_slots.txt";
-char slots[255];
+struct patchram_tlv_data slots[255];
 int last_slot = 0;
 
 const char *argp_program_version = "bthcd_rompatch_extractor";
@@ -101,7 +96,10 @@ analyze_patch_file(void)
 		uint8_t slot = -1;
 		if(type == 0x08) {
 			slot = *(uint8_t *) (void *) &patch_array[i+3];
-			slots[last_slot++] = slot;	
+			slots[last_slot].slot_number = slot;
+			slots[last_slot].target_address = *(uint32_t *)(void *)&patch_array[i+4];
+			slots[last_slot].new_data = *(uint32_t *)(void *)&patch_array[i+6];
+			last_slot += 1;
 		}
 		snprintf(patch_out_file_name, sizeof(patch_out_file_name), "%s/rompatch_nr%04d_0x%02X.bin", outdir_name, counter*10, type);
 		patch_out_file = fopen(patch_out_file_name,"wb");
@@ -130,7 +128,10 @@ write_used_slots_file(void)
 	printf("Writing used rompatch slots to %s", path);
 	slot_out_file = fopen(path, "w");
 	for(int i = 0; i < last_slot; i++) {
-		fprintf(slot_out_file, "%d\n", slots[i]); 
+		uint8_t  slot_number = slots[i].slot_number;
+		uint32_t target_address = slots[i].target_address;
+		uint32_t new_data = slots[i].new_data;
+		fprintf(slot_out_file, "%d\t0x%08X\t0x%08X\n", slot_number, target_address, new_data); 
 	}
 	fclose(slot_out_file);
 }

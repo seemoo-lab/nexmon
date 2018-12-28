@@ -1,31 +1,31 @@
 all: bthcd bthcd_rompatches
 
-bthcd : bthcd.o darm/armv7.o darm/armv7-tbl.o darm/darm.o darm/darm-tbl.o darm/thumb2.o darm/thumb2-decoder.o darm/thumb2-tbl.o darm/thumb.o darm/thumb-tbl.o
+bthcd : bthcd.o 
 ifeq ($(HOSTUNAME),Darwin)
-	gcc-mp-5 -L/opt/local/lib -largp -o $@ $^
+	gcc-mp-5 -I${NEXMON_ROOT}/patches/bluetooth/include -L/opt/local/lib -largp -o $@ $^
 else
-	gcc -o $@ $^
+	gcc -I${NEXMON_ROOT}/patches/bluetooth/include -o $@ $^
 endif
 
-bthcd_rompatches : bthcd_rompatches.o darm/armv7.o darm/armv7-tbl.o darm/darm.o darm/darm-tbl.o darm/thumb2.o darm/thumb2-decoder.o darm/thumb2-tbl.o darm/thumb.o darm/thumb-tbl.o
+bthcd_rompatches : bthcd_rompatches.o 
 ifeq ($(HOSTUNAME),Darwin)
-	gcc-mp-5 -L/opt/local/lib -largp -o $@ $^
+	gcc-mp-5 -I${NEXMON_ROOT}/patches/bluetooth/include -L/opt/local/lib -largp -o $@ $^
 else
-	gcc -o $@ $^
+	gcc -I${NEXMON_ROOT}/patches/bluetooth/include -o $@ $^
 endif
 
 bthcd.o : bthcd.c
 ifeq ($(HOSTUNAME),Darwin)
-	gcc-mp-5 -std=c99 -Wall -Wno-unused-result -O0 -D_BSD_SOURCE -o $@ -c $<
+	gcc-mp-5 -std=c99 -I${NEXMON_ROOT}/patches/bluetooth/include -Wall -Wno-unused-result -O0 -D_BSD_SOURCE -o $@ -c $<
 else
-	gcc -std=c99 -Wall -Wno-unused-result -O0 -D_BSD_SOURCE -o $@ -c $<
+	gcc -std=c99 -I${NEXMON_ROOT}/patches/bluetooth/include -Wall -Wno-unused-result -O0 -D_BSD_SOURCE -o $@ -c $<
 endif
 
 bthcd_rompatches.o : bthcd_rompatches.c
 ifeq ($(HOSTUNAME),Darwin)
-	gcc-mp-5 -std=c99 -Wall -Wno-unused-result -O0 -D_BSD_SOURCE -o $@ -c $<
+	gcc-mp-5 -I${NEXMON_ROOT}/patches/bluetooth/include -std=c99 -Wall -Wno-unused-result -O0 -D_BSD_SOURCE -o $@ -c $<
 else
-	gcc -std=c99 -Wall -Wno-unused-result -O0 -D_BSD_SOURCE -o $@ -c $<
+	gcc -std=c99 -I${NEXMON_ROOT}/patches/bluetooth/include -Wall -Wno-unused-result -O0 -D_BSD_SOURCE -o $@ -c $<
 endif
 
 darm/%.o: darm/%.c
@@ -36,6 +36,6 @@ else
 endif
 
 clean: FORCE
-	rm -f *.o darm/*.o fpext
+	rm -f *.o darm/*.o bthcd bthcd_rompatches
 
 FORCE:

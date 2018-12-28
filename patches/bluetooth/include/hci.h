@@ -67,6 +67,19 @@
 // Indicates the end of the patchram list
 #define PATCHRAM_END_OF_LIST 0xFE
 
+struct tlv {
+    uint8_t  tlv_type;
+    uint16_t length;
+    uint8_t * data;
+};
+
+struct patchram_tlv_data {
+    uint8_t  slot_number;
+    uint32_t target_address;
+    uint32_t new_data;
+    uint16_t null_bytes;
+    uint32_t unknown_bytes;
+};
 
 
 #endif
