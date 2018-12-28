@@ -2,3 +2,9 @@
 *.o
 flash_patch_extractor/fpext
 ucode_extractor/ucodeext
+// Bluetooth HCD File extractor binaries
+hcd_extractor/bthcd
+hcd_extractor/bthcd_rompatches
+// Bluetooth HCD File Generator binaries
+hcd_generator/bthcd_generate
+
