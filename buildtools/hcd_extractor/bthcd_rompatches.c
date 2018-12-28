@@ -25,14 +25,17 @@ long patch_len = 0;
 
 char *patch_file_name = AS_STR(RAM_FILE_NAME);
 char *outdir_name = 0;
+static const char *slots_file_name = "used_slots.txt";
+char slots[255];
+int last_slot = 0;
 
-const char *argp_program_version = "fpext";
-const char *argp_program_bug_address = "<mschulz@seemoo.tu-darmstadt.de>";
+const char *argp_program_version = "bthcd_rompatch_extractor";
+const char *argp_program_bug_address = "https://github.com/seemoo-lab/nexmon";
 
-static char doc[] = "fpext -- a program to extract flash patches form a firmware rom.";
+static char doc[] = "bthcd_rompatch_extractor -- Tool to extract rompatches from a given write_ram bin file.";
 
 static struct argp_option options[] = {
-	{"patchblob", 'p', "FILE", 0, "Read firmware patch file from FILE"},
+	{"patchblob", 'p', "FILE", 0, "Read write_ram patch file from FILE"},
 	{"outdir", 'o', "FILE", 0, "Output directory for the extracted patches"},
 	{ 0 }
 };
@@ -95,17 +98,41 @@ analyze_patch_file(void)
 		// 0xFE marks the end of the TLV-list
 		if ( type == 0xFE )
 			counter = 999;
-
+		uint8_t slot = -1;
+		if(type == 0x08) {
+			slot = *(uint8_t *) (void *) &patch_array[i+3];
+			slots[last_slot++] = slot;	
+		}
 		snprintf(patch_out_file_name, sizeof(patch_out_file_name), "%s/rompatch_nr%04d_0x%02X.bin", outdir_name, counter*10, type);
 		patch_out_file = fopen(patch_out_file_name,"wb");
 
-		if (patch_out_file)
+		if (patch_out_file) {
 			fwrite(&patch_array[i], len + sizeof(len) + sizeof(type), 1, patch_out_file);
+			fclose(patch_out_file);
+		} else {
+			fprintf(stderr, "Could not open file: %s\n\t", patch_out_file_name);
+			perror(NULL);
+		}
 
-		printf("type %04x len %d\n", type, len);
+		printf("type %04x len %d slot %d\n", type, len, slot);
 		i += sizeof(type) + sizeof(len) + len;
 		counter++;
 	}
+}
+
+void 
+write_used_slots_file(void)
+{
+	int path_length = strlen(outdir_name) + strlen(slots_file_name) + 1 + 1;
+	char* path = malloc(path_length);
+	FILE *slot_out_file = NULL;
+	snprintf(path, path_length, "%s/%s", outdir_name, slots_file_name);
+	printf("Writing used rompatch slots to %s", path);
+	slot_out_file = fopen(path, "w");
+	for(int i = 0; i < last_slot; i++) {
+		fprintf(slot_out_file, "%d\n", slots[i]); 
+	}
+	fclose(slot_out_file);
 }
 
 int
@@ -132,6 +159,7 @@ main(int argc, char **argv)
 	}
 
 	analyze_patch_file();
+	write_used_slots_file();
 
 	if (patch_array) free(patch_array);
 

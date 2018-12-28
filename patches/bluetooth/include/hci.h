@@ -36,6 +36,19 @@
 
 // Patchram:
 
+// Patchram area constants:
+// These are device specific
+
+//
+#define PATCHRAM_ENABLED_BITMAP_ADDRESS_NEXUS_5 0x310204
+//
+#define PATCHRAM_TARGET_TABLE_ADDRESS_NEXUS_5 0x310000
+// Address of the Patchram ram area on the nexus 5
+#define PATCHRAM_VALUE_TABLE_ADDRESS_NEXUS_5 0xd0000
+// Amount of patch slots
+#define PATCHRAM_NUMBER_OF_SLOTS_NEXUS_5 128
+
+
 // Issues a reboot and then continues to process the list
 #define PATCHRAM_ISSUE_REBOOT 0x02
 
@@ -53,5 +66,7 @@
 
 // Indicates the end of the patchram list
 #define PATCHRAM_END_OF_LIST 0xFE
+
+
 
 #endif

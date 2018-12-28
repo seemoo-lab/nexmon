@@ -88,11 +88,11 @@ process_patch_section(char* section_file_name, uint32_t addr)
 	// 251 bytes. It this is the case we need to split the section into multiple 
 	// WRITE_RAM commands.
 	while(write_index < section_len) {
-		len = (section_len - write_index) <= 251 ? (asection_len - write_index) : 251;
+		len = (section_len - write_index) <= 251 ? (section_len - write_index) : 251;
 		hci_len = len + sizeof(addr);
 		// HCI-Command: WRITE_RAM (0xFC_4C)
 		// WRITE_RAM <addr> <data>
-		fwrite(WRITE_RAM_STR, 2, 1, hcdfile);
+		fwrite(HCI_WRITE_RAM_STR, 2, 1, hcdfile);
 		fwrite(&hci_len, sizeof(hci_len), 1, hcdfile);
 		fwrite(&addr, sizeof(addr), 1, hcdfile);
 		fwrite(&section_array[write_index], len, 1, hcdfile);
@@ -147,7 +147,7 @@ main(int argc, char **argv)
 	// HCD Command: LAUNCH_RAM (0xFC_4E)
 	// LAUNCH_RAM 0x04 0xff_ff_ff_ff 
 	// To issue the bluetooth-chip to reboot into the normal bluetooth mode
-	fwrite(LAUNCH_RAM_STR_NEXUS_5, 7, 1, hcdfile);
+	fwrite(HCI_LAUNCH_RAM_STR_NEXUS_5, 7, 1, hcdfile);
 	fclose(hcdfile);
 
 	exit(EXIT_SUCCESS);

@@ -25,8 +25,8 @@ char *patch_file_name = AS_STR(RAM_FILE_NAME);
 char *firmware_file_name = 0;
 char *outdir_name = 0;
 
-const char *argp_program_version = "fpext";
-const char *argp_program_bug_address = "<mschulz@seemoo.tu-darmstadt.de>";
+const char *argp_program_version = "bthcd";
+const char *argp_program_bug_address = "https://github.com/seemoo-lab/nexmon";
 
 static char doc[] = "fpext -- a program to extract flash patches form a firmware rom.";
 
