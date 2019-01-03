@@ -24,6 +24,8 @@ CFLAGS= \
 	-DTEMPLATERAMSTART1_PTR=$(TEMPLATERAMSTART1_PTR) \
 	-DTEMPLATERAMSTART2_PTR=$(TEMPLATERAMSTART2_PTR) \
 	-DVASIPSTART_PTR=$(VASIPSTART_PTR) \
+	-DFP_CONFIG_ORIGBASE=$(FP_CONFIG_ORIGBASE) \
+	-DFP_CONFIG_ORIGEND=$(FP_CONFIG_ORIGEND) \
 	-DPATCHSTART=$(PATCHSTART) \
 	-DUCODESIZE=$(UCODESIZE) \
 	-DGIT_VERSION=\"$(GIT_VERSION)\" \
@@ -91,7 +93,6 @@ gen/flashpatches.mk: gen/nexmon2.pre $(OBJS) $(FW_PATH)/definitions.mk
 		-v fp_config_base_ptr_1=$(FP_CONFIG_BASE_PTR_1) \
 		-v fp_config_end_ptr_1=$(FP_CONFIG_END_PTR_1) \
 		-v fp_config_base_ptr_2=$(FP_CONFIG_BASE_PTR_2) \
-		-v fp_config_base_ptr_2a=$(FP_CONFIG_BASE_PTR_2A) \
 		-v fp_config_end_ptr_2=$(FP_CONFIG_END_PTR_2) \
 		-v ramstart=$(RAMSTART) \
 		-v out_file=$(RAM_FILE) \
