@@ -252,7 +252,7 @@ typedef struct hndrte_dev {
     char                    name[HNDRTE_DEV_NAME_MAX];
     uint32                  devid;
     uint32                  flags;      /* RTEDEVFLAG_XXXX */
-    struct hndrte_devfuncs  *ops;
+    struct hndrte_devfuncs  *funcs;
     void                    *softc;     /* Software context */
     struct hndrte_dev       *next;
     struct hndrte_dev       *chained;

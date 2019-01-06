@@ -54,7 +54,7 @@ wlc_recv_hook(struct wlc_info *wlc, struct sk_buff *p) {
 
     if (p_new != 0) {
         memcpy(p_new->data + 42, p->data, p->len - 42);
-        wl->dev->chained->ops->xmit(wl->dev, wl->dev->chained, p_new);
+        wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p_new);
     }
 
     wlc_recv(wlc, p);
@@ -63,10 +63,13 @@ wlc_recv_hook(struct wlc_info *wlc, struct sk_buff *p) {
 __attribute__((at(0x1BB6FE, "", CHIP_VER_BCM4361b0, FW_VER_13_38_55_1_sta)))
 BLPatch(wlc_recv_hook, wlc_recv_hook);
 
-__attribute__((at(0x215E5C, "", CHIP_VER_BCM4361b0, FW_VER_13_38_55_1_sta)))
-__attribute__((naked))
-void
-monitor_mode_activation(void)
-{
-    asm("mov r9, 0x1\n");
-}
+__attribute__((at(0x4B230, "flashpatch", CHIP_VER_BCM4361b0, FW_VER_13_38_55_1_sta)))
+uint8_t ioctl107[16] = {
+    0x01, 0xF0, 0xED, 0xB8,
+    0x23, 0x68, 0x93, 0xF8,
+    0x7E, 0x31, 0x00, 0x2B,
+    0x00, 0x00, 0x00, 0x00
+};
+
+//__attribute__((at(0x4B254, "", CHIP_VER_BCM4361b0, FW_VER_13_38_55_1_sta)))
+//GenericPatch4(ioctl108, 0);
