@@ -46,15 +46,21 @@
 
 extern void prepend_ethernet_ipv4_udp_header(struct sk_buff *p);
 
+#define FRAMEOFFSET 56
+
 void
 wlc_recv_hook(struct wlc_info *wlc, struct sk_buff *p) {
     struct osl_info *osh = wlc->osh;
-    struct sk_buff *p_new = pkt_buf_get_skb(osh, p->len - 42);
-    struct wl_info *wl = wlc->wl;
+    uint32_t monitor = *(uint32_t *)(wlc + 388);
 
-    if (p_new != 0) {
-        memcpy(p_new->data + 42, p->data, p->len - 42);
-        wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p_new);
+    if (monitor > 0) {
+        struct sk_buff *p_new = pkt_buf_get_skb(osh, p->len - FRAMEOFFSET);
+        struct wl_info *wl = wlc->wl;
+
+        if (p_new != 0) {
+            memcpy(p_new->data, p->data + FRAMEOFFSET, p->len - FRAMEOFFSET);
+            wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p_new);
+        }
     }
 
     wlc_recv(wlc, p);
