@@ -62,6 +62,7 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
             break;
 
         case 607:
+            *(uint8_t *)(*(uint32_t *)wlc + 382) = 1;
             ret = wlc_ioctl(wlc, 107, arg, len, wlc_if);
             break;
 
