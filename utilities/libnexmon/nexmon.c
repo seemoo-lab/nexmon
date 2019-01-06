@@ -52,6 +52,7 @@
 #include <errno.h>
 #include <net/if.h>
 #include <nexioctls.h>
+#include <string.h>
 
 #define WLC_GET_MONITOR                 107
 #define WLC_SET_MONITOR                 108
