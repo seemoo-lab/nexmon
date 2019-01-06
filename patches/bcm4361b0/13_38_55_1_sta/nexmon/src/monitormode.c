@@ -53,7 +53,8 @@ wlc_recv_hook(struct wlc_info *wlc, struct sk_buff *p) {
 
     if (p_new != 0) {
         memcpy(p_new->data, p->data, p->len);
-        wl_sendup(wlc->wl, 0, p_new);
+//        wl_sendup(wlc->wl, 0, p_new);
+        wl->dev->chained->ops->xmit(wl->dev, wl->dev->chained, p_new);
     }
 
     wlc_recv(wlc, p);

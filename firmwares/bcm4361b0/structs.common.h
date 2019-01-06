@@ -249,14 +249,16 @@ typedef struct sk_buff {
 #define HNDRTE_DEV_NAME_MAX 16
 
 typedef struct hndrte_dev {
-    char                        name[HNDRTE_DEV_NAME_MAX];
-    struct hndrte_devfuncs      *funcs;
-    uint32                      devid;
-    void                        *softc;     /* Software context */
-    uint32                      flags;      /* RTEDEVFLAG_XXXX */
-    struct hndrte_dev           *next;
-    struct hndrte_dev           *chained;
-    void                        *pdev;
+    char                    name[HNDRTE_DEV_NAME_MAX];
+    uint32                  devid;
+    uint32                  flags;      /* RTEDEVFLAG_XXXX */
+    struct hndrte_devfuncs  *ops;
+    void                    *softc;     /* Software context */
+    struct hndrte_dev       *next;
+    struct hndrte_dev       *chained;
+    void                    *stats;     /* May be NULL */
+    void                    *commondata;
+    void                    *pdev;
 } hndrte_dev;
 
 struct hndrte_devfuncs {
