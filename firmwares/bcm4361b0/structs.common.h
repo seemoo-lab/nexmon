@@ -764,7 +764,7 @@ struct wlc_info {
     int PAD;                            /* 0x178 */
     int PAD;                            /* 0x17C */
     int PAD;                            /* 0x180 */
-    int PAD;                            /* 0x184 */
+    unsigned int monitor;               /* 0x184 bcm4361 verified */
     int PAD;                            /* 0x188 */
     int PAD;                            /* 0x18C */
     int PAD;                            /* 0x190 */
@@ -800,7 +800,7 @@ struct wlc_info {
     int PAD;                            /* 0x200 */
     int PAD;                            /* 0x204 */
     int PAD;                            /* 0x208 */
-    int monitor;                        /* 0x20C */
+    int PAD;                            /* 0x20C */
     int bcnmisc_ibss;                   /* 0x210 */
     int bcnmisc_scan;                   /* 0x214 */
     int bcnmisc_monitor;                /* 0x218 */
