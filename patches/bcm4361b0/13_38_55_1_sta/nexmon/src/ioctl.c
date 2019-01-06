@@ -61,13 +61,11 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
             ret = IOCTL_SUCCESS;
             break;
 
-        case 607:
+        case 107:
+        case 108:
+            // allow monitor mode activation
             *(uint8_t *)(*(uint32_t *)wlc + 382) = 1;
-            ret = wlc_ioctl(wlc, 107, arg, len, wlc_if);
-            break;
-
-        case 608:
-            ret = wlc_ioctl(wlc, 108, arg, len, wlc_if);
+            ret = wlc_ioctl(wlc, cmd, arg, len, wlc_if);
             break;
 
         default:
