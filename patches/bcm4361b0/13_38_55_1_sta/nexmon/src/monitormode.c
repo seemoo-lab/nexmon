@@ -49,11 +49,11 @@ extern void prepend_ethernet_ipv4_udp_header(struct sk_buff *p);
 void
 wlc_recv_hook(struct wlc_info *wlc, struct sk_buff *p) {
     struct osl_info *osh = wlc->osh;
-    struct sk_buff *p_new = pkt_buf_get_skb(osh, p->len);
+    struct sk_buff *p_new = pkt_buf_get_skb(osh, p->len - 42);
+    struct wl_info *wl = wlc->wl;
 
     if (p_new != 0) {
-        memcpy(p_new->data, p->data, p->len);
-//        wl_sendup(wlc->wl, 0, p_new);
+        memcpy(p_new->data + 42, p->data, p->len - 42);
         wl->dev->chained->ops->xmit(wl->dev, wl->dev->chained, p_new);
     }
 
@@ -62,3 +62,11 @@ wlc_recv_hook(struct wlc_info *wlc, struct sk_buff *p) {
 
 __attribute__((at(0x1BB6FE, "", CHIP_VER_BCM4361b0, FW_VER_13_38_55_1_sta)))
 BLPatch(wlc_recv_hook, wlc_recv_hook);
+
+__attribute__((at(0x215E5C, "", CHIP_VER_BCM4361b0, FW_VER_13_38_55_1_sta)))
+__attribute__((naked))
+void
+monitor_mode_activation(void)
+{
+    asm("mov r9, 0x1\n");
+}
