@@ -38,6 +38,41 @@
 #include <types.h>
 #include <bcmcdc.h>
 
+/* used for PAPD cal */
+typedef struct _acphy_txgains {
+    uint16 txlpf;
+    uint16 txgm;
+    uint16 pga;
+    uint16 pad;
+    uint16 ipa;
+} acphy_txgains_t;
+
+/* htphy: tx gain settings */
+typedef struct {
+    uint16 rad_gain; /* Radio gains */
+    uint16 rad_gain_mi; /* Radio gains [16:31] */
+    uint16 rad_gain_hi; /* Radio gains [32:47] */
+    uint16 dac_gain; /* DAC attenuation */
+    uint16 bbmult;   /* BBmult */
+} txgain_setting_t;
+
+typedef struct { /* wlc_phy_write_tx_gain_acphy */
+    uint8 txlpf; /* Radio gains */
+    uint8 ipa;
+    uint8 pad; /* Radio gains [16:31] */
+    uint8 pga;
+    uint8 txgm; /* Radio gains [32:47] */
+    uint8 unknown;
+    uint16 dac_gain; /* DAC attenuation */
+    uint16 bbmult;   /* BBmult */
+} ac_txgain_setting_t;
+
+struct ratesel_txparams {
+    uint32 rspec[4];
+    uint8 antselid[4];
+    uint8 num;
+};
+
 struct wl_rxsts {
     uint32      pkterror;       /* error flags per pkt */
     uint32      phytype;        /* 802.11 A/B/G ... */
@@ -57,6 +92,17 @@ struct wl_rxsts {
     uint32      encoding;       /* Unknown, CCK, PBCC, OFDM, HT */
     uint32      nfrmtype;       /* special 802.11n frames(AMPDU, AMSDU) */
     void        *wlif;          /* wl interface */
+    uint8       nss;            /* Number of spatial streams for VHT frame */
+    uint8       coding;
+    uint16      aid;            /* Partial AID for VHT frame */
+    uint8       gid;            /* Group ID for VHT frame */
+    uint8       bw;             /* Bandwidth for VHT frame */
+    uint16      vhtflags;       /* VHT modulation flags */
+    uint8       bw_nonht;       /* non-HT bw advertised in rts/cts */
+    uint8       PAD;
+    uint8       PAD;
+    uint8       PAD;
+    uint32      ampdu_counter;  /* AMPDU counter for sniffer */
 } __attribute__((packed));
 
 /* status per error RX pkt */
@@ -127,7 +173,36 @@ typedef struct sk_buff {
     int PAD;                    /* 0x28 */
     int lifetime_end;           /* 0x2C */
     void *scb;                  /* 0x30 */
+    uint32 rspec;               // 0x34
 } __attribute__((packed)) sk_buff;
+
+#define HNDRTE_DEV_NAME_MAX 16
+
+typedef struct hndrte_dev {
+    char                        name[HNDRTE_DEV_NAME_MAX];
+    struct hndrte_devfuncs      *funcs;
+    uint32                      devid;
+    void                        *softc;     /* Software context */
+    uint32                      flags;      /* RTEDEVFLAG_XXXX */
+    struct hndrte_dev           *next;
+    struct hndrte_dev           *chained;
+    void                        *pdev;
+} hndrte_dev;
+
+struct hndrte_devfuncs {
+    void *(*probe)(struct hndrte_dev *dev, void *regs, uint bus,
+                   uint16 device, uint coreid, uint unit);
+    int (*open)(struct hndrte_dev *dev);
+    int (*close)(struct hndrte_dev *dev);
+    int (*xmit)(struct hndrte_dev *src, struct hndrte_dev *dev, void *lb);
+    int (*recv)(struct hndrte_dev *src, struct hndrte_dev *dev, void *pkt);
+    int (*ioctl)(struct hndrte_dev *dev, uint32 cmd, void *buffer, int len,
+                 int *used, int *needed, int set);
+    void (*txflowcontrol) (struct hndrte_dev *dev, bool state, int prio);
+    void (*poll)(struct hndrte_dev *dev);
+    int (*xmit_ctl)(struct hndrte_dev *src, struct hndrte_dev *dev, void *lb);
+    int (*xmit2)(struct hndrte_dev *src, struct hndrte_dev *dev, void *lb, int8 ch);
+};
 
 struct tunables {
     char gap[62];
@@ -148,7 +223,7 @@ struct wlc_hwband {
     short phyrev;               /* 0x1E */
     short radioid;              /* 0x20 */
     short radiorev;             /* 0x22 */
-    void *pi;                   /* 0x24 */
+    struct phy_info *pi;        /* 0x24 */
     char abgphy_encore;         /* 0x25 */
 };
 
@@ -216,24 +291,11 @@ struct wlc_hw_info {
     int PAD;                    // 0xec
     int PAD;                    // 0xf0
     int PAD;                    // 0xf4
-    int PAD;                    // 0xf8
-    int PAD;                    // 0xfc
+    char etheraddr[6];          // 0xf8
+    short PAD;                  // 0xfe
     int PAD[18];
     sk_buff *some_skbuff_ptr;
 
-};
-
-/**
- *  Name might be inaccurate
- */
-struct device {
-    char name[16];
-    void *init_function;
-    int PAD;
-    void *some_device_info;
-    int PAD;
-    int PAD;
-    struct device *bound_device;
 };
 
 /**
@@ -244,7 +306,7 @@ struct wl_info {
     void *pub;                          // 0x04
     struct wlc_info *wlc;               // 0x08
     struct wlc_hw_info *wlc_hw;         // 0x0c
-    struct device *dev;                 // 0x10
+    struct hndrte_dev *dev;             // 0x10
     int PAD;                            // 0x14
     int PAD;                            // 0x18
     int PAD;                            // 0x1c
@@ -270,15 +332,82 @@ struct sdiox_info {
     void *device_address;
 } __attribute__((packed));
 
-struct phy_info {
-    int PAD;                            // 0x000
-    int PAD;                            // 0x004
-    int PAD;                            // 0x008
-    int PAD;                            // 0x00c
-    int PAD;                            // 0x010
-    int PAD;                            // 0x014
-    int PAD;                            // 0x018
-    int PAD;                            // 0x01c
+struct shared_phy {
+    struct  phy_info *phy_head;         // 0x000 /* head of phy list */
+    uint    unit;                       // 0x004 /* device instance number */
+    struct  osl_info *osh;              // 0x008 /* pointer to os handle */
+    void    *sih;                       // 0x00c /* si handle (cookie for siutils calls) */
+    void    *physhim;                   // 0x010 /* phy <-> wl shim layer for wlapi */
+    uint    corerev;                    // 0x014 /* d11corerev, shadow of wlc_hw->corerev */
+    uint32  machwcap;                   // 0x018 /* mac hw capability */
+    bool    up;                         // 0x01c /* main driver is up and running */
+    bool    clk;                        // 0x01d /* main driver make the clk available */
+    uint8   PAD;                        // 0x01e
+    uint8   PAD;                        // 0x01f
+    uint32  PAD;                        // 0x020
+    uint32  PAD;                        // 0x024
+    uint32  PAD;                        // 0x028
+    uint32  PAD;                        // 0x02C
+    uint32  PAD;                        // 0x030
+    uint32  PAD;                        // 0x034
+    uint32  PAD;                        // 0x038
+    uint32  PAD;                        // 0x03C
+    uint32  PAD;                        // 0x040
+    uint32  PAD;                        // 0x044
+    uint32  PAD;                        // 0x048
+    uint32  PAD;                        // 0x04C
+    uint32  PAD;                        // 0x050
+    uint32  PAD;                        // 0x054
+    uint32  PAD;                        // 0x058
+    uint32  PAD;                        // 0x05C
+    uint32  PAD;                        // 0x060
+    uint32  PAD;                        // 0x064
+    uint32  PAD;                        // 0x068
+    uint32  PAD;                        // 0x06C
+    uint32  PAD;                        // 0x070
+    uint32  PAD;                        // 0x074
+    uint32  PAD;                        // 0x078
+    uint32  PAD;                        // 0x07C
+    uint32  PAD;                        // 0x080
+    uint32  PAD;                        // 0x084
+    uint32  PAD;                        // 0x088
+    uint32  PAD;                        // 0x08C
+    uint8   PAD;                        // 0x090
+    uint8   hw_phyrxchain;              // 0x091
+    uint8   PAD;                        // 0x092
+    uint8   PAD;                        // 0x093
+    uint32  PAD;                        // 0x094
+    uint32  PAD;                        // 0x098
+    uint32  PAD;                        // 0x09C
+} __attribute__((packed));
+
+struct phy_pub {
+    uint        phy_type;       /* PHY_TYPE_XX */
+    uint        phy_rev;        /* phy revision */
+    uint8       phy_corenum;        /* number of cores */
+    uint16      radioid;        /* radio id */
+    uint8       radiorev;       /* radio revision */
+    uint8       radiover;       /* radio version */
+    uint8       radiomajorrev;      /* radio major revision */
+    uint8       radiominorrev;      /* radio minor revision */
+    uint        coreflags;      /* sbtml core/phy specific flags */
+    uint        ana_rev;        /* analog core revision */
+    bool        abgphy_encore;          /* true if chipset is encore enabled */
+};
+
+struct phy_info_acphy {
+    uint8  dac_mode;                    // 0x000
+    uint8 PAD;                          // 0x001
+    uint16 bb_mult_save[1];             // 0x002
+    uint8  bb_mult_save_valid;          // 0x004
+    uint8 PAD;                          // 0x005
+    uint16 deaf_count;                  // 0x006
+    uint32 PAD;                         // 0x008
+    uint32 PAD;                         // 0x00C
+    uint32 PAD;                         // 0x010
+    uint32 PAD;                         // 0x014
+    uint32 PAD;                         // 0x018
+    uint32 PAD;                         // 0x01C
     int PAD;                            // 0x020
     int PAD;                            // 0x024
     int PAD;                            // 0x028
@@ -330,10 +459,138 @@ struct phy_info {
     int PAD;                            // 0x0e0
     int PAD;                            // 0x0e4
     int PAD;                            // 0x0e8
+    int PAD;                            // 0x0ec
+    int PAD;                            // 0x0f0
+    int PAD;                            // 0x0f4
+    int PAD;                            // 0x0f8
+    int PAD;                            // 0x0fc
+    int PAD;                            // 0x100
+    int PAD;                            // 0x104
+    int PAD;                            // 0x108
+    int PAD;                            // 0x10c
+    uint32 pstart;                      // 0x110
+    uint32 pstop;                       // 0x114
+    uint32 pfirst;                      // 0x118
+    uint32 plast;                       // 0x11c
+    int PAD;                            // 0x120
+    int PAD;                            // 0x124
+    int PAD;                            // 0x128
+    int PAD;                            // 0x12c
+    int PAD;                            // 0x130
+    int PAD;                            // 0x134
+    int PAD;                            // 0x138
+    int PAD;                            // 0x13c
+    int PAD;                            // 0x140
+    int PAD;                            // 0x144
+    int PAD;                            // 0x148
+    int PAD;                            // 0x14c
+    int PAD;                            // 0x150
+    int PAD;                            // 0x154
+    int PAD;                            // 0x158
+    int PAD;                            // 0x15c
+    int PAD;                            // 0x160
+    int PAD;                            // 0x164
+    int PAD;                            // 0x168
+    int PAD;                            // 0x16c
+    int PAD;                            // 0x170
+    int PAD;                            // 0x174
+    int PAD;                            // 0x178
+    int PAD;                            // 0x17c
+    int PAD;                            // 0x180
+    int PAD;                            // 0x184
+    int PAD;                            // 0x188
+    int PAD;                            // 0x18c
+    int PAD;                            // 0x190
+    int PAD;                            // 0x194
+    int PAD;                            // 0x198
+    int PAD;                            // 0x19c
+    int PAD;                            // 0x1a0
+    int PAD;                            // 0x1a4
+    int PAD;                            // 0x1a8
+    int PAD;                            // 0x1ac
+    int PAD;                            // 0x1b0
+    int PAD;                            // 0x1b4
+    int PAD;                            // 0x1b8
+    int PAD;                            // 0x1bc
+    int PAD;                            // 0x1c0
+    int PAD;                            // 0x1c4
+    int PAD;                            // 0x1c8
+    int PAD;                            // 0x1cc
+    int PAD;                            // 0x1d0
+    int PAD;                            // 0x1d4
+    int PAD;                            // 0x1d8
+    int PAD;                            // 0x1dc
+    int PAD;                            // 0x1e0
+    int PAD;                            // 0x1e4
+    int PAD;                            // 0x1e8
+    int16 idle_tssi[1];                 // 0x1ec
+} __attribute__((packed));
+
+struct phy_info {
+    struct phy_pub pubpi_ro;            // 0x000
+    struct shared_phy *sh;              // 0x01c
+    void   (*fn_init)(void *);                                                      // 0x020
+    void   (*fn_calinit)(void *);                                                   // 0x024
+    void   (*fn_chanset)(void *, uint16);                                           // 0x028
+    void   (*fn_txpwrrecalc)(void *);                                               // 0x02c
+    int    (*fn_longtrn)(void *, int);                                              // 0x030
+    void   (*fn_txiqccget)(void *, uint16 *, uint16 *);                             // 0x034
+    void   (*fn_txiqccmimoget)(void *, uint16 *, uint16 *, uint16 *, uint16 *);     // 0x038
+    void   (*fn_txiqccset)(void *, uint16, uint16);                                 // 0x03c
+    void   (*fn_txiqccmimoset)(void *, uint16, uint16, uint16, uint16);             // 0x040
+    uint16 (*fn_txloccget)(void *);                                                 // 0x044
+    void   (*fn_txloccset)(void *pi, uint16 didq);                            // 0x048
+    int PAD;                            // 0x04c
+    int PAD;                            // 0x050
+    int PAD;                            // 0x054
+    int PAD;                            // 0x058
+    int PAD;                            // 0x05c
+    int PAD;                            // 0x060
+    int PAD;                            // 0x064
+    int PAD;                            // 0x068
+    int PAD;                            // 0x06c
+    int PAD;                            // 0x070
+    int PAD;                            // 0x074
+    int PAD;                            // 0x078
+    int PAD;                            // 0x07c
+    int PAD;                            // 0x080
+    int PAD;                            // 0x084
+    int PAD;                            // 0x088
+    int PAD;                            // 0x08c
+    int PAD;                            // 0x090
+    int PAD;                            // 0x094
+    int PAD;                            // 0x098
+    int PAD;                            // 0x09c
+    int PAD;                            // 0x0a0
+    int PAD;                            // 0x0a4
+    int PAD;                            // 0x0a8
+    int PAD;                            // 0x0ac
+    int PAD;                            // 0x0b0
+    int PAD;                            // 0x0b4
+    int PAD;                            // 0x0b8
+    struct phy_info_acphy *pi_ac;       // 0x0bc
+    int PAD;                            // 0x0c0
+    struct d11regs *regs;               // 0x0c4
+    int PAD;                            // 0x0c8
+    int PAD;                            // 0x0cc
+    struct phy_pub pubpi;               // 0x0d0
     short PAD;                          // 0x0ec
     short radio_chanspec;               // 0x0ee
-    int PAD;                            // 0x0f0
-};
+    short PAD;                          // 0x0f0
+    short bw;                           // 0x0f2
+    int PAD;                            // 0x0f4
+    int PAD;                            // 0x0f8
+    int PAD;                            // 0x0fc
+    int PAD;                            // 0x100
+    int PAD;                            // 0x104
+    int PAD;                            // 0x108
+    int PAD;                            // 0x10c
+    int PAD;                            // 0x110
+    int PAD;                            // 0x114
+    int PAD;                            // 0x118
+    int PAD;                            // 0x11c
+    int PAD;                            // 0x120
+} __attribute__((packed));
 
 struct wlcband {
     int bandtype;                       /* 0x000 */
@@ -348,13 +605,42 @@ struct wlcband {
     char PAD;                           /* 0x016 */
     char PAD;                           /* 0x017 */
     void *hwrs_scb;                     /* 0x018 */
-    int defrateset;                     /* 0x01C */
-    int rspec_override;                 /* 0x020 */
-    int mrspec_override;                /* 0x024 */
-    char band_stf_ss_mode;              /* 0x028 */
-    char band_stf_stbc_tx;              /* 0x029 */
-    int hw_rateset;                     /* 0x030 */
-    char basic_rate;                    /* 0x034 */
+    int PAD;                            // 0x01c
+    uint32 rspec_override_alt;          // 0x020
+    uint32 mrspec_override_alt;         // 0x024
+    int PAD;                            // 0x028
+    int PAD;                            // 0x02c
+    int PAD;                            // 0x030
+    int PAD;                            // 0x034
+    int PAD;                            // 0x038
+    int PAD;                            // 0x03c
+    int PAD;                            // 0x040
+    uint32 rspec_override;              // 0x044
+    uint32 mrspec_override;             // 0x048
+    int PAD;                            // 0x04c
+    int PAD;                            // 0x050
+//    int defrateset;                     /* 0x01C */
+//    int rspec_override;                 /* 0x020 */
+//    int mrspec_override;                /* 0x024 */
+//    char band_stf_ss_mode;              /* 0x028 */
+//    char band_stf_stbc_tx;              /* 0x029 */
+//    int hw_rateset;                     /* 0x030 */
+//    char basic_rate;                    /* 0x034 */
+} __attribute__((packed));
+
+struct wlc_stf {
+    int PAD;                            // 0x000
+    int PAD;                            // 0x004
+    int PAD;                            // 0x008
+    int PAD;                            // 0x00c
+    uint8 PAD;                          // 0x010
+    uint8 PAD;                          // 0x011
+    int8 ldpc;                          // 0x012
+    int8 ldpc_tx;                       // 0x013
+    int PAD;                            // 0x014
+    int PAD;                            // 0x018
+    int PAD;                            // 0x01c
+    int PAD;                            // 0x020
 } __attribute__((packed));
 
 struct wlc_info {
@@ -364,7 +650,10 @@ struct wlc_info {
     volatile struct d11regs *regs;      /* 0x00C */
     struct wlc_hw_info *hw;             /* 0x010 */
     int PAD;                            /* 0x014 */
-    int PAD;                            /* 0x018 */
+    char PAD;                           /* 0x018 */
+    char clk;                           /* 0x019 */
+    char PAD;                           /* 0x01A */
+    char PAD;                           /* 0x01B */
     void *core;                         /* 0x01C */
     struct wlcband *band;               /* 0x020 */
     int PAD;                            /* 0x024 */
@@ -434,8 +723,8 @@ struct wlc_info {
     int PAD;                            /* 0x128 */
     int PAD;                            /* 0x12C */
     int PAD;                            /* 0x130 */
-    int PAD;                            /* 0x134 */
-    int PAD;                            /* 0x138 */
+    void *ampdu_tx;                     /* 0x134 */
+    void *ampdu_rx;                     /* 0x138 */
     int PAD;                            /* 0x13C */
     int PAD;                            /* 0x140 */
     int PAD;                            /* 0x144 */
@@ -470,14 +759,22 @@ struct wlc_info {
     int PAD;                            /* 0x1B8 */
     int PAD;                            /* 0x1BC */
     int PAD;                            /* 0x1C0 */
-    int PAD;                            /* 0x1C4 */
-    short PAD;                          /* 0x1C8 */
+    char perm_etheraddr[6];             /* 0x1C4 */
     char bandlocked;                    /* 0x1CA */
     char field_1CB;                     /* 0x1CB */
     int PAD;                            /* 0x1CC */
-    int PAD;                            /* 0x1D0 */
-    int PAD;                            /* 0x1D4 */
-    int PAD;                            /* 0x1D8 */
+    char mpc;                           /* 0x1D0 */ /* enable minimum power consumption */
+    char mpc_out;                       /* 0x1D1 */ /* disable radio_mpc_disable for out */
+    char mpc_scan;                      /* 0x1D2 */ /* disable radio_mpc_disable for scan */
+    char mpc_join;                      /* 0x1D3 */ /* disable radio_mpc_disable for join */
+    char mpc_oidscan;                   /* 0x1D4 */ /* disable radio_mpc_disable for oid scan */
+    char mpc_oidjoin;                   /* 0x1D5 */ /* disable radio_mpc_disable for oid join */
+    char mpc_oidnettype;                /* 0x1D6 */ /* disable radio_mpc_disable for oid network_type_in_use */
+    char mpc_dlycnt;                    /* 0x1D7 */ /* # of watchdog cnt before turn disable radio */
+    char mpc_offcnt;                    /* 0x1D8 */ /* # of watchdog cnt that radio is disabled */
+    char mpc_delay_off;                 /* 0x1D9 */ /* delay radio disable by # of watchdog cnt */
+    char PAD;                           /* 0x1DA */
+    char PAD;                           /* 0x1DB */
     int PAD;                            /* 0x1DC */
     int PAD;                            /* 0x1E0 */
     int PAD;                            /* 0x1E4 */
@@ -657,7 +954,7 @@ struct wlc_info {
     int PAD;                            /* 0X494 */
     int PAD;                            /* 0X498 */
     int PAD;                            /* 0X49C */
-    int PAD;                            /* 0X4A0 */
+    struct wlc_stf *stf;                /* 0X4A0 */
     int PAD;                            /* 0X4A4 */
     int PAD;                            /* 0X4A8 */
     int PAD;                            /* 0X4AC */
@@ -750,15 +1047,305 @@ struct wlc_info {
     int PAD;                            /* 0X604 */
     int PAD;                            /* 0X608 */
     int hwrxoff;                        /* 0X60C */
+    int PAD;                            /* 0X610 */
+    int PAD;                            /* 0X614 */
+    int PAD;                            /* 0X618 */
+    int PAD;                            /* 0X61C */
+    int PAD;                            /* 0X620 */
+    int PAD;                            /* 0X624 */
+    int PAD;                            /* 0X628 */
+    int PAD;                            /* 0X62C */
+    int PAD;                            /* 0X630 */
+    int PAD;                            /* 0X634 */
+    int PAD;                            /* 0X638 */
+    int PAD;                            /* 0X63C */
+    int PAD;                            /* 0X640 */
+    int PAD;                            /* 0X644 */
+    int PAD;                            /* 0X648 */
+    int PAD;                            /* 0X64C */
+    int PAD;                            /* 0X650 */
+    int PAD;                            /* 0X654 */
+    int PAD;                            /* 0X658 */
+    int PAD;                            /* 0X65C */
+    int PAD;                            /* 0X660 */
+    int PAD;                            /* 0X664 */
+    int PAD;                            /* 0X668 */
+    int PAD;                            /* 0X66C */
+    int PAD;                            /* 0X670 */
+    int PAD;                            /* 0X674 */
+    int PAD;                            /* 0X678 */
+    uint8 PAD;                          /* 0X67C */
+    uint8 toe_bypass;                   /* 0X67D */
+    uint8 toe_capable;                  /* 0X67E */
+    uint8 PAD;                          /* 0X67F */
+    int PAD;                            /* 0X680 */
 };
+
+// source of wl_cnt_t: http://svn.dd-wrt.com/browser/src/linux/universal/linux-3.10/brcm/arm/include/wlioctl.h?rev=23022
+#define NFIFO           6   /* # tx/rx fifopairs */
+
+#define WL_CNT_T_VERSION    9   /* current version of wl_cnt_t struct */
+
+typedef struct {
+    uint16  version;    /* see definition of WL_CNT_T_VERSION */
+    uint16  length;     /* length of entire structure */
+
+    /* transmit stat counters */
+    uint32  txframe;    /* tx data frames */
+    uint32  txbyte;     /* tx data bytes */
+    uint32  txretrans;  /* tx mac retransmits */
+    uint32  txerror;    /* tx data errors (derived: sum of others) */
+    uint32  txctl;      /* tx management frames */
+    uint32  txprshort;  /* tx short preamble frames */
+    uint32  txserr;     /* tx status errors */
+    uint32  txnobuf;    /* tx out of buffers errors */
+    uint32  txnoassoc;  /* tx discard because we're not associated */
+    uint32  txrunt;     /* tx runt frames */
+    uint32  txchit;     /* tx header cache hit (fastpath) */
+    uint32  txcmiss;    /* tx header cache miss (slowpath) */
+
+    /* transmit chip error counters */
+    uint32  txuflo;     /* tx fifo underflows */
+    uint32  txphyerr;   /* tx phy errors (indicated in tx status) */
+    uint32  txphycrs;
+
+    /* receive stat counters */
+    uint32  rxframe;    /* rx data frames */
+    uint32  rxbyte;     /* rx data bytes */
+    uint32  rxerror;    /* rx data errors (derived: sum of others) */
+    uint32  rxctl;      /* rx management frames */
+    uint32  rxnobuf;    /* rx out of buffers errors */
+    uint32  rxnondata;  /* rx non data frames in the data channel errors */
+    uint32  rxbadds;    /* rx bad DS errors */
+    uint32  rxbadcm;    /* rx bad control or management frames */
+    uint32  rxfragerr;  /* rx fragmentation errors */
+    uint32  rxrunt;     /* rx runt frames */
+    uint32  rxgiant;    /* rx giant frames */
+    uint32  rxnoscb;    /* rx no scb error */
+    uint32  rxbadproto; /* rx invalid frames */
+    uint32  rxbadsrcmac;    /* rx frames with Invalid Src Mac */
+    uint32  rxbadda;    /* rx frames tossed for invalid da */
+    uint32  rxfilter;   /* rx frames filtered out */
+
+    /* receive chip error counters */
+    uint32  rxoflo;     /* rx fifo overflow errors */
+    uint32  rxuflo[NFIFO];  /* rx dma descriptor underflow errors */
+
+    uint32  d11cnt_txrts_off;   /* d11cnt txrts value when reset d11cnt */
+    uint32  d11cnt_rxcrc_off;   /* d11cnt rxcrc value when reset d11cnt */
+    uint32  d11cnt_txnocts_off; /* d11cnt txnocts value when reset d11cnt */
+
+    /* misc counters */
+    uint32  dmade;      /* tx/rx dma descriptor errors */
+    uint32  dmada;      /* tx/rx dma data errors */
+    uint32  dmape;      /* tx/rx dma descriptor protocol errors */
+    uint32  reset;      /* reset count */
+    uint32  tbtt;       /* cnts the TBTT int's */
+    uint32  txdmawar;
+    uint32  pkt_callback_reg_fail;  /* callbacks register failure */
+
+    /* MAC counters: 32-bit version of d11.h's macstat_t */
+    uint32  txallfrm;   /* total number of frames sent, incl. Data, ACK, RTS, CTS,
+                 * Control Management (includes retransmissions)
+                 */
+    uint32  txrtsfrm;   /* number of RTS sent out by the MAC */
+    uint32  txctsfrm;   /* number of CTS sent out by the MAC */
+    uint32  txackfrm;   /* number of ACK frames sent out */
+    uint32  txdnlfrm;   /* Not used */
+    uint32  txbcnfrm;   /* beacons transmitted */
+    uint32  txfunfl[6]; /* per-fifo tx underflows */
+    uint32  rxtoolate;  /* receive too late */
+    uint32  txfbw;      /* transmit at fallback bw (dynamic bw) */
+    uint32  txtplunfl;  /* Template underflows (mac was too slow to transmit ACK/CTS
+                 * or BCN)
+                 */
+    uint32  txphyerror; /* Transmit phy error, type of error is reported in tx-status for
+                 * driver enqueued frames
+                 */
+    uint32  rxfrmtoolong;   /* Received frame longer than legal limit (2346 bytes) */
+    uint32  rxfrmtooshrt;   /* Received frame did not contain enough bytes for its frame type */
+    uint32  rxinvmachdr;    /* Either the protocol version != 0 or frame type not
+                 * data/control/management
+                 */
+    uint32  rxbadfcs;   /* number of frames for which the CRC check failed in the MAC */
+    uint32  rxbadplcp;  /* parity check of the PLCP header failed */
+    uint32  rxcrsglitch;    /* PHY was able to correlate the preamble but not the header */
+    uint32  rxstrt;     /* Number of received frames with a good PLCP
+                 * (i.e. passing parity check)
+                 */
+    uint32  rxdfrmucastmbss; /* Number of received DATA frames with good FCS and matching RA */
+    uint32  rxmfrmucastmbss; /* number of received mgmt frames with good FCS and matching RA */
+    uint32  rxcfrmucast;    /* number of received CNTRL frames with good FCS and matching RA */
+    uint32  rxrtsucast; /* number of unicast RTS addressed to the MAC (good FCS) */
+    uint32  rxctsucast; /* number of unicast CTS addressed to the MAC (good FCS) */
+    uint32  rxackucast; /* number of ucast ACKS received (good FCS) */
+    uint32  rxdfrmocast;    /* number of received DATA frames (good FCS and not matching RA) */
+    uint32  rxmfrmocast;    /* number of received MGMT frames (good FCS and not matching RA) */
+    uint32  rxcfrmocast;    /* number of received CNTRL frame (good FCS and not matching RA) */
+    uint32  rxrtsocast; /* number of received RTS not addressed to the MAC */
+    uint32  rxctsocast; /* number of received CTS not addressed to the MAC */
+    uint32  rxdfrmmcast;    /* number of RX Data multicast frames received by the MAC */
+    uint32  rxmfrmmcast;    /* number of RX Management multicast frames received by the MAC */
+    uint32  rxcfrmmcast;    /* number of RX Control multicast frames received by the MAC
+                 * (unlikely to see these)
+                 */
+    uint32  rxbeaconmbss;   /* beacons received from member of BSS */
+    uint32  rxdfrmucastobss; /* number of unicast frames addressed to the MAC from
+                  * other BSS (WDS FRAME)
+                  */
+    uint32  rxbeaconobss;   /* beacons received from other BSS */
+    uint32  rxrsptmout; /* Number of response timeouts for transmitted frames
+                 * expecting a response
+                 */
+    uint32  bcntxcancl; /* transmit beacons canceled due to receipt of beacon (IBSS) */
+    uint32  rxf0ovfl;   /* Number of receive fifo 0 overflows */
+    uint32  rxf1ovfl;   /* Number of receive fifo 1 overflows (obsolete) */
+    uint32  rxf2ovfl;   /* Number of receive fifo 2 overflows (obsolete) */
+    uint32  txsfovfl;   /* Number of transmit status fifo overflows (obsolete) */
+    uint32  pmqovfl;    /* Number of PMQ overflows */
+    uint32  rxcgprqfrm; /* Number of received Probe requests that made it into
+                 * the PRQ fifo
+                 */
+    uint32  rxcgprsqovfl;   /* Rx Probe Request Que overflow in the AP */
+    uint32  txcgprsfail;    /* Tx Probe Response Fail. AP sent probe response but did
+                 * not get ACK
+                 */
+    uint32  txcgprssuc; /* Tx Probe Response Success (ACK was received) */
+    uint32  prs_timeout;    /* Number of probe requests that were dropped from the PRQ
+                 * fifo because a probe response could not be sent out within
+                 * the time limit defined in M_PRS_MAXTIME
+                 */
+    uint32  rxnack;     /* obsolete */
+    uint32  frmscons;   /* obsolete */
+    uint32  txnack;     /* obsolete */
+    uint32  rxback;     /* blockack rxcnt */
+    uint32  txback;     /* blockack txcnt */
+
+    /* 802.11 MIB counters, pp. 614 of 802.11 reaff doc. */
+    uint32  txfrag;     /* dot11TransmittedFragmentCount */
+    uint32  txmulti;    /* dot11MulticastTransmittedFrameCount */
+    uint32  txfail;     /* dot11FailedCount */
+    uint32  txretry;    /* dot11RetryCount */
+    uint32  txretrie;   /* dot11MultipleRetryCount */
+    uint32  rxdup;      /* dot11FrameduplicateCount */
+    uint32  txrts;      /* dot11RTSSuccessCount */
+    uint32  txnocts;    /* dot11RTSFailureCount */
+    uint32  txnoack;    /* dot11ACKFailureCount */
+    uint32  rxfrag;     /* dot11ReceivedFragmentCount */
+    uint32  rxmulti;    /* dot11MulticastReceivedFrameCount */
+    uint32  rxcrc;      /* dot11FCSErrorCount */
+    uint32  txfrmsnt;   /* dot11TransmittedFrameCount (bogus MIB?) */
+    uint32  rxundec;    /* dot11WEPUndecryptableCount */
+
+    /* WPA2 counters (see rxundec for DecryptFailureCount) */
+    uint32  tkipmicfaill;   /* TKIPLocalMICFailures */
+    uint32  tkipcntrmsr;    /* TKIPCounterMeasuresInvoked */
+    uint32  tkipreplay; /* TKIPReplays */
+    uint32  ccmpfmterr; /* CCMPFormatErrors */
+    uint32  ccmpreplay; /* CCMPReplays */
+    uint32  ccmpundec;  /* CCMPDecryptErrors */
+    uint32  fourwayfail;    /* FourWayHandshakeFailures */
+    uint32  wepundec;   /* dot11WEPUndecryptableCount */
+    uint32  wepicverr;  /* dot11WEPICVErrorCount */
+    uint32  decsuccess; /* DecryptSuccessCount */
+    uint32  tkipicverr; /* TKIPICVErrorCount */
+    uint32  wepexcluded;    /* dot11WEPExcludedCount */
+
+    uint32  txchanrej;  /* Tx frames suppressed due to channel rejection */
+    uint32  psmwds;     /* Count PSM watchdogs */
+    uint32  phywatchdog;    /* Count Phy watchdogs (triggered by ucode) */
+
+    /* MBSS counters, AP only */
+    uint32  prq_entries_handled;    /* PRQ entries read in */
+    uint32  prq_undirected_entries; /*    which were bcast bss & ssid */
+    uint32  prq_bad_entries;    /*    which could not be translated to info */
+    uint32  atim_suppress_count;    /* TX suppressions on ATIM fifo */
+    uint32  bcn_template_not_ready; /* Template marked in use on send bcn ... */
+    uint32  bcn_template_not_ready_done; /* ...but "DMA done" interrupt rcvd */
+    uint32  late_tbtt_dpc;  /* TBTT DPC did not happen in time */
+
+    /* per-rate receive stat counters */
+    uint32  rx1mbps;    /* packets rx at 1Mbps */
+    uint32  rx2mbps;    /* packets rx at 2Mbps */
+    uint32  rx5mbps5;   /* packets rx at 5.5Mbps */
+    uint32  rx6mbps;    /* packets rx at 6Mbps */
+    uint32  rx9mbps;    /* packets rx at 9Mbps */
+    uint32  rx11mbps;   /* packets rx at 11Mbps */
+    uint32  rx12mbps;   /* packets rx at 12Mbps */
+    uint32  rx18mbps;   /* packets rx at 18Mbps */
+    uint32  rx24mbps;   /* packets rx at 24Mbps */
+    uint32  rx36mbps;   /* packets rx at 36Mbps */
+    uint32  rx48mbps;   /* packets rx at 48Mbps */
+    uint32  rx54mbps;   /* packets rx at 54Mbps */
+    uint32  rx108mbps;  /* packets rx at 108mbps */
+    uint32  rx162mbps;  /* packets rx at 162mbps */
+    uint32  rx216mbps;  /* packets rx at 216 mbps */
+    uint32  rx270mbps;  /* packets rx at 270 mbps */
+    uint32  rx324mbps;  /* packets rx at 324 mbps */
+    uint32  rx378mbps;  /* packets rx at 378 mbps */
+    uint32  rx432mbps;  /* packets rx at 432 mbps */
+    uint32  rx486mbps;  /* packets rx at 486 mbps */
+    uint32  rx540mbps;  /* packets rx at 540 mbps */
+
+    /* pkteng rx frame stats */
+    uint32  pktengrxducast; /* unicast frames rxed by the pkteng code */
+    uint32  pktengrxdmcast; /* multicast frames rxed by the pkteng code */
+
+    uint32  rfdisable;  /* count of radio disables */
+    uint32  bphy_rxcrsglitch;   /* PHY count of bphy glitches */
+    uint32  bphy_badplcp;
+
+    uint32  txexptime;  /* Tx frames suppressed due to timer expiration */
+
+    uint32  txmpdu_sgi; /* count for sgi transmit */
+    uint32  rxmpdu_sgi; /* count for sgi received */
+    uint32  txmpdu_stbc;    /* count for stbc transmit */
+    uint32  rxmpdu_stbc;    /* count for stbc received */
+
+    uint32  rxundec_mcst;   /* dot11WEPUndecryptableCount */
+
+    /* WPA2 counters (see rxundec for DecryptFailureCount) */
+    uint32  tkipmicfaill_mcst;  /* TKIPLocalMICFailures */
+    uint32  tkipcntrmsr_mcst;   /* TKIPCounterMeasuresInvoked */
+    uint32  tkipreplay_mcst;    /* TKIPReplays */
+    uint32  ccmpfmterr_mcst;    /* CCMPFormatErrors */
+    uint32  ccmpreplay_mcst;    /* CCMPReplays */
+    uint32  ccmpundec_mcst; /* CCMPDecryptErrors */
+    uint32  fourwayfail_mcst;   /* FourWayHandshakeFailures */
+    uint32  wepundec_mcst;  /* dot11WEPUndecryptableCount */
+    uint32  wepicverr_mcst; /* dot11WEPICVErrorCount */
+    uint32  decsuccess_mcst;    /* DecryptSuccessCount */
+    uint32  tkipicverr_mcst;    /* TKIPICVErrorCount */
+    uint32  wepexcluded_mcst;   /* dot11WEPExcludedCount */
+
+    uint32  dma_hang;   /* count for dma hang */
+    uint32  reinit;     /* count for reinit */
+
+    uint32  pstatxucast;    /* count of ucast frames xmitted on all psta assoc */
+    uint32  pstatxnoassoc;  /* count of txnoassoc frames xmitted on all psta assoc */
+    uint32  pstarxucast;    /* count of ucast frames received on all psta assoc */
+    uint32  pstarxbcmc; /* count of bcmc frames received on all psta */
+    uint32  pstatxbcmc; /* count of bcmc frames transmitted on all psta */
+
+    uint32  cso_passthrough; /* hw cso required but passthrough */
+    uint32  cso_normal; /* hw cso hdr for normal process */
+    uint32  chained;    /* number of frames chained */
+    uint32  chainedsz1; /* number of chain size 1 frames */
+    uint32  unchained;  /* number of frames not chained */
+    uint32  maxchainsz; /* max chain size so far */
+    uint32  currchainsz;    /* current chain size */
+    uint32  rxdrop20s;  /* drop secondary cnt */
+    uint32  pciereset;  /* Secondary Bus Reset issued by driver */
+    uint32  cfgrestore; /* configspace restore by driver */
+} wl_cnt_t;
 
 struct wlc_pub {
     struct wlc_info *wlc;               /* 0x000 */
-    int PAD;                            /* 0x004 */
-    int PAD;                            /* 0x008 */
+    char cur_etheraddr[6];              /* 0x004 */
+    short PAD;                          /* 0x00A */
     int PAD;                            /* 0x00C */
     int PAD;                            /* 0x010 */
-    int PAD;                            /* 0x014 */
+    int osh;                            /* 0x014 */
     int PAD;                            /* 0x018 */
     int PAD;                            /* 0x01C */
     int PAD;                            /* 0x020 */
@@ -781,9 +1368,37 @@ struct wlc_pub {
     char associated;                    /* 0x04C */
     char PAD;                           /* 0x04D */
     char PAD;                           /* 0x04E */
-    char PAD;                           /* 0x04F */
-    int PAD;                            /* 0x050 */
-    char gap2[147];
+    bool _ampdu_tx;                     /* 0x04F */
+    bool _ampdu_rx;                     /* 0x050 */
+    bool _amsdu_tx;                     /* 0x051 */
+    bool PAD;                           /* 0x052 */
+    bool PAD;                           /* 0x053 */
+    int PAD;                            /* 0x054 */
+    int PAD;                            /* 0x058 */
+    int PAD;                            /* 0x05C */
+    int PAD;                            /* 0x060 */
+    int PAD;                            /* 0x064 */
+    int PAD;                            /* 0x068 */
+    int PAD;                            /* 0x06C */
+    int PAD;                            /* 0x070 */
+    int PAD;                            /* 0x074 */
+    int PAD;                            /* 0x078 */
+    int PAD;                            /* 0x07C */
+    int PAD;                            /* 0x080 */
+    int PAD;                            /* 0x084 */
+    int PAD;                            /* 0x088 */
+    int PAD;                            /* 0x08C */
+    int PAD;                            /* 0x090 */
+    wl_cnt_t *_cnt;                /* 0x094 */
+    int PAD;                            /* 0x098 */
+    int PAD;                            /* 0x09C */
+    int PAD;                            /* 0x0A0 */
+    int PAD;                            /* 0x0A4 */
+    int PAD;                            /* 0x0A8 */
+    int PAD;                            /* 0x0AC */
+    int PAD;                            /* 0x0B0 */
+    int PAD;                            /* 0x0B4 */
+    char gap2[47];
     char is_amsdu; // @ 0xe7
 } __attribute__((packed));
 
@@ -1159,6 +1774,15 @@ struct hnddma_pub {
     unsigned int txnobuf;           /* tx out of dma descriptors */
 } __attribute__((packed));
 
+typedef volatile struct {
+    uint32 control;
+    uint32 ptr;
+    uint32 addrlow;
+    uint32 addrhigh;
+    uint32 status0;
+    uint32 status1;
+} dma64regs_t;
+
 struct dma_info {
     struct hnddma_pub hnddma;   /* exported structure */
     int msg_level;              /* message level pointer */
@@ -1169,8 +1793,8 @@ struct dma_info {
     bool dma64;                 /* this dma engine is operating in 64-bit mode */
     bool addrext;               /* this dma engine supports DmaExtendedAddrChanges */
     char gap2[2];
-    void *txregs;               /* 64-bit dma tx engine registers */
-    void *rxregs;               /* 64-bit dma rx engine registers */
+    dma64regs_t *txregs;        /* 64-bit dma tx engine registers */
+    dma64regs_t *rxregs;        /* 64-bit dma rx engine registers */
     void *txd;                  /* pointer to dma64 tx descriptor ring */
     void *rxd;                  /* pointer to dma64 rx descriptor ring */
     short dmadesc_align;        /* alignment requirement for dma descriptors */
@@ -1284,7 +1908,7 @@ struct d11regs {
     unsigned int tplatewrdata;   /* 0x134 */
     unsigned int PAD[2];     /* 0x138 - 0x13C */
 
-    /* PMQ registers */
+    /* Power Management Queue (PMQ) registers */
     union pmqreg pmqreg;    /* 0x140 */
     unsigned int pmqpatl;        /* 0x144 */
     unsigned int pmqpath;        /* 0x148 */
@@ -1488,142 +2112,550 @@ struct d11regs {
     unsigned short PAD;                 /* SPR_TX_STATUS2                   0x51c */
     unsigned short PAD;                 /* SPR_TX_STATUS3                   0x51e */
 
-    /* Transmit control */
-    unsigned short xmtfifodef;          /* SPR_TXE0_FIFO_Def                0x520 */
-    unsigned short xmtfifo_frame_cnt;   /* SPR_TXE0_0x22                    0x522 *//* Corerev >= 16 */
-    unsigned short xmtfifo_byte_cnt;    /* SPR_TXE0_0x24                    0x524 *//* Corerev >= 16 */
-    unsigned short xmtfifo_head;        /* SPR_TXE0_0x26                    0x526 *//* Corerev >= 16 */
-    unsigned short xmtfifo_rd_ptr;      /* SPR_TXE0_0x28                    0x528 *//* Corerev >= 16 */
-    unsigned short xmtfifo_wr_ptr;      /* SPR_TXE0_0x2a                    0x52A *//* Corerev >= 16 */
-    unsigned short xmtfifodef1;         /* SPR_TXE0_0x2c                    0x52C *//* Corerev >= 16 */
+    union {
+        struct { // d11regs
+            /* Transmit control */
+            uint16  xmtfifodef;     /* 0x520 */
+            uint16  xmtfifo_frame_cnt;      /* 0x522 */     /* Corerev >= 16 */
+            uint16  xmtfifo_byte_cnt;       /* 0x524 */     /* Corerev >= 16 */
+            uint16  xmtfifo_head;           /* 0x526 */     /* Corerev >= 16 */
+            uint16  xmtfifo_rd_ptr;         /* 0x528 */     /* Corerev >= 16 */
+            uint16  xmtfifo_wr_ptr;         /* 0x52A */     /* Corerev >= 16 */
+            uint16  xmtfifodef1;            /* 0x52C */     /* Corerev >= 16 */
 
-    unsigned short PAD;                 /* SPR_TXE0_0x2e                    0x52E */
-    unsigned short PAD;                 /* SPR_TXE0_0x30                    0x530 */
-    unsigned short PAD;                 /* SPR_TXE0_0x32                    0x532 */
-    unsigned short PAD;                 /* SPR_TXE0_0x34                    0x534 */
-    unsigned short PAD;                 /* SPR_TXE0_0x36                    0x536 */
-    unsigned short PAD;                 /* SPR_TXE0_0x38                    0x538 */
-    unsigned short PAD;                 /* SPR_TXE0_0x3a                    0x53A */
-    unsigned short PAD;                 /* SPR_TXE0_0x3c                    0x53C */
-    unsigned short PAD;                 /* SPR_TXE0_0x3e                    0x53E */
+            /* AggFifo */
+            uint16  aggfifo_cmd;            /* 0x52e */
+            uint16  aggfifo_stat;           /* 0x530 */
+            uint16  aggfifo_cfgctl;         /* 0x532 */
+            uint16  aggfifo_cfgdata;        /* 0x534 */
+            uint16  aggfifo_mpdunum;        /* 0x536 */
+            uint16  aggfifo_len;            /* 0x538 */
+            uint16  aggfifo_bmp;            /* 0x53A */
+            uint16  aggfifo_ackedcnt;       /* 0x53C */
+            uint16  aggfifo_sel;            /* 0x53E */
 
-    unsigned short xmtfifocmd;          /* SPR_TXE0_FIFO_CMD                0x540 */
-    unsigned short xmtfifoflush;        /* SPR_TXE0_FIFO_FLUSH              0x542 */
-    unsigned short xmtfifothresh;       /* SPR_TXE0_FIFO_THRES              0x544 */
-    unsigned short xmtfifordy;          /* SPR_TXE0_FIFO_RDY                0x546 */
-    unsigned short xmtfifoprirdy;       /* SPR_TXE0_FIFO_PRI_RDY            0x548 */
-    unsigned short xmtfiforqpri;        /* SPR_TXE0_FIFO_RQ_PRI             0x54A */
-    unsigned short xmttplatetxptr;      /* SPR_TXE0_Template_TX_Pointer     0x54C */
-    unsigned short PAD;                 /* SPR_TXE0_0x4e                    0x54E */
-    unsigned short xmttplateptr;        /* SPR_TXE0_Template_Pointer        0x550 */
-    unsigned short smpl_clct_strptr;    /* SPR_TXE0_0x52                    0x552 *//* Corerev >= 22 */
-    unsigned short smpl_clct_stpptr;    /* SPR_TXE0_0x54                    0x554 *//* Corerev >= 22 */
-    unsigned short smpl_clct_curptr;    /* SPR_TXE0_0x56                    0x556 *//* Corerev >= 22 */
-    unsigned short PAD;                 /* SPR_TXE0_0x58                    0x558 */
-    unsigned short PAD;                 /* SPR_TXE0_0x5a                    0x55A */
-    unsigned short PAD;                 /* SPR_TXE0_0x5c                    0x55C */
-    unsigned short PAD;                 /* SPR_TXE0_0x5e                    0x55E */
-    unsigned short xmttplatedatalo;     /* SPR_TXE0_Template_Data_Low       0x560 */
-    unsigned short xmttplatedatahi;     /* SPR_TXE0_Template_Data_High      0x562 */
+            uint16  xmtfifocmd;     /* 0x540 */
+            uint16  xmtfifoflush;       /* 0x542 */
+            uint16  xmtfifothresh;      /* 0x544 */
+            uint16  xmtfifordy;     /* 0x546 */
+            uint16  xmtfifoprirdy;      /* 0x548 */
+            uint16  xmtfiforqpri;       /* 0x54A */
+            uint16  xmttplatetxptr;     /* 0x54C */
+            uint16  PAD;            /* 0x54E */
+            uint16  xmttplateptr;       /* 0x550 */
+            uint16  smpl_clct_strptr;       /* 0x552 */ /* Corerev >= 22 */
+            uint16  smpl_clct_stpptr;       /* 0x554 */ /* Corerev >= 22 */
+            uint16  smpl_clct_curptr;       /* 0x556 */ /* Corerev >= 22 */
+            uint16  aggfifo_data;           /* 0x558 */
+            uint16  PAD[0x03];      /* 0x55A - 0x55E */
+            uint16  xmttplatedatalo;    /* 0x560 */
+            uint16  xmttplatedatahi;    /* 0x562 */
 
-    unsigned short PAD;                 /* SPR_TXE0_0x64                    0x564 */
-    unsigned short PAD;                 /* SPR_TXE0_0x66                    0x566 */
+            uint16  PAD[2];         /* 0x564 - 0x566 */
 
-    unsigned short xmtsel;              /* SPR_TXE0_SELECT                  0x568 */
-    unsigned short xmttxcnt;            /* 0x56A */
-    unsigned short xmttxshmaddr;        /* 0x56C */
+            uint16  xmtsel;         /* 0x568 */
+            uint16  xmttxcnt;       /* 0x56A */
+            uint16  xmttxshmaddr;       /* 0x56C */
 
-    unsigned short PAD[0x09];  /* 0x56E - 0x57E */
+            uint16  PAD[0x09];      /* 0x56E - 0x57E */
 
-    /* TXE1 Block */
-    unsigned short PAD[0x40];  /* 0x580 - 0x5FE */
+            /* TXE1 Block */
+            uint16  PAD[0x40];      /* 0x580 - 0x5FE */
 
-    /* TSF Block */
-    unsigned short PAD[0X02];  /* 0x600 - 0x602 */
-    unsigned short tsf_cfpstrt_l;  /* 0x604 */
-    unsigned short tsf_cfpstrt_h;  /* 0x606 */
-    unsigned short PAD[0X05];  /* 0x608 - 0x610 */
-    unsigned short tsf_cfppretbtt; /* 0x612 */
-    unsigned short PAD[0XD];   /* 0x614 - 0x62C */
-    unsigned short tsf_clk_frac_l; /* 0x62E */
-    unsigned short tsf_clk_frac_h; /* 0x630 */
-    unsigned short PAD[0X14];  /* 0x632 - 0x658 */
-    unsigned short tsf_random; /* 0x65A */
-    unsigned short PAD[0x05];  /* 0x65C - 0x664 */
-    /* GPTimer 2 registers */
-    unsigned short tsf_gpt2_stat;  /* 0x666 */
-    unsigned short tsf_gpt2_ctr_l; /* 0x668 */
-    unsigned short tsf_gpt2_ctr_h; /* 0x66A */
-    unsigned short tsf_gpt2_val_l; /* 0x66C */
-    unsigned short tsf_gpt2_val_h; /* 0x66E */
-    unsigned short tsf_gptall_stat;    /* 0x670 */
-    unsigned short PAD[0x07];  /* 0x672 - 0x67E */
+            /* TSF Block */
+            uint16  PAD[0X02];      /* 0x600 - 0x602 */
+            uint16  tsf_cfpstrt_l;      /* 0x604 */
+            uint16  tsf_cfpstrt_h;      /* 0x606 */
+            uint16  PAD[0X05];      /* 0x608 - 0x610 */
+            uint16  tsf_cfppretbtt;     /* 0x612 */
+            uint16  PAD[0XD];       /* 0x614 - 0x62C */
+            uint16  tsf_clk_frac_l;         /* 0x62E */
+            uint16  tsf_clk_frac_h;         /* 0x630 */
+            uint16  PAD[0X14];      /* 0x632 - 0x658 */
+            uint16  tsf_random;     /* 0x65A */
+            uint16  PAD[0x05];      /* 0x65C - 0x664 */
+            /* GPTimer 2 registers are corerev >= 3 */
+            uint16  tsf_gpt2_stat;      /* 0x666 */
+            uint16  tsf_gpt2_ctr_l;     /* 0x668 */
+            uint16  tsf_gpt2_ctr_h;     /* 0x66A */
+            uint16  tsf_gpt2_val_l;     /* 0x66C */
+            uint16  tsf_gpt2_val_h;     /* 0x66E */
+            uint16  tsf_gptall_stat;    /* 0x670 */
+            uint16  PAD[0x07];      /* 0x672 - 0x67E */
 
-    /* IFS Block */
-    unsigned short ifs_sifs_rx_tx_tx;  /* 0x680 */
-    unsigned short ifs_sifs_nav_tx;    /* 0x682 */
-    unsigned short ifs_slot;   /* 0x684 */
-    unsigned short PAD;        /* 0x686 */
-    unsigned short ifs_ctl;        /* 0x688 */
-    unsigned short PAD[0x3];   /* 0x68a - 0x68F */
-    unsigned short ifsstat;        /* 0x690 */
-    unsigned short ifsmedbusyctl;  /* 0x692 */
-    unsigned short iftxdur;        /* 0x694 */
-    unsigned short PAD[0x3];   /* 0x696 - 0x69b */
-    /* EDCF support in dot11macs */
-    unsigned short ifs_aifsn;  /* 0x69c */
-    unsigned short ifs_ctl1;   /* 0x69e */
+            /* IFS Block */
+            uint16  ifs_sifs_rx_tx_tx;  /* 0x680 */
+            uint16  ifs_sifs_nav_tx;    /* 0x682 */
+            uint16  ifs_slot;       /* 0x684 */
+            uint16  PAD;            /* 0x686 */
+            uint16  ifs_ctl;        /* 0x688 */
+            uint16  ifs_boff;       /* 0x68a */
+            uint16  PAD[0x2];       /* 0x68c - 0x68F */
+            uint16  ifsstat;        /* 0x690 */
+            uint16  ifsmedbusyctl;      /* 0x692 */
+            uint16  iftxdur;        /* 0x694 */
+            uint16  PAD[0x3];       /* 0x696 - 0x69b */
+            /* EDCF support in dot11macs with corerevs >= 16 */
+            uint16  ifs_aifsn;      /* 0x69c */
+            uint16  ifs_ctl1;       /* 0x69e */
 
-    /* slow clock registers */
-    unsigned short scc_ctl;        /* 0x6a0 */
-    unsigned short scc_timer_l;    /* 0x6a2 */
-    unsigned short scc_timer_h;    /* 0x6a4 */
-    unsigned short scc_frac;   /* 0x6a6 */
-    unsigned short scc_fastpwrup_dly;  /* 0x6a8 */
-    unsigned short scc_per;        /* 0x6aa */
-    unsigned short scc_per_frac;   /* 0x6ac */
-    unsigned short scc_cal_timer_l;    /* 0x6ae */
-    unsigned short scc_cal_timer_h;    /* 0x6b0 */
-    unsigned short PAD;        /* 0x6b2 */
+            /* New slow clock registers on corerev >= 5 */
+            uint16  scc_ctl;        /* 0x6a0 */
+            uint16  scc_timer_l;        /* 0x6a2 */
+            uint16  scc_timer_h;        /* 0x6a4 */
+            uint16  scc_frac;       /* 0x6a6 */
+            uint16  scc_fastpwrup_dly;  /* 0x6a8 */
+            uint16  scc_per;        /* 0x6aa */
+            uint16  scc_per_frac;       /* 0x6ac */
+            uint16  scc_cal_timer_l;    /* 0x6ae */
+            uint16  scc_cal_timer_h;    /* 0x6b0 */
+            uint16  PAD;            /* 0x6b2 */
 
-    unsigned short PAD[0x26];
+            /* BTCX block on corerev >=13 */
+            uint16  btcx_ctrl;      /* 0x6b4 */
+            uint16  btcx_stat;      /* 0x6b6 */
+            uint16  btcx_trans_ctrl;    /* 0x6b8 */
+            uint16  btcx_pri_win;       /* 0x6ba */
+            uint16  btcx_tx_conf_timer; /* 0x6bc */
+            uint16  btcx_ant_sw_timer;  /* 0x6be */
 
-    /* NAV Block */
-    unsigned short nav_ctl;        /* 0x700 */
-    unsigned short navstat;        /* 0x702 */
-    unsigned short PAD[0x3e];  /* 0x702 - 0x77E */
+            uint16  btcx_prv_rfact_timer;   /* 0x6c0 */
+            uint16  btcx_cur_rfact_timer;   /* 0x6c2 */
+            uint16  btcx_rfact_dur_timer;   /* 0x6c4 */
 
-    /* WEP/PMQ Block *//* 0x780 - 0x7FE */
-    unsigned short PAD[0x20];  /* 0x780 - 0x7BE */
+            uint16  ifs_ctl_sel_pricrs; /* 0x6c6 */
+            uint16  ifs_ctl_sel_seccrs; /* 0x6c8 */
+            uint16  PAD[19];        /* 0x6ca - 0x6ee */
 
-    unsigned short wepctl;     /* 0x7C0 */
-    unsigned short wepivloc;   /* 0x7C2 */
-    unsigned short wepivkey;   /* 0x7C4 */
-    unsigned short wepwkey;        /* 0x7C6 */
+            /* ECI regs on corerev >=14 */
+            uint16  btcx_eci_addr;      /* 0x6f0 */
+            uint16  btcx_eci_data;      /* 0x6f2 */
 
-    unsigned short PAD[4];     /* 0x7C8 - 0x7CE */
-    unsigned short pcmctl;     /* 0X7D0 */
-    unsigned short pcmstat;        /* 0X7D2 */
-    unsigned short PAD[6];     /* 0x7D4 - 0x7DE */
+            uint16  PAD[6];
 
-    unsigned short pmqctl;     /* 0x7E0 */
-    unsigned short pmqstatus;  /* 0x7E2 */
-    unsigned short pmqpat0;        /* 0x7E4 */
-    unsigned short pmqpat1;        /* 0x7E6 */
-    unsigned short pmqpat2;        /* 0x7E8 */
+            /* NAV Block */
+            uint16  nav_ctl;        /* 0x700 */
+            uint16  navstat;        /* 0x702 */
+            uint16  PAD[0x3e];      /* 0x702 - 0x77E */
 
-    unsigned short pmqdat;     /* 0x7EA */
-    unsigned short pmqdator;   /* 0x7EC */
-    unsigned short pmqhst;     /* 0x7EE */
-    unsigned short pmqpath0;   /* 0x7F0 */
-    unsigned short pmqpath1;   /* 0x7F2 */
-    unsigned short pmqpath2;   /* 0x7F4 */
-    unsigned short pmqdath;        /* 0x7F6 */
+            /* WEP/PMQ Block */     /* 0x780 - 0x7FE */
+            uint16 PAD[0x20];       /* 0x780 - 0x7BE */
 
-    unsigned short PAD[0x04];  /* 0x7F8 - 0x7FE */
+            uint16 wepctl;          /* 0x7C0 */
+            uint16 wepivloc;        /* 0x7C2 */
+            uint16 wepivkey;        /* 0x7C4 */
+            uint16 wepwkey;         /* 0x7C6 */
 
-    /* SHM *//* 0x800 - 0xEFE */
-    unsigned short PAD[0x380]; /* 0x800 - 0xEFE */
+            uint16 PAD[4];          /* 0x7C8 - 0x7CE */
+            uint16 pcmctl;          /* 0X7D0 */
+            uint16 pcmstat;         /* 0X7D2 */
+            uint16 PAD[6];          /* 0x7D4 - 0x7DE */
+
+            uint16 pmqctl;          /* 0x7E0 */
+            uint16 pmqstatus;       /* 0x7E2 */
+            uint16 pmqpat0;         /* 0x7E4 */
+            uint16 pmqpat1;         /* 0x7E6 */
+            uint16 pmqpat2;         /* 0x7E8 */
+
+            uint16 pmqdat;          /* 0x7EA */
+            uint16 pmqdator;        /* 0x7EC */
+            uint16 pmqhst;          /* 0x7EE */
+            uint16 pmqpath0;        /* 0x7F0 */
+            uint16 pmqpath1;        /* 0x7F2 */
+            uint16 pmqpath2;        /* 0x7F4 */
+            uint16 pmqdath;         /* 0x7F6 */
+
+            uint16 PAD[0x04];       /* 0x7F8 - 0x7FE */
+            /* SHM */           /* 0x800 - 0xEFE */
+            uint16  PAD[0x380];     /* 0x800 - 0xEFE */
+        } d11regs;
+
+        struct { // d11regs_nexmon_old
+            /* Transmit control */
+            unsigned short xmtfifodef;          /* SPR_TXE0_FIFO_Def                0x520 */
+            unsigned short xmtfifo_frame_cnt;   /* SPR_TXE0_0x22                    0x522 *//* Corerev >= 16 */
+            unsigned short xmtfifo_byte_cnt;    /* SPR_TXE0_0x24                    0x524 *//* Corerev >= 16 */
+            unsigned short xmtfifo_head;        /* SPR_TXE0_0x26                    0x526 *//* Corerev >= 16 */
+            unsigned short xmtfifo_rd_ptr;      /* SPR_TXE0_0x28                    0x528 *//* Corerev >= 16 */
+            unsigned short xmtfifo_wr_ptr;      /* SPR_TXE0_0x2a                    0x52A *//* Corerev >= 16 */
+            unsigned short xmtfifodef1;         /* SPR_TXE0_0x2c                    0x52C *//* Corerev >= 16 */
+
+            unsigned short PAD;                 /* SPR_TXE0_0x2e                    0x52E */
+            unsigned short PAD;                 /* SPR_TXE0_0x30                    0x530 */
+            unsigned short PAD;                 /* SPR_TXE0_0x32                    0x532 */
+            unsigned short PAD;                 /* SPR_TXE0_0x34                    0x534 */
+            unsigned short PAD;                 /* SPR_TXE0_0x36                    0x536 */
+            unsigned short PAD;                 /* SPR_TXE0_0x38                    0x538 */
+            unsigned short PAD;                 /* SPR_TXE0_0x3a                    0x53A */
+            unsigned short PAD;                 /* SPR_TXE0_0x3c                    0x53C */
+            unsigned short PAD;                 /* SPR_TXE0_0x3e                    0x53E */
+
+            unsigned short xmtfifocmd;          /* SPR_TXE0_FIFO_CMD                0x540 */
+            unsigned short xmtfifoflush;        /* SPR_TXE0_FIFO_FLUSH              0x542 */
+            unsigned short xmtfifothresh;       /* SPR_TXE0_FIFO_THRES              0x544 */
+            unsigned short xmtfifordy;          /* SPR_TXE0_FIFO_RDY                0x546 */
+            unsigned short xmtfifoprirdy;       /* SPR_TXE0_FIFO_PRI_RDY            0x548 */
+            unsigned short xmtfiforqpri;        /* SPR_TXE0_FIFO_RQ_PRI             0x54A */
+            unsigned short xmttplatetxptr;      /* SPR_TXE0_Template_TX_Pointer     0x54C */
+            unsigned short PAD;                 /* SPR_TXE0_0x4e                    0x54E */
+            unsigned short xmttplateptr;        /* SPR_TXE0_Template_Pointer        0x550 */
+            unsigned short smpl_clct_strptr;    /* SPR_TXE0_0x52                    0x552 *//* Corerev >= 22 */
+            unsigned short smpl_clct_stpptr;    /* SPR_TXE0_0x54                    0x554 *//* Corerev >= 22 */
+            unsigned short smpl_clct_curptr;    /* SPR_TXE0_0x56                    0x556 *//* Corerev >= 22 */
+            unsigned short PAD;                 /* SPR_TXE0_0x58                    0x558 */
+            unsigned short PAD;                 /* SPR_TXE0_0x5a                    0x55A */
+            unsigned short PAD;                 /* SPR_TXE0_0x5c                    0x55C */
+            unsigned short PAD;                 /* SPR_TXE0_0x5e                    0x55E */
+            unsigned short xmttplatedatalo;     /* SPR_TXE0_Template_Data_Low       0x560 */
+            unsigned short xmttplatedatahi;     /* SPR_TXE0_Template_Data_High      0x562 */
+
+            unsigned short PAD;                 /* SPR_TXE0_0x64                    0x564 */
+            unsigned short PAD;                 /* SPR_TXE0_0x66                    0x566 */
+
+            unsigned short xmtsel;              /* SPR_TXE0_SELECT                  0x568 */
+            unsigned short xmttxcnt;            /* 0x56A */
+            unsigned short xmttxshmaddr;        /* 0x56C */
+
+            unsigned short PAD[0x09];  /* 0x56E - 0x57E */
+
+            /* TXE1 Block */
+            unsigned short PAD[0x40];  /* 0x580 - 0x5FE */
+
+            /* TSF Block */
+            unsigned short PAD[0X02];  /* 0x600 - 0x602 */
+            unsigned short tsf_cfpstrt_l;  /* 0x604 */
+            unsigned short tsf_cfpstrt_h;  /* 0x606 */
+            unsigned short PAD[0X05];  /* 0x608 - 0x610 */
+            unsigned short tsf_cfppretbtt; /* 0x612 */
+            unsigned short PAD[0XD];   /* 0x614 - 0x62C */
+            unsigned short tsf_clk_frac_l; /* 0x62E */
+            unsigned short tsf_clk_frac_h; /* 0x630 */
+            unsigned short PAD[0X14];  /* 0x632 - 0x658 */
+            unsigned short tsf_random; /* 0x65A */
+            unsigned short PAD[0x05];  /* 0x65C - 0x664 */
+            /* GPTimer 2 registers */
+            unsigned short tsf_gpt2_stat;  /* 0x666 */
+            unsigned short tsf_gpt2_ctr_l; /* 0x668 */
+            unsigned short tsf_gpt2_ctr_h; /* 0x66A */
+            unsigned short tsf_gpt2_val_l; /* 0x66C */
+            unsigned short tsf_gpt2_val_h; /* 0x66E */
+            unsigned short tsf_gptall_stat;    /* 0x670 */
+            unsigned short PAD[0x07];  /* 0x672 - 0x67E */
+
+            /* IFS Block */
+            unsigned short ifs_sifs_rx_tx_tx;  /* 0x680 */
+            unsigned short ifs_sifs_nav_tx;    /* 0x682 */
+            unsigned short ifs_slot;   /* 0x684 */
+            unsigned short PAD;        /* 0x686 */
+            unsigned short ifs_ctl;        /* 0x688 */
+            unsigned short PAD[0x3];   /* 0x68a - 0x68F */
+            unsigned short ifsstat;        /* 0x690 */
+            unsigned short ifsmedbusyctl;  /* 0x692 */
+            unsigned short iftxdur;        /* 0x694 */
+            unsigned short PAD[0x3];   /* 0x696 - 0x69b */
+            /* EDCF support in dot11macs */
+            unsigned short ifs_aifsn;  /* 0x69c */
+            unsigned short ifs_ctl1;   /* 0x69e */
+
+            /* slow clock registers */
+            unsigned short scc_ctl;        /* 0x6a0 */
+            unsigned short scc_timer_l;    /* 0x6a2 */
+            unsigned short scc_timer_h;    /* 0x6a4 */
+            unsigned short scc_frac;   /* 0x6a6 */
+            unsigned short scc_fastpwrup_dly;  /* 0x6a8 */
+            unsigned short scc_per;        /* 0x6aa */
+            unsigned short scc_per_frac;   /* 0x6ac */
+            unsigned short scc_cal_timer_l;    /* 0x6ae */
+            unsigned short scc_cal_timer_h;    /* 0x6b0 */
+            unsigned short PAD;        /* 0x6b2 */
+
+            unsigned short PAD[0x26];
+
+            /* NAV Block */
+            unsigned short nav_ctl;        /* 0x700 */
+            unsigned short navstat;        /* 0x702 */
+            unsigned short PAD[0x3e];  /* 0x702 - 0x77E */
+
+            /* WEP/PMQ Block *//* 0x780 - 0x7FE */
+            unsigned short PAD[0x20];  /* 0x780 - 0x7BE */
+
+            unsigned short wepctl;     /* 0x7C0 */
+            unsigned short wepivloc;   /* 0x7C2 */
+            unsigned short wepivkey;   /* 0x7C4 */
+            unsigned short wepwkey;        /* 0x7C6 */
+
+            unsigned short PAD[4];     /* 0x7C8 - 0x7CE */
+            unsigned short pcmctl;     /* 0X7D0 */
+            unsigned short pcmstat;        /* 0X7D2 */
+            unsigned short PAD[6];     /* 0x7D4 - 0x7DE */
+
+            unsigned short pmqctl;     /* 0x7E0 */
+            unsigned short pmqstatus;  /* 0x7E2 */
+            unsigned short pmqpat0;        /* 0x7E4 */
+            unsigned short pmqpat1;        /* 0x7E6 */
+            unsigned short pmqpat2;        /* 0x7E8 */
+
+            unsigned short pmqdat;     /* 0x7EA */
+            unsigned short pmqdator;   /* 0x7EC */
+            unsigned short pmqhst;     /* 0x7EE */
+            unsigned short pmqpath0;   /* 0x7F0 */
+            unsigned short pmqpath1;   /* 0x7F2 */
+            unsigned short pmqpath2;   /* 0x7F4 */
+            unsigned short pmqdath;        /* 0x7F6 */
+
+            unsigned short PAD[0x04];  /* 0x7F8 - 0x7FE */
+
+            /* SHM *//* 0x800 - 0xEFE */
+            unsigned short PAD[0x380]; /* 0x800 - 0xEFE */
+        } d11regs_nexmon_old;
+
+        struct { // d11acregs
+            uint16  XmtFIFOFullThreshold;   /* 0x520 */
+            uint16  XmtFifoFrameCnt;    /* 0x522 */
+            uint16  PAD[1];
+            uint16  BMCReadReq;         /* 0x526 */
+            uint16  BMCReadOffset;      /* 0x528 */
+            uint16  BMCReadLength;      /* 0x52a */
+            uint16  BMCReadStatus;      /* 0x52c */
+            uint16  XmtShmAddr;         /* 0x52e */
+            uint16  PsmMSDUAccess;      /* 0x530 */
+            uint16  MSDUEntryBufCnt;    /* 0x532 */
+            uint16  MSDUEntryStartIdx;  /* 0x534 */
+            uint16  MSDUEntryEndIdx;    /* 0x536 */
+            uint16  SampleCollectPlayPtrHigh; /* 0x538 */
+            uint16  SampleCollectCurPtrHigh; /* 0x53a */
+            uint16  BMCCmd1;        /* 0x53c */
+            uint16  PAD[1];
+            uint16  BMCCTL;         /* 0x540 */
+            uint16  BMCConfig;      /* 0x542 */
+            uint16  BMCStartAddr;       /* 0x544 */
+            uint16  BMCSize;        /* 0x546 */
+            uint16  BMCCmd;         /* 0x548 */
+            uint16  BMCMaxBuffers;      /* 0x54a */
+            uint16  BMCMinBuffers;      /* 0x54c */
+            uint16  BMCAllocCtl;        /* 0x54e */
+            uint16  BMCDescrLen;        /* 0x550 */
+            uint16  SampleCollectStartPtr;  /* 0x552 */
+            uint16  SampleCollectStopPtr;   /* 0x554 */
+            uint16  SampleCollectCurPtr;    /* 0x556 */
+            uint16  SaveRestoreStartPtr;    /* 0x558 */
+            uint16  SamplePlayStartPtr;     /* 0x55a */
+            uint16  SamplePlayStopPtr;  /* 0x55c */
+            uint16  XmtDMABusy;         /* 0x55e */
+            uint16  XmtTemplateDataLo;  /* 0x560 */
+            uint16  XmtTemplateDataHi;  /* 0x562 */
+            uint16  XmtTemplatePtr;     /* 0x564 */
+            uint16  XmtSuspFlush;       /* 0x566 */
+            uint16  XmtFifoRqPrio;      /* 0x568 */
+            uint16  BMCStatCtl;         /* 0x56a */
+            uint16  BMCStatData;        /* 0x56c */
+            uint16  BMCMSDUFifoStat;    /* 0x56e */
+            uint16  PAD[4];         /* 0x570-576 */
+            uint16  txe_status1;        /* 0x578 */
+            uint16  PAD[323];       /* 0x57a - 0x800 */
+
+            /* AQM */
+            uint16  AQMConfig;      /* 0x800 */
+            uint16  AQMFifoDef;         /* 0x802 */
+            uint16  AQMMaxIdx;      /* 0x804 */
+            uint16  AQMRcvdBA0;         /* 0x806 */
+            uint16  AQMRcvdBA1;         /* 0x808 */
+            uint16  AQMRcvdBA2;         /* 0x80a */
+            uint16  AQMRcvdBA3;         /* 0x80c */
+            uint16  AQMBaSSN;       /* 0x80e */
+            uint16  AQMRefSN;       /* 0x810 */
+            uint16  AQMMaxAggLenLow;    /* 0x812 */
+            uint16  AQMMaxAggLenHi;     /* 0x814 */
+            uint16  AQMAggParams;       /* 0x816 */
+            uint16  AQMMinMpduLen;      /* 0x818 */
+            uint16  AQMMacAdjLen;       /* 0x81a */
+            uint16  DebugBusCtrl;       /* 0x81c */
+            uint16  PAD[1];
+            uint16  AQMAggStats;        /* 0x820 */
+            uint16  AQMAggLenLow;       /* 0x822 */
+            uint16  AQMAggLenHi;        /* 0x824 */
+            uint16  AQMIdxFifo;         /* 0x826 */
+            uint16  AQMMpduLenFifo;     /* 0x828 */
+            uint16  AQMTxCntFifo;       /* 0x82a */
+            uint16  AQMUpdBA0;      /* 0x82c */
+            uint16  AQMUpdBA1;      /* 0x82e */
+            uint16  AQMUpdBA2;      /* 0x830 */
+            uint16  AQMUpdBA3;      /* 0x832 */
+            uint16  AQMAckCnt;      /* 0x834 */
+            uint16  AQMConsCnt;         /* 0x836 */
+            uint16  AQMFifoReady;       /* 0x838 */
+            uint16  AQMStartLoc;        /* 0x83a */
+            uint16  PAD[2];
+            uint16  TDCCTL;         /* 0x840 */
+            uint16  TDC_Plcp0;      /* 0x842 */
+            uint16  TDC_Plcp1;      /* 0x844 */
+            uint16  TDC_FrmLen0;        /* 0x846 */
+            uint16  TDC_FrmLen1;        /* 0x848 */
+            uint16  TDC_Txtime;         /* 0x84a */
+            uint16  TDC_VhtSigB0;       /* 0x84c */
+            uint16  TDC_VhtSigB1;       /* 0x84e */
+            uint16  TDC_LSigLen;        /* 0x850 */
+            uint16  TDC_NSym0;      /* 0x852 */
+            uint16  TDC_NSym1;      /* 0x854 */
+            uint16  TDC_VhtPsduLen0;    /* 0x856 */
+            uint16  TDC_VhtPsduLen1;    /* 0x858 */
+            uint16  TDC_VhtMacPad;      /* 0x85a */
+            uint16  PAD[2];
+            uint16  ShmDma_Ctl;         /* 0x860 */
+            uint16  ShmDma_TxdcAddr;    /* 0x862 */
+            uint16  ShmDma_ShmAddr;     /* 0x864 */
+            uint16  ShmDma_XferCnt;     /* 0x866 */
+            uint16  Txdc_Addr;      /* 0x868 */
+            uint16  Txdc_Data;      /* 0x86a */
+            uint16  PAD[10];        /* 0x86c - 0x880 */
+
+            /* RXE Register */
+            uint16  MHP_Status;     /* 0x880 */
+            uint16  MHP_FC;         /* 0x882 */
+            uint16  MHP_DUR;        /* 0x884 */
+            uint16  MHP_SC;         /* 0x886 */
+            uint16  MHP_QOS;        /* 0x888 */
+            uint16  MHP_HTC_H;      /* 0x88a */
+            uint16  MHP_HTC_L;      /* 0x88c */
+            uint16  MHP_Addr1_H;        /* 0x88e */
+            uint16  MHP_Addr1_M;        /* 0x890 */
+            uint16  MHP_Addr1_L;        /* 0x892 */
+            uint16  PAD[6];         /* 0x894 - 0x8a0 */
+            uint16  MHP_Addr2_H;        /* 0x8a0 */
+            uint16  MHP_Addr2_M;        /* 0x8a2 */
+            uint16  MHP_Addr2_L;        /* 0x8a4 */
+            uint16  MHP_Addr3_H;        /* 0x8a6 */
+            uint16  MHP_Addr3_M;        /* 0x8a8 */
+            uint16  MHP_Addr3_L;        /* 0x8aa */
+            uint16  MHP_Addr4_H;        /* 0x8ac */
+            uint16  MHP_Addr4_M;        /* 0x8ae */
+            uint16  MHP_Addr4_L;        /* 0x8b0 */
+            uint16  MHP_CFC;        /* 0x8b2 */
+            uint16  PAD[6];         /* 0x8b4 - 0x8c0 */
+            uint16  DAGG_CTL2;      /* 0x8c0 */
+            uint16  DAGG_BYTESLEFT;     /* 0x8c2 */
+            uint16  DAGG_SH_OFFSET;     /* 0x8c4 */
+            uint16  DAGG_STAT;      /* 0x8c6 */
+            uint16  DAGG_LEN;       /* 0x8c8 */
+            uint16  TXBA_CTL;       /* 0x8ca */
+            uint16  TXBA_DataSel;       /* 0x8cc */
+            uint16  TXBA_Data;      /* 0x8ce */
+            uint16  PAD[8];         /* 0x8d0 - 0x8e0 */
+            uint16  AMT_CTL;        /* 0x8e0 */
+            uint16  AMT_Status;     /* 0x8e2 */
+            uint16  AMT_Limit;      /* 0x8e4 */
+            uint16  AMT_Attr;       /* 0x8e6 */
+            uint16  AMT_Match1;     /* 0x8e8 */
+            uint16  AMT_Match2;     /* 0x8ea */
+            uint16  AMT_Table_Addr;     /* 0x8ec */
+            uint16  AMT_Table_Data;     /* 0x8ee */
+            uint16  AMT_Table_Val;      /* 0x8f0 */
+            uint16  AMT_DBG_SEL;        /* 0x8f2 */
+            uint16  PAD[6];         /* 0x8f4 - 0x900 */
+            uint16  RoeCtrl;        /* 0x900 */
+            uint16  RoeStatus;      /* 0x902 */
+            uint16  RoeIPChkSum;        /* 0x904 */
+            uint16  RoeTCPUDPChkSum;    /* 0x906 */
+            uint16  PAD[12];        /* 0x908 - 0x920 */
+            uint16  PSOCtl;         /* 0x920 */
+            uint16  PSORxWordsWatermark;    /* 0x922 */
+            uint16  PSORxCntWatermark;  /* 0x924 */
+            uint16  PAD[5];         /* 0x926 - 0x930 */
+            uint16  OBFFCtl;        /* 0x930 */
+            uint16  OBFFRxWordsWatermark;   /* 0x932 */
+            uint16  OBFFRxCntWatermark; /* 0x934 */
+            uint16  PAD[101];       /* 0x936 - 0xa00 */
+
+            /* TOE */
+            uint16  ToECTL;         /* 0xa00 */
+            uint16  ToERst;         /* 0xa02 */
+            uint16  ToECSumNZ;      /* 0xa04 */
+            uint16  PAD[29];        /* 0xa06 - 0xa40 */
+
+            uint16  TxSerialCtl;        /* 0xa40 */
+            uint16  TxPlcpLSig0;        /* 0xa42 */
+            uint16  TxPlcpLSig1;        /* 0xa44 */
+            uint16  TxPlcpHtSig0;       /* 0xa46 */
+            uint16  TxPlcpHtSig1;       /* 0xa48 */
+            uint16  TxPlcpHtSig2;       /* 0xa4a */
+            uint16  TxPlcpVhtSigB0;     /* 0xa4c */
+            uint16  TxPlcpVhtSigB1;     /* 0xa4e */
+            uint16  PAD[1];
+
+            uint16  MacHdrFromShmLen;   /* 0xa52 */
+            uint16  TxPlcpLen;      /* 0xa54 */
+            uint16  PAD[1];
+
+            uint16  TxBFRptLen;         /* 0xa58 */
+            uint16  PAD[3];
+
+            uint16  TXBFCtl;        /* 0xa60 */
+            uint16  BfmRptOffset;       /* 0xa62 */
+            uint16  BfmRptLen;      /* 0xa64 */
+            uint16  TXBFBfeRptRdCnt;    /* 0xa66 */
+            uint16  PAD[76];        /* 0xa68 - 0xafe */
+            uint16  RXMapFifoSize;          /* 0xb00 */
+            uint16  PAD[511];       /* 0xb02 - 0xEFE */
+        } d11acregs;
+    } u;
+} __attribute__((packed));
+
+/* 11AC TX DMA buffer header */
+#define D11_PHY_HDR_LEN     6
+#define D11AC_TXH_NUM_RATES 4
+/* per rate info */
+typedef struct d11actxh_rate d11actxh_rate_t;
+struct d11actxh_rate {
+    uint16  PhyTxControlWord_0;             /* 0 - 1 */
+    uint16  PhyTxControlWord_1;             /* 2 - 3 */
+    uint16  PhyTxControlWord_2;             /* 4 - 5 */
+    uint8   plcp[D11_PHY_HDR_LEN];          /* 6 - 11 */
+    uint16  FbwInfo;                        /* 12 -13 */
+    uint16  TxRate;                         /* 14 */
+    uint16  RtsCtsControl;                  /* 16 */
+    uint16  Bfm0;                            /* 18 */
+} __attribute__((packed));
+
+/* per packet info */
+typedef struct d11actxh_pkt d11actxh_pkt_t;
+struct d11actxh_pkt {
+    /* Per pkt info */
+    uint16  TSOInfo;                        /* 0 */
+    uint16  MacTxControlLow;                /* 2 */
+    uint16  MacTxControlHigh;               /* 4 */
+    uint16  Chanspec;                       /* 6 */
+    uint8   IVOffset;                       /* 8 */
+    uint8   PktCacheLen;                    /* 9 */
+    uint16  FrameLen;                       /* 10 */
+    uint16  TxFrameID;                      /* 12 */
+    uint16  Seq;                            /* 14 */
+    uint16  Tstamp;                         /* 16 */
+    uint16  TxStatus;                       /* 18 */
+} __attribute__((packed));
+
+/* Per cache info */
+typedef struct d11actxh_cache d11actxh_cache_t;
+struct d11actxh_cache {
+    uint8   BssIdEncAlg;                    /* 0 */
+    uint8   KeyIdx;                         /* 1 */
+    uint8   PrimeMpduMax;                   /* 2 */
+    uint8   FallbackMpduMax;                /* 3 */
+    uint16  AmpduDur;                       /* 4 - 5 */
+    uint8   BAWin;                          /* 6 */
+    uint8   MaxAggLen;                      /* 7 */
+    uint8   TkipPH1Key[10];                 /*  8 - 17 */
+    uint8   TSCPN[6];                       /* 18 - 23 */
+} __attribute__((packed));
+
+/* Long format tx descriptor */
+typedef struct d11actxh d11actxh_t;
+struct d11actxh {
+    /* Per pkt info */
+    d11actxh_pkt_t  PktInfo;            /* 0 - 19 */
+    /* Per rate info */
+    d11actxh_rate_t RateInfo[D11AC_TXH_NUM_RATES];  /* 20 - 99 */
+    /* Per cache info */
+    d11actxh_cache_t    CacheInfo;      /* 100 - 123 */
 } __attribute__((packed));
 
 typedef void (*to_fun_t)(void *arg);
@@ -1647,6 +2679,19 @@ struct hndrte_timer
     int set;
     int periodic;
     bool    _freedone;
+} __attribute__((packed));
+
+struct tdls_iovar {
+    uint8 ea[6];
+    uint8 mode;         /* mode: depends on iovar */
+    uint8 chanspec[2];
+    uint8 PAD;
+    uint8 PAD;
+    uint8 PAD;
+    uint8 PAD;
+    uint8 PAD;
+    uint8 PAD;
+    uint8 PAD;
 } __attribute__((packed));
 
 /*== maccontrol register ==*/
@@ -1716,6 +2761,31 @@ struct udp_header {
         uint16 checksum_coverage;   /* UDPLITE: checksum_coverage */
     } len_chk_cov;
     uint16 checksum;
+} __attribute__((packed));
+
+struct icmp_header {
+    uint8 type;
+    uint8 code;
+    uint16 checksum;
+} __attribute__((packed));
+
+struct icmp_ping_header {
+    uint16 identifier;
+    uint16 sequence_number;
+} __attribute__((packed));
+
+struct ethernet_ip_icmp_ping_header {
+    struct ethernet_header ethernet;
+    struct ip_header ip;
+    struct icmp_header icmp;
+    struct icmp_ping_header ping;
+    uint8 payload[];
+} __attribute__((packed));
+
+struct ethernet_ip_udp_header {
+    struct ethernet_header ethernet;
+    struct ip_header ip;
+    struct udp_header udp;
 } __attribute__((packed));
 
 struct bdc_ethernet_ip_udp_header {

@@ -1,0 +1,42 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test that on glibc systems, the gettext() results come out in the correct
+# encoding for locales that differ only in their encoding.
+
+# This test works only on glibc systems.
+: ${GLIBC2=no}
+test "$GLIBC2" = yes || {
+  echo "Skipping test: not a glibc system"
+  Exit 77
+}
+
+# This test works only on systems that have a de_DE.ISO-8859-1 and
+# de_DE.UTF-8 locale installed.
+LC_ALL=de_DE.ISO-8859-1 ../testlocale || {
+  if test -f /usr/bin/localedef; then
+    echo "Skipping test: locale de_DE.ISO-8859-1 not installed"
+  else
+    echo "Skipping test: locale de_DE.ISO-8859-1 not supported"
+  fi
+  Exit 77
+}
+LC_ALL=de_DE.UTF-8 ../testlocale || {
+  if test -f /usr/bin/localedef; then
+    echo "Skipping test: locale de_DE.UTF-8 not installed"
+  else
+    echo "Skipping test: locale de_DE.UTF-8 not supported"
+  fi
+  Exit 77
+}
+
+test -d gt-5 || mkdir gt-5
+test -d gt-5/de_DE || mkdir gt-5/de_DE
+test -d gt-5/de_DE/LC_MESSAGES || mkdir gt-5/de_DE/LC_MESSAGES
+
+: ${MSGFMT=msgfmt}
+${MSGFMT} -o gt-5/de_DE/LC_MESSAGES/codeset.mo "$abs_srcdir"/gettext-5.po
+
+../gettext-5-prg || Exit 1
+
+Exit 0

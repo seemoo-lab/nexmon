@@ -1,0 +1,22 @@
+*** gnulib/modules/wait-process	2006-04-24 13:38:06.000000000 +0200
+--- wait-process	2006-07-30 16:45:20.000000000 +0200
+***************
+*** 6,11 ****
+--- 6,12 ----
+  lib/wait-process.c
+  m4/wait-process.m4
+  m4/sig_atomic_t.m4
++ m4/unionwait.m4
+  
+  Depends-on:
+  fatal-signal
+***************
+*** 18,23 ****
+--- 19,25 ----
+  
+  configure.ac:
+  gl_WAIT_PROCESS
++ gt_UNION_WAIT
+  
+  Makefile.am:
+  lib_SOURCES += wait-process.h wait-process.c

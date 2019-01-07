@@ -1,0 +1,33 @@
+# Portuguese translation of 'hello-c++-kde' package.
+# Copyright (C) 2005 Yoyodyne, Inc.
+# This file is distributed under the same license as the hello-c++-kde package.
+# Helder Correia <helder.pereira.correia@gmail.com>, 2005.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-c++-kde 0.14.5\n"
+"Report-Msgid-Bugs-To: bug-gnu-gettext@gnu.org\n"
+"PO-Revision-Date: 2005-11-19 23:08+0000\n"
+"Last-Translator: Helder Correia <helder.pereira.correia@gmail.com>\n"
+"Language-Team: Portuguese <translation-team-pt@lists.sourceforge.net>\n"
+"Language: pt\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: hello.cc:46
+msgid "Hello example"
+msgstr "Exemplo Olá"
+
+#: hello.cc:48
+msgid "Hello world example"
+msgstr "Exemplo Olá Mundo"
+
+#: hellowindow.cc:42
+msgid "Hello, world!"
+msgstr "Olá, Mundo!"
+
+#: hellowindow.cc:49
+#, qt-format
+msgid "This program is running as process number %1."
+msgstr "Este programa está a ser executado com o número de processo %1."

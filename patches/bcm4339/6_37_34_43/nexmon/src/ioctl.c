@@ -42,90 +42,33 @@
 #include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
 #include <rates.h>              // rates used to build the ratespec for frame injection
 #include <nexioctls.h>          // ioctls added in the nexmon patch
-#include <capabilities.h>       // capabilities included in a nexmon patch
-#include <sendframe.h>          // sendframe functionality
-#include <objmem.h>             // Functions to access object memory
+#include <version.h>            // version information
+#include <argprintf.h>          // allows to execute argprintf to print into the arg buffer
+
+extern int wlc_ioctl_4xx(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if);
+extern int wlc_ioctl_5xx(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if);
+extern int wlc_ioctl_6xx(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if);
+extern int wlc_ioctl_7xx(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if);
+extern int wlc_ioctl_8xx(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if);
 
 int 
 wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 {
     int ret = IOCTL_ERROR;
+    argprintf_init(arg, len);
 
-    switch (cmd) {
-        case NEX_GET_CAPABILITIES:
-            // sends back the chips capabilities
-            if (len == 4) {
-                memcpy(arg, &capabilities, 4);
-                ret = IOCTL_SUCCESS;
-            }
-            break;
-
-        case NEX_WRITE_TO_CONSOLE:
-            // writes the string from arg to the console
-            if (len > 0) {
-                arg[len-1] = 0;
-                printf("ioctl: %s\n", arg);
-                ret = IOCTL_SUCCESS; 
-            }
-            break;
-
-        case NEX_GET_PHYREG:
-            // reads the value from arg[0] to arg[0]
-            if(wlc->hw->up && len >= 4) {
-                wlc_phyreg_enter(wlc->band->pi);
-                *(int *) arg =  phy_reg_read(wlc->band->pi, ((int *) arg)[0]);
-                wlc_phyreg_exit(wlc->band->pi);
-                ret = IOCTL_SUCCESS;
-            }
-            break;
-
-        case NEX_SET_PHYREG:
-            // writes the value arg[1] to physical layer register arg[0]
-            if(wlc->hw->up && len >= 8) {
-                wlc_phyreg_enter(wlc->band->pi);
-                phy_reg_write(wlc->band->pi, ((int *) arg)[1], ((int *) arg)[0]);
-                wlc_phyreg_exit(wlc->band->pi);
-                ret = IOCTL_SUCCESS;
-            }
-            break;
-
-        case NEX_READ_OBJMEM:
-            if(wlc->hw->up && len >= 4)
-            {
-                int addr = ((int *) arg)[0];
-                int i = 0;
-                
-                for (i = 0; i < len/4; i++) {
-                    wlc_bmac_read_objmem32_objaddr(wlc->hw, addr + i, &((unsigned int *) arg)[i]);
-                }
-
-                ret = IOCTL_SUCCESS;
-            }
-            break;
-
-        case NEX_WRITE_OBJMEM:
-            if(wlc->hw->up && len >= 5)
-            {
-                int addr = ((int *) arg)[0];
-                int i = 0;
-                
-                for (i = 0; i < (len-4)/8; i+=2) {
-                    wlc_bmac_write_objmem64_objaddr(wlc->hw, addr + i, ((unsigned int *) arg)[i + 1], ((unsigned int *) arg)[i + 2]);
-                }
-
-                switch((len-4) % 8) {
-                    case 4:
-                        wlc_bmac_write_objmem32_objaddr(wlc->hw, addr + i, ((unsigned int *) arg)[i + 1]);
-                        break;
-                }
-
-                ret = IOCTL_SUCCESS;
-            }
-            break;
-
-        default:
-            ret = wlc_ioctl(wlc, cmd, arg, len, wlc_if);
-    }
+    if (cmd >= 400 && cmd < 500)
+        ret = wlc_ioctl_4xx(wlc, cmd, arg, len, wlc_if);
+    else if (cmd >= 500 && cmd < 600)
+        ret = wlc_ioctl_5xx(wlc, cmd, arg, len, wlc_if);
+    else if (cmd >= 600 && cmd < 700)
+        ret = wlc_ioctl_6xx(wlc, cmd, arg, len, wlc_if);
+    else if (cmd >= 700 && cmd < 800)
+        ret = wlc_ioctl_7xx(wlc, cmd, arg, len, wlc_if);
+    else if (cmd >= 800 && cmd < 900)
+        ret = wlc_ioctl_8xx(wlc, cmd, arg, len, wlc_if);
+    else
+        ret = wlc_ioctl(wlc, cmd, arg, len, wlc_if);
 
     return ret;
 }

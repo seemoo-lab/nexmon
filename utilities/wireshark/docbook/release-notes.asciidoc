@@ -1,0 +1,177 @@
+= Wireshark {wireshark-version} Release Notes
+// AsciiDoc quick reference: http://powerman.name/doc/asciidoc
+
+== What is Wireshark?
+
+Wireshark is the world's most popular network protocol analyzer. It is
+used for troubleshooting, analysis, development and education.
+
+== What's New
+
+=== Bug Fixes
+
+The following vulnerabilities have been fixed:
+
+//* ws-salink:2016-63[]
+//+
+//A dissector went awry.
+//(ws-buglink:xxxx[])
+//cve-idlink:2015-XXXX[]
+// Fixed in master: xxxx
+// Fixed in master-2.2: xxxx
+// Fixed in master-2.0: xxxx
+
+* Arbitrary file deletion on Windows. (ws-buglink:13217[])
+
+The following bugs have been fixed:
+
+//* ws-buglink:5000[]
+//* ws-buglink:6000[Wireshark bug]
+//* cve-idlink:2014-2486[]
+//* Wireshark accepted your prom invitation then cancelled at the last minute. (ws-buglink:0000[])
+// cp /dev/null /tmp/buglist.txt ; for bugnumber in `git log --stat v2.2.3rc0..| grep ' Bug:' | cut -f2 -d: | sort -n -u ` ; do gen-bugnote $bugnumber; pbpaste >> /tmp/buglist.txt; done
+
+* Saving all exported objects (SMB/SMB2) results in out of physical memory. (ws-buglink:11133[])
+
+* Export HTTP Objects - Single file shows as multiple files in 2.0.2. (ws-buglink:12230[])
+
+* Follow Stream and graph buttons remain greyed out in conversation window. (ws-buglink:12893[])
+
+* Dicom list of tags in element of VR=AT not properly decoded. (ws-buglink:13077[])
+
+* Malformed Packet: BGP Update (withdraw) message. (ws-buglink:13146[])
+
+* Install fail on macOS Sierra (error PKInstallErrorDomain Code=112). (ws-buglink:13152[])
+
+* GTP: "Create PDP Context response" message shows back-off timer as malformed when included in the response. (ws-buglink:13153[])
+
+* ICMP dissector fails to properly detect timestamps. (ws-buglink:13161[])
+
+* RLC misdissection. (ws-buglink:13162[])
+
+* Text2pcap on Windows produces corrupt output when writing the capture file to the standard output. (ws-buglink:13165[])
+
+* HTML escaping of quotes in error message. (ws-buglink:13178[])
+
+* TShark doesn't respect protocols.display_hidden_proto_items setting. (ws-buglink:13192[])
+
+* RPC/RDMA dissector should exit when frame is not RPC-over-RDMA. (ws-buglink:13195[])
+
+* Some RPC-over-RDMA frames are not recognized as RPC-over-RDMA. (ws-buglink:13196[])
+
+* RPC-over-RDMA frames with chunk lists are "Malformed". (ws-buglink:13197[])
+
+* TShark fails to pass RPC-over-RDMA frames to RPC subdissector. (ws-buglink:13198[])
+
+* Adding a DOF DPS Identity Secret, session Key, or Mode Template causes Wireshark to crash. (ws-buglink:13209[])
+
+* Wireshark shows "MS Video Source Request" in a RTCP packet as "Malformed". (ws-buglink:13212[])
+
+=== New and Updated Features
+
+There are no new features in this release.
+
+//=== Removed Dissectors
+
+=== New File Format Decoding Support
+
+There are no new file formats in this release.
+
+=== New Protocol Support
+
+There are no new protocols in this release.
+
+=== Updated Protocol Support
+
+--sort-and-group--
+BGP
+BTLE
+BOOTP/DHCP
+DICOM
+DOF
+Echo
+GTP
+ICMP
+Radiotap
+RLC
+RPC over RDMA
+RTCP
+SMB
+TCP
+UFTP4
+VXLAN
+--sort-and-group--
+
+=== New and Updated Capture File Support
+
+There is no new or updated capture file support in this release.
+//--sort-and-group--
+//--sort-and-group--
+
+=== New and Updated Capture Interfaces support
+
+There are no new or updated capture interfaces supported in this release.
+
+=== Major API Changes
+
+There are no major API changes in this release.
+
+== Getting Wireshark
+
+Wireshark source code and installation packages are available from
+https://www.wireshark.org/download.html.
+
+=== Vendor-supplied Packages
+
+Most Linux and Unix vendors supply their own Wireshark packages. You can
+usually install or upgrade Wireshark using the package management system
+specific to that platform. A list of third-party packages can be found
+on the https://www.wireshark.org/download.html#thirdparty[download page]
+on the Wireshark web site.
+
+== File Locations
+
+Wireshark and TShark look in several different locations for preference
+files, plugins, SNMP MIBS, and RADIUS dictionaries. These locations vary
+from platform to platform. You can use About→Folders to find the default
+locations on your system.
+
+== Known Problems
+
+Dumpcap might not quit if Wireshark or TShark crashes.
+(ws-buglink:1419[])
+
+The BER dissector might infinitely loop.
+(ws-buglink:1516[])
+
+Capture filters aren't applied when capturing from named pipes.
+(ws-buglink:1814[])
+
+Filtering tshark captures with read filters (-R) no longer works.
+(ws-buglink:2234[])
+
+Application crash when changing real-time option.
+(ws-buglink:4035[])
+
+Wireshark and TShark will display incorrect delta times in some cases.
+(ws-buglink:4985[])
+
+Wireshark should let you work with multiple capture files. (ws-buglink:10488[])
+
+Dell Backup and Recovery (DBAR) makes many Windows applications crash,
+including Wireshark. (ws-buglink:12036[])
+
+== Getting Help
+
+Community support is available on https://ask.wireshark.org/[Wireshark's
+Q&A site] and on the wireshark-users mailing list. Subscription
+information and archives for all of Wireshark's mailing lists can be
+found on https://www.wireshark.org/lists/[the web site].
+
+Official Wireshark training and certification are available from
+http://www.wiresharktraining.com/[Wireshark University].
+
+== Frequently Asked Questions
+
+A complete FAQ is available on the
+https://www.wireshark.org/faq.html[Wireshark web site].

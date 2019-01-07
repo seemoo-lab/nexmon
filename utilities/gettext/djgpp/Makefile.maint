@@ -1,0 +1,46 @@
+# Maintainer's Makefile                                         -*-Makefile-*-
+
+top_srcdir = ..
+srcdir = .
+
+SHELL = /bin/sh
+
+all: README fnchange.lst config.sed
+
+config.sed: config.in fnchange.in
+	sed \
+	    -e '/plural-[1-9]\+/ d' \
+	    -e 's|\.h\.in|\\\\\\\\.h\\\\\\\\.in|' \
+	    -e 's|\.in\.in|\\\\\\\\.in\\\\\\\\.in|' \
+	    -e 's|\.sh\.in|\\\\\\\\.sh\\\\\\\\.in|' \
+	    -e 's|^.*/\([A-Za-z0-9\\._+-]\+\)[ ]\+|  s,\1,|' \
+	    -e '/\/tests\// !s|@V@.*/||;s|@V@/tests/||' \
+	    -e 's|$$|,g\\\\\\|' \
+	    -e 's|^#.*$$|/@append_list_of_renamed_files@/ c\\|' \
+	  $(srcdir)/fnchange.in > t-script.sed
+	sed '$$ s|\\||' t-script.sed > script.sed
+	sed -f script.sed $(srcdir)/config.in > t-$@
+	mv t-$@ $@
+	rm -f t-script.sed script.sed
+
+fnchange.lst: fnchange.in $(top_srcdir)/configure.in
+	PACKAGE=`grep AM_INIT_AUTOMAKE $(top_srcdir)/configure.in | sed -e 's/AM_INIT_AUTOMAKE(\([^,)]*\),.*$$/\1/'`; \
+	VERSION=`grep AM_INIT_AUTOMAKE $(top_srcdir)/configure.in | sed -e 's/AM_INIT_AUTOMAKE([^,)]*, *\([^,)]*\).*$$/\1/'`; \
+	sed \
+	    -e '/^#/d' \
+	    -e "s/@V@/$${PACKAGE}-$${VERSION}/g" \
+	  $(srcdir)/fnchange.in > t-$@
+	mv t-$@ $@
+
+README: README.in $(top_srcdir)/configure.in
+	PACKAGE=`grep AM_INIT_AUTOMAKE $(top_srcdir)/configure.in | sed -e 's/AM_INIT_AUTOMAKE(\([^,)]*\),.*$$/\1/'`; \
+	VERSION=`grep AM_INIT_AUTOMAKE $(top_srcdir)/configure.in | sed -e 's/AM_INIT_AUTOMAKE([^,)]*, *\([^,)]*\).*$$/\1/'`; \
+	packageversion=`echo "$${VERSION}" | sed 's/\..*\.//'`; \
+	treeversion=`echo "$${VERSION}" | sed 's/\.//'`; \
+	sed \
+	    -e "s/@V@/$${PACKAGE}-$${VERSION}/g" \
+	    -e "s/@VER@/$${VERSION}/g" \
+	    -e "s/@packageversion@/$$packageversion/g" \
+	    -e "s/@treeversion@/$$treeversion/g" \
+	  $(srcdir)/README.in > t-$@
+	mv t-$@ $@

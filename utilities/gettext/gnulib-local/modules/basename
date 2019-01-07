@@ -1,0 +1,23 @@
+Description:
+Return the name-within-directory of a file name.
+
+Files:
+lib/basename.h
+lib/basename.c
+
+Depends-on:
+
+configure.ac:
+
+Makefile.am:
+lib_SOURCES += basename.h basename.c
+
+Include:
+"basename.h"
+
+License:
+GPL
+
+Maintainer:
+Bruno Haible
+

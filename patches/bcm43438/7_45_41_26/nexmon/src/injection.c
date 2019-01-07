@@ -41,16 +41,15 @@
 #include <helper.h>
 #include <ieee80211_radiotap.h>
 #include <sendframe.h>
-#include "bcm43438.h"
 #include "d11.h"
 #include "brcm.h"
 
 int
-inject_frame(sk_buff *p) {
+inject_frame(struct wl_info *wl, sk_buff *p) {
     int rtap_len = 0;
 
     //needed for sending:
-    struct wlc_info *wlc = WLC_INFO_ADDR;
+    struct wlc_info *wlc = wl->wlc;
     int data_rate = 0;
     //Radiotap parsing:
     struct ieee80211_radiotap_iterator iterator;
@@ -61,7 +60,7 @@ inject_frame(sk_buff *p) {
 
     rtap_header = (struct ieee80211_radiotap_header *) p->data;
 
-    int ret = ieee80211_radiotap_iterator_init(&iterator, rtap_header, rtap_len);
+    int ret = ieee80211_radiotap_iterator_init(&iterator, rtap_header, rtap_len, 0);
 
     while(!ret) {
         ret = ieee80211_radiotap_iterator_next(&iterator);
@@ -80,7 +79,7 @@ inject_frame(sk_buff *p) {
                 break;
         }
     }
-    
+
     //remove radiotap header
     skb_pull(p, rtap_len);
 
@@ -91,11 +90,17 @@ inject_frame(sk_buff *p) {
 }
 
 int
-wlc_sdio_hook(int a1, int a2, struct sk_buff *p)
+wl_send_hook(struct hndrte_dev *src, struct hndrte_dev *dev, struct sk_buff *p)
 {
-    inject_frame(p);
-    return 0;
+    struct wl_info *wl = (struct wl_info *) dev->softc;
+    struct wlc_info *wlc = wl->wlc;
+
+    if (wlc->monitor && p != 0 && p->data != 0 && ((short *) p->data)[0] == 0) {
+        return inject_frame(wl, p);
+    } else {
+        return wl_send(src, dev, p);
+    }
 }
 
-__attribute__((at(0x7EF8, "", CHIP_VER_BCM43438, FW_VER_ALL)))
-BPatch(wlc_sdio_hook, wlc_sdio_hook);
+__attribute__((at(0x38f3c, "", CHIP_VER_BCM43438, FW_VER_ALL)))
+GenericPatch4(wl_send_hook, wl_send_hook + 1);

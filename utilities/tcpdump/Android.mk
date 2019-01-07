@@ -165,8 +165,7 @@ LOCAL_SRC_FILES := $(tcpdump_src_files)
 LOCAL_CFLAGS += -DHAVE_CONFIG_H
 LOCAL_CFLAGS += -D_U_="__attribute__((unused))"
 LOCAL_CFLAGS += -Werror
-LOCAL_SHARED_LIBRARIES += libssl libcrypto
-LOCAL_STATIC_LIBRARIES += libpcap
+LOCAL_STATIC_LIBRARIES += libpcap libssl libcrypto
 LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
 LOCAL_MODULE_TAGS := debug
 LOCAL_MODULE := tcpdump
@@ -175,16 +174,16 @@ include $(BUILD_EXECUTABLE)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libssl
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../shared_system_libs/libssl.so
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../libssl/local/armeabi/libssl.a
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../boringssl/src/include
-include $(PREBUILT_SHARED_LIBRARY)
+include $(PREBUILT_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libcrypto
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../shared_system_libs/libcrypto.so
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../libcrypto/local/armeabi/libcrypto.a
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../boringssl/src/include
-include $(PREBUILT_SHARED_LIBRARY)
+include $(PREBUILT_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)

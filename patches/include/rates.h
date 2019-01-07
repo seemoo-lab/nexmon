@@ -26,13 +26,22 @@
 #define RATES_RATE_MAX  108     /* highest rate (54 Mbps) in 500kbps units */
 
 #define RATES_RATE_MASK         0x000000FF
+
 #define RATES_VHT_MCS_MASK      0x0000000F
+#define RATES_VHT_MCS_SHIFT     0
+#define RATES_VHT_MCS(n)        ((n << RATES_VHT_MCS_SHIFT) & RATES_VHT_MCS_MASK)
+
 #define RATES_VHT_NSS_MASK      0x000000F0
 #define RATES_VHT_NSS_SHIFT     4
+#define RATES_VHT_NSS(n)        ((n << RATES_VHT_NSS_SHIFT) & RATES_VHT_NSS_MASK)
 
 #define RATES_HT_MCS_MASK       0x00000007
+#define RATES_HT_MCS_SHIFT      0
+#define RATES_HT_MCS(n)         ((n << RATES_HT_MCS_SHIFT) & RATES_HT_MCS_MASK)
+
 #define RATES_HT_NSS_MASK       0x00000078
 #define RATES_HT_NSS_SHIFT      3
+#define RATES_HT_NSS(n)         ((n << RATES_HT_NSS_SHIFT) & RATES_HT_NSS_MASK)
 
 #define RATES_TXEXP_MASK        0x00000300
 #define RATES_TXEXP_SHIFT       8
@@ -63,5 +72,8 @@
 #define RATES_BW_40MHZ          (BW_40MHZ << RATES_BW_SHIFT)
 #define RATES_BW_80MHZ          (BW_80MHZ << RATES_BW_SHIFT)
 #define RATES_BW_160MHZ         (BW_160MHZ << RATES_BW_SHIFT)
+
+#define RATES_SET_HT(mcs)       (RATES_OVERRIDE_RATE | RATES_OVERRIDE_MODE | RATES_ENCODE_HT | (RATES_HT_MCS_MASK & mcs))
+#define RATES_SET_VHT(mcs)      (RATES_OVERRIDE_RATE | RATES_OVERRIDE_MODE | RATES_ENCODE_VHT | RATES_VHT_NSS(1) | (RATES_VHT_MCS_MASK & mcs))
 
 #endif /* RATES_H */

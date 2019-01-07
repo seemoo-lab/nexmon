@@ -1,0 +1,7 @@
+Further optimize pbkdf2 handling.
+Windows port?
+Signal handler is not right.  Need to be able to break and handle closing files
+at any time.
+Add support for multi-threading
+Handle multiple TKIP four-ways in the same capture file properly
+Decide how to properly handle multiple TKIP four-ways

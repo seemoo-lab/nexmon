@@ -1,0 +1,3599 @@
+<HTML>
+<HEAD>
+<!-- This HTML file has been created by texi2html 1.52b
+     from gettext.texi on 11 June 2016 -->
+
+<META HTTP-EQUIV="content-type" CONTENT="text/html; charset=UTF-8">
+<TITLE>GNU gettext utilities - 9  Manipulating PO Files</TITLE>
+</HEAD>
+<BODY>
+Go to the <A HREF="gettext_1.html">first</A>, <A HREF="gettext_8.html">previous</A>, <A HREF="gettext_10.html">next</A>, <A HREF="gettext_25.html">last</A> section, <A HREF="gettext_toc.html">table of contents</A>.
+<P><HR><P>
+
+
+<H1><A NAME="SEC79" HREF="gettext_toc.html#TOC79">9  Manipulating PO Files</A></H1>
+<P>
+<A NAME="IDX546"></A>
+
+</P>
+<P>
+Sometimes it is necessary to manipulate PO files in a way that is better
+performed automatically than by hand.  GNU <CODE>gettext</CODE> includes a
+complete set of tools for this purpose.
+
+</P>
+<P>
+<A NAME="IDX547"></A>
+When merging two packages into a single package, the resulting POT file
+will be the concatenation of the two packages' POT files.  Thus the
+maintainer must concatenate the two existing package translations into
+a single translation catalog, for each language.  This is best performed
+using <SAMP>&lsquo;msgcat&rsquo;</SAMP>.  It is then the translators' duty to deal with any
+possible conflicts that arose during the merge.
+
+</P>
+<P>
+<A NAME="IDX548"></A>
+When a translator takes over the translation job from another translator,
+but she uses a different character encoding in her locale, she will
+convert the catalog to her character encoding.  This is best done through
+the <SAMP>&lsquo;msgconv&rsquo;</SAMP> program.
+
+</P>
+<P>
+When a maintainer takes a source file with tagged messages from another
+package, he should also take the existing translations for this source
+file (and not let the translators do the same job twice).  One way to do
+this is through <SAMP>&lsquo;msggrep&rsquo;</SAMP>, another is to create a POT file for
+that source file and use <SAMP>&lsquo;msgmerge&rsquo;</SAMP>.
+
+</P>
+<P>
+<A NAME="IDX549"></A>
+<A NAME="IDX550"></A>
+When a translator wants to adjust some translation catalog for a special
+dialect or orthography -- for example, German as written in Switzerland
+versus German as written in Germany -- she needs to apply some text
+processing to every message in the catalog.  The tool for doing this is
+<SAMP>&lsquo;msgfilter&rsquo;</SAMP>.
+
+</P>
+<P>
+Another use of <CODE>msgfilter</CODE> is to produce approximately the POT file for
+which a given PO file was made.  This can be done through a filter command
+like <SAMP>&lsquo;msgfilter sed -e d | sed -e '/^# /d'&rsquo;</SAMP>.  Note that the original
+POT file may have had different comments and different plural message counts,
+that's why it's better to use the original POT file if available.
+
+</P>
+<P>
+<A NAME="IDX551"></A>
+When a translator wants to check her translations, for example according
+to orthography rules or using a non-interactive spell checker, she can do
+so using the <SAMP>&lsquo;msgexec&rsquo;</SAMP> program.
+
+</P>
+<P>
+<A NAME="IDX552"></A>
+When third party tools create PO or POT files, sometimes duplicates cannot
+be avoided.  But the GNU <CODE>gettext</CODE> tools give an error when they
+encounter duplicate msgids in the same file and in the same domain.
+To merge duplicates, the <SAMP>&lsquo;msguniq&rsquo;</SAMP> program can be used.
+
+</P>
+<P>
+<SAMP>&lsquo;msgcomm&rsquo;</SAMP> is a more general tool for keeping or throwing away
+duplicates, occurring in different files.
+
+</P>
+<P>
+<SAMP>&lsquo;msgcmp&rsquo;</SAMP> can be used to check whether a translation catalog is
+completely translated.
+
+</P>
+<P>
+<A NAME="IDX553"></A>
+<SAMP>&lsquo;msgattrib&rsquo;</SAMP> can be used to select and extract only the fuzzy
+or untranslated messages of a translation catalog.
+
+</P>
+<P>
+<SAMP>&lsquo;msgen&rsquo;</SAMP> is useful as a first step for preparing English translation
+catalogs.  It copies each message's msgid to its msgstr.
+
+</P>
+<P>
+Finally, for those applications where all these various programs are not
+sufficient, a library <SAMP>&lsquo;libgettextpo&rsquo;</SAMP> is provided that can be used to
+write other specialized programs that process PO files.
+
+</P>
+
+
+
+<H2><A NAME="SEC80" HREF="gettext_toc.html#TOC80">9.1  Invoking the <CODE>msgcat</CODE> Program</A></H2>
+
+<P>
+<A NAME="IDX554"></A>
+<A NAME="IDX555"></A>
+
+<PRE>
+msgcat [<VAR>option</VAR>] [<VAR>inputfile</VAR>]...
+</PRE>
+
+<P>
+<A NAME="IDX556"></A>
+<A NAME="IDX557"></A>
+The <CODE>msgcat</CODE> program concatenates and merges the specified PO files.
+It finds messages which are common to two or more of the specified PO files.
+By using the <CODE>--more-than</CODE> option, greater commonality may be requested
+before messages are printed.  Conversely, the <CODE>--less-than</CODE> option may be
+used to specify less commonality before messages are printed (i.e.
+<SAMP>&lsquo;--less-than=2&rsquo;</SAMP> will only print the unique messages).  Translations,
+comments, extracted comments, and file positions will be cumulated, except that
+if <CODE>--use-first</CODE> is specified, they will be taken from the first PO file
+to define them.
+
+</P>
+
+
+<H3><A NAME="SEC81" HREF="gettext_toc.html#TOC81">9.1.1  Input file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;<VAR>inputfile</VAR> ...&rsquo;</SAMP>
+<DD>
+Input files.
+
+<DT><SAMP>&lsquo;-f <VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--files-from=<VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX558"></A>
+<A NAME="IDX559"></A>
+Read the names of the input files from <VAR>file</VAR> instead of getting
+them from the command line.
+
+<DT><SAMP>&lsquo;-D <VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--directory=<VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX560"></A>
+<A NAME="IDX561"></A>
+Add <VAR>directory</VAR> to the list of directories.  Source files are
+searched relative to this list of directories.  The resulting <TT>&lsquo;.po&rsquo;</TT>
+file will be written relative to the current directory, though.
+
+</DL>
+
+<P>
+If <VAR>inputfile</VAR> is <SAMP>&lsquo;-&rsquo;</SAMP>, standard input is read.
+
+</P>
+
+
+<H3><A NAME="SEC82" HREF="gettext_toc.html#TOC82">9.1.2  Output file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-o <VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--output-file=<VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX562"></A>
+<A NAME="IDX563"></A>
+Write output to specified file.
+
+</DL>
+
+<P>
+<A NAME="IDX564"></A>
+The results are written to standard output if no output file is specified
+or if it is <SAMP>&lsquo;-&rsquo;</SAMP>.
+
+</P>
+
+
+<H3><A NAME="SEC83" HREF="gettext_toc.html#TOC83">9.1.3  Message selection</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-&#60; <VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--less-than=<VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX565"></A>
+<A NAME="IDX566"></A>
+Print messages with less than <VAR>number</VAR> definitions, defaults to infinite
+if not set.
+
+<DT><SAMP>&lsquo;-&#62; <VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--more-than=<VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX567"></A>
+<A NAME="IDX568"></A>
+Print messages with more than <VAR>number</VAR> definitions, defaults to 0 if not
+set.
+
+<DT><SAMP>&lsquo;-u&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--unique&rsquo;</SAMP>
+<DD>
+<A NAME="IDX569"></A>
+<A NAME="IDX570"></A>
+Shorthand for <SAMP>&lsquo;--less-than=2&rsquo;</SAMP>.  Requests that only unique messages be
+printed.
+
+</DL>
+
+
+
+<H3><A NAME="SEC84" HREF="gettext_toc.html#TOC84">9.1.4  Input file syntax</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-P&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--properties-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX571"></A>
+<A NAME="IDX572"></A>
+Assume the input files are Java ResourceBundles in Java <CODE>.properties</CODE>
+syntax, not in PO file syntax.
+
+<DT><SAMP>&lsquo;--stringtable-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX573"></A>
+Assume the input files are NeXTstep/GNUstep localized resource files in
+<CODE>.strings</CODE> syntax, not in PO file syntax.
+
+</DL>
+
+
+
+<H3><A NAME="SEC85" HREF="gettext_toc.html#TOC85">9.1.5  Output details</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-t&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--to-code=<VAR>name</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX574"></A>
+<A NAME="IDX575"></A>
+Specify encoding for output.
+
+<DT><SAMP>&lsquo;--use-first&rsquo;</SAMP>
+<DD>
+<A NAME="IDX576"></A>
+Use first available translation for each message.  Don't merge several
+translations into one.
+
+<DT><SAMP>&lsquo;--lang=<VAR>catalogname</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX577"></A>
+Specify the <SAMP>&lsquo;Language&rsquo;</SAMP> field to be used in the header entry.  See
+section <A HREF="gettext_6.html#SEC44">6.2  Filling in the Header Entry</A> for the meaning of this field.  Note: The
+<SAMP>&lsquo;Language-Team&rsquo;</SAMP> and <SAMP>&lsquo;Plural-Forms&rsquo;</SAMP> fields are left unchanged.
+
+<DT><SAMP>&lsquo;--color&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--color=<VAR>when</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX578"></A>
+Specify whether or when to use colors and other text attributes.
+See section <A HREF="gettext_9.html#SEC150">9.11.1  The <CODE>--color</CODE> option</A> for details.
+
+<DT><SAMP>&lsquo;--style=<VAR>style_file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX579"></A>
+Specify the CSS style rule file to use for <CODE>--color</CODE>.
+See section <A HREF="gettext_9.html#SEC152">9.11.3  The <CODE>--style</CODE> option</A> for details.
+
+<DT><SAMP>&lsquo;--force-po&rsquo;</SAMP>
+<DD>
+<A NAME="IDX580"></A>
+Always write an output file even if it contains no message.
+
+<DT><SAMP>&lsquo;-i&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--indent&rsquo;</SAMP>
+<DD>
+<A NAME="IDX581"></A>
+<A NAME="IDX582"></A>
+Write the .po file using indented style.
+
+<DT><SAMP>&lsquo;--no-location&rsquo;</SAMP>
+<DD>
+<A NAME="IDX583"></A>
+Do not write <SAMP>&lsquo;#: <VAR>filename</VAR>:<VAR>line</VAR>&rsquo;</SAMP> lines.
+
+<DT><SAMP>&lsquo;-n&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--add-location=<VAR>type</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX584"></A>
+<A NAME="IDX585"></A>
+Generate <SAMP>&lsquo;#: <VAR>filename</VAR>:<VAR>line</VAR>&rsquo;</SAMP> lines (default).
+
+The optional <VAR>type</VAR> can be either <SAMP>&lsquo;full&rsquo;</SAMP>, <SAMP>&lsquo;file&rsquo;</SAMP>, or
+<SAMP>&lsquo;never&rsquo;</SAMP>.  If it is not given or <SAMP>&lsquo;full&rsquo;</SAMP>, it generates the
+lines with both file name and line number.  If it is <SAMP>&lsquo;file&rsquo;</SAMP>, the
+line number part is omitted.  If it is <SAMP>&lsquo;never&rsquo;</SAMP>, it completely
+suppresses the lines (same as <CODE>--no-location</CODE>).
+
+<DT><SAMP>&lsquo;--strict&rsquo;</SAMP>
+<DD>
+<A NAME="IDX586"></A>
+Write out a strict Uniforum conforming PO file.  Note that this
+Uniforum format should be avoided because it doesn't support the
+GNU extensions.
+
+<DT><SAMP>&lsquo;-p&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--properties-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX587"></A>
+<A NAME="IDX588"></A>
+Write out a Java ResourceBundle in Java <CODE>.properties</CODE> syntax.  Note
+that this file format doesn't support plural forms and silently drops
+obsolete messages.
+
+<DT><SAMP>&lsquo;--stringtable-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX589"></A>
+Write out a NeXTstep/GNUstep localized resource file in <CODE>.strings</CODE> syntax.
+Note that this file format doesn't support plural forms.
+
+<DT><SAMP>&lsquo;-w <VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--width=<VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX590"></A>
+<A NAME="IDX591"></A>
+Set the output page width.  Long strings in the output files will be
+split across multiple lines in order to ensure that each line's width
+(= number of screen columns) is less or equal to the given <VAR>number</VAR>.
+
+<DT><SAMP>&lsquo;--no-wrap&rsquo;</SAMP>
+<DD>
+<A NAME="IDX592"></A>
+Do not break long message lines.  Message lines whose width exceeds the
+output page width will not be split into several lines.  Only file reference
+lines which are wider than the output page width will be split.
+
+<DT><SAMP>&lsquo;-s&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--sort-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX593"></A>
+<A NAME="IDX594"></A>
+<A NAME="IDX595"></A>
+Generate sorted output.  Note that using this option makes it much harder
+for the translator to understand each message's context.
+
+<DT><SAMP>&lsquo;-F&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--sort-by-file&rsquo;</SAMP>
+<DD>
+<A NAME="IDX596"></A>
+<A NAME="IDX597"></A>
+Sort output by file location.
+
+</DL>
+
+
+
+<H3><A NAME="SEC86" HREF="gettext_toc.html#TOC86">9.1.6  Informative output</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-h&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--help&rsquo;</SAMP>
+<DD>
+<A NAME="IDX598"></A>
+<A NAME="IDX599"></A>
+Display this help and exit.
+
+<DT><SAMP>&lsquo;-V&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--version&rsquo;</SAMP>
+<DD>
+<A NAME="IDX600"></A>
+<A NAME="IDX601"></A>
+Output version information and exit.
+
+</DL>
+
+
+
+<H2><A NAME="SEC87" HREF="gettext_toc.html#TOC87">9.2  Invoking the <CODE>msgconv</CODE> Program</A></H2>
+
+<P>
+<A NAME="IDX602"></A>
+<A NAME="IDX603"></A>
+
+<PRE>
+msgconv [<VAR>option</VAR>] [<VAR>inputfile</VAR>]
+</PRE>
+
+<P>
+<A NAME="IDX604"></A>
+The <CODE>msgconv</CODE> program converts a translation catalog to a different
+character encoding.
+
+</P>
+
+
+<H3><A NAME="SEC88" HREF="gettext_toc.html#TOC88">9.2.1  Input file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;<VAR>inputfile</VAR>&rsquo;</SAMP>
+<DD>
+Input PO file.
+
+<DT><SAMP>&lsquo;-D <VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--directory=<VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX605"></A>
+<A NAME="IDX606"></A>
+Add <VAR>directory</VAR> to the list of directories.  Source files are
+searched relative to this list of directories.  The resulting <TT>&lsquo;.po&rsquo;</TT>
+file will be written relative to the current directory, though.
+
+</DL>
+
+<P>
+If no <VAR>inputfile</VAR> is given or if it is <SAMP>&lsquo;-&rsquo;</SAMP>, standard input is read.
+
+</P>
+
+
+<H3><A NAME="SEC89" HREF="gettext_toc.html#TOC89">9.2.2  Output file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-o <VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--output-file=<VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX607"></A>
+<A NAME="IDX608"></A>
+Write output to specified file.
+
+</DL>
+
+<P>
+The results are written to standard output if no output file is specified
+or if it is <SAMP>&lsquo;-&rsquo;</SAMP>.
+
+</P>
+
+
+<H3><A NAME="SEC90" HREF="gettext_toc.html#TOC90">9.2.3  Conversion target</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-t&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--to-code=<VAR>name</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX609"></A>
+<A NAME="IDX610"></A>
+Specify encoding for output.
+
+</DL>
+
+<P>
+The default encoding is the current locale's encoding.
+
+</P>
+
+
+<H3><A NAME="SEC91" HREF="gettext_toc.html#TOC91">9.2.4  Input file syntax</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-P&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--properties-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX611"></A>
+<A NAME="IDX612"></A>
+Assume the input file is a Java ResourceBundle in Java <CODE>.properties</CODE>
+syntax, not in PO file syntax.
+
+<DT><SAMP>&lsquo;--stringtable-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX613"></A>
+Assume the input file is a NeXTstep/GNUstep localized resource file in
+<CODE>.strings</CODE> syntax, not in PO file syntax.
+
+</DL>
+
+
+
+<H3><A NAME="SEC92" HREF="gettext_toc.html#TOC92">9.2.5  Output details</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;--color&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--color=<VAR>when</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX614"></A>
+Specify whether or when to use colors and other text attributes.
+See section <A HREF="gettext_9.html#SEC150">9.11.1  The <CODE>--color</CODE> option</A> for details.
+
+<DT><SAMP>&lsquo;--style=<VAR>style_file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX615"></A>
+Specify the CSS style rule file to use for <CODE>--color</CODE>.
+See section <A HREF="gettext_9.html#SEC152">9.11.3  The <CODE>--style</CODE> option</A> for details.
+
+<DT><SAMP>&lsquo;--force-po&rsquo;</SAMP>
+<DD>
+<A NAME="IDX616"></A>
+Always write an output file even if it contains no message.
+
+<DT><SAMP>&lsquo;-i&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--indent&rsquo;</SAMP>
+<DD>
+<A NAME="IDX617"></A>
+<A NAME="IDX618"></A>
+Write the .po file using indented style.
+
+<DT><SAMP>&lsquo;--no-location&rsquo;</SAMP>
+<DD>
+<A NAME="IDX619"></A>
+Do not write <SAMP>&lsquo;#: <VAR>filename</VAR>:<VAR>line</VAR>&rsquo;</SAMP> lines.
+
+<DT><SAMP>&lsquo;-n&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--add-location=<VAR>type</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX620"></A>
+Generate <SAMP>&lsquo;#: <VAR>filename</VAR>:<VAR>line</VAR>&rsquo;</SAMP> lines (default).
+
+The optional <VAR>type</VAR> can be either <SAMP>&lsquo;full&rsquo;</SAMP>, <SAMP>&lsquo;file&rsquo;</SAMP>, or
+<SAMP>&lsquo;never&rsquo;</SAMP>.  If it is not given or <SAMP>&lsquo;full&rsquo;</SAMP>, it generates the
+lines with both file name and line number.  If it is <SAMP>&lsquo;file&rsquo;</SAMP>, the
+line number part is omitted.  If it is <SAMP>&lsquo;never&rsquo;</SAMP>, it completely
+suppresses the lines (same as <CODE>--no-location</CODE>).
+
+<DT><SAMP>&lsquo;--strict&rsquo;</SAMP>
+<DD>
+<A NAME="IDX621"></A>
+Write out a strict Uniforum conforming PO file.  Note that this
+Uniforum format should be avoided because it doesn't support the
+GNU extensions.
+
+<DT><SAMP>&lsquo;-p&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--properties-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX622"></A>
+<A NAME="IDX623"></A>
+Write out a Java ResourceBundle in Java <CODE>.properties</CODE> syntax.  Note
+that this file format doesn't support plural forms and silently drops
+obsolete messages.
+
+<DT><SAMP>&lsquo;--stringtable-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX624"></A>
+Write out a NeXTstep/GNUstep localized resource file in <CODE>.strings</CODE> syntax.
+Note that this file format doesn't support plural forms.
+
+<DT><SAMP>&lsquo;-w <VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--width=<VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX625"></A>
+<A NAME="IDX626"></A>
+Set the output page width.  Long strings in the output files will be
+split across multiple lines in order to ensure that each line's width
+(= number of screen columns) is less or equal to the given <VAR>number</VAR>.
+
+<DT><SAMP>&lsquo;--no-wrap&rsquo;</SAMP>
+<DD>
+<A NAME="IDX627"></A>
+Do not break long message lines.  Message lines whose width exceeds the
+output page width will not be split into several lines.  Only file reference
+lines which are wider than the output page width will be split.
+
+<DT><SAMP>&lsquo;-s&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--sort-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX628"></A>
+<A NAME="IDX629"></A>
+Generate sorted output.  Note that using this option makes it much harder
+for the translator to understand each message's context.
+
+<DT><SAMP>&lsquo;-F&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--sort-by-file&rsquo;</SAMP>
+<DD>
+<A NAME="IDX630"></A>
+<A NAME="IDX631"></A>
+Sort output by file location.
+
+</DL>
+
+
+
+<H3><A NAME="SEC93" HREF="gettext_toc.html#TOC93">9.2.6  Informative output</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-h&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--help&rsquo;</SAMP>
+<DD>
+<A NAME="IDX632"></A>
+<A NAME="IDX633"></A>
+Display this help and exit.
+
+<DT><SAMP>&lsquo;-V&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--version&rsquo;</SAMP>
+<DD>
+<A NAME="IDX634"></A>
+<A NAME="IDX635"></A>
+Output version information and exit.
+
+</DL>
+
+
+
+<H2><A NAME="SEC94" HREF="gettext_toc.html#TOC94">9.3  Invoking the <CODE>msggrep</CODE> Program</A></H2>
+
+<P>
+<A NAME="IDX636"></A>
+<A NAME="IDX637"></A>
+
+<PRE>
+msggrep [<VAR>option</VAR>] [<VAR>inputfile</VAR>]
+</PRE>
+
+<P>
+<A NAME="IDX638"></A>
+The <CODE>msggrep</CODE> program extracts all messages of a translation catalog
+that match a given pattern or belong to some given source files.
+
+</P>
+
+
+<H3><A NAME="SEC95" HREF="gettext_toc.html#TOC95">9.3.1  Input file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;<VAR>inputfile</VAR>&rsquo;</SAMP>
+<DD>
+Input PO file.
+
+<DT><SAMP>&lsquo;-D <VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--directory=<VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX639"></A>
+<A NAME="IDX640"></A>
+Add <VAR>directory</VAR> to the list of directories.  Source files are
+searched relative to this list of directories.  The resulting <TT>&lsquo;.po&rsquo;</TT>
+file will be written relative to the current directory, though.
+
+</DL>
+
+<P>
+If no <VAR>inputfile</VAR> is given or if it is <SAMP>&lsquo;-&rsquo;</SAMP>, standard input is read.
+
+</P>
+
+
+<H3><A NAME="SEC96" HREF="gettext_toc.html#TOC96">9.3.2  Output file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-o <VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--output-file=<VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX641"></A>
+<A NAME="IDX642"></A>
+Write output to specified file.
+
+</DL>
+
+<P>
+The results are written to standard output if no output file is specified
+or if it is <SAMP>&lsquo;-&rsquo;</SAMP>.
+
+</P>
+
+
+<H3><A NAME="SEC97" HREF="gettext_toc.html#TOC97">9.3.3  Message selection</A></H3>
+
+
+<PRE>
+  [-N <VAR>sourcefile</VAR>]... [-M <VAR>domainname</VAR>]...
+  [-J <VAR>msgctxt-pattern</VAR>] [-K <VAR>msgid-pattern</VAR>] [-T <VAR>msgstr-pattern</VAR>]
+  [-C <VAR>comment-pattern</VAR>]
+</PRE>
+
+<P>
+A message is selected if
+
+<UL>
+<LI>it comes from one of the specified source files,
+
+<LI>or if it comes from one of the specified domains,
+
+<LI>or if <SAMP>&lsquo;-J&rsquo;</SAMP> is given and its context (msgctxt) matches
+
+<VAR>msgctxt-pattern</VAR>,
+<LI>or if <SAMP>&lsquo;-K&rsquo;</SAMP> is given and its key (msgid or msgid_plural) matches
+
+<VAR>msgid-pattern</VAR>,
+<LI>or if <SAMP>&lsquo;-T&rsquo;</SAMP> is given and its translation (msgstr) matches
+
+<VAR>msgstr-pattern</VAR>,
+<LI>or if <SAMP>&lsquo;-C&rsquo;</SAMP> is given and the translator's comment matches
+
+<VAR>comment-pattern</VAR>.
+</UL>
+
+<P>
+When more than one selection criterion is specified, the set of selected
+messages is the union of the selected messages of each criterion.
+
+</P>
+<P>
+<VAR>msgctxt-pattern</VAR> or <VAR>msgid-pattern</VAR> or <VAR>msgstr-pattern</VAR> syntax:
+
+<PRE>
+  [-E | -F] [-e <VAR>pattern</VAR> | -f <VAR>file</VAR>]...
+</PRE>
+
+<P>
+<VAR>pattern</VAR>s are basic regular expressions by default, or extended regular
+expressions if -E is given, or fixed strings if -F is given.
+
+</P>
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-N <VAR>sourcefile</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--location=<VAR>sourcefile</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX643"></A>
+<A NAME="IDX644"></A>
+Select messages extracted from <VAR>sourcefile</VAR>.  <VAR>sourcefile</VAR> can be
+either a literal file name or a wildcard pattern.
+
+<DT><SAMP>&lsquo;-M <VAR>domainname</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--domain=<VAR>domainname</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX645"></A>
+<A NAME="IDX646"></A>
+Select messages belonging to domain <VAR>domainname</VAR>.
+
+<DT><SAMP>&lsquo;-J&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--msgctxt&rsquo;</SAMP>
+<DD>
+<A NAME="IDX647"></A>
+<A NAME="IDX648"></A>
+Start of patterns for the msgctxt.
+
+<DT><SAMP>&lsquo;-K&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--msgid&rsquo;</SAMP>
+<DD>
+<A NAME="IDX649"></A>
+<A NAME="IDX650"></A>
+Start of patterns for the msgid.
+
+<DT><SAMP>&lsquo;-T&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--msgstr&rsquo;</SAMP>
+<DD>
+<A NAME="IDX651"></A>
+<A NAME="IDX652"></A>
+Start of patterns for the msgstr.
+
+<DT><SAMP>&lsquo;-C&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--comment&rsquo;</SAMP>
+<DD>
+<A NAME="IDX653"></A>
+<A NAME="IDX654"></A>
+Start of patterns for the translator's comment.
+
+<DT><SAMP>&lsquo;-X&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--extracted-comment&rsquo;</SAMP>
+<DD>
+<A NAME="IDX655"></A>
+<A NAME="IDX656"></A>
+Start of patterns for the extracted comments.
+
+<DT><SAMP>&lsquo;-E&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--extended-regexp&rsquo;</SAMP>
+<DD>
+<A NAME="IDX657"></A>
+<A NAME="IDX658"></A>
+Specify that <VAR>pattern</VAR> is an extended regular expression.
+
+<DT><SAMP>&lsquo;-F&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--fixed-strings&rsquo;</SAMP>
+<DD>
+<A NAME="IDX659"></A>
+<A NAME="IDX660"></A>
+Specify that <VAR>pattern</VAR> is a set of newline-separated strings.
+
+<DT><SAMP>&lsquo;-e <VAR>pattern</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--regexp=<VAR>pattern</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX661"></A>
+<A NAME="IDX662"></A>
+Use <VAR>pattern</VAR> as a regular expression.
+
+<DT><SAMP>&lsquo;-f <VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--file=<VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX663"></A>
+<A NAME="IDX664"></A>
+Obtain <VAR>pattern</VAR> from <VAR>file</VAR>.
+
+<DT><SAMP>&lsquo;-i&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--ignore-case&rsquo;</SAMP>
+<DD>
+<A NAME="IDX665"></A>
+<A NAME="IDX666"></A>
+Ignore case distinctions.
+
+<DT><SAMP>&lsquo;-v&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--invert-match&rsquo;</SAMP>
+<DD>
+<A NAME="IDX667"></A>
+<A NAME="IDX668"></A>
+Output only the messages that do not match any selection criterion, instead
+of the messages that match a selection criterion.
+
+</DL>
+
+
+
+<H3><A NAME="SEC98" HREF="gettext_toc.html#TOC98">9.3.4  Input file syntax</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-P&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--properties-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX669"></A>
+<A NAME="IDX670"></A>
+Assume the input file is a Java ResourceBundle in Java <CODE>.properties</CODE>
+syntax, not in PO file syntax.
+
+<DT><SAMP>&lsquo;--stringtable-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX671"></A>
+Assume the input file is a NeXTstep/GNUstep localized resource file in
+<CODE>.strings</CODE> syntax, not in PO file syntax.
+
+</DL>
+
+
+
+<H3><A NAME="SEC99" HREF="gettext_toc.html#TOC99">9.3.5  Output details</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;--color&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--color=<VAR>when</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX672"></A>
+Specify whether or when to use colors and other text attributes.
+See section <A HREF="gettext_9.html#SEC150">9.11.1  The <CODE>--color</CODE> option</A> for details.
+
+<DT><SAMP>&lsquo;--style=<VAR>style_file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX673"></A>
+Specify the CSS style rule file to use for <CODE>--color</CODE>.
+See section <A HREF="gettext_9.html#SEC152">9.11.3  The <CODE>--style</CODE> option</A> for details.
+
+<DT><SAMP>&lsquo;--force-po&rsquo;</SAMP>
+<DD>
+<A NAME="IDX674"></A>
+Always write an output file even if it contains no message.
+
+<DT><SAMP>&lsquo;--indent&rsquo;</SAMP>
+<DD>
+<A NAME="IDX675"></A>
+Write the .po file using indented style.
+
+<DT><SAMP>&lsquo;--no-location&rsquo;</SAMP>
+<DD>
+<A NAME="IDX676"></A>
+Do not write <SAMP>&lsquo;#: <VAR>filename</VAR>:<VAR>line</VAR>&rsquo;</SAMP> lines.
+
+<DT><SAMP>&lsquo;-n&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--add-location=<VAR>type</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX677"></A>
+Generate <SAMP>&lsquo;#: <VAR>filename</VAR>:<VAR>line</VAR>&rsquo;</SAMP> lines (default).
+
+The optional <VAR>type</VAR> can be either <SAMP>&lsquo;full&rsquo;</SAMP>, <SAMP>&lsquo;file&rsquo;</SAMP>, or
+<SAMP>&lsquo;never&rsquo;</SAMP>.  If it is not given or <SAMP>&lsquo;full&rsquo;</SAMP>, it generates the
+lines with both file name and line number.  If it is <SAMP>&lsquo;file&rsquo;</SAMP>, the
+line number part is omitted.  If it is <SAMP>&lsquo;never&rsquo;</SAMP>, it completely
+suppresses the lines (same as <CODE>--no-location</CODE>).
+
+<DT><SAMP>&lsquo;--strict&rsquo;</SAMP>
+<DD>
+<A NAME="IDX678"></A>
+Write out a strict Uniforum conforming PO file.  Note that this
+Uniforum format should be avoided because it doesn't support the
+GNU extensions.
+
+<DT><SAMP>&lsquo;-p&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--properties-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX679"></A>
+<A NAME="IDX680"></A>
+Write out a Java ResourceBundle in Java <CODE>.properties</CODE> syntax.  Note
+that this file format doesn't support plural forms and silently drops
+obsolete messages.
+
+<DT><SAMP>&lsquo;--stringtable-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX681"></A>
+Write out a NeXTstep/GNUstep localized resource file in <CODE>.strings</CODE> syntax.
+Note that this file format doesn't support plural forms.
+
+<DT><SAMP>&lsquo;-w <VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--width=<VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX682"></A>
+<A NAME="IDX683"></A>
+Set the output page width.  Long strings in the output files will be
+split across multiple lines in order to ensure that each line's width
+(= number of screen columns) is less or equal to the given <VAR>number</VAR>.
+
+<DT><SAMP>&lsquo;--no-wrap&rsquo;</SAMP>
+<DD>
+<A NAME="IDX684"></A>
+Do not break long message lines.  Message lines whose width exceeds the
+output page width will not be split into several lines.  Only file reference
+lines which are wider than the output page width will be split.
+
+<DT><SAMP>&lsquo;--sort-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX685"></A>
+Generate sorted output.  Note that using this option makes it much harder
+for the translator to understand each message's context.
+
+<DT><SAMP>&lsquo;--sort-by-file&rsquo;</SAMP>
+<DD>
+<A NAME="IDX686"></A>
+Sort output by file location.
+
+</DL>
+
+
+
+<H3><A NAME="SEC100" HREF="gettext_toc.html#TOC100">9.3.6  Informative output</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-h&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--help&rsquo;</SAMP>
+<DD>
+<A NAME="IDX687"></A>
+<A NAME="IDX688"></A>
+Display this help and exit.
+
+<DT><SAMP>&lsquo;-V&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--version&rsquo;</SAMP>
+<DD>
+<A NAME="IDX689"></A>
+<A NAME="IDX690"></A>
+Output version information and exit.
+
+</DL>
+
+
+
+<H3><A NAME="SEC101" HREF="gettext_toc.html#TOC101">9.3.7  Examples</A></H3>
+
+<P>
+To extract the messages that come from the source files
+<CODE>gnulib-lib/error.c</CODE> and <CODE>gnulib-lib/getopt.c</CODE>:
+
+</P>
+
+<PRE>
+msggrep -N gnulib-lib/error.c -N gnulib-lib/getopt.c input.po
+</PRE>
+
+<P>
+To extract the messages that contain the string “Please specify” in the
+original string:
+
+</P>
+
+<PRE>
+msggrep --msgid -F -e 'Please specify' input.po
+</PRE>
+
+<P>
+To extract the messages that have a context specifier of either “Menu&#62;File”
+or “Menu&#62;Edit” or a submenu of them:
+
+</P>
+
+<PRE>
+msggrep --msgctxt -E -e '^Menu&#62;(File|Edit)' input.po
+</PRE>
+
+<P>
+To extract the messages whose translation contains one of the strings in the
+file <CODE>wordlist.txt</CODE>:
+
+</P>
+
+<PRE>
+msggrep --msgstr -F -f wordlist.txt input.po
+</PRE>
+
+
+
+<H2><A NAME="SEC102" HREF="gettext_toc.html#TOC102">9.4  Invoking the <CODE>msgfilter</CODE> Program</A></H2>
+
+<P>
+<A NAME="IDX691"></A>
+<A NAME="IDX692"></A>
+
+<PRE>
+msgfilter [<VAR>option</VAR>] <VAR>filter</VAR> [<VAR>filter-option</VAR>]
+</PRE>
+
+<P>
+<A NAME="IDX693"></A>
+The <CODE>msgfilter</CODE> program applies a filter to all translations of a
+translation catalog.
+
+</P>
+<P>
+<A NAME="IDX694"></A>
+<A NAME="IDX695"></A>
+<A NAME="IDX696"></A>
+<A NAME="IDX697"></A>
+<A NAME="IDX698"></A>
+<A NAME="IDX699"></A>
+<A NAME="IDX700"></A>
+<A NAME="IDX701"></A>
+During each <VAR>filter</VAR> invocation, the environment variable
+<CODE>MSGFILTER_MSGID</CODE> is bound to the message's msgid, and the environment
+variable <CODE>MSGFILTER_LOCATION</CODE> is bound to the location in the PO file
+of the message.  If the message has a context, the environment variable
+<CODE>MSGFILTER_MSGCTXT</CODE> is bound to the message's msgctxt, otherwise it is
+unbound.  If the message has a plural form, environment variable
+<CODE>MSGFILTER_MSGID_PLURAL</CODE> is bound to the message's msgid_plural and
+<CODE>MSGFILTER_PLURAL_FORM</CODE> is bound to the order number of the plural
+actually processed (starting with 0), otherwise both are unbound.
+If the message has a previous msgid (added by <CODE>msgmerge</CODE>),
+environment variable <CODE>MSGFILTER_PREV_MSGCTXT</CODE> is bound to the
+message's previous msgctxt, <CODE>MSGFILTER_PREV_MSGID</CODE> is bound to
+the previous msgid, and <CODE>MSGFILTER_PREV_MSGID_PLURAL</CODE> is bound to
+the previous msgid_plural.
+
+</P>
+
+
+<H3><A NAME="SEC103" HREF="gettext_toc.html#TOC103">9.4.1  Input file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-i <VAR>inputfile</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--input=<VAR>inputfile</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX702"></A>
+<A NAME="IDX703"></A>
+Input PO file.
+
+<DT><SAMP>&lsquo;-D <VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--directory=<VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX704"></A>
+<A NAME="IDX705"></A>
+Add <VAR>directory</VAR> to the list of directories.  Source files are
+searched relative to this list of directories.  The resulting <TT>&lsquo;.po&rsquo;</TT>
+file will be written relative to the current directory, though.
+
+</DL>
+
+<P>
+If no <VAR>inputfile</VAR> is given or if it is <SAMP>&lsquo;-&rsquo;</SAMP>, standard input is read.
+
+</P>
+
+
+<H3><A NAME="SEC104" HREF="gettext_toc.html#TOC104">9.4.2  Output file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-o <VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--output-file=<VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX706"></A>
+<A NAME="IDX707"></A>
+Write output to specified file.
+
+</DL>
+
+<P>
+The results are written to standard output if no output file is specified
+or if it is <SAMP>&lsquo;-&rsquo;</SAMP>.
+
+</P>
+
+
+<H3><A NAME="SEC105" HREF="gettext_toc.html#TOC105">9.4.3  The filter</A></H3>
+
+<P>
+The <VAR>filter</VAR> can be any program that reads a translation from standard
+input and writes a modified translation to standard output.  A frequently
+used filter is <SAMP>&lsquo;sed&rsquo;</SAMP>.  A few particular built-in filters are also
+recognized.
+
+</P>
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;--newline&rsquo;</SAMP>
+<DD>
+<A NAME="IDX708"></A>
+Add newline at the end of each input line and also strip the ending
+newline from the output line.
+
+</DL>
+
+<P>
+<A NAME="IDX709"></A>
+Note: If the filter is not a built-in filter, you have to care about encodings:
+It is your responsibility to ensure that the <VAR>filter</VAR> can cope
+with input encoded in the translation catalog's encoding.  If the
+<VAR>filter</VAR> wants input in a particular encoding, you can in a first step
+convert the translation catalog to that encoding using the <SAMP>&lsquo;msgconv&rsquo;</SAMP>
+program, before invoking <SAMP>&lsquo;msgfilter&rsquo;</SAMP>.  If the <VAR>filter</VAR> wants input
+in the locale's encoding, but you want to avoid the locale's encoding, then
+you can first convert the translation catalog to UTF-8 using the
+<SAMP>&lsquo;msgconv&rsquo;</SAMP> program and then make <SAMP>&lsquo;msgfilter&rsquo;</SAMP> work in an UTF-8
+locale, by using the <CODE>LC_ALL</CODE> environment variable.
+
+</P>
+<P>
+<A NAME="IDX710"></A>
+Note: Most translations in a translation catalog don't end with a
+newline character.  For this reason, unless the <CODE>--newline</CODE>
+option is used, it is important that the <VAR>filter</VAR> recognizes its
+last input line even if it ends without a newline, and that it doesn't
+add an undesired trailing newline at the end.  The <SAMP>&lsquo;sed&rsquo;</SAMP> program on
+some platforms is known to ignore the last line of input if it is not
+terminated with a newline.  You can use GNU <CODE>sed</CODE> instead; it does
+not have this limitation.
+
+</P>
+
+
+<H3><A NAME="SEC106" HREF="gettext_toc.html#TOC106">9.4.4  Useful <VAR>filter-option</VAR>s when the <VAR>filter</VAR> is <SAMP>&lsquo;sed&rsquo;</SAMP></A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-e <VAR>script</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--expression=<VAR>script</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX711"></A>
+<A NAME="IDX712"></A>
+Add <VAR>script</VAR> to the commands to be executed.
+
+<DT><SAMP>&lsquo;-f <VAR>scriptfile</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--file=<VAR>scriptfile</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX713"></A>
+<A NAME="IDX714"></A>
+Add the contents of <VAR>scriptfile</VAR> to the commands to be executed.
+
+<DT><SAMP>&lsquo;-n&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--quiet&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--silent&rsquo;</SAMP>
+<DD>
+<A NAME="IDX715"></A>
+<A NAME="IDX716"></A>
+<A NAME="IDX717"></A>
+Suppress automatic printing of pattern space.
+
+</DL>
+
+
+
+<H3><A NAME="SEC107" HREF="gettext_toc.html#TOC107">9.4.5  Built-in <VAR>filter</VAR>s</A></H3>
+
+<P>
+<A NAME="IDX718"></A>
+<A NAME="IDX719"></A>
+The filter <SAMP>&lsquo;recode-sr-latin&rsquo;</SAMP> is recognized as a built-in filter.
+The command <SAMP>&lsquo;recode-sr-latin&rsquo;</SAMP> converts Serbian text, written in the
+Cyrillic script, to the Latin script.
+The command <SAMP>&lsquo;msgfilter recode-sr-latin&rsquo;</SAMP> applies this conversion to the
+translations of a PO file.  Thus, it can be used to convert an <TT>&lsquo;sr.po&rsquo;</TT>
+file to an <TT>&lsquo;sr@latin.po&rsquo;</TT> file.
+
+</P>
+<P>
+<A NAME="IDX720"></A>
+The filter <SAMP>&lsquo;quot&rsquo;</SAMP> is recognized as a built-in filter.
+The command <SAMP>&lsquo;msgfilter quot&rsquo;</SAMP> converts any quotations surrounded
+by a pair of <SAMP>&lsquo;"&rsquo;</SAMP>, <SAMP>&lsquo;'&rsquo;</SAMP>, and <SAMP>&lsquo;`&rsquo;</SAMP>.
+
+</P>
+<P>
+<A NAME="IDX721"></A>
+The filter <SAMP>&lsquo;boldquot&rsquo;</SAMP> is recognized as a built-in filter.
+The command <SAMP>&lsquo;msgfilter boldquot&rsquo;</SAMP> converts any quotations
+surrounded by a pair of <SAMP>&lsquo;"&rsquo;</SAMP>, <SAMP>&lsquo;'&rsquo;</SAMP>, and <SAMP>&lsquo;`&rsquo;</SAMP>, also adding the
+VT100 escape sequences to the text to decorate it as bold.
+
+</P>
+<P>
+The use of built-in filters is not sensitive to the current locale's encoding.
+Moreover, when used with a built-in filter, <SAMP>&lsquo;msgfilter&rsquo;</SAMP> can automatically
+convert the message catalog to the UTF-8 encoding when needed.
+
+</P>
+
+
+<H3><A NAME="SEC108" HREF="gettext_toc.html#TOC108">9.4.6  Input file syntax</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-P&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--properties-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX722"></A>
+<A NAME="IDX723"></A>
+Assume the input file is a Java ResourceBundle in Java <CODE>.properties</CODE>
+syntax, not in PO file syntax.
+
+<DT><SAMP>&lsquo;--stringtable-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX724"></A>
+Assume the input file is a NeXTstep/GNUstep localized resource file in
+<CODE>.strings</CODE> syntax, not in PO file syntax.
+
+</DL>
+
+
+
+<H3><A NAME="SEC109" HREF="gettext_toc.html#TOC109">9.4.7  Output details</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;--color&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--color=<VAR>when</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX725"></A>
+Specify whether or when to use colors and other text attributes.
+See section <A HREF="gettext_9.html#SEC150">9.11.1  The <CODE>--color</CODE> option</A> for details.
+
+<DT><SAMP>&lsquo;--style=<VAR>style_file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX726"></A>
+Specify the CSS style rule file to use for <CODE>--color</CODE>.
+See section <A HREF="gettext_9.html#SEC152">9.11.3  The <CODE>--style</CODE> option</A> for details.
+
+<DT><SAMP>&lsquo;--force-po&rsquo;</SAMP>
+<DD>
+<A NAME="IDX727"></A>
+Always write an output file even if it contains no message.
+
+<DT><SAMP>&lsquo;--indent&rsquo;</SAMP>
+<DD>
+<A NAME="IDX728"></A>
+Write the .po file using indented style.
+
+<DT><SAMP>&lsquo;--keep-header&rsquo;</SAMP>
+<DD>
+<A NAME="IDX729"></A>
+Keep the header entry, i.e. the message with <SAMP>&lsquo;msgid ""&rsquo;</SAMP>, unmodified,
+instead of filtering it.  By default, the header entry is subject to
+filtering like any other message.
+
+<DT><SAMP>&lsquo;--no-location&rsquo;</SAMP>
+<DD>
+<A NAME="IDX730"></A>
+Do not write <SAMP>&lsquo;#: <VAR>filename</VAR>:<VAR>line</VAR>&rsquo;</SAMP> lines.
+
+<DT><SAMP>&lsquo;-n&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--add-location=<VAR>type</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX731"></A>
+Generate <SAMP>&lsquo;#: <VAR>filename</VAR>:<VAR>line</VAR>&rsquo;</SAMP> lines (default).
+
+The optional <VAR>type</VAR> can be either <SAMP>&lsquo;full&rsquo;</SAMP>, <SAMP>&lsquo;file&rsquo;</SAMP>, or
+<SAMP>&lsquo;never&rsquo;</SAMP>.  If it is not given or <SAMP>&lsquo;full&rsquo;</SAMP>, it generates the
+lines with both file name and line number.  If it is <SAMP>&lsquo;file&rsquo;</SAMP>, the
+line number part is omitted.  If it is <SAMP>&lsquo;never&rsquo;</SAMP>, it completely
+suppresses the lines (same as <CODE>--no-location</CODE>).
+
+<DT><SAMP>&lsquo;--strict&rsquo;</SAMP>
+<DD>
+<A NAME="IDX732"></A>
+Write out a strict Uniforum conforming PO file.  Note that this
+Uniforum format should be avoided because it doesn't support the
+GNU extensions.
+
+<DT><SAMP>&lsquo;-p&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--properties-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX733"></A>
+<A NAME="IDX734"></A>
+Write out a Java ResourceBundle in Java <CODE>.properties</CODE> syntax.  Note
+that this file format doesn't support plural forms and silently drops
+obsolete messages.
+
+<DT><SAMP>&lsquo;--stringtable-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX735"></A>
+Write out a NeXTstep/GNUstep localized resource file in <CODE>.strings</CODE> syntax.
+Note that this file format doesn't support plural forms.
+
+<DT><SAMP>&lsquo;-w <VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--width=<VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX736"></A>
+<A NAME="IDX737"></A>
+Set the output page width.  Long strings in the output files will be
+split across multiple lines in order to ensure that each line's width
+(= number of screen columns) is less or equal to the given <VAR>number</VAR>.
+
+<DT><SAMP>&lsquo;--no-wrap&rsquo;</SAMP>
+<DD>
+<A NAME="IDX738"></A>
+Do not break long message lines.  Message lines whose width exceeds the
+output page width will not be split into several lines.  Only file reference
+lines which are wider than the output page width will be split.
+
+<DT><SAMP>&lsquo;-s&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--sort-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX739"></A>
+<A NAME="IDX740"></A>
+Generate sorted output.  Note that using this option makes it much harder
+for the translator to understand each message's context.
+
+<DT><SAMP>&lsquo;-F&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--sort-by-file&rsquo;</SAMP>
+<DD>
+<A NAME="IDX741"></A>
+<A NAME="IDX742"></A>
+Sort output by file location.
+
+</DL>
+
+
+
+<H3><A NAME="SEC110" HREF="gettext_toc.html#TOC110">9.4.8  Informative output</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-h&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--help&rsquo;</SAMP>
+<DD>
+<A NAME="IDX743"></A>
+<A NAME="IDX744"></A>
+Display this help and exit.
+
+<DT><SAMP>&lsquo;-V&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--version&rsquo;</SAMP>
+<DD>
+<A NAME="IDX745"></A>
+<A NAME="IDX746"></A>
+Output version information and exit.
+
+</DL>
+
+
+
+<H3><A NAME="SEC111" HREF="gettext_toc.html#TOC111">9.4.9  Examples</A></H3>
+
+<P>
+To convert German translations to Swiss orthography (in an UTF-8 locale):
+
+</P>
+
+<PRE>
+msgconv -t UTF-8 de.po | msgfilter sed -e 's/&szlig;/ss/g'
+</PRE>
+
+<P>
+To convert Serbian translations in Cyrillic script to Latin script:
+
+</P>
+
+<PRE>
+msgfilter recode-sr-latin &#60; sr.po
+</PRE>
+
+
+
+<H2><A NAME="SEC112" HREF="gettext_toc.html#TOC112">9.5  Invoking the <CODE>msguniq</CODE> Program</A></H2>
+
+<P>
+<A NAME="IDX747"></A>
+<A NAME="IDX748"></A>
+
+<PRE>
+msguniq [<VAR>option</VAR>] [<VAR>inputfile</VAR>]
+</PRE>
+
+<P>
+<A NAME="IDX749"></A>
+<A NAME="IDX750"></A>
+The <CODE>msguniq</CODE> program unifies duplicate translations in a translation
+catalog.  It finds duplicate translations of the same message ID.  Such
+duplicates are invalid input for other programs like <CODE>msgfmt</CODE>,
+<CODE>msgmerge</CODE> or <CODE>msgcat</CODE>.  By default, duplicates are merged
+together.  When using the <SAMP>&lsquo;--repeated&rsquo;</SAMP> option, only duplicates are
+output, and all other messages are discarded.  Comments and extracted
+comments will be cumulated, except that if <SAMP>&lsquo;--use-first&rsquo;</SAMP> is
+specified, they will be taken from the first translation.  File positions
+will be cumulated.  When using the <SAMP>&lsquo;--unique&rsquo;</SAMP> option, duplicates are
+discarded.
+
+</P>
+
+
+<H3><A NAME="SEC113" HREF="gettext_toc.html#TOC113">9.5.1  Input file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;<VAR>inputfile</VAR>&rsquo;</SAMP>
+<DD>
+Input PO file.
+
+<DT><SAMP>&lsquo;-D <VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--directory=<VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX751"></A>
+<A NAME="IDX752"></A>
+Add <VAR>directory</VAR> to the list of directories.  Source files are
+searched relative to this list of directories.  The resulting <TT>&lsquo;.po&rsquo;</TT>
+file will be written relative to the current directory, though.
+
+</DL>
+
+<P>
+If no <VAR>inputfile</VAR> is given or if it is <SAMP>&lsquo;-&rsquo;</SAMP>, standard input is read.
+
+</P>
+
+
+<H3><A NAME="SEC114" HREF="gettext_toc.html#TOC114">9.5.2  Output file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-o <VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--output-file=<VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX753"></A>
+<A NAME="IDX754"></A>
+Write output to specified file.
+
+</DL>
+
+<P>
+The results are written to standard output if no output file is specified
+or if it is <SAMP>&lsquo;-&rsquo;</SAMP>.
+
+</P>
+
+
+<H3><A NAME="SEC115" HREF="gettext_toc.html#TOC115">9.5.3  Message selection</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-d&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--repeated&rsquo;</SAMP>
+<DD>
+<A NAME="IDX755"></A>
+<A NAME="IDX756"></A>
+Print only duplicates.
+
+<DT><SAMP>&lsquo;-u&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--unique&rsquo;</SAMP>
+<DD>
+<A NAME="IDX757"></A>
+<A NAME="IDX758"></A>
+Print only unique messages, discard duplicates.
+
+</DL>
+
+
+
+<H3><A NAME="SEC116" HREF="gettext_toc.html#TOC116">9.5.4  Input file syntax</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-P&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--properties-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX759"></A>
+<A NAME="IDX760"></A>
+Assume the input file is a Java ResourceBundle in Java <CODE>.properties</CODE>
+syntax, not in PO file syntax.
+
+<DT><SAMP>&lsquo;--stringtable-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX761"></A>
+Assume the input file is a NeXTstep/GNUstep localized resource file in
+<CODE>.strings</CODE> syntax, not in PO file syntax.
+
+</DL>
+
+
+
+<H3><A NAME="SEC117" HREF="gettext_toc.html#TOC117">9.5.5  Output details</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-t&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--to-code=<VAR>name</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX762"></A>
+<A NAME="IDX763"></A>
+Specify encoding for output.
+
+<DT><SAMP>&lsquo;--use-first&rsquo;</SAMP>
+<DD>
+<A NAME="IDX764"></A>
+Use first available translation for each message.  Don't merge several
+translations into one.
+
+<DT><SAMP>&lsquo;--color&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--color=<VAR>when</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX765"></A>
+Specify whether or when to use colors and other text attributes.
+See section <A HREF="gettext_9.html#SEC150">9.11.1  The <CODE>--color</CODE> option</A> for details.
+
+<DT><SAMP>&lsquo;--style=<VAR>style_file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX766"></A>
+Specify the CSS style rule file to use for <CODE>--color</CODE>.
+See section <A HREF="gettext_9.html#SEC152">9.11.3  The <CODE>--style</CODE> option</A> for details.
+
+<DT><SAMP>&lsquo;--force-po&rsquo;</SAMP>
+<DD>
+<A NAME="IDX767"></A>
+Always write an output file even if it contains no message.
+
+<DT><SAMP>&lsquo;-i&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--indent&rsquo;</SAMP>
+<DD>
+<A NAME="IDX768"></A>
+<A NAME="IDX769"></A>
+Write the .po file using indented style.
+
+<DT><SAMP>&lsquo;--no-location&rsquo;</SAMP>
+<DD>
+<A NAME="IDX770"></A>
+Do not write <SAMP>&lsquo;#: <VAR>filename</VAR>:<VAR>line</VAR>&rsquo;</SAMP> lines.
+
+<DT><SAMP>&lsquo;-n&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--add-location=<VAR>type</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX771"></A>
+<A NAME="IDX772"></A>
+Generate <SAMP>&lsquo;#: <VAR>filename</VAR>:<VAR>line</VAR>&rsquo;</SAMP> lines (default).
+
+The optional <VAR>type</VAR> can be either <SAMP>&lsquo;full&rsquo;</SAMP>, <SAMP>&lsquo;file&rsquo;</SAMP>, or
+<SAMP>&lsquo;never&rsquo;</SAMP>.  If it is not given or <SAMP>&lsquo;full&rsquo;</SAMP>, it generates the
+lines with both file name and line number.  If it is <SAMP>&lsquo;file&rsquo;</SAMP>, the
+line number part is omitted.  If it is <SAMP>&lsquo;never&rsquo;</SAMP>, it completely
+suppresses the lines (same as <CODE>--no-location</CODE>).
+
+<DT><SAMP>&lsquo;--strict&rsquo;</SAMP>
+<DD>
+<A NAME="IDX773"></A>
+Write out a strict Uniforum conforming PO file.  Note that this
+Uniforum format should be avoided because it doesn't support the
+GNU extensions.
+
+<DT><SAMP>&lsquo;-p&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--properties-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX774"></A>
+<A NAME="IDX775"></A>
+Write out a Java ResourceBundle in Java <CODE>.properties</CODE> syntax.  Note
+that this file format doesn't support plural forms and silently drops
+obsolete messages.
+
+<DT><SAMP>&lsquo;--stringtable-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX776"></A>
+Write out a NeXTstep/GNUstep localized resource file in <CODE>.strings</CODE> syntax.
+Note that this file format doesn't support plural forms.
+
+<DT><SAMP>&lsquo;-w <VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--width=<VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX777"></A>
+<A NAME="IDX778"></A>
+Set the output page width.  Long strings in the output files will be
+split across multiple lines in order to ensure that each line's width
+(= number of screen columns) is less or equal to the given <VAR>number</VAR>.
+
+<DT><SAMP>&lsquo;--no-wrap&rsquo;</SAMP>
+<DD>
+<A NAME="IDX779"></A>
+Do not break long message lines.  Message lines whose width exceeds the
+output page width will not be split into several lines.  Only file reference
+lines which are wider than the output page width will be split.
+
+<DT><SAMP>&lsquo;-s&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--sort-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX780"></A>
+<A NAME="IDX781"></A>
+Generate sorted output.  Note that using this option makes it much harder
+for the translator to understand each message's context.
+
+<DT><SAMP>&lsquo;-F&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--sort-by-file&rsquo;</SAMP>
+<DD>
+<A NAME="IDX782"></A>
+<A NAME="IDX783"></A>
+Sort output by file location.
+
+</DL>
+
+
+
+<H3><A NAME="SEC118" HREF="gettext_toc.html#TOC118">9.5.6  Informative output</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-h&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--help&rsquo;</SAMP>
+<DD>
+<A NAME="IDX784"></A>
+<A NAME="IDX785"></A>
+Display this help and exit.
+
+<DT><SAMP>&lsquo;-V&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--version&rsquo;</SAMP>
+<DD>
+<A NAME="IDX786"></A>
+<A NAME="IDX787"></A>
+Output version information and exit.
+
+</DL>
+
+
+
+<H2><A NAME="SEC119" HREF="gettext_toc.html#TOC119">9.6  Invoking the <CODE>msgcomm</CODE> Program</A></H2>
+
+<P>
+<A NAME="IDX788"></A>
+<A NAME="IDX789"></A>
+
+<PRE>
+msgcomm [<VAR>option</VAR>] [<VAR>inputfile</VAR>]...
+</PRE>
+
+<P>
+<A NAME="IDX790"></A>
+The <CODE>msgcomm</CODE> program finds messages which are common to two or more
+of the specified PO files.
+By using the <CODE>--more-than</CODE> option, greater commonality may be requested
+before messages are printed.  Conversely, the <CODE>--less-than</CODE> option may be
+used to specify less commonality before messages are printed (i.e.
+<SAMP>&lsquo;--less-than=2&rsquo;</SAMP> will only print the unique messages).  Translations,
+comments and extracted comments will be preserved, but only from the first
+PO file to define them.  File positions from all PO files will be
+cumulated.
+
+</P>
+
+
+<H3><A NAME="SEC120" HREF="gettext_toc.html#TOC120">9.6.1  Input file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;<VAR>inputfile</VAR> ...&rsquo;</SAMP>
+<DD>
+Input files.
+
+<DT><SAMP>&lsquo;-f <VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--files-from=<VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX791"></A>
+<A NAME="IDX792"></A>
+Read the names of the input files from <VAR>file</VAR> instead of getting
+them from the command line.
+
+<DT><SAMP>&lsquo;-D <VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--directory=<VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX793"></A>
+<A NAME="IDX794"></A>
+Add <VAR>directory</VAR> to the list of directories.  Source files are
+searched relative to this list of directories.  The resulting <TT>&lsquo;.po&rsquo;</TT>
+file will be written relative to the current directory, though.
+
+</DL>
+
+<P>
+If <VAR>inputfile</VAR> is <SAMP>&lsquo;-&rsquo;</SAMP>, standard input is read.
+
+</P>
+
+
+<H3><A NAME="SEC121" HREF="gettext_toc.html#TOC121">9.6.2  Output file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-o <VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--output-file=<VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX795"></A>
+<A NAME="IDX796"></A>
+Write output to specified file.
+
+</DL>
+
+<P>
+The results are written to standard output if no output file is specified
+or if it is <SAMP>&lsquo;-&rsquo;</SAMP>.
+
+</P>
+
+
+<H3><A NAME="SEC122" HREF="gettext_toc.html#TOC122">9.6.3  Message selection</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-&#60; <VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--less-than=<VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX797"></A>
+<A NAME="IDX798"></A>
+Print messages with less than <VAR>number</VAR> definitions, defaults to infinite
+if not set.
+
+<DT><SAMP>&lsquo;-&#62; <VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--more-than=<VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX799"></A>
+<A NAME="IDX800"></A>
+Print messages with more than <VAR>number</VAR> definitions, defaults to 1 if not
+set.
+
+<DT><SAMP>&lsquo;-u&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--unique&rsquo;</SAMP>
+<DD>
+<A NAME="IDX801"></A>
+<A NAME="IDX802"></A>
+Shorthand for <SAMP>&lsquo;--less-than=2&rsquo;</SAMP>.  Requests that only unique messages be
+printed.
+
+</DL>
+
+
+
+<H3><A NAME="SEC123" HREF="gettext_toc.html#TOC123">9.6.4  Input file syntax</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-P&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--properties-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX803"></A>
+<A NAME="IDX804"></A>
+Assume the input files are Java ResourceBundles in Java <CODE>.properties</CODE>
+syntax, not in PO file syntax.
+
+<DT><SAMP>&lsquo;--stringtable-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX805"></A>
+Assume the input files are NeXTstep/GNUstep localized resource files in
+<CODE>.strings</CODE> syntax, not in PO file syntax.
+
+</DL>
+
+
+
+<H3><A NAME="SEC124" HREF="gettext_toc.html#TOC124">9.6.5  Output details</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;--color&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--color=<VAR>when</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX806"></A>
+Specify whether or when to use colors and other text attributes.
+See section <A HREF="gettext_9.html#SEC150">9.11.1  The <CODE>--color</CODE> option</A> for details.
+
+<DT><SAMP>&lsquo;--style=<VAR>style_file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX807"></A>
+Specify the CSS style rule file to use for <CODE>--color</CODE>.
+See section <A HREF="gettext_9.html#SEC152">9.11.3  The <CODE>--style</CODE> option</A> for details.
+
+<DT><SAMP>&lsquo;--force-po&rsquo;</SAMP>
+<DD>
+<A NAME="IDX808"></A>
+Always write an output file even if it contains no message.
+
+<DT><SAMP>&lsquo;-i&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--indent&rsquo;</SAMP>
+<DD>
+<A NAME="IDX809"></A>
+<A NAME="IDX810"></A>
+Write the .po file using indented style.
+
+<DT><SAMP>&lsquo;--no-location&rsquo;</SAMP>
+<DD>
+<A NAME="IDX811"></A>
+Do not write <SAMP>&lsquo;#: <VAR>filename</VAR>:<VAR>line</VAR>&rsquo;</SAMP> lines.
+
+<DT><SAMP>&lsquo;-n&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--add-location=<VAR>type</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX812"></A>
+<A NAME="IDX813"></A>
+Generate <SAMP>&lsquo;#: <VAR>filename</VAR>:<VAR>line</VAR>&rsquo;</SAMP> lines (default).
+
+The optional <VAR>type</VAR> can be either <SAMP>&lsquo;full&rsquo;</SAMP>, <SAMP>&lsquo;file&rsquo;</SAMP>, or
+<SAMP>&lsquo;never&rsquo;</SAMP>.  If it is not given or <SAMP>&lsquo;full&rsquo;</SAMP>, it generates the
+lines with both file name and line number.  If it is <SAMP>&lsquo;file&rsquo;</SAMP>, the
+line number part is omitted.  If it is <SAMP>&lsquo;never&rsquo;</SAMP>, it completely
+suppresses the lines (same as <CODE>--no-location</CODE>).
+
+<DT><SAMP>&lsquo;--strict&rsquo;</SAMP>
+<DD>
+<A NAME="IDX814"></A>
+Write out a strict Uniforum conforming PO file.  Note that this
+Uniforum format should be avoided because it doesn't support the
+GNU extensions.
+
+<DT><SAMP>&lsquo;-p&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--properties-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX815"></A>
+<A NAME="IDX816"></A>
+Write out a Java ResourceBundle in Java <CODE>.properties</CODE> syntax.  Note
+that this file format doesn't support plural forms and silently drops
+obsolete messages.
+
+<DT><SAMP>&lsquo;--stringtable-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX817"></A>
+Write out a NeXTstep/GNUstep localized resource file in <CODE>.strings</CODE> syntax.
+Note that this file format doesn't support plural forms.
+
+<DT><SAMP>&lsquo;-w <VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--width=<VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX818"></A>
+<A NAME="IDX819"></A>
+Set the output page width.  Long strings in the output files will be
+split across multiple lines in order to ensure that each line's width
+(= number of screen columns) is less or equal to the given <VAR>number</VAR>.
+
+<DT><SAMP>&lsquo;--no-wrap&rsquo;</SAMP>
+<DD>
+<A NAME="IDX820"></A>
+Do not break long message lines.  Message lines whose width exceeds the
+output page width will not be split into several lines.  Only file reference
+lines which are wider than the output page width will be split.
+
+<DT><SAMP>&lsquo;-s&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--sort-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX821"></A>
+<A NAME="IDX822"></A>
+Generate sorted output.  Note that using this option makes it much harder
+for the translator to understand each message's context.
+
+<DT><SAMP>&lsquo;-F&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--sort-by-file&rsquo;</SAMP>
+<DD>
+<A NAME="IDX823"></A>
+<A NAME="IDX824"></A>
+Sort output by file location.
+
+<DT><SAMP>&lsquo;--omit-header&rsquo;</SAMP>
+<DD>
+<A NAME="IDX825"></A>
+Don't write header with <SAMP>&lsquo;msgid ""&rsquo;</SAMP> entry.
+
+</DL>
+
+
+
+<H3><A NAME="SEC125" HREF="gettext_toc.html#TOC125">9.6.6  Informative output</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-h&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--help&rsquo;</SAMP>
+<DD>
+<A NAME="IDX826"></A>
+<A NAME="IDX827"></A>
+Display this help and exit.
+
+<DT><SAMP>&lsquo;-V&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--version&rsquo;</SAMP>
+<DD>
+<A NAME="IDX828"></A>
+<A NAME="IDX829"></A>
+Output version information and exit.
+
+</DL>
+
+
+
+<H2><A NAME="SEC126" HREF="gettext_toc.html#TOC126">9.7  Invoking the <CODE>msgcmp</CODE> Program</A></H2>
+
+<P>
+<A NAME="IDX830"></A>
+<A NAME="IDX831"></A>
+
+<PRE>
+msgcmp [<VAR>option</VAR>] <VAR>def</VAR>.po <VAR>ref</VAR>.pot
+</PRE>
+
+<P>
+<A NAME="IDX832"></A>
+The <CODE>msgcmp</CODE> program compares two Uniforum style .po files to check that
+both contain the same set of msgid strings.  The <VAR>def</VAR>.po file is an
+existing PO file with the translations.  The <VAR>ref</VAR>.pot file is the last
+created PO file, or a PO Template file (generally created by <CODE>xgettext</CODE>).
+This is useful for checking that you have translated each and every message
+in your program.  Where an exact match cannot be found, fuzzy matching is
+used to produce better diagnostics.
+
+</P>
+
+
+<H3><A NAME="SEC127" HREF="gettext_toc.html#TOC127">9.7.1  Input file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;<VAR>def</VAR>.po&rsquo;</SAMP>
+<DD>
+Translations.
+
+<DT><SAMP>&lsquo;<VAR>ref</VAR>.pot&rsquo;</SAMP>
+<DD>
+References to the sources.
+
+<DT><SAMP>&lsquo;-D <VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--directory=<VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX833"></A>
+<A NAME="IDX834"></A>
+Add <VAR>directory</VAR> to the list of directories.  Source files are
+searched relative to this list of directories.
+
+</DL>
+
+
+
+<H3><A NAME="SEC128" HREF="gettext_toc.html#TOC128">9.7.2  Operation modifiers</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-m&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--multi-domain&rsquo;</SAMP>
+<DD>
+<A NAME="IDX835"></A>
+<A NAME="IDX836"></A>
+Apply <VAR>ref</VAR>.pot to each of the domains in <VAR>def</VAR>.po.
+
+<DT><SAMP>&lsquo;-N&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--no-fuzzy-matching&rsquo;</SAMP>
+<DD>
+<A NAME="IDX837"></A>
+<A NAME="IDX838"></A>
+Do not use fuzzy matching when an exact match is not found.  This may speed
+up the operation considerably.
+
+<DT><SAMP>&lsquo;--use-fuzzy&rsquo;</SAMP>
+<DD>
+<A NAME="IDX839"></A>
+Consider fuzzy messages in the <VAR>def</VAR>.po file like translated messages.
+Note that using this option is usually wrong, because fuzzy messages are
+exactly those which have not been validated by a human translator.
+
+<DT><SAMP>&lsquo;--use-untranslated&rsquo;</SAMP>
+<DD>
+<A NAME="IDX840"></A>
+Consider untranslated messages in the <VAR>def</VAR>.po file like translated
+messages.  Note that using this option is usually wrong.
+
+</DL>
+
+
+
+<H3><A NAME="SEC129" HREF="gettext_toc.html#TOC129">9.7.3  Input file syntax</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-P&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--properties-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX841"></A>
+<A NAME="IDX842"></A>
+Assume the input files are Java ResourceBundles in Java <CODE>.properties</CODE>
+syntax, not in PO file syntax.
+
+<DT><SAMP>&lsquo;--stringtable-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX843"></A>
+Assume the input files are NeXTstep/GNUstep localized resource files in
+<CODE>.strings</CODE> syntax, not in PO file syntax.
+
+</DL>
+
+
+
+<H3><A NAME="SEC130" HREF="gettext_toc.html#TOC130">9.7.4  Informative output</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-h&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--help&rsquo;</SAMP>
+<DD>
+<A NAME="IDX844"></A>
+<A NAME="IDX845"></A>
+Display this help and exit.
+
+<DT><SAMP>&lsquo;-V&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--version&rsquo;</SAMP>
+<DD>
+<A NAME="IDX846"></A>
+<A NAME="IDX847"></A>
+Output version information and exit.
+
+</DL>
+
+
+
+<H2><A NAME="SEC131" HREF="gettext_toc.html#TOC131">9.8  Invoking the <CODE>msgattrib</CODE> Program</A></H2>
+
+<P>
+<A NAME="IDX848"></A>
+<A NAME="IDX849"></A>
+
+<PRE>
+msgattrib [<VAR>option</VAR>] [<VAR>inputfile</VAR>]
+</PRE>
+
+<P>
+<A NAME="IDX850"></A>
+<A NAME="IDX851"></A>
+The <CODE>msgattrib</CODE> program filters the messages of a translation catalog
+according to their attributes, and manipulates the attributes.
+
+</P>
+
+
+<H3><A NAME="SEC132" HREF="gettext_toc.html#TOC132">9.8.1  Input file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;<VAR>inputfile</VAR>&rsquo;</SAMP>
+<DD>
+Input PO file.
+
+<DT><SAMP>&lsquo;-D <VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--directory=<VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX852"></A>
+<A NAME="IDX853"></A>
+Add <VAR>directory</VAR> to the list of directories.  Source files are
+searched relative to this list of directories.  The resulting <TT>&lsquo;.po&rsquo;</TT>
+file will be written relative to the current directory, though.
+
+</DL>
+
+<P>
+If no <VAR>inputfile</VAR> is given or if it is <SAMP>&lsquo;-&rsquo;</SAMP>, standard input is read.
+
+</P>
+
+
+<H3><A NAME="SEC133" HREF="gettext_toc.html#TOC133">9.8.2  Output file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-o <VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--output-file=<VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX854"></A>
+<A NAME="IDX855"></A>
+Write output to specified file.
+
+</DL>
+
+<P>
+The results are written to standard output if no output file is specified
+or if it is <SAMP>&lsquo;-&rsquo;</SAMP>.
+
+</P>
+
+
+<H3><A NAME="SEC134" HREF="gettext_toc.html#TOC134">9.8.3  Message selection</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;--translated&rsquo;</SAMP>
+<DD>
+<A NAME="IDX856"></A>
+Keep translated messages, remove untranslated messages.
+
+<DT><SAMP>&lsquo;--untranslated&rsquo;</SAMP>
+<DD>
+<A NAME="IDX857"></A>
+Keep untranslated messages, remove translated messages.
+
+<DT><SAMP>&lsquo;--no-fuzzy&rsquo;</SAMP>
+<DD>
+<A NAME="IDX858"></A>
+Remove
+‘fuzzy’
+marked messages.
+
+<DT><SAMP>&lsquo;--only-fuzzy&rsquo;</SAMP>
+<DD>
+<A NAME="IDX859"></A>
+Keep
+‘fuzzy’
+marked messages, remove all other messages.
+
+<DT><SAMP>&lsquo;--no-obsolete&rsquo;</SAMP>
+<DD>
+<A NAME="IDX860"></A>
+Remove obsolete #~ messages.
+
+<DT><SAMP>&lsquo;--only-obsolete&rsquo;</SAMP>
+<DD>
+<A NAME="IDX861"></A>
+Keep obsolete #~ messages, remove all other messages.
+
+</DL>
+
+
+
+<H3><A NAME="SEC135" HREF="gettext_toc.html#TOC135">9.8.4  Attribute manipulation</A></H3>
+
+<P>
+<A NAME="IDX862"></A>
+Attributes are modified after the message selection/removal has been
+performed.  If the <SAMP>&lsquo;--only-file&rsquo;</SAMP> or <SAMP>&lsquo;--ignore-file&rsquo;</SAMP> option is
+specified, the attribute modification is applied only to those messages
+that are listed in the <VAR>only-file</VAR> and not listed in the
+<VAR>ignore-file</VAR>.
+
+</P>
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;--set-fuzzy&rsquo;</SAMP>
+<DD>
+<A NAME="IDX863"></A>
+Set all messages
+‘fuzzy’.
+
+<DT><SAMP>&lsquo;--clear-fuzzy&rsquo;</SAMP>
+<DD>
+<A NAME="IDX864"></A>
+Set all messages
+non-‘fuzzy’.
+
+<DT><SAMP>&lsquo;--set-obsolete&rsquo;</SAMP>
+<DD>
+<A NAME="IDX865"></A>
+Set all messages obsolete.
+
+<DT><SAMP>&lsquo;--clear-obsolete&rsquo;</SAMP>
+<DD>
+<A NAME="IDX866"></A>
+Set all messages non-obsolete.
+
+<DT><SAMP>&lsquo;--previous&rsquo;</SAMP>
+<DD>
+<A NAME="IDX867"></A>
+When setting
+‘fuzzy’
+mark, keep “previous msgid” of translated messages.
+
+<DT><SAMP>&lsquo;--clear-previous&rsquo;</SAMP>
+<DD>
+<A NAME="IDX868"></A>
+Remove the “previous msgid” (<SAMP>&lsquo;#|&rsquo;</SAMP>) comments from all messages.
+
+<DT><SAMP>&lsquo;--empty&rsquo;</SAMP>
+<DD>
+<A NAME="IDX869"></A>
+When removing
+‘fuzzy’
+mark, also set msgstr empty.
+
+<DT><SAMP>&lsquo;--only-file=<VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX870"></A>
+Limit the attribute changes to entries that are listed in <VAR>file</VAR>.
+<VAR>file</VAR> should be a PO or POT file.
+
+<DT><SAMP>&lsquo;--ignore-file=<VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX871"></A>
+Limit the attribute changes to entries that are not listed in <VAR>file</VAR>.
+<VAR>file</VAR> should be a PO or POT file.
+
+<DT><SAMP>&lsquo;--fuzzy&rsquo;</SAMP>
+<DD>
+<A NAME="IDX872"></A>
+Synonym for <SAMP>&lsquo;--only-fuzzy --clear-fuzzy&rsquo;</SAMP>: It keeps only the fuzzy
+messages and removes their
+‘fuzzy’
+mark.
+
+<DT><SAMP>&lsquo;--obsolete&rsquo;</SAMP>
+<DD>
+<A NAME="IDX873"></A>
+Synonym for <SAMP>&lsquo;--only-obsolete --clear-obsolete&rsquo;</SAMP>: It keeps only the
+obsolete messages and makes them non-obsolete.
+
+</DL>
+
+
+
+<H3><A NAME="SEC136" HREF="gettext_toc.html#TOC136">9.8.5  Input file syntax</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-P&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--properties-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX874"></A>
+<A NAME="IDX875"></A>
+Assume the input file is a Java ResourceBundle in Java <CODE>.properties</CODE>
+syntax, not in PO file syntax.
+
+<DT><SAMP>&lsquo;--stringtable-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX876"></A>
+Assume the input file is a NeXTstep/GNUstep localized resource file in
+<CODE>.strings</CODE> syntax, not in PO file syntax.
+
+</DL>
+
+
+
+<H3><A NAME="SEC137" HREF="gettext_toc.html#TOC137">9.8.6  Output details</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;--color&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--color=<VAR>when</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX877"></A>
+Specify whether or when to use colors and other text attributes.
+See section <A HREF="gettext_9.html#SEC150">9.11.1  The <CODE>--color</CODE> option</A> for details.
+
+<DT><SAMP>&lsquo;--style=<VAR>style_file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX878"></A>
+Specify the CSS style rule file to use for <CODE>--color</CODE>.
+See section <A HREF="gettext_9.html#SEC152">9.11.3  The <CODE>--style</CODE> option</A> for details.
+
+<DT><SAMP>&lsquo;--force-po&rsquo;</SAMP>
+<DD>
+<A NAME="IDX879"></A>
+Always write an output file even if it contains no message.
+
+<DT><SAMP>&lsquo;-i&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--indent&rsquo;</SAMP>
+<DD>
+<A NAME="IDX880"></A>
+<A NAME="IDX881"></A>
+Write the .po file using indented style.
+
+<DT><SAMP>&lsquo;--no-location&rsquo;</SAMP>
+<DD>
+<A NAME="IDX882"></A>
+Do not write <SAMP>&lsquo;#: <VAR>filename</VAR>:<VAR>line</VAR>&rsquo;</SAMP> lines.
+
+<DT><SAMP>&lsquo;-n&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--add-location=<VAR>type</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX883"></A>
+<A NAME="IDX884"></A>
+Generate <SAMP>&lsquo;#: <VAR>filename</VAR>:<VAR>line</VAR>&rsquo;</SAMP> lines (default).
+
+The optional <VAR>type</VAR> can be either <SAMP>&lsquo;full&rsquo;</SAMP>, <SAMP>&lsquo;file&rsquo;</SAMP>, or
+<SAMP>&lsquo;never&rsquo;</SAMP>.  If it is not given or <SAMP>&lsquo;full&rsquo;</SAMP>, it generates the
+lines with both file name and line number.  If it is <SAMP>&lsquo;file&rsquo;</SAMP>, the
+line number part is omitted.  If it is <SAMP>&lsquo;never&rsquo;</SAMP>, it completely
+suppresses the lines (same as <CODE>--no-location</CODE>).
+
+<DT><SAMP>&lsquo;--strict&rsquo;</SAMP>
+<DD>
+<A NAME="IDX885"></A>
+Write out a strict Uniforum conforming PO file.  Note that this
+Uniforum format should be avoided because it doesn't support the
+GNU extensions.
+
+<DT><SAMP>&lsquo;-p&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--properties-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX886"></A>
+<A NAME="IDX887"></A>
+Write out a Java ResourceBundle in Java <CODE>.properties</CODE> syntax.  Note
+that this file format doesn't support plural forms and silently drops
+obsolete messages.
+
+<DT><SAMP>&lsquo;--stringtable-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX888"></A>
+Write out a NeXTstep/GNUstep localized resource file in <CODE>.strings</CODE> syntax.
+Note that this file format doesn't support plural forms.
+
+<DT><SAMP>&lsquo;-w <VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--width=<VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX889"></A>
+<A NAME="IDX890"></A>
+Set the output page width.  Long strings in the output files will be
+split across multiple lines in order to ensure that each line's width
+(= number of screen columns) is less or equal to the given <VAR>number</VAR>.
+
+<DT><SAMP>&lsquo;--no-wrap&rsquo;</SAMP>
+<DD>
+<A NAME="IDX891"></A>
+Do not break long message lines.  Message lines whose width exceeds the
+output page width will not be split into several lines.  Only file reference
+lines which are wider than the output page width will be split.
+
+<DT><SAMP>&lsquo;-s&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--sort-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX892"></A>
+<A NAME="IDX893"></A>
+Generate sorted output.  Note that using this option makes it much harder
+for the translator to understand each message's context.
+
+<DT><SAMP>&lsquo;-F&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--sort-by-file&rsquo;</SAMP>
+<DD>
+<A NAME="IDX894"></A>
+<A NAME="IDX895"></A>
+Sort output by file location.
+
+</DL>
+
+
+
+<H3><A NAME="SEC138" HREF="gettext_toc.html#TOC138">9.8.7  Informative output</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-h&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--help&rsquo;</SAMP>
+<DD>
+<A NAME="IDX896"></A>
+<A NAME="IDX897"></A>
+Display this help and exit.
+
+<DT><SAMP>&lsquo;-V&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--version&rsquo;</SAMP>
+<DD>
+<A NAME="IDX898"></A>
+<A NAME="IDX899"></A>
+Output version information and exit.
+
+</DL>
+
+
+
+<H2><A NAME="SEC139" HREF="gettext_toc.html#TOC139">9.9  Invoking the <CODE>msgen</CODE> Program</A></H2>
+
+<P>
+<A NAME="IDX900"></A>
+<A NAME="IDX901"></A>
+
+<PRE>
+msgen [<VAR>option</VAR>] <VAR>inputfile</VAR>
+</PRE>
+
+<P>
+<A NAME="IDX902"></A>
+The <CODE>msgen</CODE> program creates an English translation catalog.  The
+input file is the last created English PO file, or a PO Template file
+(generally created by xgettext).  Untranslated entries are assigned a
+translation that is identical to the msgid.
+
+</P>
+<P>
+Note: <SAMP>&lsquo;msginit --no-translator --locale=en&rsquo;</SAMP> performs a very similar
+task.  The main difference is that <CODE>msginit</CODE> cares specially about
+the header entry, whereas <CODE>msgen</CODE> doesn't.
+
+</P>
+
+
+<H3><A NAME="SEC140" HREF="gettext_toc.html#TOC140">9.9.1  Input file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;<VAR>inputfile</VAR>&rsquo;</SAMP>
+<DD>
+Input PO or POT file.
+
+<DT><SAMP>&lsquo;-D <VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--directory=<VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX903"></A>
+<A NAME="IDX904"></A>
+Add <VAR>directory</VAR> to the list of directories.  Source files are
+searched relative to this list of directories.  The resulting <TT>&lsquo;.po&rsquo;</TT>
+file will be written relative to the current directory, though.
+
+</DL>
+
+<P>
+If <VAR>inputfile</VAR> is <SAMP>&lsquo;-&rsquo;</SAMP>, standard input is read.
+
+</P>
+
+
+<H3><A NAME="SEC141" HREF="gettext_toc.html#TOC141">9.9.2  Output file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-o <VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--output-file=<VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX905"></A>
+<A NAME="IDX906"></A>
+Write output to specified file.
+
+</DL>
+
+<P>
+The results are written to standard output if no output file is specified
+or if it is <SAMP>&lsquo;-&rsquo;</SAMP>.
+
+</P>
+
+
+<H3><A NAME="SEC142" HREF="gettext_toc.html#TOC142">9.9.3  Input file syntax</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-P&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--properties-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX907"></A>
+<A NAME="IDX908"></A>
+Assume the input file is a Java ResourceBundle in Java <CODE>.properties</CODE>
+syntax, not in PO file syntax.
+
+<DT><SAMP>&lsquo;--stringtable-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX909"></A>
+Assume the input file is a NeXTstep/GNUstep localized resource file in
+<CODE>.strings</CODE> syntax, not in PO file syntax.
+
+</DL>
+
+
+
+<H3><A NAME="SEC143" HREF="gettext_toc.html#TOC143">9.9.4  Output details</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;--lang=<VAR>catalogname</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX910"></A>
+Specify the <SAMP>&lsquo;Language&rsquo;</SAMP> field to be used in the header entry.  See
+section <A HREF="gettext_6.html#SEC44">6.2  Filling in the Header Entry</A> for the meaning of this field.  Note: The
+<SAMP>&lsquo;Language-Team&rsquo;</SAMP> and <SAMP>&lsquo;Plural-Forms&rsquo;</SAMP> fields are not set by this
+option.
+
+<DT><SAMP>&lsquo;--color&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--color=<VAR>when</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX911"></A>
+Specify whether or when to use colors and other text attributes.
+See section <A HREF="gettext_9.html#SEC150">9.11.1  The <CODE>--color</CODE> option</A> for details.
+
+<DT><SAMP>&lsquo;--style=<VAR>style_file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX912"></A>
+Specify the CSS style rule file to use for <CODE>--color</CODE>.
+See section <A HREF="gettext_9.html#SEC152">9.11.3  The <CODE>--style</CODE> option</A> for details.
+
+<DT><SAMP>&lsquo;--force-po&rsquo;</SAMP>
+<DD>
+<A NAME="IDX913"></A>
+Always write an output file even if it contains no message.
+
+<DT><SAMP>&lsquo;-i&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--indent&rsquo;</SAMP>
+<DD>
+<A NAME="IDX914"></A>
+<A NAME="IDX915"></A>
+Write the .po file using indented style.
+
+<DT><SAMP>&lsquo;--no-location&rsquo;</SAMP>
+<DD>
+<A NAME="IDX916"></A>
+Do not write <SAMP>&lsquo;#: <VAR>filename</VAR>:<VAR>line</VAR>&rsquo;</SAMP> lines.
+
+<DT><SAMP>&lsquo;-n&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--add-location=<VAR>type</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX917"></A>
+Generate <SAMP>&lsquo;#: <VAR>filename</VAR>:<VAR>line</VAR>&rsquo;</SAMP> lines (default).
+
+The optional <VAR>type</VAR> can be either <SAMP>&lsquo;full&rsquo;</SAMP>, <SAMP>&lsquo;file&rsquo;</SAMP>, or
+<SAMP>&lsquo;never&rsquo;</SAMP>.  If it is not given or <SAMP>&lsquo;full&rsquo;</SAMP>, it generates the
+lines with both file name and line number.  If it is <SAMP>&lsquo;file&rsquo;</SAMP>, the
+line number part is omitted.  If it is <SAMP>&lsquo;never&rsquo;</SAMP>, it completely
+suppresses the lines (same as <CODE>--no-location</CODE>).
+
+<DT><SAMP>&lsquo;--strict&rsquo;</SAMP>
+<DD>
+<A NAME="IDX918"></A>
+Write out a strict Uniforum conforming PO file.  Note that this
+Uniforum format should be avoided because it doesn't support the
+GNU extensions.
+
+<DT><SAMP>&lsquo;-p&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--properties-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX919"></A>
+<A NAME="IDX920"></A>
+Write out a Java ResourceBundle in Java <CODE>.properties</CODE> syntax.  Note
+that this file format doesn't support plural forms and silently drops
+obsolete messages.
+
+<DT><SAMP>&lsquo;--stringtable-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX921"></A>
+Write out a NeXTstep/GNUstep localized resource file in <CODE>.strings</CODE> syntax.
+Note that this file format doesn't support plural forms.
+
+<DT><SAMP>&lsquo;-w <VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--width=<VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX922"></A>
+<A NAME="IDX923"></A>
+Set the output page width.  Long strings in the output files will be
+split across multiple lines in order to ensure that each line's width
+(= number of screen columns) is less or equal to the given <VAR>number</VAR>.
+
+<DT><SAMP>&lsquo;--no-wrap&rsquo;</SAMP>
+<DD>
+<A NAME="IDX924"></A>
+Do not break long message lines.  Message lines whose width exceeds the
+output page width will not be split into several lines.  Only file reference
+lines which are wider than the output page width will be split.
+
+<DT><SAMP>&lsquo;-s&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--sort-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX925"></A>
+<A NAME="IDX926"></A>
+Generate sorted output.  Note that using this option makes it much harder
+for the translator to understand each message's context.
+
+<DT><SAMP>&lsquo;-F&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--sort-by-file&rsquo;</SAMP>
+<DD>
+<A NAME="IDX927"></A>
+<A NAME="IDX928"></A>
+Sort output by file location.
+
+</DL>
+
+
+
+<H3><A NAME="SEC144" HREF="gettext_toc.html#TOC144">9.9.5  Informative output</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-h&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--help&rsquo;</SAMP>
+<DD>
+<A NAME="IDX929"></A>
+<A NAME="IDX930"></A>
+Display this help and exit.
+
+<DT><SAMP>&lsquo;-V&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--version&rsquo;</SAMP>
+<DD>
+<A NAME="IDX931"></A>
+<A NAME="IDX932"></A>
+Output version information and exit.
+
+</DL>
+
+
+
+<H2><A NAME="SEC145" HREF="gettext_toc.html#TOC145">9.10  Invoking the <CODE>msgexec</CODE> Program</A></H2>
+
+<P>
+<A NAME="IDX933"></A>
+<A NAME="IDX934"></A>
+
+<PRE>
+msgexec [<VAR>option</VAR>] <VAR>command</VAR> [<VAR>command-option</VAR>]
+</PRE>
+
+<P>
+<A NAME="IDX935"></A>
+The <CODE>msgexec</CODE> program applies a command to all translations of a
+translation catalog.
+The <VAR>command</VAR> can be any program that reads a translation from standard
+input.  It is invoked once for each translation.  Its output becomes
+msgexec's output.  <CODE>msgexec</CODE>'s return code is the maximum return code
+across all invocations.
+
+</P>
+<P>
+<A NAME="IDX936"></A>
+A special builtin command called <SAMP>&lsquo;0&rsquo;</SAMP> outputs the translation, followed
+by a null byte.  The output of <SAMP>&lsquo;msgexec 0&rsquo;</SAMP> is suitable as input for
+<SAMP>&lsquo;xargs -0&rsquo;</SAMP>.
+
+</P>
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;--newline&rsquo;</SAMP>
+<DD>
+<A NAME="IDX937"></A>
+Add newline at the end of each input line.
+
+</DL>
+
+<P>
+<A NAME="IDX938"></A>
+<A NAME="IDX939"></A>
+<A NAME="IDX940"></A>
+<A NAME="IDX941"></A>
+<A NAME="IDX942"></A>
+<A NAME="IDX943"></A>
+<A NAME="IDX944"></A>
+<A NAME="IDX945"></A>
+During each <VAR>command</VAR> invocation, the environment variable
+<CODE>MSGEXEC_MSGID</CODE> is bound to the message's msgid, and the environment
+variable <CODE>MSGEXEC_LOCATION</CODE> is bound to the location in the PO file
+of the message.  If the message has a context, the environment variable
+<CODE>MSGEXEC_MSGCTXT</CODE> is bound to the message's msgctxt, otherwise it is
+unbound.  If the message has a plural form, environment variable
+<CODE>MSGEXEC_MSGID_PLURAL</CODE> is bound to the message's msgid_plural and
+<CODE>MSGEXEC_PLURAL_FORM</CODE> is bound to the order number of the plural
+actually processed (starting with 0), otherwise both are unbound.
+If the message has a previous msgid (added by <CODE>msgmerge</CODE>),
+environment variable <CODE>MSGEXEC_PREV_MSGCTXT</CODE> is bound to the
+message's previous msgctxt, <CODE>MSGEXEC_PREV_MSGID</CODE> is bound to
+the previous msgid, and <CODE>MSGEXEC_PREV_MSGID_PLURAL</CODE> is bound to
+the previous msgid_plural.
+
+</P>
+<P>
+<A NAME="IDX946"></A>
+Note: It is your responsibility to ensure that the <VAR>command</VAR> can cope
+with input encoded in the translation catalog's encoding.  If the
+<VAR>command</VAR> wants input in a particular encoding, you can in a first step
+convert the translation catalog to that encoding using the <SAMP>&lsquo;msgconv&rsquo;</SAMP>
+program, before invoking <SAMP>&lsquo;msgexec&rsquo;</SAMP>.  If the <VAR>command</VAR> wants input
+in the locale's encoding, but you want to avoid the locale's encoding, then
+you can first convert the translation catalog to UTF-8 using the
+<SAMP>&lsquo;msgconv&rsquo;</SAMP> program and then make <SAMP>&lsquo;msgexec&rsquo;</SAMP> work in an UTF-8
+locale, by using the <CODE>LC_ALL</CODE> environment variable.
+
+</P>
+
+
+<H3><A NAME="SEC146" HREF="gettext_toc.html#TOC146">9.10.1  Input file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-i <VAR>inputfile</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--input=<VAR>inputfile</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX947"></A>
+<A NAME="IDX948"></A>
+Input PO file.
+
+<DT><SAMP>&lsquo;-D <VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--directory=<VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX949"></A>
+<A NAME="IDX950"></A>
+Add <VAR>directory</VAR> to the list of directories.  Source files are
+searched relative to this list of directories.  The resulting <TT>&lsquo;.po&rsquo;</TT>
+file will be written relative to the current directory, though.
+
+</DL>
+
+<P>
+If no <VAR>inputfile</VAR> is given or if it is <SAMP>&lsquo;-&rsquo;</SAMP>, standard input is read.
+
+</P>
+
+
+<H3><A NAME="SEC147" HREF="gettext_toc.html#TOC147">9.10.2  Input file syntax</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-P&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--properties-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX951"></A>
+<A NAME="IDX952"></A>
+Assume the input file is a Java ResourceBundle in Java <CODE>.properties</CODE>
+syntax, not in PO file syntax.
+
+<DT><SAMP>&lsquo;--stringtable-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX953"></A>
+Assume the input file is a NeXTstep/GNUstep localized resource file in
+<CODE>.strings</CODE> syntax, not in PO file syntax.
+
+</DL>
+
+
+
+<H3><A NAME="SEC148" HREF="gettext_toc.html#TOC148">9.10.3  Informative output</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-h&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--help&rsquo;</SAMP>
+<DD>
+<A NAME="IDX954"></A>
+<A NAME="IDX955"></A>
+Display this help and exit.
+
+<DT><SAMP>&lsquo;-V&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--version&rsquo;</SAMP>
+<DD>
+<A NAME="IDX956"></A>
+<A NAME="IDX957"></A>
+Output version information and exit.
+
+</DL>
+
+
+
+<H2><A NAME="SEC149" HREF="gettext_toc.html#TOC149">9.11  Highlighting parts of PO files</A></H2>
+
+<P>
+Translators are usually only interested in seeing the untranslated and
+fuzzy messages of a PO file.  Also, when a message is set fuzzy because
+the msgid changed, they want to see the differences between the previous
+msgid and the current one (especially if the msgid is long and only few
+words in it have changed).  Finally, it's always welcome to highlight the
+different sections of a message in a PO file (comments, msgid, msgstr, etc.).
+
+</P>
+<P>
+Such highlighting is possible through the <CODE>msgcat</CODE> options
+<SAMP>&lsquo;--color&rsquo;</SAMP> and <SAMP>&lsquo;--style&rsquo;</SAMP>.
+
+</P>
+
+
+
+<H3><A NAME="SEC150" HREF="gettext_toc.html#TOC150">9.11.1  The <CODE>--color</CODE> option</A></H3>
+
+<P>
+<A NAME="IDX958"></A>
+The <SAMP>&lsquo;--color=<VAR>when</VAR>&rsquo;</SAMP> option specifies under which conditions
+colorized output should be generated.  The <VAR>when</VAR> part can be one of
+the following:
+
+</P>
+<DL COMPACT>
+
+<DT><CODE>always</CODE>
+<DD>
+<DT><CODE>yes</CODE>
+<DD>
+The output will be colorized.
+
+<DT><CODE>never</CODE>
+<DD>
+<DT><CODE>no</CODE>
+<DD>
+The output will not be colorized.
+
+<DT><CODE>auto</CODE>
+<DD>
+<DT><CODE>tty</CODE>
+<DD>
+The output will be colorized if the output device is a tty, i.e. when the
+output goes directly to a text screen or terminal emulator window.
+
+<DT><CODE>html</CODE>
+<DD>
+The output will be colorized and be in HTML format.
+</DL>
+
+<P>
+<SAMP>&lsquo;--color&rsquo;</SAMP> is equivalent to <SAMP>&lsquo;--color=yes&rsquo;</SAMP>.  The default is
+<SAMP>&lsquo;--color=auto&rsquo;</SAMP>.
+
+</P>
+<P>
+Thus, a command like <SAMP>&lsquo;msgcat vi.po&rsquo;</SAMP> will produce colorized output
+when called by itself in a command window.  Whereas in a pipe, such as
+<SAMP>&lsquo;msgcat vi.po | less -R&rsquo;</SAMP>, it will not produce colorized output.  To
+get colorized output in this situation nevertheless, use the command
+<SAMP>&lsquo;msgcat --color vi.po | less -R&rsquo;</SAMP>.
+
+</P>
+<P>
+The <SAMP>&lsquo;--color=html&rsquo;</SAMP> option will produce output that can be viewed in
+a browser.  This can be useful, for example, for Indic languages,
+because the renderic of Indic scripts in browser is usually better than
+in terminal emulators.
+
+</P>
+<P>
+Note that the output produced with the <CODE>--color</CODE> option is <EM>not</EM>
+a valid PO file in itself.  It contains additional terminal-specific escape
+sequences or HTML tags.  A PO file reader will give a syntax error when
+confronted with such content.  Except for the <SAMP>&lsquo;--color=html&rsquo;</SAMP> case,
+you therefore normally don't need to save output produced with the
+<CODE>--color</CODE> option in a file.
+
+</P>
+
+
+<H3><A NAME="SEC151" HREF="gettext_toc.html#TOC151">9.11.2  The environment variable <CODE>TERM</CODE></A></H3>
+
+<P>
+<A NAME="IDX959"></A>
+The environment variable <CODE>TERM</CODE> contains a identifier for the text
+window's capabilities.  You can get a detailed list of these cababilities
+by using the <SAMP>&lsquo;infocmp&rsquo;</SAMP> command, using <SAMP>&lsquo;man 5 terminfo&rsquo;</SAMP> as a
+reference.
+
+</P>
+<P>
+When producing text with embedded color directives, <CODE>msgcat</CODE> looks
+at the <CODE>TERM</CODE> variable.  Text windows today typically support at least
+8 colors.  Often, however, the text window supports 16 or more colors,
+even though the <CODE>TERM</CODE> variable is set to a identifier denoting only
+8 supported colors.  It can be worth setting the <CODE>TERM</CODE> variable to
+a different value in these cases:
+
+</P>
+<DL COMPACT>
+
+<DT><CODE>xterm</CODE>
+<DD>
+<CODE>xterm</CODE> is in most cases built with support for 16 colors.  It can also
+be built with support for 88 or 256 colors (but not both).  You can try to
+set <CODE>TERM</CODE> to either <CODE>xterm-16color</CODE>, <CODE>xterm-88color</CODE>, or
+<CODE>xterm-256color</CODE>.
+
+<DT><CODE>rxvt</CODE>
+<DD>
+<CODE>rxvt</CODE> is often built with support for 16 colors.  You can try to set
+<CODE>TERM</CODE> to <CODE>rxvt-16color</CODE>.
+
+<DT><CODE>konsole</CODE>
+<DD>
+<CODE>konsole</CODE> too is often built with support for 16 colors.  You can try to
+set <CODE>TERM</CODE> to <CODE>konsole-16color</CODE> or <CODE>xterm-16color</CODE>.
+</DL>
+
+<P>
+After setting <CODE>TERM</CODE>, you can verify it by invoking
+<SAMP>&lsquo;msgcat --color=test&rsquo;</SAMP> and seeing whether the output looks like a
+reasonable color map.
+
+</P>
+
+
+<H3><A NAME="SEC152" HREF="gettext_toc.html#TOC152">9.11.3  The <CODE>--style</CODE> option</A></H3>
+
+<P>
+<A NAME="IDX960"></A>
+The <SAMP>&lsquo;--style=<VAR>style_file</VAR>&rsquo;</SAMP> option specifies the style file to use
+when colorizing.  It has an effect only when the <CODE>--color</CODE> option is
+effective.
+
+</P>
+<P>
+<A NAME="IDX961"></A>
+If the <CODE>--style</CODE> option is not specified, the environment variable
+<CODE>PO_STYLE</CODE> is considered.  It is meant to point to the user's
+preferred style for PO files.
+
+</P>
+<P>
+The default style file is <TT>&lsquo;$prefix/share/gettext/styles/po-default.css&rsquo;</TT>,
+where <CODE>$prefix</CODE> is the installation location.
+
+</P>
+<P>
+A few style files are predefined:
+<DL COMPACT>
+
+<DT><TT>&lsquo;po-vim.css&rsquo;</TT>
+<DD>
+This style imitates the look used by vim 7.
+
+<DT><TT>&lsquo;po-emacs-x.css&rsquo;</TT>
+<DD>
+This style imitates the look used by GNU Emacs 21 and 22 in an X11 window.
+
+<DT><TT>&lsquo;po-emacs-xterm.css&rsquo;</TT>
+<DD>
+<DT><TT>&lsquo;po-emacs-xterm16.css&rsquo;</TT>
+<DD>
+<DT><TT>&lsquo;po-emacs-xterm256.css&rsquo;</TT>
+<DD>
+This style imitates the look used by GNU Emacs 22 in a terminal of type
+<SAMP>&lsquo;xterm&rsquo;</SAMP> (8 colors) or <SAMP>&lsquo;xterm-16color&rsquo;</SAMP> (16 colors) or
+<SAMP>&lsquo;xterm-256color&rsquo;</SAMP> (256 colors), respectively.
+</DL>
+
+<P>
+You can use these styles without specifying a directory.  They are actually
+located in <TT>&lsquo;$prefix/share/gettext/styles/&rsquo;</TT>, where <CODE>$prefix</CODE> is the
+installation location.
+
+</P>
+<P>
+You can also design your own styles.  This is described in the next section.
+
+</P>
+
+
+
+<H3><A NAME="SEC153" HREF="gettext_toc.html#TOC153">9.11.4  Style rules for PO files</A></H3>
+
+<P>
+The same style file can be used for styling of a PO file, for terminal
+output and for HTML output.  It is written in CSS (Cascading Style Sheet)
+syntax.  See <A HREF="http://www.w3.org/TR/css2/cover.html">http://www.w3.org/TR/css2/cover.html</A> for a formal
+definition of CSS.  Many HTML authoring tutorials also contain explanations
+of CSS.
+
+</P>
+<P>
+In the case of HTML output, the style file is embedded in the HTML output.
+In the case of text output, the style file is interpreted by the
+<CODE>msgcat</CODE> program.  This means, in particular, that when
+<CODE>@import</CODE> is used with relative file names, the file names are
+
+</P>
+
+<UL>
+<LI>
+
+relative to the resulting HTML file, in the case of HTML output,
+
+<LI>
+
+relative to the style sheet containing the <CODE>@import</CODE>, in the case of
+text output.  (Actually, <CODE>@import</CODE>s are not yet supported in this case,
+due to a limitation in <CODE>libcroco</CODE>.)
+</UL>
+
+<P>
+CSS rules are built up from selectors and declarations.  The declarations
+specify graphical properties; the selectors specify specify when they apply.
+
+</P>
+<P>
+In PO files, the following simple selectors (based on "CSS classes", see
+the CSS2 spec, section 5.8.3) are supported.
+
+</P>
+
+<UL>
+<LI>
+
+Selectors that apply to entire messages:
+
+<DL COMPACT>
+
+<DT><CODE>.header</CODE>
+<DD>
+This matches the header entry of a PO file.
+
+<DT><CODE>.translated</CODE>
+<DD>
+This matches a translated message.
+
+<DT><CODE>.untranslated</CODE>
+<DD>
+This matches an untranslated message (i.e. a message with empty translation).
+
+<DT><CODE>.fuzzy</CODE>
+<DD>
+This matches a fuzzy message (i.e. a message which has a translation that
+needs review by the translator).
+
+<DT><CODE>.obsolete</CODE>
+<DD>
+This matches an obsolete message (i.e. a message that was translated but is
+not needed by the current POT file any more).
+</DL>
+
+<LI>
+
+Selectors that apply to parts of a message in PO syntax.  Recall the general
+structure of a message in PO syntax:
+
+
+<PRE>
+<VAR>white-space</VAR>
+#  <VAR>translator-comments</VAR>
+#. <VAR>extracted-comments</VAR>
+#: <VAR>reference</VAR>...
+#, <VAR>flag</VAR>...
+#| msgid <VAR>previous-untranslated-string</VAR>
+msgid <VAR>untranslated-string</VAR>
+msgstr <VAR>translated-string</VAR>
+</PRE>
+
+<DL COMPACT>
+
+<DT><CODE>.comment</CODE>
+<DD>
+This matches all comments (translator comments, extracted comments,
+source file reference comments, flag comments, previous message comments,
+as well as the entire obsolete messages).
+
+<DT><CODE>.translator-comment</CODE>
+<DD>
+This matches the translator comments.
+
+<DT><CODE>.extracted-comment</CODE>
+<DD>
+This matches the extracted comments, i.e. the comments placed by the
+programmer at the attention of the translator.
+
+<DT><CODE>.reference-comment</CODE>
+<DD>
+This matches the source file reference comments (entire lines).
+
+<DT><CODE>.reference</CODE>
+<DD>
+This matches the individual source file references inside the source file
+reference comment lines.
+
+<DT><CODE>.flag-comment</CODE>
+<DD>
+This matches the flag comment lines (entire lines).
+
+<DT><CODE>.flag</CODE>
+<DD>
+This matches the individual flags inside flag comment lines.
+
+<DT><CODE>.fuzzy-flag</CODE>
+<DD>
+This matches the `fuzzy' flag inside flag comment lines.
+
+<DT><CODE>.previous-comment</CODE>
+<DD>
+This matches the comments containing the previous untranslated string (entire
+lines).
+
+<DT><CODE>.previous</CODE>
+<DD>
+This matches the previous untranslated string including the string delimiters,
+the associated keywords (<CODE>msgid</CODE> etc.) and the spaces between them.
+
+<DT><CODE>.msgid</CODE>
+<DD>
+This matches the untranslated string including the string delimiters,
+the associated keywords (<CODE>msgid</CODE> etc.) and the spaces between them.
+
+<DT><CODE>.msgstr</CODE>
+<DD>
+This matches the translated string including the string delimiters,
+the associated keywords (<CODE>msgstr</CODE> etc.) and the spaces between them.
+
+<DT><CODE>.keyword</CODE>
+<DD>
+This matches the keywords (<CODE>msgid</CODE>, <CODE>msgstr</CODE>, etc.).
+
+<DT><CODE>.string</CODE>
+<DD>
+This matches strings, including the string delimiters (double quotes).
+</DL>
+
+<LI>
+
+Selectors that apply to parts of strings:
+
+<DL COMPACT>
+
+<DT><CODE>.text</CODE>
+<DD>
+This matches the entire contents of a string (excluding the string delimiters,
+i.e. the double quotes).
+
+<DT><CODE>.escape-sequence</CODE>
+<DD>
+This matches an escape sequence (starting with a backslash).
+
+<DT><CODE>.format-directive</CODE>
+<DD>
+This matches a format string directive (starting with a <SAMP>&lsquo;%&rsquo;</SAMP> sign in the
+case of most programming languages, with a <SAMP>&lsquo;{&rsquo;</SAMP> in the case of
+<CODE>java-format</CODE> and <CODE>csharp-format</CODE>, with a <SAMP>&lsquo;~&rsquo;</SAMP> in the case of
+<CODE>lisp-format</CODE> and <CODE>scheme-format</CODE>, or with <SAMP>&lsquo;$&rsquo;</SAMP> in the case of
+<CODE>sh-format</CODE>).
+
+<DT><CODE>.invalid-format-directive</CODE>
+<DD>
+This matches an invalid format string directive.
+
+<DT><CODE>.added</CODE>
+<DD>
+In an untranslated string, this matches a part of the string that was not
+present in the previous untranslated string.  (Not yet implemented in this
+release.)
+
+<DT><CODE>.changed</CODE>
+<DD>
+In an untranslated string or in a previous untranslated string, this matches
+a part of the string that is changed or replaced.  (Not yet implemented in
+this release.)
+
+<DT><CODE>.removed</CODE>
+<DD>
+In a previous untranslated string, this matches a part of the string that
+is not present in the current untranslated string.  (Not yet implemented in
+this release.)
+</DL>
+</UL>
+
+<P>
+These selectors can be combined to hierarchical selectors.  For example,
+
+</P>
+
+<PRE>
+.msgstr .invalid-format-directive { color: red; }
+</PRE>
+
+<P>
+will highlight the invalid format directives in the translated strings.
+
+</P>
+<P>
+In text mode, pseudo-classes (CSS2 spec, section 5.11) and pseudo-elements
+(CSS2 spec, section 5.12) are not supported.
+
+</P>
+<P>
+The declarations in HTML mode are not limited; any graphical attribute
+supported by the browsers can be used.
+
+</P>
+<P>
+The declarations in text mode are limited to the following properties.  Other
+properties will be silently ignored.
+
+</P>
+<DL COMPACT>
+
+<DT><CODE>color</CODE> (CSS2 spec, section 14.1)
+<DD>
+<DT><CODE>background-color</CODE> (CSS2 spec, section 14.2.1)
+<DD>
+These properties is supported.  Colors will be adjusted to match the terminal's
+capabilities.  Note that many terminals support only 8 colors.
+
+<DT><CODE>font-weight</CODE> (CSS2 spec, section 15.2.3)
+<DD>
+This property is supported, but most terminals can only render two different
+weights: <CODE>normal</CODE> and <CODE>bold</CODE>.  Values &#62;= 600 are rendered as
+<CODE>bold</CODE>.
+
+<DT><CODE>font-style</CODE> (CSS2 spec, section 15.2.3)
+<DD>
+This property is supported.  The values <CODE>italic</CODE> and <CODE>oblique</CODE> are
+rendered the same way.
+
+<DT><CODE>text-decoration</CODE> (CSS2 spec, section 16.3.1)
+<DD>
+This property is supported, limited to the values <CODE>none</CODE> and
+<CODE>underline</CODE>.
+</DL>
+
+
+
+<H3><A NAME="SEC154" HREF="gettext_toc.html#TOC154">9.11.5  Customizing <CODE>less</CODE> for viewing PO files</A></H3>
+
+<P>
+The <SAMP>&lsquo;less&rsquo;</SAMP> program is a popular text file browser for use in a text
+screen or terminal emulator.  It also supports text with embedded escape
+sequences for colors and text decorations.
+
+</P>
+<P>
+You can use <CODE>less</CODE> to view a PO file like this (assuming an UTF-8
+environment):
+
+</P>
+
+<PRE>
+msgcat --to-code=UTF-8 --color xyz.po | less -R
+</PRE>
+
+<P>
+You can simplify this to this simple command:
+
+</P>
+
+<PRE>
+less xyz.po
+</PRE>
+
+<P>
+after these three preparations:
+
+</P>
+
+<OL>
+<LI>
+
+Add the options <SAMP>&lsquo;-R&rsquo;</SAMP> and <SAMP>&lsquo;-f&rsquo;</SAMP> to the <CODE>LESS</CODE> environment
+variable.  In sh shells:
+
+<PRE>
+$ LESS="$LESS -R -f"
+$ export LESS
+</PRE>
+
+<LI>
+
+If your system does not already have the <TT>&lsquo;lessopen.sh&rsquo;</TT> and
+<TT>&lsquo;lessclose.sh&rsquo;</TT> scripts, create them and set the <CODE>LESSOPEN</CODE> and
+<CODE>LESSCLOSE</CODE> environment variables, as indicated in the manual page
+(<SAMP>&lsquo;man less&rsquo;</SAMP>).
+
+<LI>
+
+Add to <TT>&lsquo;lessopen.sh&rsquo;</TT> a piece of script that recognizes PO files
+through their file extension and invokes <CODE>msgcat</CODE> on them, producing
+a temporary file.  Like this:
+
+
+<PRE>
+case "$1" in
+  *.po)
+    tmpfile=`mktemp "${TMPDIR-/tmp}/less.XXXXXX"`
+    msgcat --to-code=UTF-8 --color "$1" &#62; "$tmpfile"
+    echo "$tmpfile"
+    exit 0
+    ;;
+esac
+</PRE>
+
+</OL>
+
+
+
+<H2><A NAME="SEC155" HREF="gettext_toc.html#TOC155">9.12  Writing your own programs that process PO files</A></H2>
+
+<P>
+For the tasks for which a combination of <SAMP>&lsquo;msgattrib&rsquo;</SAMP>, <SAMP>&lsquo;msgcat&rsquo;</SAMP> etc.
+is not sufficient, a set of C functions is provided in a library, to make it
+possible to process PO files in your own programs.  When you use this library,
+you don't need to write routines to parse the PO file; instead, you retrieve
+a pointer in memory to each of messages contained in the PO file.  Functions
+for writing PO files are not provided at this time.
+
+</P>
+<P>
+The functions are declared in the header file <SAMP>&lsquo;&#60;gettext-po.h&#62;&rsquo;</SAMP>, and are
+defined in a library called <SAMP>&lsquo;libgettextpo&rsquo;</SAMP>.
+
+</P>
+<P>
+<DL>
+<DT><U>Data Type:</U> <B>po_file_t</B>
+<DD><A NAME="IDX962"></A>
+This is a pointer type that refers to the contents of a PO file, after it has
+been read into memory.
+</DL>
+
+</P>
+<P>
+<DL>
+<DT><U>Data Type:</U> <B>po_message_iterator_t</B>
+<DD><A NAME="IDX963"></A>
+This is a pointer type that refers to an iterator that produces a sequence of
+messages.
+</DL>
+
+</P>
+<P>
+<DL>
+<DT><U>Data Type:</U> <B>po_message_t</B>
+<DD><A NAME="IDX964"></A>
+This is a pointer type that refers to a message of a PO file, including its
+translation.
+</DL>
+
+</P>
+<P>
+<DL>
+<DT><U>Function:</U> po_file_t <B>po_file_read</B> <I>(const char *<VAR>filename</VAR>)</I>
+<DD><A NAME="IDX965"></A>
+The <CODE>po_file_read</CODE> function reads a PO file into memory.  The file name
+is given as argument.  The return value is a handle to the PO file's contents,
+valid until <CODE>po_file_free</CODE> is called on it.  In case of error, the return
+value is <CODE>NULL</CODE>, and <CODE>errno</CODE> is set.
+</DL>
+
+</P>
+<P>
+<DL>
+<DT><U>Function:</U> void <B>po_file_free</B> <I>(po_file_t <VAR>file</VAR>)</I>
+<DD><A NAME="IDX966"></A>
+The <CODE>po_file_free</CODE> function frees a PO file's contents from memory,
+including all messages that are only implicitly accessible through iterators.
+</DL>
+
+</P>
+<P>
+<DL>
+<DT><U>Function:</U> const char * const * <B>po_file_domains</B> <I>(po_file_t <VAR>file</VAR>)</I>
+<DD><A NAME="IDX967"></A>
+The <CODE>po_file_domains</CODE> function returns the domains for which the given
+PO file has messages.  The return value is a <CODE>NULL</CODE> terminated array
+which is valid as long as the <VAR>file</VAR> handle is valid.  For PO files which
+contain no <SAMP>&lsquo;domain&rsquo;</SAMP> directive, the return value contains only one domain,
+namely the default domain <CODE>"messages"</CODE>.
+</DL>
+
+</P>
+<P>
+<DL>
+<DT><U>Function:</U> po_message_iterator_t <B>po_message_iterator</B> <I>(po_file_t <VAR>file</VAR>, const char *<VAR>domain</VAR>)</I>
+<DD><A NAME="IDX968"></A>
+The <CODE>po_message_iterator</CODE> returns an iterator that will produce the
+messages of <VAR>file</VAR> that belong to the given <VAR>domain</VAR>.  If <VAR>domain</VAR>
+is <CODE>NULL</CODE>, the default domain is used instead.  To list the messages,
+use the function <CODE>po_next_message</CODE> repeatedly.
+</DL>
+
+</P>
+<P>
+<DL>
+<DT><U>Function:</U> void <B>po_message_iterator_free</B> <I>(po_message_iterator_t <VAR>iterator</VAR>)</I>
+<DD><A NAME="IDX969"></A>
+The <CODE>po_message_iterator_free</CODE> function frees an iterator previously
+allocated through the <CODE>po_message_iterator</CODE> function.
+</DL>
+
+</P>
+<P>
+<DL>
+<DT><U>Function:</U> po_message_t <B>po_next_message</B> <I>(po_message_iterator_t <VAR>iterator</VAR>)</I>
+<DD><A NAME="IDX970"></A>
+The <CODE>po_next_message</CODE> function returns the next message from
+<VAR>iterator</VAR> and advances the iterator.  It returns <CODE>NULL</CODE> when the
+iterator has reached the end of its message list.
+</DL>
+
+</P>
+<P>
+The following functions returns details of a <CODE>po_message_t</CODE>.  Recall
+that the results are valid as long as the <VAR>file</VAR> handle is valid.
+
+</P>
+<P>
+<DL>
+<DT><U>Function:</U> const char * <B>po_message_msgid</B> <I>(po_message_t <VAR>message</VAR>)</I>
+<DD><A NAME="IDX971"></A>
+The <CODE>po_message_msgid</CODE> function returns the <CODE>msgid</CODE> (untranslated
+English string) of a message.  This is guaranteed to be non-<CODE>NULL</CODE>.
+</DL>
+
+</P>
+<P>
+<DL>
+<DT><U>Function:</U> const char * <B>po_message_msgid_plural</B> <I>(po_message_t <VAR>message</VAR>)</I>
+<DD><A NAME="IDX972"></A>
+The <CODE>po_message_msgid_plural</CODE> function returns the <CODE>msgid_plural</CODE>
+(untranslated English plural string) of a message with plurals, or <CODE>NULL</CODE>
+for a message without plural.
+</DL>
+
+</P>
+<P>
+<DL>
+<DT><U>Function:</U> const char * <B>po_message_msgstr</B> <I>(po_message_t <VAR>message</VAR>)</I>
+<DD><A NAME="IDX973"></A>
+The <CODE>po_message_msgstr</CODE> function returns the <CODE>msgstr</CODE> (translation)
+of a message.  For an untranslated message, the return value is an empty
+string.
+</DL>
+
+</P>
+<P>
+<DL>
+<DT><U>Function:</U> const char * <B>po_message_msgstr_plural</B> <I>(po_message_t <VAR>message</VAR>, int <VAR>index</VAR>)</I>
+<DD><A NAME="IDX974"></A>
+The <CODE>po_message_msgstr_plural</CODE> function returns the
+<CODE>msgstr[<VAR>index</VAR>]</CODE> of a message with plurals, or <CODE>NULL</CODE> when
+the <VAR>index</VAR> is out of range or for a message without plural.
+</DL>
+
+</P>
+<P>
+Here is an example code how these functions can be used.
+
+</P>
+
+<PRE>
+const char *filename = ...;
+po_file_t file = po_file_read (filename);
+
+if (file == NULL)
+  error (EXIT_FAILURE, errno, "couldn't open the PO file %s", filename);
+{
+  const char * const *domains = po_file_domains (file);
+  const char * const *domainp;
+
+  for (domainp = domains; *domainp; domainp++)
+    {
+      const char *domain = *domainp;
+      po_message_iterator_t iterator = po_message_iterator (file, domain);
+
+      for (;;)
+        {
+          po_message_t *message = po_next_message (iterator);
+
+          if (message == NULL)
+            break;
+          {
+            const char *msgid = po_message_msgid (message);
+            const char *msgstr = po_message_msgstr (message);
+
+            ...
+          }
+        }
+      po_message_iterator_free (iterator);
+    }
+}
+po_file_free (file);
+</PRE>
+
+<P><HR><P>
+Go to the <A HREF="gettext_1.html">first</A>, <A HREF="gettext_8.html">previous</A>, <A HREF="gettext_10.html">next</A>, <A HREF="gettext_25.html">last</A> section, <A HREF="gettext_toc.html">table of contents</A>.
+</BODY>
+</HTML>

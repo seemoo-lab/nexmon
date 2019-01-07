@@ -1,0 +1,14 @@
+coWPAtty - Brute-force dictionary attack against WPA-PSK.
+
+Copyright(c) 2004-2005, Joshua Wright <jwright@hasborg.com>
+
+INSTALLATION
+
+Most users will want to just run "make" to generate the coWPAtty binary.
+Running "make strip" will result in a smaller binary without symbols.
+
+Note that the default settings in the Makefile assume you have OpenSSL
+installed on your system.  OpenSSL has a considerably faster SHA1
+implementation than the C or i386 assembler code included in sha1.c.  If you
+don't have OpenSSL on your system ... install it.  It's at www.openssl.org.
+

@@ -1,0 +1,48 @@
+# Variable needed by LTLIBINTL.
+top_builddir=../..
+
+# Variable needed by xgettext.
+GETTEXTDATADIR="$abs_top_srcdir"
+export GETTEXTDATADIR
+
+OBJEXT="@OBJEXT@"
+EXEEXT="@EXEEXT@"
+CC="@CC@"
+CFLAGS="@CFLAGS@"
+CXX="@CXX@"
+CXXFLAGS="@CXXFLAGS@"
+CPPFLAGS="@CPPFLAGS@"
+LDFLAGS="@LDFLAGS@"
+LTLIBINTL="@LTLIBINTL@"
+JAVA_CHOICE="@JAVA_CHOICE@"
+BUILDJAVA="@BUILDJAVA@"
+TESTJAVA="@TESTJAVA@"
+CSHARP_CHOICE="@CSHARP_CHOICE@"
+BUILDCSHARP="@BUILDCSHARP@"
+TESTCSHARP="@TESTCSHARP@"
+TESTLIBASPRINTF="@TESTLIBASPRINTF@"
+GLIBC2="@GLIBC2@"
+LOCALE_FR="@LOCALE_FR@"
+LOCALE_FR_UTF8="@LOCALE_FR_UTF8@"
+LOCALE_JA="@LOCALE_JA@"
+host_os="@host_os@"
+ARCHIVE_VERSION="@ARCHIVE_VERSION@"
+
+: ${GETTEXT=tstgettext}
+: ${NGETTEXT=tstngettext}
+: ${XGETTEXT=xgettext}
+: ${MSGATTRIB=msgattrib}
+: ${MSGCAT=msgcat}
+: ${MSGCMP=msgcmp}
+: ${MSGCOMM=msgcomm}
+: ${MSGCONV=msgconv}
+: ${MSGEN=msgen}
+: ${MSGEXEC=msgexec}
+: ${MSGFILTER=msgfilter}
+: ${MSGFMT=msgfmt}
+: ${MSGGREP=msggrep}
+: ${MSGINIT=msginit}
+: ${MSGMERGE=msgmerge}
+: ${MSGUNFMT=msgunfmt}
+: ${MSGUNIQ=msguniq}
+: ${RECODE=recode}

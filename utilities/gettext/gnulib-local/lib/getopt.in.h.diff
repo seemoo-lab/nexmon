@@ -1,0 +1,71 @@
+*** gnulib/lib/getopt.in.h	2005-09-23 06:15:13.000000000 +0200
+--- gettext-tools/lib/getopt.in.h	2006-04-24 03:08:25.000000000 +0200
+***************
+*** 23,28 ****
+--- 23,36 ----
+  # define _GETOPT_H 1
+  #endif
+  
++ /* Ensure that DLL_VARIABLE is defined.  Since on OSF/1 4.0 and Irix 6.5
++    <stdlib.h> includes <getopt.h>, and <config.h> is not a prerequisite for
++    using <stdlib.h>, this file can be included without a prior
++    "#include <config.h>".  */
++ #ifdef HAVE_CONFIG_H
++ # include <config.h>
++ #endif
++ 
+  /* Standalone applications should #define __GETOPT_PREFIX to an
+     identifier that prefixes the external functions and variables
+     defined in this header.  When this happens, include the
+***************
+*** 111,117 ****
+     Also, when 'ordering' is RETURN_IN_ORDER,
+     each non-option ARGV-element is returned here.  */
+  
+! extern char *optarg;
+  
+  /* Index in ARGV of the next element to be scanned.
+     This is used for communication to and from the caller
+--- 119,125 ----
+     Also, when 'ordering' is RETURN_IN_ORDER,
+     each non-option ARGV-element is returned here.  */
+  
+! extern DLL_VARIABLE char *optarg;
+  
+  /* Index in ARGV of the next element to be scanned.
+     This is used for communication to and from the caller
+***************
+*** 125,140 ****
+     Otherwise, 'optind' communicates from one call to the next
+     how much of ARGV has been scanned so far.  */
+  
+! extern int optind;
+  
+  /* Callers store zero here to inhibit the error message 'getopt' prints
+     for unrecognized options.  */
+  
+! extern int opterr;
+  
+  /* Set to an option character which was unrecognized.  */
+  
+! extern int optopt;
+  
+  #ifndef __need_getopt
+  /* Describe the long-named options requested by the application.
+--- 133,148 ----
+     Otherwise, 'optind' communicates from one call to the next
+     how much of ARGV has been scanned so far.  */
+  
+! extern DLL_VARIABLE int optind;
+  
+  /* Callers store zero here to inhibit the error message 'getopt' prints
+     for unrecognized options.  */
+  
+! extern DLL_VARIABLE int opterr;
+  
+  /* Set to an option character which was unrecognized.  */
+  
+! extern DLL_VARIABLE int optopt;
+  
+  #ifndef __need_getopt
+  /* Describe the long-named options requested by the application.

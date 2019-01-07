@@ -1,0 +1,235 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Interface properties: GObject Reference Manual</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<link rel="home" href="index.html" title="GObject Reference Manual">
+<link rel="up" href="howto-interface.html" title="How to define and implement interfaces">
+<link rel="prev" href="howto-interface-prerequisite.html" title="Interface definition prerequisites">
+<link rel="next" href="howto-interface-override.html" title="Overriding interface methods">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="5"><tr valign="middle">
+<td width="100%" align="left" class="shortcuts"></td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
+<td><a accesskey="u" href="howto-interface.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
+<td><a accesskey="p" href="howto-interface-prerequisite.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="howto-interface-override.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+</tr></table>
+<div class="sect1">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="howto-interface-properties"></a>Interface properties</h2></div></div></div>
+<p>
+      GObject interfaces can also have
+      properties. Declaration of the interface properties is similar to
+      declaring the properties of ordinary GObject types as explained in
+      <a class="xref" href="gobject-properties.html" title="Object properties">the section called “Object properties”</a>, except that
+      <code class="function"><a class="link" href="gobject-The-Base-Object-Type.html#g-object-interface-install-property" title="g_object_interface_install_property ()">g_object_interface_install_property</a></code>
+      is used to declare the properties instead of
+      <code class="function"><a class="link" href="gobject-The-Base-Object-Type.html#g-object-class-install-property" title="g_object_class_install_property ()">g_object_class_install_property</a></code>.
+    </p>
+<p>
+      To include a property named 'autosave-frequency' of type <span class="type">gdouble</span> in the 
+      <span class="type">ViewerEditable</span> interface example code above, we only need to
+      add one call in <code class="function">viewer_editable_default_init</code> as shown
+      below:
+</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_editable_default_init</span> <span class="gtkdoc opt">(</span>ViewerEditableInterface <span class="gtkdoc opt">*</span>iface<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  <span class="function"><a href="gobject-The-Base-Object-Type.html#g-object-interface-install-property">g_object_interface_install_property</a></span> <span class="gtkdoc opt">(</span>iface<span class="gtkdoc opt">,</span>
+                                       <span class="function"><a href="gobject-Standard-Parameter-and-Value-Types.html#g-param-spec-double">g_param_spec_double</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;autosave-frequency&quot;</span><span class="gtkdoc opt">,</span>
+                                                            <span class="string">&quot;Autosave frequency&quot;</span><span class="gtkdoc opt">,</span>
+                                                            <span class="string">&quot;Frequency (in per-seconds) to autosave backups of the editable content at. &quot;</span>
+                                                            <span class="string">&quot;Or zero to disable autosaves.&quot;</span><span class="gtkdoc opt">,</span>
+                                                            <span class="number">0.0</span><span class="gtkdoc opt">,</span>  <span class="comment">/* minimum */</span>
+                                                            G_MAXDOUBLE<span class="gtkdoc opt">,</span>  <span class="comment">/* maximum */</span>
+                                                            <span class="number">0.0</span><span class="gtkdoc opt">,</span>  <span class="comment">/* default */</span>
+                                                            G_PARAM_READWRITE<span class="gtkdoc opt">));</span>
+<span class="gtkdoc opt">}</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+    </p>
+<p>
+      One point worth noting is that the declared property wasn't assigned an 
+      integer ID. The reason being that integer IDs of properties are used
+      only inside the <code class="function">get_property</code> and
+      <code class="function">set_property</code> virtual methods. Since interfaces
+      declare but do not <span class="emphasis"><em>implement</em></span> properties, there is no
+      need to assign integer IDs to them.
+    </p>
+<p>
+      An implementation declares and defines its properties in the usual
+      way as explained in <a class="xref" href="gobject-properties.html" title="Object properties">the section called “Object properties”</a>, except for one
+      small change: it can declare the properties of the interface it
+      implements using <code class="function"><a class="link" href="gobject-The-Base-Object-Type.html#g-object-class-override-property" title="g_object_class_override_property ()">g_object_class_override_property</a></code>
+      instead of <code class="function"><a class="link" href="gobject-The-Base-Object-Type.html#g-object-class-install-property" title="g_object_class_install_property ()">g_object_class_install_property</a></code>.
+      The following code snippet shows the modifications needed in the
+      <span class="type">ViewerFile</span> declaration and implementation above:
+</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">struct</span> _ViewerFile
+<span class="gtkdoc opt">{</span>
+  GObject parent_instance<span class="gtkdoc opt">;</span>
+
+  gdouble autosave_frequency<span class="gtkdoc opt">;</span>
+<span class="gtkdoc opt">};</span>
+
+<span class="gtkdoc kwb">enum</span>
+<span class="gtkdoc opt">{</span>
+  PROP_AUTOSAVE_FREQUENCY <span class="gtkdoc opt">=</span> <span class="number">1</span><span class="gtkdoc opt">,</span>
+  N_PROPERTIES
+<span class="gtkdoc opt">};</span>
+
+<span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_file_set_property</span> <span class="gtkdoc opt">(</span>GObject      <span class="gtkdoc opt">*</span>object<span class="gtkdoc opt">,</span>
+                          guint         prop_id<span class="gtkdoc opt">,</span>
+                          <span class="gtkdoc kwb">const</span> GValue <span class="gtkdoc opt">*</span>value<span class="gtkdoc opt">,</span>
+                          GParamSpec   <span class="gtkdoc opt">*</span>pspec<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  ViewerFile <span class="gtkdoc opt">*</span>file <span class="gtkdoc opt">=</span> <span class="function">VIEWER_FILE</span> <span class="gtkdoc opt">(</span>object<span class="gtkdoc opt">);</span>
+
+  <span class="keyword">switch</span> <span class="gtkdoc opt">(</span>prop_id<span class="gtkdoc opt">)</span>
+    <span class="gtkdoc opt">{</span>
+    <span class="keyword">case</span> PROP_AUTOSAVE_FREQUENCY<span class="gtkdoc opt">:</span>
+      file<span class="gtkdoc opt">-&gt;</span>autosave_frequency <span class="gtkdoc opt">=</span> <span class="function"><a href="gobject-Standard-Parameter-and-Value-Types.html#g-value-get-double">g_value_get_double</a></span> <span class="gtkdoc opt">(</span>value<span class="gtkdoc opt">);</span>
+      <span class="keyword">break</span><span class="gtkdoc opt">;</span>
+
+    <span class="keyword">default</span><span class="gtkdoc opt">:</span>
+      <span class="function"><a href="gobject-The-Base-Object-Type.html#G-OBJECT-WARN-INVALID-PROPERTY-ID:CAPS">G_OBJECT_WARN_INVALID_PROPERTY_ID</a></span> <span class="gtkdoc opt">(</span>object<span class="gtkdoc opt">,</span> prop_id<span class="gtkdoc opt">,</span> pspec<span class="gtkdoc opt">);</span>
+      <span class="keyword">break</span><span class="gtkdoc opt">;</span>
+    <span class="gtkdoc opt">}</span>
+<span class="gtkdoc opt">}</span>
+
+<span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_file_get_property</span> <span class="gtkdoc opt">(</span>GObject    <span class="gtkdoc opt">*</span>object<span class="gtkdoc opt">,</span>
+                          guint       prop_id<span class="gtkdoc opt">,</span>
+                          GValue     <span class="gtkdoc opt">*</span>value<span class="gtkdoc opt">,</span>
+                          GParamSpec <span class="gtkdoc opt">*</span>pspec<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  ViewerFile <span class="gtkdoc opt">*</span>file <span class="gtkdoc opt">=</span> <span class="function">VIEWER_FILE</span> <span class="gtkdoc opt">(</span>object<span class="gtkdoc opt">);</span>
+
+  <span class="keyword">switch</span> <span class="gtkdoc opt">(</span>prop_id<span class="gtkdoc opt">)</span>
+    <span class="gtkdoc opt">{</span>
+    <span class="keyword">case</span> PROP_AUTOSAVE_FREQUENCY<span class="gtkdoc opt">:</span>
+      <span class="function"><a href="gobject-Standard-Parameter-and-Value-Types.html#g-value-set-double">g_value_set_double</a></span> <span class="gtkdoc opt">(</span>value<span class="gtkdoc opt">,</span> file<span class="gtkdoc opt">-&gt;</span>autosave_frequency<span class="gtkdoc opt">);</span>
+      <span class="keyword">break</span><span class="gtkdoc opt">;</span>
+
+    <span class="keyword">default</span><span class="gtkdoc opt">:</span>
+      <span class="function"><a href="gobject-The-Base-Object-Type.html#G-OBJECT-WARN-INVALID-PROPERTY-ID:CAPS">G_OBJECT_WARN_INVALID_PROPERTY_ID</a></span> <span class="gtkdoc opt">(</span>object<span class="gtkdoc opt">,</span> prop_id<span class="gtkdoc opt">,</span> pspec<span class="gtkdoc opt">);</span>
+      <span class="keyword">break</span><span class="gtkdoc opt">;</span>
+    <span class="gtkdoc opt">}</span>
+<span class="gtkdoc opt">}</span>
+
+<span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_file_class_init</span> <span class="gtkdoc opt">(</span>ViewerFileClass <span class="gtkdoc opt">*</span>klass<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  GObjectClass <span class="gtkdoc opt">*</span>object_class <span class="gtkdoc opt">=</span> <span class="function"><a href="gobject-The-Base-Object-Type.html#G-OBJECT-CLASS:CAPS">G_OBJECT_CLASS</a></span> <span class="gtkdoc opt">(</span>klass<span class="gtkdoc opt">);</span>
+
+  object_class<span class="gtkdoc opt">-&gt;</span>set_property <span class="gtkdoc opt">=</span> viewer_file_set_property<span class="gtkdoc opt">;</span>
+  object_class<span class="gtkdoc opt">-&gt;</span>get_property <span class="gtkdoc opt">=</span> viewer_file_get_property<span class="gtkdoc opt">;</span>
+
+  <span class="function"><a href="gobject-The-Base-Object-Type.html#g-object-class-override-property">g_object_class_override_property</a></span> <span class="gtkdoc opt">(</span>object_class<span class="gtkdoc opt">,</span> PROP_AUTOSAVE_FREQUENCY<span class="gtkdoc opt">,</span> <span class="string">&quot;autosave-frequency&quot;</span><span class="gtkdoc opt">);</span>
+<span class="gtkdoc opt">}</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+    </p>
+</div>
+<div class="footer">
+<hr>Generated by GTK-Doc V1.25.1</div>
+</body>
+</html>

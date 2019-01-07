@@ -1,0 +1,1071 @@
+<HTML>
+<HEAD>
+<!-- This HTML file has been created by texi2html 1.52b
+     from gettext.texi on 11 June 2016 -->
+
+<META HTTP-EQUIV="content-type" CONTENT="text/html; charset=UTF-8">
+<TITLE>GNU gettext utilities - 10  Producing Binary MO Files</TITLE>
+</HEAD>
+<BODY>
+Go to the <A HREF="gettext_1.html">first</A>, <A HREF="gettext_9.html">previous</A>, <A HREF="gettext_11.html">next</A>, <A HREF="gettext_25.html">last</A> section, <A HREF="gettext_toc.html">table of contents</A>.
+<P><HR><P>
+
+
+<H1><A NAME="SEC156" HREF="gettext_toc.html#TOC156">10  Producing Binary MO Files</A></H1>
+
+
+
+<H2><A NAME="SEC157" HREF="gettext_toc.html#TOC157">10.1  Invoking the <CODE>msgfmt</CODE> Program</A></H2>
+
+<P>
+<A NAME="IDX975"></A>
+<A NAME="IDX976"></A>
+
+<PRE>
+msgfmt [<VAR>option</VAR>] <VAR>filename</VAR>.po ...
+</PRE>
+
+<P>
+<A NAME="IDX977"></A>
+The <CODE>msgfmt</CODE> programs generates a binary message catalog from a textual
+translation description.
+
+</P>
+
+
+<H3><A NAME="SEC158" HREF="gettext_toc.html#TOC158">10.1.1  Input file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;<VAR>filename</VAR>.po ...&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;-D <VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--directory=<VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX978"></A>
+<A NAME="IDX979"></A>
+Add <VAR>directory</VAR> to the list of directories.  Source files are
+searched relative to this list of directories.  The resulting binary
+file will be written relative to the current directory, though.
+
+</DL>
+
+<P>
+If an input file is <SAMP>&lsquo;-&rsquo;</SAMP>, standard input is read.
+
+</P>
+
+
+<H3><A NAME="SEC159" HREF="gettext_toc.html#TOC159">10.1.2  Operation mode</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-j&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--java&rsquo;</SAMP>
+<DD>
+<A NAME="IDX980"></A>
+<A NAME="IDX981"></A>
+<A NAME="IDX982"></A>
+Java mode: generate a Java <CODE>ResourceBundle</CODE> class.
+
+<DT><SAMP>&lsquo;--java2&rsquo;</SAMP>
+<DD>
+<A NAME="IDX983"></A>
+Like --java, and assume Java2 (JDK 1.2 or higher).
+
+<DT><SAMP>&lsquo;--csharp&rsquo;</SAMP>
+<DD>
+<A NAME="IDX984"></A>
+<A NAME="IDX985"></A>
+C# mode: generate a .NET .dll file containing a subclass of
+<CODE>GettextResourceSet</CODE>.
+
+<DT><SAMP>&lsquo;--csharp-resources&rsquo;</SAMP>
+<DD>
+<A NAME="IDX986"></A>
+<A NAME="IDX987"></A>
+C# resources mode: generate a .NET <TT>&lsquo;.resources&rsquo;</TT> file.
+
+<DT><SAMP>&lsquo;--tcl&rsquo;</SAMP>
+<DD>
+<A NAME="IDX988"></A>
+<A NAME="IDX989"></A>
+Tcl mode: generate a tcl/msgcat <TT>&lsquo;.msg&rsquo;</TT> file.
+
+<DT><SAMP>&lsquo;--qt&rsquo;</SAMP>
+<DD>
+<A NAME="IDX990"></A>
+<A NAME="IDX991"></A>
+Qt mode: generate a Qt <TT>&lsquo;.qm&rsquo;</TT> file.
+
+<DT><SAMP>&lsquo;--desktop&rsquo;</SAMP>
+<DD>
+<A NAME="IDX992"></A>
+<A NAME="IDX993"></A>
+Desktop Entry mode: generate a <TT>&lsquo;.desktop&rsquo;</TT> file.
+
+<DT><SAMP>&lsquo;--xml&rsquo;</SAMP>
+<DD>
+<A NAME="IDX994"></A>
+<A NAME="IDX995"></A>
+XML mode: generate an XML file.
+
+</DL>
+
+
+
+<H3><A NAME="SEC160" HREF="gettext_toc.html#TOC160">10.1.3  Output file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-o <VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--output-file=<VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX996"></A>
+<A NAME="IDX997"></A>
+Write output to specified file.
+
+<DT><SAMP>&lsquo;--strict&rsquo;</SAMP>
+<DD>
+<A NAME="IDX998"></A>
+Direct the program to work strictly following the Uniforum/Sun
+implementation.  Currently this only affects the naming of the output
+file.  If this option is not given the name of the output file is the
+same as the domain name.  If the strict Uniforum mode is enabled the
+suffix <TT>&lsquo;.mo&rsquo;</TT> is added to the file name if it is not already
+present.
+
+We find this behaviour of Sun's implementation rather silly and so by
+default this mode is <EM>not</EM> selected.
+
+</DL>
+
+<P>
+If the output <VAR>file</VAR> is <SAMP>&lsquo;-&rsquo;</SAMP>, output is written to standard output.
+
+</P>
+
+
+<H3><A NAME="SEC161" HREF="gettext_toc.html#TOC161">10.1.4  Output file location in Java mode</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-r <VAR>resource</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--resource=<VAR>resource</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX999"></A>
+<A NAME="IDX1000"></A>
+Specify the resource name.
+
+<DT><SAMP>&lsquo;-l <VAR>locale</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--locale=<VAR>locale</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1001"></A>
+<A NAME="IDX1002"></A>
+Specify the locale name, either a language specification of the form <VAR>ll</VAR>
+or a combined language and country specification of the form <VAR>ll_CC</VAR>.
+
+<DT><SAMP>&lsquo;-d <VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1003"></A>
+Specify the base directory of classes directory hierarchy.
+
+<DT><SAMP>&lsquo;--source&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1004"></A>
+Produce a .java source file, instead of a compiled .class file.
+
+</DL>
+
+<P>
+The class name is determined by appending the locale name to the resource name,
+separated with an underscore.  The <SAMP>&lsquo;-d&rsquo;</SAMP> option is mandatory.  The class
+is written under the specified directory.
+
+</P>
+
+
+<H3><A NAME="SEC162" HREF="gettext_toc.html#TOC162">10.1.5  Output file location in C# mode</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-r <VAR>resource</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--resource=<VAR>resource</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1005"></A>
+<A NAME="IDX1006"></A>
+Specify the resource name.
+
+<DT><SAMP>&lsquo;-l <VAR>locale</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--locale=<VAR>locale</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1007"></A>
+<A NAME="IDX1008"></A>
+Specify the locale name, either a language specification of the form <VAR>ll</VAR>
+or a combined language and country specification of the form <VAR>ll_CC</VAR>.
+
+<DT><SAMP>&lsquo;-d <VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1009"></A>
+Specify the base directory for locale dependent <TT>&lsquo;.dll&rsquo;</TT> files.
+
+</DL>
+
+<P>
+The <SAMP>&lsquo;-l&rsquo;</SAMP> and <SAMP>&lsquo;-d&rsquo;</SAMP> options are mandatory.  The <TT>&lsquo;.dll&rsquo;</TT> file is
+written in a subdirectory of the specified directory whose name depends on the
+locale.
+
+</P>
+
+
+<H3><A NAME="SEC163" HREF="gettext_toc.html#TOC163">10.1.6  Output file location in Tcl mode</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-l <VAR>locale</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--locale=<VAR>locale</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1010"></A>
+<A NAME="IDX1011"></A>
+Specify the locale name, either a language specification of the form <VAR>ll</VAR>
+or a combined language and country specification of the form <VAR>ll_CC</VAR>.
+
+<DT><SAMP>&lsquo;-d <VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1012"></A>
+Specify the base directory of <TT>&lsquo;.msg&rsquo;</TT> message catalogs.
+
+</DL>
+
+<P>
+The <SAMP>&lsquo;-l&rsquo;</SAMP> and <SAMP>&lsquo;-d&rsquo;</SAMP> options are mandatory.  The <TT>&lsquo;.msg&rsquo;</TT> file is
+written in the specified directory.
+
+</P>
+
+
+<H3><A NAME="SEC164" HREF="gettext_toc.html#TOC164">10.1.7  Desktop Entry mode operations</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;--template=<VAR>template</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1013"></A>
+Specify a .desktop file used as a template.
+
+<DT><SAMP>&lsquo;-k[<VAR>keywordspec</VAR>]&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--keyword[=<VAR>keywordspec</VAR>]&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1014"></A>
+<A NAME="IDX1015"></A>
+Specify <VAR>keywordspec</VAR> as an additional keyword to be looked for.
+Without a <VAR>keywordspec</VAR>, the option means to not use default keywords.
+
+<DT><SAMP>&lsquo;-l <VAR>locale</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--locale=<VAR>locale</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1016"></A>
+<A NAME="IDX1017"></A>
+Specify the locale name, either a language specification of the form <VAR>ll</VAR>
+or a combined language and country specification of the form <VAR>ll_CC</VAR>.
+
+<DT><SAMP>&lsquo;-d <VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1018"></A>
+Specify the directory where PO files are read.  The directory must
+contain the <SAMP>&lsquo;LINGUAS&rsquo;</SAMP> file.
+
+</DL>
+
+<P>
+To generate a <SAMP>&lsquo;.desktop&rsquo;</SAMP> file for a single locale, you can use it
+as follows.
+
+</P>
+
+<PRE>
+msgfmt --desktop --template=<VAR>template</VAR> --locale=<VAR>locale</VAR> \
+  -o <VAR>file</VAR> <VAR>filename</VAR>.po ...
+</PRE>
+
+<P>
+msgfmt provides a special "bulk" operation mode to process multiple
+<TT>&lsquo;.po&rsquo;</TT> files at a time.
+
+</P>
+
+<PRE>
+msgfmt --desktop --template=<VAR>template</VAR> -d <VAR>directory</VAR> -o <VAR>file</VAR>
+</PRE>
+
+<P>
+msgfmt first reads the <SAMP>&lsquo;LINGUAS&rsquo;</SAMP> file under <VAR>directory</VAR>, and
+then processes all <SAMP>&lsquo;.po&rsquo;</SAMP> files listed there.  You can also limit
+the locales to a subset, through the <SAMP>&lsquo;LINGUAS&rsquo;</SAMP> environment
+variable.
+
+</P>
+<P>
+For either operation modes, the <SAMP>&lsquo;-o&rsquo;</SAMP> and <SAMP>&lsquo;--template&rsquo;</SAMP>
+options are mandatory.
+
+</P>
+
+
+<H3><A NAME="SEC165" HREF="gettext_toc.html#TOC165">10.1.8  XML mode operations</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;--template=<VAR>template</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1019"></A>
+Specify an XML file used as a template.
+
+<DT><SAMP>&lsquo;-L <VAR>name</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--language=<VAR>name</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1020"></A>
+<A NAME="IDX1021"></A>
+<A NAME="IDX1022"></A>
+Specifies the language of the input files.
+
+<DT><SAMP>&lsquo;-l <VAR>locale</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--locale=<VAR>locale</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1023"></A>
+<A NAME="IDX1024"></A>
+Specify the locale name, either a language specification of the form <VAR>ll</VAR>
+or a combined language and country specification of the form <VAR>ll_CC</VAR>.
+
+<DT><SAMP>&lsquo;-d <VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1025"></A>
+Specify the base directory of <TT>&lsquo;.po&rsquo;</TT> message catalogs.
+
+</DL>
+
+<P>
+To generate an XML file for a single locale, you can use it as follows.
+
+</P>
+
+<PRE>
+msgfmt --xml --template=<VAR>template</VAR> --locale=<VAR>locale</VAR> \
+  -o <VAR>file</VAR> <VAR>filename</VAR>.po ...
+</PRE>
+
+<P>
+msgfmt provides a special "bulk" operation mode to process multiple
+<TT>&lsquo;.po&rsquo;</TT> files at a time.
+
+</P>
+
+<PRE>
+msgfmt --xml --template=<VAR>template</VAR> -d <VAR>directory</VAR> -o <VAR>file</VAR>
+</PRE>
+
+<P>
+msgfmt first reads the <SAMP>&lsquo;LINGUAS&rsquo;</SAMP> file under <VAR>directory</VAR>, and
+then processes all <SAMP>&lsquo;.po&rsquo;</SAMP> files listed there.  You can also limit
+the locales to a subset, through the <SAMP>&lsquo;LINGUAS&rsquo;</SAMP> environment
+variable.
+
+</P>
+<P>
+For either operation modes, the <SAMP>&lsquo;-o&rsquo;</SAMP> and <SAMP>&lsquo;--template&rsquo;</SAMP>
+options are mandatory.
+
+</P>
+
+
+<H3><A NAME="SEC166" HREF="gettext_toc.html#TOC166">10.1.9  Input file syntax</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-P&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--properties-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1026"></A>
+<A NAME="IDX1027"></A>
+Assume the input files are Java ResourceBundles in Java <CODE>.properties</CODE>
+syntax, not in PO file syntax.
+
+<DT><SAMP>&lsquo;--stringtable-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1028"></A>
+Assume the input files are NeXTstep/GNUstep localized resource files in
+<CODE>.strings</CODE> syntax, not in PO file syntax.
+
+</DL>
+
+
+
+<H3><A NAME="SEC167" HREF="gettext_toc.html#TOC167">10.1.10  Input file interpretation</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-c&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--check&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1029"></A>
+<A NAME="IDX1030"></A>
+Perform all the checks implied by <CODE>--check-format</CODE>, <CODE>--check-header</CODE>,
+<CODE>--check-domain</CODE>.
+
+<DT><SAMP>&lsquo;--check-format&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1031"></A>
+<A NAME="IDX1032"></A>
+Check language dependent format strings.
+
+If the string represents a format string used in a
+<CODE>printf</CODE>-like function both strings should have the same number of
+<SAMP>&lsquo;%&rsquo;</SAMP> format specifiers, with matching types.  If the flag
+<CODE>c-format</CODE> or <CODE>possible-c-format</CODE> appears in the special
+comment <KBD>#,</KBD> for this entry a check is performed.  For example, the
+check will diagnose using <SAMP>&lsquo;%.*s&rsquo;</SAMP> against <SAMP>&lsquo;%s&rsquo;</SAMP>, or <SAMP>&lsquo;%d&rsquo;</SAMP>
+against <SAMP>&lsquo;%s&rsquo;</SAMP>, or <SAMP>&lsquo;%d&rsquo;</SAMP> against <SAMP>&lsquo;%x&rsquo;</SAMP>.  It can even handle
+positional parameters.
+
+Normally the <CODE>xgettext</CODE> program automatically decides whether a
+string is a format string or not.  This algorithm is not perfect,
+though.  It might regard a string as a format string though it is not
+used in a <CODE>printf</CODE>-like function and so <CODE>msgfmt</CODE> might report
+errors where there are none.
+
+To solve this problem the programmer can dictate the decision to the
+<CODE>xgettext</CODE> program (see section <A HREF="gettext_15.html#SEC252">15.3.1  C Format Strings</A>).  The translator should not
+consider removing the flag from the <KBD>#,</KBD> line.  This "fix" would be
+reversed again as soon as <CODE>msgmerge</CODE> is called the next time.
+
+<DT><SAMP>&lsquo;--check-header&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1033"></A>
+Verify presence and contents of the header entry.  See section <A HREF="gettext_6.html#SEC44">6.2  Filling in the Header Entry</A>,
+for a description of the various fields in the header entry.
+
+<DT><SAMP>&lsquo;--check-domain&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1034"></A>
+Check for conflicts between domain directives and the <CODE>--output-file</CODE>
+option
+
+<DT><SAMP>&lsquo;-C&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--check-compatibility&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1035"></A>
+<A NAME="IDX1036"></A>
+<A NAME="IDX1037"></A>
+Check that GNU msgfmt behaves like X/Open msgfmt.  This will give an error
+when attempting to use the GNU extensions.
+
+<DT><SAMP>&lsquo;--check-accelerators[=<VAR>char</VAR>]&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1038"></A>
+<A NAME="IDX1039"></A>
+<A NAME="IDX1040"></A>
+<A NAME="IDX1041"></A>
+Check presence of keyboard accelerators for menu items.  This is based on
+the convention used in some GUIs that a keyboard accelerator in a menu
+item string is designated by an immediately preceding <SAMP>&lsquo;&#38;&rsquo;</SAMP> character.
+Sometimes a keyboard accelerator is also called "keyboard mnemonic".
+This check verifies that if the untranslated string has exactly one
+<SAMP>&lsquo;&#38;&rsquo;</SAMP> character, the translated string has exactly one <SAMP>&lsquo;&#38;&rsquo;</SAMP> as well.
+If this option is given with a <VAR>char</VAR> argument, this <VAR>char</VAR> should
+be a non-alphanumeric character and is used as keyboard accelerator mark
+instead of <SAMP>&lsquo;&#38;&rsquo;</SAMP>.
+
+<DT><SAMP>&lsquo;-f&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--use-fuzzy&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1042"></A>
+<A NAME="IDX1043"></A>
+<A NAME="IDX1044"></A>
+Use fuzzy entries in output.  Note that using this option is usually wrong,
+because fuzzy messages are exactly those which have not been validated by
+a human translator.
+
+</DL>
+
+
+
+<H3><A NAME="SEC168" HREF="gettext_toc.html#TOC168">10.1.11  Output details</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-a <VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--alignment=<VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1045"></A>
+<A NAME="IDX1046"></A>
+Align strings to <VAR>number</VAR> bytes (default: 1).
+
+<DT><SAMP>&lsquo;--endianness=<VAR>byteorder</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1047"></A>
+Write out 32-bit numbers in the given byte order.  The possible values are
+<CODE>big</CODE> and <CODE>little</CODE>.  The default is <CODE>little</CODE>.
+
+MO files of any endianness can be used on any platform.  When a MO file has
+an endianness other than the platform's one, the 32-bit numbers from the MO
+file are swapped at runtime.  The performance impact is negligible.
+
+This option can be useful to produce MO files that are optimized for one
+platform.
+
+<DT><SAMP>&lsquo;--no-hash&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1048"></A>
+Don't include a hash table in the binary file.  Lookup will be more expensive
+at run time (binary search instead of hash table lookup).
+
+</DL>
+
+
+
+<H3><A NAME="SEC169" HREF="gettext_toc.html#TOC169">10.1.12  Informative output</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-h&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--help&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1049"></A>
+<A NAME="IDX1050"></A>
+Display this help and exit.
+
+<DT><SAMP>&lsquo;-V&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--version&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1051"></A>
+<A NAME="IDX1052"></A>
+Output version information and exit.
+
+<DT><SAMP>&lsquo;--statistics&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1053"></A>
+Print statistics about translations.  When the option <CODE>--verbose</CODE> is used
+in combination with <CODE>--statistics</CODE>, the input file name is printed in
+front of the statistics line.
+
+<DT><SAMP>&lsquo;-v&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--verbose&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1054"></A>
+<A NAME="IDX1055"></A>
+Increase verbosity level.
+
+</DL>
+
+
+
+<H2><A NAME="SEC170" HREF="gettext_toc.html#TOC170">10.2  Invoking the <CODE>msgunfmt</CODE> Program</A></H2>
+
+<P>
+<A NAME="IDX1056"></A>
+<A NAME="IDX1057"></A>
+
+<PRE>
+msgunfmt [<VAR>option</VAR>] [<VAR>file</VAR>]...
+</PRE>
+
+<P>
+<A NAME="IDX1058"></A>
+The <CODE>msgunfmt</CODE> program converts a binary message catalog to a
+Uniforum style .po file.
+
+</P>
+
+
+<H3><A NAME="SEC171" HREF="gettext_toc.html#TOC171">10.2.1  Operation mode</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-j&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--java&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1059"></A>
+<A NAME="IDX1060"></A>
+<A NAME="IDX1061"></A>
+Java mode: input is a Java <CODE>ResourceBundle</CODE> class.
+
+<DT><SAMP>&lsquo;--csharp&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1062"></A>
+<A NAME="IDX1063"></A>
+C# mode: input is a .NET .dll file containing a subclass of
+<CODE>GettextResourceSet</CODE>.
+
+<DT><SAMP>&lsquo;--csharp-resources&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1064"></A>
+<A NAME="IDX1065"></A>
+C# resources mode: input is a .NET <TT>&lsquo;.resources&rsquo;</TT> file.
+
+<DT><SAMP>&lsquo;--tcl&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1066"></A>
+<A NAME="IDX1067"></A>
+Tcl mode: input is a tcl/msgcat <TT>&lsquo;.msg&rsquo;</TT> file.
+
+</DL>
+
+
+
+<H3><A NAME="SEC172" HREF="gettext_toc.html#TOC172">10.2.2  Input file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;<VAR>file</VAR> ...&rsquo;</SAMP>
+<DD>
+Input .mo files.
+
+</DL>
+
+<P>
+If no input <VAR>file</VAR> is given or if it is <SAMP>&lsquo;-&rsquo;</SAMP>, standard input is read.
+
+</P>
+
+
+<H3><A NAME="SEC173" HREF="gettext_toc.html#TOC173">10.2.3  Input file location in Java mode</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-r <VAR>resource</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--resource=<VAR>resource</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1068"></A>
+<A NAME="IDX1069"></A>
+Specify the resource name.
+
+<DT><SAMP>&lsquo;-l <VAR>locale</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--locale=<VAR>locale</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1070"></A>
+<A NAME="IDX1071"></A>
+Specify the locale name, either a language specification of the form <VAR>ll</VAR>
+or a combined language and country specification of the form <VAR>ll_CC</VAR>.
+
+</DL>
+
+<P>
+The class name is determined by appending the locale name to the resource name,
+separated with an underscore.  The class is located using the <CODE>CLASSPATH</CODE>.
+
+</P>
+
+
+<H3><A NAME="SEC174" HREF="gettext_toc.html#TOC174">10.2.4  Input file location in C# mode</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-r <VAR>resource</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--resource=<VAR>resource</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1072"></A>
+<A NAME="IDX1073"></A>
+Specify the resource name.
+
+<DT><SAMP>&lsquo;-l <VAR>locale</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--locale=<VAR>locale</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1074"></A>
+<A NAME="IDX1075"></A>
+Specify the locale name, either a language specification of the form <VAR>ll</VAR>
+or a combined language and country specification of the form <VAR>ll_CC</VAR>.
+
+<DT><SAMP>&lsquo;-d <VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1076"></A>
+Specify the base directory for locale dependent <TT>&lsquo;.dll&rsquo;</TT> files.
+
+</DL>
+
+<P>
+The <SAMP>&lsquo;-l&rsquo;</SAMP> and <SAMP>&lsquo;-d&rsquo;</SAMP> options are mandatory.  The <TT>&lsquo;.msg&rsquo;</TT> file is
+located in a subdirectory of the specified directory whose name depends on the
+locale.
+
+</P>
+
+
+<H3><A NAME="SEC175" HREF="gettext_toc.html#TOC175">10.2.5  Input file location in Tcl mode</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-l <VAR>locale</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--locale=<VAR>locale</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1077"></A>
+<A NAME="IDX1078"></A>
+Specify the locale name, either a language specification of the form <VAR>ll</VAR>
+or a combined language and country specification of the form <VAR>ll_CC</VAR>.
+
+<DT><SAMP>&lsquo;-d <VAR>directory</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1079"></A>
+Specify the base directory of <TT>&lsquo;.msg&rsquo;</TT> message catalogs.
+
+</DL>
+
+<P>
+The <SAMP>&lsquo;-l&rsquo;</SAMP> and <SAMP>&lsquo;-d&rsquo;</SAMP> options are mandatory.  The <TT>&lsquo;.msg&rsquo;</TT> file is
+located in the specified directory.
+
+</P>
+
+
+<H3><A NAME="SEC176" HREF="gettext_toc.html#TOC176">10.2.6  Output file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-o <VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--output-file=<VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1080"></A>
+<A NAME="IDX1081"></A>
+Write output to specified file.
+
+</DL>
+
+<P>
+The results are written to standard output if no output file is specified
+or if it is <SAMP>&lsquo;-&rsquo;</SAMP>.
+
+</P>
+
+
+<H3><A NAME="SEC177" HREF="gettext_toc.html#TOC177">10.2.7  Output details</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;--color&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--color=<VAR>when</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1082"></A>
+Specify whether or when to use colors and other text attributes.
+See section <A HREF="gettext_9.html#SEC150">9.11.1  The <CODE>--color</CODE> option</A> for details.
+
+<DT><SAMP>&lsquo;--style=<VAR>style_file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1083"></A>
+Specify the CSS style rule file to use for <CODE>--color</CODE>.
+See section <A HREF="gettext_9.html#SEC152">9.11.3  The <CODE>--style</CODE> option</A> for details.
+
+<DT><SAMP>&lsquo;--force-po&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1084"></A>
+Always write an output file even if it contains no message.
+
+<DT><SAMP>&lsquo;-i&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--indent&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1085"></A>
+<A NAME="IDX1086"></A>
+Write the .po file using indented style.
+
+<DT><SAMP>&lsquo;--strict&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1087"></A>
+Write out a strict Uniforum conforming PO file.  Note that this
+Uniforum format should be avoided because it doesn't support the
+GNU extensions.
+
+<DT><SAMP>&lsquo;-p&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--properties-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1088"></A>
+<A NAME="IDX1089"></A>
+Write out a Java ResourceBundle in Java <CODE>.properties</CODE> syntax.  Note
+that this file format doesn't support plural forms and silently drops
+obsolete messages.
+
+<DT><SAMP>&lsquo;--stringtable-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1090"></A>
+Write out a NeXTstep/GNUstep localized resource file in <CODE>.strings</CODE> syntax.
+Note that this file format doesn't support plural forms.
+
+<DT><SAMP>&lsquo;-w <VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--width=<VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1091"></A>
+<A NAME="IDX1092"></A>
+Set the output page width.  Long strings in the output files will be
+split across multiple lines in order to ensure that each line's width
+(= number of screen columns) is less or equal to the given <VAR>number</VAR>.
+
+<DT><SAMP>&lsquo;--no-wrap&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1093"></A>
+Do not break long message lines.  Message lines whose width exceeds the
+output page width will not be split into several lines.  Only file reference
+lines which are wider than the output page width will be split.
+
+<DT><SAMP>&lsquo;-s&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--sort-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1094"></A>
+<A NAME="IDX1095"></A>
+<A NAME="IDX1096"></A>
+Generate sorted output.  Note that using this option makes it much harder
+for the translator to understand each message's context.
+
+</DL>
+
+
+
+<H3><A NAME="SEC178" HREF="gettext_toc.html#TOC178">10.2.8  Informative output</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-h&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--help&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1097"></A>
+<A NAME="IDX1098"></A>
+Display this help and exit.
+
+<DT><SAMP>&lsquo;-V&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--version&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1099"></A>
+<A NAME="IDX1100"></A>
+Output version information and exit.
+
+<DT><SAMP>&lsquo;-v&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--verbose&rsquo;</SAMP>
+<DD>
+<A NAME="IDX1101"></A>
+<A NAME="IDX1102"></A>
+Increase verbosity level.
+
+</DL>
+
+
+
+<H2><A NAME="SEC179" HREF="gettext_toc.html#TOC179">10.3  The Format of GNU MO Files</A></H2>
+<P>
+<A NAME="IDX1103"></A>
+<A NAME="IDX1104"></A>
+
+</P>
+<P>
+The format of the generated MO files is best described by a picture,
+which appears below.
+
+</P>
+<P>
+<A NAME="IDX1105"></A>
+The first two words serve the identification of the file.  The magic
+number will always signal GNU MO files.  The number is stored in the
+byte order used when the MO file was generated, so the magic number
+really is two numbers: <CODE>0x950412de</CODE> and <CODE>0xde120495</CODE>.
+
+</P>
+<P>
+The second word describes the current revision of the file format,
+composed of a major and a minor revision number.  The revision numbers
+ensure that the readers of MO files can distinguish new formats from
+old ones and handle their contents, as far as possible.  For now the
+major revision is 0 or 1, and the minor revision is also 0 or 1.  More
+revisions might be added in the future.  A program seeing an unexpected
+major revision number should stop reading the MO file entirely; whereas
+an unexpected minor revision number means that the file can be read but
+will not reveal its full contents, when parsed by a program that
+supports only smaller minor revision numbers.
+
+</P>
+<P>
+The version is kept
+separate from the magic number, instead of using different magic
+numbers for different formats, mainly because <TT>&lsquo;/etc/magic&rsquo;</TT> is
+not updated often.
+
+</P>
+<P>
+Follow a number of pointers to later tables in the file, allowing
+for the extension of the prefix part of MO files without having to
+recompile programs reading them.  This might become useful for later
+inserting a few flag bits, indication about the charset used, new
+tables, or other things.
+
+</P>
+<P>
+Then, at offset <VAR>O</VAR> and offset <VAR>T</VAR> in the picture, two tables
+of string descriptors can be found.  In both tables, each string
+descriptor uses two 32 bits integers, one for the string length,
+another for the offset of the string in the MO file, counting in bytes
+from the start of the file.  The first table contains descriptors
+for the original strings, and is sorted so the original strings
+are in increasing lexicographical order.  The second table contains
+descriptors for the translated strings, and is parallel to the first
+table: to find the corresponding translation one has to access the
+array slot in the second array with the same index.
+
+</P>
+<P>
+Having the original strings sorted enables the use of simple binary
+search, for when the MO file does not contain an hashing table, or
+for when it is not practical to use the hashing table provided in
+the MO file.  This also has another advantage, as the empty string
+in a PO file GNU <CODE>gettext</CODE> is usually <EM>translated</EM> into
+some system information attached to that particular MO file, and the
+empty string necessarily becomes the first in both the original and
+translated tables, making the system information very easy to find.
+
+</P>
+<P>
+<A NAME="IDX1106"></A>
+The size <VAR>S</VAR> of the hash table can be zero.  In this case, the
+hash table itself is not contained in the MO file.  Some people might
+prefer this because a precomputed hashing table takes disk space, and
+does not win <EM>that</EM> much speed.  The hash table contains indices
+to the sorted array of strings in the MO file.  Conflict resolution is
+done by double hashing.  The precise hashing algorithm used is fairly
+dependent on GNU <CODE>gettext</CODE> code, and is not documented here.
+
+</P>
+<P>
+As for the strings themselves, they follow the hash file, and each
+is terminated with a <KBD>NUL</KBD>, and this <KBD>NUL</KBD> is not counted in
+the length which appears in the string descriptor.  The <CODE>msgfmt</CODE>
+program has an option selecting the alignment for MO file strings.
+With this option, each string is separately aligned so it starts at
+an offset which is a multiple of the alignment value.  On some RISC
+machines, a correct alignment will speed things up.
+
+</P>
+<P>
+<A NAME="IDX1107"></A>
+Contexts are stored by storing the concatenation of the context, a
+<KBD>EOT</KBD> byte, and the original string, instead of the original string.
+
+</P>
+<P>
+<A NAME="IDX1108"></A>
+Plural forms are stored by letting the plural of the original string
+follow the singular of the original string, separated through a
+<KBD>NUL</KBD> byte.  The length which appears in the string descriptor
+includes both.  However, only the singular of the original string
+takes part in the hash table lookup.  The plural variants of the
+translation are all stored consecutively, separated through a
+<KBD>NUL</KBD> byte.  Here also, the length in the string descriptor
+includes all of them.
+
+</P>
+<P>
+Nothing prevents a MO file from having embedded <KBD>NUL</KBD>s in strings.
+However, the program interface currently used already presumes
+that strings are <KBD>NUL</KBD> terminated, so embedded <KBD>NUL</KBD>s are
+somewhat useless.  But the MO file format is general enough so other
+interfaces would be later possible, if for example, we ever want to
+implement wide characters right in MO files, where <KBD>NUL</KBD> bytes may
+accidentally appear.  (No, we don't want to have wide characters in MO
+files.  They would make the file unnecessarily large, and the
+<SAMP>&lsquo;wchar_t&rsquo;</SAMP> type being platform dependent, MO files would be
+platform dependent as well.)
+
+</P>
+<P>
+This particular issue has been strongly debated in the GNU
+<CODE>gettext</CODE> development forum, and it is expectable that MO file
+format will evolve or change over time.  It is even possible that many
+formats may later be supported concurrently.  But surely, we have to
+start somewhere, and the MO file format described here is a good start.
+Nothing is cast in concrete, and the format may later evolve fairly
+easily, so we should feel comfortable with the current approach.
+
+</P>
+
+<PRE>
+        byte
+             +------------------------------------------+
+          0  | magic number = 0x950412de                |
+             |                                          |
+          4  | file format revision = 0                 |
+             |                                          |
+          8  | number of strings                        |  == N
+             |                                          |
+         12  | offset of table with original strings    |  == O
+             |                                          |
+         16  | offset of table with translation strings |  == T
+             |                                          |
+         20  | size of hashing table                    |  == S
+             |                                          |
+         24  | offset of hashing table                  |  == H
+             |                                          |
+             .                                          .
+             .    (possibly more entries later)         .
+             .                                          .
+             |                                          |
+          O  | length &#38; offset 0th string  ----------------.
+      O + 8  | length &#38; offset 1st string  ------------------.
+              ...                                    ...   | |
+O + ((N-1)*8)| length &#38; offset (N-1)th string           |  | |
+             |                                          |  | |
+          T  | length &#38; offset 0th translation  ---------------.
+      T + 8  | length &#38; offset 1st translation  -----------------.
+              ...                                    ...   | | | |
+T + ((N-1)*8)| length &#38; offset (N-1)th translation      |  | | | |
+             |                                          |  | | | |
+          H  | start hash table                         |  | | | |
+              ...                                    ...   | | | |
+  H + S * 4  | end hash table                           |  | | | |
+             |                                          |  | | | |
+             | NUL terminated 0th string  &#60;----------------' | | |
+             |                                          |    | | |
+             | NUL terminated 1st string  &#60;------------------' | |
+             |                                          |      | |
+              ...                                    ...       | |
+             |                                          |      | |
+             | NUL terminated 0th translation  &#60;---------------' |
+             |                                          |        |
+             | NUL terminated 1st translation  &#60;-----------------'
+             |                                          |
+              ...                                    ...
+             |                                          |
+             +------------------------------------------+
+</PRE>
+
+<P><HR><P>
+Go to the <A HREF="gettext_1.html">first</A>, <A HREF="gettext_9.html">previous</A>, <A HREF="gettext_11.html">next</A>, <A HREF="gettext_25.html">last</A> section, <A HREF="gettext_toc.html">table of contents</A>.
+</BODY>
+</HTML>

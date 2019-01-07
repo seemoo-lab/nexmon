@@ -57,7 +57,7 @@
     b_ ## name(void) { asm("b hook_" #name "\n"); }
 
 #define GenericPatch4(name, val) \
-    const unsigned int gp4_ ## name = (unsigned int) (val);
+    unsigned int gp4_ ## name = (unsigned int) (val);
 
 #define GenericPatch2(name, val) \
     unsigned short gp2_ ## name = (unsigned short) (val);

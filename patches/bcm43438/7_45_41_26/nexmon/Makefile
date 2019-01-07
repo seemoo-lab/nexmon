@@ -1,7 +1,9 @@
-FW_PATH=$(NEXMON_ROOT)/firmwares/bcm43438/7_45_41_26
+SHELL = /bin/bash
+GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
+include ../version.mk
 include $(FW_PATH)/definitions.mk
 
-LOCAL_SRCS=$(wildcard src/*.c)
+LOCAL_SRCS=$(wildcard src/*.c) src/ucode_compressed.c src/templateram.c
 COMMON_SRCS=$(wildcard $(NEXMON_ROOT)/patches/common/*.c)
 FW_SRCS=$(wildcard $(FW_PATH)/*.c)
 
@@ -15,21 +17,34 @@ CFLAGS= \
 	-fplugin-arg-nexmon-fwver=$(NEXMON_FW_VERSION_NUM) \
 	-DNEXMON_CHIP=$(NEXMON_CHIP) \
 	-DNEXMON_FW_VERSION=$(NEXMON_FW_VERSION) \
+	-DPATCHSTART=$(PATCHSTART) \
+	-DUCODESIZE=$(UCODESIZE) \
+	-DGIT_VERSION=\"$(GIT_VERSION)\" \
+	-DBUILD_NUMBER=\"$$(cat BUILD_NUMBER)\" \
 	-Wall -Werror -O2 -nostdlib -nostartfiles -ffreestanding -mthumb -march=$(NEXMON_ARCH) \
 	-ffunction-sections -fdata-sections \
 	-I$(NEXMON_ROOT)/patches/include \
+	-Iinclude \
 	-I$(FW_PATH)
 
 all: $(RAM_FILE) brcmfmac.ko
 
 init: FORCE
+	$(Q)if ! test -f BUILD_NUMBER; then echo 0 > BUILD_NUMBER; fi
+	$(Q)echo $$(($$(cat BUILD_NUMBER) + 1)) > BUILD_NUMBER
+	$(Q)touch src/version.c
 	$(Q)make -s -f $(NEXMON_ROOT)/patches/common/header.mk
 	$(Q)mkdir -p obj gen log
 
 brcmfmac.ko: check-nexmon-setup-env
-ifeq ($(shell uname -m),armv7l)
-	@printf "\033[0;31m  BUILDING DRIVER \033[0m brcmfmac/brcmfmac.ko (details: log/driver.log)\n" $@
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac -j2 >log/driver.log
+ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
+ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
+	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.9\033[0m brcmfmac_kernel49/brcmfmac.ko (details: log/driver.log)\n" $@
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel49 -j2 >log/driver.log
+else ifeq ($(findstring 4.4,$(shell uname -r)),4.4)
+	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.4\033[0m brcmfmac_kernel44/brcmfmac.ko (details: log/driver.log)\n" $@
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel44 -j2 >log/driver.log
+endif
 else
 	$(warning Warning: Driver can not be compiled on this platform, execute the make command on a raspberry pi)
 endif
@@ -87,7 +102,7 @@ gen/memory.ld: $(FW_PATH)/definitions.mk
 	$(Q)printf "rom : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(ROMSTART) $(ROMSIZE) > $@
 	$(Q)printf "ram : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(RAMSTART) $(RAMSIZE) >> $@
 	$(Q)printf "patch : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(PATCHSTART) $(PATCHSIZE) >> $@
-	$(Q)printf "ucode : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(UCODESTART) $$(($(UCODESIZE) - $(FP_CONFIG_SIZE))) >> $@
+	$(Q)printf "ucode : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(UCODESTART) $$(($(UCODESIZE) - $(PATCHSIZE))) >> $@
 	$(Q)printf "fpconfig : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(FP_CONFIG_BASE) $(FP_CONFIG_SIZE) >> $@
 
 gen/patch.elf: patch.ld gen/nexmon.ld gen/flashpatches.ld gen/memory.ld $(OBJS)
@@ -105,14 +120,39 @@ $(RAM_FILE): init gen/patch.elf $(FW_PATH)/$(RAM_FILE) gen/nexmon.mk gen/flashpa
 # ucode compression related
 ###################################################################
 
-ucode_compressed.bin: $(FW_PATH)/ucode.bin
+gen/ucode.asm: $(FW_PATH)/ucode.bin
+	$(NEXMON_ROOT)/buildtools/b43/disassembler/b43-dasm $< $@ --arch 15 --format raw-le32
+#	$(NEXMON_ROOT)/buildtools/b43/debug/b43-beautifier --asmfile $@ --defs $(NEXMON_ROOT)/buildtools/b43/debug/include > tmp && mv tmp $@
+
+ifneq ($(wildcard src/ucode.asm), )
+gen/ucode.bin: src/ucode.asm
+	@printf "\033[0;31m  ASSEMBLING UCODE\033[0m %s => %s\n" $< $@
+
+ifneq ($(wildcard $(NEXMON_ROOT)/buildtools/b43/assembler/b43-asm.bin), )
+	$(Q)PATH=$(PATH):$(NEXMON_ROOT)/buildtools/b43/assembler $(NEXMON_ROOT)/buildtools/b43/assembler/b43-asm $< $@ --format raw-le32
+else
+	$(error Warning: please compile b43-asm.bin first)
+endif
+
+else
+gen/ucode.bin: $(FW_PATH)/ucode.bin
+	@printf "\033[0;31m  COPYING UCODE\033[0m %s => %s\n" $< $@
+	$(Q)cp $< $@
+endif
+
+gen/ucode_compressed.bin: gen/ucode.bin
 	@printf "\033[0;31m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
 	$(Q)cat $< | $(ZLIBFLATE) > $@
 
-src/ucode_compressed.c: ucode_compressed.bin
+src/ucode_compressed.c: gen/ucode_compressed.bin
 	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@
 	$(Q)printf "#pragma NEXMON targetregion \"ucode\"\n\n" > $@
-	$(Q)xxd -i $< >> $@
+	$(Q)cd $(dir $<) && xxd -i $(notdir $<) >> $(shell pwd)/$@
+
+src/templateram.c: $(FW_PATH)/templateram.bin
+	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@
+	$(Q)printf "#pragma NEXMON targetregion \"ucode\"\n\n" > $@
+	$(Q)cd $(dir $<) && xxd -i $(notdir $<) >> $(shell pwd)/$@
 
 ###################################################################
 
@@ -122,31 +162,58 @@ ifndef NEXMON_SETUP_ENV
 endif
 
 backup-firmware:
-ifeq ($(shell uname -m),armv7l)
+ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
 	cp /lib/firmware/brcm/brcmfmac43430-sdio.bin brcmfmac43430-sdio.bin.orig
 else
 	$(warning Warning: Cannot backup the original firmware on this arch.)
 endif
 
-install-firmware:
-ifeq ($(shell uname -m),armv7l)
+install-firmware: brcmfmac43430-sdio.bin brcmfmac.ko
+ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
 	@printf "\033[0;31m  COPYING\033[0m brcmfmac43430-sdio.bin => /lib/firmware/brcm/brcmfmac43430-sdio.bin\n"
 	$(Q)cp brcmfmac43430-sdio.bin /lib/firmware/brcm/brcmfmac43430-sdio.bin
+ifeq ($(shell lsmod | grep "^brcmfmac" | wc -l), 1)
+	@printf "\033[0;31m  UNLOADING\033[0m brcmfmac\n"
 	$(Q)rmmod brcmfmac
+endif
 	$(Q)modprobe brcmutil
-	$(Q)insmod brcmfmac/brcmfmac.ko
+	@printf "\033[0;31m  RELOADING\033[0m brcmfmac\n"
+ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
+	$(Q)insmod brcmfmac_kernel49/brcmfmac.ko
+else ifeq ($(findstring 4.4,$(shell uname -r)),4.4)
+	$(Q)insmod brcmfmac_kernel44/brcmfmac.ko
+endif
 else
 	$(warning Warning: Cannot install firmware on this arch., bcm43430-sdio.bin needs to be copied manually into /lib/firmware/brcm/ on your RPI3)
 endif
+
+install-remote-firmware: brcmfmac43430-sdio.bin brcmfmac.ko
+	@printf "\033[0;31m  COPYING\033[0m brcmfmac43430-sdio.bin => /lib/firmware/brcm/brcmfmac43430-sdio.bin\n"
+	$(Q)sshpass -p nexmon scp brcmfmac43430-sdio.bin root@192.168.1.231:/lib/firmware/brcm/brcmfmac43430-sdio.bin
+#ifeq ($(shell sshpass -p nexmon ssh root@192.168.1.231 'lsmod | grep "^brcmfmac" | wc -l'), 1)
+	@if [ `sshpass -p nexmon ssh root@192.168.1.231 'lsmod | grep "^brcmfmac" | wc -l'` -eq 1 ]; then \
+		printf "\033[0;31m  UNLOADING\033[0m brcmfmac\n"; \
+		sshpass -p nexmon ssh root@192.168.1.231 'rmmod brcmfmac'; \
+	fi
+#endif
+	$(Q)sshpass -p nexmon ssh root@192.168.1.231 'modprobe brcmutil'
+	@printf "\033[0;31m  RELOADING\033[0m brcmfmac\n"
+	$(Q)sshpass -p nexmon ssh root@192.168.1.231 'insmod /root/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/brcmfmac.ko'
 
 clean-firmware: FORCE
 	@printf "\033[0;31m  CLEANING\033[0m\n"
 	$(Q)rm -fr $(RAM_FILE) obj gen log src/ucode_compressed.c ucode_compressed.bin
 
 clean: clean-firmware
-ifeq ($(shell uname -m),armv7l)
+ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
+ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
 	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac clean
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel49 clean
+else ifeq ($(findstring 4.4,$(shell uname -r)),4.4)
+	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel44 clean
 endif
+endif
+	$(Q)rm -f BUILD_NUMBER
 
 FORCE:

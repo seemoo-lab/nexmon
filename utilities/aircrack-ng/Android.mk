@@ -34,23 +34,23 @@ MY_CFLAGS		:= -g -W -Wall -O3 -DANDROID -D_REVISION=0 -D_FILE_OFFSET_BITS=64 \
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libssl
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../shared_system_libs/libssl.so
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../libssl/local/armeabi/libssl.a
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../boringssl/src/include
-include $(PREBUILT_SHARED_LIBRARY)
+include $(PREBUILT_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libcrypto
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../shared_system_libs/libcrypto.so
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../libcrypto/local/armeabi/libcrypto.a
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../boringssl/src/include
-include $(PREBUILT_SHARED_LIBRARY)
+include $(PREBUILT_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libsqlite
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../shared_system_libs/libsqlite.so
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../sqlite/dist
-include $(PREBUILT_SHARED_LIBRARY)
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../libsqlite/local/armeabi/libsqlite.a
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../libsqlite
+include $(PREBUILT_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
@@ -64,8 +64,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE		:= aircrack-ng
 LOCAL_SRC_FILES		:= $(MY_OBJS_AC)
 LOCAL_CFLAGS		+= $(MY_CFLAGS) -mfloat-abi=softfp -mfpu=neon -march=armv7 -DSIMD_CORE
-LOCAL_STATIC_LIBRARIES  += libosdep
-LOCAL_SHARED_LIBRARIES  := libsqlite libssl libcrypto
+LOCAL_STATIC_LIBRARIES  += libcrypto libssl libosdep libsqlite
 LOCAL_LDLIBS		+= -landroid
 include $(BUILD_EXECUTABLE)
 
@@ -74,8 +73,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE		:= airdecap-ng
 LOCAL_CFLAGS		+= $(MY_CFLAGS)
 LOCAL_SRC_FILES		:= $(MY_OBJS_AD)
-LOCAL_STATIC_LIBRARIES  += libosdep
-LOCAL_SHARED_LIBRARIES	:= libssl libcrypto
+LOCAL_STATIC_LIBRARIES  += libosdep libssl libcrypto
 include $(BUILD_EXECUTABLE)
 
 
@@ -83,8 +81,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE		:= packetforge-ng
 LOCAL_CFLAGS		+= $(MY_CFLAGS)
 LOCAL_SRC_FILES		:= $(MY_OBJS_PF)
-LOCAL_STATIC_LIBRARIES  += libosdep
-LOCAL_SHARED_LIBRARIES	:= libssl libcrypto
+LOCAL_STATIC_LIBRARIES  += libosdep libssl libcrypto
 include $(BUILD_EXECUTABLE)
 
 
@@ -92,8 +89,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE		:= aireplay-ng
 LOCAL_CFLAGS		+= $(MY_CFLAGS)
 LOCAL_SRC_FILES		:= $(MY_OBJS_AR)
-LOCAL_STATIC_LIBRARIES  += libosdep
-LOCAL_SHARED_LIBRARIES	:= libssl libcrypto
+LOCAL_STATIC_LIBRARIES  += libosdep libssl libcrypto
 include $(BUILD_EXECUTABLE)
 
 
@@ -101,8 +97,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE		:= airodump-ng
 LOCAL_CFLAGS		+= $(MY_CFLAGS)
 LOCAL_SRC_FILES		:= $(MY_OBJS_ADU)
-LOCAL_STATIC_LIBRARIES  += libosdep
-LOCAL_SHARED_LIBRARIES	:= libssl libcrypto libsqlite
+LOCAL_STATIC_LIBRARIES  += libosdep libsqlite libssl libcrypto
 include $(BUILD_EXECUTABLE)
 
 
@@ -119,8 +114,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE		:= airtun-ng
 LOCAL_CFLAGS		+= $(MY_CFLAGS)
 LOCAL_SRC_FILES		:= $(MY_OBJS_AT)
-LOCAL_STATIC_LIBRARIES  += libosdep
-LOCAL_SHARED_LIBRARIES	:= libssl libcrypto
+LOCAL_STATIC_LIBRARIES  += libosdep libssl libcrypto
 include $(BUILD_EXECUTABLE)
 
 
@@ -128,8 +122,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE		:= ivstools
 LOCAL_CFLAGS		+= $(MY_CFLAGS)
 LOCAL_SRC_FILES		:= $(MY_OBJS_IV)
-LOCAL_STATIC_LIBRARIES  += libosdep
-LOCAL_SHARED_LIBRARIES	:= libssl libcrypto
+LOCAL_STATIC_LIBRARIES  += libosdep libssl libcrypto
 include $(BUILD_EXECUTABLE)
 
 
@@ -144,8 +137,8 @@ include $(CLEAR_VARS)
 LOCAL_MODULE		:= wesside-ng
 LOCAL_CFLAGS		+= $(MY_CFLAGS)
 LOCAL_SRC_FILES		:= $(MY_OBJS_WS)
-LOCAL_STATIC_LIBRARIES  += libosdep
-LOCAL_SHARED_LIBRARIES	:= libssl libcrypto libz
+LOCAL_STATIC_LIBRARIES  += libosdep libssl libcrypto
+LOCAL_SHARED_LIBRARIES	:= libz
 LOCAL_C_INCLUDES	+= $(LOCAL_PATH)/../zlib/src
 LOCAL_SHARED_LIBRARIES	+= libz
 LOCAL_LDLIBS		+= -lz
@@ -174,8 +167,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE		:= besside-ng
 LOCAL_CFLAGS		+= $(MY_CFLAGS)
 LOCAL_SRC_FILES		:= $(MY_OBJS_BS)
-LOCAL_STATIC_LIBRARIES  += libosdep
-LOCAL_SHARED_LIBRARIES	:= libssl libcrypto
+LOCAL_STATIC_LIBRARIES  += libosdep libssl libcrypto
 LOCAL_C_INCLUDES	+= $(LOCAL_PATH)/../zlib/src
 LOCAL_SHARED_LIBRARIES	+= libz
 include $(BUILD_EXECUTABLE)
@@ -193,7 +185,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE		:= airolib-ng
 LOCAL_CFLAGS		+= $(MY_CFLAGS) -DHAVE_REGEXP
 LOCAL_SRC_FILES		:= $(MY_OBJS_AL)
-LOCAL_SHARED_LIBRARIES	:= libssl libcrypto libsqlite
+LOCAL_STATIC_LIBRARIES	+= libsqlite libssl libcrypto
 include $(BUILD_EXECUTABLE)
 
 
@@ -203,8 +195,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE		:= airbase-ng
 LOCAL_CFLAGS		+= $(MY_CFLAGS)
 LOCAL_SRC_FILES		:= $(MY_OBJS_AB)
-LOCAL_STATIC_LIBRARIES  += libosdep
-LOCAL_SHARED_LIBRARIES	:= libssl libcrypto
+LOCAL_STATIC_LIBRARIES  += libosdep libssl libcrypto
 include $(BUILD_EXECUTABLE)
 
 
@@ -221,8 +212,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE		:= tkiptun-ng
 LOCAL_CFLAGS		+= $(MY_CFLAGS)
 LOCAL_SRC_FILES		:= $(MY_OBJS_TT)
-LOCAL_STATIC_LIBRARIES  += libosdep
-LOCAL_SHARED_LIBRARIES	:= libssl libcrypto
+LOCAL_STATIC_LIBRARIES  += libosdep libssl libcrypto
 include $(BUILD_EXECUTABLE)
 
 
@@ -231,7 +221,6 @@ include $(CLEAR_VARS)
 LOCAL_MODULE		:= wpaclean
 LOCAL_CFLAGS		+= $(MY_CFLAGS)
 LOCAL_SRC_FILES		:= $(MY_OBJS_WC)
-LOCAL_STATIC_LIBRARIES  += libosdep
-LOCAL_SHARED_LIBRARIES	:= libssl libcrypto
+LOCAL_STATIC_LIBRARIES  += libosdep libssl libcrypto
 include $(BUILD_EXECUTABLE)
 

@@ -42,6 +42,7 @@
 #include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
 #include <rates.h>              // rates used to build the ratespec for frame injection
 #include <bcmwifi_channels.h>
+#include <monitormode.h>        // defitionons such as MONITOR_...
 
 #define RADIOTAP_MCS
 #define RADIOTAP_VENDOR
@@ -50,7 +51,9 @@
 // plcp length in bytes
 #define PLCP_LEN 6
 
-int
+extern void prepend_ethernet_ipv4_udp_header(struct sk_buff *p);
+
+static int
 channel2freq(struct wl_info *wl, unsigned int channel)
 {
     int freq = 0;
@@ -61,12 +64,19 @@ channel2freq(struct wl_info *wl, unsigned int channel)
     return freq;
 }
 
-void
-wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p)
+static void
+wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p, unsigned char tunnel_over_udp)
 {
     struct osl_info *osh = wl->wlc->osh;
-    unsigned int p_len_new = p->len + sizeof(struct nexmon_radiotap_header);
+    unsigned int p_len_new;
     struct sk_buff *p_new;
+
+    if (tunnel_over_udp) {
+        p_len_new = p->len + sizeof(struct ethernet_ip_udp_header) + 
+            sizeof(struct nexmon_radiotap_header);
+    } else {
+        p_len_new = p->len + sizeof(struct nexmon_radiotap_header);
+    }
 
     // We figured out that frames larger than 2032 will not arrive in user space
     if (p_len_new > 2032) {
@@ -80,6 +90,9 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p)
         printf("ERR: no free sk_buff\n");
         return;
     }
+
+    if (tunnel_over_udp)
+        skb_pull(p_new, sizeof(struct ethernet_ip_udp_header));
 
     struct nexmon_radiotap_header *frame = (struct nexmon_radiotap_header *) p_new->data;
 
@@ -154,14 +167,55 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p)
     frame->vendor_sub_namespace = 0;
     frame->vendor_skip_length = PLCP_LEN;
 
-
     memcpy(p_new->data + sizeof(struct nexmon_radiotap_header), p->data, p->len);
 
-    wl_sendup(wl, 0, p_new);
+    if (tunnel_over_udp) {
+        prepend_ethernet_ipv4_udp_header(p_new);
+    }
+
+    //wl_sendup(wl, 0, p_new);
+    wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p_new);
+}
+
+void
+wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
+    unsigned char monitor = wl->wlc->monitor & 0xFF;
+
+    if (monitor & MONITOR_RADIOTAP) {
+        wl_monitor_radiotap(wl, sts, p, 0);
+    }
+
+    if (monitor & MONITOR_IEEE80211) {
+        wl_monitor(wl, sts, p);
+    }
+
+    if (monitor & MONITOR_LOG_ONLY) {
+        printf("frame received\n");
+    }
+
+    if (monitor & MONITOR_DROP_FRM) {
+        ;
+    }
+
+    if (monitor & MONITOR_IPV4_UDP) {
+        wl_monitor_radiotap(wl, sts, p, 1);
+    }
 }
 
 // Hook the call to wl_monitor in wlc_monitor
 __attribute__((at(0x18DA30, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243)))
 __attribute__((at(0x18DB20, "", CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704)))
-__attribute__((at(0x1f0a6, "flashpatch", CHIP_VER_BCM4358, FW_VER_7_112_200_17)))
 BLPatch(wl_monitor_hook, wl_monitor_hook);
+
+// activate badfcs, if MONITOR_ACTIVATE_BADFCS is set
+void
+wlc_mctrl_hook(struct wlc_info *wlc, uint32 mask, uint32 val)
+{
+    if (wlc->monitor & MONITOR_ACTIVATE_BADFCS)
+        wlc_mctrl(wlc, MCTL_PROMISC | MCTL_KEEPBADFCS | MCTL_KEEPCONTROL, MCTL_PROMISC | MCTL_KEEPBADFCS | MCTL_KEEPCONTROL);
+    else
+        wlc_mctrl(wlc, mask, val);
+}
+
+__attribute__((at(0x34CB6, "flashpatch", CHIP_VER_BCM4339, FW_VER_ALL)))
+BLPatch(wlc_mctrl_hook, wlc_mctrl_hook);

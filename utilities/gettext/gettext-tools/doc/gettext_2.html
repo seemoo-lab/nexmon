@@ -1,0 +1,349 @@
+<HTML>
+<HEAD>
+<!-- This HTML file has been created by texi2html 1.52b
+     from gettext.texi on 11 June 2016 -->
+
+<META HTTP-EQUIV="content-type" CONTENT="text/html; charset=UTF-8">
+<TITLE>GNU gettext utilities - 2  The User's View</TITLE>
+</HEAD>
+<BODY>
+Go to the <A HREF="gettext_1.html">first</A>, <A HREF="gettext_1.html">previous</A>, <A HREF="gettext_3.html">next</A>, <A HREF="gettext_25.html">last</A> section, <A HREF="gettext_toc.html">table of contents</A>.
+<P><HR><P>
+
+
+<H1><A NAME="SEC7" HREF="gettext_toc.html#TOC7">2  The User's View</A></H1>
+
+<P>
+Nowadays, when users log into a computer, they usually find that all
+their programs show messages in their native language -- at least for
+users of languages with an active free software community, like French or
+German; to a lesser extent for languages with a smaller participation in
+free software and the GNU project, like Hindi and Filipino.
+
+</P>
+<P>
+How does this work?  How can the user influence the language that is used
+by the programs?  This chapter will answer it.
+
+</P>
+
+
+
+<H2><A NAME="SEC8" HREF="gettext_toc.html#TOC8">2.1  Operating System Installation</A></H2>
+
+<P>
+The default language is often already specified during operating system
+installation.  When the operating system is installed, the installer
+typically asks for the language used for the installation process and,
+separately, for the language to use in the installed system.  Some OS
+installers only ask for the language once.
+
+</P>
+<P>
+This determines the system-wide default language for all users.  But the
+installers often give the possibility to install extra localizations for
+additional languages.  For example, the localizations of KDE (the K
+Desktop Environment) and OpenOffice.org are often bundled separately,
+as one installable package per language.
+
+</P>
+<P>
+At this point it is good to consider the intended use of the machine: If
+it is a machine designated for personal use, additional localizations are
+probably not necessary.  If, however, the machine is in use in an
+organization or company that has international relationships, one can
+consider the needs of guest users.  If you have a guest from abroad, for
+a week, what could be his preferred locales?  It may be worth installing
+these additional localizations ahead of time, since they cost only a bit
+of disk space at this point.
+
+</P>
+<P>
+The system-wide default language is the locale configuration that is used
+when a new user account is created.  But the user can have his own locale
+configuration that is different from the one of the other users of the
+same machine.  He can specify it, typically after the first login, as
+described in the next section.
+
+</P>
+
+
+<H2><A NAME="SEC9" HREF="gettext_toc.html#TOC9">2.2  Setting the Locale Used by GUI Programs</A></H2>
+
+<P>
+The immediately available programs in a user's desktop come from a group
+of programs called a “desktop environment”; it usually includes the window
+manager, a web browser, a text editor, and more.  The most common free
+desktop environments are KDE, GNOME, and Xfce.
+
+</P>
+<P>
+The locale used by GUI programs of the desktop environment can be specified
+in a configuration screen called “control center”, “language settings”
+or “country settings”.
+
+</P>
+<P>
+Individual GUI programs that are not part of the desktop environment can
+have their locale specified either in a settings panel, or through environment
+variables.
+
+</P>
+<P>
+For some programs, it is possible to specify the locale through environment
+variables, possibly even to a different locale than the desktop's locale.
+This means, instead of starting a program through a menu or from the file
+system, you can start it from the command-line, after having set some
+environment variables.  The environment variables can be those specified
+in the next section (section <A HREF="gettext_2.html#SEC10">2.3  Setting the Locale through Environment Variables</A>); for some versions of
+KDE, however, the locale is specified through a variable <CODE>KDE_LANG</CODE>,
+rather than <CODE>LANG</CODE> or <CODE>LC_ALL</CODE>.
+
+</P>
+
+
+<H2><A NAME="SEC10" HREF="gettext_toc.html#TOC10">2.3  Setting the Locale through Environment Variables</A></H2>
+
+<P>
+As a user, if your language has been installed for this package, in the
+simplest case, you only have to set the <CODE>LANG</CODE> environment variable
+to the appropriate <SAMP>&lsquo;<VAR>ll</VAR>_<VAR>CC</VAR>&rsquo;</SAMP> combination.  For example,
+let's suppose that you speak German and live in Germany.  At the shell
+prompt, merely execute 
+<SAMP>&lsquo;setenv LANG de_DE&rsquo;</SAMP> (in <CODE>csh</CODE>),
+<SAMP>&lsquo;export LANG; LANG=de_DE&rsquo;</SAMP> (in <CODE>sh</CODE>) or
+<SAMP>&lsquo;export LANG=de_DE&rsquo;</SAMP> (in <CODE>bash</CODE>).  This can be done from your
+<TT>&lsquo;.login&rsquo;</TT> or <TT>&lsquo;.profile&rsquo;</TT> file, once and for all.
+
+</P>
+
+
+
+<H3><A NAME="SEC11" HREF="gettext_toc.html#TOC11">2.3.1  Locale Names</A></H3>
+
+<P>
+A locale name usually has the form <SAMP>&lsquo;<VAR>ll</VAR>_<VAR>CC</VAR>&rsquo;</SAMP>.  Here
+<SAMP>&lsquo;<VAR>ll</VAR>&rsquo;</SAMP> is an ISO 639 two-letter language code, and
+<SAMP>&lsquo;<VAR>CC</VAR>&rsquo;</SAMP> is an ISO 3166 two-letter country code.  For example,
+for German in Germany, <VAR>ll</VAR> is <CODE>de</CODE>, and <VAR>CC</VAR> is <CODE>DE</CODE>.
+You find a list of the language codes in appendix section <A HREF="gettext_17.html#SEC331">A  Language Codes</A> and
+a list of the country codes in appendix section <A HREF="gettext_18.html#SEC334">B  Country Codes</A>.
+
+</P>
+<P>
+You might think that the country code specification is redundant.  But in
+fact, some languages have dialects in different countries.  For example,
+<SAMP>&lsquo;de_AT&rsquo;</SAMP> is used for Austria, and <SAMP>&lsquo;pt_BR&rsquo;</SAMP> for Brazil.  The country
+code serves to distinguish the dialects.
+
+</P>
+<P>
+Many locale names have an extended syntax
+<SAMP>&lsquo;<VAR>ll</VAR>_<VAR>CC</VAR>.<VAR>encoding</VAR>&rsquo;</SAMP> that also specifies the character
+encoding.  These are in use because between 2000 and 2005, most users have
+switched to locales in UTF-8 encoding.  For example, the German locale on
+glibc systems is nowadays <SAMP>&lsquo;de_DE.UTF-8&rsquo;</SAMP>.  The older name <SAMP>&lsquo;de_DE&rsquo;</SAMP>
+still refers to the German locale as of 2000 that stores characters in
+ISO-8859-1 encoding -- a text encoding that cannot even accommodate the Euro
+currency sign.
+
+</P>
+<P>
+Some locale names use <SAMP>&lsquo;<VAR>ll</VAR>_<VAR>CC</VAR>.@<VAR>variant</VAR>&rsquo;</SAMP> instead of
+<SAMP>&lsquo;<VAR>ll</VAR>_<VAR>CC</VAR>&rsquo;</SAMP>.  The <SAMP>&lsquo;@<VAR>variant</VAR>&rsquo;</SAMP> can denote any kind of
+characteristics that is not already implied by the language <VAR>ll</VAR> and
+the country <VAR>CC</VAR>.  It can denote a particular monetary unit.  For example,
+on glibc systems, <SAMP>&lsquo;de_DE@euro&rsquo;</SAMP> denotes the locale that uses the Euro
+currency, in contrast to the older locale <SAMP>&lsquo;de_DE&rsquo;</SAMP> which implies the use
+of the currency before 2002.  It can also denote a dialect of the language,
+or the script used to write text (for example, <SAMP>&lsquo;sr_RS@latin&rsquo;</SAMP> uses the
+Latin script, whereas <SAMP>&lsquo;sr_RS&rsquo;</SAMP> uses the Cyrillic script to write Serbian),
+or the orthography rules, or similar.
+
+</P>
+<P>
+On other systems, some variations of this scheme are used, such as
+<SAMP>&lsquo;<VAR>ll</VAR>&rsquo;</SAMP>.  You can get the list of locales supported by your system
+for your language by running the command <SAMP>&lsquo;locale -a | grep '^<VAR>ll</VAR>'&rsquo;</SAMP>.
+
+</P>
+<P>
+There is also a special locale, called <SAMP>&lsquo;C&rsquo;</SAMP>.
+When it is used, it disables all localization: in this locale, all programs
+standardized by POSIX use English messages and an unspecified character
+encoding (often US-ASCII, but sometimes also ISO-8859-1 or UTF-8, depending on
+the operating system).
+
+</P>
+
+
+<H3><A NAME="SEC12" HREF="gettext_toc.html#TOC12">2.3.2  Locale Environment Variables</A></H3>
+<P>
+<A NAME="IDX40"></A>
+<A NAME="IDX41"></A>
+<A NAME="IDX42"></A>
+
+</P>
+<P>
+A locale is composed of several <EM>locale categories</EM>, see section <A HREF="gettext_1.html#SEC4">1.3  Aspects in Native Language Support</A>.
+When a program looks up locale dependent values, it does this according to
+the following environment variables, in priority order:
+
+</P>
+
+<OL>
+<LI><CODE>LANGUAGE</CODE>
+
+<A NAME="IDX43"></A>
+ 
+<A NAME="IDX44"></A>
+<LI><CODE>LC_ALL</CODE>
+
+<A NAME="IDX45"></A>
+<A NAME="IDX46"></A>
+<A NAME="IDX47"></A>
+<A NAME="IDX48"></A>
+<A NAME="IDX49"></A>
+<A NAME="IDX50"></A>
+<LI><CODE>LC_xxx</CODE>, according to selected locale category:
+
+<CODE>LC_CTYPE</CODE>, <CODE>LC_NUMERIC</CODE>, <CODE>LC_TIME</CODE>, <CODE>LC_COLLATE</CODE>,
+<CODE>LC_MONETARY</CODE>, <CODE>LC_MESSAGES</CODE>, ...
+<A NAME="IDX51"></A>
+<LI><CODE>LANG</CODE>
+
+</OL>
+
+<P>
+Variables whose value is set but is empty are ignored in this lookup.
+
+</P>
+<P>
+<CODE>LANG</CODE> is the normal environment variable for specifying a locale.
+As a user, you normally set this variable (unless some of the other variables
+have already been set by the system, in <TT>&lsquo;/etc/profile&rsquo;</TT> or similar
+initialization files).
+
+</P>
+<P>
+<CODE>LC_CTYPE</CODE>, <CODE>LC_NUMERIC</CODE>, <CODE>LC_TIME</CODE>, <CODE>LC_COLLATE</CODE>,
+<CODE>LC_MONETARY</CODE>, <CODE>LC_MESSAGES</CODE>, and so on, are the environment
+variables meant to override <CODE>LANG</CODE> and affecting a single locale
+category only.  For example, assume you are a Swedish user in Spain, and you
+want your programs to handle numbers and dates according to Spanish
+conventions, and only the messages should be in Swedish.  Then you could
+create a locale named <SAMP>&lsquo;sv_ES&rsquo;</SAMP> or <SAMP>&lsquo;sv_ES.UTF-8&rsquo;</SAMP> by use of the
+<CODE>localedef</CODE> program.  But it is simpler, and achieves the same effect,
+to set the <CODE>LANG</CODE> variable to <CODE>es_ES.UTF-8</CODE> and the
+<CODE>LC_MESSAGES</CODE> variable to <CODE>sv_SE.UTF-8</CODE>; these two locales come
+already preinstalled with the operating system.
+
+</P>
+<P>
+<CODE>LC_ALL</CODE> is an environment variable that overrides all of these.
+It is typically used in scripts that run particular programs.  For example,
+<CODE>configure</CODE> scripts generated by GNU autoconf use <CODE>LC_ALL</CODE> to make
+sure that the configuration tests don't operate in locale dependent ways.
+
+</P>
+<P>
+Some systems, unfortunately, set <CODE>LC_ALL</CODE> in <TT>&lsquo;/etc/profile&rsquo;</TT> or in
+similar initialization files.  As a user, you therefore have to unset this
+variable if you want to set <CODE>LANG</CODE> and optionally some of the other
+<CODE>LC_xxx</CODE> variables.
+
+</P>
+<P>
+The <CODE>LANGUAGE</CODE> variable is described in the next subsection.
+
+</P>
+
+
+<H3><A NAME="SEC13" HREF="gettext_toc.html#TOC13">2.3.3  Specifying a Priority List of Languages</A></H3>
+
+<P>
+Not all programs have translations for all languages.  By default, an
+English message is shown in place of a nonexistent translation.  If you
+understand other languages, you can set up a priority list of languages.
+This is done through a different environment variable, called
+<CODE>LANGUAGE</CODE>.  GNU <CODE>gettext</CODE> gives preference to <CODE>LANGUAGE</CODE>
+over <CODE>LC_ALL</CODE> and <CODE>LANG</CODE> for the purpose of message handling,
+but you still need to have <CODE>LANG</CODE> (or <CODE>LC_ALL</CODE>) set to the primary
+language; this is required by other parts of the system libraries.
+For example, some Swedish users who would rather read translations in
+German than English for when Swedish is not available, set <CODE>LANGUAGE</CODE>
+to <SAMP>&lsquo;sv:de&rsquo;</SAMP> while leaving <CODE>LANG</CODE> to <SAMP>&lsquo;sv_SE&rsquo;</SAMP>.
+
+</P>
+<P>
+Special advice for Norwegian users: The language code for Norwegian
+bokm@ringaccent{a}l changed from <SAMP>&lsquo;no&rsquo;</SAMP> to <SAMP>&lsquo;nb&rsquo;</SAMP> recently (in 2003).
+During the transition period, while some message catalogs for this language
+are installed under <SAMP>&lsquo;nb&rsquo;</SAMP> and some older ones under <SAMP>&lsquo;no&rsquo;</SAMP>, it is
+recommended for Norwegian users to set <CODE>LANGUAGE</CODE> to <SAMP>&lsquo;nb:no&rsquo;</SAMP> so that
+both newer and older translations are used.
+
+</P>
+<P>
+In the <CODE>LANGUAGE</CODE> environment variable, but not in the other
+environment variables, <SAMP>&lsquo;<VAR>ll</VAR>_<VAR>CC</VAR>&rsquo;</SAMP> combinations can be
+abbreviated as <SAMP>&lsquo;<VAR>ll</VAR>&rsquo;</SAMP> to denote the language's main dialect.
+For example, <SAMP>&lsquo;de&rsquo;</SAMP> is equivalent to <SAMP>&lsquo;de_DE&rsquo;</SAMP> (German as spoken in
+Germany), and <SAMP>&lsquo;pt&rsquo;</SAMP> to <SAMP>&lsquo;pt_PT&rsquo;</SAMP> (Portuguese as spoken in Portugal)
+in this context.
+
+</P>
+<P>
+Note: The variable <CODE>LANGUAGE</CODE> is ignored if the locale is set to
+<SAMP>&lsquo;C&rsquo;</SAMP>.  In other words, you have to first enable localization, by setting
+<CODE>LANG</CODE> (or <CODE>LC_ALL</CODE>) to a value other than <SAMP>&lsquo;C&rsquo;</SAMP>, before you can
+use a language priority list through the <CODE>LANGUAGE</CODE> variable.
+
+</P>
+
+
+<H2><A NAME="SEC14" HREF="gettext_toc.html#TOC14">2.4  Installing Translations for Particular Programs</A></H2>
+<P>
+<A NAME="IDX52"></A>
+<A NAME="IDX53"></A>
+
+</P>
+<P>
+Languages are not equally well supported in all packages using GNU
+<CODE>gettext</CODE>, and more translations are added over time.  Usually, you
+use the translations that are shipped with the operating system
+or with particular packages that you install afterwards.  But you can also
+install newer localizations directly.  For doing this, you will need an
+understanding where each localization file is stored on the file system.
+
+</P>
+<P>
+<A NAME="IDX54"></A>
+For programs that participate in the Translation Project, you can start
+looking for translations here:
+<A HREF="http://translationproject.org/team/index.html">http://translationproject.org/team/index.html</A>.
+A snapshot of this information is also found in the <TT>&lsquo;ABOUT-NLS&rsquo;</TT> file
+that is shipped with GNU gettext.
+
+</P>
+<P>
+For programs that are part of the KDE project, the starting point is:
+<A HREF="http://i18n.kde.org/">http://i18n.kde.org/</A>.
+
+</P>
+<P>
+For programs that are part of the GNOME project, the starting point is:
+<A HREF="http://www.gnome.org/i18n/">http://www.gnome.org/i18n/</A>.
+
+</P>
+<P>
+For other programs, you may check whether the program's source code package
+contains some <TT>&lsquo;<VAR>ll</VAR>.po&rsquo;</TT> files; often they are kept together in a
+directory called <TT>&lsquo;po/&rsquo;</TT>.  Each <TT>&lsquo;<VAR>ll</VAR>.po&rsquo;</TT> file contains the
+message translations for the language whose abbreviation of <VAR>ll</VAR>.
+
+</P>
+<P><HR><P>
+Go to the <A HREF="gettext_1.html">first</A>, <A HREF="gettext_1.html">previous</A>, <A HREF="gettext_3.html">next</A>, <A HREF="gettext_25.html">last</A> section, <A HREF="gettext_toc.html">table of contents</A>.
+</BODY>
+</HTML>

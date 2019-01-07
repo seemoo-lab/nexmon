@@ -1,0 +1,31 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test that bind_textdomain_codeset() works.
+
+# This test works only on systems that have a traditional french locale
+# installed.
+# gettext-4.po is actually a German PO file, but only the encoding of the
+# locale matters, not the language. configure has already checked whether
+# a traditional french locale is installed; no need to check also for a
+# traditional german locale.
+: ${LOCALE_FR=fr_FR}
+{ test $LOCALE_FR != none && LC_ALL=$LOCALE_FR ../testlocale; } || {
+  if test -f /usr/bin/localedef; then
+    echo "Skipping test: no traditional french locale is installed"
+  else
+    echo "Skipping test: no traditional french locale is supported"
+  fi
+  Exit 77
+}
+
+test -d gt-4 || mkdir gt-4
+test -d gt-4/fr || mkdir gt-4/fr
+test -d gt-4/fr/LC_MESSAGES || mkdir gt-4/fr/LC_MESSAGES
+
+: ${MSGFMT=msgfmt}
+${MSGFMT} -o gt-4/fr/LC_MESSAGES/codeset.mo "$abs_srcdir"/gettext-4.po
+
+../gettext-4-prg $LOCALE_FR || Exit 1
+
+Exit 0

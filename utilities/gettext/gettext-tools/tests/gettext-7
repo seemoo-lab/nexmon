@@ -1,0 +1,52 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test that on glibc systems, gettext() in multithreaded applications works
+# correctly if different threads operate in different locales referring to
+# the same catalog file but with different encodings.
+
+# This test works only on glibc and MacOS X systems.
+: ${host_os=unknown}
+: ${GLIBC2=no}
+{ case "$host_os" in
+    *-gnu*) test "$GLIBC2" = yes ;;
+    darwin*) true ;;
+    *) false ;;
+  esac
+} || {
+  echo "Skipping test: not a glibc or Mac OS X system"
+  Exit 77
+}
+
+# This test works only on systems that have a de_DE.ISO-8859-1 and
+# de_DE.UTF-8 locale installed.
+missing_locale=`../gettext-7-prg 1`
+if test -n "$missing_locale"; then
+  if test -f /usr/bin/localedef; then
+    echo "Skipping test: locale ${missing_locale} not installed"
+  else
+    echo "Skipping test: locale ${missing_locale} not supported"
+  fi
+  Exit 77
+fi
+
+test -d gt-7 || mkdir gt-7
+test -d gt-7/de_DE || mkdir gt-7/de_DE
+test -d gt-7/de_DE/LC_MESSAGES || mkdir gt-7/de_DE/LC_MESSAGES
+
+: ${MSGFMT=msgfmt}
+${MSGFMT} -o gt-7/de_DE/LC_MESSAGES/tstthread.mo "$abs_srcdir"/gettext-7.po
+
+../gettext-7-prg > gt-7.out
+case $? in
+  0) ;;
+  77)
+    echo "Skipping test: not a glibc >= 2.3 or MacOS X >= 10.5 system"
+    Exit 77
+    ;;
+  *)
+    Exit 1
+    ;;
+esac
+
+Exit 0

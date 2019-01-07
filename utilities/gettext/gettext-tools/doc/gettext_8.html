@@ -1,0 +1,1836 @@
+<HTML>
+<HEAD>
+<!-- This HTML file has been created by texi2html 1.52b
+     from gettext.texi on 11 June 2016 -->
+
+<META HTTP-EQUIV="content-type" CONTENT="text/html; charset=UTF-8">
+<TITLE>GNU gettext utilities - 8  Editing PO Files</TITLE>
+</HEAD>
+<BODY>
+Go to the <A HREF="gettext_1.html">first</A>, <A HREF="gettext_7.html">previous</A>, <A HREF="gettext_9.html">next</A>, <A HREF="gettext_25.html">last</A> section, <A HREF="gettext_toc.html">table of contents</A>.
+<P><HR><P>
+
+
+<H1><A NAME="SEC55" HREF="gettext_toc.html#TOC55">8  Editing PO Files</A></H1>
+<P>
+<A NAME="IDX340"></A>
+
+</P>
+
+
+
+<H2><A NAME="SEC56" HREF="gettext_toc.html#TOC56">8.1  KDE's PO File Editor</A></H2>
+<P>
+<A NAME="IDX341"></A>
+
+</P>
+
+
+<H2><A NAME="SEC57" HREF="gettext_toc.html#TOC57">8.2  GNOME's PO File Editor</A></H2>
+<P>
+<A NAME="IDX342"></A>
+
+</P>
+
+
+<H2><A NAME="SEC58" HREF="gettext_toc.html#TOC58">8.3  Emacs's PO File Editor</A></H2>
+<P>
+<A NAME="IDX343"></A>
+
+</P>
+
+<P>
+For those of you being
+the lucky users of Emacs, PO mode has been specifically created
+for providing a cozy environment for editing or modifying PO files.
+While editing a PO file, PO mode allows for the easy browsing of
+auxiliary and compendium PO files, as well as for following references into
+the set of C program sources from which PO files have been derived.
+It has a few special features, among which are the interactive marking
+of program strings as translatable, and the validation of PO files
+with easy repositioning to PO file lines showing errors.
+
+</P>
+<P>
+For the beginning, besides main PO mode commands
+(see section <A HREF="gettext_8.html#SEC60">8.3.2  Main PO mode Commands</A>), you should know how to move between entries
+(see section <A HREF="gettext_8.html#SEC61">8.3.3  Entry Positioning</A>), and how to handle untranslated entries
+(see section <A HREF="gettext_8.html#SEC65">8.3.7  Untranslated Entries</A>).
+
+</P>
+
+
+
+<H3><A NAME="SEC59" HREF="gettext_toc.html#TOC59">8.3.1  Completing GNU <CODE>gettext</CODE> Installation</A></H3>
+
+<P>
+<A NAME="IDX344"></A>
+<A NAME="IDX345"></A>
+Once you have received, unpacked, configured and compiled the GNU
+<CODE>gettext</CODE> distribution, the <SAMP>&lsquo;make install&rsquo;</SAMP> command puts in
+place the programs <CODE>xgettext</CODE>, <CODE>msgfmt</CODE>, <CODE>gettext</CODE>, and
+<CODE>msgmerge</CODE>, as well as their available message catalogs.  To
+top off a comfortable installation, you might also want to make the
+PO mode available to your Emacs users.
+
+</P>
+<P>
+<A NAME="IDX346"></A>
+<A NAME="IDX347"></A>
+During the installation of the PO mode, you might want to modify your
+file <TT>&lsquo;.emacs&rsquo;</TT>, once and for all, so it contains a few lines looking
+like:
+
+</P>
+
+<PRE>
+(setq auto-mode-alist
+      (cons '("\\.po\\'\\|\\.po\\." . po-mode) auto-mode-alist))
+(autoload 'po-mode "po-mode" "Major mode for translators to edit PO files" t)
+</PRE>
+
+<P>
+Later, whenever you edit some <TT>&lsquo;.po&rsquo;</TT>
+file, or any file having the string <SAMP>&lsquo;.po.&rsquo;</SAMP> within its name,
+Emacs loads <TT>&lsquo;po-mode.elc&rsquo;</TT> (or <TT>&lsquo;po-mode.el&rsquo;</TT>) as needed, and
+automatically activates PO mode commands for the associated buffer.
+The string <EM>PO</EM> appears in the mode line for any buffer for
+which PO mode is active.  Many PO files may be active at once in a
+single Emacs session.
+
+</P>
+<P>
+If you are using Emacs version 20 or newer, and have already installed
+the appropriate international fonts on your system, you may also tell
+Emacs how to determine automatically the coding system of every PO file.
+This will often (but not always) cause the necessary fonts to be loaded
+and used for displaying the translations on your Emacs screen.  For this
+to happen, add the lines:
+
+</P>
+
+<PRE>
+(modify-coding-system-alist 'file "\\.po\\'\\|\\.po\\."
+                            'po-find-file-coding-system)
+(autoload 'po-find-file-coding-system "po-mode")
+</PRE>
+
+<P>
+to your <TT>&lsquo;.emacs&rsquo;</TT> file.  If, with this, you still see boxes instead
+of international characters, try a different font set (via Shift Mouse
+button 1).
+
+</P>
+
+
+<H3><A NAME="SEC60" HREF="gettext_toc.html#TOC60">8.3.2  Main PO mode Commands</A></H3>
+
+<P>
+<A NAME="IDX348"></A>
+<A NAME="IDX349"></A>
+After setting up Emacs with something similar to the lines in
+section <A HREF="gettext_8.html#SEC59">8.3.1  Completing GNU <CODE>gettext</CODE> Installation</A>, PO mode is activated for a window when Emacs finds a
+PO file in that window.  This puts the window read-only and establishes a
+po-mode-map, which is a genuine Emacs mode, in a way that is not derived
+from text mode in any way.  Functions found on <CODE>po-mode-hook</CODE>,
+if any, will be executed.
+
+</P>
+<P>
+When PO mode is active in a window, the letters <SAMP>&lsquo;PO&rsquo;</SAMP> appear
+in the mode line for that window.  The mode line also displays how
+many entries of each kind are held in the PO file.  For example,
+the string <SAMP>&lsquo;132t+3f+10u+2o&rsquo;</SAMP> would tell the translator that the
+PO mode contains 132 translated entries (see section <A HREF="gettext_8.html#SEC63">8.3.5  Translated Entries</A>,
+3 fuzzy entries (see section <A HREF="gettext_8.html#SEC64">8.3.6  Fuzzy Entries</A>), 10 untranslated entries
+(see section <A HREF="gettext_8.html#SEC65">8.3.7  Untranslated Entries</A>) and 2 obsolete entries (see section <A HREF="gettext_8.html#SEC66">8.3.8  Obsolete Entries</A>).  Zero-coefficients items are not shown.  So, in this example, if
+the fuzzy entries were unfuzzied, the untranslated entries were translated
+and the obsolete entries were deleted, the mode line would merely display
+<SAMP>&lsquo;145t&rsquo;</SAMP> for the counters.
+
+</P>
+<P>
+The main PO commands are those which do not fit into the other categories of
+subsequent sections.  These allow for quitting PO mode or for managing windows
+in special ways.
+
+</P>
+<DL COMPACT>
+
+<DT><KBD>_</KBD>
+<DD>
+<A NAME="IDX350"></A>
+Undo last modification to the PO file (<CODE>po-undo</CODE>).
+
+<DT><KBD>Q</KBD>
+<DD>
+<A NAME="IDX351"></A>
+Quit processing and save the PO file (<CODE>po-quit</CODE>).
+
+<DT><KBD>q</KBD>
+<DD>
+<A NAME="IDX352"></A>
+Quit processing, possibly after confirmation (<CODE>po-confirm-and-quit</CODE>).
+
+<DT><KBD>0</KBD>
+<DD>
+<A NAME="IDX353"></A>
+Temporary leave the PO file window (<CODE>po-other-window</CODE>).
+
+<DT><KBD>?</KBD>
+<DD>
+<DT><KBD>h</KBD>
+<DD>
+<A NAME="IDX354"></A>
+<A NAME="IDX355"></A>
+Show help about PO mode (<CODE>po-help</CODE>).
+
+<DT><KBD>=</KBD>
+<DD>
+<A NAME="IDX356"></A>
+Give some PO file statistics (<CODE>po-statistics</CODE>).
+
+<DT><KBD>V</KBD>
+<DD>
+<A NAME="IDX357"></A>
+Batch validate the format of the whole PO file (<CODE>po-validate</CODE>).
+
+</DL>
+
+<P>
+<A NAME="IDX358"></A>
+<A NAME="IDX359"></A>
+The command <KBD>_</KBD> (<CODE>po-undo</CODE>) interfaces to the Emacs
+<EM>undo</EM> facility.  See section ‘Undoing Changes’ in <CITE>The Emacs Editor</CITE>.  Each time <KBD>_</KBD> is typed, modifications which the translator
+did to the PO file are undone a little more.  For the purpose of
+undoing, each PO mode command is atomic.  This is especially true for
+the <KBD><KBD>RET</KBD></KBD> command: the whole edition made by using a single
+use of this command is undone at once, even if the edition itself
+implied several actions.  However, while in the editing window, one
+can undo the edition work quite parsimoniously.
+
+</P>
+<P>
+<A NAME="IDX360"></A>
+<A NAME="IDX361"></A>
+<A NAME="IDX362"></A>
+<A NAME="IDX363"></A>
+The commands <KBD>Q</KBD> (<CODE>po-quit</CODE>) and <KBD>q</KBD>
+(<CODE>po-confirm-and-quit</CODE>) are used when the translator is done with the
+PO file.  The former is a bit less verbose than the latter.  If the file
+has been modified, it is saved to disk first.  In both cases, and prior to
+all this, the commands check if any untranslated messages remain in the
+PO file and, if so, the translator is asked if she really wants to leave
+off working with this PO file.  This is the preferred way of getting rid
+of an Emacs PO file buffer.  Merely killing it through the usual command
+<KBD>C-x k</KBD> (<CODE>kill-buffer</CODE>) is not the tidiest way to proceed.
+
+</P>
+<P>
+<A NAME="IDX364"></A>
+<A NAME="IDX365"></A>
+The command <KBD>0</KBD> (<CODE>po-other-window</CODE>) is another, softer way,
+to leave PO mode, temporarily.  It just moves the cursor to some other
+Emacs window, and pops one if necessary.  For example, if the translator
+just got PO mode to show some source context in some other, she might
+discover some apparent bug in the program source that needs correction.
+This command allows the translator to change sex, become a programmer,
+and have the cursor right into the window containing the program she
+(or rather <EM>he</EM>) wants to modify.  By later getting the cursor back
+in the PO file window, or by asking Emacs to edit this file once again,
+PO mode is then recovered.
+
+</P>
+<P>
+<A NAME="IDX366"></A>
+<A NAME="IDX367"></A>
+<A NAME="IDX368"></A>
+The command <KBD>h</KBD> (<CODE>po-help</CODE>) displays a summary of all available PO
+mode commands.  The translator should then type any character to resume
+normal PO mode operations.  The command <KBD>?</KBD> has the same effect
+as <KBD>h</KBD>.
+
+</P>
+<P>
+<A NAME="IDX369"></A>
+<A NAME="IDX370"></A>
+The command <KBD>=</KBD> (<CODE>po-statistics</CODE>) computes the total number of
+entries in the PO file, the ordinal of the current entry (counted from
+1), the number of untranslated entries, the number of obsolete entries,
+and displays all these numbers.
+
+</P>
+<P>
+<A NAME="IDX371"></A>
+<A NAME="IDX372"></A>
+The command <KBD>V</KBD> (<CODE>po-validate</CODE>) launches <CODE>msgfmt</CODE> in
+checking and verbose
+mode over the current PO file.  This command first offers to save the
+current PO file on disk.  The <CODE>msgfmt</CODE> tool, from GNU <CODE>gettext</CODE>,
+has the purpose of creating a MO file out of a PO file, and PO mode uses
+the features of this program for checking the overall format of a PO file,
+as well as all individual entries.
+
+</P>
+<P>
+<A NAME="IDX373"></A>
+The program <CODE>msgfmt</CODE> runs asynchronously with Emacs, so the
+translator regains control immediately while her PO file is being studied.
+Error output is collected in the Emacs <SAMP>&lsquo;*compilation*&rsquo;</SAMP> buffer,
+displayed in another window.  The regular Emacs command <KBD>C-x`</KBD>
+(<CODE>next-error</CODE>), as well as other usual compile commands, allow the
+translator to reposition quickly to the offending parts of the PO file.
+Once the cursor is on the line in error, the translator may decide on
+any PO mode action which would help correcting the error.
+
+</P>
+
+
+<H3><A NAME="SEC61" HREF="gettext_toc.html#TOC61">8.3.3  Entry Positioning</A></H3>
+
+<P>
+<A NAME="IDX374"></A>
+The cursor in a PO file window is almost always part of
+an entry.  The only exceptions are the special case when the cursor
+is after the last entry in the file, or when the PO file is
+empty.  The entry where the cursor is found to be is said to be the
+current entry.  Many PO mode commands operate on the current entry,
+so moving the cursor does more than allowing the translator to browse
+the PO file, this also selects on which entry commands operate.
+
+</P>
+<P>
+<A NAME="IDX375"></A>
+Some PO mode commands alter the position of the cursor in a specialized
+way.  A few of those special purpose positioning are described here,
+the others are described in following sections (for a complete list try
+<KBD>C-h m</KBD>):
+
+</P>
+<DL COMPACT>
+
+<DT><KBD>.</KBD>
+<DD>
+<A NAME="IDX376"></A>
+Redisplay the current entry (<CODE>po-current-entry</CODE>).
+
+<DT><KBD>n</KBD>
+<DD>
+<A NAME="IDX377"></A>
+Select the entry after the current one (<CODE>po-next-entry</CODE>).
+
+<DT><KBD>p</KBD>
+<DD>
+<A NAME="IDX378"></A>
+Select the entry before the current one (<CODE>po-previous-entry</CODE>).
+
+<DT><KBD>&#60;</KBD>
+<DD>
+<A NAME="IDX379"></A>
+Select the first entry in the PO file (<CODE>po-first-entry</CODE>).
+
+<DT><KBD>&#62;</KBD>
+<DD>
+<A NAME="IDX380"></A>
+Select the last entry in the PO file (<CODE>po-last-entry</CODE>).
+
+<DT><KBD>m</KBD>
+<DD>
+<A NAME="IDX381"></A>
+Record the location of the current entry for later use
+(<CODE>po-push-location</CODE>).
+
+<DT><KBD>r</KBD>
+<DD>
+<A NAME="IDX382"></A>
+Return to a previously saved entry location (<CODE>po-pop-location</CODE>).
+
+<DT><KBD>x</KBD>
+<DD>
+<A NAME="IDX383"></A>
+Exchange the current entry location with the previously saved one
+(<CODE>po-exchange-location</CODE>).
+
+</DL>
+
+<P>
+<A NAME="IDX384"></A>
+<A NAME="IDX385"></A>
+Any Emacs command able to reposition the cursor may be used
+to select the current entry in PO mode, including commands which
+move by characters, lines, paragraphs, screens or pages, and search
+commands.  However, there is a kind of standard way to display the
+current entry in PO mode, which usual Emacs commands moving
+the cursor do not especially try to enforce.  The command <KBD>.</KBD>
+(<CODE>po-current-entry</CODE>) has the sole purpose of redisplaying the
+current entry properly, after the current entry has been changed by
+means external to PO mode, or the Emacs screen otherwise altered.
+
+</P>
+<P>
+It is yet to be decided if PO mode helps the translator, or otherwise
+irritates her, by forcing a rigid window disposition while she
+is doing her work.  We originally had quite precise ideas about
+how windows should behave, but on the other hand, anyone used to
+Emacs is often happy to keep full control.  Maybe a fixed window
+disposition might be offered as a PO mode option that the translator
+might activate or deactivate at will, so it could be offered on an
+experimental basis.  If nobody feels a real need for using it, or
+a compulsion for writing it, we should drop this whole idea.
+The incentive for doing it should come from translators rather than
+programmers, as opinions from an experienced translator are surely
+more worth to me than opinions from programmers <EM>thinking</EM> about
+how <EM>others</EM> should do translation.
+
+</P>
+<P>
+<A NAME="IDX386"></A>
+<A NAME="IDX387"></A>
+<A NAME="IDX388"></A>
+<A NAME="IDX389"></A>
+The commands <KBD>n</KBD> (<CODE>po-next-entry</CODE>) and <KBD>p</KBD>
+(<CODE>po-previous-entry</CODE>) move the cursor the entry following,
+or preceding, the current one.  If <KBD>n</KBD> is given while the
+cursor is on the last entry of the PO file, or if <KBD>p</KBD>
+is given while the cursor is on the first entry, no move is done.
+
+</P>
+<P>
+<A NAME="IDX390"></A>
+<A NAME="IDX391"></A>
+<A NAME="IDX392"></A>
+<A NAME="IDX393"></A>
+The commands <KBD>&#60;</KBD> (<CODE>po-first-entry</CODE>) and <KBD>&#62;</KBD>
+(<CODE>po-last-entry</CODE>) move the cursor to the first entry, or last
+entry, of the PO file.  When the cursor is located past the last
+entry in a PO file, most PO mode commands will return an error saying
+<SAMP>&lsquo;After last entry&rsquo;</SAMP>.  Moreover, the commands <KBD>&#60;</KBD> and <KBD>&#62;</KBD>
+have the special property of being able to work even when the cursor
+is not into some PO file entry, and one may use them for nicely
+correcting this situation.  But even these commands will fail on a
+truly empty PO file.  There are development plans for the PO mode for it
+to interactively fill an empty PO file from sources.  See section <A HREF="gettext_4.html#SEC21">4.5  Marking Translatable Strings</A>.
+
+</P>
+<P>
+The translator may decide, before working at the translation of
+a particular entry, that she needs to browse the remainder of the
+PO file, maybe for finding the terminology or phraseology used
+in related entries.  She can of course use the standard Emacs idioms
+for saving the current cursor location in some register, and use that
+register for getting back, or else, use the location ring.
+
+</P>
+<P>
+<A NAME="IDX394"></A>
+<A NAME="IDX395"></A>
+<A NAME="IDX396"></A>
+<A NAME="IDX397"></A>
+PO mode offers another approach, by which cursor locations may be saved
+onto a special stack.  The command <KBD>m</KBD> (<CODE>po-push-location</CODE>)
+merely adds the location of current entry to the stack, pushing
+the already saved locations under the new one.  The command
+<KBD>r</KBD> (<CODE>po-pop-location</CODE>) consumes the top stack element and
+repositions the cursor to the entry associated with that top element.
+This position is then lost, for the next <KBD>r</KBD> will move the cursor
+to the previously saved location, and so on until no locations remain
+on the stack.
+
+</P>
+<P>
+If the translator wants the position to be kept on the location stack,
+maybe for taking a look at the entry associated with the top
+element, then go elsewhere with the intent of getting back later, she
+ought to use <KBD>m</KBD> immediately after <KBD>r</KBD>.
+
+</P>
+<P>
+<A NAME="IDX398"></A>
+<A NAME="IDX399"></A>
+The command <KBD>x</KBD> (<CODE>po-exchange-location</CODE>) simultaneously
+repositions the cursor to the entry associated with the top element of
+the stack of saved locations, and replaces that top element with the
+location of the current entry before the move.  Consequently, repeating
+the <KBD>x</KBD> command toggles alternatively between two entries.
+For achieving this, the translator will position the cursor on the
+first entry, use <KBD>m</KBD>, then position to the second entry, and
+merely use <KBD>x</KBD> for making the switch.
+
+</P>
+
+
+<H3><A NAME="SEC62" HREF="gettext_toc.html#TOC62">8.3.4  Normalizing Strings in Entries</A></H3>
+<P>
+<A NAME="IDX400"></A>
+
+</P>
+<P>
+There are many different ways for encoding a particular string into a
+PO file entry, because there are so many different ways to split and
+quote multi-line strings, and even, to represent special characters
+by backslashed escaped sequences.  Some features of PO mode rely on
+the ability for PO mode to scan an already existing PO file for a
+particular string encoded into the <CODE>msgid</CODE> field of some entry.
+Even if PO mode has internally all the built-in machinery for
+implementing this recognition easily, doing it fast is technically
+difficult.  To facilitate a solution to this efficiency problem,
+we decided on a canonical representation for strings.
+
+</P>
+<P>
+A conventional representation of strings in a PO file is currently
+under discussion, and PO mode experiments with a canonical representation.
+Having both <CODE>xgettext</CODE> and PO mode converging towards a uniform
+way of representing equivalent strings would be useful, as the internal
+normalization needed by PO mode could be automatically satisfied
+when using <CODE>xgettext</CODE> from GNU <CODE>gettext</CODE>.  An explicit
+PO mode normalization should then be only necessary for PO files
+imported from elsewhere, or for when the convention itself evolves.
+
+</P>
+<P>
+So, for achieving normalization of at least the strings of a given
+PO file needing a canonical representation, the following PO mode
+command is available:
+
+</P>
+<P>
+<A NAME="IDX401"></A>
+<DL COMPACT>
+
+<DT><KBD>M-x po-normalize</KBD>
+<DD>
+<A NAME="IDX402"></A>
+Tidy the whole PO file by making entries more uniform.
+
+</DL>
+
+<P>
+The special command <KBD>M-x po-normalize</KBD>, which has no associated
+keys, revises all entries, ensuring that strings of both original
+and translated entries use uniform internal quoting in the PO file.
+It also removes any crumb after the last entry.  This command may be
+useful for PO files freshly imported from elsewhere, or if we ever
+improve on the canonical quoting format we use.  This canonical format
+is not only meant for getting cleaner PO files, but also for greatly
+speeding up <CODE>msgid</CODE> string lookup for some other PO mode commands.
+
+</P>
+<P>
+<KBD>M-x po-normalize</KBD> presently makes three passes over the entries.
+The first implements heuristics for converting PO files for GNU
+<CODE>gettext</CODE> 0.6 and earlier, in which <CODE>msgid</CODE> and <CODE>msgstr</CODE>
+fields were using K&#38;R style C string syntax for multi-line strings.
+These heuristics may fail for comments not related to obsolete
+entries and ending with a backslash; they also depend on subsequent
+passes for finalizing the proper commenting of continued lines for
+obsolete entries.  This first pass might disappear once all oldish PO
+files would have been adjusted.  The second and third pass normalize
+all <CODE>msgid</CODE> and <CODE>msgstr</CODE> strings respectively.  They also
+clean out those trailing backslashes used by XView's <CODE>msgfmt</CODE>
+for continued lines.
+
+</P>
+<P>
+<A NAME="IDX403"></A>
+Having such an explicit normalizing command allows for importing PO
+files from other sources, but also eases the evolution of the current
+convention, evolution driven mostly by aesthetic concerns, as of now.
+It is easy to make suggested adjustments at a later time, as the
+normalizing command and eventually, other GNU <CODE>gettext</CODE> tools
+should greatly automate conformance.  A description of the canonical
+string format is given below, for the particular benefit of those not
+having Emacs handy, and who would nevertheless want to handcraft
+their PO files in nice ways.
+
+</P>
+<P>
+<A NAME="IDX404"></A>
+Right now, in PO mode, strings are single line or multi-line.  A string
+goes multi-line if and only if it has <EM>embedded</EM> newlines, that
+is, if it matches <SAMP>&lsquo;[^\n]\n+[^\n]&rsquo;</SAMP>.  So, we would have:
+
+</P>
+
+<PRE>
+msgstr "\n\nHello, world!\n\n\n"
+</PRE>
+
+<P>
+but, replacing the space by a newline, this becomes:
+
+</P>
+
+<PRE>
+msgstr ""
+"\n"
+"\n"
+"Hello,\n"
+"world!\n"
+"\n"
+"\n"
+</PRE>
+
+<P>
+We are deliberately using a caricatural example, here, to make the
+point clearer.  Usually, multi-lines are not that bad looking.
+It is probable that we will implement the following suggestion.
+We might lump together all initial newlines into the empty string,
+and also all newlines introducing empty lines (that is, for <VAR>n</VAR>
+&#62; 1, the <VAR>n</VAR>-1'th last newlines would go together on a separate
+string), so making the previous example appear:
+
+</P>
+
+<PRE>
+msgstr "\n\n"
+"Hello,\n"
+"world!\n"
+"\n\n"
+</PRE>
+
+<P>
+There are a few yet undecided little points about string normalization,
+to be documented in this manual, once these questions settle.
+
+</P>
+
+
+<H3><A NAME="SEC63" HREF="gettext_toc.html#TOC63">8.3.5  Translated Entries</A></H3>
+<P>
+<A NAME="IDX405"></A>
+
+</P>
+<P>
+Each PO file entry for which the <CODE>msgstr</CODE> field has been filled with
+a translation, and which is not marked as fuzzy (see section <A HREF="gettext_8.html#SEC64">8.3.6  Fuzzy Entries</A>),
+is said to be a <EM>translated</EM> entry.  Only translated entries will
+later be compiled by GNU <CODE>msgfmt</CODE> and become usable in programs.
+Other entry types will be excluded; translation will not occur for them.
+
+</P>
+<P>
+<A NAME="IDX406"></A>
+Some commands are more specifically related to translated entry processing.
+
+</P>
+<DL COMPACT>
+
+<DT><KBD>t</KBD>
+<DD>
+<A NAME="IDX407"></A>
+Find the next translated entry (<CODE>po-next-translated-entry</CODE>).
+
+<DT><KBD>T</KBD>
+<DD>
+<A NAME="IDX408"></A>
+Find the previous translated entry (<CODE>po-previous-translated-entry</CODE>).
+
+</DL>
+
+<P>
+<A NAME="IDX409"></A>
+<A NAME="IDX410"></A>
+<A NAME="IDX411"></A>
+<A NAME="IDX412"></A>
+The commands <KBD>t</KBD> (<CODE>po-next-translated-entry</CODE>) and <KBD>T</KBD>
+(<CODE>po-previous-translated-entry</CODE>) move forwards or backwards, chasing
+for an translated entry.  If none is found, the search is extended and
+wraps around in the PO file buffer.
+
+</P>
+<P>
+<A NAME="IDX413"></A>
+Translated entries usually result from the translator having edited in
+a translation for them, section <A HREF="gettext_8.html#SEC67">8.3.9  Modifying Translations</A>.  However, if the
+variable <CODE>po-auto-fuzzy-on-edit</CODE> is not <CODE>nil</CODE>, the entry having
+received a new translation first becomes a fuzzy entry, which ought to
+be later unfuzzied before becoming an official, genuine translated entry.
+See section <A HREF="gettext_8.html#SEC64">8.3.6  Fuzzy Entries</A>.
+
+</P>
+
+
+<H3><A NAME="SEC64" HREF="gettext_toc.html#TOC64">8.3.6  Fuzzy Entries</A></H3>
+<P>
+<A NAME="IDX414"></A>
+
+</P>
+<P>
+<A NAME="IDX415"></A>
+<A NAME="IDX416"></A>
+Each PO file entry may have a set of <EM>attributes</EM>, which are
+qualities given a name and explicitly associated with the translation,
+using a special system comment.  One of these attributes
+has the name <CODE>fuzzy</CODE>, and entries having this attribute are said
+to have a fuzzy translation.  They are called fuzzy entries, for short.
+
+</P>
+<P>
+Fuzzy entries, even if they account for translated entries for
+most other purposes, usually call for revision by the translator.
+Those may be produced by applying the program <CODE>msgmerge</CODE> to
+update an older translated PO files according to a new PO template
+file, when this tool hypothesises that some new <CODE>msgid</CODE> has
+been modified only slightly out of an older one, and chooses to pair
+what it thinks to be the old translation for the new modified entry.
+The slight alteration in the original string (the <CODE>msgid</CODE> string)
+should often be reflected in the translated string, and this requires
+the intervention of the translator.  For this reason, <CODE>msgmerge</CODE>
+might mark some entries as being fuzzy.
+
+</P>
+<P>
+<A NAME="IDX417"></A>
+Also, the translator may decide herself to mark an entry as fuzzy
+for her own convenience, when she wants to remember that the entry
+has to be later revisited.  So, some commands are more specifically
+related to fuzzy entry processing.
+
+</P>
+<DL COMPACT>
+
+<DT><KBD>f</KBD>
+<DD>
+<A NAME="IDX418"></A>
+Find the next fuzzy entry (<CODE>po-next-fuzzy-entry</CODE>).
+
+<DT><KBD>F</KBD>
+<DD>
+<A NAME="IDX419"></A>
+Find the previous fuzzy entry (<CODE>po-previous-fuzzy-entry</CODE>).
+
+<DT><KBD><KBD>TAB</KBD></KBD>
+<DD>
+<A NAME="IDX420"></A>
+Remove the fuzzy attribute of the current entry (<CODE>po-unfuzzy</CODE>).
+
+</DL>
+
+<P>
+<A NAME="IDX421"></A>
+<A NAME="IDX422"></A>
+<A NAME="IDX423"></A>
+<A NAME="IDX424"></A>
+The commands <KBD>f</KBD> (<CODE>po-next-fuzzy-entry</CODE>) and <KBD>F</KBD>
+(<CODE>po-previous-fuzzy-entry</CODE>) move forwards or backwards, chasing for
+a fuzzy entry.  If none is found, the search is extended and wraps
+around in the PO file buffer.
+
+</P>
+<P>
+<A NAME="IDX425"></A>
+<A NAME="IDX426"></A>
+<A NAME="IDX427"></A>
+The command <KBD><KBD>TAB</KBD></KBD> (<CODE>po-unfuzzy</CODE>) removes the fuzzy
+attribute associated with an entry, usually leaving it translated.
+Further, if the variable <CODE>po-auto-select-on-unfuzzy</CODE> has not
+the <CODE>nil</CODE> value, the <KBD><KBD>TAB</KBD></KBD> command will automatically chase
+for another interesting entry to work on.  The initial value of
+<CODE>po-auto-select-on-unfuzzy</CODE> is <CODE>nil</CODE>.
+
+</P>
+<P>
+The initial value of <CODE>po-auto-fuzzy-on-edit</CODE> is <CODE>nil</CODE>.  However,
+if the variable <CODE>po-auto-fuzzy-on-edit</CODE> is set to <CODE>t</CODE>, any entry
+edited through the <KBD><KBD>RET</KBD></KBD> command is marked fuzzy, as a way to
+ensure some kind of double check, later.  In this case, the usual paradigm
+is that an entry becomes fuzzy (if not already) whenever the translator
+modifies it.  If she is satisfied with the translation, she then uses
+<KBD><KBD>TAB</KBD></KBD> to pick another entry to work on, clearing the fuzzy attribute
+on the same blow.  If she is not satisfied yet, she merely uses <KBD><KBD>SPC</KBD></KBD>
+to chase another entry, leaving the entry fuzzy.
+
+</P>
+<P>
+<A NAME="IDX428"></A>
+<A NAME="IDX429"></A>
+The translator may also use the <KBD><KBD>DEL</KBD></KBD> command
+(<CODE>po-fade-out-entry</CODE>) over any translated entry to mark it as being
+fuzzy, when she wants to easily leave a trace she wants to later return
+working at this entry.
+
+</P>
+<P>
+Also, when time comes to quit working on a PO file buffer with the <KBD>q</KBD>
+command, the translator is asked for confirmation, if fuzzy string
+still exists.
+
+</P>
+
+
+<H3><A NAME="SEC65" HREF="gettext_toc.html#TOC65">8.3.7  Untranslated Entries</A></H3>
+<P>
+<A NAME="IDX430"></A>
+
+</P>
+<P>
+When <CODE>xgettext</CODE> originally creates a PO file, unless told
+otherwise, it initializes the <CODE>msgid</CODE> field with the untranslated
+string, and leaves the <CODE>msgstr</CODE> string to be empty.  Such entries,
+having an empty translation, are said to be <EM>untranslated</EM> entries.
+Later, when the programmer slightly modifies some string right in
+the program, this change is later reflected in the PO file
+by the appearance of a new untranslated entry for the modified string.
+
+</P>
+<P>
+The usual commands moving from entry to entry consider untranslated
+entries on the same level as active entries.  Untranslated entries
+are easily recognizable by the fact they end with <SAMP>&lsquo;msgstr ""&rsquo;</SAMP>.
+
+</P>
+<P>
+<A NAME="IDX431"></A>
+The work of the translator might be (quite naively) seen as the process
+of seeking for an untranslated entry, editing a translation for
+it, and repeating these actions until no untranslated entries remain.
+Some commands are more specifically related to untranslated entry
+processing.
+
+</P>
+<DL COMPACT>
+
+<DT><KBD>u</KBD>
+<DD>
+<A NAME="IDX432"></A>
+Find the next untranslated entry (<CODE>po-next-untranslated-entry</CODE>).
+
+<DT><KBD>U</KBD>
+<DD>
+<A NAME="IDX433"></A>
+Find the previous untranslated entry (<CODE>po-previous-untransted-entry</CODE>).
+
+<DT><KBD>k</KBD>
+<DD>
+<A NAME="IDX434"></A>
+Turn the current entry into an untranslated one (<CODE>po-kill-msgstr</CODE>).
+
+</DL>
+
+<P>
+<A NAME="IDX435"></A>
+<A NAME="IDX436"></A>
+<A NAME="IDX437"></A>
+<A NAME="IDX438"></A>
+The commands <KBD>u</KBD> (<CODE>po-next-untranslated-entry</CODE>) and <KBD>U</KBD>
+(<CODE>po-previous-untransted-entry</CODE>) move forwards or backwards,
+chasing for an untranslated entry.  If none is found, the search is
+extended and wraps around in the PO file buffer.
+
+</P>
+<P>
+<A NAME="IDX439"></A>
+<A NAME="IDX440"></A>
+An entry can be turned back into an untranslated entry by
+merely emptying its translation, using the command <KBD>k</KBD>
+(<CODE>po-kill-msgstr</CODE>).  See section <A HREF="gettext_8.html#SEC67">8.3.9  Modifying Translations</A>.
+
+</P>
+<P>
+Also, when time comes to quit working on a PO file buffer
+with the <KBD>q</KBD> command, the translator is asked for confirmation,
+if some untranslated string still exists.
+
+</P>
+
+
+<H3><A NAME="SEC66" HREF="gettext_toc.html#TOC66">8.3.8  Obsolete Entries</A></H3>
+<P>
+<A NAME="IDX441"></A>
+
+</P>
+<P>
+By <EM>obsolete</EM> PO file entries, we mean those entries which are
+commented out, usually by <CODE>msgmerge</CODE> when it found that the
+translation is not needed anymore by the package being localized.
+
+</P>
+<P>
+The usual commands moving from entry to entry consider obsolete
+entries on the same level as active entries.  Obsolete entries are
+easily recognizable by the fact that all their lines start with
+<CODE>#</CODE>, even those lines containing <CODE>msgid</CODE> or <CODE>msgstr</CODE>.
+
+</P>
+<P>
+Commands exist for emptying the translation or reinitializing it
+to the original untranslated string.  Commands interfacing with the
+kill ring may force some previously saved text into the translation.
+The user may interactively edit the translation.  All these commands
+may apply to obsolete entries, carefully leaving the entry obsolete
+after the fact.
+
+</P>
+<P>
+<A NAME="IDX442"></A>
+Moreover, some commands are more specifically related to obsolete
+entry processing.
+
+</P>
+<DL COMPACT>
+
+<DT><KBD>o</KBD>
+<DD>
+<A NAME="IDX443"></A>
+Find the next obsolete entry (<CODE>po-next-obsolete-entry</CODE>).
+
+<DT><KBD>O</KBD>
+<DD>
+<A NAME="IDX444"></A>
+Find the previous obsolete entry (<CODE>po-previous-obsolete-entry</CODE>).
+
+<DT><KBD><KBD>DEL</KBD></KBD>
+<DD>
+<A NAME="IDX445"></A>
+Make an active entry obsolete, or zap out an obsolete entry
+(<CODE>po-fade-out-entry</CODE>).
+
+</DL>
+
+<P>
+<A NAME="IDX446"></A>
+<A NAME="IDX447"></A>
+<A NAME="IDX448"></A>
+<A NAME="IDX449"></A>
+The commands <KBD>o</KBD> (<CODE>po-next-obsolete-entry</CODE>) and <KBD>O</KBD>
+(<CODE>po-previous-obsolete-entry</CODE>) move forwards or backwards,
+chasing for an obsolete entry.  If none is found, the search is
+extended and wraps around in the PO file buffer.
+
+</P>
+<P>
+PO mode does not provide ways for un-commenting an obsolete entry
+and making it active, because this would reintroduce an original
+untranslated string which does not correspond to any marked string
+in the program sources.  This goes with the philosophy of never
+introducing useless <CODE>msgid</CODE> values.
+
+</P>
+<P>
+<A NAME="IDX450"></A>
+<A NAME="IDX451"></A>
+<A NAME="IDX452"></A>
+<A NAME="IDX453"></A>
+However, it is possible to comment out an active entry, so making
+it obsolete.  GNU <CODE>gettext</CODE> utilities will later react to the
+disappearance of a translation by using the untranslated string.
+The command <KBD><KBD>DEL</KBD></KBD> (<CODE>po-fade-out-entry</CODE>) pushes the current entry
+a little further towards annihilation.  If the entry is active (it is a
+translated entry), then it is first made fuzzy.  If it is already fuzzy,
+then the entry is merely commented out, with confirmation.  If the entry
+is already obsolete, then it is completely deleted from the PO file.
+It is easy to recycle the translation so deleted into some other PO file
+entry, usually one which is untranslated.  See section <A HREF="gettext_8.html#SEC67">8.3.9  Modifying Translations</A>.
+
+</P>
+<P>
+Here is a quite interesting problem to solve for later development of
+PO mode, for those nights you are not sleepy.  The idea would be that
+PO mode might become bright enough, one of these days, to make good
+guesses at retrieving the most probable candidate, among all obsolete
+entries, for initializing the translation of a newly appeared string.
+I think it might be a quite hard problem to do this algorithmically, as
+we have to develop good and efficient measures of string similarity.
+Right now, PO mode completely lets the decision to the translator,
+when the time comes to find the adequate obsolete translation, it
+merely tries to provide handy tools for helping her to do so.
+
+</P>
+
+
+<H3><A NAME="SEC67" HREF="gettext_toc.html#TOC67">8.3.9  Modifying Translations</A></H3>
+<P>
+<A NAME="IDX454"></A>
+<A NAME="IDX455"></A>
+
+</P>
+<P>
+PO mode prevents direct modification of the PO file, by the usual
+means Emacs gives for altering a buffer's contents.  By doing so,
+it pretends helping the translator to avoid little clerical errors
+about the overall file format, or the proper quoting of strings,
+as those errors would be easily made.  Other kinds of errors are
+still possible, but some may be caught and diagnosed by the batch
+validation process, which the translator may always trigger by the
+<KBD>V</KBD> command.  For all other errors, the translator has to rely on
+her own judgment, and also on the linguistic reports submitted to her
+by the users of the translated package, having the same mother tongue.
+
+</P>
+<P>
+When the time comes to create a translation, correct an error diagnosed
+mechanically or reported by a user, the translators have to resort to
+using the following commands for modifying the translations.
+
+</P>
+<DL COMPACT>
+
+<DT><KBD><KBD>RET</KBD></KBD>
+<DD>
+<A NAME="IDX456"></A>
+Interactively edit the translation (<CODE>po-edit-msgstr</CODE>).
+
+<DT><KBD><KBD>LFD</KBD></KBD>
+<DD>
+<DT><KBD>C-j</KBD>
+<DD>
+<A NAME="IDX457"></A>
+<A NAME="IDX458"></A>
+Reinitialize the translation with the original, untranslated string
+(<CODE>po-msgid-to-msgstr</CODE>).
+
+<DT><KBD>k</KBD>
+<DD>
+<A NAME="IDX459"></A>
+Save the translation on the kill ring, and delete it (<CODE>po-kill-msgstr</CODE>).
+
+<DT><KBD>w</KBD>
+<DD>
+<A NAME="IDX460"></A>
+Save the translation on the kill ring, without deleting it
+(<CODE>po-kill-ring-save-msgstr</CODE>).
+
+<DT><KBD>y</KBD>
+<DD>
+<A NAME="IDX461"></A>
+Replace the translation, taking the new from the kill ring
+(<CODE>po-yank-msgstr</CODE>).
+
+</DL>
+
+<P>
+<A NAME="IDX462"></A>
+<A NAME="IDX463"></A>
+The command <KBD><KBD>RET</KBD></KBD> (<CODE>po-edit-msgstr</CODE>) opens a new Emacs
+window meant to edit in a new translation, or to modify an already existing
+translation.  The new window contains a copy of the translation taken from
+the current PO file entry, all ready for edition, expunged of all quoting
+marks, fully modifiable and with the complete extent of Emacs modifying
+commands.  When the translator is done with her modifications, she may use
+<KBD>C-c C-c</KBD> to close the subedit window with the automatically requoted
+results, or <KBD>C-c C-k</KBD> to abort her modifications.  See section <A HREF="gettext_8.html#SEC69">8.3.11  Details of Sub Edition</A>,
+for more information.
+
+</P>
+<P>
+<A NAME="IDX464"></A>
+<A NAME="IDX465"></A>
+<A NAME="IDX466"></A>
+The command <KBD><KBD>LFD</KBD></KBD> (<CODE>po-msgid-to-msgstr</CODE>) initializes, or
+reinitializes the translation with the original string.  This command is
+normally used when the translator wants to redo a fresh translation of
+the original string, disregarding any previous work.
+
+</P>
+<P>
+<A NAME="IDX467"></A>
+It is possible to arrange so, whenever editing an untranslated
+entry, the <KBD><KBD>LFD</KBD></KBD> command be automatically executed.  If you set
+<CODE>po-auto-edit-with-msgid</CODE> to <CODE>t</CODE>, the translation gets
+initialised with the original string, in case none exists already.
+The default value for <CODE>po-auto-edit-with-msgid</CODE> is <CODE>nil</CODE>.
+
+</P>
+<P>
+<A NAME="IDX468"></A>
+In fact, whether it is best to start a translation with an empty
+string, or rather with a copy of the original string, is a matter of
+taste or habit.  Sometimes, the source language and the
+target language are so different that is simply best to start writing
+on an empty page.  At other times, the source and target languages
+are so close that it would be a waste to retype a number of words
+already being written in the original string.  A translator may also
+like having the original string right under her eyes, as she will
+progressively overwrite the original text with the translation, even
+if this requires some extra editing work to get rid of the original.
+
+</P>
+<P>
+<A NAME="IDX469"></A>
+<A NAME="IDX470"></A>
+<A NAME="IDX471"></A>
+<A NAME="IDX472"></A>
+<A NAME="IDX473"></A>
+The command <KBD>k</KBD> (<CODE>po-kill-msgstr</CODE>) merely empties the
+translation string, so turning the entry into an untranslated
+one.  But while doing so, its previous contents is put apart in
+a special place, known as the kill ring.  The command <KBD>w</KBD>
+(<CODE>po-kill-ring-save-msgstr</CODE>) has also the effect of taking a
+copy of the translation onto the kill ring, but it otherwise leaves
+the entry alone, and does <EM>not</EM> remove the translation from the
+entry.  Both commands use exactly the Emacs kill ring, which is shared
+between buffers, and which is well known already to Emacs lovers.
+
+</P>
+<P>
+The translator may use <KBD>k</KBD> or <KBD>w</KBD> many times in the course
+of her work, as the kill ring may hold several saved translations.
+From the kill ring, strings may later be reinserted in various
+Emacs buffers.  In particular, the kill ring may be used for moving
+translation strings between different entries of a single PO file
+buffer, or if the translator is handling many such buffers at once,
+even between PO files.
+
+</P>
+<P>
+To facilitate exchanges with buffers which are not in PO mode, the
+translation string put on the kill ring by the <KBD>k</KBD> command is fully
+unquoted before being saved: external quotes are removed, multi-line
+strings are concatenated, and backslash escaped sequences are turned
+into their corresponding characters.  In the special case of obsolete
+entries, the translation is also uncommented prior to saving.
+
+</P>
+<P>
+<A NAME="IDX474"></A>
+<A NAME="IDX475"></A>
+The command <KBD>y</KBD> (<CODE>po-yank-msgstr</CODE>) completely replaces the
+translation of the current entry by a string taken from the kill ring.
+Following Emacs terminology, we then say that the replacement
+string is <EM>yanked</EM> into the PO file buffer.
+See section ‘Yanking’ in <CITE>The Emacs Editor</CITE>.
+The first time <KBD>y</KBD> is used, the translation receives the value of
+the most recent addition to the kill ring.  If <KBD>y</KBD> is typed once
+again, immediately, without intervening keystrokes, the translation
+just inserted is taken away and replaced by the second most recent
+addition to the kill ring.  By repeating <KBD>y</KBD> many times in a row,
+the translator may travel along the kill ring for saved strings,
+until she finds the string she really wanted.
+
+</P>
+<P>
+When a string is yanked into a PO file entry, it is fully and
+automatically requoted for complying with the format PO files should
+have.  Further, if the entry is obsolete, PO mode then appropriately
+push the inserted string inside comments.  Once again, translators
+should not burden themselves with quoting considerations besides, of
+course, the necessity of the translated string itself respective to
+the program using it.
+
+</P>
+<P>
+Note that <KBD>k</KBD> or <KBD>w</KBD> are not the only commands pushing strings
+on the kill ring, as almost any PO mode command replacing translation
+strings (or the translator comments) automatically saves the old string
+on the kill ring.  The main exceptions to this general rule are the
+yanking commands themselves.
+
+</P>
+<P>
+<A NAME="IDX476"></A>
+To better illustrate the operation of killing and yanking, let's
+use an actual example, taken from a common situation.  When the
+programmer slightly modifies some string right in the program, his
+change is later reflected in the PO file by the appearance
+of a new untranslated entry for the modified string, and the fact
+that the entry translating the original or unmodified string becomes
+obsolete.  In many cases, the translator might spare herself some work
+by retrieving the unmodified translation from the obsolete entry,
+then initializing the untranslated entry <CODE>msgstr</CODE> field with
+this retrieved translation.  Once this done, the obsolete entry is
+not wanted anymore, and may be safely deleted.
+
+</P>
+<P>
+When the translator finds an untranslated entry and suspects that a
+slight variant of the translation exists, she immediately uses <KBD>m</KBD>
+to mark the current entry location, then starts chasing obsolete
+entries with <KBD>o</KBD>, hoping to find some translation corresponding
+to the unmodified string.  Once found, she uses the <KBD><KBD>DEL</KBD></KBD> command
+for deleting the obsolete entry, knowing that <KBD><KBD>DEL</KBD></KBD> also <EM>kills</EM>
+the translation, that is, pushes the translation on the kill ring.
+Then, <KBD>r</KBD> returns to the initial untranslated entry, and <KBD>y</KBD>
+then <EM>yanks</EM> the saved translation right into the <CODE>msgstr</CODE>
+field.  The translator is then free to use <KBD><KBD>RET</KBD></KBD> for fine
+tuning the translation contents, and maybe to later use <KBD>u</KBD>,
+then <KBD>m</KBD> again, for going on with the next untranslated string.
+
+</P>
+<P>
+When some sequence of keys has to be typed over and over again, the
+translator may find it useful to become better acquainted with the Emacs
+capability of learning these sequences and playing them back under request.
+See section ‘Keyboard Macros’ in <CITE>The Emacs Editor</CITE>.
+
+</P>
+
+
+<H3><A NAME="SEC68" HREF="gettext_toc.html#TOC68">8.3.10  Modifying Comments</A></H3>
+<P>
+<A NAME="IDX477"></A>
+<A NAME="IDX478"></A>
+
+</P>
+<P>
+Any translation work done seriously will raise many linguistic
+difficulties, for which decisions have to be made, and the choices
+further documented.  These documents may be saved within the
+PO file in form of translator comments, which the translator
+is free to create, delete, or modify at will.  These comments may
+be useful to herself when she returns to this PO file after a while.
+
+</P>
+<P>
+Comments not having whitespace after the initial <SAMP>&lsquo;#&rsquo;</SAMP>, for example,
+those beginning with <SAMP>&lsquo;#.&rsquo;</SAMP> or <SAMP>&lsquo;#:&rsquo;</SAMP>, are <EM>not</EM> translator
+comments, they are exclusively created by other <CODE>gettext</CODE> tools.
+So, the commands below will never alter such system added comments,
+they are not meant for the translator to modify.  See section <A HREF="gettext_3.html#SEC15">3  The Format of PO Files</A>.
+
+</P>
+<P>
+The following commands are somewhat similar to those modifying translations,
+so the general indications given for those apply here.  See section <A HREF="gettext_8.html#SEC67">8.3.9  Modifying Translations</A>.
+
+</P>
+<DL COMPACT>
+
+<DT><KBD>#</KBD>
+<DD>
+<A NAME="IDX479"></A>
+Interactively edit the translator comments (<CODE>po-edit-comment</CODE>).
+
+<DT><KBD>K</KBD>
+<DD>
+<A NAME="IDX480"></A>
+Save the translator comments on the kill ring, and delete it
+(<CODE>po-kill-comment</CODE>).
+
+<DT><KBD>W</KBD>
+<DD>
+<A NAME="IDX481"></A>
+Save the translator comments on the kill ring, without deleting it
+(<CODE>po-kill-ring-save-comment</CODE>).
+
+<DT><KBD>Y</KBD>
+<DD>
+<A NAME="IDX482"></A>
+Replace the translator comments, taking the new from the kill ring
+(<CODE>po-yank-comment</CODE>).
+
+</DL>
+
+<P>
+These commands parallel PO mode commands for modifying the translation
+strings, and behave much the same way as they do, except that they handle
+this part of PO file comments meant for translator usage, rather
+than the translation strings.  So, if the descriptions given below are
+slightly succinct, it is because the full details have already been given.
+See section <A HREF="gettext_8.html#SEC67">8.3.9  Modifying Translations</A>.
+
+</P>
+<P>
+<A NAME="IDX483"></A>
+<A NAME="IDX484"></A>
+The command <KBD>#</KBD> (<CODE>po-edit-comment</CODE>) opens a new Emacs window
+containing a copy of the translator comments on the current PO file entry.
+If there are no such comments, PO mode understands that the translator wants
+to add a comment to the entry, and she is presented with an empty screen.
+Comment marks (<CODE>#</CODE>) and the space following them are automatically
+removed before edition, and reinstated after.  For translator comments
+pertaining to obsolete entries, the uncommenting and recommenting operations
+are done twice.  Once in the editing window, the keys <KBD>C-c C-c</KBD>
+allow the translator to tell she is finished with editing the comment.
+See section <A HREF="gettext_8.html#SEC69">8.3.11  Details of Sub Edition</A>, for further details.
+
+</P>
+<P>
+<A NAME="IDX485"></A>
+Functions found on <CODE>po-subedit-mode-hook</CODE>, if any, are executed after
+the string has been inserted in the edit buffer.
+
+</P>
+<P>
+<A NAME="IDX486"></A>
+<A NAME="IDX487"></A>
+<A NAME="IDX488"></A>
+<A NAME="IDX489"></A>
+<A NAME="IDX490"></A>
+<A NAME="IDX491"></A>
+The command <KBD>K</KBD> (<CODE>po-kill-comment</CODE>) gets rid of all
+translator comments, while saving those comments on the kill ring.
+The command <KBD>W</KBD> (<CODE>po-kill-ring-save-comment</CODE>) takes
+a copy of the translator comments on the kill ring, but leaves
+them undisturbed in the current entry.  The command <KBD>Y</KBD>
+(<CODE>po-yank-comment</CODE>) completely replaces the translator comments
+by a string taken at the front of the kill ring.  When this command
+is immediately repeated, the comments just inserted are withdrawn,
+and replaced by other strings taken along the kill ring.
+
+</P>
+<P>
+On the kill ring, all strings have the same nature.  There is no
+distinction between <EM>translation</EM> strings and <EM>translator
+comments</EM> strings.  So, for example, let's presume the translator
+has just finished editing a translation, and wants to create a new
+translator comment to document why the previous translation was
+not good, just to remember what was the problem.  Foreseeing that she
+will do that in her documentation, the translator may want to quote
+the previous translation in her translator comments.  To do so, she
+may initialize the translator comments with the previous translation,
+still at the head of the kill ring.  Because editing already pushed the
+previous translation on the kill ring, she merely has to type <KBD>M-w</KBD>
+prior to <KBD>#</KBD>, and the previous translation will be right there,
+all ready for being introduced by some explanatory text.
+
+</P>
+<P>
+On the other hand, presume there are some translator comments already
+and that the translator wants to add to those comments, instead
+of wholly replacing them.  Then, she should edit the comment right
+away with <KBD>#</KBD>.  Once inside the editing window, she can use the
+regular Emacs commands <KBD>C-y</KBD> (<CODE>yank</CODE>) and <KBD>M-y</KBD>
+(<CODE>yank-pop</CODE>) to get the previous translation where she likes.
+
+</P>
+
+
+<H3><A NAME="SEC69" HREF="gettext_toc.html#TOC69">8.3.11  Details of Sub Edition</A></H3>
+<P>
+<A NAME="IDX492"></A>
+
+</P>
+<P>
+The PO subedit minor mode has a few peculiarities worth being described
+in fuller detail.  It installs a few commands over the usual editing set
+of Emacs, which are described below.
+
+</P>
+<DL COMPACT>
+
+<DT><KBD>C-c C-c</KBD>
+<DD>
+<A NAME="IDX493"></A>
+Complete edition (<CODE>po-subedit-exit</CODE>).
+
+<DT><KBD>C-c C-k</KBD>
+<DD>
+<A NAME="IDX494"></A>
+Abort edition (<CODE>po-subedit-abort</CODE>).
+
+<DT><KBD>C-c C-a</KBD>
+<DD>
+<A NAME="IDX495"></A>
+Consult auxiliary PO files (<CODE>po-subedit-cycle-auxiliary</CODE>).
+
+</DL>
+
+<P>
+<A NAME="IDX496"></A>
+<A NAME="IDX497"></A>
+<A NAME="IDX498"></A>
+The window's contents represents a translation for a given message,
+or a translator comment.  The translator may modify this window to
+her heart's content.  Once this is done, the command <KBD>C-c C-c</KBD>
+(<CODE>po-subedit-exit</CODE>) may be used to return the edited translation into
+the PO file, replacing the original translation, even if it moved out of
+sight or if buffers were switched.
+
+</P>
+<P>
+<A NAME="IDX499"></A>
+<A NAME="IDX500"></A>
+If the translator becomes unsatisfied with her translation or comment,
+to the extent she prefers keeping what was existent prior to the
+<KBD><KBD>RET</KBD></KBD> or <KBD>#</KBD> command, she may use the command <KBD>C-c C-k</KBD>
+(<CODE>po-subedit-abort</CODE>) to merely get rid of edition, while preserving
+the original translation or comment.  Another way would be for her to exit
+normally with <KBD>C-c C-c</KBD>, then type <CODE>U</CODE> once for undoing the
+whole effect of last edition.
+
+</P>
+<P>
+<A NAME="IDX501"></A>
+<A NAME="IDX502"></A>
+The command <KBD>C-c C-a</KBD> (<CODE>po-subedit-cycle-auxiliary</CODE>)
+allows for glancing through translations
+already achieved in other languages, directly while editing the current
+translation.  This may be quite convenient when the translator is fluent
+at many languages, but of course, only makes sense when such completed
+auxiliary PO files are already available to her (see section <A HREF="gettext_8.html#SEC71">8.3.13  Consulting Auxiliary PO Files</A>).
+
+</P>
+<P>
+Functions found on <CODE>po-subedit-mode-hook</CODE>, if any, are executed after
+the string has been inserted in the edit buffer.
+
+</P>
+<P>
+While editing her translation, the translator should pay attention to not
+inserting unwanted <KBD><KBD>RET</KBD></KBD> (newline) characters at the end of
+the translated string if those are not meant to be there, or to removing
+such characters when they are required.  Since these characters are not
+visible in the editing buffer, they are easily introduced by mistake.
+To help her, <KBD><KBD>RET</KBD></KBD> automatically puts the character <CODE>&#60;</CODE>
+at the end of the string being edited, but this <CODE>&#60;</CODE> is not really
+part of the string.  On exiting the editing window with <KBD>C-c C-c</KBD>,
+PO mode automatically removes such <KBD>&#60;</KBD> and all whitespace added after
+it.  If the translator adds characters after the terminating <CODE>&#60;</CODE>, it
+looses its delimiting property and integrally becomes part of the string.
+If she removes the delimiting <CODE>&#60;</CODE>, then the edited string is taken
+<EM>as is</EM>, with all trailing newlines, even if invisible.  Also, if
+the translated string ought to end itself with a genuine <CODE>&#60;</CODE>, then
+the delimiting <CODE>&#60;</CODE> may not be removed; so the string should appear,
+in the editing window, as ending with two <CODE>&#60;</CODE> in a row.
+
+</P>
+<P>
+<A NAME="IDX503"></A>
+When a translation (or a comment) is being edited, the translator may move
+the cursor back into the PO file buffer and freely move to other entries,
+browsing at will.  If, with an edition pending, the translator wanders in the
+PO file buffer, she may decide to start modifying another entry.  Each entry
+being edited has its own subedit buffer.  It is possible to simultaneously
+edit the translation <EM>and</EM> the comment of a single entry, or to
+edit entries in different PO files, all at once.  Typing <KBD><KBD>RET</KBD></KBD>
+on a field already being edited merely resumes that particular edit.  Yet,
+the translator should better be comfortable at handling many Emacs windows!
+
+</P>
+<P>
+<A NAME="IDX504"></A>
+Pending subedits may be completed or aborted in any order, regardless
+of how or when they were started.  When many subedits are pending and the
+translator asks for quitting the PO file (with the <KBD>q</KBD> command), subedits
+are automatically resumed one at a time, so she may decide for each of them.
+
+</P>
+
+
+<H3><A NAME="SEC70" HREF="gettext_toc.html#TOC70">8.3.12  C Sources Context</A></H3>
+<P>
+<A NAME="IDX505"></A>
+<A NAME="IDX506"></A>
+<A NAME="IDX507"></A>
+
+</P>
+<P>
+PO mode is particularly powerful when used with PO files
+created through GNU <CODE>gettext</CODE> utilities, as those utilities
+insert special comments in the PO files they generate.
+Some of these special comments relate the PO file entry to
+exactly where the untranslated string appears in the program sources.
+
+</P>
+<P>
+When the translator gets to an untranslated entry, she is fairly
+often faced with an original string which is not as informative as
+it normally should be, being succinct, cryptic, or otherwise ambiguous.
+Before choosing how to translate the string, she needs to understand
+better what the string really means and how tight the translation has
+to be.  Most of the time, when problems arise, the only way left to make
+her judgment is looking at the true program sources from where this
+string originated, searching for surrounding comments the programmer
+might have put in there, and looking around for helping clues of
+<EM>any</EM> kind.
+
+</P>
+<P>
+Surely, when looking at program sources, the translator will receive
+more help if she is a fluent programmer.  However, even if she is
+not versed in programming and feels a little lost in C code, the
+translator should not be shy at taking a look, once in a while.
+It is most probable that she will still be able to find some of the
+hints she needs.  She will learn quickly to not feel uncomfortable
+in program code, paying more attention to programmer's comments,
+variable and function names (if he dared choosing them well), and
+overall organization, than to the program code itself.
+
+</P>
+<P>
+<A NAME="IDX508"></A>
+The following commands are meant to help the translator at getting
+program source context for a PO file entry.
+
+</P>
+<DL COMPACT>
+
+<DT><KBD>s</KBD>
+<DD>
+<A NAME="IDX509"></A>
+Resume the display of a program source context, or cycle through them
+(<CODE>po-cycle-source-reference</CODE>).
+
+<DT><KBD>M-s</KBD>
+<DD>
+<A NAME="IDX510"></A>
+Display of a program source context selected by menu
+(<CODE>po-select-source-reference</CODE>).
+
+<DT><KBD>S</KBD>
+<DD>
+<A NAME="IDX511"></A>
+Add a directory to the search path for source files
+(<CODE>po-consider-source-path</CODE>).
+
+<DT><KBD>M-S</KBD>
+<DD>
+<A NAME="IDX512"></A>
+Delete a directory from the search path for source files
+(<CODE>po-ignore-source-path</CODE>).
+
+</DL>
+
+<P>
+<A NAME="IDX513"></A>
+<A NAME="IDX514"></A>
+<A NAME="IDX515"></A>
+<A NAME="IDX516"></A>
+The commands <KBD>s</KBD> (<CODE>po-cycle-source-reference</CODE>) and <KBD>M-s</KBD>
+(<CODE>po-select-source-reference</CODE>) both open another window displaying
+some source program file, and already positioned in such a way that
+it shows an actual use of the string to be translated.  By doing
+so, the command gives source program context for the string.  But if
+the entry has no source context references, or if all references
+are unresolved along the search path for program sources, then the
+command diagnoses this as an error.
+
+</P>
+<P>
+Even if <KBD>s</KBD> (or <KBD>M-s</KBD>) opens a new window, the cursor stays
+in the PO file window.  If the translator really wants to
+get into the program source window, she ought to do it explicitly,
+maybe by using command <KBD>O</KBD>.
+
+</P>
+<P>
+When <KBD>s</KBD> is typed for the first time, or for a PO file entry which
+is different of the last one used for getting source context, then the
+command reacts by giving the first context available for this entry,
+if any.  If some context has already been recently displayed for the
+current PO file entry, and the translator wandered off to do other
+things, typing <KBD>s</KBD> again will merely resume, in another window,
+the context last displayed.  In particular, if the translator moved
+the cursor away from the context in the source file, the command will
+bring the cursor back to the context.  By using <KBD>s</KBD> many times
+in a row, with no other commands intervening, PO mode will cycle to
+the next available contexts for this particular entry, getting back
+to the first context once the last has been shown.
+
+</P>
+<P>
+The command <KBD>M-s</KBD> behaves differently.  Instead of cycling through
+references, it lets the translator choose a particular reference among
+many, and displays that reference.  It is best used with completion,
+if the translator types <KBD><KBD>TAB</KBD></KBD> immediately after <KBD>M-s</KBD>, in
+response to the question, she will be offered a menu of all possible
+references, as a reminder of which are the acceptable answers.
+This command is useful only where there are really many contexts
+available for a single string to translate.
+
+</P>
+<P>
+<A NAME="IDX517"></A>
+<A NAME="IDX518"></A>
+<A NAME="IDX519"></A>
+<A NAME="IDX520"></A>
+Program source files are usually found relative to where the PO
+file stands.  As a special provision, when this fails, the file is
+also looked for, but relative to the directory immediately above it.
+Those two cases take proper care of most PO files.  However, it might
+happen that a PO file has been moved, or is edited in a different
+place than its normal location.  When this happens, the translator
+should tell PO mode in which directory normally sits the genuine PO
+file.  Many such directories may be specified, and all together, they
+constitute what is called the <EM>search path</EM> for program sources.
+The command <KBD>S</KBD> (<CODE>po-consider-source-path</CODE>) is used to interactively
+enter a new directory at the front of the search path, and the command
+<KBD>M-S</KBD> (<CODE>po-ignore-source-path</CODE>) is used to select, with completion,
+one of the directories she does not want anymore on the search path.
+
+</P>
+
+
+<H3><A NAME="SEC71" HREF="gettext_toc.html#TOC71">8.3.13  Consulting Auxiliary PO Files</A></H3>
+<P>
+<A NAME="IDX521"></A>
+
+</P>
+<P>
+PO mode is able to help the knowledgeable translator, being fluent in
+many languages, at taking advantage of translations already achieved
+in other languages she just happens to know.  It provides these other
+language translations as additional context for her own work.  Moreover,
+it has features to ease the production of translations for many languages
+at once, for translators preferring to work in this way.
+
+</P>
+<P>
+<A NAME="IDX522"></A>
+<A NAME="IDX523"></A>
+An <EM>auxiliary</EM> PO file is an existing PO file meant for the same
+package the translator is working on, but targeted to a different mother
+tongue language.  Commands exist for declaring and handling auxiliary
+PO files, and also for showing contexts for the entry under work.
+
+</P>
+<P>
+Here are the auxiliary file commands available in PO mode.
+
+</P>
+<DL COMPACT>
+
+<DT><KBD>a</KBD>
+<DD>
+<A NAME="IDX524"></A>
+Seek auxiliary files for another translation for the same entry
+(<CODE>po-cycle-auxiliary</CODE>).
+
+<DT><KBD>C-c C-a</KBD>
+<DD>
+<A NAME="IDX525"></A>
+Switch to a particular auxiliary file (<CODE>po-select-auxiliary</CODE>).
+
+<DT><KBD>A</KBD>
+<DD>
+<A NAME="IDX526"></A>
+Declare this PO file as an auxiliary file (<CODE>po-consider-as-auxiliary</CODE>).
+
+<DT><KBD>M-A</KBD>
+<DD>
+<A NAME="IDX527"></A>
+Remove this PO file from the list of auxiliary files
+(<CODE>po-ignore-as-auxiliary</CODE>).
+
+</DL>
+
+<P>
+<A NAME="IDX528"></A>
+<A NAME="IDX529"></A>
+<A NAME="IDX530"></A>
+<A NAME="IDX531"></A>
+Command <KBD>A</KBD> (<CODE>po-consider-as-auxiliary</CODE>) adds the current
+PO file to the list of auxiliary files, while command <KBD>M-A</KBD>
+(<CODE>po-ignore-as-auxiliary</CODE> just removes it.
+
+</P>
+<P>
+<A NAME="IDX532"></A>
+<A NAME="IDX533"></A>
+The command <KBD>a</KBD> (<CODE>po-cycle-auxiliary</CODE>) seeks all auxiliary PO
+files, round-robin, searching for a translated entry in some other language
+having an <CODE>msgid</CODE> field identical as the one for the current entry.
+The found PO file, if any, takes the place of the current PO file in
+the display (its window gets on top).  Before doing so, the current PO
+file is also made into an auxiliary file, if not already.  So, <KBD>a</KBD>
+in this newly displayed PO file will seek another PO file, and so on,
+so repeating <KBD>a</KBD> will eventually yield back the original PO file.
+
+</P>
+<P>
+<A NAME="IDX534"></A>
+<A NAME="IDX535"></A>
+The command <KBD>C-c C-a</KBD> (<CODE>po-select-auxiliary</CODE>) asks the translator
+for her choice of a particular auxiliary file, with completion, and
+then switches to that selected PO file.  The command also checks if
+the selected file has an <CODE>msgid</CODE> field identical as the one for
+the current entry, and if yes, this entry becomes current.  Otherwise,
+the cursor of the selected file is left undisturbed.
+
+</P>
+<P>
+For all this to work fully, auxiliary PO files will have to be normalized,
+in that way that <CODE>msgid</CODE> fields should be written <EM>exactly</EM>
+the same way.  It is possible to write <CODE>msgid</CODE> fields in various
+ways for representing the same string, different writing would break the
+proper behaviour of the auxiliary file commands of PO mode.  This is not
+expected to be much a problem in practice, as most existing PO files have
+their <CODE>msgid</CODE> entries written by the same GNU <CODE>gettext</CODE> tools.
+
+</P>
+<P>
+<A NAME="IDX536"></A>
+However, PO files initially created by PO mode itself, while marking
+strings in source files, are normalised differently.  So are PO
+files resulting of the <SAMP>&lsquo;M-x normalize&rsquo;</SAMP> command.  Until these
+discrepancies between PO mode and other GNU <CODE>gettext</CODE> tools get
+fully resolved, the translator should stay aware of normalisation issues.
+
+</P>
+
+
+<H2><A NAME="SEC72" HREF="gettext_toc.html#TOC72">8.4  Using Translation Compendia</A></H2>
+<P>
+<A NAME="IDX537"></A>
+
+</P>
+<P>
+<A NAME="IDX538"></A>
+A <EM>compendium</EM> is a special PO file containing a set of
+translations recurring in many different packages.  The translator can
+use gettext tools to build a new compendium, to add entries to her
+compendium, and to initialize untranslated entries, or to update
+already translated entries, from translations kept in the compendium.
+
+</P>
+
+
+
+<H3><A NAME="SEC73" HREF="gettext_toc.html#TOC73">8.4.1  Creating Compendia</A></H3>
+<P>
+<A NAME="IDX539"></A>
+<A NAME="IDX540"></A>
+
+</P>
+<P>
+Basically every PO file consisting of translated entries only can be
+declared as a valid compendium.  Often the translator wants to have
+special compendia; let's consider two cases: <CITE>concatenating PO
+files</CITE> and <CITE>extracting a message subset from a PO file</CITE>.
+
+</P>
+
+
+<H4><A NAME="SEC74" HREF="gettext_toc.html#TOC74">8.4.1.1  Concatenate PO Files</A></H4>
+
+<P>
+<A NAME="IDX541"></A>
+<A NAME="IDX542"></A>
+To concatenate several valid PO files into one compendium file you can
+use <SAMP>&lsquo;msgcomm&rsquo;</SAMP> or <SAMP>&lsquo;msgcat&rsquo;</SAMP> (the latter preferred):
+
+</P>
+
+<PRE>
+msgcat -o compendium.po file1.po file2.po
+</PRE>
+
+<P>
+By default, <CODE>msgcat</CODE> will accumulate divergent translations
+for the same string.  Those occurrences will be marked as <CODE>fuzzy</CODE>
+and highly visible decorated; calling <CODE>msgcat</CODE> on
+<TT>&lsquo;file1.po&rsquo;</TT>:
+
+</P>
+
+<PRE>
+#: src/hello.c:200
+#, c-format
+msgid "Report bugs to &#60;%s&#62;.\n"
+msgstr "Comunicar `bugs' a &#60;%s&#62;.\n"
+</PRE>
+
+<P>
+and <TT>&lsquo;file2.po&rsquo;</TT>:
+
+</P>
+
+<PRE>
+#: src/bye.c:100
+#, c-format
+msgid "Report bugs to &#60;%s&#62;.\n"
+msgstr "Comunicar \"bugs\" a &#60;%s&#62;.\n"
+</PRE>
+
+<P>
+will result in:
+
+</P>
+
+<PRE>
+#: src/hello.c:200 src/bye.c:100
+#, fuzzy, c-format
+msgid "Report bugs to &#60;%s&#62;.\n"
+msgstr ""
+"#-#-#-#-#  file1.po  #-#-#-#-#\n"
+"Comunicar `bugs' a &#60;%s&#62;.\n"
+"#-#-#-#-#  file2.po  #-#-#-#-#\n"
+"Comunicar \"bugs\" a &#60;%s&#62;.\n"
+</PRE>
+
+<P>
+The translator will have to resolve this “conflict” manually; she
+has to decide whether the first or the second version is appropriate
+(or provide a new translation), to delete the “marker lines”, and
+finally to remove the <CODE>fuzzy</CODE> mark.
+
+</P>
+<P>
+If the translator knows in advance the first found translation of a
+message is always the best translation she can make use to the
+<SAMP>&lsquo;--use-first&rsquo;</SAMP> switch:
+
+</P>
+
+<PRE>
+msgcat --use-first -o compendium.po file1.po file2.po
+</PRE>
+
+<P>
+A good compendium file must not contain <CODE>fuzzy</CODE> or untranslated
+entries.  If input files are “dirty” you must preprocess the input
+files or postprocess the result using <SAMP>&lsquo;msgattrib --translated --no-fuzzy&rsquo;</SAMP>.
+
+</P>
+
+
+<H4><A NAME="SEC75" HREF="gettext_toc.html#TOC75">8.4.1.2  Extract a Message Subset from a PO File</A></H4>
+<P>
+<A NAME="IDX543"></A>
+
+</P>
+<P>
+Nobody wants to translate the same messages again and again; thus you
+may wish to have a compendium file containing <TT>&lsquo;getopt.c&rsquo;</TT> messages.
+
+</P>
+<P>
+To extract a message subset (e.g., all <TT>&lsquo;getopt.c&rsquo;</TT> messages) from an
+existing PO file into one compendium file you can use <SAMP>&lsquo;msggrep&rsquo;</SAMP>:
+
+</P>
+
+<PRE>
+msggrep --location src/getopt.c -o compendium.po file.po
+</PRE>
+
+
+
+<H3><A NAME="SEC76" HREF="gettext_toc.html#TOC76">8.4.2  Using Compendia</A></H3>
+
+<P>
+You can use a compendium file to initialize a translation from scratch
+or to update an already existing translation.
+
+</P>
+
+
+<H4><A NAME="SEC77" HREF="gettext_toc.html#TOC77">8.4.2.1  Initialize a New Translation File</A></H4>
+<P>
+<A NAME="IDX544"></A>
+
+</P>
+<P>
+Since a PO file with translations does not exist the translator can
+merely use <TT>&lsquo;/dev/null&rsquo;</TT> to fake the “old” translation file.
+
+</P>
+
+<PRE>
+msgmerge --compendium compendium.po -o file.po /dev/null file.pot
+</PRE>
+
+
+
+<H4><A NAME="SEC78" HREF="gettext_toc.html#TOC78">8.4.2.2  Update an Existing Translation File</A></H4>
+<P>
+<A NAME="IDX545"></A>
+
+</P>
+<P>
+Concatenate the compendium file(s) and the existing PO, merge the
+result with the POT file and remove the obsolete entries (optional,
+here done using <SAMP>&lsquo;msgattrib&rsquo;</SAMP>):
+
+</P>
+
+<PRE>
+msgcat --use-first -o update.po compendium1.po compendium2.po file.po
+msgmerge update.po file.pot | msgattrib --no-obsolete &#62; file.po
+</PRE>
+
+<P><HR><P>
+Go to the <A HREF="gettext_1.html">first</A>, <A HREF="gettext_7.html">previous</A>, <A HREF="gettext_9.html">next</A>, <A HREF="gettext_25.html">last</A> section, <A HREF="gettext_toc.html">table of contents</A>.
+</BODY>
+</HTML>

@@ -1,0 +1,25 @@
+Description:
+Simple hash table with string based keys.
+
+Files:
+lib/hash.h
+lib/hash.c
+
+Depends-on:
+obstack
+xalloc
+
+configure.ac:
+
+Makefile.am:
+lib_SOURCES += hash.h hash.c
+
+Include:
+"hash.h"
+
+License:
+GPL
+
+Maintainer:
+Bruno Haible
+

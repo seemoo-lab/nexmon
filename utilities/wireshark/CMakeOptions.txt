@@ -1,0 +1,94 @@
+# Build options for use by CMake
+
+option(BUILD_wireshark     "Build Wireshark" ON)
+option(BUILD_wireshark_gtk "Build Wireshark (GTK+ UI)" ON)
+option(BUILD_tshark        "Build tshark" ON)
+option(BUILD_tfshark       "Build tfshark" ON)
+option(BUILD_rawshark      "Build rawshark" ON)
+option(BUILD_dumpcap       "Build dumpcap" ON)
+option(BUILD_text2pcap     "Build text2pcap" ON)
+option(BUILD_mergecap      "Build mergecap" ON)
+option(BUILD_reordercap    "Build reordercap" ON)
+option(BUILD_editcap       "Build editcap" ON)
+option(BUILD_capinfos      "Build capinfos" ON)
+option(BUILD_captype       "Build captype" ON)
+option(BUILD_randpkt       "Build randpkt" ON)
+option(BUILD_dftest        "Build dftest" ON)
+option(BUILD_androiddump   "Build androiddump" ON)
+option(BUILD_sshdump       "Build sshdump" ON)
+option(BUILD_ciscodump     "Build ciscodump" ON)
+option(BUILD_randpktdump   "Build randpktdump" ON)
+
+option(DISABLE_WERROR    "Do not treat warnings as errors" ON)
+option(EXTCAP_ANDROIDDUMP_LIBPCAP    "Build androiddump using libpcap" OFF)
+option(ENABLE_EXTRA_COMPILER_WARNINGS "Do additional compiler warnings (disables -Werror)" OFF)
+option(ENABLE_CODE_ANALYSIS "Enable the compiler's static analyzer if possible" OFF)
+option(ENABLE_ASAN "Enable AddressSanitizer (ASAN) for debugging (degrades performance)" OFF)
+option(ENABLE_CHECKHF_CONFLICT "Enable hf conflict check for debugging (start-up may be slower)" OFF)
+
+#
+# Leave GTK2 the default on Windows, looks better than GTK3
+#
+if(WIN32)
+	option(ENABLE_GTK3       "Use GTK3 instead of GTK2 to build wireshark" OFF)
+else()
+	option(ENABLE_GTK3       "Use GTK3 instead of GTK2 to build wireshark" ON)
+endif()
+option(ENABLE_QT5        "Use Qt5 instead of Qt4 to build wireshark" ON)
+option(ENABLE_PCAP       "Enable libpcap support (required for capturing)" ON)
+option(WANT_PACKET_EDITOR	"Enable packet editor (experimental)" ON)
+#
+# Do not make this the default on UN*X; AirPcap support is available
+# only on Windows.  It might be nice to have it, on Windows, check
+# whether the AirPcap SDK is available, and turn AirPcap support on
+# only if it is.
+#
+if(WIN32)
+	option(ENABLE_AIRPCAP    "Enable AirPcap support" ON)
+else()
+	option(ENABLE_AIRPCAP    "Enable AirPcap support" OFF)
+endif()
+# todo
+option(ENABLE_STATIC     "Build a static version of Wireshark (not yet working)" OFF)
+option(ENABLE_ECHLD      "Enable echld support" OFF)
+option(ENABLE_PLUGINS    "Build with plugins" ON)
+option(ENABLE_EXTCAP     "Build with extcap hooks" ON)
+option(ENABLE_HTML_GUIDES       "Build HTML User & Developer Guides" OFF)
+option(ENABLE_PDF_GUIDES        "Build PDF User & Developer Guides" OFF)
+option(ENABLE_CHM_GUIDES        "Build HTML Help User & Developer Guides" OFF)
+option(ENABLE_PCAP_NG_DEFAULT	"Enable pcap-ng as default file format" ON)
+
+option(ENABLE_PORTAUDIO  "Build with PortAudio support" ON)
+option(ENABLE_ZLIB       "Build with zlib compression support" ON)
+option(ENABLE_LUA        "Build with Lua dissector support" ON)
+option(ENABLE_SMI        "Build with libsmi snmp support" ON)
+option(ENABLE_GNUTLS     "Build with GNU TLS support" ON)
+option(ENABLE_GCRYPT     "Build with GNU crypto support" ON)
+option(ENABLE_GEOIP      "Build with GeoIP support" ON)
+if(WIN32)
+	option(ENABLE_WINSPARKLE "Enable WinSparkle support" ON)
+else()
+	option(ENABLE_WINSPARKLE "Enable WinSparkle support" OFF)
+endif()
+option(ENABLE_CAP        "Build with Posix capabilities support" ON)
+option(ENABLE_CARES      "Build with c-ares support" ON)
+#
+# Libnl is Linux-specific.
+#
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+	option(ENABLE_NETLINK    "Build with libnl support" ON)
+else()
+	option(ENABLE_NETLINK    "Build with libnl support" OFF)
+endif()
+# todo Mostly hardcoded
+option(ENABLE_KERBEROS   "Build with Kerberos support" ON)
+option(ENABLE_SBC        "Build with SBC Codec support in RTP Player" ON)
+# How to install
+set(DUMPCAP_INSTALL_OPTION   "normal" CACHE STRING "Permissions to install")
+set(DUMPCAP_INST_VALS "normal" "suid" "capabilities")
+set_property(CACHE DUMPCAP_INSTALL_OPTION PROPERTY STRINGS ${DUMPCAP_INST_VALS})
+if(APPLE)
+	option(ENABLE_APPLICATION_BUNDLE "Build an OS X application bundle (Wireshark.app)" ON)
+else()
+	option(ENABLE_APPLICATION_BUNDLE "Build an OS X application bundle (Wireshark.app)" OFF)
+endif()

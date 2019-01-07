@@ -29,21 +29,3 @@ LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)
 LOCAL_MODULE:= libpcap
 
 include $(BUILD_STATIC_LIBRARY)
-
-libpcap_tests :=  \
-  tests/capturetest.c \
-  tests/filtertest.c \
-  tests/findalldevstest.c \
-  tests/opentest.c \
-  tests/reactivatetest.c \
-  tests/selpolltest.c \
-  tests/valgrindtest.c \
-
-$(foreach test,$(libpcap_tests), \
-  $(eval include $(CLEAR_VARS)) \
-  $(eval LOCAL_MODULE := libpcap_$(basename $(notdir $(test)))) \
-  $(eval LOCAL_SRC_FILES := $(test)) \
-  $(eval LOCAL_CFLAGS := $(libpcap_cflags)) \
-  $(eval LOCAL_STATIC_LIBRARIES := libpcap) \
-  $(eval include $(BUILD_NATIVE_TEST)) \
-)

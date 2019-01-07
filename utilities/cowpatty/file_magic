@@ -1,0 +1,3 @@
+# Append the contents of this file to /etc/file/magic to use the "file"
+# command to identify coWPAtty hash files
+0	ulelong		0x43575041	coWPAtty 3.0 hash file
