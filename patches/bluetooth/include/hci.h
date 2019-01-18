@@ -4,14 +4,15 @@
 // <command>: holds the hex value representing the hci-command
 // <command>_STR: holds the hex value but in form of a little-endian 
 //                  hex string
-// <command>_STR_<device_name>: holds prebuilt device-specific static
-//                               little-endian hex strings
 //
 // Commands prefixed with HCI:
 //  These Commands are HCI-Commands 
 //
 // Commands prefixed with PATCHRAM:
 //  These Commands are used in the patchram mechanism
+//
+// Device specific constants:
+//   They can be found in their header files
 ////////////////////////////////////////////////////////////////////////////
 
 #ifndef HCI_HEADER
@@ -34,20 +35,7 @@
 #define HCI_READ_RAM 0xFC4D
 #define HCI_READ_RAM_STR "\x4d\xfc"
 
-// Patchram:
-
-// Patchram area constants:
-// These are device specific
-
-//
-#define PATCHRAM_ENABLED_BITMAP_ADDRESS_NEXUS_5 0x310204
-//
-#define PATCHRAM_TARGET_TABLE_ADDRESS_NEXUS_5 0x310000
-// Address of the Patchram ram area on the nexus 5
-#define PATCHRAM_VALUE_TABLE_ADDRESS_NEXUS_5 0xd0000
-// Amount of patch slots
-#define PATCHRAM_NUMBER_OF_SLOTS_NEXUS_5 128
-
+// Patchram constants
 
 // Issues a reboot and then continues to process the list
 #define PATCHRAM_ISSUE_REBOOT 0x02
@@ -73,6 +61,15 @@ struct tlv {
     uint8_t * data;
 };
 
+//struct tlv_patchram {
+//    uint8_t tlv_type;
+//    uint16_t length;
+//    union Data {
+//        uint8_t[15] byte_data;
+//        patchram_tlv_data* struct_data;
+//    } data;
+//}
+
 struct patchram_tlv_data {
     uint8_t  slot_number;
     uint32_t target_address;
@@ -81,5 +78,19 @@ struct patchram_tlv_data {
     uint32_t unknown_bytes;
 };
 
+
+/*
+ * Takes an existing patchram_tlv_data structure and converts its content
+ * into a uint8_t array of size 15.
+ */ 
+uint8_t* patchram_tlv_data_to_byte_array(patchram_tlv_data* patchram);
+
+/*
+ * Takes an uint8_t array of size 15 (must be exactly this size!) and converts 
+ * its content to a patchram_tlv_data structure.
+ */ 
+patchram_tlv_data* byte_array_to_patchram_tlv_data(uint8_t[static 15]);
+
+tlv* get_prepared_patchram_tlv();
 
 #endif

@@ -134,6 +134,8 @@ write_used_slots_file(void)
 		fprintf(slot_out_file, "%d\t0x%08X\t0x%08X\n", slot_number, target_address, new_data); 
 	}
 	fclose(slot_out_file);
+	free(path);
+	free(slot_out_file);
 }
 
 int
