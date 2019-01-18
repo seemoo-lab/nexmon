@@ -83,14 +83,14 @@ struct patchram_tlv_data {
  * Takes an existing patchram_tlv_data structure and converts its content
  * into a uint8_t array of size 15.
  */ 
-uint8_t* patchram_tlv_data_to_byte_array(patchram_tlv_data* patchram);
+uint8_t* patchram_tlv_data_to_byte_array(struct patchram_tlv_data* patchram);
 
 /*
  * Takes an uint8_t array of size 15 (must be exactly this size!) and converts 
  * its content to a patchram_tlv_data structure.
  */ 
-patchram_tlv_data* byte_array_to_patchram_tlv_data(uint8_t[static 15]);
+struct patchram_tlv_data* byte_array_to_patchram_tlv_data(uint8_t[static 15]);
 
-tlv* get_prepared_patchram_tlv();
+struct tlv* get_prepared_patchram_tlv();
 
 #endif
