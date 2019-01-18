@@ -21,6 +21,7 @@ CFLAGS= \
 	-DGIT_VERSION=\"$(GIT_VERSION)\" \
 	-DBUILD_NUMBER=\"$$(cat BUILD_NUMBER)\" \
 	-Wall -Werror -O2 -nostdlib -nostartfiles -ffreestanding -mthumb -march=$(NEXMON_ARCH) \
+	-Wno-unused-label \
 	-ffunction-sections -fdata-sections \
 	-I$(NEXMON_ROOT)/patches/include \
 	-Iinclude \
