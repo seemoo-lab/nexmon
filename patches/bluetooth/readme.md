@@ -34,9 +34,15 @@ This awk-script is used to generate a proper `MAKEFILE` under consideration that
 - firmware: `nexmon/firmware/bcm433c0_BT/` 
 
 #### Common Code
+**common between all nexmon projects:**
 
 - common  - source/c-files: `nexmon/patches/common`
 - include - source/h-files: `nexmo/patches/include`
+
+**common between all nexmon-bluetooth projects:**
+
+- common  - source/c-files: `nexmon/patches/bluetooth/common`
+- include - source/h-files: `nexmon/patches/bluetooth/include`
 
 #### Yet Provided Patches
 
