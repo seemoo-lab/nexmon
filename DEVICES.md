@@ -50,7 +50,6 @@
 ## BCM4335
 802.11abgn+ac MIMO 1x1 + BT 4.0
 
-- LG G2
 - HTC One (M7)
 - HTC One Mini
 - Samsung S4 (I9500)
@@ -59,6 +58,7 @@
 ## BCM4339
 (4339a0) 802.11abgn+ac MIMO 1x1 + BT 4.1
 
+- LG G2
 - LG G3
 - LG Nexus 5
 - Sony Experia Z2 sgp521 castor (Tablet)
