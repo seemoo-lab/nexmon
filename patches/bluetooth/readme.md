@@ -60,35 +60,49 @@ When the bluetooth chip is booting it searches for `.hcd` files. Those files con
 #### Buildtools
 base path: `nexmon/buildtools`
 
-**hcd-extractor:** `nexmon/buildtools/hcd-extractor`
+**hcd-extractor:** `buildtools/hcd-extractor`
 
 This tool parses and extracts patches from an existing `.hcd`-file. The extracted patches are later used to generate another - valid - patch file. 
 
-**hcd-generator:** `nexmon/buildtools/hcd-generator`
+**hcd-generator:** `buildtools/hcd-generator`
 
 The extracted patches, as well as the user written ones are merged together into a valid hcd file using this tool.
 
-**nexmon.mk.2_bt.awk:** `nexmon/buildtools/scripts/nexmon.mk.2_bt.awk`
+**nexmon.mk.2_bt.awk:** `buildtools/scripts/nexmon.mk.2_bt.awk`
 
-This awk-script is used to generate a proper `MAKEFILE` under consideration that we don't build a WiFi firmware patch, but a bluetooth one.
+This awk-script is used to generate a proper `MAKEFILE` under consideration that we don't build a WiFi firmware patch, but a bluetooth one. 
+
+**bt_patch_alignment.py**: `buildtools/scripts/bt_patch_alignment.py`
+
+This script handles 4-byte alignment If the patches which is going to be compiled patches at a non 4-byte-aligned address, it is needed to create an aligned patch. This is needed due to the fact that it's only possible to write to 4-byte aligned addresses.
 
 #### Firmware
 
 **BCM 4330c0:**
-- firmware: `nexmon/firmware/bcm433c0_BT/` 
+- firmware: `firmware/bcm433c0_BT/` 
 
 #### Common Code
 **common between all nexmon projects:**
 
-- common  - source/c-files: `nexmon/patches/common`
-- include - source/h-files: `nexmo/patches/include`
+- common  - source/c-files: `patches/common`
+- include - source/h-files: `patches/include`
 
 **common between all nexmon-bluetooth projects:**
 
-- common  - source/c-files: `nexmon/patches/bluetooth/common`
-- include - source/h-files: `nexmon/patches/bluetooth/include`
+- common  - source/c-files: `patches/bluetooth/common`
+- include - source/h-files: `patches/bluetooth/include`
 
 #### Yet Provided Patches
 
-patch sources: `nexmon/patches/blueooth/bcm4335c0`
+patch sources base path: `patches/blueooth/bcm4335c0`
 
+**CVE_2018_5383:** `patches/bluetooth/bcm4335c0/nexmon/CVE_2018_5383`
+
+Proof of concept for the vulnerability with the [CVE 2018 5383](https://nvd.nist.gov/vuln/detail/CVE-2018-5383). This is (currently) only the basic assembly PoC wrapped into a C-function.
+
+**NiNo_PoC:** `patches/bluetooth/bcm4335c0/nexmon/NiNo_PoC`
+
+>In a NiNo attack an active MITM fakes that the other device has no in put and no output capabilities. We think smartphones should not accept that or show a big warning ("Is this really a headset without display?!"), but in implementations we saw this does not happen. With NiNo, secure simple pairing will still be present, but in "Just Works" mode which is suspect to MITM.
+[source](https://github.com/seemoo-lab/internalblue/blob/master/examples/NiNo_PoC.py)
+
+This project holds the original plain assembly PoC as well as a C-based implementation.
