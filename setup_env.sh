@@ -1,19 +1,20 @@
 OLD_PWD=$(pwd)
 shell_path=$(echo $SHELL)
 script_path=''
-re_zsh="zsh"
-re_bash="bash"
+#re_zsh="zsh"
+#re_bash="bash"
 
 echo -e "Setting up Nexmon build environment..."
 # Get the path of this script relative to the calling path
 # This is done using a shells' functionality, therefore we have to 
 # check which shell is currently running / sourcing this script
 # https://stackoverflow.com/questions/9901210/bash-source0-equivalent-in-zsh
-if [[ $script_path =~ $re_szh ]];
+if [[ $shell_path =~ .*zsh.* ]];
 then
+  echo $SHELL
   echo -e "[*] Detected ZSH"
   script_path=${(%):-%x}
-elif [[ $script_path =~ $re_bash ]];
+elif [[ $shell_path =~ .*bash.* ]];
 then
   script_path=${BASH_SOURCE[0]}
   echo -e "[*] Detected Bash"
