@@ -72,5 +72,5 @@ echo "[*] Exported ZLIBFLATE=$ZLIBFLATE"
 export Q=@
 export NEXMON_SETUP_ENV=1
 
-echo -e "\033[0;32mSuccessfully set up Nexmon build environment."
+echo -e "\033[0;32mSuccessfully set up Nexmon build environment.\033[0m"
 cd "$OLD_PWD"

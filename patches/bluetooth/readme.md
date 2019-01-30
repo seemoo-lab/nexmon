@@ -11,7 +11,7 @@ One possibility to patch the bluetooth chip' firmware is the *live patching mech
 
 When the bluetooth chip is booting it searches for `.hcd` files. Those files contain patching code which is then executed and loaded into the firmware. This project contains buildtools and code to write patches, which then will be integrated into hcd files to be loaded at boot time of the bluetooth chip. Unlike the *live patching mechanism* are these patches permanent and the patches can be written using C / C++.
 
-### Build patches for bcm4330, bcm4339 and bcm4358 using a x86 computer running Linux (e.g. Ubuntu 16.04)
+### Build patches for ARM Cortex M3 running on the Bluetooth core using a x86 computer running Linux (e.g. Ubuntu 16.04)
 * Install some dependencies:
   On Ubuntu / Debian based systems:
   ``` 
@@ -41,7 +41,7 @@ When the bluetooth chip is booting it searches for `.hcd` files. Those files con
   # vim contains xxd
   sudo pacman -S lib32-glibc lib32-ncurses lib32-gcc-libs vim
   ```
-* Set up the [seemoo-labl/internalblue](https://github.com/seemoo-lab/internalblue) project and install its cli. This is needed while compiling patches to non 4-byte aligned addresses.
+* Set up the [InternalBlue](https://github.com/seemoo-lab/internalblue) project and install its cli using `setup.py`. This is needed while compiling patches to non 4-byte aligned addresses.
 * Clone our repository: `git clone https://github.com/seemoo-lab/nexmon.git`
 * Go to the root directory of the repository: `cd nexmon`
   * Switch to the bluetooth branch: `git checkout bluetooth-wip`
@@ -49,7 +49,7 @@ When the bluetooth chip is booting it searches for `.hcd` files. Those files con
   * Compile some build tools and extract the ucode and flashpatches from the original firmware files: `make`
 * Go to the *patches* folder of your target device (e.g. bcm4335c0 for the Nexus 5): `cd patches/bluetooth/bcm4335c0/nexmon`
   * Setup the specific build environment: `source setup_env.sh`
-  * If you want to patch non 4-byte aligned addresses, make sure your smartphone is connected to your machine and [internalblue](https://github.com/seemoo-lab/internalblue) is accessible.
+  * If you want to patch non 4-byte aligned addresses, make sure your smartphone is connected to your machine and [InternalBlue](https://github.com/seemoo-lab/internalblue) is accessible.
   * Compile a patched firmware: `make`
   * Generate a backup of your original firmware file: `make backup-hcd`
   * Install the patched firmware on your smartphone: `make install-patch` (make sure your smartphone is connected to your machine beforehand)
