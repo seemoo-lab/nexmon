@@ -125,7 +125,7 @@ analyze_patch_file(void)
 			printf("new patch section addrcnt - addr: 0x%08x\n", addrcnt - addr);
 			snprintf(patch_out_file_name, sizeof(patch_out_file_name), "%s/10_writeram_0x%08x.bin", outdir_name, addr);
 			if(patch_out_file){
-				free(patch_out_file);
+				fclose(patch_out_file);
 				patch_out_file = NULL;
 			}
 			patch_out_file = fopen(patch_out_file_name,"wb");

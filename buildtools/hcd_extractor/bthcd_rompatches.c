@@ -133,7 +133,6 @@ analyze_patch_file(void)
 		if (patch_out_file) {
 			fwrite(&patch_array[i], len + sizeof(len) + sizeof(type), 1, patch_out_file);
 			fclose(patch_out_file);
-			free(patch_out_file);
 			patch_out_file = NULL;
 		} else {
 			fprintf(stderr, "Could not open file: %s\n\t", patch_out_file_name);
