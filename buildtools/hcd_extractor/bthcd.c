@@ -6,14 +6,10 @@
 #include <stdbool.h>
 #include <argp.h>
 #include <string.h>
-#include "darm/darm.h"
 
-#include <arpa/inet.h>
-#include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
-#include <unistd.h>
 
 #define AS_STR2(TEXT) #TEXT
 #define AS_STR(TEXT) AS_STR2(TEXT)
@@ -28,7 +24,7 @@ char *outdir_name = 0;
 const char *argp_program_version = "bthcd";
 const char *argp_program_bug_address = "https://github.com/seemoo-lab/nexmon";
 
-static char doc[] = "fpext -- a program to extract flash patches form a firmware rom.";
+static char doc[] = "hcd_extract -- a program to extract hcd patches from a hcd patch file.";
 
 static struct argp_option options[] = {
 	{"hcdfile", 'p', "FILE", 0, "Read firmware patch file from FILE"},
@@ -83,6 +79,14 @@ read_file_to_array(char *filename, char **buffer, long *filelen)
 	return 0;
 }
 
+// analyze_patch_file
+// params: void
+// Analyzes the given patch.
+// Primarly the WriteRAM patches are searched. If a WriteRAM patch is found it is written into a
+// file with the naming syntax:
+// 10_writeram_0x<targetaddress>.bin
+// In addition to the single extracted WriteRAM patches a patchout_complete.bin file is created.
+// This file contains all patches at their respective	target addresses.
 void
 analyze_patch_file(void)
 {
@@ -94,6 +98,7 @@ analyze_patch_file(void)
 	char *whole_patch;
 	long whole_patch_len;
 
+	
 	if(firmware_file_name) {
 		read_file_to_array(firmware_file_name, &whole_patch, &whole_patch_len);
 	} else {
@@ -103,6 +108,8 @@ analyze_patch_file(void)
 
 	
 	while (i < patch_len) {
+		// Each WriteRAM patch consists of the layout:
+		// < 2-byte: cmd > < 1 byte: length of patch content > < 4 byte patch target >
 		uint16_t cmd = *(uint16_t *) (void *) &patch_array[i];
 		uint8_t len = *(uint8_t *) (void *) &patch_array[i+2];
 		uint32_t addr = *(uint32_t *) (void *) &patch_array[i+3];
@@ -117,6 +124,10 @@ analyze_patch_file(void)
 			addrcnt_new = false;
 			printf("new patch section addrcnt - addr: 0x%08x\n", addrcnt - addr);
 			snprintf(patch_out_file_name, sizeof(patch_out_file_name), "%s/10_writeram_0x%08x.bin", outdir_name, addr);
+			if(patch_out_file){
+				free(patch_out_file);
+				patch_out_file = NULL;
+			}
 			patch_out_file = fopen(patch_out_file_name,"wb");
 		}
 		addrcnt = addr + len - sizeof(addr);
@@ -127,18 +138,32 @@ analyze_patch_file(void)
 		}
 		memcpy(&whole_patch[addr], &patch_array[i + sizeof(cmd) + sizeof(len) + sizeof(addr)], len - sizeof(addr));
 
-		if (patch_out_file)
+		if (patch_out_file){
 			fwrite(&patch_array[i + sizeof(cmd) + sizeof(len) + sizeof(addr)], len - sizeof(addr), 1, patch_out_file);
+		}
 
 		printf("cmd %04x len %d addr %08x\n", cmd, len, addr);
 		i += sizeof(cmd) + sizeof(len) + len;
 	}
 
 	patch_out_file = fopen("patchout_complete.bin","wb");
-	if (patch_out_file)
+	if (patch_out_file){
 		fwrite(whole_patch, whole_patch_len, 1, patch_out_file);
+		free(patch_out_file);
+		patch_out_file = NULL;
+	}
+	if (whole_patch){
+		free(whole_patch);
+		whole_patch = NULL;
+	}
 }
 
+// main
+// params (see top of this file for more information about the params):
+// f (optional): 
+// p (mandatory):
+// o (optional):
+// Starts a full analysis of the given HCD-patch file
 int
 main(int argc, char **argv)
 {
@@ -164,7 +189,10 @@ main(int argc, char **argv)
 
 	analyze_patch_file();
 
-	if (patch_array) free(patch_array);
+	if (patch_array) {
+		free(patch_array);
+		patch_array = NULL;
+	};
 
 	exit(EXIT_SUCCESS);
 }

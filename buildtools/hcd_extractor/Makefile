@@ -28,14 +28,7 @@ else
 	gcc -std=c99 -I${NEXMON_ROOT}/patches/bluetooth/include -Wall -Wno-unused-result -O0 -D_BSD_SOURCE -o $@ -c $<
 endif
 
-darm/%.o: darm/%.c
-ifeq ($(HOSTUNAME),Darwin)
-	gcc-mp-5 -std=c99 -Wall -O2 -Wextra -Wno-missing-field-initializers -o $@ -c $^
-else
-	gcc -std=c99 -Wall -O2 -Wextra -Wno-missing-field-initializers -o $@ -c $^
-endif
-
 clean: FORCE
-	rm -f *.o darm/*.o bthcd bthcd_rompatches
+	rm -f *.o bthcd bthcd_rompatches
 
 FORCE:
