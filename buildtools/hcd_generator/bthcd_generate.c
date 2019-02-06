@@ -7,6 +7,7 @@
 #include <argp.h>
 #include <string.h>
 #include <dirent.h>
+
 #include <hci.h>
 
 FILE* hcdfile = NULL;
@@ -17,7 +18,7 @@ char *indir_name = NULL;
 const char *argp_program_version = "bthcd_generate";
 const char *argp_program_bug_address = "<https://github.com/seemoo-lab/nexmon>";
 
-static char doc[] = "bthcd_generate -- Bluetooth HCD Generator";
+static char doc[] = "bthcd_generate -- Bluetooth HCD-File Generator";
 
 static struct argp_option options[] = {
 	{"hcdfile", 'o', "FILE", 0, "Output HCD file name"},
@@ -47,6 +48,11 @@ parse_opt(int key, char *arg, struct argp_state *state)
 
 static struct argp argp = { options, parse_opt, 0, doc };
 
+// read_file_to_array
+// params:
+// *filename: name of the file to read.
+// **buffer:	buffer to read the file content to.
+// *filelen:	length of the file read to buffer.
 int
 read_file_to_array(char *filename, char **buffer, long *filelen)
 {
@@ -60,13 +66,21 @@ read_file_to_array(char *filename, char **buffer, long *filelen)
 		*buffer = (char *) malloc(*filelen + 1);
 		fread(*buffer, *filelen, 1, fileptr);
 		fclose(fileptr);
+		if(fileptr) {
+			fileptr = NULL;
+		}
 
 		return *filelen;
 	}
-
+	printf("Error: Could not open file %s to write to", filename);
 	return 0;
 }
 
+// process_patch_section
+// params:
+// *section_file_name: name of the file containing the next patch section
+// addr:							 address the patch in thi section should be applied to
+//
 int
 process_patch_section(char* section_file_name, uint32_t addr)
 {
@@ -100,14 +114,16 @@ process_patch_section(char* section_file_name, uint32_t addr)
 		addr += len;
 	}
 
-	free(section_array);
+	if(section_array){
+		free(section_array);
+		section_array = NULL;
+	}
 	return 1;
 }
 
 int
 main(int argc, char **argv)
 {
-	DIR *dp;
 	struct dirent **file_list;
 	char filename[1024];
 	char addr_str[11];
@@ -141,14 +157,23 @@ main(int argc, char **argv)
 			addr = (uint32_t) strtol(addr_str, NULL, 0);
 			process_patch_section(filename, addr);
 		}
-		free(file_list[i]);
+		if(file_list[i]){
+			free(file_list[i]);
+			file_list[i] = NULL;
+		}
 	}
-	free(file_list);
+	if(file_list) {
+		free(file_list);
+		file_list = NULL;	
+	}
 	// HCD Command: LAUNCH_RAM (0xFC_4E)
 	// LAUNCH_RAM 0x04 0xff_ff_ff_ff 
 	// To issue the bluetooth-chip to reboot into the normal bluetooth mode
 	fwrite(HCI_LAUNCH_RAM_STR_NEXUS_5, 7, 1, hcdfile);
 	fclose(hcdfile);
+	if(hcdfile){
+		hcdfile = NULL;
+	}
 
 	exit(EXIT_SUCCESS);
 }
