@@ -29,6 +29,7 @@ bcm4335b0                | 6.30.171.1_sta       | Samsung Galaxy S4         | Li
 bcm4339                  | 6_37_34_43           | Nexus 5                   | Android 6 Stock           |  X  |  X  |  X  |  X  |  X  |  O 
 bcm43430a1<sup>1</sup>   | 7_45_41_26           | Raspberry Pi 3 and Zero W | Raspbian 8                |  X  |  X  |  X  |  X  |  X  |  O 
 bcm43430a1<sup>1</sup>   | 7_45_41_46           | Raspberry Pi 3 and Zero W | Raspbian Stretch          |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43430a1<sup>1</sup>   | 7_45_41_46           | Orange Pi Zero Plus 2 (H3)| Armbian 5.76              |  X  |  X  |  X  |  X  |  X  |  O 
 bcm43451b1               | 7_63_43_0            | iPhone 6                  | iOS 10.1.1 (14B100)       |     |     |     |  X  |  X  |    
 bcm43455                 | 7_45_77_0_hw         | Huawei P9                 | Android 7 Stock           |  X  |  X  |  X  |  X  |  X  |    
 bcm43455                 | 7_120_5_1_sta_C0     | Galaxy J7 2017            | ?                         |     |     |     |  X  |  X  |    
