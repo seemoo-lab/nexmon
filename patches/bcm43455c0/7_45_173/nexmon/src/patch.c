@@ -32,77 +32,28 @@
  *                                                                         *
  **************************************************************************/
 
-#ifndef FIRMWARE_VERSION_H
-#define FIRMWARE_VERSION_H
+#pragma NEXMON targetregion "patch"
 
-#define CHIP_VER_ALL                        0
-#define CHIP_VER_BCM4339                    1
-#define CHIP_VER_BCM4330                    2
-#define CHIP_VER_BCM4358                    3
-#define CHIP_VER_BCM43438                   4
-#define CHIP_VER_BCM43430a1                 4
-#define CHIP_VER_BCM4356                    5
-#define CHIP_VER_BCM4335b0                  6
-#define CHIP_VER_BCM43596a0                 7
-#define CHIP_VER_BCM43451b1                 8
-#define CHIP_VER_BCM43455                   9
-#define CHIP_VER_BCM43455c0               101
-#define CHIP_VER_BCM43909b0               102
-#define CHIP_VER_BCM4366c                 103
-#define CHIP_VER_BCM4361b0                104
+#include <firmware_version.h>
+#include <wrapper.h>	// wrapper definitions for functions that already exist in the firmware
+#include <structs.h>	// structures that are used by the code in the firmware
+#include <patcher.h>
+#include <helper.h>
+#include <capabilities.h>      // capabilities included in a nexmon patch
 
-#define FW_VER_ALL                          0
+int capabilities = NEX_CAP_MONITOR_MODE | NEX_CAP_MONITOR_MODE_RADIOTAP | NEX_CAP_FRAME_INJECTION;
 
-// for CHIP_VER_BCM4339
-#define FW_VER_6_37_32_RC23_34_40_r581243   10
-#define FW_VER_6_37_32_RC23_34_43_r639704   11
-#define FW_VER_6_37_32_34_1_mfg             12
+// Hook the call to wlc_ucode_write in wlc_ucode_download
+__attribute__((at(WLC_UCODE_WRITE_BL_HOOK_ADDR, "", CHIP_VER_ALL, FW_VER_ALL)))
+BLPatch(wlc_ucode_write_compressed, wlc_ucode_write_compressed);
 
-// for CHIP_VER_BCM4330
-#define FW_VER_5_90_195_114                 20
-#define FW_VER_5_90_100_41                  21
+__attribute__((at(HNDRTE_RECLAIM_0_END_PTR, "", CHIP_VER_ALL, FW_VER_ALL)))
+GenericPatch4(hndrte_reclaim_0_end, PATCHSTART);
 
-// for CHIP_VER_BCM4358
-#define FW_VER_7_112_200_17                 30
-#define FW_VER_7_112_201_3                  31
-#define FW_VER_7_112_300_14                 32
+extern unsigned char templateram_bin[];
 
-// for CHIP_VER_BCM43438 (wrongly labled) BCM43430a1
-#define FW_VER_7_45_41_26_r640327           40
-#define FW_VER_7_45_41_46                   41
-
-// for CHIP_VER_BCM4356
-#define FW_VER_7_35_101_5_sta               50
-#define FW_VER_7_35_101_5_apsta             51
-
-// for CHIP_VER_BCM4335b0
-#define FW_VER_6_30_171_1_sta               60
-
-// for CHIP_VER_BCM43596a0
-#define FW_VER_9_75_155_45_sta_c0           70
-#define FW_VER_9_96_4_sta_c0                71
-
-// for CHIP_VER_BCM43451b1
-#define FW_VER_7_63_43_0                    80
-
-// for CHIP_VER_BCM43455
-#define FW_VER_7_45_77_0                    90
-#define FW_VER_7_120_5_1_sta_C0             91
-#define FW_VER_7_120_7_1_sta_C0             92
-#define FW_VER_7_45_77_0_23_8_2017          93
-
-// for CHIP_VER_BCM43455c0
-#define FW_VER_7_45_154                    110
-#define FW_VER_7_45_173                    111
-
-// for CHIP_VER_BCM43909b0
-#define FW_VER_7_15_168_108                210
-
-// for CHIP_VER_BCM4366c
-#define FW_VER_10_10_69_252                310
-#define FW_VER_10_10_122_20                311
-
-// for CHIP_VER_BCM4361b0
-#define FW_VER_13_38_55_1_sta              410
-
-#endif /*FIRMWARE_VERSION_H*/
+// Moving template ram to another place in the ucode region
+#if TEMPLATERAMSTART_PTR != 0
+__attribute__((at(TEMPLATERAMSTART_PTR, "", CHIP_VER_ALL, FW_VER_ALL)))
+GenericPatch4(templateram_bin, templateram_bin);
+#endif

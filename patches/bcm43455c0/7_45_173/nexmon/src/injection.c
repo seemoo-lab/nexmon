@@ -32,77 +32,77 @@
  *                                                                         *
  **************************************************************************/
 
-#ifndef FIRMWARE_VERSION_H
-#define FIRMWARE_VERSION_H
+#pragma NEXMON targetregion "patch"
 
-#define CHIP_VER_ALL                        0
-#define CHIP_VER_BCM4339                    1
-#define CHIP_VER_BCM4330                    2
-#define CHIP_VER_BCM4358                    3
-#define CHIP_VER_BCM43438                   4
-#define CHIP_VER_BCM43430a1                 4
-#define CHIP_VER_BCM4356                    5
-#define CHIP_VER_BCM4335b0                  6
-#define CHIP_VER_BCM43596a0                 7
-#define CHIP_VER_BCM43451b1                 8
-#define CHIP_VER_BCM43455                   9
-#define CHIP_VER_BCM43455c0               101
-#define CHIP_VER_BCM43909b0               102
-#define CHIP_VER_BCM4366c                 103
-#define CHIP_VER_BCM4361b0                104
+#include <firmware_version.h>
+#include <wrapper.h>	// wrapper definitions for functions that already exist in the firmware
+#include <structs.h>	// structures that are used by the code in the firmware
+#include <patcher.h>
+#include <helper.h>
+#include <ieee80211_radiotap.h>
+#include <sendframe.h>
+#include "d11.h"
+#include "brcm.h"
 
-#define FW_VER_ALL                          0
+int
+inject_frame(struct wl_info *wl, sk_buff *p) {
+    int rtap_len = 0;
 
-// for CHIP_VER_BCM4339
-#define FW_VER_6_37_32_RC23_34_40_r581243   10
-#define FW_VER_6_37_32_RC23_34_43_r639704   11
-#define FW_VER_6_37_32_34_1_mfg             12
+    //needed for sending:
+    struct wlc_info *wlc = wl->wlc;
+    int data_rate = 0;
+    //Radiotap parsing:
+    struct ieee80211_radiotap_iterator iterator;
+    struct ieee80211_radiotap_header *rtap_header;
 
-// for CHIP_VER_BCM4330
-#define FW_VER_5_90_195_114                 20
-#define FW_VER_5_90_100_41                  21
+    //parse radiotap header
+    rtap_len = *((char *)(p->data + 2));
 
-// for CHIP_VER_BCM4358
-#define FW_VER_7_112_200_17                 30
-#define FW_VER_7_112_201_3                  31
-#define FW_VER_7_112_300_14                 32
+    rtap_header = (struct ieee80211_radiotap_header *) p->data;
 
-// for CHIP_VER_BCM43438 (wrongly labled) BCM43430a1
-#define FW_VER_7_45_41_26_r640327           40
-#define FW_VER_7_45_41_46                   41
+    int ret = ieee80211_radiotap_iterator_init(&iterator, rtap_header, rtap_len, 0);
 
-// for CHIP_VER_BCM4356
-#define FW_VER_7_35_101_5_sta               50
-#define FW_VER_7_35_101_5_apsta             51
+    while(!ret) {
+        ret = ieee80211_radiotap_iterator_next(&iterator);
+        if(ret) {
+            continue;
+        }
+        switch(iterator.this_arg_index) {
+            case IEEE80211_RADIOTAP_RATE:
+                data_rate = (*iterator.this_arg);
+                break;
+            case IEEE80211_RADIOTAP_CHANNEL:
+                //printf("Channel (freq): %d\n", iterator.this_arg[0] | (iterator.this_arg[1] << 8) );
+                break;
+            default:
+                //printf("default: %d\n", iterator.this_arg_index);
+                break;
+        }
+    }
 
-// for CHIP_VER_BCM4335b0
-#define FW_VER_6_30_171_1_sta               60
+    //remove radiotap header
+    skb_pull(p, rtap_len);
 
-// for CHIP_VER_BCM43596a0
-#define FW_VER_9_75_155_45_sta_c0           70
-#define FW_VER_9_96_4_sta_c0                71
+    //inject frame without using the queue
+    sendframe(wlc, p, 1, data_rate);
 
-// for CHIP_VER_BCM43451b1
-#define FW_VER_7_63_43_0                    80
+    return 0;
+}
 
-// for CHIP_VER_BCM43455
-#define FW_VER_7_45_77_0                    90
-#define FW_VER_7_120_5_1_sta_C0             91
-#define FW_VER_7_120_7_1_sta_C0             92
-#define FW_VER_7_45_77_0_23_8_2017          93
+int
+wl_send_hook(struct hndrte_dev *src, struct hndrte_dev *dev, struct sk_buff *p)
+{
+    struct wl_info *wl = (struct wl_info *) dev->softc;
+    struct wlc_info *wlc = wl->wlc;
 
-// for CHIP_VER_BCM43455c0
-#define FW_VER_7_45_154                    110
-#define FW_VER_7_45_173                    111
+    if (wlc->monitor && p != 0 && p->data != 0 && ((short *) p->data)[0] == 0) {
+        return inject_frame(wl, p);
+    } else {
+        return wl_send(src, dev, p);
+    }
+}
 
-// for CHIP_VER_BCM43909b0
-#define FW_VER_7_15_168_108                210
-
-// for CHIP_VER_BCM4366c
-#define FW_VER_10_10_69_252                310
-#define FW_VER_10_10_122_20                311
-
-// for CHIP_VER_BCM4361b0
-#define FW_VER_13_38_55_1_sta              410
-
-#endif /*FIRMWARE_VERSION_H*/
+__attribute__((at(0x39674, "", CHIP_VER_BCM43430a1, FW_VER_7_45_41_46)))
+__attribute__((at(0x1FE4B0, "", CHIP_VER_BCM43455c0, FW_VER_7_45_154)))
+__attribute__((at(0x201240, "", CHIP_VER_BCM43455c0, FW_VER_7_45_173)))
+GenericPatch4(wl_send_hook, wl_send_hook + 1);
