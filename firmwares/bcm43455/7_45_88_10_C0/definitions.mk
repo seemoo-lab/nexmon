@@ -27,7 +27,7 @@ TEMPLATERAMSTART=0x23A2EC	#0xa22ec + ramstart (ucodeEnd= ucodestart+size)
 TEMPLATERAMSIZE=0x8E0		# 0xA2BCC - 0x22ec (HDRTE_RECLAIR_0_END - templateramstart)
 
 FP_DATA_END_PTR=0x209580	#0x71580 +ram_sart
-FP_CONFIG_BASE_PTR_1=0x20B8F8	#0x738f8 +ram_start
+FP_CONFIG_BASE_PTR_1=0x20B8F8	#0x738f8 +ram_start  #20b948   el parcheado debe apuntar a 236bcc
 FP_CONFIG_END_PTR_1=0x20B8F4	#0x738f4 + ram_start
 FP_CONFIG_BASE_PTR_2=0x20BB7C	#0x73b7c + ram_strrat
 FP_CONFIG_END_PTR_2=0x20BB78	#0x73b78 + ram_strrat
@@ -35,4 +35,4 @@ FP_CONFIG_SIZE=0xc00		#no lo se rick
 FP_CONFIG_BASE=$$(($(PATCHSTART) - $(FP_CONFIG_SIZE)))
 FP_DATA_BASE=0x198800		#0x800 + ram strat
 FP_CONFIG_ORIGBASE=0x199000	#0x1000 + ram strat
-FP_CONFIG_ORIGEND=0x199C54	#0x1c54 + ram_strart
+FP_CONFIG_ORIGEND=0x199C00	#0x1c00 + ram_strart
