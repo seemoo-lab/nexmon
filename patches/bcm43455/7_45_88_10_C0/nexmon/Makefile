@@ -32,7 +32,7 @@ all: fw_bcmdhd.bin
 init: FORCE
 	$(Q)if ! test -f BUILD_NUMBER; then echo 0 > BUILD_NUMBER; fi
 	$(Q)echo $$(($$(cat BUILD_NUMBER) + 1)) > BUILD_NUMBER
-	$(Q)touch src/version.c
+	#$(Q)touch src/version.c
 	$(Q)make -s -f $(NEXMON_ROOT)/patches/common/header.mk
 	$(Q)mkdir -p obj gen log
 
@@ -158,13 +158,17 @@ ifndef NEXMON_SETUP_ENV
 	$(error run 'source setup_env.sh' first in the repository\'s root directory)
 endif
 
-install-firmware: fw_bcmdhd.bin
+copy-firmware:
+	@printf "\033[0;31m  COPYING TO PHONE\033[0m %s => /sdcard/%s\n" $< $<
+	$(Q)adb push fw_bcmdhd.bin /sdcard/
+
+install-firmware:
 	@printf "\033[0;31m  REMOUNTING /vendor\033[0m\n"
 	$(Q)adb shell 'su -c "mount -o rw,remount /vendor"'
 	@printf "\033[0;31m  COPYING TO PHONE\033[0m %s => /sdcard/%s\n" $< $<
-	$(Q)adb push $< /sdcard/ >> log/adb.log 2>> log/adb.log
+	$(Q)adb push fw_bcmdhd.bin /sdcard/
 	@printf "\033[0;31m  COPYING\033[0m /sdcard/fw_bcmdhd.bin => /vendor/firmware/fw_bcmdhd.bin\n"
-	$(Q)adb shell 'su -c "cp /sdcard/fw_bcmdhd.bin /vendor/firmware/fw_bcmdhd.bin"'
+	$(Q)adb shell 'su -c "cp /sdcard/fw_bcmdhd.bin /system/etc/firmware/fw_bcmdhd.bin"'
 	@printf "\033[0;31m  RELOADING FIRMWARE\033[0m\n"
 	$(Q)adb shell 'su -c "ifconfig wlan0 down && ifconfig wlan0 up"'
 

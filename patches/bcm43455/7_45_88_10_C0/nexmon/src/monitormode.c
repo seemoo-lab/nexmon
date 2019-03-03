@@ -192,10 +192,10 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
 }
 
 // Hook the call to wl_monitor in wlc_monitor
-__attribute__((at(0x1AD75E, "", CHIP_VER_BCM43455, FW_VER_7_45_77_0_23_8_2017)))
+__attribute__((at(0x1B3A36, "", CHIP_VER_BCM43455, FW_VER_7_45_88_10_C0)))
 BLPatch(wl_monitor_hook, wl_monitor_hook);
 
-/* // no flashpatches left
+/*  // no flashpatches left
 // activate badfcs, if MONITOR_ACTIVATE_BADFCS is set
 void
 wlc_mctrl_hook(struct wlc_info *wlc, uint32 mask, uint32 val)
