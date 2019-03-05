@@ -21,6 +21,7 @@ CFLAGS= \
 	-DGIT_VERSION=\"$(GIT_VERSION)\" \
 	-DBUILD_NUMBER=\"$$(cat BUILD_NUMBER)\" \
 	-Wall -Werror -O2 -nostdlib -nostartfiles -ffreestanding -mthumb -march=$(NEXMON_ARCH) \
+	-Wno-unused-label \
 	-ffunction-sections -fdata-sections \
 	-I$(NEXMON_ROOT)/patches/include \
 	-Iinclude \
@@ -65,13 +66,14 @@ gen/nexmon.mk: gen/nexmon2.pre $(OBJS) $(FW_PATH)/definitions.mk
 	$(Q)rm -r gen/hcd_extracted || true
 	$(Q)cp -r $(FW_PATH)/hcd_extracted gen/
 	$(Q)rm gen/hcd_extracted/10_writeram_0x00218000.bin
+	# Printing the content of the nexmon.mk file
 	$(Q)printf "bcm4335c0.hcd: bcm4335c0.bin\n" > $@
 	$(Q)printf "\t$(Q)cat gen/hcd_extracted/rompatches/* > gen/hcd_extracted/00_writeram_0x00218000.bin\n" >> $@
 	$(Q)printf "\t$(Q)$(NEXMON_ROOT)/buildtools/hcd_generator/bthcd_generate -i gen/hcd_extracted -o bcm4335c0.hcd\n\n" >> $@
 	$(Q)printf "bcm4335c0.bin: gen/patch.elf FORCE\n" >> $@
 	$(Q)sort gen/nexmon2.pre | \
 		gawk -v src_file=gen/patch.elf -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.mk.1.awk | \
-		gawk -v ramstart=0x0 -v initial_patch_nr=$(INITIAL_PATCH_NR) --non-decimal-data -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.mk.2_bt.awk >> $@
+		gawk -v ramstart=0x0 -v initial_patch_nr=$(INITIAL_PATCH_NR) -v rom_area_below=$(ROM_AREA_BELOW) -v rom_area_start=$(ROM_AREA_START) -v rom_area_end=$(ROM_AREA_END) --non-decimal-data -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.mk.2_bt.awk >> $@
 	$(Q)printf "\nFORCE:\n" >> $@
 	$(Q)gawk '!a[$$0]++' $@ > tmp && mv tmp $@
 
