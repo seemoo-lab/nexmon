@@ -23,9 +23,9 @@
 #define HCI_WRITE_RAM_STR "\x4c\xfc"
 
 // LAUNCH_RAM 
-#define HCI_LAUNCH_RAM 0xFC4E
-#define HCI_LAUNCH_RAM_STR "\x4e\xfc"
-#define HCI_LAUNCH_RAM_STR_NEXUS_5 "\x4e\xfc\x04\xff\xff\xff\xff"
+#define HCI_LAUNCH_RAM_COMMAND 0xFC4E
+#define HCI_LAUNCH_RAM_COMMAND_STR "\x4e\xfc"
+#define HCI_LAUNCH_RAM_STR_DEFAULT "\x4e\xfc\x04\xff\xff\xff\xff" 
 
 // Update Baudrate
 #define HCI_UPDATE_BAUDRATE 0xFC18

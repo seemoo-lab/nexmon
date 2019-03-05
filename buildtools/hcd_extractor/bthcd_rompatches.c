@@ -13,7 +13,8 @@
 #include <stdbool.h>
 #include <argp.h>
 #include <string.h>
-#include <hci.h>
+
+#include <bluetooth/hci.h>
 
 #include <sys/stat.h>
 
@@ -117,10 +118,10 @@ analyze_patch_file(void)
 		uint8_t slot = -1;
 
 		// 0xFE marks the end of the TLV-list
-		if ( type == 0xFE )
+		if ( type == PATCHRAM_END_OF_LIST )
 			counter = 999;
 		
-		if(type == 0x08) {
+		if(type == PATCHRAM_PATCH_ROM) {
 			slot = *(uint8_t *) (void *) &patch_array[i+3];
 			slots[last_slot].slot_number = slot;
 			slots[last_slot].target_address = *(uint32_t *)(void *)&patch_array[i+4];

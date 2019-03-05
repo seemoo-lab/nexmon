@@ -11,6 +11,8 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 
+#include <bluetooth/hci.h>
+
 #define AS_STR2(TEXT) #TEXT
 #define AS_STR(TEXT) AS_STR2(TEXT)
 
@@ -114,7 +116,7 @@ analyze_patch_file(void)
 		uint8_t len = *(uint8_t *) (void *) &patch_array[i+2];
 		uint32_t addr = *(uint32_t *) (void *) &patch_array[i+3];
 
-		if (cmd != 0xfc4c) {
+		if (cmd != HCI_WRITE_RAM) {
 			printf("Found cmd which is not WriteRAM. Ignore it: %04x\n", cmd);
 			i += sizeof(cmd) + sizeof(len) + len;
 			continue;

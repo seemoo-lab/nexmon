@@ -1,0 +1,15 @@
+#ifndef NEXUS_5_HEADER_GUARD
+#define NEXUS_5_HEADER_GUARD
+
+// Nexus 5 specific complete LAUNCH_RAM bytestring
+#define HCI_LAUNCH_RAM_STR "\x4e\xfc\x04\xff\xff\xff\xff"
+
+#define PATCHRAM_ENABLED_BITMAP_ADDRESS 0x310204
+
+#define PATCHRAM_TARGET_TABLE_ADDRESS 0x310000
+
+#define PATCHRAM_VALUE_TABLE_ADDRESS 0xd0000
+
+#define PATCHRAM_AMOUNT_OF_SLOTS 128
+
+#endif

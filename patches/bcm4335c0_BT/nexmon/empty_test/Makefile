@@ -65,7 +65,6 @@ gen/nexmon.mk: gen/nexmon2.pre $(OBJS) $(FW_PATH)/definitions.mk
 	$(Q)rm -r gen/hcd_extracted || true
 	$(Q)cp -r $(FW_PATH)/hcd_extracted gen/
 	$(Q)rm gen/hcd_extracted/10_writeram_0x00218000.bin
-	# Printing the content of the nexmon.mk file
 	$(Q)printf "bcm4335c0.hcd: bcm4335c0.bin\n" > $@
 	$(Q)printf "\t$(Q)cat gen/hcd_extracted/rompatches/* > gen/hcd_extracted/00_writeram_0x00218000.bin\n" >> $@
 	$(Q)printf "\t$(Q)$(NEXMON_ROOT)/buildtools/hcd_generator/bthcd_generate -i gen/hcd_extracted -o bcm4335c0.hcd\n\n" >> $@
@@ -114,17 +113,6 @@ install-backup: bcm4335c0.orig.hcd
 	adb shell 'su -c "mount -o rw,remount /system"' && \
 	adb push $< /sdcard/ && \
 	adb shell 'su -c "cp /sdcard/bcm4335c0.orig.hcd /vendor/firmware/bcm4335c0.hcd"'
-	adb shell 'su -c "service call bluetooth_manager 8"'
-	adb shell 'su -c "service call bluetooth_manager 6"'
-
-debug-install:
-	@printf "\033[0;31m DEBUG INSTALLING PATCHES\033[0m %s => device (details: log/patches.log)\n" $<
-	cat gen/hcd_extracted/rompatches/* > gen/hcd_extracted/00_writeram_0x00218000.bin
-	/home/dennis/Downloads/nexmon/buildtools/hcd_generator/bthcd_generate -i gen/hcd_extracted -o bcm4335c0.hcd
-	@if [ -f bcm4335c0.orig.hcd ]; then echo "Copying patched HCD file to device..."; else printf "\033[0;31m ERROR: NO HCD BACKUP FOUND. PLEASE RUN make backup-hcd FIRST!\033[0m \n"; false; fi;
-	adb shell 'su -c "mount -o rw,remount /system"' && \
-	adb push bcm4335c0.hcd /sdcard/ && \
-	adb shell 'su -c "cp /sdcard/bcm4335c0.hcd /vendor/firmware/bcm4335c0.hcd"'
 	adb shell 'su -c "service call bluetooth_manager 8"'
 	adb shell 'su -c "service call bluetooth_manager 6"'
 

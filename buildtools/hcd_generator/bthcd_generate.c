@@ -8,7 +8,7 @@
 #include <string.h>
 #include <dirent.h>
 
-#include <hci.h>
+#include <bluetooth/hci.h>
 
 FILE* hcdfile = NULL;
 
@@ -169,7 +169,7 @@ main(int argc, char **argv)
 	// HCD Command: LAUNCH_RAM (0xFC_4E)
 	// LAUNCH_RAM 0x04 0xff_ff_ff_ff 
 	// To issue the bluetooth-chip to reboot into the normal bluetooth mode
-	fwrite(HCI_LAUNCH_RAM_STR_NEXUS_5, 7, 1, hcdfile);
+	fwrite(HCI_LAUNCH_RAM_STR_DEFAULT, 7, 1, hcdfile);
 	fclose(hcdfile);
 	if(hcdfile){
 		hcdfile = NULL;

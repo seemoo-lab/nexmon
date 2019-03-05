@@ -2,7 +2,7 @@
 #define FIRMWARE_HEADER_GUARD
 
 #ifdef NEXUS_5
-#include <nexus5.h>
+#include <bluetooth/nexus5.h>
 #elif
 
 #endif
