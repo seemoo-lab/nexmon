@@ -115,3 +115,7 @@ After installing this patch follow these instructions:
 [source](https://github.com/seemoo-lab/internalblue/blob/master/examples/NiNo_PoC.py)
 
 This project holds the original plain assembly PoC as well as a C-based implementation.
+
+**empty_test:** `patches/bcm4335c0_BT/nexmon/empty_test`
+
+This is an empty test project containing the basic patch-layout including a valid makefile. This can be used as template for new patches.
