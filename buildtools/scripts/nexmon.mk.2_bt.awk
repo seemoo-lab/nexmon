@@ -15,6 +15,9 @@
 #####
 BEGIN {
 	patch_nr = initial_patch_nr;
+        lower_rom_area = rom_area_below;
+        rom_area_lower_boundary = rom_area_start;
+        rom_area_upper_boundary = rom_area_end;
 }
 function printPatchPrefix(address)
 {
@@ -41,7 +44,7 @@ function printPatchCat(input)
 		# Handling of patches which need to be written to the rom.
         # Since this is not directly possible we need to create rompatch files to be written to the
         # ram (see rampatch mechanism).
-        if ($1 <= 0x90000 || ($1 >= 0x260000 && $1 <= 0x268000)) {   
+        if ($1 <= lower_rom_area || ($1 >= rom_area_lower_boundary && $1 <= rom_area_upper_boundary)) {   
             # rampatch mechanism
             # All data written to the file is in little-endian, documenation below is big-endian for
             # a better legibility:

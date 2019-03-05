@@ -73,7 +73,7 @@ gen/nexmon.mk: gen/nexmon2.pre $(OBJS) $(FW_PATH)/definitions.mk
 	$(Q)printf "bcm4335c0.bin: gen/patch.elf FORCE\n" >> $@
 	$(Q)sort gen/nexmon2.pre | \
 		gawk -v src_file=gen/patch.elf -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.mk.1.awk | \
-		gawk -v ramstart=0x0 -v initial_patch_nr=$(INITIAL_PATCH_NR) --non-decimal-data -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.mk.2_bt.awk >> $@
+		gawk -v ramstart=0x0 -v initial_patch_nr=$(INITIAL_PATCH_NR) -v rom_area_below=$(ROM_AREA_BELOW) -v rom_area_start=$(ROM_AREA_START) -v rom_area_end=$(ROM_AREA_END) --non-decimal-data -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.mk.2_bt.awk >> $@
 	$(Q)printf "\nFORCE:\n" >> $@
 	$(Q)gawk '!a[$$0]++' $@ > tmp && mv tmp $@
 
