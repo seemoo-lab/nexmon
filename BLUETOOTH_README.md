@@ -100,6 +100,14 @@ patch sources base path: `patches/bcm4335c0_BT`
 **CVE_2018_5383:** `patches/bcm4335c0_BT/nexmon/CVE_2018_5383`
 
 Proof of concept for the vulnerability with the [CVE 2018 5383](https://nvd.nist.gov/vuln/detail/CVE-2018-5383). This is (currently) only the basic assembly PoC wrapped into a C-function.
+After installing this patch follow these instructions:
+1. Start InternalBlue CLI for Nexus 5 and activate the LMP monitor.
+2. Pair the Nexus 5 with the other BT device
+3. If pairing fails with message 'Incorrect PIN', repeat step 2.
+   If the other device is vulnerable, pairing succeeds with 50% probability.
+   If the other device is NOT vulnerable, pairing never succeeds.
+4. After pairing was successful, check the LMP capture and verify that
+   the Nexus 5 sent zero as y-coordinate in the 'encapsulated payload' packet
 
 **NiNo_PoC:** `patches/bcm4335c0_BT/nexmon/NiNo_PoC`
 
