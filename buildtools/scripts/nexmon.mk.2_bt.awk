@@ -14,7 +14,12 @@
 # <addr to patch> PATCH <obj file which holds the patch> <patch_name>
 #####
 BEGIN {
+	# The right hand parameter are exported as variables to the shell environment.
+	# Their definition can be found in the firmwares definition.mk file
+	# e.g. firmwares/bcm4335c0_BT/1_BT/definitions.mk
 	patch_nr = initial_patch_nr;
+	# Parameter below are used to distinguish between ROM and RAM area.
+	# This is needed since ROM and RAM patches need to be handled differently.
         lower_rom_area = rom_area_below;
         rom_area_lower_boundary = rom_area_start;
         rom_area_upper_boundary = rom_area_end;
