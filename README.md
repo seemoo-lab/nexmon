@@ -34,7 +34,8 @@ bcm43451b1               | 7_63_43_0            | iPhone 6                  | iO
 bcm43455                 | 7_45_77_0_hw         | Huawei P9                 | Android 7 Stock           |  X  |  X  |  X  |  X  |  X  |    
 bcm43455                 | 7_120_5_1_sta_C0     | Galaxy J7 2017            | ?                         |     |     |     |  X  |  X  |    
 bcm43455                 | 7_45_77_0_hw(8-2017) | Huawei P9                 | Android 7 Stock           |  X  |  X  |  X  |  X  |  X  |    
-bcm43455c0               | 7_45_154             | Raspberry Pi B3+          | Raspbian Kernel 4.9/4.14  |  X  |  X  |     |  X  |  X  |    
+bcm43455c0               | 7_45_154             | Raspberry Pi B3+          | Raspbian Kernel 4.9/4.14  |  X  |  X  |     |  X  |  X  | 
+bcm43455c0               | 7_45_173             | Raspberry Pi B3+          | Raspbian Kernel 4.19      |  X  |  X  |     |  X  |  X  |    
 bcm4356                  | 7_35_101_5_sta       | Nexus 6                   | Android 7.1.2             |  X  |  X  |     |  X  |  X  |  O 
 bcm4358                  | 7_112_200_17_sta     | Nexus 6P                  | Android 7 Stock           |  X  |  X  |     |  X  |  X  |  O 
 bcm4358                  | 7_112_201_3_sta      | Nexus 6P                  | Android 7.1.2 Stock       |  X  |  X  |     |  X  |  X  |  O 
