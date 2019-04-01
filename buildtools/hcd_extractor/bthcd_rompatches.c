@@ -85,10 +85,6 @@ read_file_to_array(char *filename, char **buffer, long *filelen)
 		*buffer = (char *) malloc(*filelen + 1);
 		fread(*buffer, *filelen, 1, fileptr);
 		fclose(fileptr);
-		if(fileptr) {
-			free(fileptr);
-			fileptr = NULL;
-		}
 		return *filelen;	
 	}
 	printf("Could not open file %s", filename);
@@ -175,8 +171,6 @@ write_used_slots_file(void)
 		fprintf(slot_out_file, "%d\t0x%08X\t0x%08X\n", slot_number, target_address, new_data); 
 	}
 	fclose(slot_out_file);
-	free(slot_out_file);
-	slot_out_file = NULL;
 	free(path);
 	path = NULL;
 }
