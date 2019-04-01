@@ -3,7 +3,7 @@ import argparse
 import os
 
 from pwn import *
-from internalblue import core
+from internalblue.adbcore import ADBCore
 
 context.arch = 'thumb'
 
@@ -39,7 +39,8 @@ if __name__ == '__main__':
     target = int(args.target, 16)
     patch_file = args.patchFile
     out_file = args.patchOutFile
-    internalblue = core.InternalBlue()
+    internalblue = ADBCore()
+    internalblue.interface = internalblue.device_list()[0][1]  # just use the first device
     internalblue.connect()
     alignment = target % 4
     if alignment == 0:
