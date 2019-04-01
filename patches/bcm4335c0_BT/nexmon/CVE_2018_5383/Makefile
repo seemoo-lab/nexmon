@@ -67,7 +67,7 @@ gen/nexmon.mk: gen/nexmon2.pre $(OBJS) $(FW_PATH)/definitions.mk
 	$(Q)rm gen/hcd_extracted/10_writeram_0x00218000.bin
 	# Printing the content of the nexmon.mk file
 	$(Q)printf "bcm4335c0.hcd: bcm4335c0.bin\n" > $@
-	$(Q)printf "\t$(Q)cat gen/hcd_extracted/rompatches/* > gen/hcd_extracted/00_writeram_0x00218000.bin\n" >> $@
+	$(Q)printf "\t$(Q)cat gen/hcd_extracted/rompatches/*.bin > gen/hcd_extracted/00_writeram_0x00218000.bin\n" >> $@
 	$(Q)printf "\t$(Q)$(NEXMON_ROOT)/buildtools/hcd_generator/bthcd_generate -i gen/hcd_extracted -o bcm4335c0.hcd\n\n" >> $@
 	$(Q)printf "bcm4335c0.bin: gen/patch.elf FORCE\n" >> $@
 	$(Q)sort gen/nexmon2.pre | \

@@ -30,12 +30,12 @@ function printPatchPrefix(address)
     byte_1 = rshift(and(address, 0x00ff0000), 16);
     byte_2 = rshift(and(address, 0x0000ff00), 8);
     byte_3 = and(address,        0x000000ff);
-    printf("\t$(Q)echo -en '\\x08\\x0f\\x00\\x%02x\\x%02x\\x%02x\\x%02x\\x%02x' > gen/hcd_extracted/rompatches/rompatch_nr%04d_0x08.bin\n",
+    printf("\t$(Q)/bin/echo -en '\\x08\\x0f\\x00\\x%02x\\x%02x\\x%02x\\x%02x\\x%02x' > gen/hcd_extracted/rompatches/rompatch_nr%04d_0x08.bin\n",
             patch_nr, byte_3, byte_2, byte_1, byte_0, 5000 + patch_nr);
 }
 function printPatchSuffix()
 {
-    printf("\t$(Q)echo -en '\\x00\\x00\\x00\\x00\\x00\\x00' >> gen/hcd_extracted/rompatches/rompatch_nr%04d_0x08.bin\n", 5000 + patch_nr)
+    printf("\t$(Q)/bin/echo -en '\\x00\\x00\\x00\\x00\\x00\\x00' >> gen/hcd_extracted/rompatches/rompatch_nr%04d_0x08.bin\n", 5000 + patch_nr)
 }
 function printPatchCat(input)
 {
