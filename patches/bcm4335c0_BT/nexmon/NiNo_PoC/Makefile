@@ -87,7 +87,7 @@ gen/nexmon.py: gen/nexmon2.pre $(OBJS) $(FW_PATH)/definitions.mk
 	@printf "\033[0;31m  GENERATING INTERNALBLUE PYTHON SCRIPT\033[0m gen/nexmon.pre => %s\n" $@
 	$(Q)sort gen/nexmon2.pre | \
 		gawk -v src_file=gen/patch.elf -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.mk.1.awk | \
-		gawk -v ramstart=0x0 -v rom_area_below=$(ROM_AREA_BELOW) -v rom_area_start=$(ROM_AREA_START) -v rom_area_end=$(ROM_AREA_END) --non-decimal-data -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.mk.2_bt_py.awk > $@
+		gawk -v ramstart=0x0 -v rom_area_below=$(ROM_AREA_BELOW) -v rom_area_start=$(ROM_AREA_START) -v rom_area_end=$(ROM_AREA_END) -v objcopy=$(NEXMON_ROOT)/buildtools/gcc-arm-none-eabi-5_4-2016q2-linux-x86/bin/arm-none-eabi-objcopy --non-decimal-data -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.mk.2_bt_py.awk > $@
 
 gen/memory.ld: $(FW_PATH)/definitions.mk
 	@printf "\033[0;31m  GENERATING LINKER FILE\033[0m %s\n" $@
