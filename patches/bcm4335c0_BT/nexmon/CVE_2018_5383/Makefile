@@ -21,12 +21,19 @@ CFLAGS= \
 	-DGIT_VERSION=\"$(GIT_VERSION)\" \
 	-DBUILD_NUMBER=\"$$(cat BUILD_NUMBER)\" \
 	-Wall -Werror -O2 -nostdlib -nostartfiles -ffreestanding -mthumb -march=$(NEXMON_ARCH) \
+	-Wno-unused-label \
 	-ffunction-sections -fdata-sections \
 	-I$(NEXMON_ROOT)/patches/include \
 	-Iinclude \
 	-I$(FW_PATH)
 
 all: bcm4335c0.hcd
+
+python: bcm4335c0.py
+
+internalblue: python
+	@printf "\033[0;31m  EXECUTING INTERNALBLUE\033[0m\n" 
+	$(Q)python bcm4335c0.py
 
 init: FORCE
 	$(Q)if ! test -f BUILD_NUMBER; then echo 0 > BUILD_NUMBER; fi
@@ -76,6 +83,12 @@ gen/nexmon.mk: gen/nexmon2.pre $(OBJS) $(FW_PATH)/definitions.mk
 	$(Q)printf "\nFORCE:\n" >> $@
 	$(Q)gawk '!a[$$0]++' $@ > tmp && mv tmp $@
 
+gen/nexmon.py: gen/nexmon2.pre $(OBJS) $(FW_PATH)/definitions.mk
+	@printf "\033[0;31m  GENERATING INTERNALBLUE PYTHON SCRIPT\033[0m gen/nexmon.pre => %s\n" $@
+	$(Q)sort gen/nexmon2.pre | \
+		gawk -v src_file=gen/patch.elf -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.mk.1.awk | \
+		gawk -v ramstart=0x0 -v rom_area_below=$(ROM_AREA_BELOW) -v rom_area_start=$(ROM_AREA_START) -v rom_area_end=$(ROM_AREA_END) --non-decimal-data -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.mk.2_bt_py.awk > $@
+
 gen/memory.ld: $(FW_PATH)/definitions.mk
 	@printf "\033[0;31m  GENERATING LINKER FILE\033[0m %s\n" $@
 	$(Q)printf "patch : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(PATCHSTART) $(PATCHSIZE) >> $@
@@ -89,6 +102,9 @@ bcm4335c0.hcd: init gen/patch.elf $(FW_PATH)/$(BIN_FILE) gen/nexmon.mk
 	@printf "\033[0;31m  APPLYING PATCHES\033[0m gen/nexmon.mk => %s (details: log/patches.log)\n" $@
 	$(Q)make -f gen/nexmon.mk >>log/patches.log 2>>log/flashpatches.log
 
+bcm4335c0.py: init gen/patch.elf gen/nexmon.py
+	@printf "\033[0;31m  GENERATING INTERNALBLUE SCRIPT\033[0m $@\n" 
+	$(Q)sed -e "/# GENERATED PATCHES/r gen/nexmon.py" $(NEXMON_ROOT)/buildtools/scripts/bt_install_patch.py > $@
 
 check-nexmon-setup-env:
 ifndef NEXMON_SETUP_ENV

@@ -2,6 +2,7 @@
 	if ($2 == "PATCH") {
 		#FIXME calling objcopy directly might break on other systems
 		# is in buildtools/gcc-arm-none-eabi-5_4-2016q2-linux-x86/bin/arm-none-eabi-objdump
+		# and $NEXMON_ROOT is not found within a syscall like this...
 		system("/usr/bin/arm-none-eabi-objcopy -O binary -j .text." $4 " gen/patch.elf gen/section.bin");
 		
 		# Check if we need Patchram or normal RAM

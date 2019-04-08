@@ -70,8 +70,6 @@ To generate a Python script, call `make python`. If you want to execute it direc
   # vim contains xxd
   sudo pacman -S lib32-glibc lib32-ncurses lib32-gcc-libs vim
   ```
-* Set up the [InternalBlue](https://github.com/seemoo-lab/internalblue) project and install its cli using `setup.py`. 
-InternalBlue is needed while compiling patches to non 4-byte aligned addresses and for live patching.
 * Clone our repository:
 
       git clone https://github.com/seemoo-lab/nexmon.git
@@ -83,11 +81,12 @@ some build tools and extract the content from the original HCD files.
       git checkout bluetooth-wip
       source setup_env.sh
       make
-  
-* Go to the *patches* folder of your target device (e.g. bcm4335c0 for the Nexus 5), setup the build environment (again),
-go to the folder of the patch you want to build and build it. In some cases you already need to be connected to your
-target device to apply patches. For example this is a requirement on the Nexus 5 if your patch is not in a 
-4-byte-aligned position. 
+
+
+##### Build Persistent Patches
+
+* Go to the `patches` folder of your target device (e.g. `bcm4335c0_BT` for the *Nexus 5*), setup the build environment (again),
+go to the folder of the patch you want to build and build it. 
     
       cd patches/bcm4335c0_BT/nexmon
       source setup_env.sh
@@ -101,9 +100,38 @@ target device to apply patches. For example this is a requirement on the Nexus 5
       
 * If something fails, reinstall your original `.hcd` file.
 
-      make install-backup 
+      make install-backup
       
-  
+*InternalBlue* is not required for building persistent patches.
+However, patches that are not 4-byte-aligned and inside ROM require a valid memory dump. If you want to add support
+for a new chip, you will need *InternalBlue* to do so.
+
+
+##### Build Live Patches
+
+* Set up the [InternalBlue](https://github.com/seemoo-lab/internalblue) project and install its cli using `setup.py`. 
+
+* Go to the `patches` folder of your target device (e.g. `bcm4335c0_BT` for the *Nexus 5*), setup the build environment (again),
+go to the folder of the patch you want to build. 
+    
+      cd patches/bcm4335c0_BT/nexmon
+      source setup_env.sh
+      cd NiNo_PoC
+
+* To generate a Python script anyone with *InternalBlue* can use to apply the patch, even without the *Nexmon* build
+environment, run:
+
+      make python
+
+* During patch development, directly installing the patch via *InternalBlue* to the first ADB device found might be more practical:
+
+      make internalblue
+
+After running the patch, you can open another *InternalBlue* instance while testing your patch or modify the Python
+script not to close the *InternalBlue* connection. Some errors will trigger coredumps, meaning that the Bluetooth
+chip prints all registers and RAM contents via HCI. Especially on an evaluation board with lots of RAM this might
+take a while. On a selection of chips, *InternalBlue* also supports a `tracepoint` feature, which is similar to a
+coredump—but only executed once and firmware execution is continued afterwards.
 
 ### Where to find what?
 
@@ -120,16 +148,12 @@ The extracted patches, as well as the user written ones are merged together into
 
 **nexmon.mk.2_bt.awk:** `buildtools/scripts/nexmon.mk.2_bt.awk`
 
-This awk-script is used to generate a proper `MAKEFILE` under consideration that we don't build a WiFi firmware patch, but a bluetooth one. 
-
-**bt_patch_alignment.py**: `buildtools/scripts/bt_patch_alignment.py`
-
-This script handles 4-byte alignment If the patches which is going to be compiled patches at a non 4-byte-aligned address, it is needed to create an aligned patch. This is needed due to the fact that it's only possible to write to 4-byte aligned addresses.
+This awk-script is used to generate a proper `MAKEFILE` under consideration that we don't build a WiFi firmware patch, but a Bluetooth one. 
 
 #### Firmware
 
-**BCM 4330c0:**
-- firmware: `firmware/bcm433c0_BT/` 
+**BCM 43305c0:**
+- firmware: `firmware/bcm4335c0_BT/` 
 
 #### Common Code
 **common between all nexmon projects:**
