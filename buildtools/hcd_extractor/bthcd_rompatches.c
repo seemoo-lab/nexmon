@@ -104,7 +104,6 @@ analyze_patch_file(void)
 {
 	int i = 0;
 	int counter = 0;
-	bool addrcnt_new = true;
 	FILE *patch_out_file = NULL;
 	char patch_out_file_name[256];
 

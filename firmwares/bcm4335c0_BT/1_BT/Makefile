@@ -3,12 +3,12 @@ include definitions.mk
 all: hcd_extracted/rompatches
 
 hcd_extracted/rompatches: hcd_extracted/10_writeram_0x00218000.bin definitions.mk
-	@printf "\033[0;31m  EXTRACT HCD FILE \033[0m\n"
-	$(Q)$(NEXMON_ROOT)/buildtools/hcd_extractor/bthcd_rompatches -p $< -o $@
+	@printf "\033[0;31m  EXTRACT HCD FILE ROMPATCHES \033[0m\n"
+	$(Q)$(NEXMON_ROOT)/buildtools/hcd_extractor/bthcd_rompatches -p $< -o $@ >/dev/null
 
 hcd_extracted/10_writeram_0x00218000.bin: $(HCD_FILE) definitions.mk
-	@printf "\033[0;31m  EXTRACT HCD FILE \033[0m\n"
-	$(Q)$(NEXMON_ROOT)/buildtools/hcd_extractor/bthcd -p $< -o hcd_extracted
+	@printf "\033[0;31m  EXTRACT HCD FILE RAMPATCHES \033[0m\n"
+	$(Q)$(NEXMON_ROOT)/buildtools/hcd_extractor/bthcd -p $< -o hcd_extracted >/dev/null
 
 clean:
 	@printf "\033[0;31m  CLEANING\033[0m\n"
