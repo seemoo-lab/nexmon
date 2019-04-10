@@ -135,7 +135,7 @@ install-backup: bcm4335c0.orig.hcd
 
 clean-firmware: FORCE
 	@printf "\033[0;31m  CLEANING\033[0m\n"
-	$(Q)rm -fr bcm4335c0.hcd bcm4335c0.bin obj gen log
+	$(Q)rm -fr bcm4335c0.hcd bcm4335c0.bin obj gen log patchout_complete.bin
 
 clean: clean-firmware
 	$(Q)rm -f BUILD_NUMBER
