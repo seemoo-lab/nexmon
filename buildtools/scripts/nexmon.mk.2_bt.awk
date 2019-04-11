@@ -38,7 +38,7 @@ function printPatchSuffix()
 		# Handling of patches which need to be written to the rom.
 		# Since this is not directly possible we need to create rompatch files to be written to the
 		# ram (see rampatch mechanism).
-		if ($1 <= rom_area_below || ($1 >= rom_area_start && $1 <= rom_area_end)) {   
+		if ($1 <= rom_area_below) {   
 		# rampatch mechanism
 		# All data written to the file is in little-endian, documenation below is big-endian for
 		# a better legibility:

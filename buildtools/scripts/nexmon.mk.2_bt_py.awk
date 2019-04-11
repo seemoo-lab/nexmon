@@ -3,7 +3,7 @@
 		system(objcopy " -O binary -j .text." $4 " gen/patch.elf gen/section.bin");
 		
 		# Check if we need Patchram or normal RAM
-		if ($1 <= rom_area_below || ($1 >= rom_area_start && $1 <= rom_area_end)) {   
+		if ($1 <= rom_area_below) {   
 			# InternalBlue already does the 4 byte alignment for us within ROM
 			printf("internalblue.patchRom(0x%08x, '", $1);
 		} else {

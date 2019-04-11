@@ -33,9 +33,9 @@
  **************************************************************************/
 
 #pragma NEXMON targetregion "patch"
-
-#include <firmware_version.h>   // definition of firmware version macros
+#include <firmware_version.h>
 #include <patcher.h>
+
 
 __attribute__((at(0x00218000, "", CHIP_VER_BCM20735B1_BT))) //TODO location is zero otherwise
 void nino(void) {
