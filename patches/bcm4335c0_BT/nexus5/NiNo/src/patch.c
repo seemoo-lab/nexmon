@@ -32,13 +32,12 @@
  *                                                                         *
  **************************************************************************/
 
-
 #pragma NEXMON targetregion "patch"
 #include <firmware_version.h>
 #include <patcher.h>
 
 
-__attribute__((at(0xd7800, "", CHIP_VER_BCM4335C0_BT))) //TODO location is zero otherwise
+//__attribute__((at(0xd7800, "", CHIP_VER_BCM4335C0_BT)))
 void nino(void) {
 	// preamble:
 	// restore first 5 bytes of sp_handleEvent

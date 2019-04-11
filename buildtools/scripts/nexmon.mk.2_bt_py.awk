@@ -14,7 +14,7 @@
 		printf("')\n");
 	} else if (($2 == "REGION") || ($2 == "TARGETREGION" && $4 != "")) {
 		system(objcopy " -O binary -j .text." $1 " gen/patch.elf gen/section.bin");
-		printf("internalblue.writeMem(0x%08x, '", $1);
+		printf("internalblue.writeMem(0x%08x, '", "0x"$4);
 		system("hexdump -v -e '/1 \"\\\\x%02x\"'  gen/section.bin");
 		printf("')\n");
 	}

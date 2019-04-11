@@ -37,7 +37,7 @@
 #include <patcher.h>
 
 
-__attribute__((at(0x00218000, "", CHIP_VER_BCM20735B1_BT))) //TODO location is zero otherwise
+//__attribute__((at(0x00218000, "", CHIP_VER_BCM20735B1_BT)))
 void nino(void) {
 	// preamble:
 	// restore first 5 bytes of sp_handleEvent
