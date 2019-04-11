@@ -58,7 +58,7 @@ void naked_prefix(void){
 		   );
 }
 
-__attribute__((at(HOOK_IO_CAP_RESP, "", CHIP_VER_BCM4335C0_BT, FW_VER_1_BT)))
+__attribute__((at(HOOK_IO_CAP_RESP, "", CHIP_VER_BCM4335C0_BT, FW_VER_NEXUS5)))
 BPatch(naked_prefix, naked_prefix)
 
 #else
@@ -83,7 +83,7 @@ void nino_payload_naked(void){
 }
 
 
-__attribute__((at(HOOK_IO_CAP_RESP, "", CHIP_VER_BCM4335C0_BT, FW_VER_1_BT)))
+__attribute__((at(HOOK_IO_CAP_RESP, "", CHIP_VER_BCM4335C0_BT, FW_VER_NEXUS5)))
 BPatch(nino_payload_naked, nino_payload_naked)
 
 #endif

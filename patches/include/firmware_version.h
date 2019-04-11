@@ -102,7 +102,10 @@
 #define FW_VER_10_10_69_252                310
 #define FW_VER_10_10_122_20                311
 
-// for CHIP_VER_BCM4335c0
-#define FW_VER_1_BT                        410
+// for CHIP_VER_BCM4335C0
+#define FW_VER_NEXUS5                      410
+
+// for CHIP_VER_BCM20735B1
+#define FW_VER_EVAL                        411
 
 #endif /*FIRMWARE_VERSION_H*/

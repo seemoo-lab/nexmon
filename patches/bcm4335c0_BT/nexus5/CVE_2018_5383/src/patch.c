@@ -61,7 +61,7 @@ void cve(void){
 }
 
 
-//__attribute__((at(HOOKS_LOCATION, "", CHIP_VER_BCM4335C0_BT, FW_VER_1_BT)))
+//__attribute__((at(HOOKS_LOCATION, "", CHIP_VER_BCM4335C0_BT, FW_VER_NEXUS5)))
 //__attribute__((optimize("O0")))
 //void pk_recv_hook(void) {
 //	__asm__(
@@ -78,11 +78,11 @@ void cve(void){
 //	    "pop {r0-r3,pc}\n");
 //}
 
-__attribute__((at(PK_RECV_HOOK_ADDRESS, "", CHIP_VER_BCM4335C0_BT, FW_VER_1_BT)))
+__attribute__((at(PK_RECV_HOOK_ADDRESS, "", CHIP_VER_BCM4335C0_BT, FW_VER_NEXUS5)))
 BLPatch(pk_recv_hook, 0xd7800 + 4);
 
 
-//__attribute__((at(HOOKS_LOCATION + 52, "", CHIP_VER_BCM4335C0_BT, FW_VER_1_BT)))
+//__attribute__((at(HOOKS_LOCATION + 52, "", CHIP_VER_BCM4335C0_BT, FW_VER_NEXUS5)))
 //__attribute__((optimize("O0")))
 //void pk_send_hook(void){
 //  __asm__( "nop\n\t"
@@ -98,11 +98,11 @@ BLPatch(pk_recv_hook, 0xd7800 + 4);
 
 //}
 
-__attribute__((at(PK_SEND_HOOK_ADDRESS, "", CHIP_VER_BCM4335C0_BT, FW_VER_1_BT)))
+__attribute__((at(PK_SEND_HOOK_ADDRESS, "", CHIP_VER_BCM4335C0_BT, FW_VER_NEXUS5)))
 BLPatch(pk_send_hook, 0xd7800 + 6)
 
 
-//__attribute__((at(HOOKS_LOCATION + 100, "", CHIP_VER_BCM4335C0_BT, FW_VER_1_BT)))
+//__attribute__((at(HOOKS_LOCATION + 100, "", CHIP_VER_BCM4335C0_BT, FW_VER_NEXUS5)))
 //__attribute__((optimize("O0")))
 //void gen_priv_key_hook(void){
 //  __asm__(
@@ -120,7 +120,7 @@ BLPatch(pk_send_hook, 0xd7800 + 6)
 //	   );
 //}
 
-__attribute__((at(GEN_PRIV_KEY_ADDRESS, "", CHIP_VER_BCM4335C0_BT, FW_VER_1_BT)))
+__attribute__((at(GEN_PRIV_KEY_ADDRESS, "", CHIP_VER_BCM4335C0_BT, FW_VER_NEXUS5)))
 BLPatch(gen_priv_key_hook, 0xd7800 + 8)
 
 

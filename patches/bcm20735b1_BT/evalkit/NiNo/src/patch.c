@@ -55,6 +55,6 @@ void nino(void) {
 
 
 // write hook to nino into the first 4 bytes of sp_handleEvent
-__attribute__((at(0x0006C00E, "", CHIP_VER_BCM20735B1_BT, FW_VER_1_BT)))
+__attribute__((at(0x0006C00E, "", CHIP_VER_BCM20735B1_BT, FW_VER_EVAL)))
 BPatch(nino1, nino);
 
