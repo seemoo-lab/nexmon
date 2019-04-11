@@ -122,6 +122,11 @@ analyze_patch_file(void)
 			continue;
 		}
 
+		if (len == 1) {
+			fprintf(stderr, "HCD file is for OTA updates, extraction not supported.\n");
+			exit(EXIT_FAILURE);
+		}
+
 		if (addrcnt_new || addrcnt != addr) {
 			addrcnt_new = false;
 			printf("new patch section addrcnt - addr: 0x%08x\n", addrcnt - addr);
@@ -135,8 +140,11 @@ analyze_patch_file(void)
 		addrcnt = addr + len - sizeof(addr);
 
 		if ((long)addr + len > whole_patch_len) {
-			fprintf(stderr, "ERR: patch address out of bounds: 0x%08X\n", addr);
-			exit(EXIT_FAILURE);
+			//TODO Eval Board has patches in range 0xFF000000 ... 0xFF0058DA
+			fprintf(stderr, "ERR: patch address out of bounds, skipping: 0x%08X\n", addr);
+			i += sizeof(cmd) + sizeof(len) + len;
+			continue;
+			
 		}
 		memcpy(&whole_patch[addr], &patch_array[i + sizeof(cmd) + sizeof(len) + sizeof(addr)], len - sizeof(addr));
 
