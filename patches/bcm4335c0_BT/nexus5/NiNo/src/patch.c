@@ -40,7 +40,7 @@
 //__attribute__((at(0xd7800, "", CHIP_VER_BCM4335C0_BT)))
 void nino(void) {
 	// preamble:
-	// restore first 5 bytes of sp_handleEvent
+	// restore first 4 bytes of sp_handleEvent
 	__asm__(	"push {r4-r6, lr}\n\t"
 			"mov r4, r0\n\t"); 
 
