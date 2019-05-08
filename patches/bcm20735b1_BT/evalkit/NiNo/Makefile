@@ -3,10 +3,11 @@ include ../version.mk
 include $(FW_PATH)/definitions.mk
 
 LOCAL_SRCS=$(wildcard src/*.c)
-COMMON_SRCS=$(wildcard $(NEXMON_ROOT)/patches/common/*.c)
+COMMON_SRCS=$(wildcard $(NEXMON_ROOT)/patches/common/wrapper.c)
 FW_SRCS=$(wildcard $(FW_PATH)/*.c)
 
 #FIXME wrapper is missing in objects that need to be built!
+# todo maybe make our own common package for bluetooth...
 OBJS=$(addprefix obj/,$(notdir $(LOCAL_SRCS:.c=.o)) $(notdir $(COMMON_SRCS:.c=.o)) $(notdir $(FW_SRCS:.c=.o)))
 
 CFLAGS= \

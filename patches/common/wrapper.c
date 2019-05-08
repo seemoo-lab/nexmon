@@ -1740,6 +1740,53 @@ uint8
 wlc_phy_set_txpwr_clamp_acphy(void *pi)
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM20735B1_BT, FW_VER_ALL, 0x26B1A)
+void
+bthci_event_vs_DBFW_CoreDumpInfoEvent(uint8 v1, uint8 v2)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM20735B1_BT, FW_VER_ALL, 0x26C7A)
+void
+bthci_event_vs_DBFW_CoreDumpRAMImageEvent()
+VOID_DUMMY
+
+AT(CHIP_VER_BCM20735B1_BT, FW_VER_ALL, 0xA379A)
+void
+dbfw_coredump_triggered_by_fw(uint8 continue_exec)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM20735B1_BT, FW_VER_ALL, 0x26BB4)
+void
+bthci_event_vs_DBFW_CoreDumpCPURegsEvent(int* sp, uint8 v2)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4335C0_BT, FW_VER_ALL, 0x23F0E)
+int
+intctl_ClrPendingInt(int a, int b)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4335C0_BT, FW_VER_ALL, 0x398c1)
+void
+send_hci_event_without_free(char *buffer)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4335C0_BT, FW_VER_ALL, 0x7AFC)
+char*
+get_cmd_buf(char event_code, uint8 size)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4335C0_BT, FW_VER_ALL, 0x3FA36)
+void
+free_bloc_buffer_aligned(char *buffer)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4335C0_BT, FW_VER_ALL, 0x46FE6)
+int
+memcpybt(void *dst, void *src, int len)
+RETURN_DUMMY
+
+  
+
 #undef VOID_DUMMY
 #undef RETURN_DUMMY
 #undef AT
