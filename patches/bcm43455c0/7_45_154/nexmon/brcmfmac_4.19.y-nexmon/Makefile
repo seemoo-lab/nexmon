@@ -17,9 +17,8 @@
 
 ccflags-y += \
 	-I$(NEXMON_ROOT)/patches/bcm43455c0/7_45_154/nexmon/brcmfmac_4.19.y-nexmon	\
-	-I$(NEXMON_ROOT)/patches/bcm43455c0/7_45_154/nexmon/brcmfmac_4.19.y-nexmon/include
-
-ccflags-$(CONFIG_BRCMDBG)	+= -DDEBUG
+	-I$(NEXMON_ROOT)/patches/bcm43455c0/7_45_154/nexmon/brcmfmac_4.19.y-nexmon/include \
+	-DDEBUG
 
 obj-$(CONFIG_BRCMFMAC) += brcmfmac.o
 brcmfmac-objs += \
@@ -35,7 +34,8 @@ brcmfmac-objs += \
 		feature.o \
 		btcoex.o \
 		vendor.o \
-		pno.o
+		pno.o \
+		debug.o
 brcmfmac-$(CONFIG_BRCMFMAC_PROTO_BCDC) += \
 		bcdc.o \
 		fwsignal.o
@@ -50,8 +50,6 @@ brcmfmac-$(CONFIG_BRCMFMAC_USB) += \
 		usb.o
 brcmfmac-$(CONFIG_BRCMFMAC_PCIE) += \
 		pcie.o
-brcmfmac-$(CONFIG_BRCMDBG) += \
-		debug.o
 brcmfmac-$(CONFIG_BRCM_TRACING) += \
 		tracepoint.o
 brcmfmac-$(CONFIG_OF) += \

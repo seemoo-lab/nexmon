@@ -38,6 +38,8 @@
 #include "proto.h"
 #include "pcie.h"
 #include "common.h"
+#include "defs.h"
+#include "sdio.h"
 
 /* NEXMON */
 #include <linux/if_arp.h>
@@ -1120,6 +1122,8 @@ static int brcmf_revinfo_read(struct seq_file *s, void *data)
 	return 0;
 }
 
+void brcmf_sdio_debugfs_create(void *bus);
+
 static int brcmf_bus_started(struct brcmf_pub *drvr, struct cfg80211_ops *ops)
 {
 	int ret = -1;
@@ -1192,9 +1196,11 @@ static int brcmf_bus_started(struct brcmf_pub *drvr, struct cfg80211_ops *ops)
 #endif /* CONFIG_INET */
 
 	/* populate debugfs */
+	brcmf_err("before brcmf_debugfs_add_entry\n");
 	brcmf_debugfs_add_entry(drvr, "revinfo", brcmf_revinfo_read);
 	brcmf_feat_debugfs_create(drvr);
 	brcmf_proto_debugfs_create(drvr);
+	brcmf_sdio_debugfs_create(drvr->bus_if->bus_priv.sdio->bus);
 
 	return 0;
 

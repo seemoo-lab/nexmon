@@ -3114,7 +3114,7 @@ static int brcmf_debugfs_sdio_count_read(struct seq_file *seq, void *data)
 	return 0;
 }
 
-static void brcmf_sdio_debugfs_create(struct brcmf_sdio *bus)
+void brcmf_sdio_debugfs_create(struct brcmf_sdio *bus)
 {
 	struct brcmf_pub *drvr = bus->sdiodev->bus_if->drvr;
 	struct dentry *dentry = brcmf_debugfs_get_devdir(drvr);
@@ -3136,7 +3136,7 @@ static int brcmf_sdio_checkdied(struct brcmf_sdio *bus)
 	return 0;
 }
 
-static void brcmf_sdio_debugfs_create(struct brcmf_sdio *bus)
+void brcmf_sdio_debugfs_create(struct brcmf_sdio *bus)
 {
 }
 #endif /* DEBUG */
@@ -3421,6 +3421,7 @@ static int brcmf_sdio_bus_preinit(struct device *dev)
 	if (bus->rxbuf)
 		bus->rxblen = value;
 
+	brcmf_err("before brcmf_sdio_debugfs_create\n");
 	brcmf_sdio_debugfs_create(bus);
 
 	/* the commands below use the terms tx and rx from
