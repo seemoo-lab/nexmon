@@ -56,7 +56,7 @@
 #define CBUF_LEN	(128)
 
 /* Device console log buffer state */
-#define CONSOLE_BUFFER_MAX	2024
+#define CONSOLE_BUFFER_MAX	4096
 
 struct rte_log_le {
 	__le32 buf;		/* Can't be pointer on (64-bit) hosts */
