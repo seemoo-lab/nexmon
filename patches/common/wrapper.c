@@ -1740,6 +1740,9 @@ uint8
 wlc_phy_set_txpwr_clamp_acphy(void *pi)
 RETURN_DUMMY
 
+
+/* Cypress Bluetooth Evaluation Board */
+
 AT(CHIP_VER_BCM20735B1_BT, FW_VER_ALL, 0x26B1A)
 void
 bthci_event_vs_DBFW_CoreDumpInfoEvent(uint8 v1, uint8 v2)
@@ -1760,6 +1763,24 @@ void
 bthci_event_vs_DBFW_CoreDumpCPURegsEvent(int* sp, uint8 v2)
 VOID_DUMMY
 
+AT(CHIP_VER_BCM20735B1_BT, FW_VER_ALL, 0xBC4)
+int
+dbfw_coredump_getSP()
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM20735B1_BT, FW_VER_ALL, 0x24C36)
+int
+bthci_event_AttemptToEnqueueEventToTransport(char* buffer)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM20735B1_BT, FW_VER_ALL, 0x24E92)
+char*
+bthci_event_AllocateEventAndFillHeader(uint8 len_total, char event_code, uint8 len_data)
+RETURN_DUMMY
+
+
+/* Nexus 5 BCM4339 */
+
 AT(CHIP_VER_BCM4335C0_BT, FW_VER_ALL, 0x23F0E)
 int
 intctl_ClrPendingInt(int a, int b)
@@ -1775,12 +1796,30 @@ char*
 get_cmd_buf(char event_code, uint8 size)
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4335C0_BT, FW_VER_ALL, 0x7B14)
+char*
+hci_allocateEventBlock(char event_code)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4335C0_BT, FW_VER_ALL, 0x79E4)
+void
+hci_sendEvent(char* buffer)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4335C0_BT, FW_VER_ALL, 0x31114)
+void
+patch_installPatchEntry(unsigned int addr, void *data_ptr, unsigned int slot)
+VOID_DUMMY
+
 AT(CHIP_VER_BCM4335C0_BT, FW_VER_ALL, 0x3FA36)
 void
 free_bloc_buffer_aligned(char *buffer)
 VOID_DUMMY
 
+/* Shared Bluetooth functions */
+
 AT(CHIP_VER_BCM4335C0_BT, FW_VER_ALL, 0x46FE6)
+AT(CHIP_VER_BCM20735B1_BT, FW_VER_ALL, 0x688BE)
 int
 memcpybt(void *dst, void *src, int len)
 RETURN_DUMMY

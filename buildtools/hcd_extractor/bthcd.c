@@ -104,8 +104,8 @@ analyze_patch_file(void)
 	if(firmware_file_name) {
 		read_file_to_array(firmware_file_name, &whole_patch, &whole_patch_len);
 	} else {
-		whole_patch = (char *) malloc(0x240000);
-		whole_patch_len = 0x240000;
+		whole_patch = (char *) malloc(0x280000);
+		whole_patch_len = 0x280000;
 	}
 
 	
