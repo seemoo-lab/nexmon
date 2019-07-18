@@ -39,3 +39,4 @@ extern int capabilities;
 #define NEX_CAP_MONITOR_MODE			(1 << 0)
 #define NEX_CAP_MONITOR_MODE_RADIOTAP	(1 << 1)
 #define NEX_CAP_FRAME_INJECTION			(1 << 2)
+#define NEX_CAP_MAME82_KARMA			(1 << 7)

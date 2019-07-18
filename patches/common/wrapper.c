@@ -413,6 +413,7 @@ sprintf(char *buf, const char *format, ...)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x12824)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x803c7c)
 int
 strlen(char *str)
 RETURN_DUMMY
@@ -1776,6 +1777,101 @@ AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C10C2)
 uint8
 wlc_phy_set_txpwr_clamp_acphy(void *pi)
 RETURN_DUMMY
+
+//static void wlc_recv_mgmt_ctl(wlc_info_t *wlc, osl_t *osh, wlc_d11rxhdr_t *wrxh, void *p);
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x008204ec)
+void wlc_recv_mgmt_ctl(void *wlc, void *osh, void *wrxh, void *p)
+VOID_DUMMY
+
+//char *bcm_ether_ntoa(const struct ether_addr *ea, char *buf)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x008040ec)
+char* bcm_ether_ntoa(const struct ether_addr *ea, char *buf)
+RETURN_DUMMY
+
+//bcm_tlv_t *bcm_parse_tlvs(void *buf, int buflen, uint key);
+//0x00804318
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x00804318)
+void* bcm_parse_tlvs(void *buf, int buflen, uint key)
+RETURN_DUMMY
+
+//0x00881350
+//wlc_bsscfg_t *wlc_bsscfg_find_by_hwaddr(wlc_info_t *wlc, struct ether_addr *hwaddr)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x00881350)
+wlc_bsscfg_t *wlc_bsscfg_find_by_hwaddr(wlc_info_t *wlc, struct ether_addr *hwaddr)
+RETURN_DUMMY
+
+//0x00881360
+//wlc_bsscfg_t *wlc_bsscfg_find_by_bssid(wlc_info_t *wlc, const struct ether_addr *bssid)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x00881360)
+wlc_bsscfg_t *wlc_bsscfg_find_by_bssid(wlc_info_t *wlc, const struct ether_addr *bssid)
+RETURN_DUMMY
+
+//0x00829f70
+//void* wlc_frame_get_mgmt(wlc_info_t *wlc, uint16 fc, const struct ether_addr *da, const struct ether_addr *sa, const struct ether_addr *bssid, uint body_len, uint8 **pbody)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x00829f70)
+void* wlc_frame_get_mgmt(wlc_info_t *wlc, uint16 fc, const struct ether_addr *da, const struct ether_addr *sa, const struct ether_addr *bssid, uint body_len, uint8 **pbody)
+RETURN_DUMMY
+
+//0x008245e4
+//void wlc_bcn_prb_body(wlc_info_t *wlc, uint type, wlc_bsscfg_t *bsscfg, uint8 *bcn, int *len, bool legacy_tpl)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x008245e4)
+void wlc_bcn_prb_body(wlc_info_t *wlc, uint type, wlc_bsscfg_t *bsscfg, uint8 *bcn, int *len, bool legacy_tpl)
+VOID_DUMMY
+
+//0x0082dff0
+//bool wlc_sendmgmt(wlc_info_t *wlc, void *p, wlc_txq_info_t *qi, struct scb *scb)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x0082dff0)
+bool wlc_sendmgmt(wlc_info_t *wlc, void *p, void *qi, struct scb *scb)
+RETURN_DUMMY
+
+/*
+//0x00839398
+//void wlc_ap_process_assocreq(wlc_ap_info_t *ap, wlc_bsscfg_t *bsscfg, struct dot11_management_header *hdr, uint8 *body, uint body_len, struct scb *scb, bool short_preamble)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x00839398)
+void wlc_ap_process_assocreq(void *ap, wlc_bsscfg_t *bsscfg, void *hdr, uint8 *body, uint body_len, struct scb *scb, bool short_preamble)
+VOID_DUMMY
+*/
+
+//legacy address 0x00839398 overwritten by flashpatch 53 with "b.w loc._ABS_0x18994"
+//void wlc_ap_process_assocreq(wlc_ap_info_t *ap, wlc_bsscfg_t *bsscfg, struct dot11_management_header *hdr, uint8 *body, uint body_len, struct scb *scb, bool short_preamble)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x18994)
+void wlc_ap_process_assocreq(void *ap, wlc_bsscfg_t *bsscfg, void *hdr, uint8 *body, uint body_len, struct scb *scb, bool short_preamble)
+VOID_DUMMY
+
+//no hook call so far, as called by driver
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x819aec)
+int wl_open(hnd_dev_t *dev)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x848154)
+int wlc_bsscfg_up(wlc_info_t *wlc, wlc_bsscfg_t *cfg)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x839CC4)
+void wlc_bss_up(wlc_ap_info_t *ap, wlc_bsscfg_t *bsscfg)
+VOID_DUMMY
+
+
+//0x0082b1d4 wlc_lowest_basic_rspec
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x82b1d4)
+ratespec_t wlc_lowest_basic_rspec(wlc_info_t *wlc, wlc_rateset_t *rs)
+RETURN_DUMMY
+
+//0x00824820 wlc_bcn_prb_template
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x824820)
+void wlc_bcn_prb_template(wlc_info_t *wlc, uint type, ratespec_t bcn_rate, wlc_bsscfg_t *cfg, uint16 *buf, int *len)
+VOID_DUMMY
+//--> example usage @0x008377f4 (wlc_ap_doiovar)
+
+//0x00803acc memmove (untested)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x803acc)
+void *memmove(void *dst, void *src, int len)
+RETURN_DUMMY
+
+//0x00880e60 PKTFREE
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x803acc)
+void PKTFREE(void *osh, void* p, int send)
+VOID_DUMMY
 
 #undef VOID_DUMMY
 #undef RETURN_DUMMY
