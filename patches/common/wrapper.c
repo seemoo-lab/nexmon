@@ -57,6 +57,16 @@ int
 ai_setcoreidx(void *sii, unsigned int coreidx)
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM43455c0, FW_VER_ALL, 0x3D20)
+void
+bcm_binit(void *b, char *buf, uint size)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM43455c0, FW_VER_ALL, 0x3D4C)
+int
+bcm_bprintf(void *b, const char *fmt, ...)
+RETURN_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x1B8C4)
 int
 bus_binddev_rom(void *sdiodev, void *d11dev)
@@ -467,6 +477,7 @@ AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x39AC)
 AT(CHIP_VER_BCM4356, FW_VER_ALL, 0x3210)
 AT(CHIP_VER_BCM43451b1, FW_VER_ALL, 0x2748)
 AT(CHIP_VER_BCM43430a1, FW_VER_ALL, 0x803dc0)
+AT(CHIP_VER_BCM43455c0, FW_VER_ALL, 0x3A94)
 int
 vsnprintf(char *buf, unsigned int n, const char *format, va_list ap)
 RETURN_DUMMY

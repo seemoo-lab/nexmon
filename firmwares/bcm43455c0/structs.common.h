@@ -665,6 +665,22 @@ struct wlc_if {
     struct wlc_if_stats  _cnt;
 };
 
+struct bcmstrbuf {
+    char *buf;
+    unsigned int size;
+    char *origbuf;
+    unsigned int origsize;
+};
+
+typedef int (*dump_fn_t)(void *handle, struct bcmstrbuf *b);
+
+typedef struct dumpcb_s {
+    const char *name;
+    dump_fn_t dump_fn;
+    void *dump_fn_arg;
+    struct dumpcb_s *next;
+} dumpcb_t;
+
 struct wlc_info {
     struct wlc_pub *pub;                /* 0x000 */
     struct osl_info *osh;               /* 0x004 */
@@ -851,7 +867,7 @@ struct wlc_info {
     int PAD;                            /* 0x2CC */
     int PAD;                            /* 0x2D0 */
     int PAD;                            /* 0x2D4 */
-    int PAD;                            /* 0x2D8 */
+    dumpcb_t *dumpcb_head;              /* 0x2D8 */
     int PAD;                            /* 0x2DC */
     int PAD;                            /* 0x2E0 */
     int PAD;                            /* 0x2E4 */

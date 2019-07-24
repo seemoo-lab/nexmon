@@ -45,24 +45,42 @@
 #include <version.h>            // version information
 #include <argprintf.h>          // allows to execute argprintf to print into the arg buffer
 
+#define NULL 0
+
 int 
 wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 {
     int ret = IOCTL_ERROR;
     argprintf_init(arg, len);
 
-    switch (cmd) {
-        case 500:
+    switch(cmd) {
+        case 510:
         {
-            if (len >= 4) {
-                memcpy(arg, "\x11\x22\x33\x44", 4);
-                ret = IOCTL_SUCCESS;
-            } 
+            argprintf("%s\n", __FUNCTION__);
+            ret = IOCTL_SUCCESS;
+            break;
         }
-        default:
+
+        case 511:
         {
-            ret = wlc_ioctl(wlc, cmd, arg, len, wlc_if);    
-        }    
+            dumpcb_t *d;
+            struct bcmstrbuf b;
+            int err;
+
+            bcm_binit(&b, arg, len);
+
+            for (d = wlc->dumpcb_head; d != NULL; d = d->next) {
+                bcm_bprintf(&b, "%s\n", d->name);
+                err = d->dump_fn(d->dump_fn_arg, &b);
+                if (err) bcm_bprintf(&b, "ERR: %d\n", err);
+                bcm_bprintf(&b, "\n");
+            }
+            ret = IOCTL_SUCCESS;
+            break;
+        }
+
+        default:
+            ret = wlc_ioctl(wlc, cmd, arg, len, wlc_if);
     }
 
     return ret;
