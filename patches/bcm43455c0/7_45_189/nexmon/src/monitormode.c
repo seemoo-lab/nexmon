@@ -148,3 +148,7 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
 __attribute__((at(0x1a6928, "", CHIP_VER_BCM43455c0, FW_VER_7_45_154)))
 __attribute__((at(0x1AB4F0, "", CHIP_VER_BCM43455c0, FW_VER_7_45_189)))
 BLPatch(wl_monitor_hook, wl_monitor_hook);
+
+//Temporary fix to ignore A-MSDU frames
+__attribute__((at(0x1B6B02, "", CHIP_VER_BCM43455c0, FW_VER_7_45_189)))
+BPatch(wlc_monitor_amsdu_patch, 0x1B6B1E);
