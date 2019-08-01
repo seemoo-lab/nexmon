@@ -177,6 +177,18 @@ struct brcmf_sdreg {
 struct brcmf_sdio;
 struct brcmf_sdiod_freezer;
 
+/* ULP SHM Offsets info */
+struct ulp_shm_info {
+	u32 m_ulp_ctrl_sdio;
+	u32 m_ulp_wakeevt_ind;
+	u32 m_ulp_wakeind;
+};
+
+struct fmac_ulp {
+	struct ulp_shm_info ulp_shm_offset;
+};
+
+
 struct brcmf_sdio_dev {
 	struct sdio_func *func[SDIO_MAX_FUNCS];
 	u8 num_funcs;			/* Supported funcs on client */
@@ -201,6 +213,8 @@ struct brcmf_sdio_dev {
 	bool wowl_enabled;
 	enum brcmf_sdiod_state state;
 	struct brcmf_sdiod_freezer *freezer;
+	struct fmac_ulp shm_ulp;
+	bool ulp;
 };
 
 /* sdio core registers */
@@ -375,5 +389,53 @@ void brcmf_sdio_wd_timer(struct brcmf_sdio *bus, bool active);
 void brcmf_sdio_wowl_config(struct device *dev, bool enabled);
 int brcmf_sdio_sleep(struct brcmf_sdio *bus, bool sleep);
 void brcmf_sdio_trigger_dpc(struct brcmf_sdio *bus);
+
+
+/* SHM offsets */
+#define M_DS1_CTRL_SDIO(ptr)	((ptr).ulp_shm_offset.m_ulp_ctrl_sdio)
+#define M_WAKEEVENT_IND(ptr)	((ptr).ulp_shm_offset.m_ulp_wakeevt_ind)
+#define M_ULP_WAKE_IND(ptr)		((ptr).ulp_shm_offset.m_ulp_wakeind)
+
+#define D11_BASE_ADDR			0x18001000
+#define D11_AXI_BASE_ADDR		0xE8000000
+#define D11_SHM_BASE_ADDR		(D11_AXI_BASE_ADDR + 0x4000)
+
+#define D11REG_ADDR(offset)	(D11_BASE_ADDR + (offset))
+#define D11IHR_ADDR(offset)	(D11_AXI_BASE_ADDR + 0x400 + (2 * (offset)))
+#define D11SHM_ADDR(offset)	(D11_SHM_BASE_ADDR + (offset))
+
+/* MacControl register */
+#define D11_MACCONTROL_REG			D11REG_ADDR(0x120)
+#define D11_MACCONTROL_REG_WAKE		0x4000000
+
+/* Following are the offsets in M_DRVR_UCODE_IF_PTR block. Start address of
+ * M_DRVR_UCODE_IF_PTR block is present in M_DRVR_UCODE_IF_PTR.
+ */
+
+/* M_ULP_WAKE_IND bits */
+#define ULP_WAKE_IND_WATCHDOG_EXP		0x1
+#define ULP_WAKE_IND_FCBS_ERROR			0x2
+#define ULP_WAKE_IND_RE_TRANSMIT_ERR	0x4
+#define ULP_WAKE_IND_HOST_WKUP			0x8
+#define ULP_WAKE_IND_INVALID_FCBS_BLK	0x10
+
+#define	C_DS1_CTRL_SDIO_DS1_SLEEP		0x1
+#define	C_DS1_CTRL_SDIO_MAC_ON			0x2
+#define	C_DS1_CTRL_SDIO_RADIO_PHY_ON	0x4
+#define	C_DS1_CTRL_SDIO_DS1_EXIT		0x8
+#define	C_DS1_CTRL_PROC_DONE			0x100
+#define	C_DS1_CTRL_REQ_VALID			0x200
+
+#define D11SHM_WR(sdh, offset, val, ret) \
+	brcmf_sdiod_regwl(sdh, D11SHM_ADDR(offset), val, ret)
+
+#define D11SHM_RD(sdh, offset, ret) \
+	brcmf_sdiod_regrl(sdh, D11SHM_ADDR(offset), ret)
+
+#define D11REG_WR(sdh, addr, val, ret) \
+	brcmf_sdiod_regwl(sdh, addr, val, ret)
+
+#define D11REG_RD(sdh, addr, ret) \
+	brcmf_sdiod_regrl(sdh, addr, ret)
 
 #endif /* BRCMFMAC_SDIO_H */

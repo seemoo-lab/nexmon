@@ -132,11 +132,15 @@ static void brcmf_feat_iovar_data_set(struct brcmf_if *ifp,
 
 static void brcmf_feat_firmware_capabilities(struct brcmf_if *ifp)
 {
-	char caps[256];
+	char caps[512];
 	enum brcmf_feat_id id;
-	int i;
+	int i, err;
 
-	brcmf_fil_iovar_data_get(ifp, "cap", caps, sizeof(caps));
+	err = brcmf_fil_iovar_data_get(ifp, "cap", caps, sizeof(caps));
+	if (err) {
+		brcmf_err("could not get firmware cap (%d)\n", err);
+		return;
+	}
 	brcmf_dbg(INFO, "[ %s]\n", caps);
 
 	for (i = 0; i < ARRAY_SIZE(brcmf_fwcap_map); i++) {

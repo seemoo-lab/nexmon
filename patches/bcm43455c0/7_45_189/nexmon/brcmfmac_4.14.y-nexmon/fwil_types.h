@@ -128,6 +128,20 @@
 #define BRCMF_WOWL_MAXPATTERNS		8
 #define BRCMF_WOWL_MAXPATTERNSIZE	128
 
+enum {
+	BRCMF_UNICAST_FILTER_NUM = 0,
+	BRCMF_BROADCAST_FILTER_NUM,
+	BRCMF_MULTICAST4_FILTER_NUM,
+	BRCMF_MULTICAST6_FILTER_NUM,
+	BRCMF_MDNS_FILTER_NUM,
+	BRCMF_ARP_FILTER_NUM,
+	BRCMF_BROADCAST_ARP_FILTER_NUM,
+	MAX_PKT_FILTER_COUNT
+};
+
+#define MAX_PKTFILTER_PATTERN_SIZE		16
+
+
 #define BRCMF_COUNTRY_BUF_SZ		4
 #define BRCMF_ANT_MAX			4
 
@@ -843,6 +857,22 @@ struct brcmf_pno_macaddr_le {
 };
 
 /**
+ * struct brcmf_dload_data_le - data passing to firmware for downloading
+ * @flag: flags related to download data.
+ * @dload_type: type of download data.
+ * @len: length in bytes of download data.
+ * @crc: crc of download data.
+ * @data: download data.
+ */
+struct brcmf_dload_data_le {
+	__le16 flag;
+	__le16 dload_type;
+	__le32 len;
+	__le32 crc;
+	u8 data[1];
+};
+
+/**
  * struct brcmf_pno_bssid_le - bssid configuration for PNO scan.
  *
  * @bssid: BSS network identifier.
@@ -946,17 +976,6 @@ struct brcmf_gscan_config {
 	u8 retry_threshold;
 	__le16  lost_ap_window;
 	struct brcmf_gscan_bucket_config bucket[1];
-};
-
-/**
- * struct brcmf_dload_data_le - data passing to firmware for downloading
- */
-struct brcmf_dload_data_le {
-	__le16 flag;
-	__le16 dload_type;
-	__le32 len;
-	__le32 crc;
-	u8 data[1];
 };
 
 #endif /* FWIL_TYPES_H_ */

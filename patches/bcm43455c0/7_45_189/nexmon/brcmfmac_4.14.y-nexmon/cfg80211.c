@@ -486,6 +486,48 @@ send_key_to_dongle(struct brcmf_if *ifp, struct brcmf_wsec_key *key)
 	return err;
 }
 
+static s32
+brcmf_configure_arp_nd_offload(struct brcmf_if *ifp, bool enable)
+{
+	s32 err;
+	u32 mode;
+
+	if (enable)
+		mode = BRCMF_ARP_OL_AGENT | BRCMF_ARP_OL_PEER_AUTO_REPLY;
+	else
+		mode = 0;
+
+	/* Try to set and enable ARP offload feature, this may fail, then it  */
+	/* is simply not supported and err 0 will be returned                 */
+	err = brcmf_fil_iovar_int_set(ifp, "arp_ol", mode);
+	if (err) {
+		brcmf_dbg(TRACE, "failed to set ARP offload mode to 0x%x, err = %d\n",
+			  mode, err);
+		err = 0;
+	} else {
+		err = brcmf_fil_iovar_int_set(ifp, "arpoe", enable);
+		if (err) {
+			brcmf_dbg(TRACE, "failed to configure (%d) ARP offload err = %d\n",
+				  enable, err);
+			err = 0;
+		} else
+			brcmf_dbg(TRACE, "successfully configured (%d) ARP offload to 0x%x\n",
+				  enable, mode);
+	}
+
+	err = brcmf_fil_iovar_int_set(ifp, "ndoe", enable);
+	if (err) {
+		brcmf_dbg(TRACE, "failed to configure (%d) ND offload err = %d\n",
+			  enable, err);
+		err = 0;
+	} else
+		brcmf_dbg(TRACE, "successfully configured (%d) ND offload to 0x%x\n",
+			  enable, mode);
+
+	return err;
+}
+
+
 static void
 brcmf_cfg80211_update_proto_addr_mode(struct wireless_dev *wdev)
 {
@@ -3802,6 +3844,9 @@ static s32 brcmf_cfg80211_resume(struct wiphy *wiphy)
 					    brcmf_notify_sched_scan_results);
 			cfg->wowl.nd_enabled = false;
 		}
+		
+		/* disable packet filters */
+		brcmf_pktfilter_enable(ifp->ndev, false);
 	}
 	return 0;
 }
@@ -3860,6 +3905,9 @@ static void brcmf_configure_wowl(struct brcmf_cfg80211_info *cfg,
 	brcmf_fil_iovar_int_set(ifp, "wowl_activate", 1);
 	brcmf_bus_wowl_config(cfg->pub->bus_if, true);
 	cfg->wowl.active = true;
+	
+	/* enable packet filters */
+	brcmf_pktfilter_enable(ifp->ndev, true);
 }
 
 static s32 brcmf_cfg80211_suspend(struct wiphy *wiphy,
@@ -3886,7 +3934,8 @@ static s32 brcmf_cfg80211_suspend(struct wiphy *wiphy,
 	if (test_bit(BRCMF_SCAN_STATUS_BUSY, &cfg->scan_status))
 		brcmf_abort_scanning(cfg);
 
-	if (wowl == NULL) {
+	if (!wowl || !test_bit(BRCMF_VIF_STATUS_CONNECTED,
+			       &ifp->vif->sme_state)) {
 		brcmf_bus_wowl_config(cfg->pub->bus_if, false);
 		list_for_each_entry(vif, &cfg->vif_list, list) {
 			if (!test_bit(BRCMF_VIF_STATUS_READY, &vif->sme_state))
@@ -5355,6 +5404,26 @@ static int brcmf_cfg80211_del_pmk(struct wiphy *wiphy, struct net_device *dev,
 	return brcmf_set_pmk(ifp, NULL, 0);
 }
 
+static int
+brcmf_cfg80211_change_bss(struct wiphy *wiphy, struct net_device *dev,
+			  struct bss_parameters *params)
+{
+	struct brcmf_if *ifp;
+	int ret = 0;
+	u32 ap_isolate;
+
+	brcmf_dbg(TRACE, "Enter\n");
+	ifp = netdev_priv(dev);
+	if (params->ap_isolate >= 0) {
+		ap_isolate = (u32)params->ap_isolate;
+		ret = brcmf_fil_iovar_int_set(ifp, "ap_isolate", ap_isolate);
+		if (ret < 0)
+			brcmf_err("ap_isolate iovar failed: ret=%d\n", ret);
+	}
+
+	return ret;
+}
+
 static struct cfg80211_ops brcmf_cfg80211_ops = {
 	.add_virtual_intf = brcmf_cfg80211_add_iface,
 	.del_virtual_intf = brcmf_cfg80211_del_iface,
@@ -5401,6 +5470,7 @@ static struct cfg80211_ops brcmf_cfg80211_ops = {
 	.update_connect_params = brcmf_cfg80211_update_conn_params,
 	.set_pmk = brcmf_cfg80211_set_pmk,
 	.del_pmk = brcmf_cfg80211_del_pmk,
+	.change_bss = brcmf_cfg80211_change_bss,
 };
 
 struct brcmf_cfg80211_vif *brcmf_alloc_vif(struct brcmf_cfg80211_info *cfg,
@@ -6658,6 +6728,7 @@ static void brcmf_wiphy_wowl_params(struct wiphy *wiphy, struct brcmf_if *ifp)
 #ifdef CONFIG_PM
 	struct brcmf_cfg80211_info *cfg = wiphy_to_cfg(wiphy);
 	struct wiphy_wowlan_support *wowl;
+	struct cfg80211_wowlan *brcmf_wowlan_config = NULL;
 
 	wowl = kmemdup(&brcmf_wowlan_support, sizeof(brcmf_wowlan_support),
 		       GFP_KERNEL);
@@ -6680,6 +6751,27 @@ static void brcmf_wiphy_wowl_params(struct wiphy *wiphy, struct brcmf_if *ifp)
 	}
 
 	wiphy->wowlan = wowl;
+	
+		/* wowlan_config structure report for kernels */
+	brcmf_wowlan_config = kzalloc(sizeof(*brcmf_wowlan_config),
+				      GFP_KERNEL);
+	if (brcmf_wowlan_config) {
+		brcmf_wowlan_config->any = false;
+		brcmf_wowlan_config->disconnect = true;
+		brcmf_wowlan_config->eap_identity_req = true;
+		brcmf_wowlan_config->four_way_handshake = true;
+		brcmf_wowlan_config->rfkill_release = false;
+		brcmf_wowlan_config->patterns = NULL;
+		brcmf_wowlan_config->n_patterns = 0;
+		brcmf_wowlan_config->tcp = NULL;
+		if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_WOWL_GTK))
+			brcmf_wowlan_config->gtk_rekey_failure = true;
+		else
+			brcmf_wowlan_config->gtk_rekey_failure = false;
+	} else {
+		brcmf_err("Can not allocate memory for brcm_wowlan_config\n");
+	}
+	wiphy->wowlan_config = brcmf_wowlan_config;
 #endif
 }
 
@@ -6811,6 +6903,7 @@ static s32 brcmf_config_dongle(struct brcmf_cfg80211_info *cfg)
 	struct wireless_dev *wdev;
 	struct brcmf_if *ifp;
 	s32 power_mode;
+	s32 eap_restrict;
 	s32 err = 0;
 
 	if (cfg->dongle_up)
@@ -6833,8 +6926,17 @@ static s32 brcmf_config_dongle(struct brcmf_cfg80211_info *cfg)
 		  (power_mode ? "enabled" : "disabled"));
 
 	err = brcmf_dongle_roam(ifp);
-	if (err)
+	if (err) {
 		goto default_conf_out;
+	}
+	
+	eap_restrict = ifp->drvr->settings->eap_restrict;
+	if (eap_restrict) {
+		err = brcmf_fil_iovar_int_set(ifp, "eap_restrict",
+					      eap_restrict);
+		if (err)
+			brcmf_info("eap_restrict error (%d)\n", err);
+	}
 	err = brcmf_cfg80211_change_iface(wdev->wiphy, ndev, wdev->iftype,
 					  NULL);
 	if (err)

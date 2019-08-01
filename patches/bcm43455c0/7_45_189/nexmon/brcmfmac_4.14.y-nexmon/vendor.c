@@ -80,8 +80,11 @@ static int brcmf_cfg80211_vndr_cmds_dcmd_handler(struct wiphy *wiphy,
 	else
 		ret = brcmf_fil_cmd_data_get(ifp, cmdhdr->cmd, dcmd_buf,
 					     ret_len);
-	if (ret != 0)
+	if (ret != 0) {
+		brcmf_dbg(INFO, "error(%d), return -EPERM\n", ret);
+		ret = -EPERM;
 		goto exit;
+	}
 
 	wr_pointer = dcmd_buf;
 	while (ret_len > 0) {
