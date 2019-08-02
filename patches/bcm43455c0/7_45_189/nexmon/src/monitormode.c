@@ -72,6 +72,14 @@ channel2freq(struct wl_info *wl, unsigned int channel)
 static void
 wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
     skb_pull(p, PLCP_HDR_LEN);
+    void *head = (void *) (((uint32_t) p->data & 0xFFE00000) + p->head_off);
+
+    if (p->data - head < sizeof(struct nexmon_radiotap_header))
+    {
+        printf("%s: no space for header\n", __FUNCTION__);
+        return;
+    }
+
     struct nexmon_radiotap_header *frame = (struct nexmon_radiotap_header *) skb_push(p, sizeof(struct nexmon_radiotap_header));
 
     memset(frame, 0, sizeof(struct nexmon_radiotap_header));
@@ -115,6 +123,14 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
     unsigned char monitor = wl->wlc->monitor & 0xFF;
 
     if (monitor & MONITOR_STS) {
+        void *head = (void *) (((uint32_t) p->data & 0xFFE00000) + p->head_off);
+
+        if (p->data - head < sizeof(struct wl_rxsts))
+        {
+            printf("%s: no space for header\n", __FUNCTION__);
+            return;
+        }
+
         skb_push(p, sizeof(struct wl_rxsts));
         memcpy(p->data, sts, sizeof(struct wl_rxsts));
         p->flags |= 0x80u;
@@ -148,6 +164,26 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
 __attribute__((at(0x1a6928, "", CHIP_VER_BCM43455c0, FW_VER_7_45_154)))
 __attribute__((at(0x1AB4F0, "", CHIP_VER_BCM43455c0, FW_VER_7_45_189)))
 BLPatch(wl_monitor_hook, wl_monitor_hook);
+
+// when the hnd_pkt_dup function is called in wlc_monitor_amsdu, we want to reserve enough space to prepend our header
+sk_buff *
+hnd_pkt_dup_hook(struct osl_info *osh, sk_buff *p)
+{
+    sk_buff *pnew;
+
+    pnew = lb_alloc(p->len + sizeof(struct nexmon_radiotap_header), 0);
+
+    if ( pnew ) {
+        skb_pull(pnew, sizeof(struct nexmon_radiotap_header));
+        memcpy(pnew->data, p->data, p->len);
+        osh->pktalloced++;
+    }
+
+    return pnew;
+}
+
+__attribute__((at(0x25AF2, "flashpatch", CHIP_VER_BCM43455c0, FW_VER_7_45_189)))
+BLPatch(hnd_pkt_dup_hook, hnd_pkt_dup_hook);
 
 //Temporary fix to ignore A-MSDU frames
 __attribute__((at(0x1B6B02, "", CHIP_VER_BCM43455c0, FW_VER_7_45_189)))

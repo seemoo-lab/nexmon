@@ -222,6 +222,11 @@ unsigned int
 hndrte_time_ms()
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM43455c0, FW_VER_ALL, 0x9BE5E)
+void *
+lb_alloc(unsigned int size, unsigned int lbuf_type)
+RETURN_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x1814f4)
 AT(CHIP_VER_BCM4335b0, FW_VER_ALL, 0x180E0)
 AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x880B80)
