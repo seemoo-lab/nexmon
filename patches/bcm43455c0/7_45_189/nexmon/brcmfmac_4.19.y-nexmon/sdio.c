@@ -1049,6 +1049,8 @@ static void brcmf_sdio_get_console_addr(struct brcmf_sdio *bus)
 }
 #endif /* DEBUG */
 
+static int brcmf_sdio_readconsole(struct brcmf_sdio *bus);
+
 static u32 brcmf_sdio_hostmail(struct brcmf_sdio *bus)
 {
 	struct brcmf_sdio_dev *sdiod = bus->sdiodev;
@@ -1075,6 +1077,7 @@ static u32 brcmf_sdio_hostmail(struct brcmf_sdio *bus)
 	if (hmb_data & HMB_DATA_FWHALT) {
 		brcmf_err("mailbox indicates firmware halted\n");
 		brcmf_dev_coredump(&sdiod->func1->dev);
+		brcmf_sdio_readconsole(bus);
 	}
 
 	/* Dongle recomposed rx frames, accept them again */

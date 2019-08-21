@@ -1103,6 +1103,8 @@ static void brcmf_sdio_get_console_addr(struct brcmf_sdio *bus)
 }
 #endif /* DEBUG */
 
+static int brcmf_sdio_readconsole(struct brcmf_sdio *bus);
+
 static u32 brcmf_sdio_hostmail(struct brcmf_sdio *bus)
 {
 	u32 intstatus = 0;
@@ -1178,9 +1180,11 @@ static u32 brcmf_sdio_hostmail(struct brcmf_sdio *bus)
 			 HMB_DATA_NAKHANDLED |
 			 HMB_DATA_FC |
 			 HMB_DATA_FWREADY |
-			 HMB_DATA_FCDATA_MASK | HMB_DATA_VERSION_MASK))
+			 HMB_DATA_FCDATA_MASK | HMB_DATA_VERSION_MASK)) {
 		brcmf_err("Unknown mailbox data content: 0x%02x\n",
 			  hmb_data);
+		brcmf_sdio_readconsole(bus);
+			 }
 
 	return intstatus;
 }
