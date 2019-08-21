@@ -58,3 +58,6 @@ patch_console_size_2(void)
 {
 	asm("mov r2, 0x800\n");
 }
+
+__attribute__((at(0x19AB20, "", CHIP_VER_BCM43455c0, FW_VER_7_45_189)))
+BPatch(do_not_print_full_stack, 0x19AB58);
