@@ -220,6 +220,7 @@ make rom.bin
 * [P4wnP1](https://github.com/mame82/P4wnP1): Highly customizable attack platform, based on Raspberry Pi Zero W and Nexmon
 * [kali Nethunter OS](https://github.com/nethunteros): ROM that brings Kali Linux to smartphones with Nexmon support
 * [dustcloud-nexmon](https://github.com/dgiese/dustcloud-nexmon): Nexmon for Xiaomi IoT devices (ARM based)
+* [InternalBlue](https://github.com/seemoo-lab/internalblue): Bluetooth experimentation framework based on Reverse Engineering of Broadcom Bluetooth Controllers
 
 # Interesting articles on firmware hacks
 If you know more projects that use nexmon or perform similar firmware hacks, let us know and we will add a link.
@@ -234,6 +235,7 @@ If you know more projects that use nexmon or perform similar firmware hacks, let
 
 # Read our papers
 * F. Gringoli, M. Schulz, J. Link, and M. Hollick. [**Free Your CSI: A Channel State Information Extraction Platform For Modern Wi-Fi Chipsets**](https://doi.org/10.1145/3349623.3355477). Accepted to appear in *Proceedings of the 13th Workshop on Wireless Network Testbeds, Experimental evaluation & CHaracterization (WiNTECH 2019)*, October 2019. [code](https://nexmon.org/csi)
+* D. Mantz, J. Classen, M. Schulz, and M. Hollick. [**InternalBlue - Bluetooth Binary Patching and Experimentation Framework**](https://dl.acm.org/citation.cfm?id=3326089). *In Proceedings of the 17th Annual International Conference on Mobile Systems, Applications, and Services (MobiSys '19)*. June 2019.
 * M. Schuß, C. A. Boano, M. Weber, M. Schulz, M. Hollick, K. Römer. [**JamLab-NG: Benchmarking Low-Power Wireless Protocols under Controlable and Repeatable Wi-Fi Interference**](https://dl.acm.org/citation.cfm?id=3324331). *Proceedings of the 2019 International Conference on Embedded Wireless Systems and Networks (EWSN 2019)*, February 2019.
 * M. Schulz, D. Wegemer, and M. Hollick. [**The Nexmon Firmware Analysis and Modification Framework: Empowering Researchers to Enhance Wi-Fi Devices**](https://doi.org/10.1016/j.comcom.2018.05.015). *Elsevier Computer Communications (COMCOM) Journal*. 2018.
 * M. Schulz, J. Link, F. Gringoli, and M. Hollick. [**Shadow Wi-Fi: Teaching Smart- phones to Transmit Raw Signals and to Extract Channel State Information to Implement Practical Covert Channels over Wi-Fi**](https://dl.acm.org/citation.cfm?id=3210333). Accepted to appear in *Proceedings of the 16th ACM International Conference on Mobile Systems, Applications, and Services*, MobiSys 2018, June 2018.
