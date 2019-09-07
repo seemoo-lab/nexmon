@@ -219,6 +219,7 @@ make rom.bin
 * [monmob](https://github.com/tuter/monmob): Monitor Mode and Frame Injection for the bcm4325, bcm4329 and bcm4330
 * [P4wnP1](https://github.com/mame82/P4wnP1): Highly customizable attack platform, based on Raspberry Pi Zero W and Nexmon
 * [kali Nethunter OS](https://github.com/nethunteros): ROM that brings Kali Linux to smartphones with Nexmon support
+* [dustcloud-nexmon](https://github.com/dgiese/dustcloud-nexmon): Nexmon for Xiaomi IoT devices (ARM based)
 
 # Interesting articles on firmware hacks
 If you know more projects that use nexmon or perform similar firmware hacks, let us know and we will add a link.
