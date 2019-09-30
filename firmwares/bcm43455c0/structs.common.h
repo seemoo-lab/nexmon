@@ -219,17 +219,17 @@ struct wl_rxsts {
 #define WL_RXS_NFRM_AMSDU_SUB       0x00000008 /* subsequent MSDU(s) in A-MSDU */
 
 struct osl_info {
-	unsigned int pktalloced;
-	int PAD[1];
-	void *callback_when_dropped;
-	unsigned int bustype;
+    unsigned int pktalloced;
+    int PAD[1];
+    void *callback_when_dropped;
+    unsigned int bustype;
 } __attribute__((packed));
 
-typedef struct sk_buff {
-	int field0;                    /* 0x00 */
-	int field4;                    /* 0x04 */
-	void *data;                 /* 0x08 */
-	short len;                  /* 0x0C */
+typedef struct sk_buff_old {
+    int field0;                    /* 0x00 */
+    int field4;                    /* 0x04 */
+    void *data;                 /* 0x08 */
+    short len;                  /* 0x0C */
     short fieldE;                  // 0x0E
     int field10;                    // 0x10
     unsigned short next;                 // 0x14
@@ -244,6 +244,36 @@ typedef struct sk_buff {
     int PAD;                    // 0x24
     int PAD;                    // 0x28
     int dword2C;                    // 0x2C
+} __attribute__((packed)) sk_buff_old;
+
+typedef struct sk_buff {
+    uint16 pktid;                       // 0x00
+    uint8 refcnt;                       // 0x02
+    uint8 poolid;                       // 0x03
+    struct {
+        uint32 head_off : 21;
+        uint32 end_off  : 11;
+    };                                  // 0x04
+    void *data;                         // 0x08
+    uint16 len;                         // 0x0C
+    union {
+        uint16 flags;
+        uint16 fieldE;
+    };                                  // 0x0E
+    struct {
+        union {
+            uint16 dmapad;
+            uint16 rxcpl_id;
+        };
+        uint8  dataOff;
+        uint8  ifidx;
+    };                                  // 0x10
+    uint16 nextby4;                     // 0x14
+    uint16 field16;                     // 0x16
+    uint32 pkttag_flags;                // 0x18
+    uint16 pkttag_seq;                  // 0x20
+    uint8 pkttag_flags2;                // 0x22
+    uint8 pkttag_flags3;                // 0x23 afterwards follow more pkttag fields
 } __attribute__((packed)) sk_buff;
 
 #define HNDRTE_DEV_NAME_MAX 16
@@ -665,6 +695,22 @@ struct wlc_if {
     struct wlc_if_stats  _cnt;
 };
 
+struct bcmstrbuf {
+    char *buf;
+    unsigned int size;
+    char *origbuf;
+    unsigned int origsize;
+};
+
+typedef int (*dump_fn_t)(void *handle, struct bcmstrbuf *b);
+
+typedef struct dumpcb_s {
+    const char *name;
+    dump_fn_t dump_fn;
+    void *dump_fn_arg;
+    struct dumpcb_s *next;
+} dumpcb_t;
+
 struct wlc_info {
     struct wlc_pub *pub;                /* 0x000 */
     struct osl_info *osh;               /* 0x004 */
@@ -851,7 +897,7 @@ struct wlc_info {
     int PAD;                            /* 0x2CC */
     int PAD;                            /* 0x2D0 */
     int PAD;                            /* 0x2D4 */
-    int PAD;                            /* 0x2D8 */
+    dumpcb_t *dumpcb_head;              /* 0x2D8 */
     int PAD;                            /* 0x2DC */
     int PAD;                            /* 0x2E0 */
     int PAD;                            /* 0x2E4 */
