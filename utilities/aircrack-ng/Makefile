@@ -18,10 +18,10 @@ libs/armeabi/aircrack-ng: Android.mk ../libsqlite/local/armeabi/libsqlite.a ../l
 	cd ../libcrypto && make
 
 install: libs/armeabi/aircrack-ng
-	adb push libs/armeabi/aireplay-ng /sdcard/
+	adb push libs/armeabi/* /sdcard/
 	adb shell 'su -c "mount -o rw,remount /system"'
-	adb shell 'su -c "cp /sdcard/aireplay-ng /system/bin/aireplay-ng"'
-	adb shell 'su -c "chmod +x /system/bin/aireplay-ng"'
+	adb shell 'su -c "cp /sdcard/air* /system/bin/"'
+	adb shell 'su -c "chmod +x /system/bin/air*"'
 
 FORCE:
 
