@@ -51,7 +51,7 @@
 // plcp length in bytes
 #define PLCP_LEN 6
 
-/*extern void prepend_ethernet_ipv4_udp_header(struct sk_buff *p);
+extern void prepend_ethernet_ipv4_udp_header(struct sk_buff *p);
 
 static int
 channel2freq(struct wl_info *wl, unsigned int channel)
@@ -164,13 +164,11 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p)
 
     //wl_sendup(wl, 0, p_new);
     wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p_new);
-}*/
+}
 
 void
 wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
-	wl_monitor(wl, sts, p);
-	return;
-/*    unsigned char monitor = wl->wlc->monitor & 0xFF;
+    unsigned char monitor = wl->wlc->monitor & 0xFF;
 
     if (monitor & MONITOR_RADIOTAP) {
         wl_monitor_radiotap(wl, sts, p);
@@ -190,7 +188,7 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
 
     if (monitor & MONITOR_IPV4_UDP) {
         printf("MONITOR over udp is not supported!\n");
-    }*/
+    }
 }
 
 // Hook the call to wl_monitor in wlc_monitor
