@@ -51,5 +51,5 @@
 
 // Protection patch
 __attribute__((at(0x19CE34, "", CHIP_VER_BCM43455, FW_VER_7_46_77_11)))
-GenericPatch2(tteesstt, 0x2000);
+GenericPatch2(protection_patch, 0x2000); //from 0x2001 (mov r0, 1) to 0x2000 (mov r0, 0)
 
