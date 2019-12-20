@@ -256,7 +256,7 @@ main(int argc, char **argv)
 
 	if (bcm43596 == 1)
 		analyse_ram_bcm43596();
-	if (bcm4366 == 1)
+	else if (bcm4366 == 1)
 		analyse_ram_bcm4366();
 	else
 		analyse_ram();
