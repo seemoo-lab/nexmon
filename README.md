@@ -33,7 +33,8 @@ bcm43451b1               | 7_63_43_0            | iPhone 6                  | iO
 bcm43455                 | 7_45_77_0_hw         | Huawei P9                 | Android 7 Stock           |  X  |  X  |  X  |  X  |  X  |    
 bcm43455                 | 7_120_5_1_sta_C0     | Galaxy J7 2017            | ?                         |     |     |     |  X  |  X  |    
 bcm43455                 | 7_45_77_0_hw(8-2017) | Huawei P9                 | Android 7 Stock           |  X  |  X  |  X  |  X  |  X  |    
-bcm43455c0               | 7_45_154             | Raspberry Pi B3+          | Raspbian Kernel 4.9/4.14  |  X  |  X  |     |  X  |  X  |    
+bcm43455c0               | 7_45_154             | Raspberry Pi B3+/B4       | Raspbian Kernel 4.9/14/19 |  X  |  X  |     |  X  |  X  |    
+bcm43455c0               | 7_45_189             | Raspberry Pi B3+/B4       | Raspbian Kernel 4.14/19   |  X  |  X  |     |  X  |  X  |    
 bcm4356                  | 7_35_101_5_sta       | Nexus 6                   | Android 7.1.2             |  X  |  X  |     |  X  |  X  |  O 
 bcm4358                  | 7_112_200_17_sta     | Nexus 6P                  | Android 7 Stock           |  X  |  X  |     |  X  |  X  |  O 
 bcm4358                  | 7_112_201_3_sta      | Nexus 6P                  | Android 7.1.2 Stock       |  X  |  X  |     |  X  |  X  |  O 
@@ -88,13 +89,13 @@ qca9500<sup>4</sup>      | 4-1-0_55             | TP-Link Talon AD7200      | Cu
 * *untested hint:* Thanks to XDA member ruleh, there is a bcmdhd driver patch to activate native monitor mode, see: https://github.com/ruleh/misc/tree/master/monitor
 
 ### Using nexutil over UDP on Nexus 5
-To be able to communicate with the firmware without root priviledges, we created a UDP interface accessible through the `libnexio`, which is also used by `nexutil`. You first have to prove to the firmware that you generally have root priviledges by setting a securtiy cookie. Then you can use it for UDP based connections. Your wlan0 interface also needs an IP address in the 192.168.222.0/24 range or you have to change the default nexutil `broadcast-ip`:
+To be able to communicate with the firmware without root priviledges, we created a UDP interface accessible through the `libnexio`, which is also used by `nexutil`. You first have to prove to the firmware that you generally have root priviledges by setting a security cookie. Then you can use it for UDP based connections. Your wlan0 interface also needs an IP address in the 192.168.222.0/24 range or you have to change the default nexutil `broadcast-ip`:
 * Set the IP address of the wlan0 interface: `ifconfig wlan0 192.168.222.1 netmask 255.255.255.0`
 * Set the security cookie as root: `nexutil -x<cookie (uint)>`
 * Start a UDP connection for example to activate monitor mode: `nexutil -X<cookie> -m1`
 
-## Build patches for bcm43430a1 on the RPI3/Zero W or bcm434355c0 on the RPI3+ using Raspbian (recommended)
-**Note:** We currently support Kernel Version 4.4 (depricated), 4.9 and 4.14
+## Build patches for bcm43430a1 on the RPI3/Zero W or bcm434355c0 on the RPI3+/RPI4 using Raspbian (recommended)
+**Note:** We currently support Kernel Version 4.4 (depricated), 4.9, 4.14 and 4.19. Raspbian contains firmware version 7.45.154 for the bcm43455c0. We also support the newer firmware release 7.45.189 from Cypress. Please, try which works best for you.
 * Make sure the following commands are executed as root: `sudo su`
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
 * Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk qpdf bison flex make`
@@ -102,10 +103,12 @@ To be able to communicate with the firmware without root priviledges, we created
 * Go into the root directory of our repository: `cd nexmon`
 * Check if `/usr/lib/arm-linux-gnueabihf/libisl.so.10` exists, if not, compile it from source:
   * `cd buildtools/isl-0.10`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libisl.so /usr/lib/arm-linux-gnueabihf/libisl.so.10`
+* Check if `/usr/lib/arm-linux-gnueabihf/libmpfr.so.4` exists, if not, compile it from source:
+  * `cd buildtools/mpfr-3.1.4`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libmpfr.so /usr/lib/arm-linux-gnueabihf/libmpfr.so.4`
 * Then you can setup the build environment for compiling firmware patches
   * Setup the build environment: `source setup_env.sh`
   * Compile some build tools and extract the ucode and flashpatches from the original firmware files: `make`
-* Go to the *patches* folder for the bcm43430a1/bcm43455c0 chipset: `cd patches/bcm43430a1/7_45_41_46/nexmon/` / `patches/bcm43455c0/7_45_154/nexmon/`
+* Go to the *patches* folder for the bcm43430a1/bcm43455c0 chipset: `cd patches/bcm43430a1/7_45_41_46/nexmon/` / `patches/bcm43455c0/<7_45_154 or 7_45_189>/nexmon/`
   * Compile a patched firmware: `make`
   * Generate a backup of your original firmware file: `make backup-firmware`
   * Install the patched firmware on your RPI3: `make install-firmware`
@@ -216,6 +219,8 @@ make rom.bin
 * [monmob](https://github.com/tuter/monmob): Monitor Mode and Frame Injection for the bcm4325, bcm4329 and bcm4330
 * [P4wnP1](https://github.com/mame82/P4wnP1): Highly customizable attack platform, based on Raspberry Pi Zero W and Nexmon
 * [kali Nethunter OS](https://github.com/nethunteros): ROM that brings Kali Linux to smartphones with Nexmon support
+* [dustcloud-nexmon](https://github.com/dgiese/dustcloud-nexmon): Nexmon for Xiaomi IoT devices (ARM based)
+* [InternalBlue](https://github.com/seemoo-lab/internalblue): Bluetooth experimentation framework based on Reverse Engineering of Broadcom Bluetooth Controllers
 
 # Interesting articles on firmware hacks
 If you know more projects that use nexmon or perform similar firmware hacks, let us know and we will add a link.
@@ -229,9 +234,12 @@ If you know more projects that use nexmon or perform similar firmware hacks, let
 * Matthias Schulz. [**Teaching Your Wireless Card New Tricks: Smartphone Performance and Security Enhancements through Wi-Fi Firmware Modifications**](http://tuprints.ulb.tu-darmstadt.de/7243/). Dr.-Ing. thesis, Technische Universität Darmstadt, Germany, February 2018. [pdf](http://tuprints.ulb.tu-darmstadt.de/7243/7/dissertation_2018_matthias_thomas_schulz.pdf)
 
 # Read our papers
-* M. Schulz, D. Wegemer, and M. Hollick. [**The Nexmon Firmware Analysis and Modification Framework: Empowering Researchers to Enhance Wi-Fi Devices**](https://doi.org/10.1016/j.comcom.2018.05.015). Accepted to appear in Elsevier Computer Communications (COMCOM) Journal. 2018.
-* M. Schulz, J. Link, F. Gringoli, and M. Hollick. **Shadow Wi-Fi: Teaching Smart- phones to Transmit Raw Signals and to Extract Channel State Information to Implement Practical Covert Channels over Wi-Fi**. Accepted to appear in *Proceedings of the 16th ACM International Conference on Mobile Systems, Applications, and Services*, MobiSys 2018, June 2018.
-* D. Steinmetzer, D. Wegemer, M. Schulz, J. Widmer, M. Hollick. **Compressive Millimeter-Wave Sector Selection in Off-the-Shelf IEEE 802.11ad Devices**. *Proceedings of the 13th International Conference on emerging Networking EXperiments and Technologies*, CoNEXT 2017, December 2017.
+* F. Gringoli, M. Schulz, J. Link, and M. Hollick. [**Free Your CSI: A Channel State Information Extraction Platform For Modern Wi-Fi Chipsets**](https://doi.org/10.1145/3349623.3355477). Accepted to appear in *Proceedings of the 13th Workshop on Wireless Network Testbeds, Experimental evaluation & CHaracterization (WiNTECH 2019)*, October 2019. [code](https://nexmon.org/csi)
+* D. Mantz, J. Classen, M. Schulz, and M. Hollick. [**InternalBlue - Bluetooth Binary Patching and Experimentation Framework**](https://dl.acm.org/citation.cfm?id=3326089). *In Proceedings of the 17th Annual International Conference on Mobile Systems, Applications, and Services (MobiSys '19)*. June 2019.
+* M. Schuß, C. A. Boano, M. Weber, M. Schulz, M. Hollick, K. Römer. [**JamLab-NG: Benchmarking Low-Power Wireless Protocols under Controlable and Repeatable Wi-Fi Interference**](https://dl.acm.org/citation.cfm?id=3324331). *Proceedings of the 2019 International Conference on Embedded Wireless Systems and Networks (EWSN 2019)*, February 2019.
+* M. Schulz, D. Wegemer, and M. Hollick. [**The Nexmon Firmware Analysis and Modification Framework: Empowering Researchers to Enhance Wi-Fi Devices**](https://doi.org/10.1016/j.comcom.2018.05.015). *Elsevier Computer Communications (COMCOM) Journal*. 2018.
+* M. Schulz, J. Link, F. Gringoli, and M. Hollick. [**Shadow Wi-Fi: Teaching Smart- phones to Transmit Raw Signals and to Extract Channel State Information to Implement Practical Covert Channels over Wi-Fi**](https://dl.acm.org/citation.cfm?id=3210333). Accepted to appear in *Proceedings of the 16th ACM International Conference on Mobile Systems, Applications, and Services*, MobiSys 2018, June 2018.
+* D. Steinmetzer, D. Wegemer, M. Schulz, J. Widmer, M. Hollick. [**Compressive Millimeter-Wave Sector Selection in Off-the-Shelf IEEE 802.11ad Devices**](https://dl.acm.org/citation.cfm?id=3143384). *Proceedings of the 13th International Conference on emerging Networking EXperiments and Technologies*, CoNEXT 2017, December 2017.
 * M. Schulz, D. Wegemer, M. Hollick. [**Nexmon: Build Your Own Wi-Fi Testbeds With Low-Level MAC and PHY-Access Using Firmware Patches on Off-the-Shelf Mobile Devices**](https://dl.acm.org/citation.cfm?id=3131476). *Proceedings of the 11th ACM International Workshop on Wireless Network Testbeds, Experimental Evaluation & Characterization (WiNTECH 2017)*, October 2017. [pdf](https://www.seemoo.tu-darmstadt.de/mschulz/wintech2017) [video](https://youtu.be/m5Zrk4n4hoE)
 * M. Schulz, F. Knapp, E. Deligeorgopoulos, D. Wegemer, F. Gringoli, M. Hollick. [**DEMO: Nexmon in Action: Advanced Applications Powered by the Nexmon Firmware Patching Framework**](https://dl.acm.org/citation.cfm?id=3133333), Accepted for publication in *Proceedings of the 11th ACM International Workshop on Wireless Network Testbeds, Experimental Evaluation & Characterization (WiNTECH 2017)*, October 2017. [pdf](https://www.seemoo.tu-darmstadt.de/mschulz/wintech2017demo)
 * M. Schulz, F. Gringoli, D. Steinmetzer, M. Koch and M. Hollick. [**Massive Reactive Smartphone-Based Jamming using Arbitrary Waveforms and Adaptive Power Control**](https://dl.acm.org/citation.cfm?id=3098253). Proceedings of the *10th ACM Conference on Security and Privacy in Wireless and Mobile Networks (WiSec 2017)*, July 2017. [pdf](https://www.seemoo.tu-darmstadt.de/mschulz/wisec2017) [video](https://youtu.be/S2XPBK0KdiQ)
