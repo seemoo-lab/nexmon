@@ -92,6 +92,8 @@
 #define FW_VER_7_120_5_1_sta_C0             91
 #define FW_VER_7_120_7_1_sta_C0             92
 #define FW_VER_7_45_77_0_23_8_2017          93
+#define FW_VER_7_46_77_11                   94
+#define FW_VER_7_45_59_16                   95
 
 // for CHIP_VER_BCM43455c0
 #define FW_VER_7_45_154                    110

@@ -33,6 +33,8 @@ bcm43451b1               | 7_63_43_0            | iPhone 6                  | iO
 bcm43455                 | 7_45_77_0_hw         | Huawei P9                 | Android 7 Stock           |  X  |  X  |  X  |  X  |  X  |    
 bcm43455                 | 7_120_5_1_sta_C0     | Galaxy J7 2017            | ?                         |     |     |     |  X  |  X  |    
 bcm43455                 | 7_45_77_0_hw(8-2017) | Huawei P9                 | Android 7 Stock           |  X  |  X  |  X  |  X  |  X  |    
+bcm43455<sup>5</sup>     | 7_46_77_11_hw         | Huawei P9                 | Android 8 China Stock     |  X  |  X  |  X  |  X  |  X  |    
+bcm43455                 | 7_45_59_16           | Sony Xperia Z5 Compact    | LineageOS 14.1            |  X  |  X  |  X  |  X  |  X  |    
 bcm43455c0               | 7_45_154             | Raspberry Pi B3+/B4       | Raspbian Kernel 4.9/14/19 |  X  |  X  |     |  X  |  X  |    
 bcm43455c0               | 7_45_189             | Raspberry Pi B3+/B4       | Raspbian Kernel 4.14/19   |  X  |  X  |     |  X  |  X  |    
 bcm4356                  | 7_35_101_5_sta       | Nexus 6                   | Android 7.1.2             |  X  |  X  |     |  X  |  X  |  O 
@@ -50,6 +52,8 @@ qca9500<sup>4</sup>      | 4-1-0_55             | TP-Link Talon AD7200      | Cu
 <sup>3</sup> flash patches need to be 8 bytes long and aligned on an 8 byte boundary
 
 <sup>4</sup> 802.11ad Wi-Fi chip from first 60 GHz Wi-Fi router Talon AD7200. Patch your firmware using [nexmon-arc](https://github.com/seemoo-lab/nexmon-arc) and run it with our custom LEDE image [lede-ad7200](https://github.com/seemoo-lab/lede-ad7200)
+
+<sup>5</sup> Disabled the execution protection (called Execute Never) on region 1, because it interferes with the nexmon code (Permission fault on Section)
 
 ## Legend
 - M = Monitor Mode
