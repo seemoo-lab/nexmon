@@ -102,14 +102,15 @@ To be able to communicate with the firmware without root priviledges, we created
 * Start a UDP connection for example to activate monitor mode: `nexutil -X<cookie> -m1`
 
 ## Build patches for bcm43430a1 on the RPI3/Zero W or bcm434355c0 on the RPI3+/RPI4 using Raspbian (recommended)
-**Note:** We currently support Kernel Version 4.4 (depricated), 4.9, 4.14 and 4.19. Raspbian contains firmware version 7.45.154 for the bcm43455c0. We also support the newer firmware release 7.45.189 from Cypress. Please, try which works best for you.
+**Note:** We currently support Kernel Version 4.4 (deprecated), 4.9, 4.14 and 4.19. Raspbian contains firmware version 7.45.154 for the bcm43455c0. We also support the newer firmware release 7.45.189 from Cypress. Please, try which works best for you.
 * Make sure the following commands are executed as root: `sudo su`
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
-* Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk qpdf bison flex make`
+* Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk qpdf bison flex make automake texinfo libtool-bin`
+* Reboot to make sure the running kernel matches the installed modules.
 * Clone our repository: `git clone https://github.com/seemoo-lab/nexmon.git`
 * Go into the root directory of our repository: `cd nexmon`
 * Check if `/usr/lib/arm-linux-gnueabihf/libisl.so.10` exists, if not, compile it from source:
-  * `cd buildtools/isl-0.10`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libisl.so /usr/lib/arm-linux-gnueabihf/libisl.so.10`
+  * `cd buildtools/isl-0.10`, `autoreconf -f -i`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libisl.so /usr/lib/arm-linux-gnueabihf/libisl.so.10`
 * Check if `/usr/lib/arm-linux-gnueabihf/libmpfr.so.4` exists, if not, compile it from source:
   * `cd buildtools/mpfr-3.1.4`, `autoreconf -f -i`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libmpfr.so /usr/lib/arm-linux-gnueabihf/libmpfr.so.4`
 * Then you can setup the build environment for compiling firmware patches
@@ -120,13 +121,14 @@ To be able to communicate with the firmware without root priviledges, we created
   * Generate a backup of your original firmware file: `make backup-firmware`
   * Install the patched firmware on your RPI3: `make install-firmware`
 * Install nexutil: from the root directory of our repository switch to the nexutil folder: `cd utilities/nexutil/`. Compile and install nexutil: `make && make install`.
-* *Optional*: remove wpa_supplicant for better control over the WiFi interface: `apt-get remove wpasupplicant`
+* *Optional*: remove wpa_supplicant for better control over the WiFi interface: `apt-get remove wpasupplicant`  
+  On recent Raspbian installs, you can also add `denyinterfaces wlan0` to the end of `/etc/dhcpcd.conf`.
 * **Note:** To connect to regular access points you have to execute `nexutil -m0` first
 
 ### Using the Monitor Mode patch
 * Thanks to the prior work of Mame82, you can setup a new monitor mode interface by executing:
-```iw phy `iw dev wlan0 info | gawk '/wiphy/ {printf "phy" $2}'` interface add mon0 type monitor```
-* To activate monitor mode in the firmware, simply set the interface up: `ifconfig mon0 up`.
+```iw dev wlan0 interface add mon0 type monitor```
+* To activate monitor mode in the firmware, simply set the interface up: `ip link set mon0 up`.
 * At this point, monitor mode is active. There is no need to call *airmon-ng*. 
 * The interface already set the Radiotap header, therefore, tools like *tcpdump* or *airodump-ng* can be used out of the box: `tcpdump -i mon0`
 * *Optional*: To make the RPI3 load the modified driver after reboot:
@@ -136,7 +138,8 @@ To be able to communicate with the firmware without root priviledges, we created
   * Copy the modified driver (Kernel 4.14): `cp /home/pi/nexmon/patches/bcm43430a1/7_45_41_46/nexmon/brcmfmac_4.14.y-nexmon/brcmfmac.ko "<PATH TO THE DRIVER>/"`
   * Probe all modules and generate new dependency: `depmod -a`
   * The new driver should be loaded by default after reboot: `reboot`
-  * **Note:** It is possible to connect to an access point or run your own access point in parallel to the monitor mode interface on the `wlan0` interface.
+  * These steps (including `make` and `make install-firmware`) should be repeated after a kernel upgrade.
+  * **Note:** It is possible to connect to an access point or run your own access point in parallel to the monitor mode interface on the `wlan0` interface.
 
 # How to build the utilities
 To build the utilities such as nexmon or dhdutil for Android, you need to download the **old** NDK version 11c,
