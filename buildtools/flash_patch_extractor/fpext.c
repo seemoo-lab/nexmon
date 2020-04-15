@@ -12,6 +12,9 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <execinfo.h>
+#include <signal.h>
+
 #define AS_STR2(TEXT) #TEXT
 #define AS_STR(TEXT) AS_STR2(TEXT)
 
@@ -237,9 +240,18 @@ analyse_ram_bcm4366()
 	}
 }
 
+static void dump_trace() {
+	void * buffer[1024];
+	const int calls = backtrace(buffer, sizeof(buffer) / sizeof(buffer[0]));
+	backtrace_symbols_fd(buffer, calls, 1);
+	exit(EXIT_FAILURE);
+}
+
 int
 main(int argc, char **argv)
 {
+	signal(SIGSEGV, dump_trace);
+
 	argp_parse(&argp, argc, argv, 0, 0, 0);
 
 	if (!read_file_to_array(ram_file_name, &ram_array, &ram_len)) {
