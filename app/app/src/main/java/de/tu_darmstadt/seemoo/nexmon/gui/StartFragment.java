@@ -18,7 +18,6 @@
 
 package de.tu_darmstadt.seemoo.nexmon.gui;
 
-
 import android.app.Fragment;
 import android.content.Intent;
 import android.graphics.Color;
@@ -53,7 +52,7 @@ import eu.chainfire.libsuperuser.Shell;
  * Use the {@link StartFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class StartFragment extends TrackingFragment {
+public class StartFragment extends Fragment {
 
     TextView tvNexmonInfo;
     ImageView ivNexmon;
@@ -96,11 +95,6 @@ public class StartFragment extends TrackingFragment {
         super.onStop();
         ((MyActivity) getActivity()).removePermissionListener();
 
-    }
-
-    @Override
-    public String getTrackingName() {
-        return "Screen: Start";
     }
 
     @Override

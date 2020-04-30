@@ -1,5 +1,6 @@
 package de.tu_darmstadt.seemoo.nexmon.gui;
 
+import android.app.Fragment;
 import android.content.Intent;
 import android.content.res.AssetManager;
 import android.os.Build;
@@ -17,8 +18,6 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.analytics.HitBuilders;
-import com.google.android.gms.analytics.Tracker;
 import com.nononsenseapps.filepicker.FilePickerActivity;
 import com.roger.catloadinglibrary.CatLoadingView;
 import com.stericson.RootShell.exceptions.RootDeniedException;
@@ -37,7 +36,7 @@ import de.tu_darmstadt.seemoo.nexmon.MyApplication;
 import de.tu_darmstadt.seemoo.nexmon.R;
 
 
-public class FirmwareFragment extends TrackingFragment implements View.OnClickListener {
+public class FirmwareFragment extends Fragment implements View.OnClickListener {
 
     private static final int UPDATE_TV_FIRMWARE_VERSION = 50;
     private static final int UPDATE_BUTTON_ENABLED = 51;
@@ -411,15 +410,6 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
 
                     Message msg = guiHandler.obtainMessage(UPDATE_TV_FIRMWARE_VERSION, out);
                     guiHandler.sendMessage(msg);
-
-                    // Get tracker.
-                    Tracker t = MyApplication.getDefaultTracker();
-                    // Build and send an Event.
-                    t.send(new HitBuilders.EventBuilder()
-                            .setCategory("Firmware Version")
-                            .setLabel("Device: " + Build.MODEL)
-                            .setAction("Version: " + out)
-                            .build());
                 }
 
                 super.commandOutput(id, line);
@@ -489,14 +479,6 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
         switch(v.getId()) {
             case R.id.btnInstallNexmonFirmware:
                 onClickInstallNexmonFirmware();
-                // Get tracker.
-                Tracker t = MyApplication.getDefaultTracker();
-                // Build and send an Event.
-                t.send(new HitBuilders.EventBuilder()
-                        .setCategory("Firmware")
-                        .setLabel("Device: " + Build.MODEL + " FW: " + tvFirmwareVersionOutput.getText())
-                        .setAction("Install")
-                        .build());
                 break;
             case R.id.btnRestoreFirmwareBackup:
                 onClickRestoreFirmwareBackup();
@@ -531,10 +513,5 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
                 guiHandler.sendMessage(msg);
             }
         }
-    }
-
-    @Override
-    public String getTrackingName() {
-        return "Screen: Firmware";
     }
 }

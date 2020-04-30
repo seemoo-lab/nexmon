@@ -18,7 +18,7 @@
 
 package de.tu_darmstadt.seemoo.nexmon.gui;
 
-
+import android.app.Fragment;
 import android.content.res.AssetManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -32,8 +32,6 @@ import android.widget.CheckBox;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-import com.google.android.gms.analytics.HitBuilders;
-import com.google.android.gms.analytics.Tracker;
 import com.roger.catloadinglibrary.CatLoadingView;
 import com.stericson.RootShell.exceptions.RootDeniedException;
 import com.stericson.RootShell.execution.Command;
@@ -50,7 +48,7 @@ import de.tu_darmstadt.seemoo.nexmon.MyApplication;
 import de.tu_darmstadt.seemoo.nexmon.R;
 
 
-public class ToolsFragment extends TrackingFragment {
+public class ToolsFragment extends Fragment {
 
     private final static int GUI_SHOW_TOAST = 111;
     private final static int GUI_SHOW_LOADING = 112;
@@ -225,13 +223,6 @@ public class ToolsFragment extends TrackingFragment {
                 File file = new File(installLocation + "/" + filename);
                 if(!file.exists()) {
                     toast("ERROR: Can't install to " + installLocation + "/" + filename);
-
-                    Tracker tracker = MyApplication.getDefaultTracker();
-                    tracker.send(new HitBuilders.EventBuilder()
-                            .setCategory("Error")
-                            .setLabel("Tools")
-                            .setAction("ERROR: Can't install to " + installLocation + "/" + filename)
-                            .build());
                 }
             }
         });
@@ -247,72 +238,35 @@ public class ToolsFragment extends TrackingFragment {
                 try {
                     guiHandler.sendEmptyMessage(GUI_SHOW_LOADING);
                     extractAssets();
-                    Tracker tracker = MyApplication.getDefaultTracker();
 
                     if (chkRawproxy.isChecked()) {
                         //toast("Installing rawproxy ...");
                         copyExtractedAsset(binInstallLocation, "rawproxy");
-
-                        tracker.send(new HitBuilders.EventBuilder()
-                                .setCategory("Tools")
-                                .setLabel("rawproxy")
-                                .setAction("install")
-                                .build());
                     }
 
                     if (chkRawproxyreverse.isChecked()) {
                         //toast("Installing rawproxyreverse ...");
                         copyExtractedAsset(binInstallLocation, "rawproxyreverse");
-
-                        tracker.send(new HitBuilders.EventBuilder()
-                                .setCategory("Tools")
-                                .setLabel("rawproxyreverse")
-                                .setAction("install")
-                                .build());
                     }
 
                     if (chkDhdutil.isChecked()) {
                         //toast("Installing dhdutil ...");
                         copyExtractedAsset(binInstallLocation, "dhdutil");
-
-                        tracker.send(new HitBuilders.EventBuilder()
-                                .setCategory("Tools")
-                                .setLabel("dhdutil")
-                                .setAction("install")
-                                .build());
                     }
 
                     if (chkNexutil.isChecked()) {
                         //toast("Installing nexutil ...");
                         copyExtractedAsset(binInstallLocation, "nexutil");
-
-                        tracker.send(new HitBuilders.EventBuilder()
-                                .setCategory("Tools")
-                                .setLabel("nexutil")
-                                .setAction("install")
-                                .build());
                     }
 
                     if (chkTcpdump.isChecked()) {
                         //toast("Installing tcpdump ...");
                         copyExtractedAsset(binInstallLocation, "tcpdump");
-
-                        tracker.send(new HitBuilders.EventBuilder()
-                                .setCategory("Tools")
-                                .setLabel("tcpdump")
-                                .setAction("install")
-                                .build());
                     }
 
                     if (chkLibfakeioctl.isChecked()) {
                         //toast("Installing tcpdump ...");
                         copyExtractedAsset(libInstallLocation, "libfakeioctl.so");
-
-                        tracker.send(new HitBuilders.EventBuilder()
-                                .setCategory("Tools")
-                                .setLabel("libfakeioctl.so")
-                                .setAction("install")
-                                .build());
                     }
 
                     if (chkAircrack.isChecked()) {
@@ -336,34 +290,16 @@ public class ToolsFragment extends TrackingFragment {
                         copyExtractedAsset(binInstallLocation, "tkiptun-ng");
                         copyExtractedAsset(binInstallLocation, "wesside-ng");
                         copyExtractedAsset(binInstallLocation, "wpaclean");
-
-                        tracker.send(new HitBuilders.EventBuilder()
-                                .setCategory("Tools")
-                                .setLabel("Aircrack")
-                                .setAction("install")
-                                .build());
                     }
 
                     if (chkNetcat.isChecked()) {
                         //toast("Installing netcat ...");
-                        copyExtractedAsset(binInstallLocation, "nc");
 
-                        tracker.send(new HitBuilders.EventBuilder()
-                                .setCategory("Tools")
-                                .setLabel("Netcat")
-                                .setAction("install")
-                                .build());
                     }
 
                     if (chkIw.isChecked()) {
                         //toast("Installing iw ...");
                         copyExtractedAsset(binInstallLocation, "iw");
-
-                        tracker.send(new HitBuilders.EventBuilder()
-                                .setCategory("Tools")
-                                .setLabel("iw")
-                                .setAction("install")
-                                .build());
                     }
 
                     if (chkWirelessTools.isChecked()) {
@@ -371,34 +307,16 @@ public class ToolsFragment extends TrackingFragment {
                         copyExtractedAsset(binInstallLocation, "iwconfig");
                         copyExtractedAsset(binInstallLocation, "iwlist");
                         copyExtractedAsset(binInstallLocation, "iwpriv");
-
-                        tracker.send(new HitBuilders.EventBuilder()
-                                .setCategory("Tools")
-                                .setLabel("WirelessTools")
-                                .setAction("installed")
-                                .build());
                     }
 
                     if (chkMdk3.isChecked()) {
                         //toast("Installing mdk3 ...");
                         copyExtractedAsset(binInstallLocation, "mdk3");
-
-                        tracker.send(new HitBuilders.EventBuilder()
-                                .setCategory("Tools")
-                                .setLabel("MDK3")
-                                .setAction("installed")
-                                .build());
                     }
 
                     if (chkSocat.isChecked()) {
                         //toast("Installing mdk3 ...");
                         copyExtractedAsset(binInstallLocation, "socat");
-
-                        tracker.send(new HitBuilders.EventBuilder()
-                                .setCategory("Tools")
-                                .setLabel("socat")
-                                .setAction("installed")
-                                .build());
                     }
 
 
@@ -420,12 +338,5 @@ public class ToolsFragment extends TrackingFragment {
         message.what = GUI_SHOW_TOAST;
         message.obj = msg;
         guiHandler.sendMessage(message);
-    }
-
-
-
-    @Override
-    public String getTrackingName() {
-        return "Screen: Tools";
     }
 }
