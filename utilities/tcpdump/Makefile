@@ -14,7 +14,7 @@ libs/armeabi/tcpdump: Android.mk ../libssl/local/armeabi/libssl.a ../libcrypto/l
 
 install: libs/armeabi/tcpdump
 	adb push $< /sdcard/
-	adb shell 'su -c "mount -o remount,rw /system"'
+	adb shell 'su -c "mount -o rw,remount /system"'
 	adb shell 'su -c "cp /sdcard/tcpdump /system/bin/tcpdump"'
 	adb shell 'su -c "chmod +x /system/bin/tcpdump"'
 
