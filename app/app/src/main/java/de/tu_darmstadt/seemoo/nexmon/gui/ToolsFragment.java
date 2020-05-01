@@ -23,6 +23,7 @@ import android.content.res.AssetManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -54,8 +55,8 @@ public class ToolsFragment extends Fragment {
     private final static int GUI_SHOW_LOADING = 112;
     private final static int GUI_DISMISS_LOADING = 113;
 
+	private String sdCardPath;
     private CatLoadingView loadingView;
-
     private Handler guiHandler;
     private CheckBox chkRawproxy;
     private CheckBox chkRawproxyreverse;
@@ -74,6 +75,7 @@ public class ToolsFragment extends Fragment {
     private Button btnInstall;
 
     public ToolsFragment() {
+    	sdCardPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/";
         // Required empty public constructor
     }
 
@@ -84,7 +86,7 @@ public class ToolsFragment extends Fragment {
      * @return A new instance of fragment.
      */
     public static ToolsFragment newInstance() {
-        ToolsFragment fragment = new ToolsFragment();
+    	ToolsFragment fragment = new ToolsFragment();
         return fragment;
     }
 
@@ -117,8 +119,6 @@ public class ToolsFragment extends Fragment {
                         break;
                     default:
                         break;
-
-
                 }
             }
         };
@@ -183,6 +183,9 @@ public class ToolsFragment extends Fragment {
         } else if(Model.contains("Nexus 5")) {
             spnBinInstallLocation.setSelection(0);  // set /system/bin
             spnLibInstallLocation.setSelection(0);  // set /system/lib
+        }else if(Model.contains("Nexus 7")) {
+            spnBinInstallLocation.setSelection(4);  // set /su/xbin
+            spnLibInstallLocation.setSelection(0);  // set /system/lib
         }
     }
 
@@ -197,24 +200,25 @@ public class ToolsFragment extends Fragment {
         AssetManager assetManager = MyApplication.getAssetManager();
         String[] files = null;
         files = assetManager.list("nexmon");
+        File folder = new File(sdCardPath + "/nexmon");
+        if(!folder.exists()) folder.mkdir();
+        
         if (files != null) for (String filename : files) {
             InputStream in = null;
             OutputStream out = null;
             in = assetManager.open("nexmon/" + filename);
-            File outFile = new File(MyApplication.getAppContext().getExternalFilesDir(null), filename);
+            File outFile = new File(sdCardPath + "/nexmon", filename);
             out = new FileOutputStream(outFile);
             copyFile(in, out);
             if (in != null) in.close();
             if (out != null) out.close();
         }
-
-
     }
 
     private void copyExtractedAsset(final String installLocation, final String filename) throws TimeoutException, IOException, RootDeniedException {
-        RootTools.getShell(true).add(new Command(0, "mount -o rw,remount /system",
+        RootTools.getShell(true).add(new Command(0, "mount -o rw,remount /system", "mount -o rw,remount /",
                 "rm -f " + installLocation + "/" + filename,
-                "cp " + MyApplication.getAppContext().getExternalFilesDir(null) + "/" + filename + " " + installLocation,
+                "cp " + sdCardPath + "nexmon/" + filename + " " + installLocation,
                 "chmod 755 " + installLocation + "/" + filename) {
 
             @Override
@@ -319,7 +323,6 @@ public class ToolsFragment extends Fragment {
                         copyExtractedAsset(binInstallLocation, "socat");
                     }
 
-
                     Thread.sleep(3000);
                     MyApplication.evaluateAll();
                 } catch (Exception e) {
@@ -329,8 +332,6 @@ public class ToolsFragment extends Fragment {
                 }
             }
         }).start();
-
-
     }
 
     private void toast(String msg) {

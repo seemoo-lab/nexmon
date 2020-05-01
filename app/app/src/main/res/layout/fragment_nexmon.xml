@@ -55,7 +55,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:paddingBottom="10dp"
-                    android:text="In the following, you can overwrite your WiFi firmware. This only works for the following radio chips and firmwares:\n\nBCM4339 (Nexus 5) - 6.37.34.43\nBCM4358 (Nexus 6P) - 7.112.200.17-sta\nBCM4330 (SGS 2) - 5.90.100.41-sta\nBCM4330 (Nexus 7) - 5.90.195.114\nCheck your firmware version before proceeding!" />
+                    android:text="In the following, you can overwrite your WiFi firmware. This only works for the following radio chips and firmwares:\n\nBCM4339 (Nexus 5) - 6.37.34.43\nBCM4358 (Nexus 6P) - 7.112.200.17-sta\nBCM4330 (SGS 2) - 5.90.100.41-sta\nBCM4330 (Nexus 7) - 5.90.195.114-sta\nCheck your firmware version before proceeding!" />
 
                 <View
                     android:layout_width="match_parent"

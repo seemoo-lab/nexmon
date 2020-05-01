@@ -15,7 +15,7 @@
         <item>BCM4330 (Galaxy S2)</item>
         <item>BCM4339 (Nexus 5)</item>
         <item>BCM4358 (Nexus 6P)</item>
-	<item>BCM4330 (Nexus 7 2012)</item>
+		<item>BCM4330 (Nexus 7 2012)</item>
     </string-array>
 
     <string-array name="bcm4330">       <!-- Samsung Galaxy S2 -->
@@ -28,7 +28,7 @@
     <string-array name="bcm4330N">       <!-- Nexus 7 2012 -->
         <item>/system</item>                   <!-- mount point -->
         <item>/system/vendor/firmware/</item>                   <!-- firmware path end-->
-        <item>fw_bcm4330_5_90_195_114_sta.bin</item>                   <!-- firmware name beginning -->
+        <item>fw_bcmdhd.bcmon.bin</item>                   <!-- firmware name beginning -->
         <item>fw_bcmdhd.bin</item>                   <!-- firmware name end -->
     </string-array>
 

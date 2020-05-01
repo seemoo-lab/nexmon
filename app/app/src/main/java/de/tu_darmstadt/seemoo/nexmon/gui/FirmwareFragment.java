@@ -223,18 +223,18 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
             spnDevice.setSelection(1);
         } else if(Model.contains(FirmwareUtils.DEVICE_SGS2)) {
             spnDevice.setSelection(0);
+        } else if(Model.contains(FirmwareUtils.DEVICE_NEXUS7)) {
+            spnDevice.setSelection(3);
         }
         evaluateFirmware();
     }
-
-
 
     private void setContentVisibility() {
         if(!(new File(fwPathEnd + fwNameEnd).exists())) {
             btnCreateFirmwareBackup.setEnabled(false);
             btnRestoreFirmwareBackup.setEnabled(false);
             btnInstallNexmonFirmware.setEnabled(false);
-        }else if ((new File(sdCardPath + fwNameEnd + ".bac")).exists()) {
+        }else if ((new File(sdCardPath + "nexmon/" + fwNameEnd + ".bac")).exists()) {
             btnCreateFirmwareBackup.setEnabled(false);
             btnInstallNexmonFirmware.setEnabled(true);
             btnRestoreFirmwareBackup.setEnabled(true);
@@ -249,7 +249,7 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
 
     public void onClickCreateFirmwareBackup() {
         evaluateFirmware();
-        final Command command = new Command(COMMAND_BACKUP_FIRMWARE, "cp " + fwPathEnd + fwNameEnd + " " + sdCardPath + fwNameEnd + ".bac") {
+        final Command command = new Command(COMMAND_BACKUP_FIRMWARE, "cp " + fwPathEnd + fwNameEnd + " " + sdCardPath + "nexmon/" + fwNameEnd + ".bac") {
 
             @Override
             public void commandOutput(int id, String line) {
@@ -286,7 +286,7 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
 
     public void onClickRestoreFirmwareBackup() {
         evaluateFirmware();
-        Command command = new Command(COMMAND_FIRMWARE_RESTORE, "mount -o rw,remount " + mountPoint, "cp " + sdCardPath + fwNameEnd + ".bac " + fwPathEnd + fwNameEnd) {
+        Command command = new Command(COMMAND_FIRMWARE_RESTORE, "mount -o rw,remount " + mountPoint, "cp " + sdCardPath + "nexmon/" + fwNameEnd + ".bac " + fwPathEnd + fwNameEnd) {
             @Override
             public void commandOutput(int id, String line) {
                 if(id == COMMAND_FIRMWARE_RESTORE)
@@ -311,19 +311,15 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
     }
 
     public void onClickInstallNexmonFirmware() {
-            final Command command = new Command(COMMAND_RESTART_WLAN, "ifconfig wlan0 down", "ifconfig wlan0 up") {
-
-                @Override
-                public void commandCompleted(int id, int exitcode) {
-                    if(id == COMMAND_RESTART_WLAN) {
-                        MyApplication.evaluateAll();
-                    }
-
-                    super.commandCompleted(id, exitcode);
+        final Command command = new Command(COMMAND_RESTART_WLAN, "ifconfig wlan0 down", "ifconfig wlan0 up") {
+            @Override
+            public void commandCompleted(int id, int exitcode) {
+                if(id == COMMAND_RESTART_WLAN) {
+                    MyApplication.evaluateAll();
                 }
-
-            };
-
+                super.commandCompleted(id, exitcode);
+            }
+        };
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -332,7 +328,6 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
                     guiHandler.sendEmptyMessage(GUI_SHOW_LOADING);
 
                     extractAssets();
-                    //MyApplication.toast("Installing firmware ...");
                     copyExtractedAsset(fwPathEnd, fwNameBeginning);
                     //Log.e("INSTALL PATH", "fwPathEnd: " + fwPathEnd + " fwNameEnd: " + fwNameEnd + " fwNameBeginning: " + fwNameBeginning);
                     RootTools.getShell(true).add(command);
@@ -341,7 +336,6 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
                 } catch(Exception e) {e.printStackTrace();}
             }
         }).start();
-
     }
 
 
@@ -356,11 +350,14 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
         AssetManager assetManager = MyApplication.getAssetManager();
         String[] files = null;
         files = assetManager.list("nexmon");
+        File folder = new File(sdCardPath + "/nexmon");
+        if (!folder.exists()) folder.mkdir();
+            
         if (files != null) for (String filename : files) {
             InputStream in = null;
             OutputStream out = null;
             in = assetManager.open("nexmon/" + filename);
-            File outFile = new File(sdCardPath, filename);
+            File outFile = new File(sdCardPath + "/nexmon", filename);
             out = new FileOutputStream(outFile);
             copyFile(in, out);
             if (in != null) in.close();
@@ -371,7 +368,7 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
     private void copyExtractedAsset(String installLocation, String filename) throws TimeoutException, IOException, RootDeniedException {
 
         RootTools.getShell(true).add(new Command(0, "mount -o rw,remount " + mountPoint,
-                "cp " + sdCardPath + filename + " " + installLocation + fwNameEnd,
+                "cp " + sdCardPath + "nexmon/" + filename + " " + installLocation + fwNameEnd,
                 "chmod 755 " + installLocation + fwNameEnd) {
 
             @Override
@@ -407,15 +404,12 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
                         e.printStackTrace();
                         out = line + "\n";
                     }
-
                     Message msg = guiHandler.obtainMessage(UPDATE_TV_FIRMWARE_VERSION, out);
                     guiHandler.sendMessage(msg);
                 }
-
                 super.commandOutput(id, line);
-
             }
-
+            
             @Override
             public void commandCompleted(int id, int exitcode) {
                 super.commandCompleted(id, exitcode);
@@ -425,7 +419,6 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
                 }
             }
         };
-
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -436,15 +429,15 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
                 }
             }
         }).start();
-
     }
-
     private void evaluateFirmware() {
         String item = spnDevice.getSelectedItem().toString();
 
         String fwInfo[] = new String[4];
 
-        if(item.startsWith("BCM4330 "))
+        if(item.startsWith("BCM4330 (N"))//(NEXUS 7 2012)
+            fwInfo = getResources().getStringArray(R.array.bcm4330N);
+        else if(item.startsWith("BCM4330 "))
             fwInfo = getResources().getStringArray(R.array.bcm4330);
         else if(item.startsWith("BCM4339 "))
             fwInfo = getResources().getStringArray(R.array.bcm4339);
@@ -469,10 +462,8 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
             fwPathEnd = "";
             fwNameEnd = "";
         }
-
         setContentVisibility();
     }
-
 
     @Override
     public void onClick(View v) {
