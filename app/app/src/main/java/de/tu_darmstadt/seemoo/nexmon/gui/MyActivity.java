@@ -18,7 +18,6 @@
 
 package de.tu_darmstadt.seemoo.nexmon.gui;
 
-
 import android.Manifest;
 import android.app.Activity;
 import android.app.Fragment;

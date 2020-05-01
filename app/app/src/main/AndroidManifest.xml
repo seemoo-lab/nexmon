@@ -2,9 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="de.tu_darmstadt.seemoo.nexmon">
+
     <uses-sdk
-        android:minSdkVersion="22"
-        android:targetSdkVersion="22" />
+        android:minSdkVersion="23"
+        android:targetSdkVersion="23" />
+
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -16,6 +18,8 @@
         android:allowBackup="true"
         android:icon="@mipmap/x_logo"
         android:label="@string/app_name"
+        tools:replace="android:theme"
+        android:theme="@android:style/Theme.Material"
         android:largeHeap="true">
         <activity
             android:name="de.tu_darmstadt.seemoo.nexmon.gui.MyActivity"
@@ -41,12 +45,16 @@
 
         <activity
             android:name="com.nononsenseapps.filepicker.FilePickerActivity"
-            android:label="@string/app_name">
+            android:label="@string/app_name"
+            android:theme="@style/FilePickerTheme">
             <intent-filter>
                 <action android:name="android.intent.action.GET_CONTENT" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+
+
+
 
         <service android:name="de.tu_darmstadt.seemoo.nexmon.sharky.WiresharkService" />
         <service android:name="de.tu_darmstadt.seemoo.nexmon.stations.APfinderService" />
