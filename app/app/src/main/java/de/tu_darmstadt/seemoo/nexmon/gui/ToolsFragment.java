@@ -212,7 +212,7 @@ public class ToolsFragment extends Fragment {
     }
 
     private void copyExtractedAsset(final String installLocation, final String filename) throws TimeoutException, IOException, RootDeniedException {
-        RootTools.getShell(true).add(new Command(0, "mount -o remount,rw /system",
+        RootTools.getShell(true).add(new Command(0, "mount -o rw,remount /system",
                 "rm -f " + installLocation + "/" + filename,
                 "cp " + MyApplication.getAppContext().getExternalFilesDir(null) + "/" + filename + " " + installLocation,
                 "chmod 755 " + installLocation + "/" + filename) {
@@ -294,7 +294,7 @@ public class ToolsFragment extends Fragment {
 
                     if (chkNetcat.isChecked()) {
                         //toast("Installing netcat ...");
-
+			copyExtractedAsset(binInstallLocation, "nc");
                     }
 
                     if (chkIw.isChecked()) {
