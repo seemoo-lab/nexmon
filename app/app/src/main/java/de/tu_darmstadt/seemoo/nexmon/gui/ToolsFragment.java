@@ -184,7 +184,7 @@ public class ToolsFragment extends Fragment {
             spnBinInstallLocation.setSelection(0);  // set /system/bin
             spnLibInstallLocation.setSelection(0);  // set /system/lib
         }else if(Model.contains("Nexus 7")) {
-            spnBinInstallLocation.setSelection(4);  // set /su/xbin
+            spnBinInstallLocation.setSelection(1);  // set /system/xbin
             spnLibInstallLocation.setSelection(0);  // set /system/lib
         }
     }
@@ -216,7 +216,7 @@ public class ToolsFragment extends Fragment {
     }
 
     private void copyExtractedAsset(final String installLocation, final String filename) throws TimeoutException, IOException, RootDeniedException {
-        RootTools.getShell(true).add(new Command(0, "mount -o rw,remount /system", "mount -o rw,remount /",
+        RootTools.getShell(true).add(new Command(0, "mount -o rw,remount /system", "mount -o rw,remount /", //root for /su path
                 "rm -f " + installLocation + "/" + filename,
                 "cp " + sdCardPath + "nexmon/" + filename + " " + installLocation,
                 "chmod 755 " + installLocation + "/" + filename) {
