@@ -183,10 +183,7 @@ public class ToolsFragment extends Fragment {
         } else if(Model.contains("Nexus 5")) {
             spnBinInstallLocation.setSelection(0);  // set /system/bin
             spnLibInstallLocation.setSelection(0);  // set /system/lib
-        }else if(Model.contains("Nexus 7")) {
-            spnBinInstallLocation.setSelection(1);  // set /system/xbin
-            spnLibInstallLocation.setSelection(0);  // set /system/lib
-        }
+    	}
     }
 
     private void copyFile(InputStream in, OutputStream out) throws IOException {
@@ -202,7 +199,7 @@ public class ToolsFragment extends Fragment {
         files = assetManager.list("nexmon");
         File folder = new File(sdCardPath + "/nexmon");
         if(!folder.exists()) folder.mkdir();
-        
+
         if (files != null) for (String filename : files) {
             InputStream in = null;
             OutputStream out = null;

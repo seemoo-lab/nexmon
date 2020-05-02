@@ -223,8 +223,6 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
             spnDevice.setSelection(1);
         } else if(Model.contains(FirmwareUtils.DEVICE_SGS2)) {
             spnDevice.setSelection(0);
-        } else if(Model.contains(FirmwareUtils.DEVICE_NEXUS7)) {
-            spnDevice.setSelection(3);
         }
         evaluateFirmware();
     }
@@ -352,7 +350,7 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
         files = assetManager.list("nexmon");
         File folder = new File(sdCardPath + "/nexmon");
         if (!folder.exists()) folder.mkdir();
-            
+
         if (files != null) for (String filename : files) {
             InputStream in = null;
             OutputStream out = null;
@@ -435,9 +433,7 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
 
         String fwInfo[] = new String[4];
 
-        if(item.startsWith("BCM4330 (N"))//(NEXUS 7 2012)
-            fwInfo = getResources().getStringArray(R.array.bcm4330N);
-        else if(item.startsWith("BCM4330 "))
+        if(item.startsWith("BCM4330 "))
             fwInfo = getResources().getStringArray(R.array.bcm4330);
         else if(item.startsWith("BCM4339 "))
             fwInfo = getResources().getStringArray(R.array.bcm4339);
