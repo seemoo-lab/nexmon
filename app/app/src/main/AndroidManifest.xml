@@ -4,7 +4,7 @@
     package="de.tu_darmstadt.seemoo.nexmon">
 
     <uses-sdk
-        android:minSdkVersion="22"
+        android:minSdkVersion="23"
         android:targetSdkVersion="23" />
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />

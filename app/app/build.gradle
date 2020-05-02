@@ -41,7 +41,7 @@ android {
 
     defaultConfig {
         applicationId "de.tu_darmstadt.seemoo.nexmon"
-        minSdkVersion 22
+        minSdkVersion 23
         targetSdkVersion 23
         compileOptions {
             sourceCompatibility JavaVersion.VERSION_1_7
