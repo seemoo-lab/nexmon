@@ -116,7 +116,7 @@ public class StartFragment extends Fragment {
                 //x += " magic: " + String.format("%08x", 0x11223344) + "\n";
                 //x += " test: " + String.format("%08x", (new Nexutil()).get(0).executeInt());
                   x += " ver:" + (new Nexutil()).getIovar("ver", 256);
-                  Toast.makeText(MyApplication.getAppContext(), x, Toast.LENGTH_SHORT).show();
+                  Toast.makeText(getContext(), x, Toast.LENGTH_SHORT).show();
                 //Toast.makeText(getContext(), Dhdutil.getInstance().dumpConsole(), Toast.LENGTH_LONG).show();
                 //Log.d("DHDUTIL", Dhdutil.getInstance().dumpConsole());
             }
