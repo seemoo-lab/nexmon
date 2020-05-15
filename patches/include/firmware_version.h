@@ -113,5 +113,10 @@
 
 // for CHIP_VER_BCM4375b1
 #define FW_VER_18_38_18_sta                510
+#define FW_VER_18_38_24_mon                511
+#define FW_VER_18_38_24_mfg                512
+#define FW_VER_18_38_18_mon                513
+#define FW_VER_18_38_18_mfg                514
+#define FW_VER_18_40_42_sta                515
 
 #endif /*FIRMWARE_VERSION_H*/
