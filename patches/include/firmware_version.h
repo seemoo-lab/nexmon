@@ -118,5 +118,6 @@
 #define FW_VER_18_38_18_mon                513
 #define FW_VER_18_38_18_mfg                514
 #define FW_VER_18_40_42_sta                515
+#define FW_VER_18_41_8_9_sta               516
 
 #endif /*FIRMWARE_VERSION_H*/
