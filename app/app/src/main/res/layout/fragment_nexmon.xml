@@ -25,8 +25,6 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin">
 
-
-
     <ScrollView
         android:id="@+id/scrollView"
         android:layout_width="match_parent"
@@ -37,17 +35,11 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-
-
-
-
             <LinearLayout
                 android:id="@+id/linDisclaimerDependent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
-
-
 
                 <TextView
                     android:id="@+id/tvInstallFirmwareHeading"
@@ -63,12 +55,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:paddingBottom="10dp"
-                    android:text="In the following, you can overwrite your WiFi firmware. This only works for the following radio chips and firmwares:\n\nBCM4339 (Nexus 5) - 6.37.34.43\nBCM4358 (Nexus 6P) - 7.112.200.17-sta\nBCM4330 (SGS 2) - 5.90.100.41-sta\n\nCheck your firmware version before proceeding!" />
+                    android:text="In the following, you can overwrite your WiFi firmware. This only works for the following radio chips and firmwares:\n\nBCM4339 (Nexus 5) - 6.37.34.43\nBCM4358 (Nexus 6P) - 7.112.200.17-sta\nBCM4330 (SGS 2) - 5.90.100.41-sta\nCheck your firmware version before proceeding!" />
 
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:background="@android:color/darker_gray"/>
+
                 <TextView
                     android:id="@+id/tvSpinnerDevice"
                     android:layout_width="match_parent"
@@ -87,8 +80,6 @@
                     android:spinnerMode="dropdown"
                     android:paddingTop="15dp" />
 
-
-
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
@@ -101,8 +92,8 @@
                     android:text="Firmware Path:"
                     android:paddingBottom="10dp"
                     android:paddingTop="10dp"
-
                     android:textStyle="bold"/>
+
                 <TextView
                     android:id="@+id/tvFirmwarePath"
                     android:layout_width="match_parent"
@@ -200,15 +191,6 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Install Nexmon Firmware" />
-
-
-
-
-
-
-
-
-
 
         </LinearLayout>
         </LinearLayout>
