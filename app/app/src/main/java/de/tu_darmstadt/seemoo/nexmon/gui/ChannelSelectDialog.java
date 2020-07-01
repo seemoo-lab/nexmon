@@ -9,8 +9,6 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-import com.google.android.gms.analytics.HitBuilders;
-import com.google.android.gms.analytics.Tracker;
 import com.stericson.RootShell.execution.Command;
 import com.stericson.RootTools.RootTools;
 
@@ -74,13 +72,6 @@ public class ChannelSelectDialog extends DialogFragment {
                 String[] channels = getResources().getStringArray(R.array.entries_list_channel_value);
                 String selectedChannel = channels[position];
                 setWlanChannel(selectedChannel);
-
-                Tracker tracker = MyApplication.getDefaultTracker();
-                tracker.send(new HitBuilders.EventBuilder()
-                        .setCategory("Channel")
-                        .setLabel("Channel Selection Dialog")
-                        .setAction("Channel changed")
-                        .build());
 
                 dismiss();
             }
