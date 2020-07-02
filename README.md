@@ -103,9 +103,9 @@ To be able to communicate with the firmware without root priviledges, we created
 
 ## Build patches for bcm43430a1 on the RPI3/Zero W or bcm434355c0 on the RPI3+/RPI4 using Raspbian (recommended)
 **Note:** We currently support Kernel Version 4.4 (depricated), 4.9, 4.14 and 4.19. Raspbian contains firmware version 7.45.154 for the bcm43455c0. We also support the newer firmware release 7.45.189 from Cypress. Please, try which works best for you.
-* Make sure the following commands are executed as root: `sudo su`
+* Make sure the following commands are executed as root: `sudo -s`
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
-* Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk qpdf bison flex make`
+* Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk qpdf bison flex make autoconf`
 * Clone our repository: `git clone https://github.com/seemoo-lab/nexmon.git`
 * Go into the root directory of our repository: `cd nexmon`
 * Check if `/usr/lib/arm-linux-gnueabihf/libisl.so.10` exists, if not, compile it from source:
@@ -113,7 +113,7 @@ To be able to communicate with the firmware without root priviledges, we created
 * Check if `/usr/lib/arm-linux-gnueabihf/libmpfr.so.4` exists, if not, compile it from source:
   * `cd buildtools/mpfr-3.1.4`, `autoreconf -f -i`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libmpfr.so /usr/lib/arm-linux-gnueabihf/libmpfr.so.4`
 * Then you can setup the build environment for compiling firmware patches
-  * Setup the build environment: `source setup_env.sh`
+  * Setup the build environment: `sudo -s`, `source setup_env.sh`
   * Compile some build tools and extract the ucode and flashpatches from the original firmware files: `make`
 * Go to the *patches* folder for the bcm43430a1/bcm43455c0 chipset: `cd patches/bcm43430a1/7_45_41_46/nexmon/` / `patches/bcm43455c0/<7_45_154 or 7_45_189>/nexmon/`
   * Compile a patched firmware: `make`
