@@ -22,6 +22,10 @@ else if [[ $HOSTUNAME == "Linux" ]] && [[ $PLATFORMUNAME == "armv7l" || $PLATFOR
     export CC=$NEXMON_ROOT/buildtools/gcc-arm-none-eabi-5_4-2016q2-linux-armv7l/bin/arm-none-eabi-
     export CCPLUGIN=$NEXMON_ROOT/buildtools/gcc-nexmon-plugin-arm/nexmon.so
     export ZLIBFLATE="zlib-flate -compress"
+else if [ $HOSTUNAME == "Linux" ] && [ $PLATFORMUNAME == "aarch64" ]; then
+    export CC=$NEXMON_ROOT/buildtools/gcc-arm-none-eabi-5_4-2016q2-linux-x86/bin/arm-none-eabi-
+    export CCPLUGIN=$NEXMON_ROOT/buildtools/gcc-nexmon-plugin/nexmon.so
+    export ZLIBFLATE="zlib-flate -compress"
 else
     echo "Platform not supported!"
 fi
