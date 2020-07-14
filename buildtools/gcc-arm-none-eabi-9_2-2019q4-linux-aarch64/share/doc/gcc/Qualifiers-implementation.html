@@ -1,0 +1,131 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Qualifiers implementation</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Qualifiers implementation">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Qualifiers implementation">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-Implementation.html#C-Implementation" rel="up" title="C Implementation">
+<link href="Declarators-implementation.html#Declarators-implementation" rel="next" title="Declarators implementation">
+<link href="Structures-unions-enumerations-and-bit_002dfields-implementation.html#Structures-unions-enumerations-and-bit_002dfields-implementation" rel="prev" title="Structures unions enumerations and bit-fields implementation">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Qualifiers-implementation"></a>
+<div class="header">
+<p>
+Next: <a href="Declarators-implementation.html#Declarators-implementation" accesskey="n" rel="next">Declarators implementation</a>, Previous: <a href="Structures-unions-enumerations-and-bit_002dfields-implementation.html#Structures-unions-enumerations-and-bit_002dfields-implementation" accesskey="p" rel="prev">Structures unions enumerations and bit-fields implementation</a>, Up: <a href="C-Implementation.html#C-Implementation" accesskey="u" rel="up">C Implementation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Qualifiers"></a>
+<h3 class="section">4.10 Qualifiers</h3>
+
+<ul>
+<li> <cite>What constitutes an access to an object that has volatile-qualified
+type (C90 6.5.3, C99 and C11 6.7.3).</cite>
+
+<p>Such an object is normally accessed by pointers and used for accessing
+hardware.  In most expressions, it is intuitively obvious what is a read
+and what is a write.  For example
+</p>
+<div class="smallexample">
+<pre class="smallexample">volatile int *dst = <var>somevalue</var>;
+volatile int *src = <var>someothervalue</var>;
+*dst = *src;
+</pre></div>
+
+<p>will cause a read of the volatile object pointed to by <var>src</var> and store the
+value into the volatile object pointed to by <var>dst</var>.  There is no
+guarantee that these reads and writes are atomic, especially for objects
+larger than <code>int</code>.
+</p>
+<p>However, if the volatile storage is not being modified, and the value of
+the volatile storage is not used, then the situation is less obvious.
+For example
+</p>
+<div class="smallexample">
+<pre class="smallexample">volatile int *src = <var>somevalue</var>;
+*src;
+</pre></div>
+
+<p>According to the C standard, such an expression is an rvalue whose type
+is the unqualified version of its original type, i.e. <code>int</code>.  Whether
+GCC interprets this as a read of the volatile object being pointed to or
+only as a request to evaluate the expression for its side effects depends
+on this type.
+</p>
+<p>If it is a scalar type, or on most targets an aggregate type whose only
+member object is of a scalar type, or a union type whose member objects
+are of scalar types, the expression is interpreted by GCC as a read of
+the volatile object; in the other cases, the expression is only evaluated
+for its side effects.
+</p>
+</li></ul>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Declarators-implementation.html#Declarators-implementation" accesskey="n" rel="next">Declarators implementation</a>, Previous: <a href="Structures-unions-enumerations-and-bit_002dfields-implementation.html#Structures-unions-enumerations-and-bit_002dfields-implementation" accesskey="p" rel="prev">Structures unions enumerations and bit-fields implementation</a>, Up: <a href="C-Implementation.html#C-Implementation" accesskey="u" rel="up">C Implementation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

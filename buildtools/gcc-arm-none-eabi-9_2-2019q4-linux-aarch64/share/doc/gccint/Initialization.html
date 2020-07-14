@@ -1,0 +1,205 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Initialization</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Initialization">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Initialization">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Assembler-Format.html#Assembler-Format" rel="up" title="Assembler Format">
+<link href="Macros-for-Initialization.html#Macros-for-Initialization" rel="next" title="Macros for Initialization">
+<link href="Label-Output.html#Label-Output" rel="prev" title="Label Output">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Initialization"></a>
+<div class="header">
+<p>
+Next: <a href="Macros-for-Initialization.html#Macros-for-Initialization" accesskey="n" rel="next">Macros for Initialization</a>, Previous: <a href="Label-Output.html#Label-Output" accesskey="p" rel="prev">Label Output</a>, Up: <a href="Assembler-Format.html#Assembler-Format" accesskey="u" rel="up">Assembler Format</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="How-Initialization-Functions-Are-Handled"></a>
+<h4 class="subsection">18.20.5 How Initialization Functions Are Handled</h4>
+<a name="index-initialization-routines"></a>
+<a name="index-termination-routines"></a>
+<a name="index-constructors_002c-output-of"></a>
+<a name="index-destructors_002c-output-of"></a>
+
+<p>The compiled code for certain languages includes <em>constructors</em>
+(also called <em>initialization routines</em>)&mdash;functions to initialize
+data in the program when the program is started.  These functions need
+to be called before the program is &ldquo;started&rdquo;&mdash;that is to say, before
+<code>main</code> is called.
+</p>
+<p>Compiling some languages generates <em>destructors</em> (also called
+<em>termination routines</em>) that should be called when the program
+terminates.
+</p>
+<p>To make the initialization and termination functions work, the compiler
+must output something in the assembler code to cause those functions to
+be called at the appropriate time.  When you port the compiler to a new
+system, you need to specify how to do this.
+</p>
+<p>There are two major ways that GCC currently supports the execution of
+initialization and termination functions.  Each way has two variants.
+Much of the structure is common to all four variations.
+</p>
+<a name="index-_005f_005fCTOR_005fLIST_005f_005f"></a>
+<a name="index-_005f_005fDTOR_005fLIST_005f_005f"></a>
+<p>The linker must build two lists of these functions&mdash;a list of
+initialization functions, called <code>__CTOR_LIST__</code>, and a list of
+termination functions, called <code>__DTOR_LIST__</code>.
+</p>
+<p>Each list always begins with an ignored function pointer (which may hold
+0, -1, or a count of the function pointers after it, depending on
+the environment).  This is followed by a series of zero or more function
+pointers to constructors (or destructors), followed by a function
+pointer containing zero.
+</p>
+<p>Depending on the operating system and its executable file format, either
+<samp>crtstuff.c</samp> or <samp>libgcc2.c</samp> traverses these lists at startup
+time and exit time.  Constructors are called in reverse order of the
+list; destructors in forward order.
+</p>
+<p>The best way to handle static constructors works only for object file
+formats which provide arbitrarily-named sections.  A section is set
+aside for a list of constructors, and another for a list of destructors.
+Traditionally these are called &lsquo;<samp>.ctors</samp>&rsquo; and &lsquo;<samp>.dtors</samp>&rsquo;.  Each
+object file that defines an initialization function also puts a word in
+the constructor section to point to that function.  The linker
+accumulates all these words into one contiguous &lsquo;<samp>.ctors</samp>&rsquo; section.
+Termination functions are handled similarly.
+</p>
+<p>This method will be chosen as the default by <samp>target-def.h</samp> if
+<code>TARGET_ASM_NAMED_SECTION</code> is defined.  A target that does not
+support arbitrary sections, but does support special designated
+constructor and destructor sections may define <code>CTORS_SECTION_ASM_OP</code>
+and <code>DTORS_SECTION_ASM_OP</code> to achieve the same effect.
+</p>
+<p>When arbitrary sections are available, there are two variants, depending
+upon how the code in <samp>crtstuff.c</samp> is called.  On systems that
+support a <em>.init</em> section which is executed at program startup,
+parts of <samp>crtstuff.c</samp> are compiled into that section.  The
+program is linked by the <code>gcc</code> driver like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">ld -o <var>output_file</var> crti.o crtbegin.o &hellip; -lgcc crtend.o crtn.o
+</pre></div>
+
+<p>The prologue of a function (<code>__init</code>) appears in the <code>.init</code>
+section of <samp>crti.o</samp>; the epilogue appears in <samp>crtn.o</samp>.  Likewise
+for the function <code>__fini</code> in the <em>.fini</em> section.  Normally these
+files are provided by the operating system or by the GNU C library, but
+are provided by GCC for a few targets.
+</p>
+<p>The objects <samp>crtbegin.o</samp> and <samp>crtend.o</samp> are (for most targets)
+compiled from <samp>crtstuff.c</samp>.  They contain, among other things, code
+fragments within the <code>.init</code> and <code>.fini</code> sections that branch
+to routines in the <code>.text</code> section.  The linker will pull all parts
+of a section together, which results in a complete <code>__init</code> function
+that invokes the routines we need at startup.
+</p>
+<p>To use this variant, you must define the <code>INIT_SECTION_ASM_OP</code>
+macro properly.
+</p>
+<p>If no init section is available, when GCC compiles any function called
+<code>main</code> (or more accurately, any function designated as a program
+entry point by the language front end calling <code>expand_main_function</code>),
+it inserts a procedure call to <code>__main</code> as the first executable code
+after the function prologue.  The <code>__main</code> function is defined
+in <samp>libgcc2.c</samp> and runs the global constructors.
+</p>
+<p>In file formats that don&rsquo;t support arbitrary sections, there are again
+two variants.  In the simplest variant, the GNU linker (GNU <code>ld</code>)
+and an &lsquo;a.out&rsquo; format must be used.  In this case,
+<code>TARGET_ASM_CONSTRUCTOR</code> is defined to produce a <code>.stabs</code>
+entry of type &lsquo;<samp>N_SETT</samp>&rsquo;, referencing the name <code>__CTOR_LIST__</code>,
+and with the address of the void function containing the initialization
+code as its value.  The GNU linker recognizes this as a request to add
+the value to a <em>set</em>; the values are accumulated, and are eventually
+placed in the executable as a vector in the format described above, with
+a leading (ignored) count and a trailing zero element.
+<code>TARGET_ASM_DESTRUCTOR</code> is handled similarly.  Since no init
+section is available, the absence of <code>INIT_SECTION_ASM_OP</code> causes
+the compilation of <code>main</code> to call <code>__main</code> as above, starting
+the initialization process.
+</p>
+<p>The last variant uses neither arbitrary sections nor the GNU linker.
+This is preferable when you want to do dynamic linking and when using
+file formats which the GNU linker does not support, such as &lsquo;ECOFF&rsquo;.  In
+this case, <code>TARGET_HAVE_CTORS_DTORS</code> is false, initialization and
+termination functions are recognized simply by their names.  This requires
+an extra program in the linkage step, called <code>collect2</code>.  This program
+pretends to be the linker, for use with GCC; it does its job by running
+the ordinary linker, but also arranges to include the vectors of
+initialization and termination functions.  These functions are called
+via <code>__main</code> as described above.  In order to use this method,
+<code>use_collect2</code> must be defined in the target in <samp>config.gcc</samp>.
+</p>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Macros-for-Initialization.html#Macros-for-Initialization" accesskey="n" rel="next">Macros for Initialization</a>, Previous: <a href="Label-Output.html#Label-Output" accesskey="p" rel="prev">Label Output</a>, Up: <a href="Assembler-Format.html#Assembler-Format" accesskey="u" rel="up">Assembler Format</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

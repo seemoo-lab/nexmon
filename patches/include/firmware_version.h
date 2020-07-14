@@ -72,6 +72,8 @@
 // for CHIP_VER_BCM43438 (wrongly labled) BCM43430a1
 #define FW_VER_7_45_41_26_r640327           40
 #define FW_VER_7_45_41_46                   41
+#define FW_VER_7_45_98_38                   42
+#define FW_VER_7_45_98_97                   43
 
 // for CHIP_VER_BCM4356
 #define FW_VER_7_35_101_5_sta               50

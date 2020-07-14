@@ -1,0 +1,170 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Strings</title>
+
+<meta name="description" content="Using as: Strings">
+<meta name="keywords" content="Using as: Strings">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Characters.html#Characters" rel="up" title="Characters">
+<link href="Chars.html#Chars" rel="next" title="Chars">
+<link href="Characters.html#Characters" rel="prev" title="Characters">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Strings"></a>
+<div class="header">
+<p>
+Next: <a href="Chars.html#Chars" accesskey="n" rel="next">Chars</a>, Up: <a href="Characters.html#Characters" accesskey="u" rel="up">Characters</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Strings-1"></a>
+<h4 class="subsubsection">3.6.1.1 Strings</h4>
+
+<a name="index-string-constants"></a>
+<a name="index-constants_002c-string"></a>
+<p>A <em>string</em> is written between double-quotes.  It may contain
+double-quotes or null characters.  The way to get special characters
+into a string is to <em>escape</em> these characters: precede them with
+a backslash &lsquo;<samp>\</samp>&rsquo; character.  For example &lsquo;<samp>\\</samp>&rsquo; represents
+one backslash:  the first <code>\</code> is an escape which tells
+<code>as</code> to interpret the second character literally as a backslash
+(which prevents <code>as</code> from recognizing the second <code>\</code> as an
+escape character).  The complete list of escapes follows.
+</p>
+<a name="index-escape-codes_002c-character"></a>
+<a name="index-character-escape-codes"></a>
+<dl compact="compact">
+<dd><a name="index--_005cb-_0028backspace-character_0029"></a>
+<a name="index-backspace-_0028_005cb_0029"></a>
+</dd>
+<dt><kbd>\b</kbd></dt>
+<dd><p>Mnemonic for backspace; for ASCII this is octal code 010.
+</p>
+<a name="index--_005cf-_0028formfeed-character_0029"></a>
+<a name="index-formfeed-_0028_005cf_0029"></a>
+</dd>
+<dt><kbd>backslash-f</kbd></dt>
+<dd><p>Mnemonic for FormFeed; for ASCII this is octal code 014.
+</p>
+<a name="index--_005cn-_0028newline-character_0029"></a>
+<a name="index-newline-_0028_005cn_0029"></a>
+</dd>
+<dt><kbd>\n</kbd></dt>
+<dd><p>Mnemonic for newline; for ASCII this is octal code 012.
+</p>
+<a name="index--_005cr-_0028carriage-return-character_0029"></a>
+<a name="index-carriage-return-_0028backslash_002dr_0029"></a>
+</dd>
+<dt><kbd>\r</kbd></dt>
+<dd><p>Mnemonic for carriage-Return; for ASCII this is octal code 015.
+</p>
+<a name="index--_005ct-_0028tab_0029"></a>
+<a name="index-tab-_0028_005ct_0029"></a>
+</dd>
+<dt><kbd>\t</kbd></dt>
+<dd><p>Mnemonic for horizontal Tab; for ASCII this is octal code 011.
+</p>
+<a name="index--_005cddd-_0028octal-character-code_0029"></a>
+<a name="index-octal-character-code-_0028_005cddd_0029"></a>
+</dd>
+<dt><kbd>\ <var>digit</var> <var>digit</var> <var>digit</var></kbd></dt>
+<dd><p>An octal character code.  The numeric code is 3 octal digits.
+For compatibility with other Unix systems, 8 and 9 are accepted as digits:
+for example, <code>\008</code> has the value 010, and <code>\009</code> the value 011.
+</p>
+<a name="index--_005cxd_002e_002e_002e-_0028hex-character-code_0029"></a>
+<a name="index-hex-character-code-_0028_005cxd_002e_002e_002e_0029"></a>
+</dd>
+<dt><kbd>\<code>x</code> <var>hex-digits...</var></kbd></dt>
+<dd><p>A hex character code.  All trailing hex digits are combined.  Either upper or
+lower case <code>x</code> works.
+</p>
+<a name="index--_005c_005c-_0028_005c-character_0029"></a>
+<a name="index-backslash-_0028_005c_005c_0029"></a>
+</dd>
+<dt><kbd>\\</kbd></dt>
+<dd><p>Represents one &lsquo;<samp>\</samp>&rsquo; character.
+</p>
+<a name="index--_005c_0022-_0028doublequote-character_0029"></a>
+<a name="index-doublequote-_0028_005c_0022_0029"></a>
+</dd>
+<dt><kbd>\&quot;</kbd></dt>
+<dd><p>Represents one &lsquo;<samp>&quot;</samp>&rsquo; character.  Needed in strings to represent
+this character, because an unescaped &lsquo;<samp>&quot;</samp>&rsquo; would end the string.
+</p>
+</dd>
+<dt><kbd>\ <var>anything-else</var></kbd></dt>
+<dd><p>Any other character when escaped by <kbd>\</kbd> gives a warning, but
+assembles as if the &lsquo;<samp>\</samp>&rsquo; was not present.  The idea is that if
+you used an escape sequence you clearly didn&rsquo;t want the literal
+interpretation of the following character.  However <code>as</code> has no
+other interpretation, so <code>as</code> knows it is giving you the wrong
+code and warns you of the fact.
+</p></dd>
+</dl>
+
+<p>Which characters are escapable, and what those escapes represent,
+varies widely among assemblers.  The current set is what we think
+the BSD 4.2 assembler recognizes, and is a subset of what most C
+compilers recognize.  If you are in doubt, do not use an escape
+sequence.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Chars.html#Chars" accesskey="n" rel="next">Chars</a>, Up: <a href="Characters.html#Characters" accesskey="u" rel="up">Characters</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

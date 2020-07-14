@@ -1,0 +1,144 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Guile API</title>
+
+<meta name="description" content="Debugging with GDB: Guile API">
+<meta name="keywords" content="Debugging with GDB: Guile API">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Guile.html#Guile" rel="up" title="Guile">
+<link href="Basic-Guile.html#Basic-Guile" rel="next" title="Basic Guile">
+<link href="Guile-Commands.html#Guile-Commands" rel="prev" title="Guile Commands">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Guile-API"></a>
+<div class="header">
+<p>
+Next: <a href="Guile-Auto_002dloading.html#Guile-Auto_002dloading" accesskey="n" rel="next">Guile Auto-loading</a>, Previous: <a href="Guile-Commands.html#Guile-Commands" accesskey="p" rel="prev">Guile Commands</a>, Up: <a href="Guile.html#Guile" accesskey="u" rel="up">Guile</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Guile-API-1"></a>
+<h4 class="subsection">23.3.3 Guile API</h4>
+<a name="index-guile-api"></a>
+<a name="index-programming-in-guile"></a>
+
+<p>You can get quick online help for <small>GDB</small>&rsquo;s Guile API by issuing
+the command <kbd>help&nbsp;guile</kbd><!-- /@w -->, or by issuing the command <kbd>,help</kbd>
+from an interactive Guile session.  Furthermore, most Guile procedures
+provided by <small>GDB</small> have doc strings which can be obtained with
+<kbd>,describe <var>procedure-name</var></kbd> or <kbd>,d <var>procedure-name</var></kbd>
+from the Guile interactive prompt.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Basic-Guile.html#Basic-Guile" accesskey="1">Basic Guile</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Basic Guile Functions
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Guile-Configuration.html#Guile-Configuration" accesskey="2">Guile Configuration</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Guile configuration variables
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GDB-Scheme-Data-Types.html#GDB-Scheme-Data-Types" accesskey="3">GDB Scheme Data Types</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Scheme representations of GDB objects
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Guile-Exception-Handling.html#Guile-Exception-Handling" accesskey="4">Guile Exception Handling</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How Guile exceptions are translated
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Values-From-Inferior-In-Guile.html#Values-From-Inferior-In-Guile" accesskey="5">Values From Inferior In Guile</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Guile representation of values
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Arithmetic-In-Guile.html#Arithmetic-In-Guile" accesskey="6">Arithmetic In Guile</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Arithmetic in Guile
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Types-In-Guile.html#Types-In-Guile" accesskey="7">Types In Guile</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Guile representation of types
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Guile-Pretty-Printing-API.html#Guile-Pretty-Printing-API" accesskey="8">Guile Pretty Printing API</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Pretty-printing values with Guile
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Selecting-Guile-Pretty_002dPrinters.html#Selecting-Guile-Pretty_002dPrinters" accesskey="9">Selecting Guile Pretty-Printers</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How GDB chooses a pretty-printer
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Writing-a-Guile-Pretty_002dPrinter.html#Writing-a-Guile-Pretty_002dPrinter">Writing a Guile Pretty-Printer</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Writing a pretty-printer
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Commands-In-Guile.html#Commands-In-Guile">Commands In Guile</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Implementing new commands in Guile
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Parameters-In-Guile.html#Parameters-In-Guile">Parameters In Guile</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Adding new <small>GDB</small> parameters
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Progspaces-In-Guile.html#Progspaces-In-Guile">Progspaces In Guile</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Program spaces
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Objfiles-In-Guile.html#Objfiles-In-Guile">Objfiles In Guile</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Object files in Guile
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Frames-In-Guile.html#Frames-In-Guile">Frames In Guile</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Accessing inferior stack frames from Guile
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Blocks-In-Guile.html#Blocks-In-Guile">Blocks In Guile</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Accessing blocks from Guile
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Symbols-In-Guile.html#Symbols-In-Guile">Symbols In Guile</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Guile representation of symbols
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Symbol-Tables-In-Guile.html#Symbol-Tables-In-Guile">Symbol Tables In Guile</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Guile representation of symbol tables
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Breakpoints-In-Guile.html#Breakpoints-In-Guile">Breakpoints In Guile</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Manipulating breakpoints using Guile
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Lazy-Strings-In-Guile.html#Lazy-Strings-In-Guile">Lazy Strings In Guile</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Guile representation of lazy strings
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Architectures-In-Guile.html#Architectures-In-Guile">Architectures In Guile</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Guile representation of architectures
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Disassembly-In-Guile.html#Disassembly-In-Guile">Disassembly In Guile</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Disassembling instructions from Guile
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="I_002fO-Ports-in-Guile.html#I_002fO-Ports-in-Guile">I/O Ports in Guile</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">GDB I/O ports
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Memory-Ports-in-Guile.html#Memory-Ports-in-Guile">Memory Ports in Guile</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Accessing memory through ports and bytevectors
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Iterators-In-Guile.html#Iterators-In-Guile">Iterators In Guile</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Basic iterator support
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Guile-Auto_002dloading.html#Guile-Auto_002dloading" accesskey="n" rel="next">Guile Auto-loading</a>, Previous: <a href="Guile-Commands.html#Guile-Commands" accesskey="p" rel="prev">Guile Commands</a>, Up: <a href="Guile.html#Guile" accesskey="u" rel="up">Guile</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

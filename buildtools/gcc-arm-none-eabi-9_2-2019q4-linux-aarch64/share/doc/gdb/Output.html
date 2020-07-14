@@ -1,0 +1,226 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Output</title>
+
+<meta name="description" content="Debugging with GDB: Output">
+<meta name="keywords" content="Debugging with GDB: Output">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Sequences.html#Sequences" rel="up" title="Sequences">
+<link href="Auto_002dloading-sequences.html#Auto_002dloading-sequences" rel="next" title="Auto-loading sequences">
+<link href="Command-Files.html#Command-Files" rel="prev" title="Command Files">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Output"></a>
+<div class="header">
+<p>
+Next: <a href="Auto_002dloading-sequences.html#Auto_002dloading-sequences" accesskey="n" rel="next">Auto-loading sequences</a>, Previous: <a href="Command-Files.html#Command-Files" accesskey="p" rel="prev">Command Files</a>, Up: <a href="Sequences.html#Sequences" accesskey="u" rel="up">Sequences</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Commands-for-Controlled-Output"></a>
+<h4 class="subsection">23.1.4 Commands for Controlled Output</h4>
+
+<p>During the execution of a command file or a user-defined command, normal
+<small>GDB</small> output is suppressed; the only output that appears is what is
+explicitly printed by the commands in the definition.  This section
+describes three commands useful for generating exactly the output you
+want.
+</p>
+<dl compact="compact">
+<dd><a name="index-echo"></a>
+</dd>
+<dt><code>echo <var>text</var></code></dt>
+<dd><p>Print <var>text</var>.  Nonprinting characters can be included in
+<var>text</var> using C escape sequences, such as &lsquo;<samp>\n</samp>&rsquo; to print a
+newline.  <strong>No newline is printed unless you specify one.</strong>
+In addition to the standard C escape sequences, a backslash followed
+by a space stands for a space.  This is useful for displaying a
+string with spaces at the beginning or the end, since leading and
+trailing spaces are otherwise trimmed from all arguments.
+To print &lsquo;<samp>&nbsp;<!-- /@w -->and foo =&nbsp;<!-- /@w --></samp>&rsquo;, use the command
+&lsquo;<samp>echo \&nbsp;<!-- /@w -->and foo = \&nbsp;<!-- /@w --></samp>&rsquo;.
+</p>
+<p>A backslash at the end of <var>text</var> can be used, as in C, to continue
+the command onto subsequent lines.  For example,
+</p>
+<div class="smallexample">
+<pre class="smallexample">echo This is some text\n\
+which is continued\n\
+onto several lines.\n
+</pre></div>
+
+<p>produces the same output as
+</p>
+<div class="smallexample">
+<pre class="smallexample">echo This is some text\n
+echo which is continued\n
+echo onto several lines.\n
+</pre></div>
+
+<a name="index-output"></a>
+</dd>
+<dt><code>output <var>expression</var></code></dt>
+<dd><p>Print the value of <var>expression</var> and nothing but that value: no
+newlines, no &lsquo;<samp>$<var>nn</var> = </samp>&rsquo;.  The value is not entered in the
+value history either.  See <a href="Expressions.html#Expressions">Expressions</a>, for more information
+on expressions.
+</p>
+</dd>
+<dt><code>output/<var>fmt</var> <var>expression</var></code></dt>
+<dd><p>Print the value of <var>expression</var> in format <var>fmt</var>.  You can use
+the same formats as for <code>print</code>.  See <a href="Output-Formats.html#Output-Formats">Output
+Formats</a>, for more information.
+</p>
+<a name="index-printf"></a>
+</dd>
+<dt><code>printf <var>template</var>, <var>expressions</var>&hellip;</code></dt>
+<dd><p>Print the values of one or more <var>expressions</var> under the control of
+the string <var>template</var>.  To print several values, make
+<var>expressions</var> be a comma-separated list of individual expressions,
+which may be either numbers or pointers.  Their values are printed as
+specified by <var>template</var>, exactly as a C program would do by
+executing the code below:
+</p>
+<div class="smallexample">
+<pre class="smallexample">printf (<var>template</var>, <var>expressions</var>&hellip;);
+</pre></div>
+
+<p>As in <code>C</code> <code>printf</code>, ordinary characters in <var>template</var>
+are printed verbatim, while <em>conversion specification</em> introduced
+by the &lsquo;<samp>%</samp>&rsquo; character cause subsequent <var>expressions</var> to be
+evaluated, their values converted and formatted according to type and
+style information encoded in the conversion specifications, and then
+printed.
+</p>
+<p>For example, you can print two values in hex like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">printf &quot;foo, bar-foo = 0x%x, 0x%x\n&quot;, foo, bar-foo
+</pre></div>
+
+<p><code>printf</code> supports all the standard <code>C</code> conversion
+specifications, including the flags and modifiers between the &lsquo;<samp>%</samp>&rsquo;
+character and the conversion letter, with the following exceptions:
+</p>
+<ul>
+<li> The argument-ordering modifiers, such as &lsquo;<samp>2$</samp>&rsquo;, are not supported.
+
+</li><li> The modifier &lsquo;<samp>*</samp>&rsquo; is not supported for specifying precision or
+width.
+
+</li><li> The &lsquo;<samp>'</samp>&rsquo; flag (for separation of digits into groups according to
+<code>LC_NUMERIC'</code>) is not supported.
+
+</li><li> The type modifiers &lsquo;<samp>hh</samp>&rsquo;, &lsquo;<samp>j</samp>&rsquo;, &lsquo;<samp>t</samp>&rsquo;, and &lsquo;<samp>z</samp>&rsquo; are not
+supported.
+
+</li><li> The conversion letter &lsquo;<samp>n</samp>&rsquo; (as in &lsquo;<samp>%n</samp>&rsquo;) is not supported.
+
+</li><li> The conversion letters &lsquo;<samp>a</samp>&rsquo; and &lsquo;<samp>A</samp>&rsquo; are not supported.
+</li></ul>
+
+<p>Note that the &lsquo;<samp>ll</samp>&rsquo; type modifier is supported only if the
+underlying <code>C</code> implementation used to build <small>GDB</small> supports
+the <code>long long int</code> type, and the &lsquo;<samp>L</samp>&rsquo; type modifier is
+supported only if <code>long double</code> type is available.
+</p>
+<p>As in <code>C</code>, <code>printf</code> supports simple backslash-escape
+sequences, such as <code>\n</code>, &lsquo;<samp>\t</samp>&rsquo;, &lsquo;<samp>\\</samp>&rsquo;, &lsquo;<samp>\&quot;</samp>&rsquo;,
+&lsquo;<samp>\a</samp>&rsquo;, and &lsquo;<samp>\f</samp>&rsquo;, that consist of backslash followed by a
+single character.  Octal and hexadecimal escape sequences are not
+supported.
+</p>
+<p>Additionally, <code>printf</code> supports conversion specifications for DFP
+(<em>Decimal Floating Point</em>) types using the following length modifiers
+together with a floating point specifier.
+letters:
+</p>
+<ul>
+<li> &lsquo;<samp>H</samp>&rsquo; for printing <code>Decimal32</code> types.
+
+</li><li> &lsquo;<samp>D</samp>&rsquo; for printing <code>Decimal64</code> types.
+
+</li><li> &lsquo;<samp>DD</samp>&rsquo; for printing <code>Decimal128</code> types.
+</li></ul>
+
+<p>If the underlying <code>C</code> implementation used to build <small>GDB</small> has
+support for the three length modifiers for DFP types, other modifiers
+such as width and precision will also be available for <small>GDB</small> to use.
+</p>
+<p>In case there is no such <code>C</code> support, no additional modifiers will be
+available and the value will be printed in the standard way.
+</p>
+<p>Here&rsquo;s an example of printing DFP types using the above conversion letters:
+</p><div class="smallexample">
+<pre class="smallexample">printf &quot;D32: %Hf - D64: %Df - D128: %DDf\n&quot;,1.2345df,1.2E10dd,1.2E1dl
+</pre></div>
+
+<a name="eval"></a><a name="index-eval"></a>
+</dd>
+<dt><code>eval <var>template</var>, <var>expressions</var>&hellip;</code></dt>
+<dd><p>Convert the values of one or more <var>expressions</var> under the control of
+the string <var>template</var> to a command line, and call it.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Auto_002dloading-sequences.html#Auto_002dloading-sequences" accesskey="n" rel="next">Auto-loading sequences</a>, Previous: <a href="Command-Files.html#Command-Files" accesskey="p" rel="prev">Command Files</a>, Up: <a href="Sequences.html#Sequences" accesskey="u" rel="up">Sequences</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

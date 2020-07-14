@@ -1,0 +1,164 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Nios II Relocations</title>
+
+<meta name="description" content="Using as: Nios II Relocations">
+<meta name="keywords" content="Using as: Nios II Relocations">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="NiosII_002dDependent.html#NiosII_002dDependent" rel="up" title="NiosII-Dependent">
+<link href="Nios-II-Directives.html#Nios-II-Directives" rel="next" title="Nios II Directives">
+<link href="Nios-II-Chars.html#Nios-II-Chars" rel="prev" title="Nios II Chars">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Nios-II-Relocations"></a>
+<div class="header">
+<p>
+Next: <a href="Nios-II-Directives.html#Nios-II-Directives" accesskey="n" rel="next">Nios II Directives</a>, Previous: <a href="Nios-II-Syntax.html#Nios-II-Syntax" accesskey="p" rel="prev">Nios II Syntax</a>, Up: <a href="NiosII_002dDependent.html#NiosII_002dDependent" accesskey="u" rel="up">NiosII-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Nios-II-Machine-Relocations"></a>
+<h4 class="subsection">9.31.3 Nios II Machine Relocations</h4>
+
+<a name="index-machine-relocations_002c-Nios-II"></a>
+<a name="index-Nios-II-machine-relocations"></a>
+
+<dl compact="compact">
+<dd><a name="index-hiadj-directive_002c-Nios-II"></a>
+</dd>
+<dt><code>%hiadj(<var>expression</var>)</code></dt>
+<dd><p>Extract the upper 16 bits of <var>expression</var> and add 
+one if the 15th bit is set. 
+</p>
+<p>The value of <code>%hiadj(<var>expression</var>)</code> is:
+</p><div class="smallexample">
+<pre class="smallexample">((<var>expression</var> &gt;&gt; 16) &amp; 0xffff) + ((<var>expression</var> &gt;&gt; 15) &amp; 0x01)
+</pre></div>
+
+<p>The <code>%hiadj</code> relocation is intended to be used with
+the <code>addi</code>, <code>ld</code> or <code>st</code> instructions
+along with a <code>%lo</code>, in order to load a 32-bit constant.
+</p>
+<div class="smallexample">
+<pre class="smallexample">movhi r2, %hiadj(symbol)
+addi r2, r2, %lo(symbol)
+</pre></div>
+
+<a name="index-hi-directive_002c-Nios-II"></a>
+</dd>
+<dt><code>%hi(<var>expression</var>)</code></dt>
+<dd><p>Extract the upper 16 bits of <var>expression</var>.
+</p>
+<a name="index-lo-directive_002c-Nios-II"></a>
+</dd>
+<dt><code>%lo(<var>expression</var>)</code></dt>
+<dd><p>Extract the lower 16 bits of <var>expression</var>.
+</p>
+<a name="index-gprel-directive_002c-Nios-II"></a>
+</dd>
+<dt><code>%gprel(<var>expression</var>)</code></dt>
+<dd><p>Subtract the value of the symbol <code>_gp</code> from
+<var>expression</var>. 
+</p>
+<p>The intention of the <code>%gprel</code> relocation is
+to have a fast small area of memory which only
+takes a 16-bit immediate to access.
+</p>
+<div class="smallexample">
+<pre class="smallexample">	.section .sdata
+fastint:
+	.int 123
+	.section .text
+	ldw r4, %gprel(fastint)(gp)
+</pre></div>
+
+<a name="index-call-directive_002c-Nios-II"></a>
+<a name="index-call_005flo-directive_002c-Nios-II"></a>
+<a name="index-call_005fhiadj-directive_002c-Nios-II"></a>
+<a name="index-got-directive_002c-Nios-II"></a>
+<a name="index-got_005flo-directive_002c-Nios-II"></a>
+<a name="index-got_005fhiadj-directive_002c-Nios-II"></a>
+<a name="index-gotoff-directive_002c-Nios-II"></a>
+<a name="index-gotoff_005flo-directive_002c-Nios-II"></a>
+<a name="index-gotoff_005fhiadj-directive_002c-Nios-II"></a>
+<a name="index-tls_005fgd-directive_002c-Nios-II"></a>
+<a name="index-tls_005fie-directive_002c-Nios-II"></a>
+<a name="index-tls_005fle-directive_002c-Nios-II"></a>
+<a name="index-tls_005fldm-directive_002c-Nios-II"></a>
+<a name="index-tls_005fldo-directive_002c-Nios-II"></a>
+</dd>
+<dt><code>%call(<var>expression</var>)</code></dt>
+<dt><code>%call_lo(<var>expression</var>)</code></dt>
+<dt><code>%call_hiadj(<var>expression</var>)</code></dt>
+<dt><code>%got(<var>expression</var>)</code></dt>
+<dt><code>%got_lo(<var>expression</var>)</code></dt>
+<dt><code>%got_hiadj(<var>expression</var>)</code></dt>
+<dt><code>%gotoff(<var>expression</var>)</code></dt>
+<dt><code>%gotoff_lo(<var>expression</var>)</code></dt>
+<dt><code>%gotoff_hiadj(<var>expression</var>)</code></dt>
+<dt><code>%tls_gd(<var>expression</var>)</code></dt>
+<dt><code>%tls_ie(<var>expression</var>)</code></dt>
+<dt><code>%tls_le(<var>expression</var>)</code></dt>
+<dt><code>%tls_ldm(<var>expression</var>)</code></dt>
+<dt><code>%tls_ldo(<var>expression</var>)</code></dt>
+<dd>
+<p>These relocations support the ABI for Linux Systems documented in the
+<cite>Nios II Processor Reference Handbook</cite>.
+</p></dd>
+</dl>
+
+
+
+
+
+</body>
+</html>

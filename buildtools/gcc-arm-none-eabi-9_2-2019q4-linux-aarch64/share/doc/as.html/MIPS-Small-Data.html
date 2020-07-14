@@ -1,0 +1,131 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: MIPS Small Data</title>
+
+<meta name="description" content="Using as: MIPS Small Data">
+<meta name="keywords" content="Using as: MIPS Small Data">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="MIPS_002dDependent.html#MIPS_002dDependent" rel="up" title="MIPS-Dependent">
+<link href="MIPS-ISA.html#MIPS-ISA" rel="next" title="MIPS ISA">
+<link href="MIPS-Symbol-Sizes.html#MIPS-Symbol-Sizes" rel="prev" title="MIPS Symbol Sizes">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="MIPS-Small-Data"></a>
+<div class="header">
+<p>
+Next: <a href="MIPS-ISA.html#MIPS-ISA" accesskey="n" rel="next">MIPS ISA</a>, Previous: <a href="MIPS-Symbol-Sizes.html#MIPS-Symbol-Sizes" accesskey="p" rel="prev">MIPS Symbol Sizes</a>, Up: <a href="MIPS_002dDependent.html#MIPS_002dDependent" accesskey="u" rel="up">MIPS-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Controlling-the-use-of-small-data-accesses"></a>
+<h4 class="subsection">9.27.4 Controlling the use of small data accesses</h4>
+
+<a name="index-small-data_002c-MIPS"></a>
+<a name="index-gp-register_002c-MIPS"></a>
+<p>It often takes several instructions to load the address of a symbol.
+For example, when &lsquo;<samp>addr</samp>&rsquo; is a 32-bit symbol, the non-PIC expansion
+of &lsquo;<samp>dla $4,addr</samp>&rsquo; is usually:
+</p>
+<div class="smallexample">
+<pre class="smallexample">lui     $4,%hi(addr)
+daddiu  $4,$4,%lo(addr)
+</pre></div>
+
+<p>The sequence is much longer when &lsquo;<samp>addr</samp>&rsquo; is a 64-bit symbol.
+See <a href="MIPS-Symbol-Sizes.html#MIPS-Symbol-Sizes">Directives to override the size of symbols</a>.
+</p>
+<p>In order to cut down on this overhead, most embedded MIPS systems
+set aside a 64-kilobyte &ldquo;small data&rdquo; area and guarantee that all
+data of size <var>n</var> and smaller will be placed in that area.
+The limit <var>n</var> is passed to both the assembler and the linker
+using the command-line option <samp>-G <var>n</var></samp>, see <a href="MIPS-Options.html#MIPS-Options">Assembler options</a>.  Note that the same value of <var>n</var> must be used
+when linking and when assembling all input files to the link; any
+inconsistency could cause a relocation overflow error.
+</p>
+<p>The size of an object in the <code>.bss</code> section is set by the
+<code>.comm</code> or <code>.lcomm</code> directive that defines it.  The size of
+an external object may be set with the <code>.extern</code> directive.  For
+example, &lsquo;<samp>.extern sym,4</samp>&rsquo; declares that the object at <code>sym</code>
+is 4 bytes in length, while leaving <code>sym</code> otherwise undefined.
+</p>
+<p>When no <samp>-G</samp> option is given, the default limit is 8 bytes.
+The option <samp>-G 0</samp> prevents any data from being automatically
+classified as small.
+</p>
+<p>It is also possible to mark specific objects as small by putting them
+in the special sections <code>.sdata</code> and <code>.sbss</code>, which are
+&ldquo;small&rdquo; counterparts of <code>.data</code> and <code>.bss</code> respectively.
+The toolchain will treat such data as small regardless of the
+<samp>-G</samp> setting.
+</p>
+<p>On startup, systems that support a small data area are expected to
+initialize register <code>$28</code>, also known as <code>$gp</code>, in such a
+way that small data can be accessed using a 16-bit offset from that
+register.  For example, when &lsquo;<samp>addr</samp>&rsquo; is small data,
+the &lsquo;<samp>dla $4,addr</samp>&rsquo; instruction above is equivalent to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">daddiu  $4,$28,%gp_rel(addr)
+</pre></div>
+
+<p>Small data is not supported for SVR4-style PIC.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="MIPS-ISA.html#MIPS-ISA" accesskey="n" rel="next">MIPS ISA</a>, Previous: <a href="MIPS-Symbol-Sizes.html#MIPS-Symbol-Sizes" accesskey="p" rel="prev">MIPS Symbol Sizes</a>, Up: <a href="MIPS_002dDependent.html#MIPS_002dDependent" accesskey="u" rel="up">MIPS-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

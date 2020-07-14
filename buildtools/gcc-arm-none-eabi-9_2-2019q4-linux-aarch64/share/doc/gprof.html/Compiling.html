@@ -1,0 +1,178 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the gprof profiler of the GNU system.
+
+Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU gprof: Compiling</title>
+
+<meta name="description" content="GNU gprof: Compiling">
+<meta name="keywords" content="GNU gprof: Compiling">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Executing.html#Executing" rel="next" title="Executing">
+<link href="Introduction.html#Introduction" rel="prev" title="Introduction">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Compiling"></a>
+<div class="header">
+<p>
+Next: <a href="Executing.html#Executing" accesskey="n" rel="next">Executing</a>, Previous: <a href="Introduction.html#Introduction" accesskey="p" rel="prev">Introduction</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<hr>
+<a name="Compiling-a-Program-for-Profiling"></a>
+<h2 class="chapter">2 Compiling a Program for Profiling</h2>
+
+<p>The first step in generating profile information for your program is
+to compile and link it with profiling enabled.
+</p>
+<p>To compile a source file for profiling, specify the &lsquo;<samp>-pg</samp>&rsquo; option when
+you run the compiler.  (This is in addition to the options you normally
+use.)
+</p>
+<p>To link the program for profiling, if you use a compiler such as <code>cc</code>
+to do the linking, simply specify &lsquo;<samp>-pg</samp>&rsquo; in addition to your usual
+options.  The same option, &lsquo;<samp>-pg</samp>&rsquo;, alters either compilation or linking
+to do what is necessary for profiling.  Here are examples:
+</p>
+<div class="example">
+<pre class="example">cc -g -c myprog.c utils.c -pg
+cc -o myprog myprog.o utils.o -pg
+</pre></div>
+
+<p>The &lsquo;<samp>-pg</samp>&rsquo; option also works with a command that both compiles and links:
+</p>
+<div class="example">
+<pre class="example">cc -o myprog myprog.c utils.c -g -pg
+</pre></div>
+
+<p>Note: The &lsquo;<samp>-pg</samp>&rsquo; option must be part of your compilation options
+as well as your link options.  If it is not then no call-graph data
+will be gathered and when you run <code>gprof</code> you will get an error
+message like this:
+</p>
+<div class="example">
+<pre class="example">gprof: gmon.out file is missing call-graph data
+</pre></div>
+
+<p>If you add the &lsquo;<samp>-Q</samp>&rsquo; switch to suppress the printing of the call
+graph data you will still be able to see the time samples:
+</p>
+<div class="example">
+<pre class="example">Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total
+ time   seconds   seconds    calls  Ts/call  Ts/call  name
+ 44.12      0.07     0.07                             zazLoop
+ 35.29      0.14     0.06                             main
+ 20.59      0.17     0.04                             bazMillion
+</pre></div>
+
+<p>If you run the linker <code>ld</code> directly instead of through a compiler
+such as <code>cc</code>, you may have to specify a profiling startup file
+<samp>gcrt0.o</samp> as the first input file instead of the usual startup
+file <samp>crt0.o</samp>.  In addition, you would probably want to
+specify the profiling C library, <samp>libc_p.a</samp>, by writing
+&lsquo;<samp>-lc_p</samp>&rsquo; instead of the usual &lsquo;<samp>-lc</samp>&rsquo;.  This is not absolutely
+necessary, but doing this gives you number-of-calls information for
+standard library functions such as <code>read</code> and <code>open</code>.  For
+example:
+</p>
+<div class="example">
+<pre class="example">ld -o myprog /lib/gcrt0.o myprog.o utils.o -lc_p
+</pre></div>
+
+<p>If you are running the program on a system which supports shared
+libraries you may run into problems with the profiling support code in
+a shared library being called before that library has been fully
+initialised.  This is usually detected by the program encountering a
+segmentation fault as soon as it is run.  The solution is to link
+against a static version of the library containing the profiling
+support code, which for <code>gcc</code> users can be done via the
+&lsquo;<samp>-static</samp>&rsquo; or &lsquo;<samp>-static-libgcc</samp>&rsquo; command-line option.  For
+example:
+</p>
+<div class="example">
+<pre class="example">gcc -g -pg -static-libgcc myprog.c utils.c -o myprog
+</pre></div>
+
+<p>If you compile only some of the modules of the program with &lsquo;<samp>-pg</samp>&rsquo;, you
+can still profile the program, but you won&rsquo;t get complete information about
+the modules that were compiled without &lsquo;<samp>-pg</samp>&rsquo;.  The only information
+you get for the functions in those modules is the total time spent in them;
+there is no record of how many times they were called, or from where.  This
+will not affect the flat profile (except that the <code>calls</code> field for
+the functions will be blank), but will greatly reduce the usefulness of the
+call graph.
+</p>
+<p>If you wish to perform line-by-line profiling you should use the
+<code>gcov</code> tool instead of <code>gprof</code>.  See that tool&rsquo;s manual or
+info pages for more details of how to do this.
+</p>
+<p>Note, older versions of <code>gcc</code> produce line-by-line profiling
+information that works with <code>gprof</code> rather than <code>gcov</code> so
+there is still support for displaying this kind of information in
+<code>gprof</code>. See <a href="Line_002dby_002dline.html#Line_002dby_002dline">Line-by-line Profiling</a>.
+</p>
+<p>It also worth noting that <code>gcc</code> implements a
+&lsquo;<samp>-finstrument-functions</samp>&rsquo; command-line option which will insert
+calls to special user supplied instrumentation routines at the entry
+and exit of every function in their program.  This can be used to
+implement an alternative profiling scheme.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Executing.html#Executing" accesskey="n" rel="next">Executing</a>, Previous: <a href="Introduction.html#Introduction" accesskey="p" rel="prev">Introduction</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+
+
+
+</body>
+</html>

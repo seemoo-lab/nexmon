@@ -1,0 +1,142 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): PowerPC Atomic Memory Operation Functions</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): PowerPC Atomic Memory Operation Functions">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): PowerPC Atomic Memory Operation Functions">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Target-Builtins.html#Target-Builtins" rel="up" title="Target Builtins">
+<link href="RX-Built_002din-Functions.html#RX-Built_002din-Functions" rel="next" title="RX Built-in Functions">
+<link href="PowerPC-Hardware-Transactional-Memory-Built_002din-Functions.html#PowerPC-Hardware-Transactional-Memory-Built_002din-Functions" rel="prev" title="PowerPC Hardware Transactional Memory Built-in Functions">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="PowerPC-Atomic-Memory-Operation-Functions"></a>
+<div class="header">
+<p>
+Next: <a href="RX-Built_002din-Functions.html#RX-Built_002din-Functions" accesskey="n" rel="next">RX Built-in Functions</a>, Previous: <a href="PowerPC-Hardware-Transactional-Memory-Built_002din-Functions.html#PowerPC-Hardware-Transactional-Memory-Built_002din-Functions" accesskey="p" rel="prev">PowerPC Hardware Transactional Memory Built-in Functions</a>, Up: <a href="Target-Builtins.html#Target-Builtins" accesskey="u" rel="up">Target Builtins</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="PowerPC-Atomic-Memory-Operation-Functions-1"></a>
+<h4 class="subsection">6.60.24 PowerPC Atomic Memory Operation Functions</h4>
+<p>ISA 3.0 of the PowerPC added new atomic memory operation (amo)
+instructions.  GCC provides support for these instructions in 64-bit
+environments.  All of the functions are declared in the include file
+<code>amo.h</code>.
+</p>
+<p>The functions supported are:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#include &lt;amo.h&gt;
+
+uint32_t amo_lwat_add (uint32_t *, uint32_t);
+uint32_t amo_lwat_xor (uint32_t *, uint32_t);
+uint32_t amo_lwat_ior (uint32_t *, uint32_t);
+uint32_t amo_lwat_and (uint32_t *, uint32_t);
+uint32_t amo_lwat_umax (uint32_t *, uint32_t);
+uint32_t amo_lwat_umin (uint32_t *, uint32_t);
+uint32_t amo_lwat_swap (uint32_t *, uint32_t);
+
+int32_t amo_lwat_sadd (int32_t *, int32_t);
+int32_t amo_lwat_smax (int32_t *, int32_t);
+int32_t amo_lwat_smin (int32_t *, int32_t);
+int32_t amo_lwat_sswap (int32_t *, int32_t);
+
+uint64_t amo_ldat_add (uint64_t *, uint64_t);
+uint64_t amo_ldat_xor (uint64_t *, uint64_t);
+uint64_t amo_ldat_ior (uint64_t *, uint64_t);
+uint64_t amo_ldat_and (uint64_t *, uint64_t);
+uint64_t amo_ldat_umax (uint64_t *, uint64_t);
+uint64_t amo_ldat_umin (uint64_t *, uint64_t);
+uint64_t amo_ldat_swap (uint64_t *, uint64_t);
+
+int64_t amo_ldat_sadd (int64_t *, int64_t);
+int64_t amo_ldat_smax (int64_t *, int64_t);
+int64_t amo_ldat_smin (int64_t *, int64_t);
+int64_t amo_ldat_sswap (int64_t *, int64_t);
+
+void amo_stwat_add (uint32_t *, uint32_t);
+void amo_stwat_xor (uint32_t *, uint32_t);
+void amo_stwat_ior (uint32_t *, uint32_t);
+void amo_stwat_and (uint32_t *, uint32_t);
+void amo_stwat_umax (uint32_t *, uint32_t);
+void amo_stwat_umin (uint32_t *, uint32_t);
+
+void amo_stwat_sadd (int32_t *, int32_t);
+void amo_stwat_smax (int32_t *, int32_t);
+void amo_stwat_smin (int32_t *, int32_t);
+
+void amo_stdat_add (uint64_t *, uint64_t);
+void amo_stdat_xor (uint64_t *, uint64_t);
+void amo_stdat_ior (uint64_t *, uint64_t);
+void amo_stdat_and (uint64_t *, uint64_t);
+void amo_stdat_umax (uint64_t *, uint64_t);
+void amo_stdat_umin (uint64_t *, uint64_t);
+
+void amo_stdat_sadd (int64_t *, int64_t);
+void amo_stdat_smax (int64_t *, int64_t);
+void amo_stdat_smin (int64_t *, int64_t);
+</pre></div>
+
+
+
+
+</body>
+</html>

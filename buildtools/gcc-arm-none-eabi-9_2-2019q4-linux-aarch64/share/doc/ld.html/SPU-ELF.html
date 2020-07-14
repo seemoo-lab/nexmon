@@ -1,0 +1,160 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU linker LD
+(GNU Toolchain for the A-profile Architecture 9.2-2019.12 (arm-9.10))
+version 2.33.1.
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>LD: SPU ELF</title>
+
+<meta name="description" content="LD: SPU ELF">
+<meta name="keywords" content="LD: SPU ELF">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="LD-Index.html#LD-Index" rel="index" title="LD Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Machine-Dependent.html#Machine-Dependent" rel="up" title="Machine Dependent">
+<link href="TI-COFF.html#TI-COFF" rel="next" title="TI COFF">
+<link href="S_002f390-ELF.html#S_002f390-ELF" rel="prev" title="S/390 ELF">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="SPU-ELF"></a>
+<div class="header">
+<p>
+Next: <a href="TI-COFF.html#TI-COFF" accesskey="n" rel="next">TI COFF</a>, Previous: <a href="S_002f390-ELF.html#S_002f390-ELF" accesskey="p" rel="prev">S/390 ELF</a>, Up: <a href="Machine-Dependent.html#Machine-Dependent" accesskey="u" rel="up">Machine Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="ld-and-SPU-ELF-Support"></a>
+<h3 class="section">4.14 <code>ld</code> and SPU ELF Support</h3>
+
+<a name="index-SPU-ELF-options"></a>
+<dl compact="compact">
+<dd>
+<a name="index-SPU-plugins"></a>
+<a name="index-_002d_002dplugin"></a>
+</dd>
+<dt><samp>--plugin</samp></dt>
+<dd><p>This option marks an executable as a PIC plugin module.
+</p>
+<a name="index-SPU-overlays"></a>
+<a name="index-_002d_002dno_002doverlays"></a>
+</dd>
+<dt><samp>--no-overlays</samp></dt>
+<dd><p>Normally, <code>ld</code> recognizes calls to functions within overlay
+regions, and redirects such calls to an overlay manager via a stub.
+<code>ld</code> also provides a built-in overlay manager.  This option
+turns off all this special overlay handling.
+</p>
+<a name="index-SPU-overlay-stub-symbols"></a>
+<a name="index-_002d_002demit_002dstub_002dsyms-2"></a>
+</dd>
+<dt><samp>--emit-stub-syms</samp></dt>
+<dd><p>This option causes <code>ld</code> to label overlay stubs with a local
+symbol that encodes the stub type and destination.
+</p>
+<a name="index-SPU-extra-overlay-stubs"></a>
+<a name="index-_002d_002dextra_002doverlay_002dstubs"></a>
+</dd>
+<dt><samp>--extra-overlay-stubs</samp></dt>
+<dd><p>This option causes <code>ld</code> to add overlay call stubs on all
+function calls out of overlay regions.  Normally stubs are not added
+on calls to non-overlay regions.
+</p>
+<a name="index-SPU-local-store-size"></a>
+<a name="index-_002d_002dlocal_002dstore_003dlo_003ahi"></a>
+</dd>
+<dt><samp>--local-store=lo:hi</samp></dt>
+<dd><p><code>ld</code> usually checks that a final executable for SPU fits in
+the address range 0 to 256k.  This option may be used to change the
+range.  Disable the check entirely with <samp>--local-store=0:0</samp>.
+</p>
+<a name="index-SPU"></a>
+<a name="index-_002d_002dstack_002danalysis"></a>
+</dd>
+<dt><samp>--stack-analysis</samp></dt>
+<dd><p>SPU local store space is limited.  Over-allocation of stack space
+unnecessarily limits space available for code and data, while
+under-allocation results in runtime failures.  If given this option,
+<code>ld</code> will provide an estimate of maximum stack usage.
+<code>ld</code> does this by examining symbols in code sections to
+determine the extents of functions, and looking at function prologues
+for stack adjusting instructions.  A call-graph is created by looking
+for relocations on branch instructions.  The graph is then searched
+for the maximum stack usage path.  Note that this analysis does not
+find calls made via function pointers, and does not handle recursion
+and other cycles in the call graph.  Stack usage may be
+under-estimated if your code makes such calls.  Also, stack usage for
+dynamic allocation, e.g. alloca, will not be detected.  If a link map
+is requested, detailed information about each function&rsquo;s stack usage
+and calls will be given.
+</p>
+<a name="index-SPU-1"></a>
+<a name="index-_002d_002demit_002dstack_002dsyms"></a>
+</dd>
+<dt><samp>--emit-stack-syms</samp></dt>
+<dd><p>This option, if given along with <samp>--stack-analysis</samp> will result
+in <code>ld</code> emitting stack sizing symbols for each function.
+These take the form <code>__stack_&lt;function_name&gt;</code> for global
+functions, and <code>__stack_&lt;number&gt;_&lt;function_name&gt;</code> for static
+functions.  <code>&lt;number&gt;</code> is the section id in hex.  The value of
+such symbols is the stack requirement for the corresponding function.
+The symbol size will be zero, type <code>STT_NOTYPE</code>, binding
+<code>STB_LOCAL</code>, and section <code>SHN_ABS</code>.
+</p></dd>
+</dl>
+
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="TI-COFF.html#TI-COFF" accesskey="n" rel="next">TI COFF</a>, Previous: <a href="S_002f390-ELF.html#S_002f390-ELF" accesskey="p" rel="prev">S/390 ELF</a>, Up: <a href="Machine-Dependent.html#Machine-Dependent" accesskey="u" rel="up">Machine Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Remote Non-Stop</title>
+
+<meta name="description" content="Debugging with GDB: Remote Non-Stop">
+<meta name="keywords" content="Debugging with GDB: Remote Non-Stop">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Remote-Protocol.html#Remote-Protocol" rel="up" title="Remote Protocol">
+<link href="Packet-Acknowledgment.html#Packet-Acknowledgment" rel="next" title="Packet Acknowledgment">
+<link href="Notification-Packets.html#Notification-Packets" rel="prev" title="Notification Packets">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Remote-Non_002dStop"></a>
+<div class="header">
+<p>
+Next: <a href="Packet-Acknowledgment.html#Packet-Acknowledgment" accesskey="n" rel="next">Packet Acknowledgment</a>, Previous: <a href="Notification-Packets.html#Notification-Packets" accesskey="p" rel="prev">Notification Packets</a>, Up: <a href="Remote-Protocol.html#Remote-Protocol" accesskey="u" rel="up">Remote Protocol</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Remote-Protocol-Support-for-Non_002dStop-Mode"></a>
+<h3 class="section">E.10 Remote Protocol Support for Non-Stop Mode</h3>
+
+<p><small>GDB</small>&rsquo;s remote protocol supports non-stop debugging of
+multi-threaded programs, as described in <a href="Non_002dStop-Mode.html#Non_002dStop-Mode">Non-Stop Mode</a>.  If the stub
+supports non-stop mode, it should report that to <small>GDB</small> by including
+&lsquo;<samp>QNonStop+</samp>&rsquo; in its &lsquo;<samp>qSupported</samp>&rsquo; response (see <a href="General-Query-Packets.html#qSupported">qSupported</a>).
+</p>
+<p><small>GDB</small> typically sends a &lsquo;<samp>QNonStop</samp>&rsquo; packet only when
+establishing a new connection with the stub.  Entering non-stop mode
+does not alter the state of any currently-running threads, but targets
+must stop all threads in any already-attached processes when entering
+all-stop mode.  <small>GDB</small> uses the &lsquo;<samp>?</samp>&rsquo; packet as necessary to
+probe the target state after a mode change.
+</p>
+<p>In non-stop mode, when an attached process encounters an event that
+would otherwise be reported with a stop reply, it uses the
+asynchronous notification mechanism (see <a href="Notification-Packets.html#Notification-Packets">Notification Packets</a>) to
+inform <small>GDB</small>.  In contrast to all-stop mode, where all threads
+in all processes are stopped when a stop reply is sent, in non-stop
+mode only the thread reporting the stop event is stopped.  That is,
+when reporting a &lsquo;<samp>S</samp>&rsquo; or &lsquo;<samp>T</samp>&rsquo; response to indicate completion
+of a step operation, hitting a breakpoint, or a fault, only the
+affected thread is stopped; any other still-running threads continue
+to run.  When reporting a &lsquo;<samp>W</samp>&rsquo; or &lsquo;<samp>X</samp>&rsquo; response, all running
+threads belonging to other attached processes continue to run.
+</p>
+<p>In non-stop mode, the target shall respond to the &lsquo;<samp>?</samp>&rsquo; packet as
+follows.  First, any incomplete stop reply notification/&lsquo;<samp>vStopped</samp>&rsquo; 
+sequence in progress is abandoned.  The target must begin a new
+sequence reporting stop events for all stopped threads, whether or not
+it has previously reported those events to <small>GDB</small>.  The first
+stop reply is sent as a synchronous reply to the &lsquo;<samp>?</samp>&rsquo; packet, and
+subsequent stop replies are sent as responses to &lsquo;<samp>vStopped</samp>&rsquo; packets
+using the mechanism described above.  The target must not send
+asynchronous stop reply notifications until the sequence is complete.
+If all threads are running when the target receives the &lsquo;<samp>?</samp>&rsquo; packet,
+or if the target is not attached to any process, it shall respond
+&lsquo;<samp>OK</samp>&rsquo;.
+</p>
+<p>If the stub supports non-stop mode, it should also support the
+&lsquo;<samp>swbreak</samp>&rsquo; stop reason if software breakpoints are supported, and
+the &lsquo;<samp>hwbreak</samp>&rsquo; stop reason if hardware breakpoints are supported
+(see <a href="Stop-Reply-Packets.html#swbreak-stop-reason">swbreak stop reason</a>).  This is because given the asynchronous
+nature of non-stop mode, between the time a thread hits a breakpoint
+and the time the event is finally processed by <small>GDB</small>, the
+breakpoint may have already been removed from the target.  Due to
+this, <small>GDB</small> needs to be able to tell whether a trap stop was
+caused by a delayed breakpoint event, which should be ignored, as
+opposed to a random trap signal, which should be reported to the user.
+Note the &lsquo;<samp>swbreak</samp>&rsquo; feature implies that the target is responsible
+for adjusting the PC when a software breakpoint triggers, if
+necessary, such as on the x86 architecture.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Packet-Acknowledgment.html#Packet-Acknowledgment" accesskey="n" rel="next">Packet Acknowledgment</a>, Previous: <a href="Notification-Packets.html#Notification-Packets" accesskey="p" rel="prev">Notification Packets</a>, Up: <a href="Remote-Protocol.html#Remote-Protocol" accesskey="u" rel="up">Remote Protocol</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

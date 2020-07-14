@@ -1,0 +1,157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: FLUSH</title>
+
+<meta name="description" content="The GNU Fortran Compiler: FLUSH">
+<meta name="keywords" content="The GNU Fortran Compiler: FLUSH">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Intrinsic-Procedures.html#Intrinsic-Procedures" rel="up" title="Intrinsic Procedures">
+<link href="FNUM.html#FNUM" rel="next" title="FNUM">
+<link href="FLOOR.html#FLOOR" rel="prev" title="FLOOR">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="FLUSH"></a>
+<div class="header">
+<p>
+Next: <a href="FNUM.html#FNUM" accesskey="n" rel="next">FNUM</a>, Previous: <a href="FLOOR.html#FLOOR" accesskey="p" rel="prev">FLOOR</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="FLUSH-_002d_002d_002d-Flush-I_002fO-unit_0028s_0029"></a>
+<h3 class="section">9.110 <code>FLUSH</code> &mdash; Flush I/O unit(s)</h3>
+<a name="index-FLUSH"></a>
+<a name="index-file-operation_002c-flush"></a>
+
+<dl compact="compact">
+<dt><em>Description</em>:</dt>
+<dd><p>Flushes Fortran unit(s) currently open for output. Without the optional
+argument, all units are flushed, otherwise just the unit specified.
+</p>
+</dd>
+<dt><em>Standard</em>:</dt>
+<dd><p>GNU extension
+</p>
+</dd>
+<dt><em>Class</em>:</dt>
+<dd><p>Subroutine
+</p>
+</dd>
+<dt><em>Syntax</em>:</dt>
+<dd><p><code>CALL FLUSH(UNIT)</code>
+</p>
+</dd>
+<dt><em>Arguments</em>:</dt>
+<dd><table>
+<tr><td width="15%"><var>UNIT</var></td><td width="70%">(Optional) The type shall be <code>INTEGER</code>.</td></tr>
+</table>
+
+</dd>
+<dt><em>Note</em>:</dt>
+<dd><p>Beginning with the Fortran 2003 standard, there is a <code>FLUSH</code>
+statement that should be preferred over the <code>FLUSH</code> intrinsic.
+</p>
+<p>The <code>FLUSH</code> intrinsic and the Fortran 2003 <code>FLUSH</code> statement
+have identical effect: they flush the runtime library&rsquo;s I/O buffer so
+that the data becomes visible to other processes. This does not guarantee
+that the data is committed to disk.
+</p>
+<p>On POSIX systems, you can request that all data is transferred  to  the
+storage device by calling the <code>fsync</code> function, with the POSIX file
+descriptor of the I/O unit as argument (retrieved with GNU intrinsic
+<code>FNUM</code>). The following example shows how:
+</p>
+<div class="smallexample">
+<pre class="smallexample">  ! Declare the interface for POSIX fsync function
+  interface
+    function fsync (fd) bind(c,name=&quot;fsync&quot;)
+    use iso_c_binding, only: c_int
+      integer(c_int), value :: fd
+      integer(c_int) :: fsync
+    end function fsync
+  end interface
+
+  ! Variable declaration
+  integer :: ret
+
+  ! Opening unit 10
+  open (10,file=&quot;foo&quot;)
+
+  ! ...
+  ! Perform I/O on unit 10
+  ! ...
+
+  ! Flush and sync
+  flush(10)
+  ret = fsync(fnum(10))
+
+  ! Handle possible error
+  if (ret /= 0) stop &quot;Error calling FSYNC&quot;
+</pre></div>
+
+</dd>
+</dl>
+
+
+
+
+
+
+</body>
+</html>

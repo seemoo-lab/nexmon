@@ -1,0 +1,330 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Environment Variables</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Environment Variables">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Environment Variables">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Invoking-GCC.html#Invoking-GCC" rel="up" title="Invoking GCC">
+<link href="Precompiled-Headers.html#Precompiled-Headers" rel="next" title="Precompiled Headers">
+<link href="Spec-Files.html#Spec-Files" rel="prev" title="Spec Files">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Environment-Variables"></a>
+<div class="header">
+<p>
+Next: <a href="Precompiled-Headers.html#Precompiled-Headers" accesskey="n" rel="next">Precompiled Headers</a>, Previous: <a href="Spec-Files.html#Spec-Files" accesskey="p" rel="prev">Spec Files</a>, Up: <a href="Invoking-GCC.html#Invoking-GCC" accesskey="u" rel="up">Invoking GCC</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Environment-Variables-Affecting-GCC"></a>
+<h3 class="section">3.20 Environment Variables Affecting GCC</h3>
+<a name="index-environment-variables"></a>
+
+<p>This section describes several environment variables that affect how GCC
+operates.  Some of them work by specifying directories or prefixes to use
+when searching for various kinds of files.  Some are used to specify other
+aspects of the compilation environment.
+</p>
+<p>Note that you can also specify places to search using options such as
+<samp>-B</samp>, <samp>-I</samp> and <samp>-L</samp> (see <a href="Directory-Options.html#Directory-Options">Directory Options</a>).  These
+take precedence over places specified using environment variables, which
+in turn take precedence over those specified by the configuration of GCC.
+See <a href="http://gcc.gnu.org/onlinedocs/gccint/Driver.html#Driver">Controlling the Compilation Driver <samp>gcc</samp></a> in <cite>GNU Compiler Collection (GCC) Internals</cite>.
+</p>
+<dl compact="compact">
+<dt><code>LANG</code></dt>
+<dt><code>LC_CTYPE</code></dt>
+<dt><code>LC_MESSAGES</code></dt>
+<dt><code>LC_ALL</code></dt>
+<dd><a name="index-LANG"></a>
+<a name="index-LC_005fCTYPE"></a>
+<a name="index-LC_005fMESSAGES"></a>
+<a name="index-LC_005fALL"></a>
+<a name="index-locale"></a>
+<p>These environment variables control the way that GCC uses
+localization information which allows GCC to work with different
+national conventions.  GCC inspects the locale categories
+<code>LC_CTYPE</code> and <code>LC_MESSAGES</code> if it has been configured to do
+so.  These locale categories can be set to any value supported by your
+installation.  A typical value is &lsquo;<samp>en_GB.UTF-8</samp>&rsquo; for English in the United
+Kingdom encoded in UTF-8.
+</p>
+<p>The <code>LC_CTYPE</code> environment variable specifies character
+classification.  GCC uses it to determine the character boundaries in
+a string; this is needed for some multibyte encodings that contain quote
+and escape characters that are otherwise interpreted as a string
+end or escape.
+</p>
+<p>The <code>LC_MESSAGES</code> environment variable specifies the language to
+use in diagnostic messages.
+</p>
+<p>If the <code>LC_ALL</code> environment variable is set, it overrides the value
+of <code>LC_CTYPE</code> and <code>LC_MESSAGES</code>; otherwise, <code>LC_CTYPE</code>
+and <code>LC_MESSAGES</code> default to the value of the <code>LANG</code>
+environment variable.  If none of these variables are set, GCC
+defaults to traditional C English behavior.
+</p>
+</dd>
+<dt><code>TMPDIR</code></dt>
+<dd><a name="index-TMPDIR"></a>
+<p>If <code>TMPDIR</code> is set, it specifies the directory to use for temporary
+files.  GCC uses temporary files to hold the output of one stage of
+compilation which is to be used as input to the next stage: for example,
+the output of the preprocessor, which is the input to the compiler
+proper.
+</p>
+</dd>
+<dt><code>GCC_COMPARE_DEBUG</code></dt>
+<dd><a name="index-GCC_005fCOMPARE_005fDEBUG"></a>
+<p>Setting <code>GCC_COMPARE_DEBUG</code> is nearly equivalent to passing
+<samp>-fcompare-debug</samp> to the compiler driver.  See the documentation
+of this option for more details.
+</p>
+</dd>
+<dt><code>GCC_EXEC_PREFIX</code></dt>
+<dd><a name="index-GCC_005fEXEC_005fPREFIX"></a>
+<p>If <code>GCC_EXEC_PREFIX</code> is set, it specifies a prefix to use in the
+names of the subprograms executed by the compiler.  No slash is added
+when this prefix is combined with the name of a subprogram, but you can
+specify a prefix that ends with a slash if you wish.
+</p>
+<p>If <code>GCC_EXEC_PREFIX</code> is not set, GCC attempts to figure out
+an appropriate prefix to use based on the pathname it is invoked with.
+</p>
+<p>If GCC cannot find the subprogram using the specified prefix, it
+tries looking in the usual places for the subprogram.
+</p>
+<p>The default value of <code>GCC_EXEC_PREFIX</code> is
+<samp><var>prefix</var>/lib/gcc/</samp> where <var>prefix</var> is the prefix to
+the installed compiler. In many cases <var>prefix</var> is the value
+of <code>prefix</code> when you ran the <samp>configure</samp> script.
+</p>
+<p>Other prefixes specified with <samp>-B</samp> take precedence over this prefix.
+</p>
+<p>This prefix is also used for finding files such as <samp>crt0.o</samp> that are
+used for linking.
+</p>
+<p>In addition, the prefix is used in an unusual way in finding the
+directories to search for header files.  For each of the standard
+directories whose name normally begins with &lsquo;<samp>/usr/local/lib/gcc</samp>&rsquo;
+(more precisely, with the value of <code>GCC_INCLUDE_DIR</code>), GCC tries
+replacing that beginning with the specified prefix to produce an
+alternate directory name.  Thus, with <samp>-Bfoo/</samp>, GCC searches
+<samp>foo/bar</samp> just before it searches the standard directory 
+<samp>/usr/local/lib/bar</samp>.
+If a standard directory begins with the configured
+<var>prefix</var> then the value of <var>prefix</var> is replaced by
+<code>GCC_EXEC_PREFIX</code> when looking for header files.
+</p>
+</dd>
+<dt><code>COMPILER_PATH</code></dt>
+<dd><a name="index-COMPILER_005fPATH"></a>
+<p>The value of <code>COMPILER_PATH</code> is a colon-separated list of
+directories, much like <code>PATH</code>.  GCC tries the directories thus
+specified when searching for subprograms, if it cannot find the
+subprograms using <code>GCC_EXEC_PREFIX</code>.
+</p>
+</dd>
+<dt><code>LIBRARY_PATH</code></dt>
+<dd><a name="index-LIBRARY_005fPATH"></a>
+<p>The value of <code>LIBRARY_PATH</code> is a colon-separated list of
+directories, much like <code>PATH</code>.  When configured as a native compiler,
+GCC tries the directories thus specified when searching for special
+linker files, if it cannot find them using <code>GCC_EXEC_PREFIX</code>.  Linking
+using GCC also uses these directories when searching for ordinary
+libraries for the <samp>-l</samp> option (but directories specified with
+<samp>-L</samp> come first).
+</p>
+</dd>
+<dt><code>LANG</code></dt>
+<dd><a name="index-LANG-1"></a>
+<a name="index-locale-definition"></a>
+<p>This variable is used to pass locale information to the compiler.  One way in
+which this information is used is to determine the character set to be used
+when character literals, string literals and comments are parsed in C and C++.
+When the compiler is configured to allow multibyte characters,
+the following values for <code>LANG</code> are recognized:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>C-JIS</samp>&rsquo;</dt>
+<dd><p>Recognize JIS characters.
+</p></dd>
+<dt>&lsquo;<samp>C-SJIS</samp>&rsquo;</dt>
+<dd><p>Recognize SJIS characters.
+</p></dd>
+<dt>&lsquo;<samp>C-EUCJP</samp>&rsquo;</dt>
+<dd><p>Recognize EUCJP characters.
+</p></dd>
+</dl>
+
+<p>If <code>LANG</code> is not defined, or if it has some other value, then the
+compiler uses <code>mblen</code> and <code>mbtowc</code> as defined by the default locale to
+recognize and translate multibyte characters.
+</p></dd>
+</dl>
+
+<p>Some additional environment variables affect the behavior of the
+preprocessor.
+</p>
+
+
+
+<dl compact="compact">
+<dt><code>CPATH</code>
+<a name="index-CPATH"></a>
+</dt>
+<dt><code>C_INCLUDE_PATH</code>
+<a name="index-C_005fINCLUDE_005fPATH"></a>
+</dt>
+<dt><code>CPLUS_INCLUDE_PATH</code>
+<a name="index-CPLUS_005fINCLUDE_005fPATH"></a>
+</dt>
+<dt><code>OBJC_INCLUDE_PATH</code>
+<a name="index-OBJC_005fINCLUDE_005fPATH"></a>
+</dt>
+<dd><p>Each variable&rsquo;s value is a list of directories separated by a special
+character, much like <code>PATH</code>, in which to look for header files.
+The special character, <code>PATH_SEPARATOR</code>, is target-dependent and
+determined at GCC build time.  For Microsoft Windows-based targets it is a
+semicolon, and for almost all other targets it is a colon.
+</p>
+<p><code>CPATH</code> specifies a list of directories to be searched as if
+specified with <samp>-I</samp>, but after any paths given with <samp>-I</samp>
+options on the command line.  This environment variable is used
+regardless of which language is being preprocessed.
+</p>
+<p>The remaining environment variables apply only when preprocessing the
+particular language indicated.  Each specifies a list of directories
+to be searched as if specified with <samp>-isystem</samp>, but after any
+paths given with <samp>-isystem</samp> options on the command line.
+</p>
+<p>In all these variables, an empty element instructs the compiler to
+search its current working directory.  Empty elements can appear at the
+beginning or end of a path.  For instance, if the value of
+<code>CPATH</code> is <code>:/special/include</code>, that has the same
+effect as &lsquo;<samp><span class="nolinebreak">-I.</span>&nbsp;<span class="nolinebreak">-I/special/include</span><!-- /@w --></samp>&rsquo;.
+</p>
+
+</dd>
+<dt><code>DEPENDENCIES_OUTPUT</code>
+<a name="index-DEPENDENCIES_005fOUTPUT"></a>
+</dt>
+<dd><a name="index-dependencies-for-make-as-output"></a>
+<p>If this variable is set, its value specifies how to output
+dependencies for Make based on the non-system header files processed
+by the compiler.  System header files are ignored in the dependency
+output.
+</p>
+<p>The value of <code>DEPENDENCIES_OUTPUT</code> can be just a file name, in
+which case the Make rules are written to that file, guessing the target
+name from the source file name.  Or the value can have the form
+&lsquo;<samp><var>file</var> <var>target</var></samp>&rsquo;, in which case the rules are written to
+file <var>file</var> using <var>target</var> as the target name.
+</p>
+<p>In other words, this environment variable is equivalent to combining
+the options <samp>-MM</samp> and <samp>-MF</samp>
+(see <a href="Preprocessor-Options.html#Preprocessor-Options">Preprocessor Options</a>),
+with an optional <samp>-MT</samp> switch too.
+</p>
+</dd>
+<dt><code>SUNPRO_DEPENDENCIES</code>
+<a name="index-SUNPRO_005fDEPENDENCIES"></a>
+</dt>
+<dd><a name="index-dependencies-for-make-as-output-1"></a>
+<p>This variable is the same as <code>DEPENDENCIES_OUTPUT</code> (see above),
+except that system header files are not ignored, so it implies
+<samp>-M</samp> rather than <samp>-MM</samp>.  However, the dependence on the
+main input file is omitted.
+See <a href="Preprocessor-Options.html#Preprocessor-Options">Preprocessor Options</a>.
+</p>
+</dd>
+<dt><code>SOURCE_DATE_EPOCH</code>
+<a name="index-SOURCE_005fDATE_005fEPOCH"></a>
+</dt>
+<dd><p>If this variable is set, its value specifies a UNIX timestamp to be
+used in replacement of the current date and time in the <code>__DATE__</code>
+and <code>__TIME__</code> macros, so that the embedded timestamps become
+reproducible.
+</p>
+<p>The value of <code>SOURCE_DATE_EPOCH</code> must be a UNIX timestamp,
+defined as the number of seconds (excluding leap seconds) since
+01 Jan 1970 00:00:00 represented in ASCII; identical to the output of
+&lsquo;<samp><code>date +%s</code></samp>&rsquo; on GNU/Linux and other systems that support the
+<code>%s</code> extension in the <code>date</code> command.
+</p>
+<p>The value should be a known timestamp such as the last modification
+time of the source or package and it should be set by the build
+process.
+</p>
+</dd>
+</dl>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Precompiled-Headers.html#Precompiled-Headers" accesskey="n" rel="next">Precompiled Headers</a>, Previous: <a href="Spec-Files.html#Spec-Files" accesskey="p" rel="prev">Spec Files</a>, Up: <a href="Invoking-GCC.html#Invoking-GCC" accesskey="u" rel="up">Invoking GCC</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

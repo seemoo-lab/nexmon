@@ -1,0 +1,119 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Internal flags</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Internal flags">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Internal flags">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="LTO.html#LTO" rel="up" title="LTO">
+<link href="Match-and-Simplify.html#Match-and-Simplify" rel="next" title="Match and Simplify">
+<link href="WHOPR.html#WHOPR" rel="prev" title="WHOPR">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Internal-flags"></a>
+<div class="header">
+<p>
+Previous: <a href="WHOPR.html#WHOPR" accesskey="p" rel="prev">WHOPR</a>, Up: <a href="LTO.html#LTO" accesskey="u" rel="up">LTO</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Internal-flags-controlling-lto1"></a>
+<h3 class="section">25.5 Internal flags controlling <code>lto1</code></h3>
+
+<p>The following flags are passed into <code>lto1</code> and are not
+meant to be used directly from the command line.
+</p>
+<ul>
+<li> -fwpa
+<a name="index-fwpa"></a>
+This option runs the serial part of the link-time optimizer
+performing the inter-procedural propagation (WPA mode).  The
+compiler reads in summary information from all inputs and
+performs an analysis based on summary information only.  It
+generates object files for subsequent runs of the link-time
+optimizer where individual object files are optimized using both
+summary information from the WPA mode and the actual function
+bodies.  It then drives the LTRANS phase.
+
+</li><li> -fltrans
+<a name="index-fltrans"></a>
+This option runs the link-time optimizer in the
+local-transformation (LTRANS) mode, which reads in output from a
+previous run of the LTO in WPA mode.  In the LTRANS mode, LTO
+optimizes an object and produces the final assembly.
+
+</li><li> -fltrans-output-list=<var>file</var>
+<a name="index-fltrans_002doutput_002dlist"></a>
+This option specifies a file to which the names of LTRANS output
+files are written.  This option is only meaningful in conjunction
+with <samp>-fwpa</samp>.
+
+</li><li> -fresolution=<var>file</var>
+<a name="index-fresolution"></a>
+This option specifies the linker resolution file.  This option is
+only meaningful in conjunction with <samp>-fwpa</samp> and as option
+to pass through to the LTO linker plugin.
+</li></ul>
+
+
+
+
+</body>
+</html>

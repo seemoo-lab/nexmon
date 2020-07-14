@@ -1,0 +1,580 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Regs and Memory</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Regs and Memory">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Regs and Memory">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="RTL.html#RTL" rel="up" title="RTL">
+<link href="Arithmetic.html#Arithmetic" rel="next" title="Arithmetic">
+<link href="Constants.html#Constants" rel="prev" title="Constants">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Regs-and-Memory"></a>
+<div class="header">
+<p>
+Next: <a href="Arithmetic.html#Arithmetic" accesskey="n" rel="next">Arithmetic</a>, Previous: <a href="Constants.html#Constants" accesskey="p" rel="prev">Constants</a>, Up: <a href="RTL.html#RTL" accesskey="u" rel="up">RTL</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Registers-and-Memory"></a>
+<h3 class="section">14.8 Registers and Memory</h3>
+<a name="index-RTL-register-expressions"></a>
+<a name="index-RTL-memory-expressions"></a>
+
+<p>Here are the RTL expression types for describing access to machine
+registers and to main memory.
+</p>
+<dl compact="compact">
+<dd><a name="index-reg"></a>
+<a name="index-hard-registers"></a>
+<a name="index-pseudo-registers"></a>
+</dd>
+<dt><code>(reg:<var>m</var> <var>n</var>)</code></dt>
+<dd><p>For small values of the integer <var>n</var> (those that are less than
+<code>FIRST_PSEUDO_REGISTER</code>), this stands for a reference to machine
+register number <var>n</var>: a <em>hard register</em>.  For larger values of
+<var>n</var>, it stands for a temporary value or <em>pseudo register</em>.
+The compiler&rsquo;s strategy is to generate code assuming an unlimited
+number of such pseudo registers, and later convert them into hard
+registers or into memory references.
+</p>
+<p><var>m</var> is the machine mode of the reference.  It is necessary because
+machines can generally refer to each register in more than one mode.
+For example, a register may contain a full word but there may be
+instructions to refer to it as a half word or as a single byte, as
+well as instructions to refer to it as a floating point number of
+various precisions.
+</p>
+<p>Even for a register that the machine can access in only one mode,
+the mode must always be specified.
+</p>
+<p>The symbol <code>FIRST_PSEUDO_REGISTER</code> is defined by the machine
+description, since the number of hard registers on the machine is an
+invariant characteristic of the machine.  Note, however, that not
+all of the machine registers must be general registers.  All the
+machine registers that can be used for storage of data are given
+hard register numbers, even those that can be used only in certain
+instructions or can hold only certain types of data.
+</p>
+<p>A hard register may be accessed in various modes throughout one
+function, but each pseudo register is given a natural mode
+and is accessed only in that mode.  When it is necessary to describe
+an access to a pseudo register using a nonnatural mode, a <code>subreg</code>
+expression is used.
+</p>
+<p>A <code>reg</code> expression with a machine mode that specifies more than
+one word of data may actually stand for several consecutive registers.
+If in addition the register number specifies a hardware register, then
+it actually represents several consecutive hardware registers starting
+with the specified one.
+</p>
+<p>Each pseudo register number used in a function&rsquo;s RTL code is
+represented by a unique <code>reg</code> expression.
+</p>
+<a name="index-FIRST_005fVIRTUAL_005fREGISTER"></a>
+<a name="index-LAST_005fVIRTUAL_005fREGISTER"></a>
+<p>Some pseudo register numbers, those within the range of
+<code>FIRST_VIRTUAL_REGISTER</code> to <code>LAST_VIRTUAL_REGISTER</code> only
+appear during the RTL generation phase and are eliminated before the
+optimization phases.  These represent locations in the stack frame that
+cannot be determined until RTL generation for the function has been
+completed.  The following virtual register numbers are defined:
+</p>
+<dl compact="compact">
+<dd><a name="index-VIRTUAL_005fINCOMING_005fARGS_005fREGNUM"></a>
+</dd>
+<dt><code>VIRTUAL_INCOMING_ARGS_REGNUM</code></dt>
+<dd><p>This points to the first word of the incoming arguments passed on the
+stack.  Normally these arguments are placed there by the caller, but the
+callee may have pushed some arguments that were previously passed in
+registers.
+</p>
+<a name="index-FIRST_005fPARM_005fOFFSET-and-virtual-registers"></a>
+<a name="index-ARG_005fPOINTER_005fREGNUM-and-virtual-registers"></a>
+<p>When RTL generation is complete, this virtual register is replaced
+by the sum of the register given by <code>ARG_POINTER_REGNUM</code> and the
+value of <code>FIRST_PARM_OFFSET</code>.
+</p>
+<a name="index-VIRTUAL_005fSTACK_005fVARS_005fREGNUM"></a>
+<a name="index-FRAME_005fGROWS_005fDOWNWARD-and-virtual-registers"></a>
+</dd>
+<dt><code>VIRTUAL_STACK_VARS_REGNUM</code></dt>
+<dd><p>If <code>FRAME_GROWS_DOWNWARD</code> is defined to a nonzero value, this points
+to immediately above the first variable on the stack.  Otherwise, it points
+to the first variable on the stack.
+</p>
+<a name="index-TARGET_005fSTARTING_005fFRAME_005fOFFSET-and-virtual-registers"></a>
+<a name="index-FRAME_005fPOINTER_005fREGNUM-and-virtual-registers"></a>
+<p><code>VIRTUAL_STACK_VARS_REGNUM</code> is replaced with the sum of the
+register given by <code>FRAME_POINTER_REGNUM</code> and the value
+<code>TARGET_STARTING_FRAME_OFFSET</code>.
+</p>
+<a name="index-VIRTUAL_005fSTACK_005fDYNAMIC_005fREGNUM"></a>
+</dd>
+<dt><code>VIRTUAL_STACK_DYNAMIC_REGNUM</code></dt>
+<dd><p>This points to the location of dynamically allocated memory on the stack
+immediately after the stack pointer has been adjusted by the amount of
+memory desired.
+</p>
+<a name="index-STACK_005fDYNAMIC_005fOFFSET-and-virtual-registers"></a>
+<a name="index-STACK_005fPOINTER_005fREGNUM-and-virtual-registers"></a>
+<p>This virtual register is replaced by the sum of the register given by
+<code>STACK_POINTER_REGNUM</code> and the value <code>STACK_DYNAMIC_OFFSET</code>.
+</p>
+<a name="index-VIRTUAL_005fOUTGOING_005fARGS_005fREGNUM"></a>
+</dd>
+<dt><code>VIRTUAL_OUTGOING_ARGS_REGNUM</code></dt>
+<dd><p>This points to the location in the stack at which outgoing arguments
+should be written when the stack is pre-pushed (arguments pushed using
+push insns should always use <code>STACK_POINTER_REGNUM</code>).
+</p>
+<a name="index-STACK_005fPOINTER_005fOFFSET-and-virtual-registers"></a>
+<p>This virtual register is replaced by the sum of the register given by
+<code>STACK_POINTER_REGNUM</code> and the value <code>STACK_POINTER_OFFSET</code>.
+</p></dd>
+</dl>
+
+<a name="index-subreg"></a>
+</dd>
+<dt><code>(subreg:<var>m1</var> <var>reg:m2</var> <var>bytenum</var>)</code></dt>
+<dd>
+<p><code>subreg</code> expressions are used to refer to a register in a machine
+mode other than its natural one, or to refer to one register of
+a multi-part <code>reg</code> that actually refers to several registers.
+</p>
+<p>Each pseudo register has a natural mode.  If it is necessary to
+operate on it in a different mode, the register must be
+enclosed in a <code>subreg</code>.
+</p>
+<p>There are currently three supported types for the first operand of a
+<code>subreg</code>:
+</p><ul>
+<li> pseudo registers
+This is the most common case.  Most <code>subreg</code>s have pseudo
+<code>reg</code>s as their first operand.
+
+</li><li> mem
+<code>subreg</code>s of <code>mem</code> were common in earlier versions of GCC and
+are still supported.  During the reload pass these are replaced by plain
+<code>mem</code>s.  On machines that do not do instruction scheduling, use of
+<code>subreg</code>s of <code>mem</code> are still used, but this is no longer
+recommended.  Such <code>subreg</code>s are considered to be
+<code>register_operand</code>s rather than <code>memory_operand</code>s before and
+during reload.  Because of this, the scheduling passes cannot properly
+schedule instructions with <code>subreg</code>s of <code>mem</code>, so for machines
+that do scheduling, <code>subreg</code>s of <code>mem</code> should never be used.
+To support this, the combine and recog passes have explicit code to
+inhibit the creation of <code>subreg</code>s of <code>mem</code> when
+<code>INSN_SCHEDULING</code> is defined.
+
+<p>The use of <code>subreg</code>s of <code>mem</code> after the reload pass is an area
+that is not well understood and should be avoided.  There is still some
+code in the compiler to support this, but this code has possibly rotted.
+This use of <code>subreg</code>s is discouraged and will most likely not be
+supported in the future.
+</p>
+</li><li> hard registers
+It is seldom necessary to wrap hard registers in <code>subreg</code>s; such
+registers would normally reduce to a single <code>reg</code> rtx.  This use of
+<code>subreg</code>s is discouraged and may not be supported in the future.
+
+</li></ul>
+
+<p><code>subreg</code>s of <code>subreg</code>s are not supported.  Using
+<code>simplify_gen_subreg</code> is the recommended way to avoid this problem.
+</p>
+<p><code>subreg</code>s come in two distinct flavors, each having its own
+usage and rules:
+</p>
+<dl compact="compact">
+<dt>Paradoxical subregs</dt>
+<dd><p>When <var>m1</var> is strictly wider than <var>m2</var>, the <code>subreg</code>
+expression is called <em>paradoxical</em>.  The canonical test for this
+class of <code>subreg</code> is:
+</p>
+<div class="smallexample">
+<pre class="smallexample">paradoxical_subreg_p (<var>m1</var>, <var>m2</var>)
+</pre></div>
+
+<p>Paradoxical <code>subreg</code>s can be used as both lvalues and rvalues.
+When used as an lvalue, the low-order bits of the source value
+are stored in <var>reg</var> and the high-order bits are discarded.
+When used as an rvalue, the low-order bits of the <code>subreg</code> are
+taken from <var>reg</var> while the high-order bits may or may not be
+defined.
+</p>
+<p>The high-order bits of rvalues are defined in the following circumstances:
+</p>
+<ul>
+<li> <code>subreg</code>s of <code>mem</code>
+When <var>m2</var> is smaller than a word, the macro <code>LOAD_EXTEND_OP</code>,
+can control how the high-order bits are defined.
+
+</li><li> <code>subreg</code> of <code>reg</code>s
+The upper bits are defined when <code>SUBREG_PROMOTED_VAR_P</code> is true.
+<code>SUBREG_PROMOTED_UNSIGNED_P</code> describes what the upper bits hold.
+Such subregs usually represent local variables, register variables
+and parameter pseudo variables that have been promoted to a wider mode.
+
+</li></ul>
+
+<p><var>bytenum</var> is always zero for a paradoxical <code>subreg</code>, even on
+big-endian targets.
+</p>
+<p>For example, the paradoxical <code>subreg</code>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(set (subreg:SI (reg:HI <var>x</var>) 0) <var>y</var>)
+</pre></div>
+
+<p>stores the lower 2 bytes of <var>y</var> in <var>x</var> and discards the upper
+2 bytes.  A subsequent:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(set <var>z</var> (subreg:SI (reg:HI <var>x</var>) 0))
+</pre></div>
+
+<p>would set the lower two bytes of <var>z</var> to <var>y</var> and set the upper
+two bytes to an unknown value assuming <code>SUBREG_PROMOTED_VAR_P</code> is
+false.
+</p>
+</dd>
+<dt>Normal subregs</dt>
+<dd><p>When <var>m1</var> is at least as narrow as <var>m2</var> the <code>subreg</code>
+expression is called <em>normal</em>.
+</p>
+<a name="index-REGMODE_005fNATURAL_005fSIZE"></a>
+<p>Normal <code>subreg</code>s restrict consideration to certain bits of
+<var>reg</var>.  For this purpose, <var>reg</var> is divided into
+individually-addressable blocks in which each block has:
+</p>
+<div class="smallexample">
+<pre class="smallexample">REGMODE_NATURAL_SIZE (<var>m2</var>)
+</pre></div>
+
+<p>bytes.  Usually the value is <code>UNITS_PER_WORD</code>; that is,
+most targets usually treat each word of a register as being
+independently addressable.
+</p>
+<p>There are two types of normal <code>subreg</code>.  If <var>m1</var> is known
+to be no bigger than a block, the <code>subreg</code> refers to the
+least-significant part (or <em>lowpart</em>) of one block of <var>reg</var>.
+If <var>m1</var> is known to be larger than a block, the <code>subreg</code> refers
+to two or more complete blocks.
+</p>
+<p>When used as an lvalue, <code>subreg</code> is a block-based accessor.
+Storing to a <code>subreg</code> modifies all the blocks of <var>reg</var> that
+overlap the <code>subreg</code>, but it leaves the other blocks of <var>reg</var>
+alone.
+</p>
+<p>When storing to a normal <code>subreg</code> that is smaller than a block,
+the other bits of the referenced block are usually left in an undefined
+state.  This laxity makes it easier to generate efficient code for
+such instructions.  To represent an instruction that preserves all the
+bits outside of those in the <code>subreg</code>, use <code>strict_low_part</code>
+or <code>zero_extract</code> around the <code>subreg</code>.
+</p>
+<p><var>bytenum</var> must identify the offset of the first byte of the
+<code>subreg</code> from the start of <var>reg</var>, assuming that <var>reg</var> is
+laid out in memory order.  The memory order of bytes is defined by
+two target macros, <code>WORDS_BIG_ENDIAN</code> and <code>BYTES_BIG_ENDIAN</code>:
+</p>
+<ul>
+<li> <a name="index-WORDS_005fBIG_005fENDIAN_002c-effect-on-subreg"></a>
+<code>WORDS_BIG_ENDIAN</code>, if set to 1, says that byte number zero is
+part of the most significant word; otherwise, it is part of the least
+significant word.
+
+</li><li> <a name="index-BYTES_005fBIG_005fENDIAN_002c-effect-on-subreg"></a>
+<code>BYTES_BIG_ENDIAN</code>, if set to 1, says that byte number zero is
+the most significant byte within a word; otherwise, it is the least
+significant byte within a word.
+</li></ul>
+
+<a name="index-FLOAT_005fWORDS_005fBIG_005fENDIAN_002c-_0028lack-of_0029-effect-on-subreg"></a>
+<p>On a few targets, <code>FLOAT_WORDS_BIG_ENDIAN</code> disagrees with
+<code>WORDS_BIG_ENDIAN</code>.  However, most parts of the compiler treat
+floating point values as if they had the same endianness as integer
+values.  This works because they handle them solely as a collection of
+integer values, with no particular numerical value.  Only real.c and
+the runtime libraries care about <code>FLOAT_WORDS_BIG_ENDIAN</code>.
+</p>
+<p>Thus,
+</p>
+<div class="smallexample">
+<pre class="smallexample">(subreg:HI (reg:SI <var>x</var>) 2)
+</pre></div>
+
+<p>on a <code>BYTES_BIG_ENDIAN</code>, &lsquo;<samp>UNITS_PER_WORD == 4</samp>&rsquo; target is the same as
+</p>
+<div class="smallexample">
+<pre class="smallexample">(subreg:HI (reg:SI <var>x</var>) 0)
+</pre></div>
+
+<p>on a little-endian, &lsquo;<samp>UNITS_PER_WORD == 4</samp>&rsquo; target.  Both
+<code>subreg</code>s access the lower two bytes of register <var>x</var>.
+</p>
+<p>Note that the byte offset is a polynomial integer; it may not be a
+compile-time constant on targets with variable-sized modes.  However,
+the restrictions above mean that there are only a certain set of
+acceptable offsets for a given combination of <var>m1</var> and <var>m2</var>.
+The compiler can always tell which blocks a valid subreg occupies, and
+whether the subreg is a lowpart of a block.
+</p>
+</dd>
+</dl>
+
+<p>A <code>MODE_PARTIAL_INT</code> mode behaves as if it were as wide as the
+corresponding <code>MODE_INT</code> mode, except that it has an unknown
+number of undefined bits.  For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(subreg:PSI (reg:SI 0) 0)
+</pre></div>
+
+<a name="index-REGMODE_005fNATURAL_005fSIZE-1"></a>
+<p>accesses the whole of &lsquo;<samp>(reg:SI 0)</samp>&rsquo;, but the exact relationship
+between the <code>PSImode</code> value and the <code>SImode</code> value is not
+defined.  If we assume &lsquo;<samp>REGMODE_NATURAL_SIZE (DImode) &lt;= 4</samp>&rsquo;,
+then the following two <code>subreg</code>s:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(subreg:PSI (reg:DI 0) 0)
+(subreg:PSI (reg:DI 0) 4)
+</pre></div>
+
+<p>represent independent 4-byte accesses to the two halves of
+&lsquo;<samp>(reg:DI 0)</samp>&rsquo;.  Both <code>subreg</code>s have an unknown number
+of undefined bits.
+</p>
+<p>If &lsquo;<samp>REGMODE_NATURAL_SIZE (PSImode) &lt;= 2</samp>&rsquo; then these two <code>subreg</code>s:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(subreg:HI (reg:PSI 0) 0)
+(subreg:HI (reg:PSI 0) 2)
+</pre></div>
+
+<p>represent independent 2-byte accesses that together span the whole
+of &lsquo;<samp>(reg:PSI 0)</samp>&rsquo;.  Storing to the first <code>subreg</code> does not
+affect the value of the second, and vice versa.  &lsquo;<samp>(reg:PSI 0)</samp>&rsquo;
+has an unknown number of undefined bits, so the assignment:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(set (subreg:HI (reg:PSI 0) 0) (reg:HI 4))
+</pre></div>
+
+<p>does not guarantee that &lsquo;<samp>(subreg:HI (reg:PSI 0) 0)</samp>&rsquo; has the
+value &lsquo;<samp>(reg:HI 4)</samp>&rsquo;.
+</p>
+<a name="index-TARGET_005fCAN_005fCHANGE_005fMODE_005fCLASS-and-subreg-semantics"></a>
+<p>The rules above apply to both pseudo <var>reg</var>s and hard <var>reg</var>s.
+If the semantics are not correct for particular combinations of
+<var>m1</var>, <var>m2</var> and hard <var>reg</var>, the target-specific code
+must ensure that those combinations are never used.  For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">TARGET_CAN_CHANGE_MODE_CLASS (<var>m2</var>, <var>m1</var>, <var>class</var>)
+</pre></div>
+
+<p>must be false for every class <var>class</var> that includes <var>reg</var>.
+</p>
+<p>GCC must be able to determine at compile time whether a subreg is
+paradoxical, whether it occupies a whole number of blocks, or whether
+it is a lowpart of a block.  This means that certain combinations of
+variable-sized mode are not permitted.  For example, if <var>m2</var>
+holds <var>n</var> <code>SI</code> values, where <var>n</var> is greater than zero,
+it is not possible to form a <code>DI</code> <code>subreg</code> of it; such a
+<code>subreg</code> would be paradoxical when <var>n</var> is 1 but not when
+<var>n</var> is greater than 1.
+</p>
+<a name="index-SUBREG_005fREG"></a>
+<a name="index-SUBREG_005fBYTE"></a>
+<p>The first operand of a <code>subreg</code> expression is customarily accessed
+with the <code>SUBREG_REG</code> macro and the second operand is customarily
+accessed with the <code>SUBREG_BYTE</code> macro.
+</p>
+<p>It has been several years since a platform in which
+<code>BYTES_BIG_ENDIAN</code> not equal to <code>WORDS_BIG_ENDIAN</code> has
+been tested.  Anyone wishing to support such a platform in the future
+may be confronted with code rot.
+</p>
+<a name="index-scratch"></a>
+<a name="index-scratch-operands"></a>
+</dd>
+<dt><code>(scratch:<var>m</var>)</code></dt>
+<dd><p>This represents a scratch register that will be required for the
+execution of a single instruction and not used subsequently.  It is
+converted into a <code>reg</code> by either the local register allocator or
+the reload pass.
+</p>
+<p><code>scratch</code> is usually present inside a <code>clobber</code> operation
+(see <a href="Side-Effects.html#Side-Effects">Side Effects</a>).
+</p>
+<a name="index-cc0"></a>
+<a name="index-condition-code-register"></a>
+</dd>
+<dt><code>(cc0)</code></dt>
+<dd><p>This refers to the machine&rsquo;s condition code register.  It has no
+operands and may not have a machine mode.  There are two ways to use it:
+</p>
+<ul>
+<li> To stand for a complete set of condition code flags.  This is best on
+most machines, where each comparison sets the entire series of flags.
+
+<p>With this technique, <code>(cc0)</code> may be validly used in only two
+contexts: as the destination of an assignment (in test and compare
+instructions) and in comparison operators comparing against zero
+(<code>const_int</code> with value zero; that is to say, <code>const0_rtx</code>).
+</p>
+</li><li> To stand for a single flag that is the result of a single condition.
+This is useful on machines that have only a single flag bit, and in
+which comparison instructions must specify the condition to test.
+
+<p>With this technique, <code>(cc0)</code> may be validly used in only two
+contexts: as the destination of an assignment (in test and compare
+instructions) where the source is a comparison operator, and as the
+first operand of <code>if_then_else</code> (in a conditional branch).
+</p></li></ul>
+
+<a name="index-cc0_005frtx"></a>
+<p>There is only one expression object of code <code>cc0</code>; it is the
+value of the variable <code>cc0_rtx</code>.  Any attempt to create an
+expression of code <code>cc0</code> will return <code>cc0_rtx</code>.
+</p>
+<p>Instructions can set the condition code implicitly.  On many machines,
+nearly all instructions set the condition code based on the value that
+they compute or store.  It is not necessary to record these actions
+explicitly in the RTL because the machine description includes a
+prescription for recognizing the instructions that do so (by means of
+the macro <code>NOTICE_UPDATE_CC</code>).  See <a href="Condition-Code.html#Condition-Code">Condition Code</a>.  Only
+instructions whose sole purpose is to set the condition code, and
+instructions that use the condition code, need mention <code>(cc0)</code>.
+</p>
+<p>On some machines, the condition code register is given a register number
+and a <code>reg</code> is used instead of <code>(cc0)</code>.  This is usually the
+preferable approach if only a small subset of instructions modify the
+condition code.  Other machines store condition codes in general
+registers; in such cases a pseudo register should be used.
+</p>
+<p>Some machines, such as the SPARC and RS/6000, have two sets of
+arithmetic instructions, one that sets and one that does not set the
+condition code.  This is best handled by normally generating the
+instruction that does not set the condition code, and making a pattern
+that both performs the arithmetic and sets the condition code register
+(which would not be <code>(cc0)</code> in this case).  For examples, search
+for &lsquo;<samp>addcc</samp>&rsquo; and &lsquo;<samp>andcc</samp>&rsquo; in <samp>sparc.md</samp>.
+</p>
+<a name="index-pc"></a>
+</dd>
+<dt><code>(pc)</code></dt>
+<dd><a name="index-program-counter"></a>
+<p>This represents the machine&rsquo;s program counter.  It has no operands and
+may not have a machine mode.  <code>(pc)</code> may be validly used only in
+certain specific contexts in jump instructions.
+</p>
+<a name="index-pc_005frtx"></a>
+<p>There is only one expression object of code <code>pc</code>; it is the value
+of the variable <code>pc_rtx</code>.  Any attempt to create an expression of
+code <code>pc</code> will return <code>pc_rtx</code>.
+</p>
+<p>All instructions that do not jump alter the program counter implicitly
+by incrementing it, but there is no need to mention this in the RTL.
+</p>
+<a name="index-mem"></a>
+</dd>
+<dt><code>(mem:<var>m</var> <var>addr</var> <var>alias</var>)</code></dt>
+<dd><p>This RTX represents a reference to main memory at an address
+represented by the expression <var>addr</var>.  <var>m</var> specifies how large
+a unit of memory is accessed.  <var>alias</var> specifies an alias set for the
+reference.  In general two items are in different alias sets if they cannot
+reference the same memory address.
+</p>
+<p>The construct <code>(mem:BLK (scratch))</code> is considered to alias all
+other memories.  Thus it may be used as a memory barrier in epilogue
+stack deallocation patterns.
+</p>
+<a name="index-concat"></a>
+</dd>
+<dt><code>(concat<var>m</var> <var>rtx</var> <var>rtx</var>)</code></dt>
+<dd><p>This RTX represents the concatenation of two other RTXs.  This is used
+for complex values.  It should only appear in the RTL attached to
+declarations and during RTL generation.  It should not appear in the
+ordinary insn chain.
+</p>
+<a name="index-concatn"></a>
+</dd>
+<dt><code>(concatn<var>m</var> [<var>rtx</var> &hellip;])</code></dt>
+<dd><p>This RTX represents the concatenation of all the <var>rtx</var> to make a
+single value.  Like <code>concat</code>, this should only appear in
+declarations, and not in the insn chain.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Arithmetic.html#Arithmetic" accesskey="n" rel="next">Arithmetic</a>, Previous: <a href="Constants.html#Constants" accesskey="p" rel="prev">Constants</a>, Up: <a href="RTL.html#RTL" accesskey="u" rel="up">RTL</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

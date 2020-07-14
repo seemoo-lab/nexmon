@@ -1,0 +1,165 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Invoking GDB</title>
+
+<meta name="description" content="Debugging with GDB: Invoking GDB">
+<meta name="keywords" content="Debugging with GDB: Invoking GDB">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Invocation.html#Invocation" rel="up" title="Invocation">
+<link href="File-Options.html#File-Options" rel="next" title="File Options">
+<link href="Invocation.html#Invocation" rel="prev" title="Invocation">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Invoking-GDB"></a>
+<div class="header">
+<p>
+Next: <a href="Quitting-GDB.html#Quitting-GDB" accesskey="n" rel="next">Quitting GDB</a>, Up: <a href="Invocation.html#Invocation" accesskey="u" rel="up">Invocation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Invoking-GDB-1"></a>
+<h3 class="section">2.1 Invoking <small>GDB</small></h3>
+
+<p>Invoke <small>GDB</small> by running the program <code>gdb</code>.  Once started,
+<small>GDB</small> reads commands from the terminal until you tell it to exit.
+</p>
+<p>You can also run <code>gdb</code> with a variety of arguments and options,
+to specify more of your debugging environment at the outset.
+</p>
+<p>The command-line options described here are designed
+to cover a variety of situations; in some environments, some of these
+options may effectively be unavailable.
+</p>
+<p>The most usual way to start <small>GDB</small> is with one argument,
+specifying an executable program:
+</p>
+<div class="smallexample">
+<pre class="smallexample">gdb <var>program</var>
+</pre></div>
+
+<p>You can also start with both an executable program and a core file
+specified:
+</p>
+<div class="smallexample">
+<pre class="smallexample">gdb <var>program</var> <var>core</var>
+</pre></div>
+
+<p>You can, instead, specify a process ID as a second argument, if you want
+to debug a running process:
+</p>
+<div class="smallexample">
+<pre class="smallexample">gdb <var>program</var> 1234
+</pre></div>
+
+<p>would attach <small>GDB</small> to process <code>1234</code> (unless you also have a file
+named <samp>1234</samp>; <small>GDB</small> does check for a core file first).
+</p>
+<p>Taking advantage of the second command-line argument requires a fairly
+complete operating system; when you use <small>GDB</small> as a remote
+debugger attached to a bare board, there may not be any notion of
+&ldquo;process&rdquo;, and there is often no way to get a core dump.  <small>GDB</small>
+will warn you if it is unable to attach or to read core dumps.
+</p>
+<p>You can optionally have <code>gdb</code> pass any arguments after the
+executable file to the inferior using <code>--args</code>.  This option stops
+option processing.
+</p><div class="smallexample">
+<pre class="smallexample">gdb --args gcc -O2 -c foo.c
+</pre></div>
+<p>This will cause <code>gdb</code> to debug <code>gcc</code>, and to set
+<code>gcc</code>&rsquo;s command-line arguments (see <a href="Arguments.html#Arguments">Arguments</a>) to &lsquo;<samp>-O2 -c foo.c</samp>&rsquo;.
+</p>
+<p>You can run <code>gdb</code> without printing the front material, which describes
+<small>GDB</small>&rsquo;s non-warranty, by specifying <code>--silent</code>
+(or <code>-q</code>/<code>--quiet</code>):
+</p>
+<div class="smallexample">
+<pre class="smallexample">gdb --silent
+</pre></div>
+
+<p>You can further control how <small>GDB</small> starts up by using command-line
+options.  <small>GDB</small> itself can remind you of the options available.
+</p>
+<p>Type
+</p>
+<div class="smallexample">
+<pre class="smallexample">gdb -help
+</pre></div>
+
+<p>to display all available options and briefly describe their use
+(&lsquo;<samp>gdb -h</samp>&rsquo; is a shorter equivalent).
+</p>
+<p>All options and command line arguments you give are processed
+in sequential order.  The order makes a difference when the
+&lsquo;<samp>-x</samp>&rsquo; option is used.
+</p>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="File-Options.html#File-Options" accesskey="1">File Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Choosing files
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Mode-Options.html#Mode-Options" accesskey="2">Mode Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Choosing modes
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Startup.html#Startup" accesskey="3">Startup</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">What <small>GDB</small> does during startup
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Quitting-GDB.html#Quitting-GDB" accesskey="n" rel="next">Quitting GDB</a>, Up: <a href="Invocation.html#Invocation" accesskey="u" rel="up">Invocation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

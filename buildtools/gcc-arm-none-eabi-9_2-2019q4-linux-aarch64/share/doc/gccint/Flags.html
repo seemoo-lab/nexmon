@@ -1,0 +1,619 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Flags</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Flags">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Flags">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="RTL.html#RTL" rel="up" title="RTL">
+<link href="Machine-Modes.html#Machine-Modes" rel="next" title="Machine Modes">
+<link href="Special-Accessors.html#Special-Accessors" rel="prev" title="Special Accessors">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Flags"></a>
+<div class="header">
+<p>
+Next: <a href="Machine-Modes.html#Machine-Modes" accesskey="n" rel="next">Machine Modes</a>, Previous: <a href="Special-Accessors.html#Special-Accessors" accesskey="p" rel="prev">Special Accessors</a>, Up: <a href="RTL.html#RTL" accesskey="u" rel="up">RTL</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Flags-in-an-RTL-Expression"></a>
+<h3 class="section">14.5 Flags in an RTL Expression</h3>
+<a name="index-flags-in-RTL-expression"></a>
+
+<p>RTL expressions contain several flags (one-bit bit-fields)
+that are used in certain types of expression.  Most often they
+are accessed with the following macros, which expand into lvalues.
+</p>
+<dl compact="compact">
+<dd><a name="index-CROSSING_005fJUMP_005fP"></a>
+<a name="index-jump_005finsn-and-_002fj"></a>
+</dd>
+<dt><code>CROSSING_JUMP_P (<var>x</var>)</code></dt>
+<dd><p>Nonzero in a <code>jump_insn</code> if it crosses between hot and cold sections,
+which could potentially be very far apart in the executable.  The presence
+of this flag indicates to other optimizations that this branching instruction
+should not be &ldquo;collapsed&rdquo; into a simpler branching construct.  It is used
+when the optimization to partition basic blocks into hot and cold sections
+is turned on.
+</p>
+<a name="index-CONSTANT_005fPOOL_005fADDRESS_005fP"></a>
+<a name="index-symbol_005fref-and-_002fu"></a>
+<a name="index-unchanging_002c-in-symbol_005fref"></a>
+</dd>
+<dt><code>CONSTANT_POOL_ADDRESS_P (<var>x</var>)</code></dt>
+<dd><p>Nonzero in a <code>symbol_ref</code> if it refers to part of the current
+function&rsquo;s constant pool.  For most targets these addresses are in a
+<code>.rodata</code> section entirely separate from the function, but for
+some targets the addresses are close to the beginning of the function.
+In either case GCC assumes these addresses can be addressed directly,
+perhaps with the help of base registers.
+Stored in the <code>unchanging</code> field and printed as &lsquo;<samp>/u</samp>&rsquo;.
+</p>
+<a name="index-INSN_005fANNULLED_005fBRANCH_005fP"></a>
+<a name="index-jump_005finsn-and-_002fu"></a>
+<a name="index-call_005finsn-and-_002fu"></a>
+<a name="index-insn-and-_002fu"></a>
+<a name="index-unchanging_002c-in-jump_005finsn_002c-call_005finsn-and-insn"></a>
+</dd>
+<dt><code>INSN_ANNULLED_BRANCH_P (<var>x</var>)</code></dt>
+<dd><p>In a <code>jump_insn</code>, <code>call_insn</code>, or <code>insn</code> indicates
+that the branch is an annulling one.  See the discussion under
+<code>sequence</code> below.  Stored in the <code>unchanging</code> field and
+printed as &lsquo;<samp>/u</samp>&rsquo;.
+</p>
+<a name="index-INSN_005fDELETED_005fP"></a>
+<a name="index-insn-and-_002fv"></a>
+<a name="index-call_005finsn-and-_002fv"></a>
+<a name="index-jump_005finsn-and-_002fv"></a>
+<a name="index-code_005flabel-and-_002fv"></a>
+<a name="index-jump_005ftable_005fdata-and-_002fv"></a>
+<a name="index-barrier-and-_002fv"></a>
+<a name="index-note-and-_002fv"></a>
+<a name="index-volatil_002c-in-insn_002c-call_005finsn_002c-jump_005finsn_002c-code_005flabel_002c-jump_005ftable_005fdata_002c-barrier_002c-and-note"></a>
+</dd>
+<dt><code>INSN_DELETED_P (<var>x</var>)</code></dt>
+<dd><p>In an <code>insn</code>, <code>call_insn</code>, <code>jump_insn</code>, <code>code_label</code>,
+<code>jump_table_data</code>, <code>barrier</code>, or <code>note</code>,
+nonzero if the insn has been deleted.  Stored in the
+<code>volatil</code> field and printed as &lsquo;<samp>/v</samp>&rsquo;.
+</p>
+<a name="index-INSN_005fFROM_005fTARGET_005fP"></a>
+<a name="index-insn-and-_002fs"></a>
+<a name="index-jump_005finsn-and-_002fs"></a>
+<a name="index-call_005finsn-and-_002fs"></a>
+<a name="index-in_005fstruct_002c-in-insn-and-jump_005finsn-and-call_005finsn"></a>
+</dd>
+<dt><code>INSN_FROM_TARGET_P (<var>x</var>)</code></dt>
+<dd><p>In an <code>insn</code> or <code>jump_insn</code> or <code>call_insn</code> in a delay
+slot of a branch, indicates that the insn
+is from the target of the branch.  If the branch insn has
+<code>INSN_ANNULLED_BRANCH_P</code> set, this insn will only be executed if
+the branch is taken.  For annulled branches with
+<code>INSN_FROM_TARGET_P</code> clear, the insn will be executed only if the
+branch is not taken.  When <code>INSN_ANNULLED_BRANCH_P</code> is not set,
+this insn will always be executed.  Stored in the <code>in_struct</code>
+field and printed as &lsquo;<samp>/s</samp>&rsquo;.
+</p>
+<a name="index-LABEL_005fPRESERVE_005fP"></a>
+<a name="index-code_005flabel-and-_002fi"></a>
+<a name="index-note-and-_002fi"></a>
+<a name="index-in_005fstruct_002c-in-code_005flabel-and-note"></a>
+</dd>
+<dt><code>LABEL_PRESERVE_P (<var>x</var>)</code></dt>
+<dd><p>In a <code>code_label</code> or <code>note</code>, indicates that the label is referenced by
+code or data not visible to the RTL of a given function.
+Labels referenced by a non-local goto will have this bit set.  Stored
+in the <code>in_struct</code> field and printed as &lsquo;<samp>/s</samp>&rsquo;.
+</p>
+<a name="index-LABEL_005fREF_005fNONLOCAL_005fP"></a>
+<a name="index-label_005fref-and-_002fv"></a>
+<a name="index-reg_005flabel-and-_002fv"></a>
+<a name="index-volatil_002c-in-label_005fref-and-reg_005flabel"></a>
+</dd>
+<dt><code>LABEL_REF_NONLOCAL_P (<var>x</var>)</code></dt>
+<dd><p>In <code>label_ref</code> and <code>reg_label</code> expressions, nonzero if this is
+a reference to a non-local label.
+Stored in the <code>volatil</code> field and printed as &lsquo;<samp>/v</samp>&rsquo;.
+</p>
+<a name="index-MEM_005fKEEP_005fALIAS_005fSET_005fP"></a>
+<a name="index-mem-and-_002fj"></a>
+<a name="index-jump_002c-in-mem"></a>
+</dd>
+<dt><code>MEM_KEEP_ALIAS_SET_P (<var>x</var>)</code></dt>
+<dd><p>In <code>mem</code> expressions, 1 if we should keep the alias set for this
+mem unchanged when we access a component.  Set to 1, for example, when we
+are already in a non-addressable component of an aggregate.
+Stored in the <code>jump</code> field and printed as &lsquo;<samp>/j</samp>&rsquo;.
+</p>
+<a name="index-MEM_005fVOLATILE_005fP"></a>
+<a name="index-mem-and-_002fv"></a>
+<a name="index-asm_005finput-and-_002fv"></a>
+<a name="index-asm_005foperands-and-_002fv"></a>
+<a name="index-volatil_002c-in-mem_002c-asm_005foperands_002c-and-asm_005finput"></a>
+</dd>
+<dt><code>MEM_VOLATILE_P (<var>x</var>)</code></dt>
+<dd><p>In <code>mem</code>, <code>asm_operands</code>, and <code>asm_input</code> expressions,
+nonzero for volatile memory references.
+Stored in the <code>volatil</code> field and printed as &lsquo;<samp>/v</samp>&rsquo;.
+</p>
+<a name="index-MEM_005fNOTRAP_005fP"></a>
+<a name="index-mem-and-_002fc"></a>
+<a name="index-call_002c-in-mem"></a>
+</dd>
+<dt><code>MEM_NOTRAP_P (<var>x</var>)</code></dt>
+<dd><p>In <code>mem</code>, nonzero for memory references that will not trap.
+Stored in the <code>call</code> field and printed as &lsquo;<samp>/c</samp>&rsquo;.
+</p>
+<a name="index-MEM_005fPOINTER"></a>
+<a name="index-mem-and-_002ff"></a>
+<a name="index-frame_005frelated_002c-in-mem"></a>
+</dd>
+<dt><code>MEM_POINTER (<var>x</var>)</code></dt>
+<dd><p>Nonzero in a <code>mem</code> if the memory reference holds a pointer.
+Stored in the <code>frame_related</code> field and printed as &lsquo;<samp>/f</samp>&rsquo;.
+</p>
+<a name="index-MEM_005fREADONLY_005fP"></a>
+<a name="index-mem-and-_002fu"></a>
+<a name="index-unchanging_002c-in-mem"></a>
+</dd>
+<dt><code>MEM_READONLY_P (<var>x</var>)</code></dt>
+<dd><p>Nonzero in a <code>mem</code>, if the memory is statically allocated and read-only.
+</p>
+<p>Read-only in this context means never modified during the lifetime of the
+program, not necessarily in ROM or in write-disabled pages.  A common
+example of the later is a shared library&rsquo;s global offset table.  This
+table is initialized by the runtime loader, so the memory is technically
+writable, but after control is transferred from the runtime loader to the
+application, this memory will never be subsequently modified.
+</p>
+<p>Stored in the <code>unchanging</code> field and printed as &lsquo;<samp>/u</samp>&rsquo;.
+</p>
+<a name="index-PREFETCH_005fSCHEDULE_005fBARRIER_005fP"></a>
+<a name="index-prefetch-and-_002fv"></a>
+<a name="index-volatile_002c-in-prefetch"></a>
+</dd>
+<dt><code>PREFETCH_SCHEDULE_BARRIER_P (<var>x</var>)</code></dt>
+<dd><p>In a <code>prefetch</code>, indicates that the prefetch is a scheduling barrier.
+No other INSNs will be moved over it.
+Stored in the <code>volatil</code> field and printed as &lsquo;<samp>/v</samp>&rsquo;.
+</p>
+<a name="index-REG_005fFUNCTION_005fVALUE_005fP"></a>
+<a name="index-reg-and-_002fi"></a>
+<a name="index-return_005fval_002c-in-reg"></a>
+</dd>
+<dt><code>REG_FUNCTION_VALUE_P (<var>x</var>)</code></dt>
+<dd><p>Nonzero in a <code>reg</code> if it is the place in which this function&rsquo;s
+value is going to be returned.  (This happens only in a hard
+register.)  Stored in the <code>return_val</code> field and printed as
+&lsquo;<samp>/i</samp>&rsquo;.
+</p>
+<a name="index-REG_005fPOINTER"></a>
+<a name="index-reg-and-_002ff"></a>
+<a name="index-frame_005frelated_002c-in-reg"></a>
+</dd>
+<dt><code>REG_POINTER (<var>x</var>)</code></dt>
+<dd><p>Nonzero in a <code>reg</code> if the register holds a pointer.  Stored in the
+<code>frame_related</code> field and printed as &lsquo;<samp>/f</samp>&rsquo;.
+</p>
+<a name="index-REG_005fUSERVAR_005fP"></a>
+<a name="index-reg-and-_002fv"></a>
+<a name="index-volatil_002c-in-reg"></a>
+</dd>
+<dt><code>REG_USERVAR_P (<var>x</var>)</code></dt>
+<dd><p>In a <code>reg</code>, nonzero if it corresponds to a variable present in
+the user&rsquo;s source code.  Zero for temporaries generated internally by
+the compiler.  Stored in the <code>volatil</code> field and printed as
+&lsquo;<samp>/v</samp>&rsquo;.
+</p>
+<p>The same hard register may be used also for collecting the values of
+functions called by this one, but <code>REG_FUNCTION_VALUE_P</code> is zero
+in this kind of use.
+</p>
+<a name="index-RTL_005fCONST_005fCALL_005fP"></a>
+<a name="index-call_005finsn-and-_002fu-1"></a>
+<a name="index-unchanging_002c-in-call_005finsn"></a>
+</dd>
+<dt><code>RTL_CONST_CALL_P (<var>x</var>)</code></dt>
+<dd><p>In a <code>call_insn</code> indicates that the insn represents a call to a
+const function.  Stored in the <code>unchanging</code> field and printed as
+&lsquo;<samp>/u</samp>&rsquo;.
+</p>
+<a name="index-RTL_005fPURE_005fCALL_005fP"></a>
+<a name="index-call_005finsn-and-_002fi"></a>
+<a name="index-return_005fval_002c-in-call_005finsn"></a>
+</dd>
+<dt><code>RTL_PURE_CALL_P (<var>x</var>)</code></dt>
+<dd><p>In a <code>call_insn</code> indicates that the insn represents a call to a
+pure function.  Stored in the <code>return_val</code> field and printed as
+&lsquo;<samp>/i</samp>&rsquo;.
+</p>
+<a name="index-RTL_005fCONST_005fOR_005fPURE_005fCALL_005fP"></a>
+<a name="index-call_005finsn-and-_002fu-or-_002fi"></a>
+</dd>
+<dt><code>RTL_CONST_OR_PURE_CALL_P (<var>x</var>)</code></dt>
+<dd><p>In a <code>call_insn</code>, true if <code>RTL_CONST_CALL_P</code> or
+<code>RTL_PURE_CALL_P</code> is true.
+</p>
+<a name="index-RTL_005fLOOPING_005fCONST_005fOR_005fPURE_005fCALL_005fP"></a>
+<a name="index-call_005finsn-and-_002fc"></a>
+<a name="index-call_002c-in-call_005finsn"></a>
+</dd>
+<dt><code>RTL_LOOPING_CONST_OR_PURE_CALL_P (<var>x</var>)</code></dt>
+<dd><p>In a <code>call_insn</code> indicates that the insn represents a possibly
+infinite looping call to a const or pure function.  Stored in the
+<code>call</code> field and printed as &lsquo;<samp>/c</samp>&rsquo;.  Only true if one of
+<code>RTL_CONST_CALL_P</code> or <code>RTL_PURE_CALL_P</code> is true.
+</p>
+<a name="index-RTX_005fFRAME_005fRELATED_005fP"></a>
+<a name="index-insn-and-_002ff"></a>
+<a name="index-call_005finsn-and-_002ff"></a>
+<a name="index-jump_005finsn-and-_002ff"></a>
+<a name="index-barrier-and-_002ff"></a>
+<a name="index-set-and-_002ff"></a>
+<a name="index-frame_005frelated_002c-in-insn_002c-call_005finsn_002c-jump_005finsn_002c-barrier_002c-and-set"></a>
+</dd>
+<dt><code>RTX_FRAME_RELATED_P (<var>x</var>)</code></dt>
+<dd><p>Nonzero in an <code>insn</code>, <code>call_insn</code>, <code>jump_insn</code>,
+<code>barrier</code>, or <code>set</code> which is part of a function prologue
+and sets the stack pointer, sets the frame pointer, or saves a register.
+This flag should also be set on an instruction that sets up a temporary
+register to use in place of the frame pointer.
+Stored in the <code>frame_related</code> field and printed as &lsquo;<samp>/f</samp>&rsquo;.
+</p>
+<p>In particular, on RISC targets where there are limits on the sizes of
+immediate constants, it is sometimes impossible to reach the register
+save area directly from the stack pointer.  In that case, a temporary
+register is used that is near enough to the register save area, and the
+Canonical Frame Address, i.e., DWARF2&rsquo;s logical frame pointer, register
+must (temporarily) be changed to be this temporary register.  So, the
+instruction that sets this temporary register must be marked as
+<code>RTX_FRAME_RELATED_P</code>.
+</p>
+<p>If the marked instruction is overly complex (defined in terms of what
+<code>dwarf2out_frame_debug_expr</code> can handle), you will also have to
+create a <code>REG_FRAME_RELATED_EXPR</code> note and attach it to the
+instruction.  This note should contain a simple expression of the
+computation performed by this instruction, i.e., one that
+<code>dwarf2out_frame_debug_expr</code> can handle.
+</p>
+<p>This flag is required for exception handling support on targets with RTL
+prologues.
+</p>
+<a name="index-SCHED_005fGROUP_005fP"></a>
+<a name="index-insn-and-_002fs-1"></a>
+<a name="index-call_005finsn-and-_002fs-1"></a>
+<a name="index-jump_005finsn-and-_002fs-1"></a>
+<a name="index-jump_005ftable_005fdata-and-_002fs"></a>
+<a name="index-in_005fstruct_002c-in-insn_002c-call_005finsn_002c-jump_005finsn-and-jump_005ftable_005fdata"></a>
+</dd>
+<dt><code>SCHED_GROUP_P (<var>x</var>)</code></dt>
+<dd><p>During instruction scheduling, in an <code>insn</code>, <code>call_insn</code>,
+<code>jump_insn</code> or <code>jump_table_data</code>, indicates that the
+previous insn must be scheduled together with this insn.  This is used to
+ensure that certain groups of instructions will not be split up by the
+instruction scheduling pass, for example, <code>use</code> insns before
+a <code>call_insn</code> may not be separated from the <code>call_insn</code>.
+Stored in the <code>in_struct</code> field and printed as &lsquo;<samp>/s</samp>&rsquo;.
+</p>
+<a name="index-SET_005fIS_005fRETURN_005fP"></a>
+<a name="index-insn-and-_002fj"></a>
+<a name="index-jump_002c-in-insn"></a>
+</dd>
+<dt><code>SET_IS_RETURN_P (<var>x</var>)</code></dt>
+<dd><p>For a <code>set</code>, nonzero if it is for a return.
+Stored in the <code>jump</code> field and printed as &lsquo;<samp>/j</samp>&rsquo;.
+</p>
+<a name="index-SIBLING_005fCALL_005fP"></a>
+<a name="index-call_005finsn-and-_002fj"></a>
+<a name="index-jump_002c-in-call_005finsn"></a>
+</dd>
+<dt><code>SIBLING_CALL_P (<var>x</var>)</code></dt>
+<dd><p>For a <code>call_insn</code>, nonzero if the insn is a sibling call.
+Stored in the <code>jump</code> field and printed as &lsquo;<samp>/j</samp>&rsquo;.
+</p>
+<a name="index-STRING_005fPOOL_005fADDRESS_005fP"></a>
+<a name="index-symbol_005fref-and-_002ff"></a>
+<a name="index-frame_005frelated_002c-in-symbol_005fref"></a>
+</dd>
+<dt><code>STRING_POOL_ADDRESS_P (<var>x</var>)</code></dt>
+<dd><p>For a <code>symbol_ref</code> expression, nonzero if it addresses this function&rsquo;s
+string constant pool.
+Stored in the <code>frame_related</code> field and printed as &lsquo;<samp>/f</samp>&rsquo;.
+</p>
+<a name="index-SUBREG_005fPROMOTED_005fUNSIGNED_005fP"></a>
+<a name="index-subreg-and-_002fu-and-_002fv"></a>
+<a name="index-unchanging_002c-in-subreg"></a>
+<a name="index-volatil_002c-in-subreg"></a>
+</dd>
+<dt><code>SUBREG_PROMOTED_UNSIGNED_P (<var>x</var>)</code></dt>
+<dd><p>Returns a value greater then zero for a <code>subreg</code> that has
+<code>SUBREG_PROMOTED_VAR_P</code> nonzero if the object being referenced is kept
+zero-extended, zero if it is kept sign-extended, and less then zero if it is
+extended some other way via the <code>ptr_extend</code> instruction.
+Stored in the <code>unchanging</code>
+field and <code>volatil</code> field, printed as &lsquo;<samp>/u</samp>&rsquo; and &lsquo;<samp>/v</samp>&rsquo;.
+This macro may only be used to get the value it may not be used to change
+the value.  Use <code>SUBREG_PROMOTED_UNSIGNED_SET</code> to change the value.
+</p>
+<a name="index-SUBREG_005fPROMOTED_005fUNSIGNED_005fSET"></a>
+<a name="index-subreg-and-_002fu"></a>
+<a name="index-unchanging_002c-in-subreg-1"></a>
+<a name="index-volatil_002c-in-subreg-1"></a>
+</dd>
+<dt><code>SUBREG_PROMOTED_UNSIGNED_SET (<var>x</var>)</code></dt>
+<dd><p>Set the <code>unchanging</code> and <code>volatil</code> fields in a <code>subreg</code>
+to reflect zero, sign, or other extension.  If <code>volatil</code> is
+zero, then <code>unchanging</code> as nonzero means zero extension and as
+zero means sign extension.  If <code>volatil</code> is nonzero then some
+other type of extension was done via the <code>ptr_extend</code> instruction.
+</p>
+<a name="index-SUBREG_005fPROMOTED_005fVAR_005fP"></a>
+<a name="index-subreg-and-_002fs"></a>
+<a name="index-in_005fstruct_002c-in-subreg"></a>
+</dd>
+<dt><code>SUBREG_PROMOTED_VAR_P (<var>x</var>)</code></dt>
+<dd><p>Nonzero in a <code>subreg</code> if it was made when accessing an object that
+was promoted to a wider mode in accord with the <code>PROMOTED_MODE</code> machine
+description macro (see <a href="Storage-Layout.html#Storage-Layout">Storage Layout</a>).  In this case, the mode of
+the <code>subreg</code> is the declared mode of the object and the mode of
+<code>SUBREG_REG</code> is the mode of the register that holds the object.
+Promoted variables are always either sign- or zero-extended to the wider
+mode on every assignment.  Stored in the <code>in_struct</code> field and
+printed as &lsquo;<samp>/s</samp>&rsquo;.
+</p>
+<a name="index-SYMBOL_005fREF_005fUSED"></a>
+<a name="index-used_002c-in-symbol_005fref"></a>
+</dd>
+<dt><code>SYMBOL_REF_USED (<var>x</var>)</code></dt>
+<dd><p>In a <code>symbol_ref</code>, indicates that <var>x</var> has been used.  This is
+normally only used to ensure that <var>x</var> is only declared external
+once.  Stored in the <code>used</code> field.
+</p>
+<a name="index-SYMBOL_005fREF_005fWEAK"></a>
+<a name="index-symbol_005fref-and-_002fi"></a>
+<a name="index-return_005fval_002c-in-symbol_005fref"></a>
+</dd>
+<dt><code>SYMBOL_REF_WEAK (<var>x</var>)</code></dt>
+<dd><p>In a <code>symbol_ref</code>, indicates that <var>x</var> has been declared weak.
+Stored in the <code>return_val</code> field and printed as &lsquo;<samp>/i</samp>&rsquo;.
+</p>
+<a name="index-SYMBOL_005fREF_005fFLAG"></a>
+<a name="index-symbol_005fref-and-_002fv"></a>
+<a name="index-volatil_002c-in-symbol_005fref"></a>
+</dd>
+<dt><code>SYMBOL_REF_FLAG (<var>x</var>)</code></dt>
+<dd><p>In a <code>symbol_ref</code>, this is used as a flag for machine-specific purposes.
+Stored in the <code>volatil</code> field and printed as &lsquo;<samp>/v</samp>&rsquo;.
+</p>
+<p>Most uses of <code>SYMBOL_REF_FLAG</code> are historic and may be subsumed
+by <code>SYMBOL_REF_FLAGS</code>.  Certainly use of <code>SYMBOL_REF_FLAGS</code>
+is mandatory if the target requires more than one bit of storage.
+</p></dd>
+</dl>
+
+<p>These are the fields to which the above macros refer:
+</p>
+<dl compact="compact">
+<dd><a name="index-call"></a>
+<a name="index-_002fc-in-RTL-dump"></a>
+</dd>
+<dt><code>call</code></dt>
+<dd><p>In a <code>mem</code>, 1 means that the memory reference will not trap.
+</p>
+<p>In a <code>call</code>, 1 means that this pure or const call may possibly
+infinite loop.
+</p>
+<p>In an RTL dump, this flag is represented as &lsquo;<samp>/c</samp>&rsquo;.
+</p>
+<a name="index-frame_005frelated"></a>
+<a name="index-_002ff-in-RTL-dump"></a>
+</dd>
+<dt><code>frame_related</code></dt>
+<dd><p>In an <code>insn</code> or <code>set</code> expression, 1 means that it is part of
+a function prologue and sets the stack pointer, sets the frame pointer,
+saves a register, or sets up a temporary register to use in place of the
+frame pointer.
+</p>
+<p>In <code>reg</code> expressions, 1 means that the register holds a pointer.
+</p>
+<p>In <code>mem</code> expressions, 1 means that the memory reference holds a pointer.
+</p>
+<p>In <code>symbol_ref</code> expressions, 1 means that the reference addresses
+this function&rsquo;s string constant pool.
+</p>
+<p>In an RTL dump, this flag is represented as &lsquo;<samp>/f</samp>&rsquo;.
+</p>
+<a name="index-in_005fstruct"></a>
+<a name="index-_002fs-in-RTL-dump"></a>
+</dd>
+<dt><code>in_struct</code></dt>
+<dd><p>In <code>reg</code> expressions, it is 1 if the register has its entire life
+contained within the test expression of some loop.
+</p>
+<p>In <code>subreg</code> expressions, 1 means that the <code>subreg</code> is accessing
+an object that has had its mode promoted from a wider mode.
+</p>
+<p>In <code>label_ref</code> expressions, 1 means that the referenced label is
+outside the innermost loop containing the insn in which the <code>label_ref</code>
+was found.
+</p>
+<p>In <code>code_label</code> expressions, it is 1 if the label may never be deleted.
+This is used for labels which are the target of non-local gotos.  Such a
+label that would have been deleted is replaced with a <code>note</code> of type
+<code>NOTE_INSN_DELETED_LABEL</code>.
+</p>
+<p>In an <code>insn</code> during dead-code elimination, 1 means that the insn is
+dead code.
+</p>
+<p>In an <code>insn</code> or <code>jump_insn</code> during reorg for an insn in the
+delay slot of a branch,
+1 means that this insn is from the target of the branch.
+</p>
+<p>In an <code>insn</code> during instruction scheduling, 1 means that this insn
+must be scheduled as part of a group together with the previous insn.
+</p>
+<p>In an RTL dump, this flag is represented as &lsquo;<samp>/s</samp>&rsquo;.
+</p>
+<a name="index-return_005fval"></a>
+<a name="index-_002fi-in-RTL-dump"></a>
+</dd>
+<dt><code>return_val</code></dt>
+<dd><p>In <code>reg</code> expressions, 1 means the register contains
+the value to be returned by the current function.  On
+machines that pass parameters in registers, the same register number
+may be used for parameters as well, but this flag is not set on such
+uses.
+</p>
+<p>In <code>symbol_ref</code> expressions, 1 means the referenced symbol is weak.
+</p>
+<p>In <code>call</code> expressions, 1 means the call is pure.
+</p>
+<p>In an RTL dump, this flag is represented as &lsquo;<samp>/i</samp>&rsquo;.
+</p>
+<a name="index-jump"></a>
+<a name="index-_002fj-in-RTL-dump"></a>
+</dd>
+<dt><code>jump</code></dt>
+<dd><p>In a <code>mem</code> expression, 1 means we should keep the alias set for this
+mem unchanged when we access a component.
+</p>
+<p>In a <code>set</code>, 1 means it is for a return.
+</p>
+<p>In a <code>call_insn</code>, 1 means it is a sibling call.
+</p>
+<p>In a <code>jump_insn</code>, 1 means it is a crossing jump.
+</p>
+<p>In an RTL dump, this flag is represented as &lsquo;<samp>/j</samp>&rsquo;.
+</p>
+<a name="index-unchanging"></a>
+<a name="index-_002fu-in-RTL-dump"></a>
+</dd>
+<dt><code>unchanging</code></dt>
+<dd><p>In <code>reg</code> and <code>mem</code> expressions, 1 means
+that the value of the expression never changes.
+</p>
+<p>In <code>subreg</code> expressions, it is 1 if the <code>subreg</code> references an
+unsigned object whose mode has been promoted to a wider mode.
+</p>
+<p>In an <code>insn</code> or <code>jump_insn</code> in the delay slot of a branch
+instruction, 1 means an annulling branch should be used.
+</p>
+<p>In a <code>symbol_ref</code> expression, 1 means that this symbol addresses
+something in the per-function constant pool.
+</p>
+<p>In a <code>call_insn</code> 1 means that this instruction is a call to a const
+function.
+</p>
+<p>In an RTL dump, this flag is represented as &lsquo;<samp>/u</samp>&rsquo;.
+</p>
+<a name="index-used"></a>
+</dd>
+<dt><code>used</code></dt>
+<dd><p>This flag is used directly (without an access macro) at the end of RTL
+generation for a function, to count the number of times an expression
+appears in insns.  Expressions that appear more than once are copied,
+according to the rules for shared structure (see <a href="Sharing.html#Sharing">Sharing</a>).
+</p>
+<p>For a <code>reg</code>, it is used directly (without an access macro) by the
+leaf register renumbering code to ensure that each register is only
+renumbered once.
+</p>
+<p>In a <code>symbol_ref</code>, it indicates that an external declaration for
+the symbol has already been written.
+</p>
+<a name="index-volatil"></a>
+<a name="index-_002fv-in-RTL-dump"></a>
+</dd>
+<dt><code>volatil</code></dt>
+<dd><a name="index-volatile-memory-references"></a>
+<p>In a <code>mem</code>, <code>asm_operands</code>, or <code>asm_input</code>
+expression, it is 1 if the memory
+reference is volatile.  Volatile memory references may not be deleted,
+reordered or combined.
+</p>
+<p>In a <code>symbol_ref</code> expression, it is used for machine-specific
+purposes.
+</p>
+<p>In a <code>reg</code> expression, it is 1 if the value is a user-level variable.
+0 indicates an internal compiler temporary.
+</p>
+<p>In an <code>insn</code>, 1 means the insn has been deleted.
+</p>
+<p>In <code>label_ref</code> and <code>reg_label</code> expressions, 1 means a reference
+to a non-local label.
+</p>
+<p>In <code>prefetch</code> expressions, 1 means that the containing insn is a
+scheduling barrier.
+</p>
+<p>In an RTL dump, this flag is represented as &lsquo;<samp>/v</samp>&rsquo;.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Machine-Modes.html#Machine-Modes" accesskey="n" rel="next">Machine Modes</a>, Previous: <a href="Special-Accessors.html#Special-Accessors" accesskey="p" rel="prev">Special Accessors</a>, Up: <a href="RTL.html#RTL" accesskey="u" rel="up">RTL</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

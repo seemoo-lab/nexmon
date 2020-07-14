@@ -1,0 +1,164 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Number of iterations</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Number of iterations">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Number of iterations">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation" rel="up" title="Loop Analysis and Representation">
+<link href="Dependency-analysis.html#Dependency-analysis" rel="next" title="Dependency analysis">
+<link href="loop_002div.html#loop_002div" rel="prev" title="loop-iv">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Number-of-iterations"></a>
+<div class="header">
+<p>
+Next: <a href="Dependency-analysis.html#Dependency-analysis" accesskey="n" rel="next">Dependency analysis</a>, Previous: <a href="loop_002div.html#loop_002div" accesskey="p" rel="prev">loop-iv</a>, Up: <a href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation" accesskey="u" rel="up">Loop Analysis and Representation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Number-of-iterations-analysis"></a>
+<h3 class="section">16.7 Number of iterations analysis</h3>
+<a name="index-Number-of-iterations-analysis"></a>
+
+<p>Both on GIMPLE and on RTL, there are functions available to determine
+the number of iterations of a loop, with a similar interface.  The
+number of iterations of a loop in GCC is defined as the number of
+executions of the loop latch.  In many cases, it is not possible to
+determine the number of iterations unconditionally &ndash; the determined
+number is correct only if some assumptions are satisfied.  The analysis
+tries to verify these conditions using the information contained in the
+program; if it fails, the conditions are returned together with the
+result.  The following information and conditions are provided by the
+analysis:
+</p>
+<ul>
+<li> <code>assumptions</code>: If this condition is false, the rest of
+the information is invalid.
+</li><li> <code>noloop_assumptions</code> on RTL, <code>may_be_zero</code> on GIMPLE: If
+this condition is true, the loop exits in the first iteration.
+</li><li> <code>infinite</code>: If this condition is true, the loop is infinite.
+This condition is only available on RTL.  On GIMPLE, conditions for
+finiteness of the loop are included in <code>assumptions</code>.
+</li><li> <code>niter_expr</code> on RTL, <code>niter</code> on GIMPLE: The expression
+that gives number of iterations.  The number of iterations is defined as
+the number of executions of the loop latch.
+</li></ul>
+
+<p>Both on GIMPLE and on RTL, it necessary for the induction variable
+analysis framework to be initialized (SCEV on GIMPLE, loop-iv on RTL).
+On GIMPLE, the results are stored to <code>struct tree_niter_desc</code>
+structure.  Number of iterations before the loop is exited through a
+given exit can be determined using <code>number_of_iterations_exit</code>
+function.  On RTL, the results are returned in <code>struct niter_desc</code>
+structure.  The corresponding function is named
+<code>check_simple_exit</code>.  There are also functions that pass through
+all the exits of a loop and try to find one with easy to determine
+number of iterations &ndash; <code>find_loop_niter</code> on GIMPLE and
+<code>find_simple_exit</code> on RTL.  Finally, there are functions that
+provide the same information, but additionally cache it, so that
+repeated calls to number of iterations are not so costly &ndash;
+<code>number_of_latch_executions</code> on GIMPLE and <code>get_simple_loop_desc</code>
+on RTL.
+</p>
+<p>Note that some of these functions may behave slightly differently than
+others &ndash; some of them return only the expression for the number of
+iterations, and fail if there are some assumptions.  The function
+<code>number_of_latch_executions</code> works only for single-exit loops.
+The function <code>number_of_cond_exit_executions</code> can be used to
+determine number of executions of the exit condition of a single-exit
+loop (i.e., the <code>number_of_latch_executions</code> increased by one).
+</p>
+<p>On GIMPLE, below constraint flags affect semantics of some APIs of number
+of iterations analyzer:
+</p>
+<ul>
+<li> <code>LOOP_C_INFINITE</code>: If this constraint flag is set, the loop
+is known to be infinite.  APIs like <code>number_of_iterations_exit</code> can
+return false directly without doing any analysis.
+</li><li> <code>LOOP_C_FINITE</code>: If this constraint flag is set, the loop is
+known to be finite, in other words, loop&rsquo;s number of iterations can be
+computed with <code>assumptions</code> be true.
+</li></ul>
+
+<p>Generally, the constraint flags are set/cleared by consumers which are
+loop optimizers.  It&rsquo;s also the consumers&rsquo; responsibility to set/clear
+constraints correctly.  Failing to do that might result in hard to track
+down bugs in scev/niter consumers.  One typical use case is vectorizer:
+it drives number of iterations analyzer by setting <code>LOOP_C_FINITE</code>
+and vectorizes possibly infinite loop by versioning loop with analysis
+result.  In return, constraints set by consumers can also help number of
+iterations analyzer in following optimizers.  For example, <code>niter</code>
+of a loop versioned under <code>assumptions</code> is valid unconditionally.
+</p>
+<p>Other constraints may be added in the future, for example, a constraint
+indicating that loops&rsquo; latch must roll thus <code>may_be_zero</code> would be
+false unconditionally.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Dependency-analysis.html#Dependency-analysis" accesskey="n" rel="next">Dependency analysis</a>, Previous: <a href="loop_002div.html#loop_002div" accesskey="p" rel="prev">loop-iv</a>, Up: <a href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation" accesskey="u" rel="up">Loop Analysis and Representation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Aggregate Return</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Aggregate Return">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Aggregate Return">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Stack-and-Calling.html#Stack-and-Calling" rel="up" title="Stack and Calling">
+<link href="Caller-Saves.html#Caller-Saves" rel="next" title="Caller Saves">
+<link href="Scalar-Return.html#Scalar-Return" rel="prev" title="Scalar Return">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Aggregate-Return"></a>
+<div class="header">
+<p>
+Next: <a href="Caller-Saves.html#Caller-Saves" accesskey="n" rel="next">Caller Saves</a>, Previous: <a href="Scalar-Return.html#Scalar-Return" accesskey="p" rel="prev">Scalar Return</a>, Up: <a href="Stack-and-Calling.html#Stack-and-Calling" accesskey="u" rel="up">Stack and Calling</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="How-Large-Values-Are-Returned"></a>
+<h4 class="subsection">18.9.9 How Large Values Are Returned</h4>
+<a name="index-aggregates-as-return-values"></a>
+<a name="index-large-return-values"></a>
+<a name="index-returning-aggregate-values"></a>
+<a name="index-structure-value-address"></a>
+
+<p>When a function value&rsquo;s mode is <code>BLKmode</code> (and in some other
+cases), the value is not returned according to
+<code>TARGET_FUNCTION_VALUE</code> (see <a href="Scalar-Return.html#Scalar-Return">Scalar Return</a>).  Instead, the
+caller passes the address of a block of memory in which the value
+should be stored.  This address is called the <em>structure value
+address</em>.
+</p>
+<p>This section describes how to control returning structure values in
+memory.
+</p>
+<dl>
+<dt><a name="index-TARGET_005fRETURN_005fIN_005fMEMORY"></a>Target Hook: <em>bool</em> <strong>TARGET_RETURN_IN_MEMORY</strong> <em>(const_tree <var>type</var>, const_tree <var>fntype</var>)</em></dt>
+<dd><p>This target hook should return a nonzero value to say to return the
+function value in memory, just as large structures are always returned.
+Here <var>type</var> will be the data type of the value, and <var>fntype</var>
+will be the type of the function doing the returning, or <code>NULL</code> for
+libcalls.
+</p>
+<p>Note that values of mode <code>BLKmode</code> must be explicitly handled
+by this function.  Also, the option <samp>-fpcc-struct-return</samp>
+takes effect regardless of this macro.  On most systems, it is
+possible to leave the hook undefined; this causes a default
+definition to be used, whose value is the constant 1 for <code>BLKmode</code>
+values, and 0 otherwise.
+</p>
+<p>Do not use this hook to indicate that structures and unions should always
+be returned in memory.  You should instead use <code>DEFAULT_PCC_STRUCT_RETURN</code>
+to indicate this.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-DEFAULT_005fPCC_005fSTRUCT_005fRETURN"></a>Macro: <strong>DEFAULT_PCC_STRUCT_RETURN</strong></dt>
+<dd><p>Define this macro to be 1 if all structure and union return values must be
+in memory.  Since this results in slower code, this should be defined
+only if needed for compatibility with other compilers or with an ABI.
+If you define this macro to be 0, then the conventions used for structure
+and union return values are decided by the <code>TARGET_RETURN_IN_MEMORY</code>
+target hook.
+</p>
+<p>If not defined, this defaults to the value 1.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fSTRUCT_005fVALUE_005fRTX"></a>Target Hook: <em>rtx</em> <strong>TARGET_STRUCT_VALUE_RTX</strong> <em>(tree <var>fndecl</var>, int <var>incoming</var>)</em></dt>
+<dd><p>This target hook should return the location of the structure value
+address (normally a <code>mem</code> or <code>reg</code>), or 0 if the address is
+passed as an &ldquo;invisible&rdquo; first argument.  Note that <var>fndecl</var> may
+be <code>NULL</code>, for libcalls.  You do not need to define this target
+hook if the address is always passed as an &ldquo;invisible&rdquo; first
+argument.
+</p>
+<p>On some architectures the place where the structure value address
+is found by the called function is not the same place that the
+caller put it.  This can be due to register windows, or it could
+be because the function prologue moves it to a different place.
+<var>incoming</var> is <code>1</code> or <code>2</code> when the location is needed in
+the context of the called function, and <code>0</code> in the context of
+the caller.
+</p>
+<p>If <var>incoming</var> is nonzero and the address is to be found on the
+stack, return a <code>mem</code> which refers to the frame pointer. If
+<var>incoming</var> is <code>2</code>, the result is being used to fetch the
+structure value address at the beginning of a function.  If you need
+to emit adjusting code, you should do it at this point.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-PCC_005fSTATIC_005fSTRUCT_005fRETURN"></a>Macro: <strong>PCC_STATIC_STRUCT_RETURN</strong></dt>
+<dd><p>Define this macro if the usual system convention on the target machine
+for returning structures and unions is for the called function to return
+the address of a static variable containing the value.
+</p>
+<p>Do not define this if the usual system convention is for the caller to
+pass an address to the subroutine.
+</p>
+<p>This macro has effect in <samp>-fpcc-struct-return</samp> mode, but it does
+nothing when you use <samp>-freg-struct-return</samp> mode.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fGET_005fRAW_005fRESULT_005fMODE"></a>Target Hook: <em>fixed_size_mode</em> <strong>TARGET_GET_RAW_RESULT_MODE</strong> <em>(int <var>regno</var>)</em></dt>
+<dd><p>This target hook returns the mode to be used when accessing raw return registers in <code>__builtin_return</code>.  Define this macro if the value in <var>reg_raw_mode</var> is not correct.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fGET_005fRAW_005fARG_005fMODE"></a>Target Hook: <em>fixed_size_mode</em> <strong>TARGET_GET_RAW_ARG_MODE</strong> <em>(int <var>regno</var>)</em></dt>
+<dd><p>This target hook returns the mode to be used when accessing raw argument registers in <code>__builtin_apply_args</code>.  Define this macro if the value in <var>reg_raw_mode</var> is not correct.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fEMPTY_005fRECORD_005fP"></a>Target Hook: <em>bool</em> <strong>TARGET_EMPTY_RECORD_P</strong> <em>(const_tree <var>type</var>)</em></dt>
+<dd><p>This target hook returns true if the type is an empty record.  The default
+is to return <code>false</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fWARN_005fPARAMETER_005fPASSING_005fABI"></a>Target Hook: <em>void</em> <strong>TARGET_WARN_PARAMETER_PASSING_ABI</strong> <em>(cumulative_args_t <var>ca</var>, tree <var>type</var>)</em></dt>
+<dd><p>This target hook warns about the change in empty class parameter passing
+ABI.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Caller-Saves.html#Caller-Saves" accesskey="n" rel="next">Caller Saves</a>, Previous: <a href="Scalar-Return.html#Scalar-Return" accesskey="p" rel="prev">Scalar Return</a>, Up: <a href="Stack-and-Calling.html#Stack-and-Calling" accesskey="u" rel="up">Stack and Calling</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: Non-Fortran Main Program</title>
+
+<meta name="description" content="The GNU Fortran Compiler: Non-Fortran Main Program">
+<meta name="keywords" content="The GNU Fortran Compiler: Non-Fortran Main Program">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Mixed_002dLanguage-Programming.html#Mixed_002dLanguage-Programming" rel="up" title="Mixed-Language Programming">
+<link href="_005fgfortran_005fset_005fargs.html#g_t_005fgfortran_005fset_005fargs" rel="next" title="_gfortran_set_args">
+<link href="NOVECTOR-directive.html#NOVECTOR-directive" rel="prev" title="NOVECTOR directive">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Non_002dFortran-Main-Program"></a>
+<div class="header">
+<p>
+Next: <a href="Naming-and-argument_002dpassing-conventions.html#Naming-and-argument_002dpassing-conventions" accesskey="n" rel="next">Naming and argument-passing conventions</a>, Previous: <a href="GNU-Fortran-Compiler-Directives.html#GNU-Fortran-Compiler-Directives" accesskey="p" rel="prev">GNU Fortran Compiler Directives</a>, Up: <a href="Mixed_002dLanguage-Programming.html#Mixed_002dLanguage-Programming" accesskey="u" rel="up">Mixed-Language Programming</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Non_002dFortran-Main-Program-1"></a>
+<h3 class="section">7.3 Non-Fortran Main Program</h3>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="_005fgfortran_005fset_005fargs.html#g_t_005fgfortran_005fset_005fargs" accesskey="1">_gfortran_set_args</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Save command-line arguments
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="_005fgfortran_005fset_005foptions.html#g_t_005fgfortran_005fset_005foptions" accesskey="2">_gfortran_set_options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Set library option flags
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="_005fgfortran_005fset_005fconvert.html#g_t_005fgfortran_005fset_005fconvert" accesskey="3">_gfortran_set_convert</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Set endian conversion
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="_005fgfortran_005fset_005frecord_005fmarker.html#g_t_005fgfortran_005fset_005frecord_005fmarker" accesskey="4">_gfortran_set_record_marker</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Set length of record markers
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="_005fgfortran_005fset_005ffpe.html#g_t_005fgfortran_005fset_005ffpe" accesskey="5">_gfortran_set_fpe</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Set when a Floating Point Exception should be raised
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="_005fgfortran_005fset_005fmax_005fsubrecord_005flength.html#g_t_005fgfortran_005fset_005fmax_005fsubrecord_005flength" accesskey="6">_gfortran_set_max_subrecord_length</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Set subrecord length
+</td></tr>
+</table>
+
+<p>Even if you are doing mixed-language programming, it is very
+likely that you do not need to know or use the information in this
+section.  Since it is about the internal structure of GNU Fortran,
+it may also change in GCC minor releases.
+</p>
+<p>When you compile a <code>PROGRAM</code> with GNU Fortran, a function
+with the name <code>main</code> (in the symbol table of the object file)
+is generated, which initializes the libgfortran library and then
+calls the actual program which uses the name <code>MAIN__</code>, for
+historic reasons.  If you link GNU Fortran compiled procedures
+to, e.g., a C or C++ program or to a Fortran program compiled by
+a different compiler, the libgfortran library is not initialized
+and thus a few intrinsic procedures do not work properly, e.g.
+those for obtaining the command-line arguments.
+</p>
+<p>Therefore, if your <code>PROGRAM</code> is not compiled with
+GNU Fortran and the GNU Fortran compiled procedures require
+intrinsics relying on the library initialization, you need to
+initialize the library yourself.  Using the default options,
+gfortran calls <code>_gfortran_set_args</code> and
+<code>_gfortran_set_options</code>.  The initialization of the former
+is needed if the called procedures access the command line
+(and for backtracing); the latter sets some flags based on the
+standard chosen or to enable backtracing.  In typical programs,
+it is not necessary to call any initialization function.
+</p>
+<p>If your <code>PROGRAM</code> is compiled with GNU Fortran, you shall
+not call any of the following functions.  The libgfortran
+initialization functions are shown in C syntax but using C
+bindings they are also accessible from Fortran.
+</p>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Naming-and-argument_002dpassing-conventions.html#Naming-and-argument_002dpassing-conventions" accesskey="n" rel="next">Naming and argument-passing conventions</a>, Previous: <a href="GNU-Fortran-Compiler-Directives.html#GNU-Fortran-Compiler-Directives" accesskey="p" rel="prev">GNU Fortran Compiler Directives</a>, Up: <a href="Mixed_002dLanguage-Programming.html#Mixed_002dLanguage-Programming" accesskey="u" rel="up">Mixed-Language Programming</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

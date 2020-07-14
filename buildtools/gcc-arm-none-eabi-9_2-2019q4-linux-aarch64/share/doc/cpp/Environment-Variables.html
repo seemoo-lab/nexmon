@@ -1,0 +1,195 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1987-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation.  A copy of
+the license is included in the
+section entitled "GNU Free Documentation License".
+
+This manual contains no Invariant Sections.  The Front-Cover Texts are
+(a) (see below), and the Back-Cover Texts are (b) (see below).
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The C Preprocessor: Environment Variables</title>
+
+<meta name="description" content="The C Preprocessor: Environment Variables">
+<meta name="keywords" content="The C Preprocessor: Environment Variables">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index-of-Directives.html#Index-of-Directives" rel="index" title="Index of Directives">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License" rel="next" title="GNU Free Documentation License">
+<link href="Invocation.html#Invocation" rel="prev" title="Invocation">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Environment-Variables"></a>
+<div class="header">
+<p>
+Next: <a href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License" accesskey="n" rel="next">GNU Free Documentation License</a>, Previous: <a href="Invocation.html#Invocation" accesskey="p" rel="prev">Invocation</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index-of-Directives.html#Index-of-Directives" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Environment-Variables-1"></a>
+<h2 class="chapter">13 Environment Variables</h2>
+<a name="index-environment-variables"></a>
+
+<p>This section describes the environment variables that affect how CPP
+operates.  You can use them to specify directories or prefixes to use
+when searching for include files, or to control dependency output.
+</p>
+<p>Note that you can also specify places to search using options such as
+<samp>-I</samp>, and control dependency output with options like
+<samp>-M</samp> (see <a href="Invocation.html#Invocation">Invocation</a>).  These take precedence over
+environment variables, which in turn take precedence over the
+configuration of GCC.
+</p>
+
+
+
+<dl compact="compact">
+<dt><code>CPATH</code>
+<a name="index-CPATH"></a>
+</dt>
+<dt><code>C_INCLUDE_PATH</code>
+<a name="index-C_005fINCLUDE_005fPATH"></a>
+</dt>
+<dt><code>CPLUS_INCLUDE_PATH</code>
+<a name="index-CPLUS_005fINCLUDE_005fPATH"></a>
+</dt>
+<dt><code>OBJC_INCLUDE_PATH</code>
+<a name="index-OBJC_005fINCLUDE_005fPATH"></a>
+</dt>
+<dd><p>Each variable&rsquo;s value is a list of directories separated by a special
+character, much like <code>PATH</code>, in which to look for header files.
+The special character, <code>PATH_SEPARATOR</code>, is target-dependent and
+determined at GCC build time.  For Microsoft Windows-based targets it is a
+semicolon, and for almost all other targets it is a colon.
+</p>
+<p><code>CPATH</code> specifies a list of directories to be searched as if
+specified with <samp>-I</samp>, but after any paths given with <samp>-I</samp>
+options on the command line.  This environment variable is used
+regardless of which language is being preprocessed.
+</p>
+<p>The remaining environment variables apply only when preprocessing the
+particular language indicated.  Each specifies a list of directories
+to be searched as if specified with <samp>-isystem</samp>, but after any
+paths given with <samp>-isystem</samp> options on the command line.
+</p>
+<p>In all these variables, an empty element instructs the compiler to
+search its current working directory.  Empty elements can appear at the
+beginning or end of a path.  For instance, if the value of
+<code>CPATH</code> is <code>:/special/include</code>, that has the same
+effect as &lsquo;<samp><span class="nolinebreak">-I.</span>&nbsp;<span class="nolinebreak">-I/special/include</span><!-- /@w --></samp>&rsquo;.
+</p>
+<p>See also <a href="Search-Path.html#Search-Path">Search Path</a>.
+</p>
+</dd>
+<dt><code>DEPENDENCIES_OUTPUT</code>
+<a name="index-DEPENDENCIES_005fOUTPUT"></a>
+</dt>
+<dd><a name="index-dependencies-for-make-as-output"></a>
+<p>If this variable is set, its value specifies how to output
+dependencies for Make based on the non-system header files processed
+by the compiler.  System header files are ignored in the dependency
+output.
+</p>
+<p>The value of <code>DEPENDENCIES_OUTPUT</code> can be just a file name, in
+which case the Make rules are written to that file, guessing the target
+name from the source file name.  Or the value can have the form
+&lsquo;<samp><var>file</var> <var>target</var></samp>&rsquo;, in which case the rules are written to
+file <var>file</var> using <var>target</var> as the target name.
+</p>
+<p>In other words, this environment variable is equivalent to combining
+the options <samp>-MM</samp> and <samp>-MF</samp>
+(see <a href="Invocation.html#Invocation">Invocation</a>),
+with an optional <samp>-MT</samp> switch too.
+</p>
+</dd>
+<dt><code>SUNPRO_DEPENDENCIES</code>
+<a name="index-SUNPRO_005fDEPENDENCIES"></a>
+</dt>
+<dd><a name="index-dependencies-for-make-as-output-1"></a>
+<p>This variable is the same as <code>DEPENDENCIES_OUTPUT</code> (see above),
+except that system header files are not ignored, so it implies
+<samp>-M</samp> rather than <samp>-MM</samp>.  However, the dependence on the
+main input file is omitted.
+See <a href="Invocation.html#Invocation">Invocation</a>.
+</p>
+</dd>
+<dt><code>SOURCE_DATE_EPOCH</code>
+<a name="index-SOURCE_005fDATE_005fEPOCH"></a>
+</dt>
+<dd><p>If this variable is set, its value specifies a UNIX timestamp to be
+used in replacement of the current date and time in the <code>__DATE__</code>
+and <code>__TIME__</code> macros, so that the embedded timestamps become
+reproducible.
+</p>
+<p>The value of <code>SOURCE_DATE_EPOCH</code> must be a UNIX timestamp,
+defined as the number of seconds (excluding leap seconds) since
+01 Jan 1970 00:00:00 represented in ASCII; identical to the output of
+&lsquo;<samp><code>date +%s</code></samp>&rsquo; on GNU/Linux and other systems that support the
+<code>%s</code> extension in the <code>date</code> command.
+</p>
+<p>The value should be a known timestamp such as the last modification
+time of the source or package and it should be set by the build
+process.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License" accesskey="n" rel="next">GNU Free Documentation License</a>, Previous: <a href="Invocation.html#Invocation" accesskey="p" rel="prev">Invocation</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index-of-Directives.html#Index-of-Directives" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

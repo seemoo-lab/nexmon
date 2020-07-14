@@ -1,0 +1,132 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: Thread-safety of the runtime library</title>
+
+<meta name="description" content="The GNU Fortran Compiler: Thread-safety of the runtime library">
+<meta name="keywords" content="The GNU Fortran Compiler: Thread-safety of the runtime library">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Compiler-Characteristics.html#Compiler-Characteristics" rel="up" title="Compiler Characteristics">
+<link href="Data-consistency-and-durability.html#Data-consistency-and-durability" rel="next" title="Data consistency and durability">
+<link href="MAX-and-MIN-intrinsics-with-REAL-NaN-arguments.html#MAX-and-MIN-intrinsics-with-REAL-NaN-arguments" rel="prev" title="MAX and MIN intrinsics with REAL NaN arguments">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Thread_002dsafety-of-the-runtime-library"></a>
+<div class="header">
+<p>
+Next: <a href="Data-consistency-and-durability.html#Data-consistency-and-durability" accesskey="n" rel="next">Data consistency and durability</a>, Previous: <a href="MAX-and-MIN-intrinsics-with-REAL-NaN-arguments.html#MAX-and-MIN-intrinsics-with-REAL-NaN-arguments" accesskey="p" rel="prev">MAX and MIN intrinsics with REAL NaN arguments</a>, Up: <a href="Compiler-Characteristics.html#Compiler-Characteristics" accesskey="u" rel="up">Compiler Characteristics</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Thread_002dsafety-of-the-runtime-library-1"></a>
+<h3 class="section">5.5 Thread-safety of the runtime library</h3>
+<a name="index-thread_002dsafety_002c-threads"></a>
+
+<p>GNU Fortran can be used in programs with multiple threads, e.g. by
+using OpenMP, by calling OS thread handling functions via the
+<code>ISO_C_BINDING</code> facility, or by GNU Fortran compiled library code
+being called from a multi-threaded program.
+</p>
+<p>The GNU Fortran runtime library, (<code>libgfortran</code>), supports being
+called concurrently from multiple threads with the following
+exceptions.
+</p>
+<p>During library initialization, the C <code>getenv</code> function is used,
+which need not be thread-safe.  Similarly, the <code>getenv</code>
+function is used to implement the <code>GET_ENVIRONMENT_VARIABLE</code> and
+<code>GETENV</code> intrinsics.  It is the responsibility of the user to
+ensure that the environment is not being updated concurrently when any
+of these actions are taking place.
+</p>
+<p>The <code>EXECUTE_COMMAND_LINE</code> and <code>SYSTEM</code> intrinsics are
+implemented with the <code>system</code> function, which need not be
+thread-safe.  It is the responsibility of the user to ensure that
+<code>system</code> is not called concurrently.
+</p>
+<p>For platforms not supporting thread-safe POSIX functions, further
+functionality might not be thread-safe.  For details, please consult
+the documentation for your operating system.
+</p>
+<p>The GNU Fortran runtime library uses various C library functions that
+depend on the locale, such as <code>strtod</code> and <code>snprintf</code>.  In
+order to work correctly in locale-aware programs that set the locale
+using <code>setlocale</code>, the locale is reset to the default &ldquo;C&rdquo;
+locale while executing a formatted <code>READ</code> or <code>WRITE</code>
+statement.  On targets supporting the POSIX 2008 per-thread locale
+functions (e.g. <code>newlocale</code>, <code>uselocale</code>,
+<code>freelocale</code>), these are used and thus the global locale set
+using <code>setlocale</code> or the per-thread locales in other threads are
+not affected.  However, on targets lacking this functionality, the
+global LC_NUMERIC locale is set to &ldquo;C&rdquo; during the formatted I/O.
+Thus, on such targets it&rsquo;s not safe to call <code>setlocale</code>
+concurrently from another thread while a Fortran formatted I/O
+operation is in progress.  Also, other threads doing something
+dependent on the LC_NUMERIC locale might not work correctly if a
+formatted I/O operation is in progress in another thread.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Data-consistency-and-durability.html#Data-consistency-and-durability" accesskey="n" rel="next">Data consistency and durability</a>, Previous: <a href="MAX-and-MIN-intrinsics-with-REAL-NaN-arguments.html#MAX-and-MIN-intrinsics-with-REAL-NaN-arguments" accesskey="p" rel="prev">MAX and MIN intrinsics with REAL NaN arguments</a>, Up: <a href="Compiler-Characteristics.html#Compiler-Characteristics" accesskey="u" rel="up">Compiler Characteristics</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

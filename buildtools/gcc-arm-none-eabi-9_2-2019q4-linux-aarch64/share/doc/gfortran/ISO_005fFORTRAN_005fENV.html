@@ -1,0 +1,228 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: ISO_FORTRAN_ENV</title>
+
+<meta name="description" content="The GNU Fortran Compiler: ISO_FORTRAN_ENV">
+<meta name="keywords" content="The GNU Fortran Compiler: ISO_FORTRAN_ENV">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Intrinsic-Modules.html#Intrinsic-Modules" rel="up" title="Intrinsic Modules">
+<link href="ISO_005fC_005fBINDING.html#ISO_005fC_005fBINDING" rel="next" title="ISO_C_BINDING">
+<link href="Intrinsic-Modules.html#Intrinsic-Modules" rel="prev" title="Intrinsic Modules">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="ISO_005fFORTRAN_005fENV"></a>
+<div class="header">
+<p>
+Next: <a href="ISO_005fC_005fBINDING.html#ISO_005fC_005fBINDING" accesskey="n" rel="next">ISO_C_BINDING</a>, Up: <a href="Intrinsic-Modules.html#Intrinsic-Modules" accesskey="u" rel="up">Intrinsic Modules</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="ISO_005fFORTRAN_005fENV-1"></a>
+<h3 class="section">10.1 <code>ISO_FORTRAN_ENV</code></h3>
+<dl compact="compact">
+<dt><em>Standard</em>:</dt>
+<dd><p>Fortran 2003 and later, except when otherwise noted
+</p></dd>
+</dl>
+
+<p>The <code>ISO_FORTRAN_ENV</code> module provides the following scalar default-integer
+named constants:
+</p>
+<dl compact="compact">
+<dt><code>ATOMIC_INT_KIND</code>:</dt>
+<dd><p>Default-kind integer constant to be used as kind parameter when defining
+integer variables used in atomic operations. (Fortran 2008 or later.)
+</p>
+</dd>
+<dt><code>ATOMIC_LOGICAL_KIND</code>:</dt>
+<dd><p>Default-kind integer constant to be used as kind parameter when defining
+logical variables used in atomic operations. (Fortran 2008 or later.)
+</p>
+</dd>
+<dt><code>CHARACTER_KINDS</code>:</dt>
+<dd><p>Default-kind integer constant array of rank one containing the supported kind
+parameters of the <code>CHARACTER</code> type. (Fortran 2008 or later.)
+</p>
+</dd>
+<dt><code>CHARACTER_STORAGE_SIZE</code>:</dt>
+<dd><p>Size in bits of the character storage unit.
+</p>
+</dd>
+<dt><code>ERROR_UNIT</code>:</dt>
+<dd><p>Identifies the preconnected unit used for error reporting.
+</p>
+</dd>
+<dt><code>FILE_STORAGE_SIZE</code>:</dt>
+<dd><p>Size in bits of the file-storage unit.
+</p>
+</dd>
+<dt><code>INPUT_UNIT</code>:</dt>
+<dd><p>Identifies the preconnected unit identified by the asterisk
+(<code>*</code>) in <code>READ</code> statement.
+</p>
+</dd>
+<dt><code>INT8</code>, <code>INT16</code>, <code>INT32</code>, <code>INT64</code>:</dt>
+<dd><p>Kind type parameters to specify an INTEGER type with a storage
+size of 16, 32, and 64 bits. It is negative if a target platform
+does not support the particular kind. (Fortran 2008 or later.)
+</p>
+</dd>
+<dt><code>INTEGER_KINDS</code>:</dt>
+<dd><p>Default-kind integer constant array of rank one containing the supported kind
+parameters of the <code>INTEGER</code> type. (Fortran 2008 or later.)
+</p>
+</dd>
+<dt><code>IOSTAT_END</code>:</dt>
+<dd><p>The value assigned to the variable passed to the <code>IOSTAT=</code> specifier of
+an input/output statement if an end-of-file condition occurred.
+</p>
+</dd>
+<dt><code>IOSTAT_EOR</code>:</dt>
+<dd><p>The value assigned to the variable passed to the <code>IOSTAT=</code> specifier of
+an input/output statement if an end-of-record condition occurred.
+</p>
+</dd>
+<dt><code>IOSTAT_INQUIRE_INTERNAL_UNIT</code>:</dt>
+<dd><p>Scalar default-integer constant, used by <code>INQUIRE</code> for the
+<code>IOSTAT=</code> specifier to denote an that a unit number identifies an
+internal unit. (Fortran 2008 or later.)
+</p>
+</dd>
+<dt><code>NUMERIC_STORAGE_SIZE</code>:</dt>
+<dd><p>The size in bits of the numeric storage unit.
+</p>
+</dd>
+<dt><code>LOGICAL_KINDS</code>:</dt>
+<dd><p>Default-kind integer constant array of rank one containing the supported kind
+parameters of the <code>LOGICAL</code> type. (Fortran 2008 or later.)
+</p>
+</dd>
+<dt><code>OUTPUT_UNIT</code>:</dt>
+<dd><p>Identifies the preconnected unit identified by the asterisk
+(<code>*</code>) in <code>WRITE</code> statement.
+</p>
+</dd>
+<dt><code>REAL32</code>, <code>REAL64</code>, <code>REAL128</code>:</dt>
+<dd><p>Kind type parameters to specify a REAL type with a storage
+size of 32, 64, and 128 bits. It is negative if a target platform
+does not support the particular kind. (Fortran 2008 or later.)
+</p>
+</dd>
+<dt><code>REAL_KINDS</code>:</dt>
+<dd><p>Default-kind integer constant array of rank one containing the supported kind
+parameters of the <code>REAL</code> type. (Fortran 2008 or later.)
+</p>
+</dd>
+<dt><code>STAT_LOCKED</code>:</dt>
+<dd><p>Scalar default-integer constant used as STAT= return value by <code>LOCK</code> to
+denote that the lock variable is locked by the executing image. (Fortran 2008
+or later.)
+</p>
+</dd>
+<dt><code>STAT_LOCKED_OTHER_IMAGE</code>:</dt>
+<dd><p>Scalar default-integer constant used as STAT= return value by <code>UNLOCK</code> to
+denote that the lock variable is locked by another image. (Fortran 2008 or
+later.)
+</p>
+</dd>
+<dt><code>STAT_STOPPED_IMAGE</code>:</dt>
+<dd><p>Positive, scalar default-integer constant used as STAT= return value if the
+argument in the statement requires synchronisation with an image, which has
+initiated the termination of the execution. (Fortran 2008 or later.)
+</p>
+</dd>
+<dt><code>STAT_FAILED_IMAGE</code>:</dt>
+<dd><p>Positive, scalar default-integer constant used as STAT= return value if the
+argument in the statement requires communication with an image, which has
+is in the failed state. (TS 18508 or later.)
+</p>
+</dd>
+<dt><code>STAT_UNLOCKED</code>:</dt>
+<dd><p>Scalar default-integer constant used as STAT= return value by <code>UNLOCK</code> to
+denote that the lock variable is unlocked. (Fortran 2008 or later.)
+</p></dd>
+</dl>
+
+<p>The module provides the following derived type:
+</p>
+<dl compact="compact">
+<dt><code>LOCK_TYPE</code>:</dt>
+<dd><p>Derived type with private components to be use with the <code>LOCK</code> and
+<code>UNLOCK</code> statement. A variable of its type has to be always declared
+as coarray and may not appear in a variable-definition context.
+(Fortran 2008 or later.)
+</p></dd>
+</dl>
+
+<p>The module also provides the following intrinsic procedures:
+<a href="COMPILER_005fOPTIONS.html#COMPILER_005fOPTIONS">COMPILER_OPTIONS</a> and <a href="COMPILER_005fVERSION.html#COMPILER_005fVERSION">COMPILER_VERSION</a>.
+</p>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="ISO_005fC_005fBINDING.html#ISO_005fC_005fBINDING" accesskey="n" rel="next">ISO_C_BINDING</a>, Up: <a href="Intrinsic-Modules.html#Intrinsic-Modules" accesskey="u" rel="up">Intrinsic Modules</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

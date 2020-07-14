@@ -1,0 +1,153 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Leaf Functions</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Leaf Functions">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Leaf Functions">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Registers.html#Registers" rel="up" title="Registers">
+<link href="Stack-Registers.html#Stack-Registers" rel="next" title="Stack Registers">
+<link href="Values-in-Registers.html#Values-in-Registers" rel="prev" title="Values in Registers">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Leaf-Functions"></a>
+<div class="header">
+<p>
+Next: <a href="Stack-Registers.html#Stack-Registers" accesskey="n" rel="next">Stack Registers</a>, Previous: <a href="Values-in-Registers.html#Values-in-Registers" accesskey="p" rel="prev">Values in Registers</a>, Up: <a href="Registers.html#Registers" accesskey="u" rel="up">Registers</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Handling-Leaf-Functions"></a>
+<h4 class="subsection">18.7.4 Handling Leaf Functions</h4>
+
+<a name="index-leaf-functions"></a>
+<a name="index-functions_002c-leaf"></a>
+<p>On some machines, a leaf function (i.e., one which makes no calls) can run
+more efficiently if it does not make its own register window.  Often this
+means it is required to receive its arguments in the registers where they
+are passed by the caller, instead of the registers where they would
+normally arrive.
+</p>
+<p>The special treatment for leaf functions generally applies only when
+other conditions are met; for example, often they may use only those
+registers for its own variables and temporaries.  We use the term &ldquo;leaf
+function&rdquo; to mean a function that is suitable for this special
+handling, so that functions with no calls are not necessarily &ldquo;leaf
+functions&rdquo;.
+</p>
+<p>GCC assigns register numbers before it knows whether the function is
+suitable for leaf function treatment.  So it needs to renumber the
+registers in order to output a leaf function.  The following macros
+accomplish this.
+</p>
+<dl>
+<dt><a name="index-LEAF_005fREGISTERS"></a>Macro: <strong>LEAF_REGISTERS</strong></dt>
+<dd><p>Name of a char vector, indexed by hard register number, which
+contains 1 for a register that is allowable in a candidate for leaf
+function treatment.
+</p>
+<p>If leaf function treatment involves renumbering the registers, then the
+registers marked here should be the ones before renumbering&mdash;those that
+GCC would ordinarily allocate.  The registers which will actually be
+used in the assembler code, after renumbering, should not be marked with 1
+in this vector.
+</p>
+<p>Define this macro only if the target machine offers a way to optimize
+the treatment of leaf functions.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-LEAF_005fREG_005fREMAP"></a>Macro: <strong>LEAF_REG_REMAP</strong> <em>(<var>regno</var>)</em></dt>
+<dd><p>A C expression whose value is the register number to which <var>regno</var>
+should be renumbered, when a function is treated as a leaf function.
+</p>
+<p>If <var>regno</var> is a register number which should not appear in a leaf
+function before renumbering, then the expression should yield -1, which
+will cause the compiler to abort.
+</p>
+<p>Define this macro only if the target machine offers a way to optimize the
+treatment of leaf functions, and registers need to be renumbered to do
+this.
+</p></dd></dl>
+
+<a name="index-current_005ffunction_005fis_005fleaf"></a>
+<a name="index-current_005ffunction_005fuses_005fonly_005fleaf_005fregs"></a>
+<p><code>TARGET_ASM_FUNCTION_PROLOGUE</code> and
+<code>TARGET_ASM_FUNCTION_EPILOGUE</code> must usually treat leaf functions
+specially.  They can test the C variable <code>current_function_is_leaf</code>
+which is nonzero for leaf functions.  <code>current_function_is_leaf</code> is
+set prior to local register allocation and is valid for the remaining
+compiler passes.  They can also test the C variable
+<code>current_function_uses_only_leaf_regs</code> which is nonzero for leaf
+functions which only use leaf registers.
+<code>current_function_uses_only_leaf_regs</code> is valid after all passes
+that modify the instructions have been run and is only useful if
+<code>LEAF_REGISTERS</code> is defined.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Stack-Registers.html#Stack-Registers" accesskey="n" rel="next">Stack Registers</a>, Previous: <a href="Values-in-Registers.html#Values-in-Registers" accesskey="p" rel="prev">Values in Registers</a>, Up: <a href="Registers.html#Registers" accesskey="u" rel="up">Registers</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

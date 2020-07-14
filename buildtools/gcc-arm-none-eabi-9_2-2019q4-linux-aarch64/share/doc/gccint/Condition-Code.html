@@ -1,0 +1,134 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Condition Code</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Condition Code">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Condition Code">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Target-Macros.html#Target-Macros" rel="up" title="Target Macros">
+<link href="CC0-Condition-Codes.html#CC0-Condition-Codes" rel="next" title="CC0 Condition Codes">
+<link href="Anchored-Addresses.html#Anchored-Addresses" rel="prev" title="Anchored Addresses">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Condition-Code"></a>
+<div class="header">
+<p>
+Next: <a href="Costs.html#Costs" accesskey="n" rel="next">Costs</a>, Previous: <a href="Anchored-Addresses.html#Anchored-Addresses" accesskey="p" rel="prev">Anchored Addresses</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Condition-Code-Status"></a>
+<h3 class="section">18.15 Condition Code Status</h3>
+<a name="index-condition-code-status"></a>
+
+<p>The macros in this section can be split in two families, according to the
+two ways of representing condition codes in GCC.
+</p>
+<p>The first representation is the so called <code>(cc0)</code> representation
+(see <a href="Jump-Patterns.html#Jump-Patterns">Jump Patterns</a>), where all instructions can have an implicit
+clobber of the condition codes.  The second is the condition code
+register representation, which provides better schedulability for
+architectures that do have a condition code register, but on which
+most instructions do not affect it.  The latter category includes
+most RISC machines.
+</p>
+<p>The implicit clobbering poses a strong restriction on the placement of
+the definition and use of the condition code.  In the past the definition
+and use were always adjacent.  However, recent changes to support trapping
+arithmatic may result in the definition and user being in different blocks.
+Thus, there may be a <code>NOTE_INSN_BASIC_BLOCK</code> between them.  Additionally,
+the definition may be the source of exception handling edges.
+</p>
+<p>These restrictions can prevent important
+optimizations on some machines.  For example, on the IBM RS/6000, there
+is a delay for taken branches unless the condition code register is set
+three instructions earlier than the conditional branch.  The instruction
+scheduler cannot perform this optimization if it is not permitted to
+separate the definition and use of the condition code register.
+</p>
+<p>For this reason, it is possible and suggested to use a register to
+represent the condition code for new ports.  If there is a specific
+condition code register in the machine, use a hard register.  If the
+condition code or comparison result can be placed in any general register,
+or if there are multiple condition registers, use a pseudo register.
+Registers used to store the condition code value will usually have a mode
+that is in class <code>MODE_CC</code>.
+</p>
+<p>Alternatively, you can use <code>BImode</code> if the comparison operator is
+specified already in the compare instruction.  In this case, you are not
+interested in most macros in this section.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="CC0-Condition-Codes.html#CC0-Condition-Codes" accesskey="1">CC0 Condition Codes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Old style representation of condition codes.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="MODE_005fCC-Condition-Codes.html#MODE_005fCC-Condition-Codes" accesskey="2">MODE_CC Condition Codes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Modern representation of condition codes.
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Costs.html#Costs" accesskey="n" rel="next">Costs</a>, Previous: <a href="Anchored-Addresses.html#Anchored-Addresses" accesskey="p" rel="prev">Anchored Addresses</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

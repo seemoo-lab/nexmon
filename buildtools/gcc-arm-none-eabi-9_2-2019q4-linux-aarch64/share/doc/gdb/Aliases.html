@@ -1,0 +1,168 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Aliases</title>
+
+<meta name="description" content="Debugging with GDB: Aliases">
+<meta name="keywords" content="Debugging with GDB: Aliases">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Extending-GDB.html#Extending-GDB" rel="up" title="Extending GDB">
+<link href="Interpreters.html#Interpreters" rel="next" title="Interpreters">
+<link href="Multiple-Extension-Languages.html#Multiple-Extension-Languages" rel="prev" title="Multiple Extension Languages">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Aliases"></a>
+<div class="header">
+<p>
+Previous: <a href="Multiple-Extension-Languages.html#Multiple-Extension-Languages" accesskey="p" rel="prev">Multiple Extension Languages</a>, Up: <a href="Extending-GDB.html#Extending-GDB" accesskey="u" rel="up">Extending GDB</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Creating-new-spellings-of-existing-commands"></a>
+<h3 class="section">23.6 Creating new spellings of existing commands</h3>
+<a name="index-aliases-for-commands"></a>
+
+<p>It is often useful to define alternate spellings of existing commands.
+For example, if a new <small>GDB</small> command defined in Python has
+a long name to type, it is handy to have an abbreviated version of it
+that involves less typing.
+</p>
+<p><small>GDB</small> itself uses aliases.  For example &lsquo;<samp>s</samp>&rsquo; is an alias
+of the &lsquo;<samp>step</samp>&rsquo; command even though it is otherwise an ambiguous
+abbreviation of other commands like &lsquo;<samp>set</samp>&rsquo; and &lsquo;<samp>show</samp>&rsquo;.
+</p>
+<p>Aliases are also used to provide shortened or more common versions
+of multi-word commands.  For example, <small>GDB</small> provides the
+&lsquo;<samp>tty</samp>&rsquo; alias of the &lsquo;<samp>set inferior-tty</samp>&rsquo; command.
+</p>
+<p>You can define a new alias with the &lsquo;<samp>alias</samp>&rsquo; command.
+</p>
+<dl compact="compact">
+<dd>
+<a name="index-alias"></a>
+</dd>
+<dt><code>alias [-a] [--] <var>ALIAS</var> = <var>COMMAND</var></code></dt>
+</dl>
+
+<p><var>ALIAS</var> specifies the name of the new alias.
+Each word of <var>ALIAS</var> must consist of letters, numbers, dashes and
+underscores.
+</p>
+<p><var>COMMAND</var> specifies the name of an existing command
+that is being aliased.
+</p>
+<p>The &lsquo;<samp>-a</samp>&rsquo; option specifies that the new alias is an abbreviation
+of the command.  Abbreviations are not shown in command
+lists displayed by the &lsquo;<samp>help</samp>&rsquo; command.
+</p>
+<p>The &lsquo;<samp>--</samp>&rsquo; option specifies the end of options,
+and is useful when <var>ALIAS</var> begins with a dash.
+</p>
+<p>Here is a simple example showing how to make an abbreviation
+of a command so that there is less to type.
+Suppose you were tired of typing &lsquo;<samp>disas</samp>&rsquo;, the current
+shortest unambiguous abbreviation of the &lsquo;<samp>disassemble</samp>&rsquo; command
+and you wanted an even shorter version named &lsquo;<samp>di</samp>&rsquo;.
+The following will accomplish this.
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) alias -a di = disas
+</pre></div>
+
+<p>Note that aliases are different from user-defined commands.
+With a user-defined command, you also need to write documentation
+for it with the &lsquo;<samp>document</samp>&rsquo; command.
+An alias automatically picks up the documentation of the existing command.
+</p>
+<p>Here is an example where we make &lsquo;<samp>elms</samp>&rsquo; an abbreviation of
+&lsquo;<samp>elements</samp>&rsquo; in the &lsquo;<samp>set print elements</samp>&rsquo; command.
+This is to show that you can make an abbreviation of any part
+of a command.
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) alias -a set print elms = set print elements
+(gdb) alias -a show print elms = show print elements
+(gdb) set p elms 20
+(gdb) show p elms
+Limit on string chars or array elements to print is 200.
+</pre></div>
+
+<p>Note that if you are defining an alias of a &lsquo;<samp>set</samp>&rsquo; command,
+and you want to have an alias for the corresponding &lsquo;<samp>show</samp>&rsquo;
+command, then you need to define the latter separately.
+</p>
+<p>Unambiguously abbreviated commands are allowed in <var>COMMAND</var> and
+<var>ALIAS</var>, just as they are normally.
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) alias -a set pr elms = set p ele
+</pre></div>
+
+<p>Finally, here is an example showing the creation of a one word
+alias for a more complex command.
+This creates alias &lsquo;<samp>spe</samp>&rsquo; of the command &lsquo;<samp>set print elements</samp>&rsquo;.
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) alias spe = set print elements
+(gdb) spe 20
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Multiple-Extension-Languages.html#Multiple-Extension-Languages" accesskey="p" rel="prev">Multiple Extension Languages</a>, Up: <a href="Extending-GDB.html#Extending-GDB" accesskey="u" rel="up">Extending GDB</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

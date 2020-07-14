@@ -1,0 +1,262 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): MIPS-3D Built-in Functions</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): MIPS-3D Built-in Functions">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): MIPS-3D Built-in Functions">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="MIPS-Loongson-Built_002din-Functions.html#MIPS-Loongson-Built_002din-Functions" rel="up" title="MIPS Loongson Built-in Functions">
+<link href="MIPS-SIMD-Architecture-_0028MSA_0029-Support.html#MIPS-SIMD-Architecture-_0028MSA_0029-Support" rel="next" title="MIPS SIMD Architecture (MSA) Support">
+<link href="Paired_002dSingle-Built_002din-Functions.html#Paired_002dSingle-Built_002din-Functions" rel="prev" title="Paired-Single Built-in Functions">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="MIPS_002d3D-Built_002din-Functions"></a>
+<div class="header">
+<p>
+Previous: <a href="Paired_002dSingle-Built_002din-Functions.html#Paired_002dSingle-Built_002din-Functions" accesskey="p" rel="prev">Paired-Single Built-in Functions</a>, Up: <a href="MIPS-Loongson-Built_002din-Functions.html#MIPS-Loongson-Built_002din-Functions" accesskey="u" rel="up">MIPS Loongson Built-in Functions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="MIPS_002d3D-Built_002din-Functions-1"></a>
+<h4 class="subsubsection">6.60.15.3 MIPS-3D Built-in Functions</h4>
+
+<p>The MIPS-3D Application-Specific Extension (ASE) includes additional
+paired-single instructions that are designed to improve the performance
+of 3D graphics operations.  Support for these instructions is controlled
+by the <samp>-mips3d</samp> command-line option.
+</p>
+<p>The functions listed below map directly to a particular MIPS-3D
+instruction.  Please refer to the architecture specification for
+more details on what each instruction does.
+</p>
+<dl compact="compact">
+<dt><code>v2sf __builtin_mips_addr_ps (v2sf, v2sf)</code></dt>
+<dd><p>Reduction add (<code>addr.ps</code>).
+</p>
+</dd>
+<dt><code>v2sf __builtin_mips_mulr_ps (v2sf, v2sf)</code></dt>
+<dd><p>Reduction multiply (<code>mulr.ps</code>).
+</p>
+</dd>
+<dt><code>v2sf __builtin_mips_cvt_pw_ps (v2sf)</code></dt>
+<dd><p>Convert paired single to paired word (<code>cvt.pw.ps</code>).
+</p>
+</dd>
+<dt><code>v2sf __builtin_mips_cvt_ps_pw (v2sf)</code></dt>
+<dd><p>Convert paired word to paired single (<code>cvt.ps.pw</code>).
+</p>
+</dd>
+<dt><code>float __builtin_mips_recip1_s (float)</code></dt>
+<dt><code>double __builtin_mips_recip1_d (double)</code></dt>
+<dt><code>v2sf __builtin_mips_recip1_ps (v2sf)</code></dt>
+<dd><p>Reduced-precision reciprocal (sequence step 1) (<code>recip1.<var>fmt</var></code>).
+</p>
+</dd>
+<dt><code>float __builtin_mips_recip2_s (float, float)</code></dt>
+<dt><code>double __builtin_mips_recip2_d (double, double)</code></dt>
+<dt><code>v2sf __builtin_mips_recip2_ps (v2sf, v2sf)</code></dt>
+<dd><p>Reduced-precision reciprocal (sequence step 2) (<code>recip2.<var>fmt</var></code>).
+</p>
+</dd>
+<dt><code>float __builtin_mips_rsqrt1_s (float)</code></dt>
+<dt><code>double __builtin_mips_rsqrt1_d (double)</code></dt>
+<dt><code>v2sf __builtin_mips_rsqrt1_ps (v2sf)</code></dt>
+<dd><p>Reduced-precision reciprocal square root (sequence step 1)
+(<code>rsqrt1.<var>fmt</var></code>).
+</p>
+</dd>
+<dt><code>float __builtin_mips_rsqrt2_s (float, float)</code></dt>
+<dt><code>double __builtin_mips_rsqrt2_d (double, double)</code></dt>
+<dt><code>v2sf __builtin_mips_rsqrt2_ps (v2sf, v2sf)</code></dt>
+<dd><p>Reduced-precision reciprocal square root (sequence step 2)
+(<code>rsqrt2.<var>fmt</var></code>).
+</p></dd>
+</dl>
+
+<p>The following multi-instruction functions are also available.
+In each case, <var>cond</var> can be any of the 16 floating-point conditions:
+<code>f</code>, <code>un</code>, <code>eq</code>, <code>ueq</code>, <code>olt</code>, <code>ult</code>,
+<code>ole</code>, <code>ule</code>, <code>sf</code>, <code>ngle</code>, <code>seq</code>,
+<code>ngl</code>, <code>lt</code>, <code>nge</code>, <code>le</code> or <code>ngt</code>.
+</p>
+<dl compact="compact">
+<dt><code>int __builtin_mips_cabs_<var>cond</var>_s (float <var>a</var>, float <var>b</var>)</code></dt>
+<dt><code>int __builtin_mips_cabs_<var>cond</var>_d (double <var>a</var>, double <var>b</var>)</code></dt>
+<dd><p>Absolute comparison of two scalar values (<code>cabs.<var>cond</var>.<var>fmt</var></code>,
+<code>bc1t</code>/<code>bc1f</code>).
+</p>
+<p>These functions compare <var>a</var> and <var>b</var> using <code>cabs.<var>cond</var>.s</code>
+or <code>cabs.<var>cond</var>.d</code> and return the result as a boolean value.
+For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">float a, b;
+if (__builtin_mips_cabs_eq_s (a, b))
+  true ();
+else
+  false ();
+</pre></div>
+
+</dd>
+<dt><code>int __builtin_mips_upper_cabs_<var>cond</var>_ps (v2sf <var>a</var>, v2sf <var>b</var>)</code></dt>
+<dt><code>int __builtin_mips_lower_cabs_<var>cond</var>_ps (v2sf <var>a</var>, v2sf <var>b</var>)</code></dt>
+<dd><p>Absolute comparison of two paired-single values (<code>cabs.<var>cond</var>.ps</code>,
+<code>bc1t</code>/<code>bc1f</code>).
+</p>
+<p>These functions compare <var>a</var> and <var>b</var> using <code>cabs.<var>cond</var>.ps</code>
+and return either the upper or lower half of the result.  For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">v2sf a, b;
+if (__builtin_mips_upper_cabs_eq_ps (a, b))
+  upper_halves_are_equal ();
+else
+  upper_halves_are_unequal ();
+
+if (__builtin_mips_lower_cabs_eq_ps (a, b))
+  lower_halves_are_equal ();
+else
+  lower_halves_are_unequal ();
+</pre></div>
+
+</dd>
+<dt><code>v2sf __builtin_mips_movt_cabs_<var>cond</var>_ps (v2sf <var>a</var>, v2sf <var>b</var>, v2sf <var>c</var>, v2sf <var>d</var>)</code></dt>
+<dt><code>v2sf __builtin_mips_movf_cabs_<var>cond</var>_ps (v2sf <var>a</var>, v2sf <var>b</var>, v2sf <var>c</var>, v2sf <var>d</var>)</code></dt>
+<dd><p>Conditional move based on absolute comparison (<code>cabs.<var>cond</var>.ps</code>,
+<code>movt.ps</code>/<code>movf.ps</code>).
+</p>
+<p>The <code>movt</code> functions return the value <var>x</var> computed by:
+</p>
+<div class="smallexample">
+<pre class="smallexample">cabs.<var>cond</var>.ps <var>cc</var>,<var>a</var>,<var>b</var>
+mov.ps <var>x</var>,<var>c</var>
+movt.ps <var>x</var>,<var>d</var>,<var>cc</var>
+</pre></div>
+
+<p>The <code>movf</code> functions are similar but use <code>movf.ps</code> instead
+of <code>movt.ps</code>.
+</p>
+</dd>
+<dt><code>int __builtin_mips_any_c_<var>cond</var>_ps (v2sf <var>a</var>, v2sf <var>b</var>)</code></dt>
+<dt><code>int __builtin_mips_all_c_<var>cond</var>_ps (v2sf <var>a</var>, v2sf <var>b</var>)</code></dt>
+<dt><code>int __builtin_mips_any_cabs_<var>cond</var>_ps (v2sf <var>a</var>, v2sf <var>b</var>)</code></dt>
+<dt><code>int __builtin_mips_all_cabs_<var>cond</var>_ps (v2sf <var>a</var>, v2sf <var>b</var>)</code></dt>
+<dd><p>Comparison of two paired-single values
+(<code>c.<var>cond</var>.ps</code>/<code>cabs.<var>cond</var>.ps</code>,
+<code>bc1any2t</code>/<code>bc1any2f</code>).
+</p>
+<p>These functions compare <var>a</var> and <var>b</var> using <code>c.<var>cond</var>.ps</code>
+or <code>cabs.<var>cond</var>.ps</code>.  The <code>any</code> forms return <code>true</code> if either
+result is <code>true</code> and the <code>all</code> forms return <code>true</code> if both results are <code>true</code>.
+For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">v2sf a, b;
+if (__builtin_mips_any_c_eq_ps (a, b))
+  one_is_true ();
+else
+  both_are_false ();
+
+if (__builtin_mips_all_c_eq_ps (a, b))
+  both_are_true ();
+else
+  one_is_false ();
+</pre></div>
+
+</dd>
+<dt><code>int __builtin_mips_any_c_<var>cond</var>_4s (v2sf <var>a</var>, v2sf <var>b</var>, v2sf <var>c</var>, v2sf <var>d</var>)</code></dt>
+<dt><code>int __builtin_mips_all_c_<var>cond</var>_4s (v2sf <var>a</var>, v2sf <var>b</var>, v2sf <var>c</var>, v2sf <var>d</var>)</code></dt>
+<dt><code>int __builtin_mips_any_cabs_<var>cond</var>_4s (v2sf <var>a</var>, v2sf <var>b</var>, v2sf <var>c</var>, v2sf <var>d</var>)</code></dt>
+<dt><code>int __builtin_mips_all_cabs_<var>cond</var>_4s (v2sf <var>a</var>, v2sf <var>b</var>, v2sf <var>c</var>, v2sf <var>d</var>)</code></dt>
+<dd><p>Comparison of four paired-single values
+(<code>c.<var>cond</var>.ps</code>/<code>cabs.<var>cond</var>.ps</code>,
+<code>bc1any4t</code>/<code>bc1any4f</code>).
+</p>
+<p>These functions use <code>c.<var>cond</var>.ps</code> or <code>cabs.<var>cond</var>.ps</code>
+to compare <var>a</var> with <var>b</var> and to compare <var>c</var> with <var>d</var>.
+The <code>any</code> forms return <code>true</code> if any of the four results are <code>true</code>
+and the <code>all</code> forms return <code>true</code> if all four results are <code>true</code>.
+For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">v2sf a, b, c, d;
+if (__builtin_mips_any_c_eq_4s (a, b, c, d))
+  some_are_true ();
+else
+  all_are_false ();
+
+if (__builtin_mips_all_c_eq_4s (a, b, c, d))
+  all_are_true ();
+else
+  some_are_false ();
+</pre></div>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Paired_002dSingle-Built_002din-Functions.html#Paired_002dSingle-Built_002din-Functions" accesskey="p" rel="prev">Paired-Single Built-in Functions</a>, Up: <a href="MIPS-Loongson-Built_002din-Functions.html#MIPS-Loongson-Built_002din-Functions" accesskey="u" rel="up">MIPS Loongson Built-in Functions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

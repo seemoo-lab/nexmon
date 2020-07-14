@@ -1,0 +1,312 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Incompatibilities</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Incompatibilities">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Incompatibilities">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Trouble.html#Trouble" rel="up" title="Trouble">
+<link href="Fixed-Headers.html#Fixed-Headers" rel="next" title="Fixed Headers">
+<link href="Interoperation.html#Interoperation" rel="prev" title="Interoperation">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Incompatibilities"></a>
+<div class="header">
+<p>
+Next: <a href="Fixed-Headers.html#Fixed-Headers" accesskey="n" rel="next">Fixed Headers</a>, Previous: <a href="Interoperation.html#Interoperation" accesskey="p" rel="prev">Interoperation</a>, Up: <a href="Trouble.html#Trouble" accesskey="u" rel="up">Trouble</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Incompatibilities-of-GCC"></a>
+<h3 class="section">13.3 Incompatibilities of GCC</h3>
+<a name="index-incompatibilities-of-GCC"></a>
+<a name="index-traditional-1"></a>
+
+<p>There are several noteworthy incompatibilities between GNU C and K&amp;R
+(non-ISO) versions of C.
+</p>
+<ul>
+<li> <a name="index-string-constants"></a>
+<a name="index-read_002donly-strings"></a>
+<a name="index-shared-strings"></a>
+GCC normally makes string constants read-only.  If several
+identical-looking string constants are used, GCC stores only one
+copy of the string.
+
+<a name="index-mktemp_002c-and-constant-strings"></a>
+<p>One consequence is that you cannot call <code>mktemp</code> with a string
+constant argument.  The function <code>mktemp</code> always alters the
+string its argument points to.
+</p>
+<a name="index-sscanf_002c-and-constant-strings"></a>
+<a name="index-fscanf_002c-and-constant-strings"></a>
+<a name="index-scanf_002c-and-constant-strings"></a>
+<p>Another consequence is that <code>sscanf</code> does not work on some very
+old systems when passed a string constant as its format control string
+or input.  This is because <code>sscanf</code> incorrectly tries to write
+into the string constant.  Likewise <code>fscanf</code> and <code>scanf</code>.
+</p>
+<p>The solution to these problems is to change the program to use
+<code>char</code>-array variables with initialization strings for these
+purposes instead of string constants.
+</p>
+</li><li> <code>-2147483648</code> is positive.
+
+<p>This is because 2147483648 cannot fit in the type <code>int</code>, so
+(following the ISO C rules) its data type is <code>unsigned long int</code>.
+Negating this value yields 2147483648 again.
+</p>
+</li><li> GCC does not substitute macro arguments when they appear inside of
+string constants.  For example, the following macro in GCC
+
+<div class="smallexample">
+<pre class="smallexample">#define foo(a) &quot;a&quot;
+</pre></div>
+
+<p>will produce output <code>&quot;a&quot;</code> regardless of what the argument <var>a</var> is.
+</p>
+</li><li> <a name="index-setjmp-incompatibilities"></a>
+<a name="index-longjmp-incompatibilities"></a>
+When you use <code>setjmp</code> and <code>longjmp</code>, the only automatic
+variables guaranteed to remain valid are those declared
+<code>volatile</code>.  This is a consequence of automatic register
+allocation.  Consider this function:
+
+<div class="smallexample">
+<pre class="smallexample">jmp_buf j;
+
+foo ()
+{
+  int a, b;
+
+  a = fun1 ();
+  if (setjmp (j))
+    return a;
+
+  a = fun2 ();
+  /* <span class="roman"><code>longjmp (j)</code> may occur in <code>fun3</code>.</span> */
+  return a + fun3 ();
+}
+</pre></div>
+
+<p>Here <code>a</code> may or may not be restored to its first value when the
+<code>longjmp</code> occurs.  If <code>a</code> is allocated in a register, then
+its first value is restored; otherwise, it keeps the last value stored
+in it.
+</p>
+<a name="index-W-3"></a>
+<p>If you use the <samp>-W</samp> option with the <samp>-O</samp> option, you will
+get a warning when GCC thinks such a problem might be possible.
+</p>
+</li><li> Programs that use preprocessing directives in the middle of macro
+arguments do not work with GCC.  For example, a program like this
+will not work:
+
+<div class="smallexample">
+<pre class="smallexample">foobar (
+#define luser
+        hack)
+</pre></div>
+
+<p>ISO C does not permit such a construct.
+</p>
+</li><li> K&amp;R compilers allow comments to cross over an inclusion boundary
+(i.e. started in an include file and ended in the including file).
+
+</li><li> <a name="index-external-declaration-scope"></a>
+<a name="index-scope-of-external-declarations"></a>
+<a name="index-declaration-scope"></a>
+Declarations of external variables and functions within a block apply
+only to the block containing the declaration.  In other words, they
+have the same scope as any other declaration in the same place.
+
+<p>In some other C compilers, an <code>extern</code> declaration affects all the
+rest of the file even if it happens within a block.
+</p>
+</li><li> In traditional C, you can combine <code>long</code>, etc., with a typedef name,
+as shown here:
+
+<div class="smallexample">
+<pre class="smallexample">typedef int foo;
+typedef long foo bar;
+</pre></div>
+
+<p>In ISO C, this is not allowed: <code>long</code> and other type modifiers
+require an explicit <code>int</code>.
+</p>
+</li><li> <a name="index-typedef-names-as-function-parameters"></a>
+PCC allows typedef names to be used as function parameters.
+
+</li><li> Traditional C allows the following erroneous pair of declarations to
+appear together in a given scope:
+
+<div class="smallexample">
+<pre class="smallexample">typedef int foo;
+typedef foo foo;
+</pre></div>
+
+</li><li> GCC treats all characters of identifiers as significant.  According to
+K&amp;R-1 (2.2), &ldquo;No more than the first eight characters are significant,
+although more may be used.&rdquo;.  Also according to K&amp;R-1 (2.2), &ldquo;An
+identifier is a sequence of letters and digits; the first character must
+be a letter.  The underscore _ counts as a letter.&rdquo;, but GCC also
+allows dollar signs in identifiers.
+
+</li><li> <a name="index-whitespace"></a>
+PCC allows whitespace in the middle of compound assignment operators
+such as &lsquo;<samp>+=</samp>&rsquo;.  GCC, following the ISO standard, does not
+allow this.
+
+</li><li> <a name="index-apostrophes"></a>
+<a name="index-_0027"></a>
+GCC complains about unterminated character constants inside of
+preprocessing conditionals that fail.  Some programs have English
+comments enclosed in conditionals that are guaranteed to fail; if these
+comments contain apostrophes, GCC will probably report an error.  For
+example, this code would produce an error:
+
+<div class="smallexample">
+<pre class="smallexample">#if 0
+You can't expect this to work.
+#endif
+</pre></div>
+
+<p>The best solution to such a problem is to put the text into an actual
+C comment delimited by &lsquo;<samp>/*&hellip;*/</samp>&rsquo;.
+</p>
+</li><li> Many user programs contain the declaration &lsquo;<samp>long time ();</samp>&rsquo;.  In the
+past, the system header files on many systems did not actually declare
+<code>time</code>, so it did not matter what type your program declared it to
+return.  But in systems with ISO C headers, <code>time</code> is declared to
+return <code>time_t</code>, and if that is not the same as <code>long</code>, then
+&lsquo;<samp>long time ();</samp>&rsquo; is erroneous.
+
+<p>The solution is to change your program to use appropriate system headers
+(<code>&lt;time.h&gt;</code> on systems with ISO C headers) and not to declare
+<code>time</code> if the system header files declare it, or failing that to
+use <code>time_t</code> as the return type of <code>time</code>.
+</p>
+</li><li> <a name="index-float-as-function-value-type"></a>
+When compiling functions that return <code>float</code>, PCC converts it to
+a double.  GCC actually returns a <code>float</code>.  If you are concerned
+with PCC compatibility, you should declare your functions to return
+<code>double</code>; you might as well say what you mean.
+
+</li><li> <a name="index-structures"></a>
+<a name="index-unions"></a>
+When compiling functions that return structures or unions, GCC
+output code normally uses a method different from that used on most
+versions of Unix.  As a result, code compiled with GCC cannot call
+a structure-returning function compiled with PCC, and vice versa.
+
+<p>The method used by GCC is as follows: a structure or union which is
+1, 2, 4 or 8 bytes long is returned like a scalar.  A structure or union
+with any other size is stored into an address supplied by the caller
+(usually in a special, fixed register, but on some machines it is passed
+on the stack).  The target hook <code>TARGET_STRUCT_VALUE_RTX</code>
+tells GCC where to pass this address.
+</p>
+<p>By contrast, PCC on most target machines returns structures and unions
+of any size by copying the data into an area of static storage, and then
+returning the address of that storage as if it were a pointer value.
+The caller must copy the data from that memory area to the place where
+the value is wanted.  GCC does not use this method because it is
+slower and nonreentrant.
+</p>
+<p>On some newer machines, PCC uses a reentrant convention for all
+structure and union returning.  GCC on most of these machines uses a
+compatible convention when returning structures and unions in memory,
+but still returns small structures and unions in registers.
+</p>
+<a name="index-fpcc_002dstruct_002dreturn-1"></a>
+<p>You can tell GCC to use a compatible convention for all structure and
+union returning with the option <samp>-fpcc-struct-return</samp>.
+</p>
+</li><li> <a name="index-preprocessing-tokens"></a>
+<a name="index-preprocessing-numbers"></a>
+GCC complains about program fragments such as &lsquo;<samp>0x74ae-0x4000</samp>&rsquo;
+which appear to be two hexadecimal constants separated by the minus
+operator.  Actually, this string is a single <em>preprocessing token</em>.
+Each such token must correspond to one token in C.  Since this does not,
+GCC prints an error message.  Although it may appear obvious that what
+is meant is an operator and two values, the ISO C standard specifically
+requires that this be treated as erroneous.
+
+<p>A <em>preprocessing token</em> is a <em>preprocessing number</em> if it
+begins with a digit and is followed by letters, underscores, digits,
+periods and &lsquo;<samp>e+</samp>&rsquo;, &lsquo;<samp>e-</samp>&rsquo;, &lsquo;<samp>E+</samp>&rsquo;, &lsquo;<samp>E-</samp>&rsquo;, &lsquo;<samp>p+</samp>&rsquo;,
+&lsquo;<samp>p-</samp>&rsquo;, &lsquo;<samp>P+</samp>&rsquo;, or &lsquo;<samp>P-</samp>&rsquo; character sequences.  (In strict C90
+mode, the sequences &lsquo;<samp>p+</samp>&rsquo;, &lsquo;<samp>p-</samp>&rsquo;, &lsquo;<samp>P+</samp>&rsquo; and &lsquo;<samp>P-</samp>&rsquo; cannot
+appear in preprocessing numbers.)
+</p>
+<p>To make the above program fragment valid, place whitespace in front of
+the minus sign.  This whitespace will end the preprocessing number.
+</p></li></ul>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Fixed-Headers.html#Fixed-Headers" accesskey="n" rel="next">Fixed Headers</a>, Previous: <a href="Interoperation.html#Interoperation" accesskey="p" rel="prev">Interoperation</a>, Up: <a href="Trouble.html#Trouble" accesskey="u" rel="up">Trouble</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

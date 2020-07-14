@@ -1,0 +1,187 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Patterns</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Patterns">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Patterns">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Machine-Desc.html#Machine-Desc" rel="up" title="Machine Desc">
+<link href="Example.html#Example" rel="next" title="Example">
+<link href="Overview.html#Overview" rel="prev" title="Overview">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Patterns"></a>
+<div class="header">
+<p>
+Next: <a href="Example.html#Example" accesskey="n" rel="next">Example</a>, Previous: <a href="Overview.html#Overview" accesskey="p" rel="prev">Overview</a>, Up: <a href="Machine-Desc.html#Machine-Desc" accesskey="u" rel="up">Machine Desc</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Everything-about-Instruction-Patterns"></a>
+<h3 class="section">17.2 Everything about Instruction Patterns</h3>
+<a name="index-patterns"></a>
+<a name="index-instruction-patterns"></a>
+
+<a name="index-define_005finsn"></a>
+<p>A <code>define_insn</code> expression is used to define instruction patterns
+to which insns may be matched.  A <code>define_insn</code> expression contains
+an incomplete RTL expression, with pieces to be filled in later, operand
+constraints that restrict how the pieces can be filled in, and an output
+template or C code to generate the assembler output.
+</p>
+<p>A <code>define_insn</code> is an RTL expression containing four or five operands:
+</p>
+<ol>
+<li> An optional name <var>n</var>.  When a name is present, the compiler
+automically generates a C++ function &lsquo;<samp>gen_<var>n</var></samp>&rsquo; that takes
+the operands of the instruction as arguments and returns the instruction&rsquo;s
+rtx pattern.  The compiler also assigns the instruction a unique code
+&lsquo;<samp>CODE_FOR_<var>n</var></samp>&rsquo;, with all such codes belonging to an enum
+called <code>insn_code</code>.
+
+<p>These names serve one of two purposes.  The first is to indicate that the
+instruction performs a certain standard job for the RTL-generation
+pass of the compiler, such as a move, an addition, or a conditional
+jump.  The second is to help the target generate certain target-specific
+operations, such as when implementing target-specific intrinsic functions.
+</p>
+<p>It is better to prefix target-specific names with the name of the
+target, to avoid any clash with current or future standard names.
+</p>
+<p>The absence of a name is indicated by writing an empty string
+where the name should go.  Nameless instruction patterns are never
+used for generating RTL code, but they may permit several simpler insns
+to be combined later on.
+</p>
+<p>For the purpose of debugging the compiler, you may also specify a
+name beginning with the &lsquo;<samp>*</samp>&rsquo; character.  Such a name is used only
+for identifying the instruction in RTL dumps; it is equivalent to having
+a nameless pattern for all other purposes.  Names beginning with the
+&lsquo;<samp>*</samp>&rsquo; character are not required to be unique.
+</p>
+<p>The name may also have the form &lsquo;<samp>@<var>n</var></samp>&rsquo;.  This has the same
+effect as a name &lsquo;<samp><var>n</var></samp>&rsquo;, but in addition tells the compiler to
+generate further helper functions; see <a href="Parameterized-Names.html#Parameterized-Names">Parameterized Names</a> for details.
+</p>
+</li><li> The <em>RTL template</em>: This is a vector of incomplete RTL expressions
+which describe the semantics of the instruction (see <a href="RTL-Template.html#RTL-Template">RTL Template</a>).
+It is incomplete because it may contain <code>match_operand</code>,
+<code>match_operator</code>, and <code>match_dup</code> expressions that stand for
+operands of the instruction.
+
+<p>If the vector has multiple elements, the RTL template is treated as a
+<code>parallel</code> expression.
+</p>
+</li><li> <a name="index-pattern-conditions"></a>
+<a name="index-conditions_002c-in-patterns"></a>
+The condition: This is a string which contains a C expression.  When the
+compiler attempts to match RTL against a pattern, the condition is
+evaluated.  If the condition evaluates to <code>true</code>, the match is
+permitted.  The condition may be an empty string, which is treated
+as always <code>true</code>.
+
+<a name="index-named-patterns-and-conditions"></a>
+<p>For a named pattern, the condition may not depend on the data in the
+insn being matched, but only the target-machine-type flags.  The compiler
+needs to test these conditions during initialization in order to learn
+exactly which named instructions are available in a particular run.
+</p>
+<a name="index-operands-1"></a>
+<p>For nameless patterns, the condition is applied only when matching an
+individual insn, and only after the insn has matched the pattern&rsquo;s
+recognition template.  The insn&rsquo;s operands may be found in the vector
+<code>operands</code>.
+</p>
+<p>An instruction condition cannot become more restrictive as compilation
+progresses.  If the condition accepts a particular RTL instruction at
+one stage of compilation, it must continue to accept that instruction
+until the final pass.  For example, &lsquo;<samp>!reload_completed</samp>&rsquo; and
+&lsquo;<samp>can_create_pseudo_p ()</samp>&rsquo; are both invalid instruction conditions,
+because they are true during the earlier RTL passes and false during
+the later ones.  For the same reason, if a condition accepts an
+instruction before register allocation, it cannot later try to control
+register allocation by excluding certain register or value combinations.
+</p>
+<p>Although a condition cannot become more restrictive as compilation
+progresses, the condition for a nameless pattern <em>can</em> become
+more permissive.  For example, a nameless instruction can require
+&lsquo;<samp>reload_completed</samp>&rsquo; to be true, in which case it only matches
+after register allocation.
+</p>
+</li><li> The <em>output template</em> or <em>output statement</em>: This is either
+a string, or a fragment of C code which returns a string.
+
+<p>When simple substitution isn&rsquo;t general enough, you can specify a piece
+of C code to compute the output.  See <a href="Output-Statement.html#Output-Statement">Output Statement</a>.
+</p>
+</li><li> The <em>insn attributes</em>: This is an optional vector containing the values of
+attributes for insns matching this pattern (see <a href="Insn-Attributes.html#Insn-Attributes">Insn Attributes</a>).
+</li></ol>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Example.html#Example" accesskey="n" rel="next">Example</a>, Previous: <a href="Overview.html#Overview" accesskey="p" rel="prev">Overview</a>, Up: <a href="Machine-Desc.html#Machine-Desc" accesskey="u" rel="up">Machine Desc</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

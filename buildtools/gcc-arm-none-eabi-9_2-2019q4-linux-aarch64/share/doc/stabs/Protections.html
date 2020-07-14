@@ -1,0 +1,161 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1992-2019 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>STABS: Protections</title>
+
+<meta name="description" content="STABS: Protections">
+<meta name="keywords" content="STABS: Protections">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Symbol-Types-Index.html#Symbol-Types-Index" rel="index" title="Symbol Types Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Cplusplus.html#Cplusplus" rel="up" title="Cplusplus">
+<link href="Method-Modifiers.html#Method-Modifiers" rel="next" title="Method Modifiers">
+<link href="Member-Type-Descriptor.html#Member-Type-Descriptor" rel="prev" title="Member Type Descriptor">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Protections"></a>
+<div class="header">
+<p>
+Next: <a href="Method-Modifiers.html#Method-Modifiers" accesskey="n" rel="next">Method Modifiers</a>, Previous: <a href="Member-Type-Descriptor.html#Member-Type-Descriptor" accesskey="p" rel="prev">Member Type Descriptor</a>, Up: <a href="Cplusplus.html#Cplusplus" accesskey="u" rel="up">Cplusplus</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Symbol-Types-Index.html#Symbol-Types-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Protections-1"></a>
+<h3 class="section">8.9 Protections</h3>
+
+<p>In the simple class definition shown above all member data and
+functions were publicly accessible.  The example that follows
+contrasts public, protected and privately accessible fields and shows
+how these protections are encoded in C<tt>++</tt> stabs.
+</p>
+<p>If the character following the &lsquo;<samp><var>field-name</var>:</samp>&rsquo; part of the
+string is &lsquo;<samp>/</samp>&rsquo;, then the next character is the visibility.  &lsquo;<samp>0</samp>&rsquo;
+means private, &lsquo;<samp>1</samp>&rsquo; means protected, and &lsquo;<samp>2</samp>&rsquo; means public.
+Debuggers should ignore visibility characters they do not recognize, and
+assume a reasonable default (such as public) (GDB 4.11 does not, but
+this should be fixed in the next GDB release).  If no visibility is
+specified the field is public.  The visibility &lsquo;<samp>9</samp>&rsquo; means that the
+field has been optimized out and is public (there is no way to specify
+an optimized out field with a private or protected visibility).
+Visibility &lsquo;<samp>9</samp>&rsquo; is not supported by GDB 4.11; this should be fixed
+in the next GDB release.
+</p>
+<p>The following C<tt>++</tt> source:
+</p>
+<div class="example">
+<pre class="example">class vis {
+private:
+        int   priv;
+protected:
+        char  prot;
+public:
+        float pub;
+};
+</pre></div>
+
+<p>generates the following stab:
+</p>
+<div class="example">
+<pre class="example"># <span class="roman">128 is N_LSYM</span>
+.stabs &quot;vis:T19=s12priv:/01,0,32;prot:/12,32,8;pub:12,64,32;;&quot;,128,0,0,0
+</pre></div>
+
+<p>&lsquo;<samp>vis:T19=s12</samp>&rsquo; indicates that type number 19 is a 12 byte structure
+named <code>vis</code> The <code>priv</code> field has public visibility
+(&lsquo;<samp>/0</samp>&rsquo;), type int (&lsquo;<samp>1</samp>&rsquo;), and offset and size &lsquo;<samp>,0,32;</samp>&rsquo;.
+The <code>prot</code> field has protected visibility (&lsquo;<samp>/1</samp>&rsquo;), type char
+(&lsquo;<samp>2</samp>&rsquo;) and offset and size &lsquo;<samp>,32,8;</samp>&rsquo;.  The <code>pub</code> field has
+type float (&lsquo;<samp>12</samp>&rsquo;), and offset and size &lsquo;<samp>,64,32;</samp>&rsquo;.
+</p>
+<p>Protections for member functions are signified by one digit embedded in
+the field part of the stab describing the method.  The digit is 0 if
+private, 1 if protected and 2 if public.  Consider the C<tt>++</tt> class
+definition below:
+</p>
+<div class="example">
+<pre class="example">class all_methods {
+private:
+        int   priv_meth(int in){return in;};
+protected:
+        char  protMeth(char in){return in;};
+public:
+        float pubMeth(float in){return in;};
+};
+</pre></div>
+
+<p>It generates the following stab.  The digit in question is to the left
+of an &lsquo;<samp>A</samp>&rsquo; in each case.  Notice also that in this case two symbol
+descriptors apply to the class name struct tag and struct type.
+</p>
+<div class="display">
+<pre class="display">.stabs &quot;class_name:sym_desc(struct tag&amp;type)type_def(21)=
+        sym_desc(struct)struct_bytes(1)
+        meth_name::type_def(22)=sym_desc(method)returning(int);
+        :args(int);protection(private)modifier(normal)virtual(no);
+        meth_name::type_def(23)=sym_desc(method)returning(char);
+        :args(char);protection(protected)modifier(normal)virtual(no);
+        meth_name::type_def(24)=sym_desc(method)returning(float);
+        :args(float);protection(public)modifier(normal)virtual(no);;&quot;,
+        N_LSYM,NIL,NIL,NIL
+</pre></div>
+
+<div class="smallexample">
+<pre class="smallexample">.stabs &quot;all_methods:Tt21=s1priv_meth::22=##1;:i;0A.;protMeth::23=##2;:c;1A.;
+        pubMeth::24=##12;:f;2A.;;&quot;,128,0,0,0
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Method-Modifiers.html#Method-Modifiers" accesskey="n" rel="next">Method Modifiers</a>, Previous: <a href="Member-Type-Descriptor.html#Member-Type-Descriptor" accesskey="p" rel="prev">Member Type Descriptor</a>, Up: <a href="Cplusplus.html#Cplusplus" accesskey="u" rel="up">Cplusplus</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Symbol-Types-Index.html#Symbol-Types-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

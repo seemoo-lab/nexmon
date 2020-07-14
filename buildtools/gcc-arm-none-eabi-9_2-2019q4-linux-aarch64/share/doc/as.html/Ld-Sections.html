@@ -1,0 +1,153 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Ld Sections</title>
+
+<meta name="description" content="Using as: Ld Sections">
+<meta name="keywords" content="Using as: Ld Sections">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Sections.html#Sections" rel="up" title="Sections">
+<link href="As-Sections.html#As-Sections" rel="next" title="As Sections">
+<link href="Secs-Background.html#Secs-Background" rel="prev" title="Secs Background">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Ld-Sections"></a>
+<div class="header">
+<p>
+Next: <a href="As-Sections.html#As-Sections" accesskey="n" rel="next">As Sections</a>, Previous: <a href="Secs-Background.html#Secs-Background" accesskey="p" rel="prev">Secs Background</a>, Up: <a href="Sections.html#Sections" accesskey="u" rel="up">Sections</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Linker-Sections"></a>
+<h3 class="section">4.2 Linker Sections</h3>
+<p><code>ld</code> deals with just four kinds of sections, summarized below.
+</p>
+<dl compact="compact">
+<dd>
+<a name="index-named-sections"></a>
+<a name="index-sections_002c-named"></a>
+</dd>
+<dt><strong>named sections</strong></dt>
+<dd><a name="index-text-section"></a>
+<a name="index-data-section"></a>
+</dd>
+<dt><strong>text section</strong></dt>
+<dt><strong>data section</strong></dt>
+<dd><p>These sections hold your program.  <code>as</code> and <code>ld</code> treat them as
+separate but equal sections.  Anything you can say of one section is
+true of another.
+When the program is running, however, it is
+customary for the text section to be unalterable.  The
+text section is often shared among processes: it contains
+instructions, constants and the like.  The data section of a running
+program is usually alterable: for example, C variables would be stored
+in the data section.
+</p>
+<a name="index-bss-section"></a>
+</dd>
+<dt><strong>bss section</strong></dt>
+<dd><p>This section contains zeroed bytes when your program begins running.  It
+is used to hold uninitialized variables or common storage.  The length of
+each partial program&rsquo;s bss section is important, but because it starts
+out containing zeroed bytes there is no need to store explicit zero
+bytes in the object file.  The bss section was invented to eliminate
+those explicit zeros from object files.
+</p>
+<a name="index-absolute-section"></a>
+</dd>
+<dt><strong>absolute section</strong></dt>
+<dd><p>Address 0 of this section is always &ldquo;relocated&rdquo; to runtime address 0.
+This is useful if you want to refer to an address that <code>ld</code> must
+not change when relocating.  In this sense we speak of absolute
+addresses being &ldquo;unrelocatable&rdquo;: they do not change during relocation.
+</p>
+<a name="index-undefined-section"></a>
+</dd>
+<dt><strong>undefined section</strong></dt>
+<dd><p>This &ldquo;section&rdquo; is a catch-all for address references to objects not in
+the preceding sections.
+</p></dd>
+</dl>
+
+<a name="index-relocation-example"></a>
+<p>An idealized example of three relocatable sections follows.
+The example uses the traditional section names &lsquo;<samp>.text</samp>&rsquo; and &lsquo;<samp>.data</samp>&rsquo;.
+Memory addresses are on the horizontal axis.
+</p>
+<div class="smallexample">
+<pre class="smallexample">                      +-----+----+--+
+partial program # 1:  |ttttt|dddd|00|
+                      +-----+----+--+
+
+                      text   data bss
+                      seg.   seg. seg.
+
+                      +---+---+---+
+partial program # 2:  |TTT|DDD|000|
+                      +---+---+---+
+
+                      +--+---+-----+--+----+---+-----+~~
+linked program:       |  |TTT|ttttt|  |dddd|DDD|00000|
+                      +--+---+-----+--+----+---+-----+~~
+
+    addresses:        0 &hellip;
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="As-Sections.html#As-Sections" accesskey="n" rel="next">As Sections</a>, Previous: <a href="Secs-Background.html#Secs-Background" accesskey="p" rel="prev">Secs Background</a>, Up: <a href="Sections.html#Sections" accesskey="u" rel="up">Sections</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

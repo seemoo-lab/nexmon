@@ -1,0 +1,133 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Stub Contents</title>
+
+<meta name="description" content="Debugging with GDB: Stub Contents">
+<meta name="keywords" content="Debugging with GDB: Stub Contents">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Remote-Stub.html#Remote-Stub" rel="up" title="Remote Stub">
+<link href="Bootstrapping.html#Bootstrapping" rel="next" title="Bootstrapping">
+<link href="Remote-Stub.html#Remote-Stub" rel="prev" title="Remote Stub">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Stub-Contents"></a>
+<div class="header">
+<p>
+Next: <a href="Bootstrapping.html#Bootstrapping" accesskey="n" rel="next">Bootstrapping</a>, Up: <a href="Remote-Stub.html#Remote-Stub" accesskey="u" rel="up">Remote Stub</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="What-the-Stub-Can-Do-for-You"></a>
+<h4 class="subsection">20.5.1 What the Stub Can Do for You</h4>
+
+<a name="index-remote-serial-stub"></a>
+<p>The debugging stub for your architecture supplies these three
+subroutines:
+</p>
+<dl compact="compact">
+<dt><code>set_debug_traps</code></dt>
+<dd><a name="index-set_005fdebug_005ftraps"></a>
+<a name="index-remote-serial-stub_002c-initialization"></a>
+<p>This routine arranges for <code>handle_exception</code> to run when your
+program stops.  You must call this subroutine explicitly in your
+program&rsquo;s startup code.
+</p>
+</dd>
+<dt><code>handle_exception</code></dt>
+<dd><a name="index-handle_005fexception"></a>
+<a name="index-remote-serial-stub_002c-main-routine"></a>
+<p>This is the central workhorse, but your program never calls it
+explicitly&mdash;the setup code arranges for <code>handle_exception</code> to
+run when a trap is triggered.
+</p>
+<p><code>handle_exception</code> takes control when your program stops during
+execution (for example, on a breakpoint), and mediates communications
+with <small>GDB</small> on the host machine.  This is where the communications
+protocol is implemented; <code>handle_exception</code> acts as the <small>GDB</small>
+representative on the target machine.  It begins by sending summary
+information on the state of your program, then continues to execute,
+retrieving and transmitting any information <small>GDB</small> needs, until you
+execute a <small>GDB</small> command that makes your program resume; at that point,
+<code>handle_exception</code> returns control to your own code on the target
+machine.
+</p>
+</dd>
+<dt><code>breakpoint</code></dt>
+<dd><a name="index-breakpoint-subroutine_002c-remote"></a>
+<p>Use this auxiliary subroutine to make your program contain a
+breakpoint.  Depending on the particular situation, this may be the only
+way for <small>GDB</small> to get control.  For instance, if your target
+machine has some sort of interrupt button, you won&rsquo;t need to call this;
+pressing the interrupt button transfers control to
+<code>handle_exception</code>&mdash;in effect, to <small>GDB</small>.  On some machines,
+simply receiving characters on the serial port may also trigger a trap;
+again, in that situation, you don&rsquo;t need to call <code>breakpoint</code> from
+your own program&mdash;simply running &lsquo;<samp>target remote</samp>&rsquo; from the host
+<small>GDB</small> session gets control.
+</p>
+<p>Call <code>breakpoint</code> if none of these is true, or if you simply want
+to make certain your program stops at a predetermined point for the
+start of your debugging session.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Bootstrapping.html#Bootstrapping" accesskey="n" rel="next">Bootstrapping</a>, Up: <a href="Remote-Stub.html#Remote-Stub" accesskey="u" rel="up">Remote Stub</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

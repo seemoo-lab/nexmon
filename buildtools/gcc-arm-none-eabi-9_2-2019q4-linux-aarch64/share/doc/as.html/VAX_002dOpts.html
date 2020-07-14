@@ -1,0 +1,193 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: VAX-Opts</title>
+
+<meta name="description" content="Using as: VAX-Opts">
+<meta name="keywords" content="Using as: VAX-Opts">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Vax_002dDependent.html#Vax_002dDependent" rel="up" title="Vax-Dependent">
+<link href="VAX_002dfloat.html#VAX_002dfloat" rel="next" title="VAX-float">
+<link href="Vax_002dDependent.html#Vax_002dDependent" rel="prev" title="Vax-Dependent">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="VAX_002dOpts"></a>
+<div class="header">
+<p>
+Next: <a href="VAX_002dfloat.html#VAX_002dfloat" accesskey="n" rel="next">VAX-float</a>, Up: <a href="Vax_002dDependent.html#Vax_002dDependent" accesskey="u" rel="up">Vax-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="VAX-Command_002dLine-Options"></a>
+<h4 class="subsection">9.50.1 VAX Command-Line Options</h4>
+
+<a name="index-command_002dline-options-ignored_002c-VAX"></a>
+<a name="index-VAX-command_002dline-options-ignored"></a>
+<p>The Vax version of <code>as</code> accepts any of the following options,
+gives a warning message that the option was ignored and proceeds.
+These options are for compatibility with scripts designed for other
+people&rsquo;s assemblers.
+</p>
+<dl compact="compact">
+<dd><a name="index-_002dD_002c-ignored-on-VAX"></a>
+<a name="index-_002dS_002c-ignored-on-VAX"></a>
+<a name="index-_002dT_002c-ignored-on-VAX"></a>
+</dd>
+<dt><code><code>-D</code> (Debug)</code></dt>
+<dt><code><code>-S</code> (Symbol Table)</code></dt>
+<dt><code><code>-T</code> (Token Trace)</code></dt>
+<dd><p>These are obsolete options used to debug old assemblers.
+</p>
+<a name="index-_002dd_002c-VAX-option"></a>
+</dd>
+<dt><code><code>-d</code> (Displacement size for JUMPs)</code></dt>
+<dd><p>This option expects a number following the &lsquo;<samp>-d</samp>&rsquo;.  Like options
+that expect filenames, the number may immediately follow the
+&lsquo;<samp>-d</samp>&rsquo; (old standard) or constitute the whole of the command-line
+argument that follows &lsquo;<samp>-d</samp>&rsquo; (<small>GNU</small> standard).
+</p>
+<a name="index-_002dV_002c-redundant-on-VAX"></a>
+</dd>
+<dt><code><code>-V</code> (Virtualize Interpass Temporary File)</code></dt>
+<dd><p>Some other assemblers use a temporary file.  This option
+commanded them to keep the information in active memory rather
+than in a disk file.  <code>as</code> always does this, so this
+option is redundant.
+</p>
+<a name="index-_002dJ_002c-ignored-on-VAX"></a>
+</dd>
+<dt><code><code>-J</code> (JUMPify Longer Branches)</code></dt>
+<dd><p>Many 32-bit computers permit a variety of branch instructions
+to do the same job.  Some of these instructions are short (and
+fast) but have a limited range; others are long (and slow) but
+can branch anywhere in virtual memory.  Often there are 3
+flavors of branch: short, medium and long.  Some other
+assemblers would emit short and medium branches, unless told by
+this option to emit short and long branches.
+</p>
+<a name="index-_002dt_002c-ignored-on-VAX"></a>
+</dd>
+<dt><code><code>-t</code> (Temporary File Directory)</code></dt>
+<dd><p>Some other assemblers may use a temporary file, and this option
+takes a filename being the directory to site the temporary
+file.  Since <code>as</code> does not use a temporary disk file, this
+option makes no difference.  &lsquo;<samp>-t</samp>&rsquo; needs exactly one
+filename.
+</p></dd>
+</dl>
+
+<a name="index-VMS-_0028VAX_0029-options"></a>
+<a name="index-options-for-VAX_002fVMS"></a>
+<a name="index-VAX_002fVMS-options"></a>
+<a name="index-Vax_002d11-C-compatibility"></a>
+<a name="index-symbols-with-uppercase_002c-VAX_002fVMS"></a>
+<p>The Vax version of the assembler accepts additional options when
+compiled for VMS:
+</p>
+<dl compact="compact">
+<dd><a name="index-_002dh-option_002c-VAX_002fVMS"></a>
+</dd>
+<dt>&lsquo;<samp>-h <var>n</var></samp>&rsquo;</dt>
+<dd><p>External symbol or section (used for global variables) names are not
+case sensitive on VAX/VMS and always mapped to upper case.  This is
+contrary to the C language definition which explicitly distinguishes
+upper and lower case.  To implement a standard conforming C compiler,
+names must be changed (mapped) to preserve the case information.  The
+default mapping is to convert all lower case characters to uppercase and
+adding an underscore followed by a 6 digit hex value, representing a 24
+digit binary value.  The one digits in the binary value represent which
+characters are uppercase in the original symbol name.
+</p>
+<p>The &lsquo;<samp>-h <var>n</var></samp>&rsquo; option determines how we map names.  This takes
+several values.  No &lsquo;<samp>-h</samp>&rsquo; switch at all allows case hacking as
+described above.  A value of zero (&lsquo;<samp>-h0</samp>&rsquo;) implies names should be
+upper case, and inhibits the case hack.  A value of 2 (&lsquo;<samp>-h2</samp>&rsquo;)
+implies names should be all lower case, with no case hack.  A value of 3
+(&lsquo;<samp>-h3</samp>&rsquo;) implies that case should be preserved.  The value 1 is
+unused.  The <code>-H</code> option directs <code>as</code> to display
+every mapped symbol during assembly.
+</p>
+<p>Symbols whose names include a dollar sign &lsquo;<samp>$</samp>&rsquo; are exceptions to the
+general name mapping.  These symbols are normally only used to reference
+VMS library names.  Such symbols are always mapped to upper case.
+</p>
+<a name="index-_002d_002b-option_002c-VAX_002fVMS"></a>
+</dd>
+<dt>&lsquo;<samp>-+</samp>&rsquo;</dt>
+<dd><p>The &lsquo;<samp>-+</samp>&rsquo; option causes <code>as</code> to truncate any symbol
+name larger than 31 characters.  The &lsquo;<samp>-+</samp>&rsquo; option also prevents some
+code following the &lsquo;<samp>_main</samp>&rsquo; symbol normally added to make the object
+file compatible with Vax-11 &quot;C&quot;.
+</p>
+<a name="index-_002d1-option_002c-VAX_002fVMS"></a>
+</dd>
+<dt>&lsquo;<samp>-1</samp>&rsquo;</dt>
+<dd><p>This option is ignored for backward compatibility with <code>as</code>
+version 1.x.
+</p>
+<a name="index-_002dH-option_002c-VAX_002fVMS"></a>
+</dd>
+<dt>&lsquo;<samp>-H</samp>&rsquo;</dt>
+<dd><p>The &lsquo;<samp>-H</samp>&rsquo; option causes <code>as</code> to print every symbol
+which was changed by case mapping.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="VAX_002dfloat.html#VAX_002dfloat" accesskey="n" rel="next">VAX-float</a>, Up: <a href="Vax_002dDependent.html#Vax_002dDependent" accesskey="u" rel="up">Vax-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Storage References</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Storage References">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Storage References">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Expression-trees.html#Expression-trees" rel="up" title="Expression trees">
+<link href="Unary-and-Binary-Expressions.html#Unary-and-Binary-Expressions" rel="next" title="Unary and Binary Expressions">
+<link href="Constant-expressions.html#Constant-expressions" rel="prev" title="Constant expressions">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Storage-References"></a>
+<div class="header">
+<p>
+Next: <a href="Unary-and-Binary-Expressions.html#Unary-and-Binary-Expressions" accesskey="n" rel="next">Unary and Binary Expressions</a>, Previous: <a href="Constant-expressions.html#Constant-expressions" accesskey="p" rel="prev">Constant expressions</a>, Up: <a href="Expression-trees.html#Expression-trees" accesskey="u" rel="up">Expression trees</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="References-to-storage"></a>
+<h4 class="subsection">11.6.2 References to storage</h4>
+<a name="index-ADDR_005fEXPR"></a>
+<a name="index-INDIRECT_005fREF"></a>
+<a name="index-MEM_005fREF"></a>
+<a name="index-ARRAY_005fREF"></a>
+<a name="index-ARRAY_005fRANGE_005fREF"></a>
+<a name="index-TARGET_005fMEM_005fREF"></a>
+<a name="index-COMPONENT_005fREF"></a>
+
+<dl compact="compact">
+<dt><code>ARRAY_REF</code></dt>
+<dd><p>These nodes represent array accesses.  The first operand is the array;
+the second is the index.  To calculate the address of the memory
+accessed, you must scale the index by the size of the type of the array
+elements.  The type of these expressions must be the type of a component of
+the array.  The third and fourth operands are used after gimplification
+to represent the lower bound and component size but should not be used
+directly; call <code>array_ref_low_bound</code> and <code>array_ref_element_size</code>
+instead.
+</p>
+</dd>
+<dt><code>ARRAY_RANGE_REF</code></dt>
+<dd><p>These nodes represent access to a range (or &ldquo;slice&rdquo;) of an array.  The
+operands are the same as that for <code>ARRAY_REF</code> and have the same
+meanings.  The type of these expressions must be an array whose component
+type is the same as that of the first operand.  The range of that array
+type determines the amount of data these expressions access.
+</p>
+</dd>
+<dt><code>TARGET_MEM_REF</code></dt>
+<dd><p>These nodes represent memory accesses whose address directly map to
+an addressing mode of the target architecture.  The first argument
+is <code>TMR_SYMBOL</code> and must be a <code>VAR_DECL</code> of an object with
+a fixed address.  The second argument is <code>TMR_BASE</code> and the
+third one is <code>TMR_INDEX</code>.  The fourth argument is
+<code>TMR_STEP</code> and must be an <code>INTEGER_CST</code>.  The fifth
+argument is <code>TMR_OFFSET</code> and must be an <code>INTEGER_CST</code>.
+Any of the arguments may be NULL if the appropriate component
+does not appear in the address.  Address of the <code>TARGET_MEM_REF</code>
+is determined in the following way.
+</p>
+<div class="smallexample">
+<pre class="smallexample">&amp;TMR_SYMBOL + TMR_BASE + TMR_INDEX * TMR_STEP + TMR_OFFSET
+</pre></div>
+
+<p>The sixth argument is the reference to the original memory access, which
+is preserved for the purposes of the RTL alias analysis.  The seventh
+argument is a tag representing the results of tree level alias analysis.
+</p>
+</dd>
+<dt><code>ADDR_EXPR</code></dt>
+<dd><p>These nodes are used to represent the address of an object.  (These
+expressions will always have pointer or reference type.)  The operand may
+be another expression, or it may be a declaration.
+</p>
+<p>As an extension, GCC allows users to take the address of a label.  In
+this case, the operand of the <code>ADDR_EXPR</code> will be a
+<code>LABEL_DECL</code>.  The type of such an expression is <code>void*</code>.
+</p>
+<p>If the object addressed is not an lvalue, a temporary is created, and
+the address of the temporary is used.
+</p>
+</dd>
+<dt><code>INDIRECT_REF</code></dt>
+<dd><p>These nodes are used to represent the object pointed to by a pointer.
+The operand is the pointer being dereferenced; it will always have
+pointer or reference type.
+</p>
+</dd>
+<dt><code>MEM_REF</code></dt>
+<dd><p>These nodes are used to represent the object pointed to by a pointer
+offset by a constant.
+The first operand is the pointer being dereferenced; it will always have
+pointer or reference type.  The second operand is a pointer constant.
+Its type is specifying the type to be used for type-based alias analysis.
+</p>
+</dd>
+<dt><code>COMPONENT_REF</code></dt>
+<dd><p>These nodes represent non-static data member accesses.  The first
+operand is the object (rather than a pointer to it); the second operand
+is the <code>FIELD_DECL</code> for the data member.  The third operand represents
+the byte offset of the field, but should not be used directly; call
+<code>component_ref_field_offset</code> instead.
+</p>
+
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Unary-and-Binary-Expressions.html#Unary-and-Binary-Expressions" accesskey="n" rel="next">Unary and Binary Expressions</a>, Previous: <a href="Constant-expressions.html#Constant-expressions" accesskey="p" rel="prev">Constant expressions</a>, Up: <a href="Expression-trees.html#Expression-trees" accesskey="u" rel="up">Expression trees</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

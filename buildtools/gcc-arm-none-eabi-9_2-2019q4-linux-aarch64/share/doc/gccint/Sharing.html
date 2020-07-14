@@ -1,0 +1,174 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Sharing</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Sharing">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Sharing">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="RTL.html#RTL" rel="up" title="RTL">
+<link href="Reading-RTL.html#Reading-RTL" rel="next" title="Reading RTL">
+<link href="Calls.html#Calls" rel="prev" title="Calls">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Sharing"></a>
+<div class="header">
+<p>
+Next: <a href="Reading-RTL.html#Reading-RTL" accesskey="n" rel="next">Reading RTL</a>, Previous: <a href="Calls.html#Calls" accesskey="p" rel="prev">Calls</a>, Up: <a href="RTL.html#RTL" accesskey="u" rel="up">RTL</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Structure-Sharing-Assumptions"></a>
+<h3 class="section">14.21 Structure Sharing Assumptions</h3>
+<a name="index-sharing-of-RTL-components"></a>
+<a name="index-RTL-structure-sharing-assumptions"></a>
+
+<p>The compiler assumes that certain kinds of RTL expressions are unique;
+there do not exist two distinct objects representing the same value.
+In other cases, it makes an opposite assumption: that no RTL expression
+object of a certain kind appears in more than one place in the
+containing structure.
+</p>
+<p>These assumptions refer to a single function; except for the RTL
+objects that describe global variables and external functions,
+and a few standard objects such as small integer constants,
+no RTL objects are common to two functions.
+</p>
+<ul>
+<li> <a name="index-reg_002c-RTL-sharing"></a>
+Each pseudo-register has only a single <code>reg</code> object to represent it,
+and therefore only a single machine mode.
+
+</li><li> <a name="index-symbolic-label"></a>
+<a name="index-symbol_005fref_002c-RTL-sharing"></a>
+For any symbolic label, there is only one <code>symbol_ref</code> object
+referring to it.
+
+</li><li> <a name="index-const_005fint_002c-RTL-sharing"></a>
+All <code>const_int</code> expressions with equal values are shared.
+
+</li><li> <a name="index-const_005fpoly_005fint_002c-RTL-sharing"></a>
+All <code>const_poly_int</code> expressions with equal modes and values
+are shared.
+
+</li><li> <a name="index-pc_002c-RTL-sharing"></a>
+There is only one <code>pc</code> expression.
+
+</li><li> <a name="index-cc0_002c-RTL-sharing"></a>
+There is only one <code>cc0</code> expression.
+
+</li><li> <a name="index-const_005fdouble_002c-RTL-sharing"></a>
+There is only one <code>const_double</code> expression with value 0 for
+each floating point mode.  Likewise for values 1 and 2.
+
+</li><li> <a name="index-const_005fvector_002c-RTL-sharing"></a>
+There is only one <code>const_vector</code> expression with value 0 for
+each vector mode, be it an integer or a double constant vector.
+
+</li><li> <a name="index-label_005fref_002c-RTL-sharing"></a>
+<a name="index-scratch_002c-RTL-sharing"></a>
+No <code>label_ref</code> or <code>scratch</code> appears in more than one place in
+the RTL structure; in other words, it is safe to do a tree-walk of all
+the insns in the function and assume that each time a <code>label_ref</code>
+or <code>scratch</code> is seen it is distinct from all others that are seen.
+
+</li><li> <a name="index-mem_002c-RTL-sharing"></a>
+Only one <code>mem</code> object is normally created for each static
+variable or stack slot, so these objects are frequently shared in all
+the places they appear.  However, separate but equal objects for these
+variables are occasionally made.
+
+</li><li> <a name="index-asm_005foperands_002c-RTL-sharing"></a>
+When a single <code>asm</code> statement has multiple output operands, a
+distinct <code>asm_operands</code> expression is made for each output operand.
+However, these all share the vector which contains the sequence of input
+operands.  This sharing is used later on to test whether two
+<code>asm_operands</code> expressions come from the same statement, so all
+optimizations must carefully preserve the sharing if they copy the
+vector at all.
+
+</li><li> No RTL object appears in more than one place in the RTL structure
+except as described above.  Many passes of the compiler rely on this
+by assuming that they can modify RTL objects in place without unwanted
+side-effects on other insns.
+
+</li><li> <a name="index-unshare_005fall_005frtl"></a>
+During initial RTL generation, shared structure is freely introduced.
+After all the RTL for a function has been generated, all shared
+structure is copied by <code>unshare_all_rtl</code> in <samp>emit-rtl.c</samp>,
+after which the above rules are guaranteed to be followed.
+
+</li><li> <a name="index-copy_005frtx_005fif_005fshared"></a>
+During the combiner pass, shared structure within an insn can exist
+temporarily.  However, the shared structure is copied before the
+combiner is finished with the insn.  This is done by calling
+<code>copy_rtx_if_shared</code>, which is a subroutine of
+<code>unshare_all_rtl</code>.
+</li></ul>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Reading-RTL.html#Reading-RTL" accesskey="n" rel="next">Reading RTL</a>, Previous: <a href="Calls.html#Calls" accesskey="p" rel="prev">Calls</a>, Up: <a href="RTL.html#RTL" accesskey="u" rel="up">RTL</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

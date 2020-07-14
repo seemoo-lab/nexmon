@@ -1,0 +1,162 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: Further Interoperability of Fortran with C</title>
+
+<meta name="description" content="The GNU Fortran Compiler: Further Interoperability of Fortran with C">
+<meta name="keywords" content="The GNU Fortran Compiler: Further Interoperability of Fortran with C">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Interoperability-with-C.html#Interoperability-with-C" rel="up" title="Interoperability with C">
+<link href="GNU-Fortran-Compiler-Directives.html#GNU-Fortran-Compiler-Directives" rel="next" title="GNU Fortran Compiler Directives">
+<link href="Working-with-Pointers.html#Working-with-Pointers" rel="prev" title="Working with Pointers">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Further-Interoperability-of-Fortran-with-C"></a>
+<div class="header">
+<p>
+Previous: <a href="Working-with-Pointers.html#Working-with-Pointers" accesskey="p" rel="prev">Working with Pointers</a>, Up: <a href="Interoperability-with-C.html#Interoperability-with-C" accesskey="u" rel="up">Interoperability with C</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Further-Interoperability-of-Fortran-with-C-1"></a>
+<h4 class="subsection">7.1.6 Further Interoperability of Fortran with C</h4>
+
+<p>The Technical Specification ISO/IEC TS 29113:2012 on further
+interoperability of Fortran with C extends the interoperability support
+of Fortran 2003 and Fortran 2008. Besides removing some restrictions
+and constraints, it adds assumed-type (<code>TYPE(*)</code>) and assumed-rank
+(<code>dimension</code>) variables and allows for interoperability of
+assumed-shape, assumed-rank and deferred-shape arrays, including
+allocatables and pointers.
+</p>
+<p>Note: Currently, GNU Fortran does not use internally the array descriptor
+(dope vector) as specified in the Technical Specification, but uses
+an array descriptor with different fields. Assumed type and assumed rank
+formal arguments are converted in the library to the specified form. The
+ISO_Fortran_binding API functions (also Fortran 2018 18.4) are implemented
+in libgfortran. Alternatively, the Chasm Language Interoperability Tools,
+<a href="http://chasm-interop.sourceforge.net/">http://chasm-interop.sourceforge.net/</a>, provide an interface to GNU
+Fortran&rsquo;s array descriptor.
+</p>
+<p>The Technical Specification adds the following new features, which
+are supported by GNU Fortran:
+</p>
+<ul>
+<li> The <code>ASYNCHRONOUS</code> attribute has been clarified and
+extended to allow its use with asynchronous communication in
+user-provided libraries such as in implementations of the
+Message Passing Interface specification.
+
+</li><li> Many constraints have been relaxed, in particular for
+the <code>C_LOC</code> and <code>C_F_POINTER</code> intrinsics.
+
+</li><li> The <code>OPTIONAL</code> attribute is now allowed for dummy
+arguments; an absent argument matches a <code>NULL</code> pointer.
+
+</li><li> Assumed types (<code>TYPE(*)</code>) have been added, which may
+only be used for dummy arguments.  They are unlimited polymorphic
+but contrary to <code>CLASS(*)</code> they do not contain any type
+information, similar to C&rsquo;s <code>void *</code> pointers.  Expressions
+of any type and kind can be passed; thus, it can be used as
+replacement for <code>TYPE(C_PTR)</code>, avoiding the use of
+<code>C_LOC</code> in the caller.
+
+<p>Note, however, that <code>TYPE(*)</code> only accepts scalar arguments,
+unless the <code>DIMENSION</code> is explicitly specified.  As
+<code>DIMENSION(*)</code> only supports array (including array elements) but
+no scalars, it is not a full replacement for <code>C_LOC</code>.  On the
+other hand, assumed-type assumed-rank dummy arguments
+(<code>TYPE(*), DIMENSION(..)</code>) allow for both scalars and arrays, but
+require special code on the callee side to handle the array descriptor.
+</p>
+</li><li> Assumed-rank arrays (<code>DIMENSION(..)</code>) as dummy argument
+allow that scalars and arrays of any rank can be passed as actual
+argument. As the Technical Specification does not provide for direct
+means to operate with them, they have to be used either from the C side
+or be converted using <code>C_LOC</code> and <code>C_F_POINTER</code> to scalars
+or arrays of a specific rank. The rank can be determined using the
+<code>RANK</code> intrinisic.
+</li></ul>
+
+
+<p>Currently unimplemented:
+</p>
+<ul>
+<li> GNU Fortran always uses an array descriptor, which does not
+match the one of the Technical Specification. The
+<code>ISO_Fortran_binding.h</code> header file and the C functions it
+specifies are not available.
+
+</li><li> Using assumed-shape, assumed-rank and deferred-shape arrays in
+<code>BIND(C)</code> procedures is not fully supported. In particular,
+C interoperable strings of other length than one are not supported
+as this requires the new array descriptor.
+</li></ul>
+
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Working-with-Pointers.html#Working-with-Pointers" accesskey="p" rel="prev">Working with Pointers</a>, Up: <a href="Interoperability-with-C.html#Interoperability-with-C" accesskey="u" rel="up">Interoperability with C</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

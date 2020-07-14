@@ -1,0 +1,84 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU C Preprocessor Internals: Conventions</title>
+
+<meta name="description" content="The GNU C Preprocessor Internals: Conventions">
+<meta name="keywords" content="The GNU C Preprocessor Internals: Conventions">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Lexer.html#Lexer" rel="next" title="Lexer">
+<link href="index.html#Top" rel="prev" title="Top">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Conventions"></a>
+<div class="header">
+<p>
+Next: <a href="Lexer.html#Lexer" accesskey="n" rel="next">Lexer</a>, Previous: <a href="index.html#Top" accesskey="p" rel="prev">Top</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Conventions-1"></a>
+<h2 class="unnumbered">Conventions</h2>
+<a name="index-interface"></a>
+<a name="index-header-files"></a>
+
+<p>cpplib has two interfaces&mdash;one is exposed internally only, and the
+other is for both internal and external use.
+</p>
+<p>The convention is that functions and types that are exposed to multiple
+files internally are prefixed with &lsquo;<samp>_cpp_</samp>&rsquo;, and are to be found in
+the file <samp>internal.h</samp>.  Functions and types exposed to external
+clients are in <samp>cpplib.h</samp>, and prefixed with &lsquo;<samp>cpp_</samp>&rsquo;.  For
+historical reasons this is no longer quite true, but we should strive to
+stick to it.
+</p>
+<p>We are striving to reduce the information exposed in <samp>cpplib.h</samp> to the
+bare minimum necessary, and then to keep it there.  This makes clear
+exactly what external clients are entitled to assume, and allows us to
+change internals in the future without worrying whether library clients
+are perhaps relying on some kind of undocumented implementation-specific
+behavior.
+</p>
+
+
+
+</body>
+</html>

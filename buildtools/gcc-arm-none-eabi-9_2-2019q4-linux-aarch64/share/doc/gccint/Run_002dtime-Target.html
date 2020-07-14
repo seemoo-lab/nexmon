@@ -1,0 +1,290 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Run-time Target</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Run-time Target">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Run-time Target">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Target-Macros.html#Target-Macros" rel="up" title="Target Macros">
+<link href="Per_002dFunction-Data.html#Per_002dFunction-Data" rel="next" title="Per-Function Data">
+<link href="Driver.html#Driver" rel="prev" title="Driver">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Run_002dtime-Target"></a>
+<div class="header">
+<p>
+Next: <a href="Per_002dFunction-Data.html#Per_002dFunction-Data" accesskey="n" rel="next">Per-Function Data</a>, Previous: <a href="Driver.html#Driver" accesskey="p" rel="prev">Driver</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Run_002dtime-Target-Specification"></a>
+<h3 class="section">18.3 Run-time Target Specification</h3>
+<a name="index-run_002dtime-target-specification"></a>
+<a name="index-predefined-macros"></a>
+<a name="index-target-specifications"></a>
+
+<p>Here are run-time target specifications.
+</p>
+<dl>
+<dt><a name="index-TARGET_005fCPU_005fCPP_005fBUILTINS"></a>Macro: <strong>TARGET_CPU_CPP_BUILTINS</strong> <em>()</em></dt>
+<dd><p>This function-like macro expands to a block of code that defines
+built-in preprocessor macros and assertions for the target CPU, using
+the functions <code>builtin_define</code>, <code>builtin_define_std</code> and
+<code>builtin_assert</code>.  When the front end
+calls this macro it provides a trailing semicolon, and since it has
+finished command line option processing your code can use those
+results freely.
+</p>
+<p><code>builtin_assert</code> takes a string in the form you pass to the
+command-line option <samp>-A</samp>, such as <code>cpu=mips</code>, and creates
+the assertion.  <code>builtin_define</code> takes a string in the form
+accepted by option <samp>-D</samp> and unconditionally defines the macro.
+</p>
+<p><code>builtin_define_std</code> takes a string representing the name of an
+object-like macro.  If it doesn&rsquo;t lie in the user&rsquo;s namespace,
+<code>builtin_define_std</code> defines it unconditionally.  Otherwise, it
+defines a version with two leading underscores, and another version
+with two leading and trailing underscores, and defines the original
+only if an ISO standard was not requested on the command line.  For
+example, passing <code>unix</code> defines <code>__unix</code>, <code>__unix__</code>
+and possibly <code>unix</code>; passing <code>_mips</code> defines <code>__mips</code>,
+<code>__mips__</code> and possibly <code>_mips</code>, and passing <code>_ABI64</code>
+defines only <code>_ABI64</code>.
+</p>
+<p>You can also test for the C dialect being compiled.  The variable
+<code>c_language</code> is set to one of <code>clk_c</code>, <code>clk_cplusplus</code>
+or <code>clk_objective_c</code>.  Note that if we are preprocessing
+assembler, this variable will be <code>clk_c</code> but the function-like
+macro <code>preprocessing_asm_p()</code> will return true, so you might want
+to check for that first.  If you need to check for strict ANSI, the
+variable <code>flag_iso</code> can be used.  The function-like macro
+<code>preprocessing_trad_p()</code> can be used to check for traditional
+preprocessing.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fOS_005fCPP_005fBUILTINS"></a>Macro: <strong>TARGET_OS_CPP_BUILTINS</strong> <em>()</em></dt>
+<dd><p>Similarly to <code>TARGET_CPU_CPP_BUILTINS</code> but this macro is optional
+and is used for the target operating system instead.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fOBJFMT_005fCPP_005fBUILTINS"></a>Macro: <strong>TARGET_OBJFMT_CPP_BUILTINS</strong> <em>()</em></dt>
+<dd><p>Similarly to <code>TARGET_CPU_CPP_BUILTINS</code> but this macro is optional
+and is used for the target object format.  <samp>elfos.h</samp> uses this
+macro to define <code>__ELF__</code>, so you probably do not need to define
+it yourself.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-target_005fflags"></a>Variable: <em>extern int</em> <strong>target_flags</strong></dt>
+<dd><p>This variable is declared in <samp>options.h</samp>, which is included before
+any target-specific headers.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fDEFAULT_005fTARGET_005fFLAGS"></a>Common Target Hook: <em>int</em> <strong>TARGET_DEFAULT_TARGET_FLAGS</strong></dt>
+<dd><p>This variable specifies the initial value of <code>target_flags</code>.
+Its default setting is 0.
+</p></dd></dl>
+
+<a name="index-optional-hardware-or-system-features"></a>
+<a name="index-features_002c-optional_002c-in-system-conventions"></a>
+
+<dl>
+<dt><a name="index-TARGET_005fHANDLE_005fOPTION"></a>Common Target Hook: <em>bool</em> <strong>TARGET_HANDLE_OPTION</strong> <em>(struct gcc_options *<var>opts</var>, struct gcc_options *<var>opts_set</var>, const struct cl_decoded_option *<var>decoded</var>, location_t <var>loc</var>)</em></dt>
+<dd><p>This hook is called whenever the user specifies one of the
+target-specific options described by the <samp>.opt</samp> definition files
+(see <a href="Options.html#Options">Options</a>).  It has the opportunity to do some option-specific
+processing and should return true if the option is valid.  The default
+definition does nothing but return true.
+</p>
+<p><var>decoded</var> specifies the option and its arguments.  <var>opts</var> and
+<var>opts_set</var> are the <code>gcc_options</code> structures to be used for
+storing option state, and <var>loc</var> is the location at which the
+option was passed (<code>UNKNOWN_LOCATION</code> except for options passed
+via attributes).
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fHANDLE_005fC_005fOPTION"></a>C Target Hook: <em>bool</em> <strong>TARGET_HANDLE_C_OPTION</strong> <em>(size_t <var>code</var>, const char *<var>arg</var>, int <var>value</var>)</em></dt>
+<dd><p>This target hook is called whenever the user specifies one of the
+target-specific C language family options described by the <samp>.opt</samp>
+definition files(see <a href="Options.html#Options">Options</a>).  It has the opportunity to do some
+option-specific processing and should return true if the option is
+valid.  The arguments are like for <code>TARGET_HANDLE_OPTION</code>.  The
+default definition does nothing but return false.
+</p>
+<p>In general, you should use <code>TARGET_HANDLE_OPTION</code> to handle
+options.  However, if processing an option requires routines that are
+only available in the C (and related language) front ends, then you
+should use <code>TARGET_HANDLE_C_OPTION</code> instead.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fOBJC_005fCONSTRUCT_005fSTRING_005fOBJECT"></a>C Target Hook: <em>tree</em> <strong>TARGET_OBJC_CONSTRUCT_STRING_OBJECT</strong> <em>(tree <var>string</var>)</em></dt>
+<dd><p>Targets may provide a string object type that can be used within and between C, C++ and their respective Objective-C dialects. A string object might, for example, embed encoding and length information. These objects are considered opaque to the compiler and handled as references. An ideal implementation makes the composition of the string object match that of the Objective-C <code>NSString</code> (<code>NXString</code> for GNUStep), allowing efficient interworking between C-only and Objective-C code. If a target implements string objects then this hook should return a reference to such an object constructed from the normal &lsquo;C&rsquo; string representation provided in <var>string</var>. At present, the hook is used by Objective-C only, to obtain a common-format string object when the target provides one.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fOBJC_005fDECLARE_005fUNRESOLVED_005fCLASS_005fREFERENCE"></a>C Target Hook: <em>void</em> <strong>TARGET_OBJC_DECLARE_UNRESOLVED_CLASS_REFERENCE</strong> <em>(const char *<var>classname</var>)</em></dt>
+<dd><p>Declare that Objective C class <var>classname</var> is referenced  by the current TU.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fOBJC_005fDECLARE_005fCLASS_005fDEFINITION"></a>C Target Hook: <em>void</em> <strong>TARGET_OBJC_DECLARE_CLASS_DEFINITION</strong> <em>(const char *<var>classname</var>)</em></dt>
+<dd><p>Declare that Objective C class <var>classname</var> is defined  by the current TU.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fSTRING_005fOBJECT_005fREF_005fTYPE_005fP"></a>C Target Hook: <em>bool</em> <strong>TARGET_STRING_OBJECT_REF_TYPE_P</strong> <em>(const_tree <var>stringref</var>)</em></dt>
+<dd><p>If a target implements string objects then this hook should return <code>true</code> if <var>stringref</var> is a valid reference to such an object.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fCHECK_005fSTRING_005fOBJECT_005fFORMAT_005fARG"></a>C Target Hook: <em>void</em> <strong>TARGET_CHECK_STRING_OBJECT_FORMAT_ARG</strong> <em>(tree <var>format_arg</var>, tree <var>args_list</var>)</em></dt>
+<dd><p>If a target implements string objects then this hook should should  provide a facility to check the function arguments in <var>args_list</var>  against the format specifiers in <var>format_arg</var> where the type of  <var>format_arg</var> is one recognized as a valid string reference type.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fOVERRIDE_005fOPTIONS_005fAFTER_005fCHANGE"></a>Target Hook: <em>void</em> <strong>TARGET_OVERRIDE_OPTIONS_AFTER_CHANGE</strong> <em>(void)</em></dt>
+<dd><p>This target function is similar to the hook <code>TARGET_OPTION_OVERRIDE</code>
+but is called when the optimize level is changed via an attribute or
+pragma or when it is reset at the end of the code affected by the
+attribute or pragma.  It is not called at the beginning of compilation
+when <code>TARGET_OPTION_OVERRIDE</code> is called so if you want to perform these
+actions then, you should have <code>TARGET_OPTION_OVERRIDE</code> call
+<code>TARGET_OVERRIDE_OPTIONS_AFTER_CHANGE</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-C_005fCOMMON_005fOVERRIDE_005fOPTIONS"></a>Macro: <strong>C_COMMON_OVERRIDE_OPTIONS</strong></dt>
+<dd><p>This is similar to the <code>TARGET_OPTION_OVERRIDE</code> hook
+but is only used in the C
+language frontends (C, Objective-C, C++, Objective-C++) and so can be
+used to alter option flag variables which only exist in those
+frontends.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fOPTION_005fOPTIMIZATION_005fTABLE"></a>Common Target Hook: <em>const struct default_options *</em> <strong>TARGET_OPTION_OPTIMIZATION_TABLE</strong></dt>
+<dd><p>Some machines may desire to change what optimizations are performed for
+various optimization levels.   This variable, if defined, describes
+options to enable at particular sets of optimization levels.  These
+options are processed once
+just after the optimization level is determined and before the remainder
+of the command options have been parsed, so may be overridden by other
+options passed explicitly.
+</p>
+<p>This processing is run once at program startup and when the optimization
+options are changed via <code>#pragma GCC optimize</code> or by using the
+<code>optimize</code> attribute.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fOPTION_005fINIT_005fSTRUCT"></a>Common Target Hook: <em>void</em> <strong>TARGET_OPTION_INIT_STRUCT</strong> <em>(struct gcc_options *<var>opts</var>)</em></dt>
+<dd><p>Set target-dependent initial values of fields in <var>opts</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fOPTION_005fDEFAULT_005fPARAMS"></a>Common Target Hook: <em>void</em> <strong>TARGET_OPTION_DEFAULT_PARAMS</strong> <em>(void)</em></dt>
+<dd><p>Set target-dependent default values for <samp>--param</samp> settings, using calls to <code>set_default_param_value</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fOPTION_005fVALIDATE_005fPARAM"></a>Common Target Hook: <em>bool</em> <strong>TARGET_OPTION_VALIDATE_PARAM</strong> <em>(int, <var>int</var>)</em></dt>
+<dd><p>Validate target-dependent value for <samp>--param</samp> settings, using calls to <code>set_param_value</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-SWITCHABLE_005fTARGET"></a>Macro: <strong>SWITCHABLE_TARGET</strong></dt>
+<dd><p>Some targets need to switch between substantially different subtargets
+during compilation.  For example, the MIPS target has one subtarget for
+the traditional MIPS architecture and another for MIPS16.  Source code
+can switch between these two subarchitectures using the <code>mips16</code>
+and <code>nomips16</code> attributes.
+</p>
+<p>Such subtargets can differ in things like the set of available
+registers, the set of available instructions, the costs of various
+operations, and so on.  GCC caches a lot of this type of information
+in global variables, and recomputing them for each subtarget takes a
+significant amount of time.  The compiler therefore provides a facility
+for maintaining several versions of the global variables and quickly
+switching between them; see <samp>target-globals.h</samp> for details.
+</p>
+<p>Define this macro to 1 if your target needs this facility.  The default
+is 0.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fFLOAT_005fEXCEPTIONS_005fROUNDING_005fSUPPORTED_005fP"></a>Target Hook: <em>bool</em> <strong>TARGET_FLOAT_EXCEPTIONS_ROUNDING_SUPPORTED_P</strong> <em>(void)</em></dt>
+<dd><p>Returns true if the target supports IEEE 754 floating-point exceptions and rounding modes, false otherwise.  This is intended to relate to the <code>float</code> and <code>double</code> types, but not necessarily <code>long double</code>. By default, returns true if the <code>adddf3</code> instruction pattern is available and false otherwise, on the assumption that hardware floating point supports exceptions and rounding modes but software floating point does not.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Per_002dFunction-Data.html#Per_002dFunction-Data" accesskey="n" rel="next">Per-Function Data</a>, Previous: <a href="Driver.html#Driver" accesskey="p" rel="prev">Driver</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

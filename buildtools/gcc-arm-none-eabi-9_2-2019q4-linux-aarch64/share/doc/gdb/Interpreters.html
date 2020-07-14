@@ -1,0 +1,181 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Interpreters</title>
+
+<meta name="description" content="Debugging with GDB: Interpreters">
+<meta name="keywords" content="Debugging with GDB: Interpreters">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="TUI.html#TUI" rel="next" title="TUI">
+<link href="Aliases.html#Aliases" rel="prev" title="Aliases">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Interpreters"></a>
+<div class="header">
+<p>
+Next: <a href="TUI.html#TUI" accesskey="n" rel="next">TUI</a>, Previous: <a href="Extending-GDB.html#Extending-GDB" accesskey="p" rel="prev">Extending GDB</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Command-Interpreters"></a>
+<h2 class="chapter">24 Command Interpreters</h2>
+<a name="index-command-interpreters"></a>
+
+<p><small>GDB</small> supports multiple command interpreters, and some command
+infrastructure to allow users or user interface writers to switch
+between interpreters or run commands in other interpreters.
+</p>
+<p><small>GDB</small> currently supports two command interpreters, the console
+interpreter (sometimes called the command-line interpreter or <small>CLI</small>)
+and the machine interface interpreter (or <small>GDB/MI</small>).  This manual
+describes both of these interfaces in great detail.
+</p>
+<p>By default, <small>GDB</small> will start with the console interpreter.
+However, the user may choose to start <small>GDB</small> with another
+interpreter by specifying the <samp>-i</samp> or <samp>--interpreter</samp>
+startup options.  Defined interpreters include:
+</p>
+<dl compact="compact">
+<dt><code>console</code></dt>
+<dd><a name="index-console-interpreter"></a>
+<p>The traditional console or command-line interpreter.  This is the most often
+used interpreter with <small>GDB</small>. With no interpreter specified at runtime,
+<small>GDB</small> will use this interpreter.
+</p>
+</dd>
+<dt><code>mi</code></dt>
+<dd><a name="index-mi-interpreter"></a>
+<p>The newest <small>GDB/MI</small> interface (currently <code>mi2</code>).  Used primarily
+by programs wishing to use <small>GDB</small> as a backend for a debugger GUI
+or an IDE.  For more information, see <a href="GDB_002fMI.html#GDB_002fMI">The <small>GDB/MI</small>
+Interface</a>.
+</p>
+</dd>
+<dt><code>mi2</code></dt>
+<dd><a name="index-mi2-interpreter"></a>
+<p>The current <small>GDB/MI</small> interface.
+</p>
+</dd>
+<dt><code>mi1</code></dt>
+<dd><a name="index-mi1-interpreter"></a>
+<p>The <small>GDB/MI</small> interface included in <small>GDB</small> 5.1, 5.2, and 5.3.
+</p>
+</dd>
+</dl>
+
+<a name="index-invoke-another-interpreter"></a>
+
+<a name="index-interpreter_002dexec"></a>
+<p>You may execute commands in any interpreter from the current
+interpreter using the appropriate command.  If you are running the
+console interpreter, simply use the <code>interpreter-exec</code> command:
+</p>
+<div class="smallexample">
+<pre class="smallexample">interpreter-exec mi &quot;-data-list-register-names&quot;
+</pre></div>
+
+<p><small>GDB/MI</small> has a similar command, although it is only available in versions of
+<small>GDB</small> which support <small>GDB/MI</small> version 2 (or greater).
+</p>
+<p>Note that <code>interpreter-exec</code> only changes the interpreter for the
+duration of the specified command.  It does not change the interpreter
+permanently.
+</p>
+<a name="index-start-a-new-independent-interpreter"></a>
+
+<p>Although you may only choose a single interpreter at startup, it is
+possible to run an independent interpreter on a specified input/output
+device (usually a tty).
+</p>
+<p>For example, consider a debugger GUI or IDE that wants to provide a
+<small>GDB</small> console view.  It may do so by embedding a terminal
+emulator widget in its GUI, starting <small>GDB</small> in the traditional
+command-line mode with stdin/stdout/stderr redirected to that
+terminal, and then creating an MI interpreter running on a specified
+input/output device.  The console interpreter created by <small>GDB</small>
+at startup handles commands the user types in the terminal widget,
+while the GUI controls and synchronizes state with <small>GDB</small> using
+the separate MI interpreter.
+</p>
+<p>To start a new secondary <em>user interface</em> running MI, use the
+<code>new-ui</code> command:
+</p>
+<a name="index-new_002dui"></a>
+<a name="index-new-user-interface"></a>
+<div class="smallexample">
+<pre class="smallexample">new-ui <var>interpreter</var> <var>tty</var>
+</pre></div>
+
+<p>The <var>interpreter</var> parameter specifies the interpreter to run.
+This accepts the same values as the <code>interpreter-exec</code> command.
+For example, &lsquo;<samp>console</samp>&rsquo;, &lsquo;<samp>mi</samp>&rsquo;, &lsquo;<samp>mi2</samp>&rsquo;, etc.  The
+<var>tty</var> parameter specifies the name of the bidirectional file the
+interpreter uses for input/output, usually the name of a
+pseudoterminal slave on Unix systems.  For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) new-ui mi /dev/pts/9
+</pre></div>
+
+<p>runs an MI interpreter on <samp>/dev/pts/9</samp>.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="TUI.html#TUI" accesskey="n" rel="next">TUI</a>, Previous: <a href="Extending-GDB.html#Extending-GDB" accesskey="p" rel="prev">Extending GDB</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

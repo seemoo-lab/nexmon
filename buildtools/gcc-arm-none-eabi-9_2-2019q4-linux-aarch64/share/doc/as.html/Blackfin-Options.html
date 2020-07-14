@@ -1,0 +1,138 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Blackfin Options</title>
+
+<meta name="description" content="Using as: Blackfin Options">
+<meta name="keywords" content="Using as: Blackfin Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Blackfin_002dDependent.html#Blackfin_002dDependent" rel="up" title="Blackfin-Dependent">
+<link href="Blackfin-Syntax.html#Blackfin-Syntax" rel="next" title="Blackfin Syntax">
+<link href="Blackfin_002dDependent.html#Blackfin_002dDependent" rel="prev" title="Blackfin-Dependent">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Blackfin-Options"></a>
+<div class="header">
+<p>
+Next: <a href="Blackfin-Syntax.html#Blackfin-Syntax" accesskey="n" rel="next">Blackfin Syntax</a>, Up: <a href="Blackfin_002dDependent.html#Blackfin_002dDependent" accesskey="u" rel="up">Blackfin-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Options-5"></a>
+<h4 class="subsection">9.6.1 Options</h4>
+<a name="index-Blackfin-options-_0028none_0029"></a>
+<a name="index-options-for-Blackfin-_0028none_0029"></a>
+
+<dl compact="compact">
+<dd>
+<a name="index-_002dmcpu_003d-command_002dline-option_002c-Blackfin"></a>
+</dd>
+<dt><code>-mcpu=<var>processor</var><span class="roman">[</span>-<var>sirevision</var><span class="roman">]</span></code></dt>
+<dd><p>This option specifies the target processor.  The optional <var>sirevision</var>
+is not used in assembler.  It&rsquo;s here such that GCC can easily pass down its
+<code>-mcpu=</code> option.  The assembler will issue an
+error message if an attempt is made to assemble an instruction which
+will not execute on the target processor.  The following processor names are
+recognized:
+<code>bf504</code>,
+<code>bf506</code>,
+<code>bf512</code>,
+<code>bf514</code>,
+<code>bf516</code>,
+<code>bf518</code>,
+<code>bf522</code>,
+<code>bf523</code>,
+<code>bf524</code>,
+<code>bf525</code>,
+<code>bf526</code>,
+<code>bf527</code>,
+<code>bf531</code>,
+<code>bf532</code>,
+<code>bf533</code>,
+<code>bf534</code>,
+<code>bf535</code> (not implemented yet),
+<code>bf536</code>,
+<code>bf537</code>,
+<code>bf538</code>,
+<code>bf539</code>,
+<code>bf542</code>,
+<code>bf542m</code>,
+<code>bf544</code>,
+<code>bf544m</code>,
+<code>bf547</code>,
+<code>bf547m</code>,
+<code>bf548</code>,
+<code>bf548m</code>,
+<code>bf549</code>,
+<code>bf549m</code>,
+<code>bf561</code>,
+and
+<code>bf592</code>.
+</p>
+<a name="index-_002dmfdpic-command_002dline-option_002c-Blackfin"></a>
+</dd>
+<dt><code>-mfdpic</code></dt>
+<dd><p>Assemble for the FDPIC ABI.
+</p>
+<a name="index-_002dmno_002dfdpic-command_002dline-option_002c-Blackfin"></a>
+<a name="index-_002dmnopic-command_002dline-option_002c-Blackfin"></a>
+</dd>
+<dt><code>-mno-fdpic</code></dt>
+<dt><code>-mnopic</code></dt>
+<dd><p>Disable -mfdpic.
+</p></dd>
+</dl>
+
+
+
+
+</body>
+</html>

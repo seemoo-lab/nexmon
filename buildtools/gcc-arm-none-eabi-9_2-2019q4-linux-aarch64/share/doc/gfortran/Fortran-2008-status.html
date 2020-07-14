@@ -1,0 +1,206 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: Fortran 2008 status</title>
+
+<meta name="description" content="The GNU Fortran Compiler: Fortran 2008 status">
+<meta name="keywords" content="The GNU Fortran Compiler: Fortran 2008 status">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Fortran-standards-status.html#Fortran-standards-status" rel="up" title="Fortran standards status">
+<link href="Fortran-2018-status.html#Fortran-2018-status" rel="next" title="Fortran 2018 status">
+<link href="Fortran-2003-status.html#Fortran-2003-status" rel="prev" title="Fortran 2003 status">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Fortran-2008-status"></a>
+<div class="header">
+<p>
+Next: <a href="Fortran-2018-status.html#Fortran-2018-status" accesskey="n" rel="next">Fortran 2018 status</a>, Previous: <a href="Fortran-2003-status.html#Fortran-2003-status" accesskey="p" rel="prev">Fortran 2003 status</a>, Up: <a href="Fortran-standards-status.html#Fortran-standards-status" accesskey="u" rel="up">Fortran standards status</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Fortran-2008-status-1"></a>
+<h3 class="section">4.2 Fortran 2008 status</h3>
+
+<p>The latest version of the Fortran standard is ISO/IEC 1539-1:2010, informally
+known as Fortran 2008.  The official version is available from International
+Organization for Standardization (ISO) or its national member organizations.
+The the final draft (FDIS) can be downloaded free of charge from
+<a href="http://www.nag.co.uk/sc22wg5/links.html">http://www.nag.co.uk/sc22wg5/links.html</a>.  Fortran is developed by the
+Working Group 5 of Sub-Committee 22 of the Joint Technical Committee 1 of the
+International Organization for Standardization and the International
+Electrotechnical Commission (IEC).  This group is known as
+<a href="http://www.nag.co.uk/sc22wg5/">WG5</a>.
+</p>
+<p>The GNU Fortran compiler supports several of the new features of Fortran 2008;
+the <a href="https://gcc.gnu.org/wiki/Fortran2008Status">wiki</a> has some information
+about the current Fortran 2008 implementation status.  In particular, the
+following is implemented.
+</p>
+<ul>
+<li> The <samp>-std=f2008</samp> option and support for the file extensions
+<samp>.f08</samp> and <samp>.F08</samp>.
+
+</li><li> The <code>OPEN</code> statement now supports the <code>NEWUNIT=</code> option,
+which returns a unique file unit, thus preventing inadvertent use of the
+same unit in different parts of the program.
+
+</li><li> The <code>g0</code> format descriptor and unlimited format items.
+
+</li><li> The mathematical intrinsics <code>ASINH</code>, <code>ACOSH</code>, <code>ATANH</code>,
+<code>ERF</code>, <code>ERFC</code>, <code>GAMMA</code>, <code>LOG_GAMMA</code>, <code>BESSEL_J0</code>,
+<code>BESSEL_J1</code>, <code>BESSEL_JN</code>, <code>BESSEL_Y0</code>, <code>BESSEL_Y1</code>,
+<code>BESSEL_YN</code>, <code>HYPOT</code>, <code>NORM2</code>, and <code>ERFC_SCALED</code>.
+
+</li><li> Using complex arguments with <code>TAN</code>, <code>SINH</code>, <code>COSH</code>,
+<code>TANH</code>, <code>ASIN</code>, <code>ACOS</code>, and <code>ATAN</code> is now possible;
+<code>ATAN</code>(<var>Y</var>,<var>X</var>) is now an alias for <code>ATAN2</code>(<var>Y</var>,<var>X</var>).
+
+</li><li> Support of the <code>PARITY</code> intrinsic functions.
+
+</li><li> The following bit intrinsics: <code>LEADZ</code> and <code>TRAILZ</code> for
+counting the number of leading and trailing zero bits, <code>POPCNT</code> and
+<code>POPPAR</code> for counting the number of one bits and returning the parity;
+<code>BGE</code>, <code>BGT</code>, <code>BLE</code>, and <code>BLT</code> for bitwise comparisons;
+<code>DSHIFTL</code> and <code>DSHIFTR</code> for combined left and right shifts,
+<code>MASKL</code> and <code>MASKR</code> for simple left and right justified masks,
+<code>MERGE_BITS</code> for a bitwise merge using a mask, <code>SHIFTA</code>,
+<code>SHIFTL</code> and <code>SHIFTR</code> for shift operations, and the
+transformational bit intrinsics <code>IALL</code>, <code>IANY</code> and <code>IPARITY</code>.
+
+</li><li> Support of the <code>EXECUTE_COMMAND_LINE</code> intrinsic subroutine.
+
+</li><li> Support for the <code>STORAGE_SIZE</code> intrinsic inquiry function.
+
+</li><li> The <code>INT{8,16,32}</code> and <code>REAL{32,64,128}</code> kind type
+parameters and the array-valued named constants <code>INTEGER_KINDS</code>,
+<code>LOGICAL_KINDS</code>, <code>REAL_KINDS</code> and <code>CHARACTER_KINDS</code> of
+the intrinsic module <code>ISO_FORTRAN_ENV</code>.
+
+</li><li> The module procedures <code>C_SIZEOF</code> of the intrinsic module
+<code>ISO_C_BINDINGS</code> and <code>COMPILER_VERSION</code> and <code>COMPILER_OPTIONS</code>
+of <code>ISO_FORTRAN_ENV</code>.
+
+</li><li> Coarray support for serial programs with <samp>-fcoarray=single</samp> flag
+and experimental support for multiple images with the <samp>-fcoarray=lib</samp>
+flag.
+
+</li><li> Submodules are supported. It should noted that <code>MODULEs</code> do not
+produce the smod file needed by the descendent <code>SUBMODULEs</code> unless they
+contain at least one <code>MODULE PROCEDURE</code> interface. The reason for this is
+that <code>SUBMODULEs</code> are useless without <code>MODULE PROCEDUREs</code>. See
+http://j3-fortran.org/doc/meeting/207/15-209.txt for a discussion and a draft
+interpretation. Adopting this interpretation has the advantage that code that
+does not use submodules does not generate smod files.
+
+</li><li> The <code>DO CONCURRENT</code> construct is supported.
+
+</li><li> The <code>BLOCK</code> construct is supported.
+
+</li><li> The <code>STOP</code> and the new <code>ERROR STOP</code> statements now
+support all constant expressions. Both show the signals which were signaling
+at termination.
+
+</li><li> Support for the <code>CONTIGUOUS</code> attribute.
+
+</li><li> Support for <code>ALLOCATE</code> with <code>MOLD</code>.
+
+</li><li> Support for the <code>IMPURE</code> attribute for procedures, which
+allows for <code>ELEMENTAL</code> procedures without the restrictions of
+<code>PURE</code>.
+
+</li><li> Null pointers (including <code>NULL()</code>) and not-allocated variables
+can be used as actual argument to optional non-pointer, non-allocatable
+dummy arguments, denoting an absent argument.
+
+</li><li> Non-pointer variables with <code>TARGET</code> attribute can be used as
+actual argument to <code>POINTER</code> dummies with <code>INTENT(IN)</code>.
+
+</li><li> Pointers including procedure pointers and those in a derived
+type (pointer components) can now be initialized by a target instead
+of only by <code>NULL</code>.
+
+</li><li> The <code>EXIT</code> statement (with construct-name) can be now be
+used to leave not only the <code>DO</code> but also the <code>ASSOCIATE</code>,
+<code>BLOCK</code>, <code>IF</code>, <code>SELECT CASE</code> and <code>SELECT TYPE</code>
+constructs.
+
+</li><li> Internal procedures can now be used as actual argument.
+
+</li><li> Minor features: obsolesce diagnostics for <code>ENTRY</code> with
+<samp>-std=f2008</samp>; a line may start with a semicolon; for internal
+and module procedures <code>END</code> can be used instead of
+<code>END SUBROUTINE</code> and <code>END FUNCTION</code>; <code>SELECTED_REAL_KIND</code>
+now also takes a <code>RADIX</code> argument; intrinsic types are supported
+for <code>TYPE</code>(<var>intrinsic-type-spec</var>); multiple type-bound procedures
+can be declared in a single <code>PROCEDURE</code> statement; implied-shape
+arrays are supported for named constants (<code>PARAMETER</code>).
+</li></ul>
+
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Fortran-2018-status.html#Fortran-2018-status" accesskey="n" rel="next">Fortran 2018 status</a>, Previous: <a href="Fortran-2003-status.html#Fortran-2003-status" accesskey="p" rel="prev">Fortran 2003 status</a>, Up: <a href="Fortran-standards-status.html#Fortran-standards-status" accesskey="u" rel="up">Fortran standards status</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

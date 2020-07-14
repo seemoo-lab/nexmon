@@ -1,0 +1,133 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1992-2019 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>STABS: Assembly Code</title>
+
+<meta name="description" content="STABS: Assembly Code">
+<meta name="keywords" content="STABS: Assembly Code">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Symbol-Types-Index.html#Symbol-Types-Index" rel="index" title="Symbol Types Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Overview.html#Overview" rel="up" title="Overview">
+<link href="Program-Structure.html#Program-Structure" rel="next" title="Program Structure">
+<link href="C-Example.html#C-Example" rel="prev" title="C Example">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Assembly-Code"></a>
+<div class="header">
+<p>
+Previous: <a href="C-Example.html#C-Example" accesskey="p" rel="prev">C Example</a>, Up: <a href="Overview.html#Overview" accesskey="u" rel="up">Overview</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Symbol-Types-Index.html#Symbol-Types-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="The-Simple-Example-at-the-Assembly-Level"></a>
+<h3 class="section">1.5 The Simple Example at the Assembly Level</h3>
+
+<p>This simple &ldquo;hello world&rdquo; example demonstrates several of the stab
+types used to describe C language source files.
+</p>
+<div class="example">
+<pre class="example">1  gcc2_compiled.:
+2  .stabs &quot;/cygint/s1/users/jcm/play/&quot;,100,0,0,Ltext0
+3  .stabs &quot;hello.c&quot;,100,0,0,Ltext0
+4  .text
+5  Ltext0:
+6  .stabs &quot;int:t1=r1;-2147483648;2147483647;&quot;,128,0,0,0
+7  .stabs &quot;char:t2=r2;0;127;&quot;,128,0,0,0
+8  .stabs &quot;long int:t3=r1;-2147483648;2147483647;&quot;,128,0,0,0
+9  .stabs &quot;unsigned int:t4=r1;0;-1;&quot;,128,0,0,0
+10 .stabs &quot;long unsigned int:t5=r1;0;-1;&quot;,128,0,0,0
+11 .stabs &quot;short int:t6=r1;-32768;32767;&quot;,128,0,0,0
+12 .stabs &quot;long long int:t7=r1;0;-1;&quot;,128,0,0,0
+13 .stabs &quot;short unsigned int:t8=r1;0;65535;&quot;,128,0,0,0
+14 .stabs &quot;long long unsigned int:t9=r1;0;-1;&quot;,128,0,0,0
+15 .stabs &quot;signed char:t10=r1;-128;127;&quot;,128,0,0,0
+16 .stabs &quot;unsigned char:t11=r1;0;255;&quot;,128,0,0,0
+17 .stabs &quot;float:t12=r1;4;0;&quot;,128,0,0,0
+18 .stabs &quot;double:t13=r1;8;0;&quot;,128,0,0,0
+19 .stabs &quot;long double:t14=r1;8;0;&quot;,128,0,0,0
+20 .stabs &quot;void:t15=15&quot;,128,0,0,0
+21      .align 4
+22 LC0:
+23      .ascii &quot;Hello, world!\12\0&quot;
+24      .align 4
+25      .global _main
+26      .proc 1
+27 _main:
+28 .stabn 68,0,4,LM1
+29 LM1:
+30      !#PROLOGUE# 0
+31      save %sp,-136,%sp
+32      !#PROLOGUE# 1
+33      call ___main,0
+34      nop
+35 .stabn 68,0,5,LM2
+36 LM2:
+37 LBB2:
+38      sethi %hi(LC0),%o1
+39      or %o1,%lo(LC0),%o0
+40      call _printf,0
+41      nop
+42 .stabn 68,0,6,LM3
+43 LM3:
+44 LBE2:
+45 .stabn 68,0,6,LM4
+46 LM4:
+47 L1:
+48      ret
+49      restore
+50 .stabs &quot;main:F1&quot;,36,0,0,_main
+51 .stabn 192,0,0,LBB2
+52 .stabn 224,0,0,LBE2
+</pre></div>
+
+
+
+
+</body>
+</html>

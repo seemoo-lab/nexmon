@@ -1,0 +1,276 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Hurd Native</title>
+
+<meta name="description" content="Debugging with GDB: Hurd Native">
+<meta name="keywords" content="Debugging with GDB: Hurd Native">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Native.html#Native" rel="up" title="Native">
+<link href="Darwin.html#Darwin" rel="next" title="Darwin">
+<link href="Non_002ddebug-DLL-Symbols.html#Non_002ddebug-DLL-Symbols" rel="prev" title="Non-debug DLL Symbols">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Hurd-Native"></a>
+<div class="header">
+<p>
+Next: <a href="Darwin.html#Darwin" accesskey="n" rel="next">Darwin</a>, Previous: <a href="Cygwin-Native.html#Cygwin-Native" accesskey="p" rel="prev">Cygwin Native</a>, Up: <a href="Native.html#Native" accesskey="u" rel="up">Native</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Commands-Specific-to-GNU-Hurd-Systems"></a>
+<h4 class="subsection">21.1.5 Commands Specific to <small>GNU</small> Hurd Systems</h4>
+<a name="index-GNU-Hurd-debugging"></a>
+
+<p>This subsection describes <small>GDB</small> commands specific to the
+<small>GNU</small> Hurd native debugging.
+</p>
+<dl compact="compact">
+<dt><code>set signals</code></dt>
+<dt><code>set sigs</code></dt>
+<dd><a name="index-set-signals_002c-Hurd-command"></a>
+<a name="index-set-sigs_002c-Hurd-command"></a>
+<p>This command toggles the state of inferior signal interception by
+<small>GDB</small>.  Mach exceptions, such as breakpoint traps, are not
+affected by this command.  <code>sigs</code> is a shorthand alias for
+<code>signals</code>.
+</p>
+</dd>
+<dt><code>show signals</code></dt>
+<dt><code>show sigs</code></dt>
+<dd><a name="index-show-signals_002c-Hurd-command"></a>
+<a name="index-show-sigs_002c-Hurd-command"></a>
+<p>Show the current state of intercepting inferior&rsquo;s signals.
+</p>
+</dd>
+<dt><code>set signal-thread</code></dt>
+<dt><code>set sigthread</code></dt>
+<dd><a name="index-set-signal_002dthread"></a>
+<a name="index-set-sigthread"></a>
+<p>This command tells <small>GDB</small> which thread is the <code>libc</code> signal
+thread.  That thread is run when a signal is delivered to a running
+process.  <code>set sigthread</code> is the shorthand alias of <code>set
+signal-thread</code>.
+</p>
+</dd>
+<dt><code>show signal-thread</code></dt>
+<dt><code>show sigthread</code></dt>
+<dd><a name="index-show-signal_002dthread"></a>
+<a name="index-show-sigthread"></a>
+<p>These two commands show which thread will run when the inferior is
+delivered a signal.
+</p>
+</dd>
+<dt><code>set stopped</code></dt>
+<dd><a name="index-set-stopped_002c-Hurd-command"></a>
+<p>This commands tells <small>GDB</small> that the inferior process is stopped,
+as with the <code>SIGSTOP</code> signal.  The stopped process can be
+continued by delivering a signal to it.
+</p>
+</dd>
+<dt><code>show stopped</code></dt>
+<dd><a name="index-show-stopped_002c-Hurd-command"></a>
+<p>This command shows whether <small>GDB</small> thinks the debuggee is
+stopped.
+</p>
+</dd>
+<dt><code>set exceptions</code></dt>
+<dd><a name="index-set-exceptions_002c-Hurd-command"></a>
+<p>Use this command to turn off trapping of exceptions in the inferior.
+When exception trapping is off, neither breakpoints nor
+single-stepping will work.  To restore the default, set exception
+trapping on.
+</p>
+</dd>
+<dt><code>show exceptions</code></dt>
+<dd><a name="index-show-exceptions_002c-Hurd-command"></a>
+<p>Show the current state of trapping exceptions in the inferior.
+</p>
+</dd>
+<dt><code>set task pause</code></dt>
+<dd><a name="index-set-task_002c-Hurd-commands"></a>
+<a name="index-task-attributes-_0028GNU-Hurd_0029"></a>
+<a name="index-pause-current-task-_0028GNU-Hurd_0029"></a>
+<p>This command toggles task suspension when <small>GDB</small> has control.
+Setting it to on takes effect immediately, and the task is suspended
+whenever <small>GDB</small> gets control.  Setting it to off will take
+effect the next time the inferior is continued.  If this option is set
+to off, you can use <code>set thread default pause on</code> or <code>set
+thread pause on</code> (see below) to pause individual threads.
+</p>
+</dd>
+<dt><code>show task pause</code></dt>
+<dd><a name="index-show-task_002c-Hurd-commands"></a>
+<p>Show the current state of task suspension.
+</p>
+</dd>
+<dt><code>set task detach-suspend-count</code></dt>
+<dd><a name="index-task-suspend-count"></a>
+<a name="index-detach-from-task_002c-GNU-Hurd"></a>
+<p>This command sets the suspend count the task will be left with when
+<small>GDB</small> detaches from it.
+</p>
+</dd>
+<dt><code>show task detach-suspend-count</code></dt>
+<dd><p>Show the suspend count the task will be left with when detaching.
+</p>
+</dd>
+<dt><code>set task exception-port</code></dt>
+<dt><code>set task excp</code></dt>
+<dd><a name="index-task-exception-port_002c-GNU-Hurd"></a>
+<p>This command sets the task exception port to which <small>GDB</small> will
+forward exceptions.  The argument should be the value of the <em>send
+rights</em> of the task.  <code>set task excp</code> is a shorthand alias.
+</p>
+</dd>
+<dt><code>set noninvasive</code></dt>
+<dd><a name="index-noninvasive-task-options"></a>
+<p>This command switches <small>GDB</small> to a mode that is the least
+invasive as far as interfering with the inferior is concerned.  This
+is the same as using <code>set task pause</code>, <code>set exceptions</code>, and
+<code>set signals</code> to values opposite to the defaults.
+</p>
+</dd>
+<dt><code>info send-rights</code></dt>
+<dt><code>info receive-rights</code></dt>
+<dt><code>info port-rights</code></dt>
+<dt><code>info port-sets</code></dt>
+<dt><code>info dead-names</code></dt>
+<dt><code>info ports</code></dt>
+<dt><code>info psets</code></dt>
+<dd><a name="index-send-rights_002c-GNU-Hurd"></a>
+<a name="index-receive-rights_002c-GNU-Hurd"></a>
+<a name="index-port-rights_002c-GNU-Hurd"></a>
+<a name="index-port-sets_002c-GNU-Hurd"></a>
+<a name="index-dead-names_002c-GNU-Hurd"></a>
+<p>These commands display information about, respectively, send rights,
+receive rights, port rights, port sets, and dead names of a task.
+There are also shorthand aliases: <code>info ports</code> for <code>info
+port-rights</code> and <code>info psets</code> for <code>info port-sets</code>.
+</p>
+</dd>
+<dt><code>set thread pause</code></dt>
+<dd><a name="index-set-thread_002c-Hurd-command"></a>
+<a name="index-thread-properties_002c-GNU-Hurd"></a>
+<a name="index-pause-current-thread-_0028GNU-Hurd_0029"></a>
+<p>This command toggles current thread suspension when <small>GDB</small> has
+control.  Setting it to on takes effect immediately, and the current
+thread is suspended whenever <small>GDB</small> gets control.  Setting it to
+off will take effect the next time the inferior is continued.
+Normally, this command has no effect, since when <small>GDB</small> has
+control, the whole task is suspended.  However, if you used <code>set
+task pause off</code> (see above), this command comes in handy to suspend
+only the current thread.
+</p>
+</dd>
+<dt><code>show thread pause</code></dt>
+<dd><a name="index-show-thread_002c-Hurd-command"></a>
+<p>This command shows the state of current thread suspension.
+</p>
+</dd>
+<dt><code>set thread run</code></dt>
+<dd><p>This command sets whether the current thread is allowed to run.
+</p>
+</dd>
+<dt><code>show thread run</code></dt>
+<dd><p>Show whether the current thread is allowed to run.
+</p>
+</dd>
+<dt><code>set thread detach-suspend-count</code></dt>
+<dd><a name="index-thread-suspend-count_002c-GNU-Hurd"></a>
+<a name="index-detach-from-thread_002c-GNU-Hurd"></a>
+<p>This command sets the suspend count <small>GDB</small> will leave on a
+thread when detaching.  This number is relative to the suspend count
+found by <small>GDB</small> when it notices the thread; use <code>set thread
+takeover-suspend-count</code> to force it to an absolute value.
+</p>
+</dd>
+<dt><code>show thread detach-suspend-count</code></dt>
+<dd><p>Show the suspend count <small>GDB</small> will leave on the thread when
+detaching.
+</p>
+</dd>
+<dt><code>set thread exception-port</code></dt>
+<dt><code>set thread excp</code></dt>
+<dd><p>Set the thread exception port to which to forward exceptions.  This
+overrides the port set by <code>set task exception-port</code> (see above).
+<code>set thread excp</code> is the shorthand alias.
+</p>
+</dd>
+<dt><code>set thread takeover-suspend-count</code></dt>
+<dd><p>Normally, <small>GDB</small>&rsquo;s thread suspend counts are relative to the
+value <small>GDB</small> finds when it notices each thread.  This command
+changes the suspend counts to be absolute instead.
+</p>
+</dd>
+<dt><code>set thread default</code></dt>
+<dt><code>show thread default</code></dt>
+<dd><a name="index-thread-default-settings_002c-GNU-Hurd"></a>
+<p>Each of the above <code>set thread</code> commands has a <code>set thread
+default</code> counterpart (e.g., <code>set thread default pause</code>, <code>set
+thread default exception-port</code>, etc.).  The <code>thread default</code>
+variety of commands sets the default thread properties for all
+threads; you can then change the properties of individual threads with
+the non-default commands.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Darwin.html#Darwin" accesskey="n" rel="next">Darwin</a>, Previous: <a href="Cygwin-Native.html#Cygwin-Native" accesskey="p" rel="prev">Cygwin Native</a>, Up: <a href="Native.html#Native" accesskey="u" rel="up">Native</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

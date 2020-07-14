@@ -1,0 +1,188 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: s390 Aliases</title>
+
+<meta name="description" content="Using as: s390 Aliases">
+<meta name="keywords" content="Using as: s390 Aliases">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="s390-Syntax.html#s390-Syntax" rel="up" title="s390 Syntax">
+<link href="s390-Operand-Modifier.html#s390-Operand-Modifier" rel="next" title="s390 Operand Modifier">
+<link href="s390-Formats.html#s390-Formats" rel="prev" title="s390 Formats">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="s390-Aliases"></a>
+<div class="header">
+<p>
+Next: <a href="s390-Operand-Modifier.html#s390-Operand-Modifier" accesskey="n" rel="next">s390 Operand Modifier</a>, Previous: <a href="s390-Formats.html#s390-Formats" accesskey="p" rel="prev">s390 Formats</a>, Up: <a href="s390-Syntax.html#s390-Syntax" accesskey="u" rel="up">s390 Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Instruction-Aliases"></a>
+<h4 class="subsubsection">9.41.3.5 Instruction Aliases</h4>
+<a name="index-instruction-aliases_002c-s390"></a>
+<a name="index-s390-instruction-aliases"></a>
+
+<p>A specific bit pattern can have multiple mnemonics, for example
+the bit pattern &lsquo;<samp>0xa7000000</samp>&rsquo; has the mnemonics &lsquo;<samp>tmh</samp>&rsquo; and
+&lsquo;<samp>tmlh</samp>&rsquo;. In addition, there are a number of mnemonics recognized by
+<code>as</code> that are not present in the Principles of Operation.
+These are the short forms of the branch instructions, where the condition
+code mask operand is encoded in the mnemonic. This is relevant for the
+branch instructions, the compare and branch instructions, and the
+compare and trap instructions.
+</p>
+<p>For the branch instructions there are 20 condition code strings that can
+be used as part of the mnemonic in place of a mask operand in the instruction
+format:
+</p>
+<div class="display">
+<table>
+<thead><tr><th width="30%"><pre class="display">instruction</pre></th><th width="30%"><pre class="display">short form</pre></th></tr></thead>
+<tr><td width="30%"><pre class="display">bcr   M1,R2</pre></td><td width="30%"><pre class="display">b&lt;m&gt;r  R2</pre></td></tr>
+<tr><td width="30%"><pre class="display">bc    M1,D2(X2,B2)</pre></td><td width="30%"><pre class="display">b&lt;m&gt;   D2(X2,B2)</pre></td></tr>
+<tr><td width="30%"><pre class="display">brc   M1,I2</pre></td><td width="30%"><pre class="display">j&lt;m&gt;   I2</pre></td></tr>
+<tr><td width="30%"><pre class="display">brcl  M1,I2</pre></td><td width="30%"><pre class="display">jg&lt;m&gt;  I2</pre></td></tr>
+</table>
+</div>
+
+<p>In the mnemonic for a branch instruction the condition code string &lt;m&gt;
+can be any of the following:
+</p>
+<div class="display">
+<table>
+<tr><td><pre class="display">o</pre></td><td><pre class="display">jump on overflow / if ones</pre></td></tr>
+<tr><td><pre class="display">h</pre></td><td><pre class="display">jump on A high</pre></td></tr>
+<tr><td><pre class="display">p</pre></td><td><pre class="display">jump on plus</pre></td></tr>
+<tr><td><pre class="display">nle</pre></td><td><pre class="display">jump on not low or equal</pre></td></tr>
+<tr><td><pre class="display">l</pre></td><td><pre class="display">jump on A low</pre></td></tr>
+<tr><td><pre class="display">m</pre></td><td><pre class="display">jump on minus</pre></td></tr>
+<tr><td><pre class="display">nhe</pre></td><td><pre class="display">jump on not high or equal</pre></td></tr>
+<tr><td><pre class="display">lh</pre></td><td><pre class="display">jump on low or high</pre></td></tr>
+<tr><td><pre class="display">ne</pre></td><td><pre class="display">jump on A not equal B</pre></td></tr>
+<tr><td><pre class="display">nz</pre></td><td><pre class="display">jump on not zero / if not zeros</pre></td></tr>
+<tr><td><pre class="display">e</pre></td><td><pre class="display">jump on A equal B</pre></td></tr>
+<tr><td><pre class="display">z</pre></td><td><pre class="display">jump on zero / if zeroes</pre></td></tr>
+<tr><td><pre class="display">nlh</pre></td><td><pre class="display">jump on not low or high</pre></td></tr>
+<tr><td><pre class="display">he</pre></td><td><pre class="display">jump on high or equal</pre></td></tr>
+<tr><td><pre class="display">nl</pre></td><td><pre class="display">jump on A not low</pre></td></tr>
+<tr><td><pre class="display">nm</pre></td><td><pre class="display">jump on not minus / if not mixed</pre></td></tr>
+<tr><td><pre class="display">le</pre></td><td><pre class="display">jump on low or equal</pre></td></tr>
+<tr><td><pre class="display">nh</pre></td><td><pre class="display">jump on A not high</pre></td></tr>
+<tr><td><pre class="display">np</pre></td><td><pre class="display">jump on not plus</pre></td></tr>
+<tr><td><pre class="display">no</pre></td><td><pre class="display">jump on not overflow / if not ones</pre></td></tr>
+</table>
+</div>
+
+<p>For the compare and branch, and compare and trap instructions there
+are 12 condition code strings that can be used as part of the mnemonic in
+place of a mask operand in the instruction format:
+</p>
+<div class="display">
+<table>
+<thead><tr><th width="40%"><pre class="display">instruction</pre></th><th width="40%"><pre class="display">short form</pre></th></tr></thead>
+<tr><td width="40%"><pre class="display">crb    R1,R2,M3,D4(B4)</pre></td><td width="40%"><pre class="display">crb&lt;m&gt;    R1,R2,D4(B4)</pre></td></tr>
+<tr><td width="40%"><pre class="display">cgrb   R1,R2,M3,D4(B4)</pre></td><td width="40%"><pre class="display">cgrb&lt;m&gt;   R1,R2,D4(B4)</pre></td></tr>
+<tr><td width="40%"><pre class="display">crj    R1,R2,M3,I4</pre></td><td width="40%"><pre class="display">crj&lt;m&gt;    R1,R2,I4</pre></td></tr>
+<tr><td width="40%"><pre class="display">cgrj   R1,R2,M3,I4</pre></td><td width="40%"><pre class="display">cgrj&lt;m&gt;   R1,R2,I4</pre></td></tr>
+<tr><td width="40%"><pre class="display">cib    R1,I2,M3,D4(B4)</pre></td><td width="40%"><pre class="display">cib&lt;m&gt;    R1,I2,D4(B4)</pre></td></tr>
+<tr><td width="40%"><pre class="display">cgib   R1,I2,M3,D4(B4)</pre></td><td width="40%"><pre class="display">cgib&lt;m&gt;   R1,I2,D4(B4)</pre></td></tr>
+<tr><td width="40%"><pre class="display">cij    R1,I2,M3,I4</pre></td><td width="40%"><pre class="display">cij&lt;m&gt;    R1,I2,I4</pre></td></tr>
+<tr><td width="40%"><pre class="display">cgij   R1,I2,M3,I4</pre></td><td width="40%"><pre class="display">cgij&lt;m&gt;   R1,I2,I4</pre></td></tr>
+<tr><td width="40%"><pre class="display">crt    R1,R2,M3</pre></td><td width="40%"><pre class="display">crt&lt;m&gt;    R1,R2</pre></td></tr>
+<tr><td width="40%"><pre class="display">cgrt   R1,R2,M3</pre></td><td width="40%"><pre class="display">cgrt&lt;m&gt;   R1,R2</pre></td></tr>
+<tr><td width="40%"><pre class="display">cit    R1,I2,M3</pre></td><td width="40%"><pre class="display">cit&lt;m&gt;    R1,I2</pre></td></tr>
+<tr><td width="40%"><pre class="display">cgit   R1,I2,M3</pre></td><td width="40%"><pre class="display">cgit&lt;m&gt;   R1,I2</pre></td></tr>
+<tr><td width="40%"><pre class="display">clrb   R1,R2,M3,D4(B4)</pre></td><td width="40%"><pre class="display">clrb&lt;m&gt;   R1,R2,D4(B4)</pre></td></tr>
+<tr><td width="40%"><pre class="display">clgrb  R1,R2,M3,D4(B4)</pre></td><td width="40%"><pre class="display">clgrb&lt;m&gt;  R1,R2,D4(B4)</pre></td></tr>
+<tr><td width="40%"><pre class="display">clrj   R1,R2,M3,I4</pre></td><td width="40%"><pre class="display">clrj&lt;m&gt;   R1,R2,I4</pre></td></tr>
+<tr><td width="40%"><pre class="display">clgrj  R1,R2,M3,I4</pre></td><td width="40%"><pre class="display">clgrj&lt;m&gt;  R1,R2,I4</pre></td></tr>
+<tr><td width="40%"><pre class="display">clib   R1,I2,M3,D4(B4)</pre></td><td width="40%"><pre class="display">clib&lt;m&gt;   R1,I2,D4(B4)</pre></td></tr>
+<tr><td width="40%"><pre class="display">clgib  R1,I2,M3,D4(B4)</pre></td><td width="40%"><pre class="display">clgib&lt;m&gt;  R1,I2,D4(B4)</pre></td></tr>
+<tr><td width="40%"><pre class="display">clij   R1,I2,M3,I4</pre></td><td width="40%"><pre class="display">clij&lt;m&gt;   R1,I2,I4</pre></td></tr>
+<tr><td width="40%"><pre class="display">clgij  R1,I2,M3,I4</pre></td><td width="40%"><pre class="display">clgij&lt;m&gt;  R1,I2,I4</pre></td></tr>
+<tr><td width="40%"><pre class="display">clrt   R1,R2,M3</pre></td><td width="40%"><pre class="display">clrt&lt;m&gt;   R1,R2</pre></td></tr>
+<tr><td width="40%"><pre class="display">clgrt  R1,R2,M3</pre></td><td width="40%"><pre class="display">clgrt&lt;m&gt;  R1,R2</pre></td></tr>
+<tr><td width="40%"><pre class="display">clfit  R1,I2,M3</pre></td><td width="40%"><pre class="display">clfit&lt;m&gt;  R1,I2</pre></td></tr>
+<tr><td width="40%"><pre class="display">clgit  R1,I2,M3</pre></td><td width="40%"><pre class="display">clgit&lt;m&gt;  R1,I2</pre></td></tr>
+</table>
+</div>
+
+<p>In the mnemonic for a compare and branch and compare and trap instruction
+the condition code string &lt;m&gt; can be any of the following:
+</p>
+<div class="display">
+<table>
+<tr><td><pre class="display">h</pre></td><td><pre class="display">jump on A high</pre></td></tr>
+<tr><td><pre class="display">nle</pre></td><td><pre class="display">jump on not low or equal</pre></td></tr>
+<tr><td><pre class="display">l</pre></td><td><pre class="display">jump on A low</pre></td></tr>
+<tr><td><pre class="display">nhe</pre></td><td><pre class="display">jump on not high or equal</pre></td></tr>
+<tr><td><pre class="display">ne</pre></td><td><pre class="display">jump on A not equal B</pre></td></tr>
+<tr><td><pre class="display">lh</pre></td><td><pre class="display">jump on low or high</pre></td></tr>
+<tr><td><pre class="display">e</pre></td><td><pre class="display">jump on A equal B</pre></td></tr>
+<tr><td><pre class="display">nlh</pre></td><td><pre class="display">jump on not low or high</pre></td></tr>
+<tr><td><pre class="display">nl</pre></td><td><pre class="display">jump on A not low</pre></td></tr>
+<tr><td><pre class="display">he</pre></td><td><pre class="display">jump on high or equal</pre></td></tr>
+<tr><td><pre class="display">nh</pre></td><td><pre class="display">jump on A not high</pre></td></tr>
+<tr><td><pre class="display">le</pre></td><td><pre class="display">jump on low or equal</pre></td></tr>
+</table>
+</div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="s390-Operand-Modifier.html#s390-Operand-Modifier" accesskey="n" rel="next">s390 Operand Modifier</a>, Previous: <a href="s390-Formats.html#s390-Formats" accesskey="p" rel="prev">s390 Formats</a>, Up: <a href="s390-Syntax.html#s390-Syntax" accesskey="u" rel="up">s390 Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1994-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GDB&rsquo;s Obsolete Annotations: Breakpoint Info</title>
+
+<meta name="description" content="GDB&rsquo;s Obsolete Annotations: Breakpoint Info">
+<meta name="keywords" content="GDB&rsquo;s Obsolete Annotations: Breakpoint Info">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Invalidation.html#Invalidation" rel="next" title="Invalidation">
+<link href="Errors.html#Errors" rel="prev" title="Errors">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Breakpoint-Info"></a>
+<div class="header">
+<p>
+Next: <a href="Invalidation.html#Invalidation" accesskey="n" rel="next">Invalidation</a>, Previous: <a href="Errors.html#Errors" accesskey="p" rel="prev">Errors</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<hr>
+<a name="Information-on-Breakpoints"></a>
+<h2 class="chapter">10 Information on Breakpoints</h2>
+
+<p><em>Breakpoint Annotations have been removed.  <small>GDB/MI</small> instead
+provides breakpoint commands.</em>
+</p>
+<a name="index-annotations-for-breakpoints"></a>
+<p>The output from the <code>info breakpoints</code> command is annotated as follows:
+</p>
+<a name="index-breakpoints_002dheaders"></a>
+<a name="index-breakpoints_002dtable"></a>
+<div class="smallexample">
+<pre class="smallexample">^Z^Zbreakpoints-headers
+<var>header-entry</var>
+^Z^Zbreakpoints-table
+</pre></div>
+
+<p>where <var>header-entry</var> has the same syntax as an entry (see below) but
+instead of containing data, it contains strings which are intended to
+convey the meaning of each field to the user.  This is followed by any
+number of entries.  If a field does not apply for this entry, it is
+omitted.  Fields may contain trailing whitespace.  Each entry consists
+of:
+</p>
+<a name="index-record"></a>
+<a name="index-field"></a>
+<div class="smallexample">
+<pre class="smallexample">^Z^Zrecord
+^Z^Zfield 0
+<var>number</var>
+^Z^Zfield 1
+<var>type</var>
+^Z^Zfield 2
+<var>disposition</var>
+^Z^Zfield 3
+<var>enable</var>
+^Z^Zfield 4
+<var>address</var>
+^Z^Zfield 5
+<var>what</var>
+^Z^Zfield 6
+<var>frame</var>
+^Z^Zfield 7
+<var>condition</var>
+^Z^Zfield 8
+<var>ignore-count</var>
+^Z^Zfield 9
+<var>commands</var>
+</pre></div>
+
+<p>Note that <var>address</var> is intended for user consumption&mdash;the syntax
+varies depending on the language.
+</p>
+<p>The output ends with
+</p>
+<a name="index-breakpoints_002dtable_002dend"></a>
+<div class="smallexample">
+<pre class="smallexample">^Z^Zbreakpoints-table-end
+</pre></div>
+
+
+
+
+</body>
+</html>

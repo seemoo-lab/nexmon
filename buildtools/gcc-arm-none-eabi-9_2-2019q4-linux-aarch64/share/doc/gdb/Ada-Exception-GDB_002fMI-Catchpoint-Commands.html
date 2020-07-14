@@ -1,0 +1,239 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Ada Exception GDB/MI Catchpoint Commands</title>
+
+<meta name="description" content="Debugging with GDB: Ada Exception GDB/MI Catchpoint Commands">
+<meta name="keywords" content="Debugging with GDB: Ada Exception GDB/MI Catchpoint Commands">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="GDB_002fMI-Catchpoint-Commands.html#GDB_002fMI-Catchpoint-Commands" rel="up" title="GDB/MI Catchpoint Commands">
+<link href="GDB_002fMI-Program-Context.html#GDB_002fMI-Program-Context" rel="next" title="GDB/MI Program Context">
+<link href="Shared-Library-GDB_002fMI-Catchpoint-Commands.html#Shared-Library-GDB_002fMI-Catchpoint-Commands" rel="prev" title="Shared Library GDB/MI Catchpoint Commands">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Ada-Exception-GDB_002fMI-Catchpoint-Commands"></a>
+<div class="header">
+<p>
+Previous: <a href="Shared-Library-GDB_002fMI-Catchpoint-Commands.html#Shared-Library-GDB_002fMI-Catchpoint-Commands" accesskey="p" rel="prev">Shared Library GDB/MI Catchpoint Commands</a>, Up: <a href="GDB_002fMI-Catchpoint-Commands.html#GDB_002fMI-Catchpoint-Commands" accesskey="u" rel="up">GDB/MI Catchpoint Commands</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Ada-Exception-GDB_002fMI-Catchpoints"></a>
+<h4 class="subsection">27.9.2 Ada Exception <small>GDB/MI</small> Catchpoints</h4>
+
+<p>The following <small>GDB/MI</small> commands can be used to create catchpoints
+that stop the execution when Ada exceptions are being raised.
+</p>
+<a name="The-_002dcatch_002dassert-Command"></a>
+<h4 class="subheading">The <code>-catch-assert</code> Command</h4>
+<a name="index-_002dcatch_002dassert"></a>
+
+<a name="Synopsis-15"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -catch-assert [ -c <var>condition</var>] [ -d ] [ -t ]
+</pre></div>
+
+<p>Add a catchpoint for failed Ada assertions.
+</p>
+<p>The possible optional parameters for this command are:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>-c <var>condition</var></samp>&rsquo;</dt>
+<dd><p>Make the catchpoint conditional on <var>condition</var>.
+</p></dd>
+<dt>&lsquo;<samp>-d</samp>&rsquo;</dt>
+<dd><p>Create a disabled catchpoint.
+</p></dd>
+<dt>&lsquo;<samp>-t</samp>&rsquo;</dt>
+<dd><p>Create a temporary catchpoint.
+</p></dd>
+</dl>
+
+<a name="GDB-Command-14"></a>
+<h4 class="subsubheading"><small>GDB</small> Command</h4>
+
+<p>The corresponding <small>GDB</small> command is &lsquo;<samp>catch assert</samp>&rsquo;.
+</p>
+<a name="Example-14"></a>
+<h4 class="subsubheading">Example</h4>
+
+<div class="smallexample">
+<pre class="smallexample">-catch-assert
+^done,bkptno=&quot;5&quot;,bkpt={number=&quot;5&quot;,type=&quot;breakpoint&quot;,disp=&quot;keep&quot;,
+enabled=&quot;y&quot;,addr=&quot;0x0000000000404888&quot;,what=&quot;failed Ada assertions&quot;,
+thread-groups=[&quot;i1&quot;],times=&quot;0&quot;,
+original-location=&quot;__gnat_debug_raise_assert_failure&quot;}
+(gdb)
+</pre></div>
+
+<a name="The-_002dcatch_002dexception-Command"></a>
+<h4 class="subheading">The <code>-catch-exception</code> Command</h4>
+<a name="index-_002dcatch_002dexception"></a>
+
+<a name="Synopsis-16"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -catch-exception [ -c <var>condition</var>] [ -d ] [ -e <var>exception-name</var> ]
+    [ -t ] [ -u ]
+</pre></div>
+
+<p>Add a catchpoint stopping when Ada exceptions are raised.
+By default, the command stops the program when any Ada exception
+gets raised.  But it is also possible, by using some of the
+optional parameters described below, to create more selective
+catchpoints.
+</p>
+<p>The possible optional parameters for this command are:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>-c <var>condition</var></samp>&rsquo;</dt>
+<dd><p>Make the catchpoint conditional on <var>condition</var>.
+</p></dd>
+<dt>&lsquo;<samp>-d</samp>&rsquo;</dt>
+<dd><p>Create a disabled catchpoint.
+</p></dd>
+<dt>&lsquo;<samp>-e <var>exception-name</var></samp>&rsquo;</dt>
+<dd><p>Only stop when <var>exception-name</var> is raised.  This option cannot
+be used combined with &lsquo;<samp>-u</samp>&rsquo;.
+</p></dd>
+<dt>&lsquo;<samp>-t</samp>&rsquo;</dt>
+<dd><p>Create a temporary catchpoint.
+</p></dd>
+<dt>&lsquo;<samp>-u</samp>&rsquo;</dt>
+<dd><p>Stop only when an unhandled exception gets raised.  This option
+cannot be used combined with &lsquo;<samp>-e</samp>&rsquo;.
+</p></dd>
+</dl>
+
+<a name="GDB-Command-15"></a>
+<h4 class="subsubheading"><small>GDB</small> Command</h4>
+
+<p>The corresponding <small>GDB</small> commands are &lsquo;<samp>catch exception</samp>&rsquo;
+and &lsquo;<samp>catch exception unhandled</samp>&rsquo;.
+</p>
+<a name="Example-15"></a>
+<h4 class="subsubheading">Example</h4>
+
+<div class="smallexample">
+<pre class="smallexample">-catch-exception -e Program_Error
+^done,bkptno=&quot;4&quot;,bkpt={number=&quot;4&quot;,type=&quot;breakpoint&quot;,disp=&quot;keep&quot;,
+enabled=&quot;y&quot;,addr=&quot;0x0000000000404874&quot;,
+what=&quot;`Program_Error' Ada exception&quot;, thread-groups=[&quot;i1&quot;],
+times=&quot;0&quot;,original-location=&quot;__gnat_debug_raise_exception&quot;}
+(gdb)
+</pre></div>
+
+<a name="The-_002dcatch_002dhandlers-Command"></a>
+<h4 class="subheading">The <code>-catch-handlers</code> Command</h4>
+<a name="index-_002dcatch_002dhandlers"></a>
+
+<a name="Synopsis-17"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -catch-handlers [ -c <var>condition</var>] [ -d ] [ -e <var>exception-name</var> ]
+    [ -t ]
+</pre></div>
+
+<p>Add a catchpoint stopping when Ada exceptions are handled.
+By default, the command stops the program when any Ada exception
+gets handled.  But it is also possible, by using some of the
+optional parameters described below, to create more selective
+catchpoints.
+</p>
+<p>The possible optional parameters for this command are:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>-c <var>condition</var></samp>&rsquo;</dt>
+<dd><p>Make the catchpoint conditional on <var>condition</var>.
+</p></dd>
+<dt>&lsquo;<samp>-d</samp>&rsquo;</dt>
+<dd><p>Create a disabled catchpoint.
+</p></dd>
+<dt>&lsquo;<samp>-e <var>exception-name</var></samp>&rsquo;</dt>
+<dd><p>Only stop when <var>exception-name</var> is handled.
+</p></dd>
+<dt>&lsquo;<samp>-t</samp>&rsquo;</dt>
+<dd><p>Create a temporary catchpoint.
+</p></dd>
+</dl>
+
+<a name="GDB-Command-16"></a>
+<h4 class="subsubheading"><small>GDB</small> Command</h4>
+
+<p>The corresponding <small>GDB</small> command is &lsquo;<samp>catch handlers</samp>&rsquo;.
+</p>
+<a name="Example-16"></a>
+<h4 class="subsubheading">Example</h4>
+
+<div class="smallexample">
+<pre class="smallexample">-catch-handlers -e Constraint_Error
+^done,bkptno=&quot;4&quot;,bkpt={number=&quot;4&quot;,type=&quot;breakpoint&quot;,disp=&quot;keep&quot;,
+enabled=&quot;y&quot;,addr=&quot;0x0000000000402f68&quot;,
+what=&quot;`Constraint_Error' Ada exception handlers&quot;,thread-groups=[&quot;i1&quot;],
+times=&quot;0&quot;,original-location=&quot;__gnat_begin_handler&quot;}
+(gdb)
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Shared-Library-GDB_002fMI-Catchpoint-Commands.html#Shared-Library-GDB_002fMI-Catchpoint-Commands" accesskey="p" rel="prev">Shared Library GDB/MI Catchpoint Commands</a>, Up: <a href="GDB_002fMI-Catchpoint-Commands.html#GDB_002fMI-Catchpoint-Commands" accesskey="u" rel="up">GDB/MI Catchpoint Commands</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,252 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Rationale</title>
+
+<meta name="description" content="Debugging with GDB: Rationale">
+<meta name="keywords" content="Debugging with GDB: Rationale">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Agent-Expressions.html#Agent-Expressions" rel="up" title="Agent Expressions">
+<link href="Target-Descriptions.html#Target-Descriptions" rel="next" title="Target Descriptions">
+<link href="Varying-Target-Capabilities.html#Varying-Target-Capabilities" rel="prev" title="Varying Target Capabilities">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Rationale"></a>
+<div class="header">
+<p>
+Previous: <a href="Varying-Target-Capabilities.html#Varying-Target-Capabilities" accesskey="p" rel="prev">Varying Target Capabilities</a>, Up: <a href="Agent-Expressions.html#Agent-Expressions" accesskey="u" rel="up">Agent Expressions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Rationale-1"></a>
+<h3 class="section">F.5 Rationale</h3>
+
+<p>Some of the design decisions apparent above are arguable.
+</p>
+<dl compact="compact">
+<dt><b>What about stack overflow/underflow?</b></dt>
+<dd><p>GDB should be able to query the target to discover its stack size.
+Given that information, GDB can determine at translation time whether a
+given expression will overflow the stack.  But this spec isn&rsquo;t about
+what kinds of error-checking GDB ought to do.
+</p>
+</dd>
+<dt><b>Why are you doing everything in LONGEST?</b></dt>
+<dd>
+<p>Speed isn&rsquo;t important, but agent code size is; using LONGEST brings in a
+bunch of support code to do things like division, etc.  So this is a
+serious concern.
+</p>
+<p>First, note that you don&rsquo;t need different bytecodes for different
+operand sizes.  You can generate code without <em>knowing</em> how big the
+stack elements actually are on the target.  If the target only supports
+32-bit ints, and you don&rsquo;t send any 64-bit bytecodes, everything just
+works.  The observation here is that the MIPS and the Alpha have only
+fixed-size registers, and you can still get C&rsquo;s semantics even though
+most instructions only operate on full-sized words.  You just need to
+make sure everything is properly sign-extended at the right times.  So
+there is no need for 32- and 64-bit variants of the bytecodes.  Just
+implement everything using the largest size you support.
+</p>
+<p>GDB should certainly check to see what sizes the target supports, so the
+user can get an error earlier, rather than later.  But this information
+is not necessary for correctness.
+</p>
+
+</dd>
+<dt><b>Why don&rsquo;t you have <code>&gt;</code> or <code>&lt;=</code> operators?</b></dt>
+<dd><p>I want to keep the interpreter small, and we don&rsquo;t need them.  We can
+combine the <code>less_</code> opcodes with <code>log_not</code>, and swap the order
+of the operands, yielding all four asymmetrical comparison operators.
+For example, <code>(x &lt;= y)</code> is <code>! (x &gt; y)</code>, which is <code>! (y &lt;
+x)</code>.
+</p>
+</dd>
+<dt><b>Why do you have <code>log_not</code>?</b></dt>
+<dt><b>Why do you have <code>ext</code>?</b></dt>
+<dt><b>Why do you have <code>zero_ext</code>?</b></dt>
+<dd><p>These are all easily synthesized from other instructions, but I expect
+them to be used frequently, and they&rsquo;re simple, so I include them to
+keep bytecode strings short.
+</p>
+<p><code>log_not</code> is equivalent to <code>const8 0 equal</code>; it&rsquo;s used in half
+the relational operators.
+</p>
+<p><code>ext <var>n</var></code> is equivalent to <code>const8 <var>s-n</var> lsh const8
+<var>s-n</var> rsh_signed</code>, where <var>s</var> is the size of the stack elements;
+it follows <code>ref<var>m</var></code> and <var>reg</var> bytecodes when the value
+should be signed.  See the next bulleted item.
+</p>
+<p><code>zero_ext <var>n</var></code> is equivalent to <code>const<var>m</var> <var>mask</var>
+log_and</code>; it&rsquo;s used whenever we push the value of a register, because we
+can&rsquo;t assume the upper bits of the register aren&rsquo;t garbage.
+</p>
+</dd>
+<dt><b>Why not have sign-extending variants of the <code>ref</code> operators?</b></dt>
+<dd><p>Because that would double the number of <code>ref</code> operators, and we
+need the <code>ext</code> bytecode anyway for accessing bitfields.
+</p>
+</dd>
+<dt><b>Why not have constant-address variants of the <code>ref</code> operators?</b></dt>
+<dd><p>Because that would double the number of <code>ref</code> operators again, and
+<code>const32 <var>address</var> ref32</code> is only one byte longer.
+</p>
+</dd>
+<dt><b>Why do the <code>ref<var>n</var></code> operators have to support unaligned fetches?</b></dt>
+<dd><p>GDB will generate bytecode that fetches multi-byte values at unaligned
+addresses whenever the executable&rsquo;s debugging information tells it to.
+Furthermore, GDB does not know the value the pointer will have when GDB
+generates the bytecode, so it cannot determine whether a particular
+fetch will be aligned or not.
+</p>
+<p>In particular, structure bitfields may be several bytes long, but follow
+no alignment rules; members of packed structures are not necessarily
+aligned either.
+</p>
+<p>In general, there are many cases where unaligned references occur in
+correct C code, either at the programmer&rsquo;s explicit request, or at the
+compiler&rsquo;s discretion.  Thus, it is simpler to make the GDB agent
+bytecodes work correctly in all circumstances than to make GDB guess in
+each case whether the compiler did the usual thing.
+</p>
+</dd>
+<dt><b>Why are there no side-effecting operators?</b></dt>
+<dd><p>Because our current client doesn&rsquo;t want them?  That&rsquo;s a cheap answer.  I
+think the real answer is that I&rsquo;m afraid of implementing function
+calls.  We should re-visit this issue after the present contract is
+delivered.
+</p>
+</dd>
+<dt><b>Why aren&rsquo;t the <code>goto</code> ops PC-relative?</b></dt>
+<dd><p>The interpreter has the base address around anyway for PC bounds
+checking, and it seemed simpler.
+</p>
+</dd>
+<dt><b>Why is there only one offset size for the <code>goto</code> ops?</b></dt>
+<dd><p>Offsets are currently sixteen bits.  I&rsquo;m not happy with this situation
+either:
+</p>
+<p>Suppose we have multiple branch ops with different offset sizes.  As I
+generate code left-to-right, all my jumps are forward jumps (there are
+no loops in expressions), so I never know the target when I emit the
+jump opcode.  Thus, I have to either always assume the largest offset
+size, or do jump relaxation on the code after I generate it, which seems
+like a big waste of time.
+</p>
+<p>I can imagine a reasonable expression being longer than 256 bytes.  I
+can&rsquo;t imagine one being longer than 64k.  Thus, we need 16-bit offsets.
+This kind of reasoning is so bogus, but relaxation is pathetic.
+</p>
+<p>The other approach would be to generate code right-to-left.  Then I&rsquo;d
+always know my offset size.  That might be fun.
+</p>
+</dd>
+<dt><b>Where is the function call bytecode?</b></dt>
+<dd>
+<p>When we add side-effects, we should add this.
+</p>
+</dd>
+<dt><b>Why does the <code>reg</code> bytecode take a 16-bit register number?</b></dt>
+<dd>
+<p>Intel&rsquo;s IA-64 architecture has 128 general-purpose registers,
+and 128 floating-point registers, and I&rsquo;m sure it has some random
+control registers.
+</p>
+</dd>
+<dt><b>Why do we need <code>trace</code> and <code>trace_quick</code>?</b></dt>
+<dd><p>Because GDB needs to record all the memory contents and registers an
+expression touches.  If the user wants to evaluate an expression
+<code>x-&gt;y-&gt;z</code>, the agent must record the values of <code>x</code> and
+<code>x-&gt;y</code> as well as the value of <code>x-&gt;y-&gt;z</code>.
+</p>
+</dd>
+<dt><b>Don&rsquo;t the <code>trace</code> bytecodes make the interpreter less general?</b></dt>
+<dd><p>They do mean that the interpreter contains special-purpose code, but
+that doesn&rsquo;t mean the interpreter can only be used for that purpose.  If
+an expression doesn&rsquo;t use the <code>trace</code> bytecodes, they don&rsquo;t get in
+its way.
+</p>
+</dd>
+<dt><b>Why doesn&rsquo;t <code>trace_quick</code> consume its arguments the way everything else does?</b></dt>
+<dd><p>In general, you do want your operators to consume their arguments; it&rsquo;s
+consistent, and generally reduces the amount of stack rearrangement
+necessary.  However, <code>trace_quick</code> is a kludge to save space; it
+only exists so we needn&rsquo;t write <code>dup const8 <var>SIZE</var> trace</code>
+before every memory reference.  Therefore, it&rsquo;s okay for it not to
+consume its arguments; it&rsquo;s meant for a specific context in which we
+know exactly what it should do with the stack.  If we&rsquo;re going to have a
+kludge, it should be an effective kludge.
+</p>
+</dd>
+<dt><b>Why does <code>trace16</code> exist?</b></dt>
+<dd><p>That opcode was added by the customer that contracted Cygnus for the
+data tracing work.  I personally think it is unnecessary; objects that
+large will be quite rare, so it is okay to use <code>dup const16
+<var>size</var> trace</code> in those cases.
+</p>
+<p>Whatever we decide to do with <code>trace16</code>, we should at least leave
+opcode 0x30 reserved, to remain compatible with the customer who added
+it.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Varying-Target-Capabilities.html#Varying-Target-Capabilities" accesskey="p" rel="prev">Varying Target Capabilities</a>, Up: <a href="Agent-Expressions.html#Agent-Expressions" accesskey="u" rel="up">Agent Expressions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

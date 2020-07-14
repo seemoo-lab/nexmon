@@ -1,0 +1,116 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: The Ctrl-C Message</title>
+
+<meta name="description" content="Debugging with GDB: The Ctrl-C Message">
+<meta name="keywords" content="Debugging with GDB: The Ctrl-C Message">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="File_002dI_002fO-Remote-Protocol-Extension.html#File_002dI_002fO-Remote-Protocol-Extension" rel="up" title="File-I/O Remote Protocol Extension">
+<link href="Console-I_002fO.html#Console-I_002fO" rel="next" title="Console I/O">
+<link href="The-F-Reply-Packet.html#The-F-Reply-Packet" rel="prev" title="The F Reply Packet">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="The-Ctrl_002dC-Message"></a>
+<div class="header">
+<p>
+Next: <a href="Console-I_002fO.html#Console-I_002fO" accesskey="n" rel="next">Console I/O</a>, Previous: <a href="The-F-Reply-Packet.html#The-F-Reply-Packet" accesskey="p" rel="prev">The F Reply Packet</a>, Up: <a href="File_002dI_002fO-Remote-Protocol-Extension.html#File_002dI_002fO-Remote-Protocol-Extension" accesskey="u" rel="up">File-I/O Remote Protocol Extension</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="The-Ctrl_002dC-Message-1"></a>
+<h4 class="subsection">E.13.5 The &lsquo;<samp>Ctrl-C</samp>&rsquo; Message</h4>
+<a name="index-ctrl_002dc-message_002c-in-file_002di_002fo-protocol"></a>
+
+<p>If the &lsquo;<samp>Ctrl-C</samp>&rsquo; flag is set in the <small>GDB</small>
+reply packet (see <a href="The-F-Reply-Packet.html#The-F-Reply-Packet">The F Reply Packet</a>),
+the target should behave as if it had
+gotten a break message.  The meaning for the target is &ldquo;system call
+interrupted by <code>SIGINT</code>&rdquo;.  Consequentially, the target should actually stop
+(as with a break message) and return to <small>GDB</small> with a <code>T02</code>
+packet.
+</p>
+<p>It&rsquo;s important for the target to know in which
+state the system call was interrupted.  There are two possible cases:
+</p>
+<ul>
+<li> The system call hasn&rsquo;t been performed on the host yet.
+
+</li><li> The system call on the host has been finished.
+
+</li></ul>
+
+<p>These two states can be distinguished by the target by the value of the
+returned <code>errno</code>.  If it&rsquo;s the protocol representation of <code>EINTR</code>, the system
+call hasn&rsquo;t been performed.  This is equivalent to the <code>EINTR</code> handling
+on POSIX systems.  In any other case, the target may presume that the
+system call has been finished &mdash; successfully or not &mdash; and should behave
+as if the break message arrived right after the system call.
+</p>
+<p><small>GDB</small> must behave reliably.  If the system call has not been called
+yet, <small>GDB</small> may send the <code>F</code> reply immediately, setting <code>EINTR</code> as
+<code>errno</code> in the packet.  If the system call on the host has been finished
+before the user requests a break, the full action must be finished by
+<small>GDB</small>.  This requires sending <code>M</code> or <code>X</code> packets as necessary.
+The <code>F</code> packet may only be sent when either nothing has happened
+or the full action has been completed.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Console-I_002fO.html#Console-I_002fO" accesskey="n" rel="next">Console I/O</a>, Previous: <a href="The-F-Reply-Packet.html#The-F-Reply-Packet" accesskey="p" rel="prev">The F Reply Packet</a>, Up: <a href="File_002dI_002fO-Remote-Protocol-Extension.html#File_002dI_002fO-Remote-Protocol-Extension" accesskey="u" rel="up">File-I/O Remote Protocol Extension</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

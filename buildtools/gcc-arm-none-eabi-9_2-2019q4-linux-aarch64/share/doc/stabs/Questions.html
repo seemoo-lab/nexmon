@@ -1,0 +1,102 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1992-2019 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>STABS: Questions</title>
+
+<meta name="description" content="STABS: Questions">
+<meta name="keywords" content="STABS: Questions">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Symbol-Types-Index.html#Symbol-Types-Index" rel="index" title="Symbol Types Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Stab-Sections.html#Stab-Sections" rel="next" title="Stab Sections">
+<link href="N_005fLENG.html#N_005fLENG" rel="prev" title="N_LENG">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Questions"></a>
+<div class="header">
+<p>
+Next: <a href="Stab-Sections.html#Stab-Sections" accesskey="n" rel="next">Stab Sections</a>, Previous: <a href="Expanded-Reference.html#Expanded-Reference" accesskey="p" rel="prev">Expanded Reference</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Symbol-Types-Index.html#Symbol-Types-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Questions-and-Anomalies"></a>
+<h2 class="appendix">Appendix E Questions and Anomalies</h2>
+
+<ul>
+<li> For GNU C stabs defining local and global variables (<code>N_LSYM</code> and
+<code>N_GSYM</code>), the desc field is supposed to contain the source
+line number on which the variable is defined.  In reality the desc
+field is always 0.  (This behavior is defined in <samp>dbxout.c</samp> and
+putting a line number in desc is controlled by &lsquo;<samp>#ifdef
+WINNING_GDB</samp>&rsquo;, which defaults to false). GDB supposedly uses this
+information if you say &lsquo;<samp>list <var>var</var></samp>&rsquo;.  In reality, <var>var</var> can
+be a variable defined in the program and GDB says &lsquo;<samp>function
+<var>var</var> not defined</samp>&rsquo;.
+
+</li><li> In GNU C stabs, there seems to be no way to differentiate tag types:
+structures, unions, and enums (symbol descriptor &lsquo;<samp>T</samp>&rsquo;) and typedefs
+(symbol descriptor &lsquo;<samp>t</samp>&rsquo;) defined at file scope from types defined locally
+to a procedure or other more local scope.  They all use the <code>N_LSYM</code>
+stab type.  Types defined at procedure scope are emitted after the
+<code>N_RBRAC</code> of the preceding function and before the code of the
+procedure in which they are defined.  This is exactly the same as
+types defined in the source file between the two procedure bodies.
+GDB over-compensates by placing all types in block #1, the block for
+symbols of file scope.  This is true for default, &lsquo;<samp>-ansi</samp>&rsquo; and
+&lsquo;<samp>-traditional</samp>&rsquo; compiler options. (Bugs gcc/1063, gdb/1066.)
+
+</li><li> What ends the procedure scope?  Is it the proc block&rsquo;s <code>N_RBRAC</code> or the
+next <code>N_FUN</code>?  (I believe its the first.)
+</li></ul>
+
+
+
+
+</body>
+</html>

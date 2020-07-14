@@ -1,0 +1,190 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Alias analysis</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Alias analysis">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Alias analysis">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Tree-SSA.html#Tree-SSA" rel="up" title="Tree SSA">
+<link href="Memory-model.html#Memory-model" rel="next" title="Memory model">
+<link href="SSA.html#SSA" rel="prev" title="SSA">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Alias-analysis"></a>
+<div class="header">
+<p>
+Next: <a href="Memory-model.html#Memory-model" accesskey="n" rel="next">Memory model</a>, Previous: <a href="SSA.html#SSA" accesskey="p" rel="prev">SSA</a>, Up: <a href="Tree-SSA.html#Tree-SSA" accesskey="u" rel="up">Tree SSA</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Alias-analysis-1"></a>
+<h3 class="section">13.4 Alias analysis</h3>
+<a name="index-alias"></a>
+<a name="index-flow_002dsensitive-alias-analysis"></a>
+<a name="index-flow_002dinsensitive-alias-analysis"></a>
+
+<p>Alias analysis in GIMPLE SSA form consists of two pieces.  First
+the virtual SSA web ties conflicting memory accesses and provides
+a SSA use-def chain and SSA immediate-use chains for walking
+possibly dependent memory accesses.  Second an alias-oracle can
+be queried to disambiguate explicit and implicit memory references.
+</p>
+<ol>
+<li> Memory SSA form.
+
+<p>All statements that may use memory have exactly one accompanied use of
+a virtual SSA name that represents the state of memory at the
+given point in the IL.
+</p>
+<p>All statements that may define memory have exactly one accompanied
+definition of a virtual SSA name using the previous state of memory
+and defining the new state of memory after the given point in the IL.
+</p>
+<div class="smallexample">
+<pre class="smallexample">int i;
+int foo (void)
+{
+  # .MEM_3 = VDEF &lt;.MEM_2(D)&gt;
+  i = 1;
+  # VUSE &lt;.MEM_3&gt;
+  return i;
+}
+</pre></div>
+
+<p>The virtual SSA names in this case are <code>.MEM_2(D)</code> and
+<code>.MEM_3</code>.  The store to the global variable <code>i</code>
+defines <code>.MEM_3</code> invalidating <code>.MEM_2(D)</code>.  The
+load from <code>i</code> uses that new state <code>.MEM_3</code>.
+</p>
+<p>The virtual SSA web serves as constraints to SSA optimizers
+preventing illegitimate code-motion and optimization.  It
+also provides a way to walk related memory statements.
+</p>
+</li><li> Points-to and escape analysis.
+
+<p>Points-to analysis builds a set of constraints from the GIMPLE
+SSA IL representing all pointer operations and facts we do
+or do not know about pointers.  Solving this set of constraints
+yields a conservatively correct solution for each pointer
+variable in the program (though we are only interested in
+SSA name pointers) as to what it may possibly point to.
+</p>
+<p>This points-to solution for a given SSA name pointer is stored
+in the <code>pt_solution</code> sub-structure of the
+<code>SSA_NAME_PTR_INFO</code> record.  The following accessor
+functions are available:
+</p>
+<ul>
+<li> <code>pt_solution_includes</code>
+</li><li> <code>pt_solutions_intersect</code>
+</li></ul>
+
+<p>Points-to analysis also computes the solution for two special
+set of pointers, <code>ESCAPED</code> and <code>CALLUSED</code>.  Those
+represent all memory that has escaped the scope of analysis
+or that is used by pure or nested const calls.
+</p>
+</li><li> Type-based alias analysis
+
+<p>Type-based alias analysis is frontend dependent though generic
+support is provided by the middle-end in <code>alias.c</code>.  TBAA
+code is used by both tree optimizers and RTL optimizers.
+</p>
+<p>Every language that wishes to perform language-specific alias analysis
+should define a function that computes, given a <code>tree</code>
+node, an alias set for the node.  Nodes in different alias sets are not
+allowed to alias.  For an example, see the C front-end function
+<code>c_get_alias_set</code>.
+</p>
+</li><li> Tree alias-oracle
+
+<p>The tree alias-oracle provides means to disambiguate two memory
+references and memory references against statements.  The following
+queries are available:
+</p>
+<ul>
+<li> <code>refs_may_alias_p</code>
+</li><li> <code>ref_maybe_used_by_stmt_p</code>
+</li><li> <code>stmt_may_clobber_ref_p</code>
+</li></ul>
+
+<p>In addition to those two kind of statement walkers are available
+walking statements related to a reference ref.
+<code>walk_non_aliased_vuses</code> walks over dominating memory defining
+statements and calls back if the statement does not clobber ref
+providing the non-aliased VUSE.  The walk stops at
+the first clobbering statement or if asked to.
+<code>walk_aliased_vdefs</code> walks over dominating memory defining
+statements and calls back on each statement clobbering ref
+providing its aliasing VDEF.  The walk stops if asked to.
+</p>
+</li></ol>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Memory-model.html#Memory-model" accesskey="n" rel="next">Memory model</a>, Previous: <a href="SSA.html#SSA" accesskey="p" rel="prev">SSA</a>, Up: <a href="Tree-SSA.html#Tree-SSA" accesskey="u" rel="up">Tree SSA</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

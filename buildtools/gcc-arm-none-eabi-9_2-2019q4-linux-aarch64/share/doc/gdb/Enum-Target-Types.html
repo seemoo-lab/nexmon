@@ -1,0 +1,112 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Enum Target Types</title>
+
+<meta name="description" content="Debugging with GDB: Enum Target Types">
+<meta name="keywords" content="Debugging with GDB: Enum Target Types">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Target-Descriptions.html#Target-Descriptions" rel="up" title="Target Descriptions">
+<link href="Standard-Target-Features.html#Standard-Target-Features" rel="next" title="Standard Target Features">
+<link href="Predefined-Target-Types.html#Predefined-Target-Types" rel="prev" title="Predefined Target Types">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Enum-Target-Types"></a>
+<div class="header">
+<p>
+Next: <a href="Standard-Target-Features.html#Standard-Target-Features" accesskey="n" rel="next">Standard Target Features</a>, Previous: <a href="Predefined-Target-Types.html#Predefined-Target-Types" accesskey="p" rel="prev">Predefined Target Types</a>, Up: <a href="Target-Descriptions.html#Target-Descriptions" accesskey="u" rel="up">Target Descriptions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Enum-Target-Types-1"></a>
+<h3 class="section">G.4 Enum Target Types</h3>
+<a name="index-target-descriptions_002c-enum-types"></a>
+
+<p>Enum target types are useful in &lsquo;<samp>struct</samp>&rsquo; and &lsquo;<samp>flags</samp>&rsquo;
+register descriptions.  See <a href="Target-Description-Format.html#Target-Description-Format">Target Description Format</a>.
+</p>
+<p>Enum types have a name, size and a list of name/value pairs.
+</p>
+<div class="smallexample">
+<pre class="smallexample">&lt;enum id=&quot;<var>id</var>&quot; size=&quot;<var>size</var>&quot;&gt;
+  &lt;evalue name=&quot;<var>name</var>&quot; value=&quot;<var>value</var>&quot;/&gt;
+  &hellip;
+&lt;/enum&gt;
+</pre></div>
+
+<p>Enums must be defined before they are used.
+</p>
+<div class="smallexample">
+<pre class="smallexample">&lt;enum id=&quot;levels_type&quot; size=&quot;4&quot;&gt;
+  &lt;evalue name=&quot;low&quot; value=&quot;0&quot;/&gt;
+  &lt;evalue name=&quot;high&quot; value=&quot;1&quot;/&gt;
+&lt;/enum&gt;
+&lt;flags id=&quot;flags_type&quot; size=&quot;4&quot;&gt;
+  &lt;field name=&quot;X&quot; start=&quot;0&quot;/&gt;
+  &lt;field name=&quot;LEVEL&quot; start=&quot;1&quot; end=&quot;1&quot; type=&quot;levels_type&quot;/&gt;
+&lt;/flags&gt;
+&lt;reg name=&quot;flags&quot; bitsize=&quot;32&quot; type=&quot;flags_type&quot;/&gt;
+</pre></div>
+
+<p>Given that description, a value of 3 for the &lsquo;<samp>flags</samp>&rsquo; register
+would be printed as:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) info register flags
+flags 0x3 [ X LEVEL=high ]
+</pre></div>
+
+
+
+
+</body>
+</html>

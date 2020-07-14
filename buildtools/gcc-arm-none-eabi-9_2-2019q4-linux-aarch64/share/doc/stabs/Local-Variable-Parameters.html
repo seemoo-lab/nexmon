@@ -1,0 +1,143 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1992-2019 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>STABS: Local Variable Parameters</title>
+
+<meta name="description" content="STABS: Local Variable Parameters">
+<meta name="keywords" content="STABS: Local Variable Parameters">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Symbol-Types-Index.html#Symbol-Types-Index" rel="index" title="Symbol Types Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Parameters.html#Parameters" rel="up" title="Parameters">
+<link href="Reference-Parameters.html#Reference-Parameters" rel="next" title="Reference Parameters">
+<link href="Register-Parameters.html#Register-Parameters" rel="prev" title="Register Parameters">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Local-Variable-Parameters"></a>
+<div class="header">
+<p>
+Next: <a href="Reference-Parameters.html#Reference-Parameters" accesskey="n" rel="next">Reference Parameters</a>, Previous: <a href="Register-Parameters.html#Register-Parameters" accesskey="p" rel="prev">Register Parameters</a>, Up: <a href="Parameters.html#Parameters" accesskey="u" rel="up">Parameters</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Symbol-Types-Index.html#Symbol-Types-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Storing-Parameters-as-Local-Variables"></a>
+<h4 class="subsection">4.7.2 Storing Parameters as Local Variables</h4>
+
+<p>There is a case similar to an argument in a register, which is an
+argument that is actually stored as a local variable.  Sometimes this
+happens when the argument was passed in a register and then the compiler
+stores it as a local variable.  If possible, the compiler should claim
+that it&rsquo;s in a register, but this isn&rsquo;t always done.
+</p>
+<p>If a parameter is passed as one type and converted to a smaller type by
+the prologue (for example, the parameter is declared as a <code>float</code>,
+but the calling conventions specify that it is passed as a
+<code>double</code>), then GCC2 (sometimes) uses a pair of symbols.  The first
+symbol uses symbol descriptor &lsquo;<samp>p</samp>&rsquo; and the type which is passed.
+The second symbol has the type and location which the parameter actually
+has after the prologue.  For example, suppose the following C code
+appears with no prototypes involved:
+</p>
+<div class="example">
+<pre class="example">void
+subr (f)
+     float f;
+{
+</pre></div>
+
+<p>if <code>f</code> is passed as a double at stack offset 8, and the prologue
+converts it to a float in register number 0, then the stabs look like:
+</p>
+<div class="example">
+<pre class="example">.stabs &quot;f:p13&quot;,160,0,3,8   # <span class="roman">160 is <code>N_PSYM</code>, here 13 is <code>double</code></span>
+.stabs &quot;f:r12&quot;,64,0,3,0    # <span class="roman">64 is <code>N_RSYM</code>, here 12 is <code>float</code></span>
+</pre></div>
+
+<p>In both stabs 3 is the line number where <code>f</code> is declared
+(see <a href="Line-Numbers.html#Line-Numbers">Line Numbers</a>).
+</p>
+<a name="index-N_005fLSYM_002c-for-parameter"></a>
+<p>GCC, at least on the 960, has another solution to the same problem.  It
+uses a single &lsquo;<samp>p</samp>&rsquo; symbol descriptor for an argument which is stored
+as a local variable but uses <code>N_LSYM</code> instead of <code>N_PSYM</code>.  In
+this case, the value of the symbol is an offset relative to the local
+variables for that function, not relative to the arguments; on some
+machines those are the same thing, but not on all.
+</p>
+<p>On the VAX or on other machines in which the calling convention includes
+the number of words of arguments actually passed, the debugger (GDB at
+least) uses the parameter symbols to keep track of whether it needs to
+print nameless arguments in addition to the formal parameters which it
+has printed because each one has a stab.  For example, in 
+</p>
+<div class="example">
+<pre class="example">extern int fprintf (FILE *stream, char *format, &hellip;);
+&hellip;
+fprintf (stdout, &quot;%d\n&quot;, x);
+</pre></div>
+
+<p>there are stabs for <code>stream</code> and <code>format</code>.  On most machines,
+the debugger can only print those two arguments (because it has no way
+of knowing that additional arguments were passed), but on the VAX or
+other machines with a calling convention which indicates the number of
+words of arguments, the debugger can print all three arguments.  To do
+so, the parameter symbol (symbol descriptor &lsquo;<samp>p</samp>&rsquo;) (not necessarily
+&lsquo;<samp>r</samp>&rsquo; or symbol descriptor omitted symbols) needs to contain the
+actual type as passed (for example, <code>double</code> not <code>float</code> if it
+is passed as a double and converted to a float).
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Reference-Parameters.html#Reference-Parameters" accesskey="n" rel="next">Reference Parameters</a>, Previous: <a href="Register-Parameters.html#Register-Parameters" accesskey="p" rel="prev">Register Parameters</a>, Up: <a href="Parameters.html#Parameters" accesskey="u" rel="up">Parameters</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Symbol-Types-Index.html#Symbol-Types-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

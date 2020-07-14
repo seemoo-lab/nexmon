@@ -1,0 +1,218 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Invoking GCC</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Invoking GCC">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Invoking GCC">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Option-Summary.html#Option-Summary" rel="next" title="Option Summary">
+<link href="Standards.html#Standards" rel="prev" title="Standards">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Invoking-GCC"></a>
+<div class="header">
+<p>
+Next: <a href="C-Implementation.html#C-Implementation" accesskey="n" rel="next">C Implementation</a>, Previous: <a href="Standards.html#Standards" accesskey="p" rel="prev">Standards</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="GCC-Command-Options"></a>
+<h2 class="chapter">3 GCC Command Options</h2>
+<a name="index-GCC-command-options"></a>
+<a name="index-command-options"></a>
+<a name="index-options_002c-GCC-command"></a>
+
+<p>When you invoke GCC, it normally does preprocessing, compilation,
+assembly and linking.  The &ldquo;overall options&rdquo; allow you to stop this
+process at an intermediate stage.  For example, the <samp>-c</samp> option
+says not to run the linker.  Then the output consists of object files
+output by the assembler.
+See <a href="Overall-Options.html#Overall-Options">Options Controlling the Kind of Output</a>.
+</p>
+<p>Other options are passed on to one or more stages of processing.  Some options
+control the preprocessor and others the compiler itself.  Yet other
+options control the assembler and linker; most of these are not
+documented here, since you rarely need to use any of them.
+</p>
+<a name="index-C-compilation-options"></a>
+<p>Most of the command-line options that you can use with GCC are useful
+for C programs; when an option is only useful with another language
+(usually C++), the explanation says so explicitly.  If the description
+for a particular option does not mention a source language, you can use
+that option with all supported languages.
+</p>
+<a name="index-cross-compiling"></a>
+<a name="index-specifying-machine-version"></a>
+<a name="index-specifying-compiler-version-and-target-machine"></a>
+<a name="index-compiler-version_002c-specifying"></a>
+<a name="index-target-machine_002c-specifying"></a>
+<p>The usual way to run GCC is to run the executable called <code>gcc</code>, or
+<code><var>machine</var>-gcc</code> when cross-compiling, or
+<code><var>machine</var>-gcc-<var>version</var></code> to run a specific version of GCC.
+When you compile C++ programs, you should invoke GCC as <code>g++</code> 
+instead.  See <a href="Invoking-G_002b_002b.html#Invoking-G_002b_002b">Compiling C++ Programs</a>, 
+for information about the differences in behavior between <code>gcc</code> 
+and <code>g++</code> when compiling C++ programs.
+</p>
+<a name="index-grouping-options"></a>
+<a name="index-options_002c-grouping"></a>
+<p>The <code>gcc</code> program accepts options and file names as operands.  Many
+options have multi-letter names; therefore multiple single-letter options
+may <em>not</em> be grouped: <samp>-dv</samp> is very different from &lsquo;<samp><span class="nolinebreak">-d</span>&nbsp;<span class="nolinebreak">-v</span></samp>&rsquo;<!-- /@w -->.
+</p>
+<a name="index-order-of-options"></a>
+<a name="index-options_002c-order"></a>
+<p>You can mix options and other arguments.  For the most part, the order
+you use doesn&rsquo;t matter.  Order does matter when you use several
+options of the same kind; for example, if you specify <samp>-L</samp> more
+than once, the directories are searched in the order specified.  Also,
+the placement of the <samp>-l</samp> option is significant.
+</p>
+<p>Many options have long names starting with &lsquo;<samp>-f</samp>&rsquo; or with
+&lsquo;<samp>-W</samp>&rsquo;&mdash;for example,
+<samp>-fmove-loop-invariants</samp>, <samp>-Wformat</samp> and so on.  Most of
+these have both positive and negative forms; the negative form of
+<samp>-ffoo</samp> is <samp>-fno-foo</samp>.  This manual documents
+only one of these two forms, whichever one is not the default.
+</p>
+<p>Some options take one or more arguments typically separated either
+by a space or by the equals sign (&lsquo;<samp>=</samp>&rsquo;) from the option name.
+Unless documented otherwise, an argument can be either numeric or
+a string.  Numeric arguments must typically be small unsigned decimal
+or hexadecimal integers.  Hexadecimal arguments must begin with
+the &lsquo;<samp>0x</samp>&rsquo; prefix.  Arguments to options that specify a size
+threshold of some sort may be arbitrarily large decimal or hexadecimal
+integers followed by a byte size suffix designating a multiple of bytes
+such as <code>kB</code> and <code>KiB</code> for kilobyte and kibibyte, respectively,
+<code>MB</code> and <code>MiB</code> for megabyte and mebibyte, <code>GB</code> and
+<code>GiB</code> for gigabyte and gigibyte, and so on.  Such arguments are
+designated by <var>byte-size</var> in the following text.  Refer to the NIST,
+IEC, and other relevant national and international standards for the full
+listing and explanation of the binary and decimal byte size prefixes.
+</p>
+
+<p>See <a href="Option-Index.html#Option-Index">Option Index</a>, for an index to GCC&rsquo;s options.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Option-Summary.html#Option-Summary" accesskey="1">Option Summary</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Brief list of all options, without explanations.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Overall-Options.html#Overall-Options" accesskey="2">Overall Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Controlling the kind of output:
+                        an executable, object files, assembler files,
+                        or preprocessed source.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Invoking-G_002b_002b.html#Invoking-G_002b_002b" accesskey="3">Invoking G++</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Compiling C++ programs.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="C-Dialect-Options.html#C-Dialect-Options" accesskey="4">C Dialect Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Controlling the variant of C language compiled.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="C_002b_002b-Dialect-Options.html#C_002b_002b-Dialect-Options" accesskey="5">C++ Dialect Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Variations on C++.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Objective_002dC-and-Objective_002dC_002b_002b-Dialect-Options.html#Objective_002dC-and-Objective_002dC_002b_002b-Dialect-Options" accesskey="6">Objective-C and Objective-C++ Dialect Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Variations on Objective-C
+                        and Objective-C++.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Diagnostic-Message-Formatting-Options.html#Diagnostic-Message-Formatting-Options" accesskey="7">Diagnostic Message Formatting Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Controlling how diagnostics should
+                        be formatted.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Warning-Options.html#Warning-Options" accesskey="8">Warning Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How picky should the compiler be?
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Debugging-Options.html#Debugging-Options" accesskey="9">Debugging Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Producing debuggable code.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Optimize-Options.html#Optimize-Options">Optimize Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How much optimization?
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Instrumentation-Options.html#Instrumentation-Options">Instrumentation Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Enabling profiling and extra run-time error checking.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Preprocessor-Options.html#Preprocessor-Options">Preprocessor Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Controlling header files and macro definitions.
+                         Also, getting dependency information for Make.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Assembler-Options.html#Assembler-Options">Assembler Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Passing options to the assembler.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Link-Options.html#Link-Options">Link Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Specifying libraries and so on.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Directory-Options.html#Directory-Options">Directory Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Where to find header files and libraries.
+                        Where to find the compiler executable files.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Code-Gen-Options.html#Code-Gen-Options">Code Gen Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Specifying conventions for function calls, data layout
+                        and register usage.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Developer-Options.html#Developer-Options">Developer Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Printing GCC configuration info, statistics, and
+                        debugging dumps.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Submodel-Options.html#Submodel-Options">Submodel Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Target-specific options, such as compiling for a
+                        specific processor variant.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Spec-Files.html#Spec-Files">Spec Files</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How to pass switches to sub-processes.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Environment-Variables.html#Environment-Variables">Environment Variables</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Env vars that affect GCC.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Precompiled-Headers.html#Precompiled-Headers">Precompiled Headers</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Compiling a header once, and using it many times.
+</td></tr>
+</table>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="C-Implementation.html#C-Implementation" accesskey="n" rel="next">C Implementation</a>, Previous: <a href="Standards.html#Standards" accesskey="p" rel="prev">Standards</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

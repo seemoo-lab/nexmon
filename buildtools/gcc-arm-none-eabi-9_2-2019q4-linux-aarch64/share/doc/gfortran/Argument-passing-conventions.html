@@ -1,0 +1,206 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: Argument passing conventions</title>
+
+<meta name="description" content="The GNU Fortran Compiler: Argument passing conventions">
+<meta name="keywords" content="The GNU Fortran Compiler: Argument passing conventions">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Naming-and-argument_002dpassing-conventions.html#Naming-and-argument_002dpassing-conventions" rel="up" title="Naming and argument-passing conventions">
+<link href="Coarray-Programming.html#Coarray-Programming" rel="next" title="Coarray Programming">
+<link href="Naming-conventions.html#Naming-conventions" rel="prev" title="Naming conventions">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Argument-passing-conventions"></a>
+<div class="header">
+<p>
+Previous: <a href="Naming-conventions.html#Naming-conventions" accesskey="p" rel="prev">Naming conventions</a>, Up: <a href="Naming-and-argument_002dpassing-conventions.html#Naming-and-argument_002dpassing-conventions" accesskey="u" rel="up">Naming and argument-passing conventions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Argument-passing-conventions-1"></a>
+<h4 class="subsection">7.4.2 Argument passing conventions</h4>
+
+<p>Subroutines do not return a value (matching C99&rsquo;s <code>void</code>) while
+functions either return a value as specified in the platform ABI or
+the result variable is passed as hidden argument to the function and
+no result is returned.  A hidden result variable is used when the
+result variable is an array or of type <code>CHARACTER</code>.
+</p>
+<p>Arguments are passed according to the platform ABI. In particular,
+complex arguments might not be compatible to a struct with two real
+components for the real and imaginary part. The argument passing
+matches the one of C99&rsquo;s <code>_Complex</code>.  Functions with scalar
+complex result variables return their value and do not use a
+by-reference argument.  Note that with the <samp>-ff2c</samp> option,
+the argument passing is modified and no longer completely matches
+the platform ABI.  Some other Fortran compilers use <code>f2c</code>
+semantic by default; this might cause problems with
+interoperablility.
+</p>
+<p>GNU Fortran passes most arguments by reference, i.e. by passing a
+pointer to the data.  Note that the compiler might use a temporary
+variable into which the actual argument has been copied, if required
+semantically (copy-in/copy-out).
+</p>
+<p>For arguments with <code>ALLOCATABLE</code> and <code>POINTER</code>
+attribute (including procedure pointers), a pointer to the pointer
+is passed such that the pointer address can be modified in the
+procedure.
+</p>
+<p>For dummy arguments with the <code>VALUE</code> attribute: Scalar arguments
+of the type <code>INTEGER</code>, <code>LOGICAL</code>, <code>REAL</code> and
+<code>COMPLEX</code> are passed by value according to the platform ABI.
+(As vendor extension and not recommended, using <code>%VAL()</code> in the
+call to a procedure has the same effect.) For <code>TYPE(C_PTR)</code> and
+procedure pointers, the pointer itself is passed such that it can be
+modified without affecting the caller.
+</p>
+<p>For Boolean (<code>LOGICAL</code>) arguments, please note that GCC expects
+only the integer value 0 and 1.  If a GNU Fortran <code>LOGICAL</code>
+variable contains another integer value, the result is undefined.
+As some other Fortran compilers use <em>-1</em> for <code>.TRUE.</code>,
+extra care has to be taken &ndash; such as passing the value as
+<code>INTEGER</code>.  (The same value restriction also applies to other
+front ends of GCC, e.g. to GCC&rsquo;s C99 compiler for <code>_Bool</code>
+or GCC&rsquo;s Ada compiler for <code>Boolean</code>.)
+</p>
+<p>For arguments of <code>CHARACTER</code> type, the character length is passed
+as a hidden argument at the end of the argument list.  For
+deferred-length strings, the value is passed by reference, otherwise
+by value.  The character length has the C type <code>size_t</code> (or
+<code>INTEGER(kind=C_SIZE_T)</code> in Fortran).  Note that this is
+different to older versions of the GNU Fortran compiler, where the
+type of the hidden character length argument was a C <code>int</code>.  In
+order to retain compatibility with older versions, one can e.g. for
+the following Fortran procedure
+</p>
+<div class="smallexample">
+<pre class="smallexample">subroutine fstrlen (s, a)
+   character(len=*) :: s
+   integer :: a
+   print*, len(s)
+end subroutine fstrlen
+</pre></div>
+
+<p>define the corresponding C prototype as follows:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#if __GNUC__ &gt; 7
+typedef size_t fortran_charlen_t;
+#else
+typedef int fortran_charlen_t;
+#endif
+
+void fstrlen_ (char*, int*, fortran_charlen_t);
+</pre></div>
+
+<p>In order to avoid such compiler-specific details, for new code it is
+instead recommended to use the ISO_C_BINDING feature.
+</p>
+<p>Note with C binding, <code>CHARACTER(len=1)</code> result variables are
+returned according to the platform ABI and no hidden length argument
+is used for dummy arguments; with <code>VALUE</code>, those variables are
+passed by value.
+</p>
+<p>For <code>OPTIONAL</code> dummy arguments, an absent argument is denoted
+by a NULL pointer, except for scalar dummy arguments of type
+<code>INTEGER</code>, <code>LOGICAL</code>, <code>REAL</code> and <code>COMPLEX</code>
+which have the <code>VALUE</code> attribute.  For those, a hidden Boolean
+argument (<code>logical(kind=C_bool),value</code>) is used to indicate
+whether the argument is present.
+</p>
+<p>Arguments which are assumed-shape, assumed-rank or deferred-rank
+arrays or, with <samp>-fcoarray=lib</samp>, allocatable scalar coarrays use
+an array descriptor.  All other arrays pass the address of the
+first element of the array.  With <samp>-fcoarray=lib</samp>, the token
+and the offset belonging to nonallocatable coarrays dummy arguments
+are passed as hidden argument along the character length hidden
+arguments.  The token is an oparque pointer identifying the coarray
+and the offset is a passed-by-value integer of kind <code>C_PTRDIFF_T</code>,
+denoting the byte offset between the base address of the coarray and
+the passed scalar or first element of the passed array.
+</p>
+<p>The arguments are passed in the following order
+</p><ul>
+<li> Result variable, when the function result is passed by reference
+</li><li> Character length of the function result, if it is a of type
+<code>CHARACTER</code> and no C binding is used
+</li><li> The arguments in the order in which they appear in the Fortran
+declaration
+</li><li> The the present status for optional arguments with value attribute,
+which are internally passed by value
+</li><li> The character length and/or coarray token and offset for the first
+argument which is a <code>CHARACTER</code> or a nonallocatable coarray dummy
+argument, followed by the hidden arguments of the next dummy argument
+of such a type
+</li></ul>
+
+
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Naming-conventions.html#Naming-conventions" accesskey="p" rel="prev">Naming conventions</a>, Up: <a href="Naming-and-argument_002dpassing-conventions.html#Naming-and-argument_002dpassing-conventions" accesskey="u" rel="up">Naming and argument-passing conventions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

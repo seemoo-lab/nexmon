@@ -1,0 +1,123 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: RTL Tests</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: RTL Tests">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: RTL Tests">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Testsuites.html#Testsuites" rel="up" title="Testsuites">
+<link href="Options.html#Options" rel="next" title="Options">
+<link href="GIMPLE-Tests.html#GIMPLE-Tests" rel="prev" title="GIMPLE Tests">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="RTL-Tests"></a>
+<div class="header">
+<p>
+Previous: <a href="GIMPLE-Tests.html#GIMPLE-Tests" accesskey="p" rel="prev">GIMPLE Tests</a>, Up: <a href="Testsuites.html#Testsuites" accesskey="u" rel="up">Testsuites</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Support-for-testing-RTL-passes"></a>
+<h3 class="section">7.11 Support for testing RTL passes</h3>
+
+<p>As of gcc 7, C functions can be tagged with <code>__RTL</code> to indicate that the
+function body will be RTL, rather than C.  For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">double __RTL (startwith (&quot;ira&quot;)) test (struct foo *f, const struct bar *b)
+{
+  (function &quot;test&quot;
+     [...snip; various directives go in here...]
+  ) ;; function &quot;test&quot;
+}
+</pre></div>
+
+<p>The <code>startwith</code> argument indicates at which pass to begin.
+</p>
+<p>The parser expects the RTL body to be in the format emitted by this
+dumping function:
+</p>
+<div class="smallexample">
+<pre class="smallexample">DEBUG_FUNCTION void
+print_rtx_function (FILE *outfile, function *fn, bool compact);
+</pre></div>
+
+<p>when &quot;compact&quot; is true.  So you can capture RTL in the correct format
+from the debugger using:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) print_rtx_function (stderr, cfun, true);
+</pre></div>
+
+<p>and copy and paste the output into the body of the C function.
+</p>
+<p>Example DejaGnu tests of RTL can be seen in the source tree under
+<samp>gcc/testsuite/gcc.dg/rtl</samp>.
+</p>
+<p>The <code>__RTL</code> parser is not integrated with the C tokenizer or
+preprocessor, and works simply by reading the relevant lines within
+the braces.  In particular, the RTL body must be on separate lines from
+the enclosing braces, and the preprocessor is not usable within it.
+</p>
+
+
+
+</body>
+</html>

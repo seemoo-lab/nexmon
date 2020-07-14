@@ -1,0 +1,140 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Define Subst</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Define Subst">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Define Subst">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Machine-Desc.html#Machine-Desc" rel="up" title="Machine Desc">
+<link href="Define-Subst-Example.html#Define-Subst-Example" rel="next" title="Define Subst Example">
+<link href="Conditional-Execution.html#Conditional-Execution" rel="prev" title="Conditional Execution">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Define-Subst"></a>
+<div class="header">
+<p>
+Next: <a href="Constant-Definitions.html#Constant-Definitions" accesskey="n" rel="next">Constant Definitions</a>, Previous: <a href="Conditional-Execution.html#Conditional-Execution" accesskey="p" rel="prev">Conditional Execution</a>, Up: <a href="Machine-Desc.html#Machine-Desc" accesskey="u" rel="up">Machine Desc</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="RTL-Templates-Transformations"></a>
+<h3 class="section">17.21 RTL Templates Transformations</h3>
+<a name="index-define_005fsubst"></a>
+
+<p>For some hardware architectures there are common cases when the RTL
+templates for the instructions can be derived from the other RTL
+templates using simple transformations.  E.g., <samp>i386.md</samp> contains
+an RTL template for the ordinary <code>sub</code> instruction&mdash;
+<code>*subsi_1</code>, and for the <code>sub</code> instruction with subsequent
+zero-extension&mdash;<code>*subsi_1_zext</code>.  Such cases can be easily
+implemented by a single meta-template capable of generating a modified
+case based on the initial one:
+</p>
+<a name="index-define_005fsubst-4"></a>
+<div class="smallexample">
+<pre class="smallexample">(define_subst &quot;<var>name</var>&quot;
+  [<var>input-template</var>]
+  &quot;<var>condition</var>&quot;
+  [<var>output-template</var>])
+</pre></div>
+<p><var>input-template</var> is a pattern describing the source RTL template,
+which will be transformed.
+</p>
+<p><var>condition</var> is a C expression that is conjunct with the condition
+from the input-template to generate a condition to be used in the
+output-template.
+</p>
+<p><var>output-template</var> is a pattern that will be used in the resulting
+template.
+</p>
+<p><code>define_subst</code> mechanism is tightly coupled with the notion of the
+subst attribute (see <a href="Subst-Iterators.html#Subst-Iterators">Subst Iterators</a>).  The use of
+<code>define_subst</code> is triggered by a reference to a subst attribute in
+the transforming RTL template.  This reference initiates duplication of
+the source RTL template and substitution of the attributes with their
+values.  The source RTL template is left unchanged, while the copy is
+transformed by <code>define_subst</code>.  This transformation can fail in the
+case when the source RTL template is not matched against the
+input-template of the <code>define_subst</code>.  In such case the copy is
+deleted.
+</p>
+<p><code>define_subst</code> can be used only in <code>define_insn</code> and
+<code>define_expand</code>, it cannot be used in other expressions (e.g. in
+<code>define_insn_and_split</code>).
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Define-Subst-Example.html#Define-Subst-Example" accesskey="1">Define Subst Example</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Example of <code>define_subst</code> work.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Define-Subst-Pattern-Matching.html#Define-Subst-Pattern-Matching" accesskey="2">Define Subst Pattern Matching</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Process of template comparison.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Define-Subst-Output-Template.html#Define-Subst-Output-Template" accesskey="3">Define Subst Output Template</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Generation of output template.
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Constant-Definitions.html#Constant-Definitions" accesskey="n" rel="next">Constant Definitions</a>, Previous: <a href="Conditional-Execution.html#Conditional-Execution" accesskey="p" rel="prev">Conditional Execution</a>, Up: <a href="Machine-Desc.html#Machine-Desc" accesskey="u" rel="up">Machine Desc</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

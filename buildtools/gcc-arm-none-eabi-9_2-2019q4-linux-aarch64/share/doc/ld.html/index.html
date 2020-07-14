@@ -1,0 +1,250 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU linker LD
+(GNU Toolchain for the A-profile Architecture 9.2-2019.12 (arm-9.10))
+version 2.33.1.
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>LD: Top</title>
+
+<meta name="description" content="LD: Top">
+<meta name="keywords" content="LD: Top">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="#Top" rel="start" title="Top">
+<link href="LD-Index.html#LD-Index" rel="index" title="LD Index">
+<link href="#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="../dir/index.html" rel="up" title="(dir)">
+<link href="Overview.html#Overview" rel="next" title="Overview">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+
+
+
+
+
+
+
+
+<a name="SEC_Contents"></a>
+<h2 class="contents-heading">Table of Contents</h2>
+
+<div class="contents">
+
+<ul class="no-bullet">
+  <li><a name="toc-Overview-1" href="Overview.html#Overview">1 Overview</a></li>
+  <li><a name="toc-Invocation-1" href="Invocation.html#Invocation">2 Invocation</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Command_002dline-Options" href="Options.html#Options">2.1 Command-line Options</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Options-Specific-to-i386-PE-Targets" href="Options.html#Options-Specific-to-i386-PE-Targets">2.1.1 Options Specific to i386 PE Targets</a></li>
+      <li><a name="toc-Options-specific-to-C6X-uClinux-targets" href="Options.html#Options-specific-to-C6X-uClinux-targets">2.1.2 Options specific to C6X uClinux targets</a></li>
+      <li><a name="toc-Options-specific-to-C_002dSKY-targets" href="Options.html#Options-specific-to-C_002dSKY-targets">2.1.3 Options specific to C-SKY targets</a></li>
+      <li><a name="toc-Options-specific-to-Motorola-68HC11-and-68HC12-targets" href="Options.html#Options-specific-to-Motorola-68HC11-and-68HC12-targets">2.1.4 Options specific to Motorola 68HC11 and 68HC12 targets</a></li>
+      <li><a name="toc-Options-specific-to-Motorola-68K-target" href="Options.html#Options-specific-to-Motorola-68K-target">2.1.5 Options specific to Motorola 68K target</a></li>
+      <li><a name="toc-Options-specific-to-MIPS-targets" href="Options.html#Options-specific-to-MIPS-targets">2.1.6 Options specific to MIPS targets</a></li>
+    </ul></li>
+    <li><a name="toc-Environment-Variables" href="Environment.html#Environment">2.2 Environment Variables</a></li>
+  </ul></li>
+  <li><a name="toc-Linker-Scripts" href="Scripts.html#Scripts">3 Linker Scripts</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Basic-Linker-Script-Concepts" href="Basic-Script-Concepts.html#Basic-Script-Concepts">3.1 Basic Linker Script Concepts</a></li>
+    <li><a name="toc-Linker-Script-Format" href="Script-Format.html#Script-Format">3.2 Linker Script Format</a></li>
+    <li><a name="toc-Simple-Linker-Script-Example" href="Simple-Example.html#Simple-Example">3.3 Simple Linker Script Example</a></li>
+    <li><a name="toc-Simple-Linker-Script-Commands" href="Simple-Commands.html#Simple-Commands">3.4 Simple Linker Script Commands</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Setting-the-Entry-Point" href="Entry-Point.html#Entry-Point">3.4.1 Setting the Entry Point</a></li>
+      <li><a name="toc-Commands-Dealing-with-Files" href="File-Commands.html#File-Commands">3.4.2 Commands Dealing with Files</a></li>
+      <li><a name="toc-Commands-Dealing-with-Object-File-Formats" href="Format-Commands.html#Format-Commands">3.4.3 Commands Dealing with Object File Formats</a></li>
+      <li><a name="toc-Assign-alias-names-to-memory-regions" href="REGION_005fALIAS.html#REGION_005fALIAS">3.4.4 Assign alias names to memory regions</a></li>
+      <li><a name="toc-Other-Linker-Script-Commands" href="Miscellaneous-Commands.html#Miscellaneous-Commands">3.4.5 Other Linker Script Commands</a></li>
+    </ul></li>
+    <li><a name="toc-Assigning-Values-to-Symbols" href="Assignments.html#Assignments">3.5 Assigning Values to Symbols</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Simple-Assignments-1" href="Simple-Assignments.html#Simple-Assignments">3.5.1 Simple Assignments</a></li>
+      <li><a name="toc-HIDDEN-1" href="HIDDEN.html#HIDDEN">3.5.2 HIDDEN</a></li>
+      <li><a name="toc-PROVIDE-1" href="PROVIDE.html#PROVIDE">3.5.3 PROVIDE</a></li>
+      <li><a name="toc-PROVIDE_005fHIDDEN-1" href="PROVIDE_005fHIDDEN.html#PROVIDE_005fHIDDEN">3.5.4 PROVIDE_HIDDEN</a></li>
+      <li><a name="toc-Source-Code-Reference-1" href="Source-Code-Reference.html#Source-Code-Reference">3.5.5 Source Code Reference</a></li>
+    </ul></li>
+    <li><a name="toc-SECTIONS-Command" href="SECTIONS.html#SECTIONS">3.6 SECTIONS Command</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Output-Section-Description-1" href="Output-Section-Description.html#Output-Section-Description">3.6.1 Output Section Description</a></li>
+      <li><a name="toc-Output-Section-Name-1" href="Output-Section-Name.html#Output-Section-Name">3.6.2 Output Section Name</a></li>
+      <li><a name="toc-Output-Section-Address-1" href="Output-Section-Address.html#Output-Section-Address">3.6.3 Output Section Address</a></li>
+      <li><a name="toc-Input-Section-Description" href="Input-Section.html#Input-Section">3.6.4 Input Section Description</a>
+      <ul class="no-bullet">
+        <li><a name="toc-Input-Section-Basics-1" href="Input-Section-Basics.html#Input-Section-Basics">3.6.4.1 Input Section Basics</a></li>
+        <li><a name="toc-Input-Section-Wildcard-Patterns" href="Input-Section-Wildcards.html#Input-Section-Wildcards">3.6.4.2 Input Section Wildcard Patterns</a></li>
+        <li><a name="toc-Input-Section-for-Common-Symbols" href="Input-Section-Common.html#Input-Section-Common">3.6.4.3 Input Section for Common Symbols</a></li>
+        <li><a name="toc-Input-Section-and-Garbage-Collection" href="Input-Section-Keep.html#Input-Section-Keep">3.6.4.4 Input Section and Garbage Collection</a></li>
+        <li><a name="toc-Input-Section-Example-1" href="Input-Section-Example.html#Input-Section-Example">3.6.4.5 Input Section Example</a></li>
+      </ul></li>
+      <li><a name="toc-Output-Section-Data-1" href="Output-Section-Data.html#Output-Section-Data">3.6.5 Output Section Data</a></li>
+      <li><a name="toc-Output-Section-Keywords-1" href="Output-Section-Keywords.html#Output-Section-Keywords">3.6.6 Output Section Keywords</a></li>
+      <li><a name="toc-Output-Section-Discarding-1" href="Output-Section-Discarding.html#Output-Section-Discarding">3.6.7 Output Section Discarding</a></li>
+      <li><a name="toc-Output-Section-Attributes-1" href="Output-Section-Attributes.html#Output-Section-Attributes">3.6.8 Output Section Attributes</a>
+      <ul class="no-bullet">
+        <li><a name="toc-Output-Section-Type-1" href="Output-Section-Type.html#Output-Section-Type">3.6.8.1 Output Section Type</a></li>
+        <li><a name="toc-Output-Section-LMA-1" href="Output-Section-LMA.html#Output-Section-LMA">3.6.8.2 Output Section LMA</a></li>
+        <li><a name="toc-Forced-Output-Alignment-1" href="Forced-Output-Alignment.html#Forced-Output-Alignment">3.6.8.3 Forced Output Alignment</a></li>
+        <li><a name="toc-Forced-Input-Alignment-1" href="Forced-Input-Alignment.html#Forced-Input-Alignment">3.6.8.4 Forced Input Alignment</a></li>
+        <li><a name="toc-Output-Section-Constraint-1" href="Output-Section-Constraint.html#Output-Section-Constraint">3.6.8.5 Output Section Constraint</a></li>
+        <li><a name="toc-Output-Section-Region-1" href="Output-Section-Region.html#Output-Section-Region">3.6.8.6 Output Section Region</a></li>
+        <li><a name="toc-Output-Section-Phdr-1" href="Output-Section-Phdr.html#Output-Section-Phdr">3.6.8.7 Output Section Phdr</a></li>
+        <li><a name="toc-Output-Section-Fill-1" href="Output-Section-Fill.html#Output-Section-Fill">3.6.8.8 Output Section Fill</a></li>
+      </ul></li>
+      <li><a name="toc-Overlay-Description-1" href="Overlay-Description.html#Overlay-Description">3.6.9 Overlay Description</a></li>
+    </ul></li>
+    <li><a name="toc-MEMORY-Command" href="MEMORY.html#MEMORY">3.7 MEMORY Command</a></li>
+    <li><a name="toc-PHDRS-Command" href="PHDRS.html#PHDRS">3.8 PHDRS Command</a></li>
+    <li><a name="toc-VERSION-Command" href="VERSION.html#VERSION">3.9 VERSION Command</a></li>
+    <li><a name="toc-Expressions-in-Linker-Scripts" href="Expressions.html#Expressions">3.10 Expressions in Linker Scripts</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Constants-1" href="Constants.html#Constants">3.10.1 Constants</a></li>
+      <li><a name="toc-Symbolic-Constants-1" href="Symbolic-Constants.html#Symbolic-Constants">3.10.2 Symbolic Constants</a></li>
+      <li><a name="toc-Symbol-Names" href="Symbols.html#Symbols">3.10.3 Symbol Names</a></li>
+      <li><a name="toc-Orphan-Sections-1" href="Orphan-Sections.html#Orphan-Sections">3.10.4 Orphan Sections</a></li>
+      <li><a name="toc-The-Location-Counter" href="Location-Counter.html#Location-Counter">3.10.5 The Location Counter</a></li>
+      <li><a name="toc-Operators-1" href="Operators.html#Operators">3.10.6 Operators</a></li>
+      <li><a name="toc-Evaluation-1" href="Evaluation.html#Evaluation">3.10.7 Evaluation</a></li>
+      <li><a name="toc-The-Section-of-an-Expression" href="Expression-Section.html#Expression-Section">3.10.8 The Section of an Expression</a></li>
+      <li><a name="toc-Builtin-Functions-1" href="Builtin-Functions.html#Builtin-Functions">3.10.9 Builtin Functions</a></li>
+    </ul></li>
+    <li><a name="toc-Implicit-Linker-Scripts-1" href="Implicit-Linker-Scripts.html#Implicit-Linker-Scripts">3.11 Implicit Linker Scripts</a></li>
+  </ul></li>
+  <li><a name="toc-Machine-Dependent-Features" href="Machine-Dependent.html#Machine-Dependent">4 Machine Dependent Features</a>
+  <ul class="no-bullet">
+    <li><a name="toc-ld-and-the-H8_002f300" href="H8_002f300.html#H8_002f300">4.1 <code>ld</code> and the H8/300</a></li>
+    <li><a name="toc-ld-and-the-Motorola-68HC11-and-68HC12-families" href="M68HC11_002f68HC12.html#M68HC11_002f68HC12">4.2 <code>ld</code> and the Motorola 68HC11 and 68HC12 families</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Linker-Relaxation" href="M68HC11_002f68HC12.html#Linker-Relaxation">4.2.1 Linker Relaxation</a></li>
+      <li><a name="toc-Trampoline-Generation" href="M68HC11_002f68HC12.html#Trampoline-Generation">4.2.2 Trampoline Generation</a></li>
+    </ul></li>
+    <li><a name="toc-ld-and-the-ARM-family" href="ARM.html#ARM">4.3 <code>ld</code> and the ARM family</a></li>
+    <li><a name="toc-ld-and-HPPA-32_002dbit-ELF-Support" href="HPPA-ELF32.html#HPPA-ELF32">4.4 <code>ld</code> and HPPA 32-bit ELF Support</a></li>
+    <li><a name="toc-ld-and-the-Motorola-68K-family" href="M68K.html#M68K">4.5 <code>ld</code> and the Motorola 68K family</a></li>
+    <li><a name="toc-ld-and-the-MIPS-family" href="MIPS.html#MIPS">4.6 <code>ld</code> and the MIPS family</a></li>
+    <li><a name="toc-ld-and-MMIX" href="MMIX.html#MMIX">4.7 <code>ld</code> and MMIX</a></li>
+    <li><a name="toc-ld-and-MSP430" href="MSP430.html#MSP430">4.8 <code>ld</code> and MSP430</a></li>
+    <li><a name="toc-ld-and-NDS32" href="NDS32.html#NDS32">4.9 <code>ld</code> and NDS32</a></li>
+    <li><a name="toc-ld-and-the-Altera-Nios-II" href="Nios-II.html#Nios-II">4.10 <code>ld</code> and the Altera Nios II</a></li>
+    <li><a name="toc-ld-and-PowerPC-32_002dbit-ELF-Support" href="PowerPC-ELF32.html#PowerPC-ELF32">4.11 <code>ld</code> and PowerPC 32-bit ELF Support</a></li>
+    <li><a name="toc-ld-and-PowerPC64-64_002dbit-ELF-Support" href="PowerPC64-ELF64.html#PowerPC64-ELF64">4.12 <code>ld</code> and PowerPC64 64-bit ELF Support</a></li>
+    <li><a name="toc-ld-and-S_002f390-ELF-Support" href="S_002f390-ELF.html#S_002f390-ELF">4.13 <code>ld</code> and S/390 ELF Support</a></li>
+    <li><a name="toc-ld-and-SPU-ELF-Support" href="SPU-ELF.html#SPU-ELF">4.14 <code>ld</code> and SPU ELF Support</a></li>
+    <li><a name="toc-ld_0027s-Support-for-Various-TI-COFF-Versions" href="TI-COFF.html#TI-COFF">4.15 <code>ld</code>&rsquo;s Support for Various TI COFF Versions</a></li>
+    <li><a name="toc-ld-and-WIN32-_0028cygwin_002fmingw_0029" href="WIN32.html#WIN32">4.16 <code>ld</code> and WIN32 (cygwin/mingw)</a></li>
+    <li><a name="toc-ld-and-Xtensa-Processors" href="Xtensa.html#Xtensa">4.17 <code>ld</code> and Xtensa Processors</a></li>
+  </ul></li>
+  <li><a name="toc-BFD-1" href="BFD.html#BFD">5 BFD</a>
+  <ul class="no-bullet">
+    <li><a name="toc-How-It-Works_003a-An-Outline-of-BFD" href="BFD-outline.html#BFD-outline">5.1 How It Works: An Outline of BFD</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Information-Loss" href="BFD-information-loss.html#BFD-information-loss">5.1.1 Information Loss</a></li>
+      <li><a name="toc-The-BFD-canonical-object_002dfile-format" href="Canonical-format.html#Canonical-format">5.1.2 The BFD canonical object-file format</a></li>
+    </ul></li>
+  </ul></li>
+  <li><a name="toc-Reporting-Bugs-1" href="Reporting-Bugs.html#Reporting-Bugs">6 Reporting Bugs</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Have-You-Found-a-Bug_003f" href="Bug-Criteria.html#Bug-Criteria">6.1 Have You Found a Bug?</a></li>
+    <li><a name="toc-How-to-Report-Bugs" href="Bug-Reporting.html#Bug-Reporting">6.2 How to Report Bugs</a></li>
+  </ul></li>
+  <li><a name="toc-MRI-Compatible-Script-Files" href="MRI.html#MRI">Appendix A MRI Compatible Script Files</a></li>
+  <li><a name="toc-GNU-Free-Documentation-License-1" href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License">Appendix B GNU Free Documentation License</a></li>
+  <li><a name="toc-LD-Index-1" href="LD-Index.html#LD-Index">LD Index</a></li>
+</ul>
+</div>
+
+
+<a name="Top"></a>
+<div class="header">
+<p>
+Next: <a href="Overview.html#Overview" accesskey="n" rel="next">Overview</a>, Up: <a href="../dir/index.html" accesskey="u" rel="up">(dir)</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="LD"></a>
+<h1 class="top">LD</h1>
+<p>This file documents the <small>GNU</small> linker ld
+(GNU Toolchain for the A-profile Architecture 9.2-2019.12 (arm-9.10))
+version 2.33.1.
+</p>
+<p>This document is distributed under the terms of the GNU Free
+Documentation License version 1.3.  A copy of the license is included
+in the section entitled &ldquo;GNU Free Documentation License&rdquo;.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Overview.html#Overview" accesskey="1">Overview</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Overview
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Invocation.html#Invocation" accesskey="2">Invocation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Invocation
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Scripts.html#Scripts" accesskey="3">Scripts</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Linker Scripts
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Machine-Dependent.html#Machine-Dependent" accesskey="4">Machine Dependent</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Machine Dependent Features
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="BFD.html#BFD" accesskey="5">BFD</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">BFD
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Reporting-Bugs.html#Reporting-Bugs" accesskey="6">Reporting Bugs</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Reporting Bugs
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="MRI.html#MRI" accesskey="7">MRI</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">MRI Compatible Script Files
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License" accesskey="8">GNU Free Documentation License</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">GNU Free Documentation License
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="LD-Index.html#LD-Index" accesskey="9">LD Index</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">LD Index
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Overview.html#Overview" accesskey="n" rel="next">Overview</a>, Up: <a href="../dir/index.html" accesskey="u" rel="up">(dir)</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

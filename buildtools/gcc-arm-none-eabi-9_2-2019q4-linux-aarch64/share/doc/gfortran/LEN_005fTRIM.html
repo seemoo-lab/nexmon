@@ -1,0 +1,124 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: LEN_TRIM</title>
+
+<meta name="description" content="The GNU Fortran Compiler: LEN_TRIM">
+<meta name="keywords" content="The GNU Fortran Compiler: LEN_TRIM">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Intrinsic-Procedures.html#Intrinsic-Procedures" rel="up" title="Intrinsic Procedures">
+<link href="LGE.html#LGE" rel="next" title="LGE">
+<link href="LEN.html#LEN" rel="prev" title="LEN">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="LEN_005fTRIM"></a>
+<div class="header">
+<p>
+Next: <a href="LGE.html#LGE" accesskey="n" rel="next">LGE</a>, Previous: <a href="LEN.html#LEN" accesskey="p" rel="prev">LEN</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="LEN_005fTRIM-_002d_002d_002d-Length-of-a-character-entity-without-trailing-blank-characters"></a>
+<h3 class="section">9.169 <code>LEN_TRIM</code> &mdash; Length of a character entity without trailing blank characters</h3>
+<a name="index-LEN_005fTRIM"></a>
+<a name="index-string_002c-length_002c-without-trailing-whitespace"></a>
+
+<dl compact="compact">
+<dt><em>Description</em>:</dt>
+<dd><p>Returns the length of a character string, ignoring any trailing blanks.
+</p>
+</dd>
+<dt><em>Standard</em>:</dt>
+<dd><p>Fortran 95 and later, with <var>KIND</var> argument Fortran 2003 and later
+</p>
+</dd>
+<dt><em>Class</em>:</dt>
+<dd><p>Elemental function
+</p>
+</dd>
+<dt><em>Syntax</em>:</dt>
+<dd><p><code>RESULT = LEN_TRIM(STRING [, KIND])</code>
+</p>
+</dd>
+<dt><em>Arguments</em>:</dt>
+<dd><table>
+<tr><td width="15%"><var>STRING</var></td><td width="70%">Shall be a scalar of type <code>CHARACTER</code>,
+with <code>INTENT(IN)</code></td></tr>
+<tr><td width="15%"><var>KIND</var></td><td width="70%">(Optional) An <code>INTEGER</code> initialization
+expression indicating the kind parameter of the result.</td></tr>
+</table>
+
+</dd>
+<dt><em>Return value</em>:</dt>
+<dd><p>The return value is of type <code>INTEGER</code> and of kind <var>KIND</var>. If
+<var>KIND</var> is absent, the return value is of default integer kind.
+</p>
+</dd>
+<dt><em>See also</em>:</dt>
+<dd><p><a href="LEN.html#LEN">LEN</a>, <a href="ADJUSTL.html#ADJUSTL">ADJUSTL</a>, <a href="ADJUSTR.html#ADJUSTR">ADJUSTR</a>
+</p></dd>
+</dl>
+
+
+
+
+
+
+</body>
+</html>

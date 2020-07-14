@@ -1,0 +1,186 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Back End</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Back End">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Back End">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="gcc-Directory.html#gcc-Directory" rel="up" title="gcc Directory">
+<link href="Testsuites.html#Testsuites" rel="next" title="Testsuites">
+<link href="Front-End-Makefile.html#Front-End-Makefile" rel="prev" title="Front End Makefile">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Back-End"></a>
+<div class="header">
+<p>
+Previous: <a href="Front-End.html#Front-End" accesskey="p" rel="prev">Front End</a>, Up: <a href="gcc-Directory.html#gcc-Directory" accesskey="u" rel="up">gcc Directory</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Anatomy-of-a-Target-Back-End"></a>
+<h4 class="subsection">6.3.9 Anatomy of a Target Back End</h4>
+
+<p>A back end for a target architecture in GCC has the following parts:
+</p>
+<ul>
+<li> A directory <samp><var>machine</var></samp> under <samp>gcc/config</samp>, containing a
+machine description <samp><var>machine</var>.md</samp> file (see <a href="Machine-Desc.html#Machine-Desc">Machine Descriptions</a>), header files <samp><var>machine</var>.h</samp> and
+<samp><var>machine</var>-protos.h</samp> and a source file <samp><var>machine</var>.c</samp>
+(see <a href="Target-Macros.html#Target-Macros">Target Description Macros and Functions</a>),
+possibly a target Makefile fragment <samp>t-<var>machine</var></samp>
+(see <a href="Target-Fragment.html#Target-Fragment">The Target Makefile Fragment</a>), and maybe
+some other files.  The names of these files may be changed from the
+defaults given by explicit specifications in <samp>config.gcc</samp>.
+</li><li> If necessary, a file <samp><var>machine</var>-modes.def</samp> in the
+<samp><var>machine</var></samp> directory, containing additional machine modes to
+represent condition codes.  See <a href="Condition-Code.html#Condition-Code">Condition Code</a>, for further details.
+</li><li> An optional <samp><var>machine</var>.opt</samp> file in the <samp><var>machine</var></samp>
+directory, containing a list of target-specific options.  You can also
+add other option files using the <code>extra_options</code> variable in
+<samp>config.gcc</samp>.  See <a href="Options.html#Options">Options</a>.
+</li><li> Entries in <samp>config.gcc</samp> (see <a href="System-Config.html#System-Config">The
+<samp>config.gcc</samp> File</a>) for the systems with this target
+architecture.
+</li><li> Documentation in <samp>gcc/doc/invoke.texi</samp> for any command-line
+options supported by this target (see <a href="Run_002dtime-Target.html#Run_002dtime-Target">Run-time
+Target Specification</a>).  This means both entries in the summary table
+of options and details of the individual options.
+</li><li> Documentation in <samp>gcc/doc/extend.texi</samp> for any target-specific
+attributes supported (see <a href="Target-Attributes.html#Target-Attributes">Defining
+target-specific uses of <code>__attribute__</code></a>), including where the
+same attribute is already supported on some targets, which are
+enumerated in the manual.
+</li><li> Documentation in <samp>gcc/doc/extend.texi</samp> for any target-specific
+pragmas supported.
+</li><li> Documentation in <samp>gcc/doc/extend.texi</samp> of any target-specific
+built-in functions supported.
+</li><li> Documentation in <samp>gcc/doc/extend.texi</samp> of any target-specific
+format checking styles supported.
+</li><li> Documentation in <samp>gcc/doc/md.texi</samp> of any target-specific
+constraint letters (see <a href="Machine-Constraints.html#Machine-Constraints">Constraints for
+Particular Machines</a>).
+</li><li> A note in <samp>gcc/doc/contrib.texi</samp> under the person or people who
+contributed the target support.
+</li><li> Entries in <samp>gcc/doc/install.texi</samp> for all target triplets
+supported with this target architecture, giving details of any special
+notes about installation for this target, or saying that there are no
+special notes if there are none.
+</li><li> Possibly other support outside the <samp>gcc</samp> directory for runtime
+libraries.  FIXME: reference docs for this.  The <code>libstdc++</code> porting
+manual needs to be installed as info for this to work, or to be a
+chapter of this manual.
+</li></ul>
+
+<p>The <samp><var>machine</var>.h</samp> header is included very early in GCC&rsquo;s
+standard sequence of header files, while <samp><var>machine</var>-protos.h</samp>
+is included late in the sequence.  Thus <samp><var>machine</var>-protos.h</samp>
+can include declarations referencing types that are not defined when
+<samp><var>machine</var>.h</samp> is included, specifically including those from
+<samp>rtl.h</samp> and <samp>tree.h</samp>.  Since both RTL and tree types may not
+be available in every context where <samp><var>machine</var>-protos.h</samp> is
+included, in this file you should guard declarations using these types
+inside appropriate <code>#ifdef RTX_CODE</code> or <code>#ifdef TREE_CODE</code>
+conditional code segments.
+</p>
+<p>If the backend uses shared data structures that require <code>GTY</code> markers 
+for garbage collection (see <a href="Type-Information.html#Type-Information">Type Information</a>), you must declare those
+in <samp><var>machine</var>.h</samp> rather than <samp><var>machine</var>-protos.h</samp>.  
+Any definitions required for building libgcc must also go in
+<samp><var>machine</var>.h</samp>.
+</p>
+<p>GCC uses the macro <code>IN_TARGET_CODE</code> to distinguish between
+machine-specific <samp>.c</samp> and <samp>.cc</samp> files and
+machine-independent <samp>.c</samp> and <samp>.cc</samp> files.  Machine-specific
+files should use the directive:
+</p>
+<div class="example">
+<pre class="example">#define IN_TARGET_CODE 1
+</pre></div>
+
+<p>before including <code>config.h</code>.
+</p>
+<p>If the back end is added to the official GCC source repository, the
+following are also necessary:
+</p>
+<ul>
+<li> An entry for the target architecture in <samp>readings.html</samp> on the
+GCC web site, with any relevant links.
+</li><li> Details of the properties of the back end and target architecture in
+<samp>backends.html</samp> on the GCC web site.
+</li><li> A news item about the contribution of support for that target
+architecture, in <samp>index.html</samp> on the GCC web site.
+</li><li> Normally, one or more maintainers of that target listed in
+<samp>MAINTAINERS</samp>.  Some existing architectures may be unmaintained,
+but it would be unusual to add support for a target that does not have
+a maintainer when support is added.
+</li><li> Target triplets covering all <samp>config.gcc</samp> stanzas for the target,
+in the list in <samp>contrib/config-list.mk</samp>.
+</li></ul>
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Front-End.html#Front-End" accesskey="p" rel="prev">Front End</a>, Up: <a href="gcc-Directory.html#gcc-Directory" accesskey="u" rel="up">gcc Directory</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

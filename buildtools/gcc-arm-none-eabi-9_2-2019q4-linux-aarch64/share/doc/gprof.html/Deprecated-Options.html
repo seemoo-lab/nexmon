@@ -1,0 +1,132 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the gprof profiler of the GNU system.
+
+Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU gprof: Deprecated Options</title>
+
+<meta name="description" content="GNU gprof: Deprecated Options">
+<meta name="keywords" content="GNU gprof: Deprecated Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Invoking.html#Invoking" rel="up" title="Invoking">
+<link href="Symspecs.html#Symspecs" rel="next" title="Symspecs">
+<link href="Miscellaneous-Options.html#Miscellaneous-Options" rel="prev" title="Miscellaneous Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Deprecated-Options"></a>
+<div class="header">
+<p>
+Next: <a href="Symspecs.html#Symspecs" accesskey="n" rel="next">Symspecs</a>, Previous: <a href="Miscellaneous-Options.html#Miscellaneous-Options" accesskey="p" rel="prev">Miscellaneous Options</a>, Up: <a href="Invoking.html#Invoking" accesskey="u" rel="up">Invoking</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<hr>
+<a name="Deprecated-Options-1"></a>
+<h3 class="section">4.4 Deprecated Options</h3>
+
+<p>These options have been replaced with newer versions that use symspecs.
+</p>
+<dl compact="compact">
+<dt><code>-e <var>function_name</var></code></dt>
+<dd><p>The &lsquo;<samp>-e <var>function</var></samp>&rsquo; option tells <code>gprof</code> to not print
+information about the function <var>function_name</var> (and its
+children&hellip;) in the call graph.  The function will still be listed
+as a child of any functions that call it, but its index number will be
+shown as &lsquo;<samp>[not printed]</samp>&rsquo;.  More than one &lsquo;<samp>-e</samp>&rsquo; option may be
+given; only one <var>function_name</var> may be indicated with each &lsquo;<samp>-e</samp>&rsquo;
+option.
+</p>
+</dd>
+<dt><code>-E <var>function_name</var></code></dt>
+<dd><p>The <code>-E <var>function</var></code> option works like the <code>-e</code> option, but
+time spent in the function (and children who were not called from
+anywhere else), will not be used to compute the percentages-of-time for
+the call graph.  More than one &lsquo;<samp>-E</samp>&rsquo; option may be given; only one
+<var>function_name</var> may be indicated with each &lsquo;<samp>-E</samp>&rsquo; option.
+</p>
+</dd>
+<dt><code>-f <var>function_name</var></code></dt>
+<dd><p>The &lsquo;<samp>-f <var>function</var></samp>&rsquo; option causes <code>gprof</code> to limit the
+call graph to the function <var>function_name</var> and its children (and
+their children&hellip;).  More than one &lsquo;<samp>-f</samp>&rsquo; option may be given;
+only one <var>function_name</var> may be indicated with each &lsquo;<samp>-f</samp>&rsquo;
+option.
+</p>
+</dd>
+<dt><code>-F <var>function_name</var></code></dt>
+<dd><p>The &lsquo;<samp>-F <var>function</var></samp>&rsquo; option works like the <code>-f</code> option, but
+only time spent in the function and its children (and their
+children&hellip;) will be used to determine total-time and
+percentages-of-time for the call graph.  More than one &lsquo;<samp>-F</samp>&rsquo; option
+may be given; only one <var>function_name</var> may be indicated with each
+&lsquo;<samp>-F</samp>&rsquo; option.  The &lsquo;<samp>-F</samp>&rsquo; option overrides the &lsquo;<samp>-E</samp>&rsquo; option.
+</p>
+</dd>
+</dl>
+
+
+<p>Note that only one function can be specified with each <code>-e</code>,
+<code>-E</code>, <code>-f</code> or <code>-F</code> option.  To specify more than one
+function, use multiple options.  For example, this command:
+</p>
+<div class="example">
+<pre class="example">gprof -e boring -f foo -f bar myprogram &gt; gprof.output
+</pre></div>
+
+<p>lists in the call graph all functions that were reached from either
+<code>foo</code> or <code>bar</code> and were not reachable from <code>boring</code>.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Symspecs.html#Symspecs" accesskey="n" rel="next">Symspecs</a>, Previous: <a href="Miscellaneous-Options.html#Miscellaneous-Options" accesskey="p" rel="prev">Miscellaneous Options</a>, Up: <a href="Invoking.html#Invoking" accesskey="u" rel="up">Invoking</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+
+
+
+</body>
+</html>

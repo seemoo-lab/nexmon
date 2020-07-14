@@ -1,0 +1,580 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Debugging Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Debugging Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Debugging Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Invoking-GCC.html#Invoking-GCC" rel="up" title="Invoking GCC">
+<link href="Optimize-Options.html#Optimize-Options" rel="next" title="Optimize Options">
+<link href="Warning-Options.html#Warning-Options" rel="prev" title="Warning Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Debugging-Options"></a>
+<div class="header">
+<p>
+Next: <a href="Optimize-Options.html#Optimize-Options" accesskey="n" rel="next">Optimize Options</a>, Previous: <a href="Warning-Options.html#Warning-Options" accesskey="p" rel="prev">Warning Options</a>, Up: <a href="Invoking-GCC.html#Invoking-GCC" accesskey="u" rel="up">Invoking GCC</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Options-for-Debugging-Your-Program"></a>
+<h3 class="section">3.9 Options for Debugging Your Program</h3>
+<a name="index-options_002c-debugging"></a>
+<a name="index-debugging-information-options"></a>
+
+<p>To tell GCC to emit extra information for use by a debugger, in almost 
+all cases you need only to add <samp>-g</samp> to your other options.
+</p>
+<p>GCC allows you to use <samp>-g</samp> with
+<samp>-O</samp>.  The shortcuts taken by optimized code may occasionally
+be surprising: some variables you declared may not exist
+at all; flow of control may briefly move where you did not expect it;
+some statements may not be executed because they compute constant
+results or their values are already at hand; some statements may
+execute in different places because they have been moved out of loops.
+Nevertheless it is possible to debug optimized output.  This makes
+it reasonable to use the optimizer for programs that might have bugs.
+</p>
+<p>If you are not using some other optimization option, consider
+using <samp>-Og</samp> (see <a href="Optimize-Options.html#Optimize-Options">Optimize Options</a>) with <samp>-g</samp>.  
+With no <samp>-O</samp> option at all, some compiler passes that collect
+information useful for debugging do not run at all, so that
+<samp>-Og</samp> may result in a better debugging experience.
+</p>
+<dl compact="compact">
+<dt><code>-g</code></dt>
+<dd><a name="index-g"></a>
+<p>Produce debugging information in the operating system&rsquo;s native format
+(stabs, COFF, XCOFF, or DWARF).  GDB can work with this debugging
+information.
+</p>
+<p>On most systems that use stabs format, <samp>-g</samp> enables use of extra
+debugging information that only GDB can use; this extra information
+makes debugging work better in GDB but probably makes other debuggers
+crash or
+refuse to read the program.  If you want to control for certain whether
+to generate the extra information, use <samp>-gstabs+</samp>, <samp>-gstabs</samp>,
+<samp>-gxcoff+</samp>, <samp>-gxcoff</samp>, or <samp>-gvms</samp> (see below).
+</p>
+</dd>
+<dt><code>-ggdb</code></dt>
+<dd><a name="index-ggdb"></a>
+<p>Produce debugging information for use by GDB.  This means to use the
+most expressive format available (DWARF, stabs, or the native format
+if neither of those are supported), including GDB extensions if at all
+possible.
+</p>
+</dd>
+<dt><code>-gdwarf</code></dt>
+<dt><code>-gdwarf-<var>version</var></code></dt>
+<dd><a name="index-gdwarf"></a>
+<p>Produce debugging information in DWARF format (if that is supported).
+The value of <var>version</var> may be either 2, 3, 4 or 5; the default version
+for most targets is 4.  DWARF Version 5 is only experimental.
+</p>
+<p>Note that with DWARF Version 2, some ports require and always
+use some non-conflicting DWARF 3 extensions in the unwind tables.
+</p>
+<p>Version 4 may require GDB 7.0 and <samp>-fvar-tracking-assignments</samp>
+for maximum benefit.
+</p>
+<p>GCC no longer supports DWARF Version 1, which is substantially
+different than Version 2 and later.  For historical reasons, some
+other DWARF-related options such as
+<samp>-fno-dwarf2-cfi-asm</samp>) retain a reference to DWARF Version 2
+in their names, but apply to all currently-supported versions of DWARF.
+</p>
+</dd>
+<dt><code>-gstabs</code></dt>
+<dd><a name="index-gstabs"></a>
+<p>Produce debugging information in stabs format (if that is supported),
+without GDB extensions.  This is the format used by DBX on most BSD
+systems.  On MIPS, Alpha and System V Release 4 systems this option
+produces stabs debugging output that is not understood by DBX.
+On System V Release 4 systems this option requires the GNU assembler.
+</p>
+</dd>
+<dt><code>-gstabs+</code></dt>
+<dd><a name="index-gstabs_002b"></a>
+<p>Produce debugging information in stabs format (if that is supported),
+using GNU extensions understood only by the GNU debugger (GDB).  The
+use of these extensions is likely to make other debuggers crash or
+refuse to read the program.
+</p>
+</dd>
+<dt><code>-gxcoff</code></dt>
+<dd><a name="index-gxcoff"></a>
+<p>Produce debugging information in XCOFF format (if that is supported).
+This is the format used by the DBX debugger on IBM RS/6000 systems.
+</p>
+</dd>
+<dt><code>-gxcoff+</code></dt>
+<dd><a name="index-gxcoff_002b"></a>
+<p>Produce debugging information in XCOFF format (if that is supported),
+using GNU extensions understood only by the GNU debugger (GDB).  The
+use of these extensions is likely to make other debuggers crash or
+refuse to read the program, and may cause assemblers other than the GNU
+assembler (GAS) to fail with an error.
+</p>
+</dd>
+<dt><code>-gvms</code></dt>
+<dd><a name="index-gvms"></a>
+<p>Produce debugging information in Alpha/VMS debug format (if that is
+supported).  This is the format used by DEBUG on Alpha/VMS systems.
+</p>
+</dd>
+<dt><code>-g<var>level</var></code></dt>
+<dt><code>-ggdb<var>level</var></code></dt>
+<dt><code>-gstabs<var>level</var></code></dt>
+<dt><code>-gxcoff<var>level</var></code></dt>
+<dt><code>-gvms<var>level</var></code></dt>
+<dd><p>Request debugging information and also use <var>level</var> to specify how
+much information.  The default level is 2.
+</p>
+<p>Level 0 produces no debug information at all.  Thus, <samp>-g0</samp> negates
+<samp>-g</samp>.
+</p>
+<p>Level 1 produces minimal information, enough for making backtraces in
+parts of the program that you don&rsquo;t plan to debug.  This includes
+descriptions of functions and external variables, and line number
+tables, but no information about local variables.
+</p>
+<p>Level 3 includes extra information, such as all the macro definitions
+present in the program.  Some debuggers support macro expansion when
+you use <samp>-g3</samp>.
+</p>
+<p>If you use multiple <samp>-g</samp> options, with or without level numbers,
+the last such option is the one that is effective.
+</p>
+<p><samp>-gdwarf</samp> does not accept a concatenated debug level, to avoid
+confusion with <samp>-gdwarf-<var>level</var></samp>.
+Instead use an additional <samp>-g<var>level</var></samp> option to change the
+debug level for DWARF.
+</p>
+</dd>
+<dt><code>-feliminate-unused-debug-symbols</code></dt>
+<dd><a name="index-feliminate_002dunused_002ddebug_002dsymbols"></a>
+<p>Produce debugging information in stabs format (if that is supported),
+for only symbols that are actually used.
+</p>
+</dd>
+<dt><code>-femit-class-debug-always</code></dt>
+<dd><a name="index-femit_002dclass_002ddebug_002dalways"></a>
+<p>Instead of emitting debugging information for a C++ class in only one
+object file, emit it in all object files using the class.  This option
+should be used only with debuggers that are unable to handle the way GCC
+normally emits debugging information for classes because using this
+option increases the size of debugging information by as much as a
+factor of two.
+</p>
+</dd>
+<dt><code>-fno-merge-debug-strings</code></dt>
+<dd><a name="index-fmerge_002ddebug_002dstrings"></a>
+<a name="index-fno_002dmerge_002ddebug_002dstrings"></a>
+<p>Direct the linker to not merge together strings in the debugging
+information that are identical in different object files.  Merging is
+not supported by all assemblers or linkers.  Merging decreases the size
+of the debug information in the output file at the cost of increasing
+link processing time.  Merging is enabled by default.
+</p>
+</dd>
+<dt><code>-fdebug-prefix-map=<var>old</var>=<var>new</var></code></dt>
+<dd><a name="index-fdebug_002dprefix_002dmap"></a>
+<p>When compiling files residing in directory <samp><var>old</var></samp>, record
+debugging information describing them as if the files resided in
+directory <samp><var>new</var></samp> instead.  This can be used to replace a
+build-time path with an install-time path in the debug info.  It can
+also be used to change an absolute path to a relative path by using
+<samp>.</samp> for <var>new</var>.  This can give more reproducible builds, which
+are location independent, but may require an extra command to tell GDB
+where to find the source files. See also <samp>-ffile-prefix-map</samp>.
+</p>
+</dd>
+<dt><code>-fvar-tracking</code></dt>
+<dd><a name="index-fvar_002dtracking"></a>
+<p>Run variable tracking pass.  It computes where variables are stored at each
+position in code.  Better debugging information is then generated
+(if the debugging information format supports this information).
+</p>
+<p>It is enabled by default when compiling with optimization (<samp>-Os</samp>,
+<samp>-O</samp>, <samp>-O2</samp>, &hellip;), debugging information (<samp>-g</samp>) and
+the debug info format supports it.
+</p>
+</dd>
+<dt><code>-fvar-tracking-assignments</code></dt>
+<dd><a name="index-fvar_002dtracking_002dassignments"></a>
+<a name="index-fno_002dvar_002dtracking_002dassignments"></a>
+<p>Annotate assignments to user variables early in the compilation and
+attempt to carry the annotations over throughout the compilation all the
+way to the end, in an attempt to improve debug information while
+optimizing.  Use of <samp>-gdwarf-4</samp> is recommended along with it.
+</p>
+<p>It can be enabled even if var-tracking is disabled, in which case
+annotations are created and maintained, but discarded at the end.
+By default, this flag is enabled together with <samp>-fvar-tracking</samp>,
+except when selective scheduling is enabled.
+</p>
+</dd>
+<dt><code>-gsplit-dwarf</code></dt>
+<dd><a name="index-gsplit_002ddwarf"></a>
+<p>Separate as much DWARF debugging information as possible into a
+separate output file with the extension <samp>.dwo</samp>.  This option allows
+the build system to avoid linking files with debug information.  To
+be useful, this option requires a debugger capable of reading <samp>.dwo</samp>
+files.
+</p>
+</dd>
+<dt><code>-gdescribe-dies</code></dt>
+<dd><a name="index-gdescribe_002ddies"></a>
+<p>Add description attributes to some DWARF DIEs that have no name attribute,
+such as artificial variables, external references and call site
+parameter DIEs.
+</p>
+</dd>
+<dt><code>-gpubnames</code></dt>
+<dd><a name="index-gpubnames"></a>
+<p>Generate DWARF <code>.debug_pubnames</code> and <code>.debug_pubtypes</code> sections.
+</p>
+</dd>
+<dt><code>-ggnu-pubnames</code></dt>
+<dd><a name="index-ggnu_002dpubnames"></a>
+<p>Generate <code>.debug_pubnames</code> and <code>.debug_pubtypes</code> sections in a format
+suitable for conversion into a GDB&nbsp;index.  This option is only useful
+with a linker that can produce GDB&nbsp;index version 7.
+</p>
+</dd>
+<dt><code>-fdebug-types-section</code></dt>
+<dd><a name="index-fdebug_002dtypes_002dsection"></a>
+<a name="index-fno_002ddebug_002dtypes_002dsection"></a>
+<p>When using DWARF Version 4 or higher, type DIEs can be put into
+their own <code>.debug_types</code> section instead of making them part of the
+<code>.debug_info</code> section.  It is more efficient to put them in a separate
+comdat section since the linker can then remove duplicates.
+But not all DWARF consumers support <code>.debug_types</code> sections yet
+and on some objects <code>.debug_types</code> produces larger instead of smaller
+debugging information.
+</p>
+</dd>
+<dt><code>-grecord-gcc-switches</code></dt>
+<dt><code>-gno-record-gcc-switches</code></dt>
+<dd><a name="index-grecord_002dgcc_002dswitches"></a>
+<a name="index-gno_002drecord_002dgcc_002dswitches"></a>
+<p>This switch causes the command-line options used to invoke the
+compiler that may affect code generation to be appended to the
+DW_AT_producer attribute in DWARF debugging information.  The options
+are concatenated with spaces separating them from each other and from
+the compiler version.  
+It is enabled by default.
+See also <samp>-frecord-gcc-switches</samp> for another
+way of storing compiler options into the object file.  
+</p>
+</dd>
+<dt><code>-gstrict-dwarf</code></dt>
+<dd><a name="index-gstrict_002ddwarf"></a>
+<p>Disallow using extensions of later DWARF standard version than selected
+with <samp>-gdwarf-<var>version</var></samp>.  On most targets using non-conflicting
+DWARF extensions from later standard versions is allowed.
+</p>
+</dd>
+<dt><code>-gno-strict-dwarf</code></dt>
+<dd><a name="index-gno_002dstrict_002ddwarf"></a>
+<p>Allow using extensions of later DWARF standard version than selected with
+<samp>-gdwarf-<var>version</var></samp>.
+</p>
+</dd>
+<dt><code>-gas-loc-support</code></dt>
+<dd><a name="index-gas_002dloc_002dsupport"></a>
+<p>Inform the compiler that the assembler supports <code>.loc</code> directives.
+It may then use them for the assembler to generate DWARF2+ line number
+tables.
+</p>
+<p>This is generally desirable, because assembler-generated line-number
+tables are a lot more compact than those the compiler can generate
+itself.
+</p>
+<p>This option will be enabled by default if, at GCC configure time, the
+assembler was found to support such directives.
+</p>
+</dd>
+<dt><code>-gno-as-loc-support</code></dt>
+<dd><a name="index-gno_002das_002dloc_002dsupport"></a>
+<p>Force GCC to generate DWARF2+ line number tables internally, if DWARF2+
+line number tables are to be generated.
+</p>
+</dd>
+<dt><code>gas-locview-support</code></dt>
+<dd><a name="index-gas_002dlocview_002dsupport"></a>
+<p>Inform the compiler that the assembler supports <code>view</code> assignment
+and reset assertion checking in <code>.loc</code> directives.
+</p>
+<p>This option will be enabled by default if, at GCC configure time, the
+assembler was found to support them.
+</p>
+</dd>
+<dt><code>gno-as-locview-support</code></dt>
+<dd><p>Force GCC to assign view numbers internally, if
+<samp>-gvariable-location-views</samp> are explicitly requested.
+</p>
+</dd>
+<dt><code>-gcolumn-info</code></dt>
+<dt><code>-gno-column-info</code></dt>
+<dd><a name="index-gcolumn_002dinfo"></a>
+<a name="index-gno_002dcolumn_002dinfo"></a>
+<p>Emit location column information into DWARF debugging information, rather
+than just file and line.
+This option is enabled by default.
+</p>
+</dd>
+<dt><code>-gstatement-frontiers</code></dt>
+<dt><code>-gno-statement-frontiers</code></dt>
+<dd><a name="index-gstatement_002dfrontiers"></a>
+<a name="index-gno_002dstatement_002dfrontiers"></a>
+<p>This option causes GCC to create markers in the internal representation
+at the beginning of statements, and to keep them roughly in place
+throughout compilation, using them to guide the output of <code>is_stmt</code>
+markers in the line number table.  This is enabled by default when
+compiling with optimization (<samp>-Os</samp>, <samp>-O</samp>, <samp>-O2</samp>,
+&hellip;), and outputting DWARF 2 debug information at the normal level.
+</p>
+</dd>
+<dt><code>-gvariable-location-views</code></dt>
+<dt><code>-gvariable-location-views=incompat5</code></dt>
+<dt><code>-gno-variable-location-views</code></dt>
+<dd><a name="index-gvariable_002dlocation_002dviews"></a>
+<a name="index-gvariable_002dlocation_002dviews_003dincompat5"></a>
+<a name="index-gno_002dvariable_002dlocation_002dviews"></a>
+<p>Augment variable location lists with progressive view numbers implied
+from the line number table.  This enables debug information consumers to
+inspect state at certain points of the program, even if no instructions
+associated with the corresponding source locations are present at that
+point.  If the assembler lacks support for view numbers in line number
+tables, this will cause the compiler to emit the line number table,
+which generally makes them somewhat less compact.  The augmented line
+number tables and location lists are fully backward-compatible, so they
+can be consumed by debug information consumers that are not aware of
+these augmentations, but they won&rsquo;t derive any benefit from them either.
+</p>
+<p>This is enabled by default when outputting DWARF 2 debug information at
+the normal level, as long as there is assembler support,
+<samp>-fvar-tracking-assignments</samp> is enabled and
+<samp>-gstrict-dwarf</samp> is not.  When assembler support is not
+available, this may still be enabled, but it will force GCC to output
+internal line number tables, and if
+<samp>-ginternal-reset-location-views</samp> is not enabled, that will most
+certainly lead to silently mismatching location views.
+</p>
+<p>There is a proposed representation for view numbers that is not backward
+compatible with the location list format introduced in DWARF 5, that can
+be enabled with <samp>-gvariable-location-views=incompat5</samp>.  This
+option may be removed in the future, is only provided as a reference
+implementation of the proposed representation.  Debug information
+consumers are not expected to support this extended format, and they
+would be rendered unable to decode location lists using it.
+</p>
+</dd>
+<dt><code>-ginternal-reset-location-views</code></dt>
+<dt><code>-gnointernal-reset-location-views</code></dt>
+<dd><a name="index-ginternal_002dreset_002dlocation_002dviews"></a>
+<a name="index-gno_002dinternal_002dreset_002dlocation_002dviews"></a>
+<p>Attempt to determine location views that can be omitted from location
+view lists.  This requires the compiler to have very accurate insn
+length estimates, which isn&rsquo;t always the case, and it may cause
+incorrect view lists to be generated silently when using an assembler
+that does not support location view lists.  The GNU assembler will flag
+any such error as a <code>view number mismatch</code>.  This is only enabled
+on ports that define a reliable estimation function.
+</p>
+</dd>
+<dt><code>-ginline-points</code></dt>
+<dt><code>-gno-inline-points</code></dt>
+<dd><a name="index-ginline_002dpoints"></a>
+<a name="index-gno_002dinline_002dpoints"></a>
+<p>Generate extended debug information for inlined functions.  Location
+view tracking markers are inserted at inlined entry points, so that
+address and view numbers can be computed and output in debug
+information.  This can be enabled independently of location views, in
+which case the view numbers won&rsquo;t be output, but it can only be enabled
+along with statement frontiers, and it is only enabled by default if
+location views are enabled.
+</p>
+</dd>
+<dt><code>-gz<span class="roman">[</span>=<var>type</var><span class="roman">]</span></code></dt>
+<dd><a name="index-gz"></a>
+<p>Produce compressed debug sections in DWARF format, if that is supported.
+If <var>type</var> is not given, the default type depends on the capabilities
+of the assembler and linker used.  <var>type</var> may be one of
+&lsquo;<samp>none</samp>&rsquo; (don&rsquo;t compress debug sections), &lsquo;<samp>zlib</samp>&rsquo; (use zlib
+compression in ELF gABI format), or &lsquo;<samp>zlib-gnu</samp>&rsquo; (use zlib
+compression in traditional GNU format).  If the linker doesn&rsquo;t support
+writing compressed debug sections, the option is rejected.  Otherwise,
+if the assembler does not support them, <samp>-gz</samp> is silently ignored
+when producing object files.
+</p>
+</dd>
+<dt><code>-femit-struct-debug-baseonly</code></dt>
+<dd><a name="index-femit_002dstruct_002ddebug_002dbaseonly"></a>
+<p>Emit debug information for struct-like types
+only when the base name of the compilation source file
+matches the base name of file in which the struct is defined.
+</p>
+<p>This option substantially reduces the size of debugging information,
+but at significant potential loss in type information to the debugger.
+See <samp>-femit-struct-debug-reduced</samp> for a less aggressive option.
+See <samp>-femit-struct-debug-detailed</samp> for more detailed control.
+</p>
+<p>This option works only with DWARF debug output.
+</p>
+</dd>
+<dt><code>-femit-struct-debug-reduced</code></dt>
+<dd><a name="index-femit_002dstruct_002ddebug_002dreduced"></a>
+<p>Emit debug information for struct-like types
+only when the base name of the compilation source file
+matches the base name of file in which the type is defined,
+unless the struct is a template or defined in a system header.
+</p>
+<p>This option significantly reduces the size of debugging information,
+with some potential loss in type information to the debugger.
+See <samp>-femit-struct-debug-baseonly</samp> for a more aggressive option.
+See <samp>-femit-struct-debug-detailed</samp> for more detailed control.
+</p>
+<p>This option works only with DWARF debug output.
+</p>
+</dd>
+<dt><code>-femit-struct-debug-detailed<span class="roman">[</span>=<var>spec-list</var><span class="roman">]</span></code></dt>
+<dd><a name="index-femit_002dstruct_002ddebug_002ddetailed"></a>
+<p>Specify the struct-like types
+for which the compiler generates debug information.
+The intent is to reduce duplicate struct debug information
+between different object files within the same program.
+</p>
+<p>This option is a detailed version of
+<samp>-femit-struct-debug-reduced</samp> and <samp>-femit-struct-debug-baseonly</samp>,
+which serves for most needs.
+</p>
+<p>A specification has the syntax<br>
+[&lsquo;<samp>dir:</samp>&rsquo;|&lsquo;<samp>ind:</samp>&rsquo;][&lsquo;<samp>ord:</samp>&rsquo;|&lsquo;<samp>gen:</samp>&rsquo;](&lsquo;<samp>any</samp>&rsquo;|&lsquo;<samp>sys</samp>&rsquo;|&lsquo;<samp>base</samp>&rsquo;|&lsquo;<samp>none</samp>&rsquo;)
+</p>
+<p>The optional first word limits the specification to
+structs that are used directly (&lsquo;<samp>dir:</samp>&rsquo;) or used indirectly (&lsquo;<samp>ind:</samp>&rsquo;).
+A struct type is used directly when it is the type of a variable, member.
+Indirect uses arise through pointers to structs.
+That is, when use of an incomplete struct is valid, the use is indirect.
+An example is
+&lsquo;<samp>struct one direct; struct two * indirect;</samp>&rsquo;.
+</p>
+<p>The optional second word limits the specification to
+ordinary structs (&lsquo;<samp>ord:</samp>&rsquo;) or generic structs (&lsquo;<samp>gen:</samp>&rsquo;).
+Generic structs are a bit complicated to explain.
+For C++, these are non-explicit specializations of template classes,
+or non-template classes within the above.
+Other programming languages have generics,
+but <samp>-femit-struct-debug-detailed</samp> does not yet implement them.
+</p>
+<p>The third word specifies the source files for those
+structs for which the compiler should emit debug information.
+The values &lsquo;<samp>none</samp>&rsquo; and &lsquo;<samp>any</samp>&rsquo; have the normal meaning.
+The value &lsquo;<samp>base</samp>&rsquo; means that
+the base of name of the file in which the type declaration appears
+must match the base of the name of the main compilation file.
+In practice, this means that when compiling <samp>foo.c</samp>, debug information
+is generated for types declared in that file and <samp>foo.h</samp>,
+but not other header files.
+The value &lsquo;<samp>sys</samp>&rsquo; means those types satisfying &lsquo;<samp>base</samp>&rsquo;
+or declared in system or compiler headers.
+</p>
+<p>You may need to experiment to determine the best settings for your application.
+</p>
+<p>The default is <samp>-femit-struct-debug-detailed=all</samp>.
+</p>
+<p>This option works only with DWARF debug output.
+</p>
+</dd>
+<dt><code>-fno-dwarf2-cfi-asm</code></dt>
+<dd><a name="index-fdwarf2_002dcfi_002dasm"></a>
+<a name="index-fno_002ddwarf2_002dcfi_002dasm"></a>
+<p>Emit DWARF unwind info as compiler generated <code>.eh_frame</code> section
+instead of using GAS <code>.cfi_*</code> directives.
+</p>
+</dd>
+<dt><code>-fno-eliminate-unused-debug-types</code></dt>
+<dd><a name="index-feliminate_002dunused_002ddebug_002dtypes"></a>
+<a name="index-fno_002deliminate_002dunused_002ddebug_002dtypes"></a>
+<p>Normally, when producing DWARF output, GCC avoids producing debug symbol 
+output for types that are nowhere used in the source file being compiled.
+Sometimes it is useful to have GCC emit debugging
+information for all types declared in a compilation
+unit, regardless of whether or not they are actually used
+in that compilation unit, for example 
+if, in the debugger, you want to cast a value to a type that is
+not actually used in your program (but is declared).  More often,
+however, this results in a significant amount of wasted space.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Optimize-Options.html#Optimize-Options" accesskey="n" rel="next">Optimize Options</a>, Previous: <a href="Warning-Options.html#Warning-Options" accesskey="p" rel="prev">Warning Options</a>, Up: <a href="Invoking-GCC.html#Invoking-GCC" accesskey="u" rel="up">Invoking GCC</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

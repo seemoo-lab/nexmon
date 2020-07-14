@@ -1,0 +1,216 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Binary Utilities: strings</title>
+
+<meta name="description" content="GNU Binary Utilities: strings">
+<meta name="keywords" content="GNU Binary Utilities: strings">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Binutils-Index.html#Binutils-Index" rel="index" title="Binutils Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="strip.html#strip" rel="next" title="strip">
+<link href="size.html#size" rel="prev" title="size">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="strings"></a>
+<div class="header">
+<p>
+Next: <a href="strip.html#strip" accesskey="n" rel="next">strip</a>, Previous: <a href="size.html#size" accesskey="p" rel="prev">size</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Binutils-Index.html#Binutils-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="strings-1"></a>
+<h2 class="chapter">7 strings</h2>
+<a name="index-strings"></a>
+<a name="index-listings-strings"></a>
+<a name="index-printing-strings"></a>
+<a name="index-strings_002c-printing"></a>
+
+
+<div class="smallexample">
+<pre class="smallexample">strings [<samp>-afovV</samp>] [<samp>-</samp><var>min-len</var>]
+        [<samp>-n</samp> <var>min-len</var>] [<samp>--bytes=</samp><var>min-len</var>]
+        [<samp>-t</samp> <var>radix</var>] [<samp>--radix=</samp><var>radix</var>]
+        [<samp>-e</samp> <var>encoding</var>] [<samp>--encoding=</samp><var>encoding</var>]
+        [<samp>-</samp>] [<samp>--all</samp>] [<samp>--print-file-name</samp>]
+        [<samp>-T</samp> <var>bfdname</var>] [<samp>--target=</samp><var>bfdname</var>]
+        [<samp>-w</samp>] [<samp>--include-all-whitespace</samp>]
+        [<samp>-s</samp>] [<samp>--output-separator</samp><var>sep_string</var>]
+        [<samp>--help</samp>] [<samp>--version</samp>] <var>file</var>&hellip;
+</pre></div>
+
+
+<p>For each <var>file</var> given, <small>GNU</small> <code>strings</code> prints the
+printable character sequences that are at least 4 characters long (or
+the number given with the options below) and are followed by an
+unprintable character.
+</p>
+<p>Depending upon how the strings program was configured it will default
+to either displaying all the printable sequences that it can find in
+each file, or only those sequences that are in loadable, initialized
+data sections.  If the file type in unrecognizable, or if strings is
+reading from stdin then it will always display all of the printable
+sequences that it can find.
+</p>
+<p>For backwards compatibility any file that occurs after a command-line
+option of just <samp>-</samp> will also be scanned in full, regardless of
+the presence of any <samp>-d</samp> option.
+</p>
+<p><code>strings</code> is mainly useful for determining the contents of
+non-text files.
+</p>
+
+
+<dl compact="compact">
+<dt><code>-a</code></dt>
+<dt><code>--all</code></dt>
+<dt><code>-</code></dt>
+<dd><p>Scan the whole file, regardless of what sections it contains or
+whether those sections are loaded or initialized.  Normally this is
+the default behaviour, but strings can be configured so that the
+<samp>-d</samp> is the default instead.
+</p>
+<p>The <samp>-</samp> option is position dependent and forces strings to
+perform full scans of any file that is mentioned after the <samp>-</samp>
+on the command line, even if the <samp>-d</samp> option has been
+specified.
+</p>
+</dd>
+<dt><code>-d</code></dt>
+<dt><code>--data</code></dt>
+<dd><p>Only print strings from initialized, loaded data sections in the
+file.  This may reduce the amount of garbage in the output, but it
+also exposes the strings program to any security flaws that may be
+present in the BFD library used to scan and load sections.  Strings
+can be configured so that this option is the default behaviour.  In
+such cases the <samp>-a</samp> option can be used to avoid using the BFD
+library and instead just print all of the strings found in the file.
+</p>
+</dd>
+<dt><code>-f</code></dt>
+<dt><code>--print-file-name</code></dt>
+<dd><p>Print the name of the file before each string.
+</p>
+</dd>
+<dt><code>--help</code></dt>
+<dd><p>Print a summary of the program usage on the standard output and exit.
+</p>
+</dd>
+<dt><code>-<var>min-len</var></code></dt>
+<dt><code>-n <var>min-len</var></code></dt>
+<dt><code>--bytes=<var>min-len</var></code></dt>
+<dd><p>Print sequences of characters that are at least <var>min-len</var> characters
+long, instead of the default 4.
+</p>
+</dd>
+<dt><code>-o</code></dt>
+<dd><p>Like &lsquo;<samp>-t o</samp>&rsquo;.  Some other versions of <code>strings</code> have <samp>-o</samp>
+act like &lsquo;<samp>-t d</samp>&rsquo; instead.  Since we can not be compatible with both
+ways, we simply chose one.
+</p>
+</dd>
+<dt><code>-t <var>radix</var></code></dt>
+<dt><code>--radix=<var>radix</var></code></dt>
+<dd><p>Print the offset within the file before each string.  The single
+character argument specifies the radix of the offset&mdash;&lsquo;<samp>o</samp>&rsquo; for
+octal, &lsquo;<samp>x</samp>&rsquo; for hexadecimal, or &lsquo;<samp>d</samp>&rsquo; for decimal.
+</p>
+</dd>
+<dt><code>-e <var>encoding</var></code></dt>
+<dt><code>--encoding=<var>encoding</var></code></dt>
+<dd><p>Select the character encoding of the strings that are to be found.
+Possible values for <var>encoding</var> are: &lsquo;<samp>s</samp>&rsquo; = single-7-bit-byte
+characters (ASCII, ISO 8859, etc., default), &lsquo;<samp>S</samp>&rsquo; =
+single-8-bit-byte characters, &lsquo;<samp>b</samp>&rsquo; = 16-bit bigendian, &lsquo;<samp>l</samp>&rsquo; =
+16-bit littleendian, &lsquo;<samp>B</samp>&rsquo; = 32-bit bigendian, &lsquo;<samp>L</samp>&rsquo; = 32-bit
+littleendian.  Useful for finding wide character strings. (&lsquo;<samp>l</samp>&rsquo;
+and &lsquo;<samp>b</samp>&rsquo; apply to, for example, Unicode UTF-16/UCS-2 encodings).
+</p>
+</dd>
+<dt><code>-T <var>bfdname</var></code></dt>
+<dt><code>--target=<var>bfdname</var></code></dt>
+<dd><a name="index-object-code-format-3"></a>
+<p>Specify an object code format other than your system&rsquo;s default format.
+See <a href="Target-Selection.html#Target-Selection">Target Selection</a>, for more information.
+</p>
+</dd>
+<dt><code>-v</code></dt>
+<dt><code>-V</code></dt>
+<dt><code>--version</code></dt>
+<dd><p>Print the program version number on the standard output and exit.
+</p>
+</dd>
+<dt><code>-w</code></dt>
+<dt><code>--include-all-whitespace</code></dt>
+<dd><p>By default tab and space characters are included in the strings that
+are displayed, but other whitespace characters, such a newlines and
+carriage returns, are not.  The <samp>-w</samp> option changes this so
+that all whitespace characters are considered to be part of a string.
+</p>
+</dd>
+<dt><code>-s</code></dt>
+<dt><code>--output-separator</code></dt>
+<dd><p>By default, output strings are delimited by a new-line. This option
+allows you to supply any string to be used as the output record
+separator.  Useful with &ndash;include-all-whitespace where strings
+may contain new-lines internally.
+</p></dd>
+</dl>
+
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="strip.html#strip" accesskey="n" rel="next">strip</a>, Previous: <a href="size.html#size" accesskey="p" rel="prev">size</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Binutils-Index.html#Binutils-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

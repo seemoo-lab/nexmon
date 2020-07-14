@@ -1,0 +1,148 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: AND</title>
+
+<meta name="description" content="The GNU Fortran Compiler: AND">
+<meta name="keywords" content="The GNU Fortran Compiler: AND">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Intrinsic-Procedures.html#Intrinsic-Procedures" rel="up" title="Intrinsic Procedures">
+<link href="ANINT.html#ANINT" rel="next" title="ANINT">
+<link href="ALLOCATED.html#ALLOCATED" rel="prev" title="ALLOCATED">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="AND"></a>
+<div class="header">
+<p>
+Next: <a href="ANINT.html#ANINT" accesskey="n" rel="next">ANINT</a>, Previous: <a href="ALLOCATED.html#ALLOCATED" accesskey="p" rel="prev">ALLOCATED</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="AND-_002d_002d_002d-Bitwise-logical-AND"></a>
+<h3 class="section">9.16 <code>AND</code> &mdash; Bitwise logical AND</h3>
+<a name="index-AND"></a>
+<a name="index-bitwise-logical-and"></a>
+<a name="index-logical-and_002c-bitwise"></a>
+
+<dl compact="compact">
+<dt><em>Description</em>:</dt>
+<dd><p>Bitwise logical <code>AND</code>.
+</p>
+<p>This intrinsic routine is provided for backwards compatibility with 
+GNU Fortran 77.  For integer arguments, programmers should consider
+the use of the <a href="IAND.html#IAND">IAND</a> intrinsic defined by the Fortran standard.
+</p>
+</dd>
+<dt><em>Standard</em>:</dt>
+<dd><p>GNU extension
+</p>
+</dd>
+<dt><em>Class</em>:</dt>
+<dd><p>Function
+</p>
+</dd>
+<dt><em>Syntax</em>:</dt>
+<dd><p><code>RESULT = AND(I, J)</code>
+</p>
+</dd>
+<dt><em>Arguments</em>:</dt>
+<dd><table>
+<tr><td width="15%"><var>I</var></td><td width="70%">The type shall be either a scalar <code>INTEGER</code>
+type or a scalar <code>LOGICAL</code> type or a boz-literal-constant.</td></tr>
+<tr><td width="15%"><var>J</var></td><td width="70%">The type shall be the same as the type of <var>I</var> or
+a boz-literal-constant. <var>I</var> and <var>J</var> shall not both be
+boz-literal-constants.  If either <var>I</var> or <var>J</var> is a
+boz-literal-constant, then the other argument must be a scalar <code>INTEGER</code>.</td></tr>
+</table>
+
+</dd>
+<dt><em>Return value</em>:</dt>
+<dd><p>The return type is either a scalar <code>INTEGER</code> or a scalar
+<code>LOGICAL</code>.  If the kind type parameters differ, then the
+smaller kind type is implicitly converted to larger kind, and the 
+return has the larger kind.  A boz-literal-constant is 
+converted to an <code>INTEGER</code> with the kind type parameter of
+the other argument as-if a call to <a href="INT.html#INT">INT</a> occurred.
+</p>
+</dd>
+<dt><em>Example</em>:</dt>
+<dd><div class="smallexample">
+<pre class="smallexample">PROGRAM test_and
+  LOGICAL :: T = .TRUE., F = .FALSE.
+  INTEGER :: a, b
+  DATA a / Z'F' /, b / Z'3' /
+
+  WRITE (*,*) AND(T, T), AND(T, F), AND(F, T), AND(F, F)
+  WRITE (*,*) AND(a, b)
+END PROGRAM
+</pre></div>
+
+</dd>
+<dt><em>See also</em>:</dt>
+<dd><p>Fortran 95 elemental function: <a href="IAND.html#IAND">IAND</a>
+</p></dd>
+</dl>
+
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: PDP-11-Options</title>
+
+<meta name="description" content="Using as: PDP-11-Options">
+<meta name="keywords" content="Using as: PDP-11-Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="PDP_002d11_002dDependent.html#PDP_002d11_002dDependent" rel="up" title="PDP-11-Dependent">
+<link href="PDP_002d11_002dPseudos.html#PDP_002d11_002dPseudos" rel="next" title="PDP-11-Pseudos">
+<link href="PDP_002d11_002dDependent.html#PDP_002d11_002dDependent" rel="prev" title="PDP-11-Dependent">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="PDP_002d11_002dOptions"></a>
+<div class="header">
+<p>
+Next: <a href="PDP_002d11_002dPseudos.html#PDP_002d11_002dPseudos" accesskey="n" rel="next">PDP-11-Pseudos</a>, Up: <a href="PDP_002d11_002dDependent.html#PDP_002d11_002dDependent" accesskey="u" rel="up">PDP-11-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Options-17"></a>
+<h4 class="subsection">9.34.1 Options</h4>
+
+<a name="index-options-for-PDP_002d11"></a>
+
+<p>The PDP-11 version of <code>as</code> has a rich set of machine
+dependent options.
+</p>
+<a name="Code-Generation-Options"></a>
+<h4 class="subsubsection">9.34.1.1 Code Generation Options</h4>
+
+<dl compact="compact">
+<dd><a name="index-_002dmpic"></a>
+<a name="index-_002dmno_002dpic"></a>
+</dd>
+<dt><code>-mpic | -mno-pic</code></dt>
+<dd><p>Generate position-independent (or position-dependent) code.
+</p>
+<p>The default is to generate position-independent code.
+</p></dd>
+</dl>
+
+<a name="Instruction-Set-Extension-Options"></a>
+<h4 class="subsubsection">9.34.1.2 Instruction Set Extension Options</h4>
+
+<p>These options enables or disables the use of extensions over the base
+line instruction set as introduced by the first PDP-11 CPU: the KA11.
+Most options come in two variants: a <code>-m</code><var>extension</var> that
+enables <var>extension</var>, and a <code>-mno-</code><var>extension</var> that disables
+<var>extension</var>.
+</p>
+<p>The default is to enable all extensions.
+</p>
+<dl compact="compact">
+<dd><a name="index-_002dmall"></a>
+<a name="index-_002dmall_002dextensions"></a>
+</dd>
+<dt><code>-mall | -mall-extensions</code></dt>
+<dd><p>Enable all instruction set extensions.
+</p>
+<a name="index-_002dmno_002dextensions"></a>
+</dd>
+<dt><code>-mno-extensions</code></dt>
+<dd><p>Disable all instruction set extensions.
+</p>
+<a name="index-_002dmcis"></a>
+<a name="index-_002dmno_002dcis"></a>
+</dd>
+<dt><code>-mcis | -mno-cis</code></dt>
+<dd><p>Enable (or disable) the use of the commercial instruction set, which
+consists of these instructions: <code>ADDNI</code>, <code>ADDN</code>, <code>ADDPI</code>,
+<code>ADDP</code>, <code>ASHNI</code>, <code>ASHN</code>, <code>ASHPI</code>, <code>ASHP</code>,
+<code>CMPCI</code>, <code>CMPC</code>, <code>CMPNI</code>, <code>CMPN</code>, <code>CMPPI</code>,
+<code>CMPP</code>, <code>CVTLNI</code>, <code>CVTLN</code>, <code>CVTLPI</code>, <code>CVTLP</code>,
+<code>CVTNLI</code>, <code>CVTNL</code>, <code>CVTNPI</code>, <code>CVTNP</code>, <code>CVTPLI</code>,
+<code>CVTPL</code>, <code>CVTPNI</code>, <code>CVTPN</code>, <code>DIVPI</code>, <code>DIVP</code>,
+<code>L2DR</code>, <code>L3DR</code>, <code>LOCCI</code>, <code>LOCC</code>, <code>MATCI</code>,
+<code>MATC</code>, <code>MOVCI</code>, <code>MOVC</code>, <code>MOVRCI</code>, <code>MOVRC</code>,
+<code>MOVTCI</code>, <code>MOVTC</code>, <code>MULPI</code>, <code>MULP</code>, <code>SCANCI</code>,
+<code>SCANC</code>, <code>SKPCI</code>, <code>SKPC</code>, <code>SPANCI</code>, <code>SPANC</code>,
+<code>SUBNI</code>, <code>SUBN</code>, <code>SUBPI</code>, and <code>SUBP</code>.
+</p>
+<a name="index-_002dmcsm"></a>
+<a name="index-_002dmno_002dcsm"></a>
+</dd>
+<dt><code>-mcsm | -mno-csm</code></dt>
+<dd><p>Enable (or disable) the use of the <code>CSM</code> instruction.
+</p>
+<a name="index-_002dmeis"></a>
+<a name="index-_002dmno_002deis"></a>
+</dd>
+<dt><code>-meis | -mno-eis</code></dt>
+<dd><p>Enable (or disable) the use of the extended instruction set, which
+consists of these instructions: <code>ASHC</code>, <code>ASH</code>, <code>DIV</code>,
+<code>MARK</code>, <code>MUL</code>, <code>RTT</code>, <code>SOB</code> <code>SXT</code>, and
+<code>XOR</code>.
+</p>
+<a name="index-_002dmfis"></a>
+<a name="index-_002dmno_002dfis"></a>
+<a name="index-_002dmkev11"></a>
+<a name="index-_002dmkev11-1"></a>
+<a name="index-_002dmno_002dkev11"></a>
+</dd>
+<dt><code>-mfis | -mkev11</code></dt>
+<dt><code>-mno-fis | -mno-kev11</code></dt>
+<dd><p>Enable (or disable) the use of the KEV11 floating-point instructions:
+<code>FADD</code>, <code>FDIV</code>, <code>FMUL</code>, and <code>FSUB</code>.
+</p>
+<a name="index-_002dmfpp"></a>
+<a name="index-_002dmno_002dfpp"></a>
+<a name="index-_002dmfpu"></a>
+<a name="index-_002dmno_002dfpu"></a>
+<a name="index-_002dmfp_002d11"></a>
+<a name="index-_002dmno_002dfp_002d11"></a>
+</dd>
+<dt><code>-mfpp | -mfpu | -mfp-11</code></dt>
+<dt><code>-mno-fpp | -mno-fpu | -mno-fp-11</code></dt>
+<dd><p>Enable (or disable) the use of FP-11 floating-point instructions:
+<code>ABSF</code>, <code>ADDF</code>, <code>CFCC</code>, <code>CLRF</code>, <code>CMPF</code>,
+<code>DIVF</code>, <code>LDCFF</code>, <code>LDCIF</code>, <code>LDEXP</code>, <code>LDF</code>,
+<code>LDFPS</code>, <code>MODF</code>, <code>MULF</code>, <code>NEGF</code>, <code>SETD</code>,
+<code>SETF</code>, <code>SETI</code>, <code>SETL</code>, <code>STCFF</code>, <code>STCFI</code>,
+<code>STEXP</code>, <code>STF</code>, <code>STFPS</code>, <code>STST</code>, <code>SUBF</code>, and
+<code>TSTF</code>.
+</p>
+<a name="index-_002dmlimited_002deis"></a>
+<a name="index-_002dmno_002dlimited_002deis"></a>
+</dd>
+<dt><code>-mlimited-eis | -mno-limited-eis</code></dt>
+<dd><p>Enable (or disable) the use of the limited extended instruction set:
+<code>MARK</code>, <code>RTT</code>, <code>SOB</code>, <code>SXT</code>, and <code>XOR</code>.
+</p>
+<p>The -mno-limited-eis options also implies -mno-eis.
+</p>
+<a name="index-_002dmmfpt"></a>
+<a name="index-_002dmno_002dmfpt"></a>
+</dd>
+<dt><code>-mmfpt | -mno-mfpt</code></dt>
+<dd><p>Enable (or disable) the use of the <code>MFPT</code> instruction.
+</p>
+<a name="index-_002dmmutiproc"></a>
+<a name="index-_002dmno_002dmutiproc"></a>
+</dd>
+<dt><code>-mmultiproc | -mno-multiproc</code></dt>
+<dd><p>Enable (or disable) the use of multiprocessor instructions: <code>TSTSET</code> and
+<code>WRTLCK</code>.
+</p>
+<a name="index-_002dmmxps"></a>
+<a name="index-_002dmno_002dmxps"></a>
+</dd>
+<dt><code>-mmxps | -mno-mxps</code></dt>
+<dd><p>Enable (or disable) the use of the <code>MFPS</code> and <code>MTPS</code> instructions.
+</p>
+<a name="index-_002dmspl"></a>
+<a name="index-_002dmno_002dspl"></a>
+</dd>
+<dt><code>-mspl | -mno-spl</code></dt>
+<dd><p>Enable (or disable) the use of the <code>SPL</code> instruction.
+</p>
+<a name="index-_002dmmicrocode"></a>
+<a name="index-_002dmno_002dmicrocode"></a>
+<p>Enable (or disable) the use of the microcode instructions: <code>LDUB</code>,
+<code>MED</code>, and <code>XFC</code>.
+</p></dd>
+</dl>
+
+<a name="CPU-Model-Options"></a>
+<h4 class="subsubsection">9.34.1.3 CPU Model Options</h4>
+
+<p>These options enable the instruction set extensions supported by a
+particular CPU, and disables all other extensions.
+</p>
+<dl compact="compact">
+<dd><a name="index-_002dmka11"></a>
+</dd>
+<dt><code>-mka11</code></dt>
+<dd><p>KA11 CPU.  Base line instruction set only.
+</p>
+<a name="index-_002dmkb11"></a>
+</dd>
+<dt><code>-mkb11</code></dt>
+<dd><p>KB11 CPU.  Enable extended instruction set and <code>SPL</code>.
+</p>
+<a name="index-_002dmkd11a"></a>
+</dd>
+<dt><code>-mkd11a</code></dt>
+<dd><p>KD11-A CPU.  Enable limited extended instruction set.
+</p>
+<a name="index-_002dmkd11b"></a>
+</dd>
+<dt><code>-mkd11b</code></dt>
+<dd><p>KD11-B CPU.  Base line instruction set only.
+</p>
+<a name="index-_002dmkd11d"></a>
+</dd>
+<dt><code>-mkd11d</code></dt>
+<dd><p>KD11-D CPU.  Base line instruction set only.
+</p>
+<a name="index-_002dmkd11e"></a>
+</dd>
+<dt><code>-mkd11e</code></dt>
+<dd><p>KD11-E CPU.  Enable extended instruction set, <code>MFPS</code>, and <code>MTPS</code>.
+</p>
+<a name="index-_002dmkd11f"></a>
+<a name="index-_002dmkd11h"></a>
+<a name="index-_002dmkd11q"></a>
+</dd>
+<dt><code>-mkd11f | -mkd11h | -mkd11q</code></dt>
+<dd><p>KD11-F, KD11-H, or KD11-Q CPU.  Enable limited extended instruction set,
+<code>MFPS</code>, and <code>MTPS</code>.
+</p>
+<a name="index-_002dmkd11k"></a>
+</dd>
+<dt><code>-mkd11k</code></dt>
+<dd><p>KD11-K CPU.  Enable extended instruction set, <code>LDUB</code>, <code>MED</code>,
+<code>MFPS</code>, <code>MFPT</code>, <code>MTPS</code>, and <code>XFC</code>.
+</p>
+<a name="index-_002dmkd11z"></a>
+</dd>
+<dt><code>-mkd11z</code></dt>
+<dd><p>KD11-Z CPU.  Enable extended instruction set, <code>CSM</code>, <code>MFPS</code>,
+<code>MFPT</code>, <code>MTPS</code>, and <code>SPL</code>.
+</p>
+<a name="index-_002dmf11"></a>
+</dd>
+<dt><code>-mf11</code></dt>
+<dd><p>F11 CPU.  Enable extended instruction set, <code>MFPS</code>, <code>MFPT</code>, and
+<code>MTPS</code>.
+</p>
+<a name="index-_002dmj11"></a>
+</dd>
+<dt><code>-mj11</code></dt>
+<dd><p>J11 CPU.  Enable extended instruction set, <code>CSM</code>, <code>MFPS</code>,
+<code>MFPT</code>, <code>MTPS</code>, <code>SPL</code>, <code>TSTSET</code>, and <code>WRTLCK</code>.
+</p>
+<a name="index-_002dmt11"></a>
+</dd>
+<dt><code>-mt11</code></dt>
+<dd><p>T11 CPU.  Enable limited extended instruction set, <code>MFPS</code>, and
+<code>MTPS</code>.
+</p></dd>
+</dl>
+
+<a name="Machine-Model-Options"></a>
+<h4 class="subsubsection">9.34.1.4 Machine Model Options</h4>
+
+<p>These options enable the instruction set extensions supported by a
+particular machine model, and disables all other extensions.
+</p>
+<dl compact="compact">
+<dd><a name="index-_002dm11_002f03"></a>
+</dd>
+<dt><code>-m11/03</code></dt>
+<dd><p>Same as <code>-mkd11f</code>.
+</p>
+<a name="index-_002dm11_002f04"></a>
+</dd>
+<dt><code>-m11/04</code></dt>
+<dd><p>Same as <code>-mkd11d</code>.
+</p>
+<a name="index-_002dm11_002f05"></a>
+<a name="index-_002dm11_002f10"></a>
+</dd>
+<dt><code>-m11/05 | -m11/10</code></dt>
+<dd><p>Same as <code>-mkd11b</code>.
+</p>
+<a name="index-_002dm11_002f15"></a>
+<a name="index-_002dm11_002f20"></a>
+</dd>
+<dt><code>-m11/15 | -m11/20</code></dt>
+<dd><p>Same as <code>-mka11</code>.
+</p>
+<a name="index-_002dm11_002f21"></a>
+</dd>
+<dt><code>-m11/21</code></dt>
+<dd><p>Same as <code>-mt11</code>.
+</p>
+<a name="index-_002dm11_002f23"></a>
+<a name="index-_002dm11_002f24"></a>
+</dd>
+<dt><code>-m11/23 | -m11/24</code></dt>
+<dd><p>Same as <code>-mf11</code>.
+</p>
+<a name="index-_002dm11_002f34"></a>
+</dd>
+<dt><code>-m11/34</code></dt>
+<dd><p>Same as <code>-mkd11e</code>.
+</p>
+<a name="index-_002dm11_002f34a"></a>
+</dd>
+<dt><code>-m11/34a</code></dt>
+<dd><p>Ame as <code>-mkd11e</code> <code>-mfpp</code>.
+</p>
+<a name="index-_002dm11_002f35"></a>
+<a name="index-_002dm11_002f40"></a>
+</dd>
+<dt><code>-m11/35 | -m11/40</code></dt>
+<dd><p>Same as <code>-mkd11a</code>.
+</p>
+<a name="index-_002dm11_002f44"></a>
+</dd>
+<dt><code>-m11/44</code></dt>
+<dd><p>Same as <code>-mkd11z</code>.
+</p>
+<a name="index-_002dm11_002f45"></a>
+<a name="index-_002dm11_002f50"></a>
+<a name="index-_002dm11_002f55"></a>
+<a name="index-_002dm11_002f70"></a>
+</dd>
+<dt><code>-m11/45 | -m11/50 | -m11/55 | -m11/70</code></dt>
+<dd><p>Same as <code>-mkb11</code>.
+</p>
+<a name="index-_002dm11_002f53"></a>
+<a name="index-_002dm11_002f73"></a>
+<a name="index-_002dm11_002f83"></a>
+<a name="index-_002dm11_002f84"></a>
+<a name="index-_002dm11_002f93"></a>
+<a name="index-_002dm11_002f94"></a>
+</dd>
+<dt><code>-m11/53 | -m11/73 | -m11/83 | -m11/84 | -m11/93 | -m11/94</code></dt>
+<dd><p>Same as <code>-mj11</code>.
+</p>
+<a name="index-_002dm11_002f60"></a>
+</dd>
+<dt><code>-m11/60</code></dt>
+<dd><p>Same as <code>-mkd11k</code>.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="PDP_002d11_002dPseudos.html#PDP_002d11_002dPseudos" accesskey="n" rel="next">PDP-11-Pseudos</a>, Up: <a href="PDP_002d11_002dDependent.html#PDP_002d11_002dDependent" accesskey="u" rel="up">PDP-11-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

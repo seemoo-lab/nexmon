@@ -1,0 +1,662 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1987-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation.  A copy of
+the license is included in the
+section entitled "GNU Free Documentation License".
+
+This manual contains no Invariant Sections.  The Front-Cover Texts are
+(a) (see below), and the Back-Cover Texts are (b) (see below).
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The C Preprocessor: Common Predefined Macros</title>
+
+<meta name="description" content="The C Preprocessor: Common Predefined Macros">
+<meta name="keywords" content="The C Preprocessor: Common Predefined Macros">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index-of-Directives.html#Index-of-Directives" rel="index" title="Index of Directives">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Predefined-Macros.html#Predefined-Macros" rel="up" title="Predefined Macros">
+<link href="System_002dspecific-Predefined-Macros.html#System_002dspecific-Predefined-Macros" rel="next" title="System-specific Predefined Macros">
+<link href="Standard-Predefined-Macros.html#Standard-Predefined-Macros" rel="prev" title="Standard Predefined Macros">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Common-Predefined-Macros"></a>
+<div class="header">
+<p>
+Next: <a href="System_002dspecific-Predefined-Macros.html#System_002dspecific-Predefined-Macros" accesskey="n" rel="next">System-specific Predefined Macros</a>, Previous: <a href="Standard-Predefined-Macros.html#Standard-Predefined-Macros" accesskey="p" rel="prev">Standard Predefined Macros</a>, Up: <a href="Predefined-Macros.html#Predefined-Macros" accesskey="u" rel="up">Predefined Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index-of-Directives.html#Index-of-Directives" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Common-Predefined-Macros-1"></a>
+<h4 class="subsection">3.7.2 Common Predefined Macros</h4>
+<a name="index-common-predefined-macros"></a>
+
+<p>The common predefined macros are GNU C extensions.  They are available
+with the same meanings regardless of the machine or operating system on
+which you are using GNU C or GNU Fortran.  Their names all start with
+double underscores.
+</p>
+<dl compact="compact">
+<dt><code>__COUNTER__</code></dt>
+<dd><p>This macro expands to sequential integral values starting from 0.  In
+conjunction with the <code>##</code> operator, this provides a convenient means to
+generate unique identifiers.  Care must be taken to ensure that
+<code>__COUNTER__</code> is not expanded prior to inclusion of precompiled headers
+which use it.  Otherwise, the precompiled headers will not be used.
+</p>
+</dd>
+<dt><code>__GFORTRAN__</code></dt>
+<dd><p>The GNU Fortran compiler defines this.
+</p>
+</dd>
+<dt><code>__GNUC__</code></dt>
+<dt><code>__GNUC_MINOR__</code></dt>
+<dt><code>__GNUC_PATCHLEVEL__</code></dt>
+<dd><p>These macros are defined by all GNU compilers that use the C
+preprocessor: C, C++, Objective-C and Fortran.  Their values are the major
+version, minor version, and patch level of the compiler, as integer
+constants.  For example, GCC version <var>x</var>.<var>y</var>.<var>z</var>
+defines <code>__GNUC__</code> to <var>x</var>, <code>__GNUC_MINOR__</code> to <var>y</var>,
+and <code>__GNUC_PATCHLEVEL__</code> to <var>z</var>.  These
+macros are also defined if you invoke the preprocessor directly.
+</p>
+<p>If all you need to know is whether or not your program is being compiled
+by GCC, or a non-GCC compiler that claims to accept the GNU C dialects,
+you can simply test <code>__GNUC__</code>.  If you need to write code
+which depends on a specific version, you must be more careful.  Each
+time the minor version is increased, the patch level is reset to zero;
+each time the major version is increased, the
+minor version and patch level are reset.  If you wish to use the
+predefined macros directly in the conditional, you will need to write it
+like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">/* <span class="roman">Test for GCC &gt; 3.2.0</span> */
+#if __GNUC__ &gt; 3 || \
+    (__GNUC__ == 3 &amp;&amp; (__GNUC_MINOR__ &gt; 2 || \
+                       (__GNUC_MINOR__ == 2 &amp;&amp; \
+                        __GNUC_PATCHLEVEL__ &gt; 0))
+</pre></div>
+
+<p>Another approach is to use the predefined macros to
+calculate a single number, then compare that against a threshold:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#define GCC_VERSION (__GNUC__ * 10000 \
+                     + __GNUC_MINOR__ * 100 \
+                     + __GNUC_PATCHLEVEL__)
+&hellip;
+/* <span class="roman">Test for GCC &gt; 3.2.0</span> */
+#if GCC_VERSION &gt; 30200
+</pre></div>
+
+<p>Many people find this form easier to understand.
+</p>
+</dd>
+<dt><code>__GNUG__</code></dt>
+<dd><p>The GNU C++ compiler defines this.  Testing it is equivalent to
+testing <code><span class="nolinebreak">(__GNUC__</span>&nbsp;&amp;&amp;&nbsp;<span class="nolinebreak">__cplusplus)</span><!-- /@w --></code>.
+</p>
+</dd>
+<dt><code>__STRICT_ANSI__</code></dt>
+<dd><p>GCC defines this macro if and only if the <samp>-ansi</samp> switch, or a
+<samp>-std</samp> switch specifying strict conformance to some version of ISO C
+or ISO C++, was specified when GCC was invoked.  It is defined to &lsquo;<samp>1</samp>&rsquo;.
+This macro exists primarily to direct GNU libc&rsquo;s header files to use only
+definitions found in standard C.
+</p>
+</dd>
+<dt><code>__BASE_FILE__</code></dt>
+<dd><p>This macro expands to the name of the main input file, in the form
+of a C string constant.  This is the source file that was specified
+on the command line of the preprocessor or C compiler.
+</p>
+</dd>
+<dt><code>__INCLUDE_LEVEL__</code></dt>
+<dd><p>This macro expands to a decimal integer constant that represents the
+depth of nesting in include files.  The value of this macro is
+incremented on every &lsquo;<samp>#include</samp>&rsquo; directive and decremented at the
+end of every included file.  It starts out at 0, its value within the
+base file specified on the command line.
+</p>
+</dd>
+<dt><code>__ELF__</code></dt>
+<dd><p>This macro is defined if the target uses the ELF object format.
+</p>
+</dd>
+<dt><code>__VERSION__</code></dt>
+<dd><p>This macro expands to a string constant which describes the version of
+the compiler in use.  You should not rely on its contents having any
+particular form, but it can be counted on to contain at least the
+release number.
+</p>
+</dd>
+<dt><code>__OPTIMIZE__</code></dt>
+<dt><code>__OPTIMIZE_SIZE__</code></dt>
+<dt><code>__NO_INLINE__</code></dt>
+<dd><p>These macros describe the compilation mode.  <code>__OPTIMIZE__</code> is
+defined in all optimizing compilations.  <code>__OPTIMIZE_SIZE__</code> is
+defined if the compiler is optimizing for size, not speed.
+<code>__NO_INLINE__</code> is defined if no functions will be inlined into
+their callers (when not optimizing, or when inlining has been
+specifically disabled by <samp>-fno-inline</samp>).
+</p>
+<p>These macros cause certain GNU header files to provide optimized
+definitions, using macros or inline functions, of system library
+functions.  You should not use these macros in any way unless you make
+sure that programs will execute with the same effect whether or not they
+are defined.  If they are defined, their value is 1.
+</p>
+</dd>
+<dt><code>__GNUC_GNU_INLINE__</code></dt>
+<dd><p>GCC defines this macro if functions declared <code>inline</code> will be
+handled in GCC&rsquo;s traditional gnu90 mode.  Object files will contain
+externally visible definitions of all functions declared <code>inline</code>
+without <code>extern</code> or <code>static</code>.  They will not contain any
+definitions of any functions declared <code>extern inline</code>.
+</p>
+</dd>
+<dt><code>__GNUC_STDC_INLINE__</code></dt>
+<dd><p>GCC defines this macro if functions declared <code>inline</code> will be
+handled according to the ISO C99 or later standards.  Object files will contain
+externally visible definitions of all functions declared <code>extern
+inline</code>.  They will not contain definitions of any functions declared
+<code>inline</code> without <code>extern</code>.
+</p>
+<p>If this macro is defined, GCC supports the <code>gnu_inline</code> function
+attribute as a way to always get the gnu90 behavior.
+</p>
+</dd>
+<dt><code>__CHAR_UNSIGNED__</code></dt>
+<dd><p>GCC defines this macro if and only if the data type <code>char</code> is
+unsigned on the target machine.  It exists to cause the standard header
+file <samp>limits.h</samp> to work correctly.  You should not use this macro
+yourself; instead, refer to the standard macros defined in <samp>limits.h</samp>.
+</p>
+</dd>
+<dt><code>__WCHAR_UNSIGNED__</code></dt>
+<dd><p>Like <code>__CHAR_UNSIGNED__</code>, this macro is defined if and only if the
+data type <code>wchar_t</code> is unsigned and the front-end is in C++ mode.
+</p>
+</dd>
+<dt><code>__REGISTER_PREFIX__</code></dt>
+<dd><p>This macro expands to a single token (not a string constant) which is
+the prefix applied to CPU register names in assembly language for this
+target.  You can use it to write assembly that is usable in multiple
+environments.  For example, in the <code>m68k-aout</code> environment it
+expands to nothing, but in the <code>m68k-coff</code> environment it expands
+to a single &lsquo;<samp>%</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>__USER_LABEL_PREFIX__</code></dt>
+<dd><p>This macro expands to a single token which is the prefix applied to
+user labels (symbols visible to C code) in assembly.  For example, in
+the <code>m68k-aout</code> environment it expands to an &lsquo;<samp>_</samp>&rsquo;, but in the
+<code>m68k-coff</code> environment it expands to nothing.
+</p>
+<p>This macro will have the correct definition even if
+<samp>-f(no-)underscores</samp> is in use, but it will not be correct if
+target-specific options that adjust this prefix are used (e.g. the
+OSF/rose <samp>-mno-underscores</samp> option).
+</p>
+</dd>
+<dt><code>__SIZE_TYPE__</code></dt>
+<dt><code>__PTRDIFF_TYPE__</code></dt>
+<dt><code>__WCHAR_TYPE__</code></dt>
+<dt><code>__WINT_TYPE__</code></dt>
+<dt><code>__INTMAX_TYPE__</code></dt>
+<dt><code>__UINTMAX_TYPE__</code></dt>
+<dt><code>__SIG_ATOMIC_TYPE__</code></dt>
+<dt><code>__INT8_TYPE__</code></dt>
+<dt><code>__INT16_TYPE__</code></dt>
+<dt><code>__INT32_TYPE__</code></dt>
+<dt><code>__INT64_TYPE__</code></dt>
+<dt><code>__UINT8_TYPE__</code></dt>
+<dt><code>__UINT16_TYPE__</code></dt>
+<dt><code>__UINT32_TYPE__</code></dt>
+<dt><code>__UINT64_TYPE__</code></dt>
+<dt><code>__INT_LEAST8_TYPE__</code></dt>
+<dt><code>__INT_LEAST16_TYPE__</code></dt>
+<dt><code>__INT_LEAST32_TYPE__</code></dt>
+<dt><code>__INT_LEAST64_TYPE__</code></dt>
+<dt><code>__UINT_LEAST8_TYPE__</code></dt>
+<dt><code>__UINT_LEAST16_TYPE__</code></dt>
+<dt><code>__UINT_LEAST32_TYPE__</code></dt>
+<dt><code>__UINT_LEAST64_TYPE__</code></dt>
+<dt><code>__INT_FAST8_TYPE__</code></dt>
+<dt><code>__INT_FAST16_TYPE__</code></dt>
+<dt><code>__INT_FAST32_TYPE__</code></dt>
+<dt><code>__INT_FAST64_TYPE__</code></dt>
+<dt><code>__UINT_FAST8_TYPE__</code></dt>
+<dt><code>__UINT_FAST16_TYPE__</code></dt>
+<dt><code>__UINT_FAST32_TYPE__</code></dt>
+<dt><code>__UINT_FAST64_TYPE__</code></dt>
+<dt><code>__INTPTR_TYPE__</code></dt>
+<dt><code>__UINTPTR_TYPE__</code></dt>
+<dd><p>These macros are defined to the correct underlying types for the
+<code>size_t</code>, <code>ptrdiff_t</code>, <code>wchar_t</code>, <code>wint_t</code>,
+<code>intmax_t</code>, <code>uintmax_t</code>, <code>sig_atomic_t</code>, <code>int8_t</code>,
+<code>int16_t</code>, <code>int32_t</code>, <code>int64_t</code>, <code>uint8_t</code>,
+<code>uint16_t</code>, <code>uint32_t</code>, <code>uint64_t</code>,
+<code>int_least8_t</code>, <code>int_least16_t</code>, <code>int_least32_t</code>,
+<code>int_least64_t</code>, <code>uint_least8_t</code>, <code>uint_least16_t</code>,
+<code>uint_least32_t</code>, <code>uint_least64_t</code>, <code>int_fast8_t</code>,
+<code>int_fast16_t</code>, <code>int_fast32_t</code>, <code>int_fast64_t</code>,
+<code>uint_fast8_t</code>, <code>uint_fast16_t</code>, <code>uint_fast32_t</code>,
+<code>uint_fast64_t</code>, <code>intptr_t</code>, and <code>uintptr_t</code> typedefs,
+respectively.  They exist to make the standard header files
+<samp>stddef.h</samp>, <samp>stdint.h</samp>, and <samp>wchar.h</samp> work correctly.
+You should not use these macros directly; instead, include the
+appropriate headers and use the typedefs.  Some of these macros may
+not be defined on particular systems if GCC does not provide a
+<samp>stdint.h</samp> header on those systems.
+</p>
+</dd>
+<dt><code>__CHAR_BIT__</code></dt>
+<dd><p>Defined to the number of bits used in the representation of the
+<code>char</code> data type.  It exists to make the standard header given
+numerical limits work correctly.  You should not use
+this macro directly; instead, include the appropriate headers.
+</p>
+</dd>
+<dt><code>__SCHAR_MAX__</code></dt>
+<dt><code>__WCHAR_MAX__</code></dt>
+<dt><code>__SHRT_MAX__</code></dt>
+<dt><code>__INT_MAX__</code></dt>
+<dt><code>__LONG_MAX__</code></dt>
+<dt><code>__LONG_LONG_MAX__</code></dt>
+<dt><code>__WINT_MAX__</code></dt>
+<dt><code>__SIZE_MAX__</code></dt>
+<dt><code>__PTRDIFF_MAX__</code></dt>
+<dt><code>__INTMAX_MAX__</code></dt>
+<dt><code>__UINTMAX_MAX__</code></dt>
+<dt><code>__SIG_ATOMIC_MAX__</code></dt>
+<dt><code>__INT8_MAX__</code></dt>
+<dt><code>__INT16_MAX__</code></dt>
+<dt><code>__INT32_MAX__</code></dt>
+<dt><code>__INT64_MAX__</code></dt>
+<dt><code>__UINT8_MAX__</code></dt>
+<dt><code>__UINT16_MAX__</code></dt>
+<dt><code>__UINT32_MAX__</code></dt>
+<dt><code>__UINT64_MAX__</code></dt>
+<dt><code>__INT_LEAST8_MAX__</code></dt>
+<dt><code>__INT_LEAST16_MAX__</code></dt>
+<dt><code>__INT_LEAST32_MAX__</code></dt>
+<dt><code>__INT_LEAST64_MAX__</code></dt>
+<dt><code>__UINT_LEAST8_MAX__</code></dt>
+<dt><code>__UINT_LEAST16_MAX__</code></dt>
+<dt><code>__UINT_LEAST32_MAX__</code></dt>
+<dt><code>__UINT_LEAST64_MAX__</code></dt>
+<dt><code>__INT_FAST8_MAX__</code></dt>
+<dt><code>__INT_FAST16_MAX__</code></dt>
+<dt><code>__INT_FAST32_MAX__</code></dt>
+<dt><code>__INT_FAST64_MAX__</code></dt>
+<dt><code>__UINT_FAST8_MAX__</code></dt>
+<dt><code>__UINT_FAST16_MAX__</code></dt>
+<dt><code>__UINT_FAST32_MAX__</code></dt>
+<dt><code>__UINT_FAST64_MAX__</code></dt>
+<dt><code>__INTPTR_MAX__</code></dt>
+<dt><code>__UINTPTR_MAX__</code></dt>
+<dt><code>__WCHAR_MIN__</code></dt>
+<dt><code>__WINT_MIN__</code></dt>
+<dt><code>__SIG_ATOMIC_MIN__</code></dt>
+<dd><p>Defined to the maximum value of the <code>signed char</code>, <code>wchar_t</code>,
+<code>signed short</code>,
+<code>signed int</code>, <code>signed long</code>, <code>signed long long</code>,
+<code>wint_t</code>, <code>size_t</code>, <code>ptrdiff_t</code>,
+<code>intmax_t</code>, <code>uintmax_t</code>, <code>sig_atomic_t</code>, <code>int8_t</code>,
+<code>int16_t</code>, <code>int32_t</code>, <code>int64_t</code>, <code>uint8_t</code>,
+<code>uint16_t</code>, <code>uint32_t</code>, <code>uint64_t</code>,
+<code>int_least8_t</code>, <code>int_least16_t</code>, <code>int_least32_t</code>,
+<code>int_least64_t</code>, <code>uint_least8_t</code>, <code>uint_least16_t</code>,
+<code>uint_least32_t</code>, <code>uint_least64_t</code>, <code>int_fast8_t</code>,
+<code>int_fast16_t</code>, <code>int_fast32_t</code>, <code>int_fast64_t</code>,
+<code>uint_fast8_t</code>, <code>uint_fast16_t</code>, <code>uint_fast32_t</code>,
+<code>uint_fast64_t</code>, <code>intptr_t</code>, and <code>uintptr_t</code> types and
+to the minimum value of the <code>wchar_t</code>, <code>wint_t</code>, and
+<code>sig_atomic_t</code> types respectively.  They exist to make the
+standard header given numerical limits work correctly.  You should not
+use these macros directly; instead, include the appropriate headers.
+Some of these macros may not be defined on particular systems if GCC
+does not provide a <samp>stdint.h</samp> header on those systems.
+</p>
+</dd>
+<dt><code>__INT8_C</code></dt>
+<dt><code>__INT16_C</code></dt>
+<dt><code>__INT32_C</code></dt>
+<dt><code>__INT64_C</code></dt>
+<dt><code>__UINT8_C</code></dt>
+<dt><code>__UINT16_C</code></dt>
+<dt><code>__UINT32_C</code></dt>
+<dt><code>__UINT64_C</code></dt>
+<dt><code>__INTMAX_C</code></dt>
+<dt><code>__UINTMAX_C</code></dt>
+<dd><p>Defined to implementations of the standard <samp>stdint.h</samp> macros with
+the same names without the leading <code>__</code>.  They exist the make the
+implementation of that header work correctly.  You should not use
+these macros directly; instead, include the appropriate headers.  Some
+of these macros may not be defined on particular systems if GCC does
+not provide a <samp>stdint.h</samp> header on those systems.
+</p>
+</dd>
+<dt><code>__SCHAR_WIDTH__</code></dt>
+<dt><code>__SHRT_WIDTH__</code></dt>
+<dt><code>__INT_WIDTH__</code></dt>
+<dt><code>__LONG_WIDTH__</code></dt>
+<dt><code>__LONG_LONG_WIDTH__</code></dt>
+<dt><code>__PTRDIFF_WIDTH__</code></dt>
+<dt><code>__SIG_ATOMIC_WIDTH__</code></dt>
+<dt><code>__SIZE_WIDTH__</code></dt>
+<dt><code>__WCHAR_WIDTH__</code></dt>
+<dt><code>__WINT_WIDTH__</code></dt>
+<dt><code>__INT_LEAST8_WIDTH__</code></dt>
+<dt><code>__INT_LEAST16_WIDTH__</code></dt>
+<dt><code>__INT_LEAST32_WIDTH__</code></dt>
+<dt><code>__INT_LEAST64_WIDTH__</code></dt>
+<dt><code>__INT_FAST8_WIDTH__</code></dt>
+<dt><code>__INT_FAST16_WIDTH__</code></dt>
+<dt><code>__INT_FAST32_WIDTH__</code></dt>
+<dt><code>__INT_FAST64_WIDTH__</code></dt>
+<dt><code>__INTPTR_WIDTH__</code></dt>
+<dt><code>__INTMAX_WIDTH__</code></dt>
+<dd><p>Defined to the bit widths of the corresponding types.  They exist to
+make the implementations of <samp>limits.h</samp> and <samp>stdint.h</samp> behave
+correctly.  You should not use these macros directly; instead, include
+the appropriate headers.  Some of these macros may not be defined on
+particular systems if GCC does not provide a <samp>stdint.h</samp> header on
+those systems.
+</p>
+</dd>
+<dt><code>__SIZEOF_INT__</code></dt>
+<dt><code>__SIZEOF_LONG__</code></dt>
+<dt><code>__SIZEOF_LONG_LONG__</code></dt>
+<dt><code>__SIZEOF_SHORT__</code></dt>
+<dt><code>__SIZEOF_POINTER__</code></dt>
+<dt><code>__SIZEOF_FLOAT__</code></dt>
+<dt><code>__SIZEOF_DOUBLE__</code></dt>
+<dt><code>__SIZEOF_LONG_DOUBLE__</code></dt>
+<dt><code>__SIZEOF_SIZE_T__</code></dt>
+<dt><code>__SIZEOF_WCHAR_T__</code></dt>
+<dt><code>__SIZEOF_WINT_T__</code></dt>
+<dt><code>__SIZEOF_PTRDIFF_T__</code></dt>
+<dd><p>Defined to the number of bytes of the C standard data types: <code>int</code>,
+<code>long</code>, <code>long long</code>, <code>short</code>, <code>void *</code>, <code>float</code>,
+<code>double</code>, <code>long double</code>, <code>size_t</code>, <code>wchar_t</code>, <code>wint_t</code>
+and <code>ptrdiff_t</code>.
+</p>
+</dd>
+<dt><code>__BYTE_ORDER__</code></dt>
+<dt><code>__ORDER_LITTLE_ENDIAN__</code></dt>
+<dt><code>__ORDER_BIG_ENDIAN__</code></dt>
+<dt><code>__ORDER_PDP_ENDIAN__</code></dt>
+<dd><p><code>__BYTE_ORDER__</code> is defined to one of the values
+<code>__ORDER_LITTLE_ENDIAN__</code>, <code>__ORDER_BIG_ENDIAN__</code>, or
+<code>__ORDER_PDP_ENDIAN__</code> to reflect the layout of multi-byte and
+multi-word quantities in memory.  If <code>__BYTE_ORDER__</code> is equal to
+<code>__ORDER_LITTLE_ENDIAN__</code> or <code>__ORDER_BIG_ENDIAN__</code>, then
+multi-byte and multi-word quantities are laid out identically: the
+byte (word) at the lowest address is the least significant or most
+significant byte (word) of the quantity, respectively.  If
+<code>__BYTE_ORDER__</code> is equal to <code>__ORDER_PDP_ENDIAN__</code>, then
+bytes in 16-bit words are laid out in a little-endian fashion, whereas
+the 16-bit subwords of a 32-bit quantity are laid out in big-endian
+fashion.
+</p>
+<p>You should use these macros for testing like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">/* <span class="roman">Test for a little-endian machine</span> */
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+</pre></div>
+
+</dd>
+<dt><code>__FLOAT_WORD_ORDER__</code></dt>
+<dd><p><code>__FLOAT_WORD_ORDER__</code> is defined to one of the values
+<code>__ORDER_LITTLE_ENDIAN__</code> or <code>__ORDER_BIG_ENDIAN__</code> to reflect
+the layout of the words of multi-word floating-point quantities.
+</p>
+</dd>
+<dt><code>__DEPRECATED</code></dt>
+<dd><p>This macro is defined, with value 1, when compiling a C++ source file
+with warnings about deprecated constructs enabled.  These warnings are
+enabled by default, but can be disabled with <samp>-Wno-deprecated</samp>.
+</p>
+</dd>
+<dt><code>__EXCEPTIONS</code></dt>
+<dd><p>This macro is defined, with value 1, when compiling a C++ source file
+with exceptions enabled.  If <samp>-fno-exceptions</samp> is used when
+compiling the file, then this macro is not defined.
+</p>
+</dd>
+<dt><code>__GXX_RTTI</code></dt>
+<dd><p>This macro is defined, with value 1, when compiling a C++ source file
+with runtime type identification enabled.  If <samp>-fno-rtti</samp> is
+used when compiling the file, then this macro is not defined.
+</p>
+</dd>
+<dt><code>__USING_SJLJ_EXCEPTIONS__</code></dt>
+<dd><p>This macro is defined, with value 1, if the compiler uses the old
+mechanism based on <code>setjmp</code> and <code>longjmp</code> for exception
+handling.
+</p>
+</dd>
+<dt><code>__GXX_EXPERIMENTAL_CXX0X__</code></dt>
+<dd><p>This macro is defined when compiling a C++ source file with the option
+<samp>-std=c++0x</samp> or <samp>-std=gnu++0x</samp>. It indicates that some
+features likely to be included in C++0x are available. Note that these
+features are experimental, and may change or be removed in future
+versions of GCC.
+</p>
+</dd>
+<dt><code>__GXX_WEAK__</code></dt>
+<dd><p>This macro is defined when compiling a C++ source file.  It has the
+value 1 if the compiler will use weak symbols, COMDAT sections, or
+other similar techniques to collapse symbols with &ldquo;vague linkage&rdquo;
+that are defined in multiple translation units.  If the compiler will
+not collapse such symbols, this macro is defined with value 0.  In
+general, user code should not need to make use of this macro; the
+purpose of this macro is to ease implementation of the C++ runtime
+library provided with G++.
+</p>
+</dd>
+<dt><code>__NEXT_RUNTIME__</code></dt>
+<dd><p>This macro is defined, with value 1, if (and only if) the NeXT runtime
+(as in <samp>-fnext-runtime</samp>) is in use for Objective-C.  If the GNU
+runtime is used, this macro is not defined, so that you can use this
+macro to determine which runtime (NeXT or GNU) is being used.
+</p>
+</dd>
+<dt><code>__LP64__</code></dt>
+<dt><code>_LP64</code></dt>
+<dd><p>These macros are defined, with value 1, if (and only if) the compilation
+is for a target where <code>long int</code> and pointer both use 64-bits and
+<code>int</code> uses 32-bit.
+</p>
+</dd>
+<dt><code>__SSP__</code></dt>
+<dd><p>This macro is defined, with value 1, when <samp>-fstack-protector</samp> is in
+use.
+</p>
+</dd>
+<dt><code>__SSP_ALL__</code></dt>
+<dd><p>This macro is defined, with value 2, when <samp>-fstack-protector-all</samp> is
+in use.
+</p>
+</dd>
+<dt><code>__SSP_STRONG__</code></dt>
+<dd><p>This macro is defined, with value 3, when <samp>-fstack-protector-strong</samp> is
+in use.
+</p>
+</dd>
+<dt><code>__SSP_EXPLICIT__</code></dt>
+<dd><p>This macro is defined, with value 4, when <samp>-fstack-protector-explicit</samp> is
+in use.
+</p>
+</dd>
+<dt><code>__SANITIZE_ADDRESS__</code></dt>
+<dd><p>This macro is defined, with value 1, when <samp>-fsanitize=address</samp>
+or <samp>-fsanitize=kernel-address</samp> are in use.
+</p>
+</dd>
+<dt><code>__SANITIZE_THREAD__</code></dt>
+<dd><p>This macro is defined, with value 1, when <samp>-fsanitize=thread</samp> is in use.
+</p>
+</dd>
+<dt><code>__TIMESTAMP__</code></dt>
+<dd><p>This macro expands to a string constant that describes the date and time
+of the last modification of the current source file. The string constant
+contains abbreviated day of the week, month, day of the month, time in
+hh:mm:ss form, year and looks like <code>&quot;Sun&nbsp;Sep&nbsp;16&nbsp;01:03:52&nbsp;1973&quot;<!-- /@w --></code>.
+If the day of the month is less than 10, it is padded with a space on the left.
+</p>
+<p>If GCC cannot determine the current date, it will emit a warning message
+(once per compilation) and <code>__TIMESTAMP__</code> will expand to
+<code>&quot;???&nbsp;???&nbsp;??&nbsp;??:??:??&nbsp;????&quot;<!-- /@w --></code>.
+</p>
+</dd>
+<dt><code>__GCC_HAVE_SYNC_COMPARE_AND_SWAP_1</code></dt>
+<dt><code>__GCC_HAVE_SYNC_COMPARE_AND_SWAP_2</code></dt>
+<dt><code>__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4</code></dt>
+<dt><code>__GCC_HAVE_SYNC_COMPARE_AND_SWAP_8</code></dt>
+<dt><code>__GCC_HAVE_SYNC_COMPARE_AND_SWAP_16</code></dt>
+<dd><p>These macros are defined when the target processor supports atomic compare
+and swap operations on operands 1, 2, 4, 8 or 16 bytes in length, respectively.
+</p>
+</dd>
+<dt><code>__HAVE_SPECULATION_SAFE_VALUE</code></dt>
+<dd><p>This macro is defined with the value 1 to show that this version of GCC
+supports <code>__builtin_speculation_safe_value</code>.
+</p>
+</dd>
+<dt><code>__GCC_HAVE_DWARF2_CFI_ASM</code></dt>
+<dd><p>This macro is defined when the compiler is emitting DWARF CFI directives
+to the assembler.  When this is defined, it is possible to emit those same
+directives in inline assembly.
+</p>
+</dd>
+<dt><code>__FP_FAST_FMA</code></dt>
+<dt><code>__FP_FAST_FMAF</code></dt>
+<dt><code>__FP_FAST_FMAL</code></dt>
+<dd><p>These macros are defined with value 1 if the backend supports the
+<code>fma</code>, <code>fmaf</code>, and <code>fmal</code> builtin functions, so that
+the include file <samp>math.h</samp> can define the macros
+<code>FP_FAST_FMA</code>, <code>FP_FAST_FMAF</code>, and <code>FP_FAST_FMAL</code>
+for compatibility with the 1999 C standard.
+</p>
+</dd>
+<dt><code>__FP_FAST_FMAF16</code></dt>
+<dt><code>__FP_FAST_FMAF32</code></dt>
+<dt><code>__FP_FAST_FMAF64</code></dt>
+<dt><code>__FP_FAST_FMAF128</code></dt>
+<dt><code>__FP_FAST_FMAF32X</code></dt>
+<dt><code>__FP_FAST_FMAF64X</code></dt>
+<dt><code>__FP_FAST_FMAF128X</code></dt>
+<dd><p>These macros are defined with the value 1 if the backend supports the
+<code>fma</code> functions using the additional <code>_Float<var>n</var></code> and
+<code>_Float<var>n</var>x</code> types that are defined in ISO/IEC TS
+18661-3:2015.  The include file <samp>math.h</samp> can define the
+<code>FP_FAST_FMAF<var>n</var></code> and <code>FP_FAST_FMAF<var>n</var>x</code> macros if
+the user defined <code>__STDC_WANT_IEC_60559_TYPES_EXT__</code> before
+including <samp>math.h</samp>.
+</p>
+</dd>
+<dt><code>__GCC_IEC_559</code></dt>
+<dd><p>This macro is defined to indicate the intended level of support for
+IEEE 754 (IEC 60559) floating-point arithmetic.  It expands to a
+nonnegative integer value.  If 0, it indicates that the combination of
+the compiler configuration and the command-line options is not
+intended to support IEEE 754 arithmetic for <code>float</code> and
+<code>double</code> as defined in C99 and C11 Annex F (for example, that the
+standard rounding modes and exceptions are not supported, or that
+optimizations are enabled that conflict with IEEE 754 semantics).  If
+1, it indicates that IEEE 754 arithmetic is intended to be supported;
+this does not mean that all relevant language features are supported
+by GCC.  If 2 or more, it additionally indicates support for IEEE
+754-2008 (in particular, that the binary encodings for quiet and
+signaling NaNs are as specified in IEEE 754-2008).
+</p>
+<p>This macro does not indicate the default state of command-line options
+that control optimizations that C99 and C11 permit to be controlled by
+standard pragmas, where those standards do not require a particular
+default state.  It does not indicate whether optimizations respect
+signaling NaN semantics (the macro for that is
+<code>__SUPPORT_SNAN__</code>).  It does not indicate support for decimal
+floating point or the IEEE 754 binary16 and binary128 types.
+</p>
+</dd>
+<dt><code>__GCC_IEC_559_COMPLEX</code></dt>
+<dd><p>This macro is defined to indicate the intended level of support for
+IEEE 754 (IEC 60559) floating-point arithmetic for complex numbers, as
+defined in C99 and C11 Annex G.  It expands to a nonnegative integer
+value.  If 0, it indicates that the combination of the compiler
+configuration and the command-line options is not intended to support
+Annex G requirements (for example, because <samp>-fcx-limited-range</samp>
+was used).  If 1 or more, it indicates that it is intended to support
+those requirements; this does not mean that all relevant language
+features are supported by GCC.
+</p>
+</dd>
+<dt><code>__NO_MATH_ERRNO__</code></dt>
+<dd><p>This macro is defined if <samp>-fno-math-errno</samp> is used, or enabled
+by another option such as <samp>-ffast-math</samp> or by default.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="System_002dspecific-Predefined-Macros.html#System_002dspecific-Predefined-Macros" accesskey="n" rel="next">System-specific Predefined Macros</a>, Previous: <a href="Standard-Predefined-Macros.html#Standard-Predefined-Macros" accesskey="p" rel="prev">Standard Predefined Macros</a>, Up: <a href="Predefined-Macros.html#Predefined-Macros" accesskey="u" rel="up">Predefined Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index-of-Directives.html#Index-of-Directives" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

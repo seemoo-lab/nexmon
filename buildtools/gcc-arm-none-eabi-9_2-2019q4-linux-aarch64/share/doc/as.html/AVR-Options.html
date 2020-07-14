@@ -1,0 +1,228 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: AVR Options</title>
+
+<meta name="description" content="Using as: AVR Options">
+<meta name="keywords" content="Using as: AVR Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="AVR_002dDependent.html#AVR_002dDependent" rel="up" title="AVR-Dependent">
+<link href="AVR-Syntax.html#AVR-Syntax" rel="next" title="AVR Syntax">
+<link href="AVR_002dDependent.html#AVR_002dDependent" rel="prev" title="AVR-Dependent">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="AVR-Options"></a>
+<div class="header">
+<p>
+Next: <a href="AVR-Syntax.html#AVR-Syntax" accesskey="n" rel="next">AVR Syntax</a>, Up: <a href="AVR_002dDependent.html#AVR_002dDependent" accesskey="u" rel="up">AVR-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Options-4"></a>
+<h4 class="subsection">9.5.1 Options</h4>
+<a name="index-AVR-options-_0028none_0029"></a>
+<a name="index-options-for-AVR-_0028none_0029"></a>
+
+<dl compact="compact">
+<dd>
+<a name="index-_002dmmcu_003d-command_002dline-option_002c-AVR"></a>
+</dd>
+<dt><code>-mmcu=<var>mcu</var></code></dt>
+<dd><p>Specify ATMEL AVR instruction set or MCU type.
+</p>
+<p>Instruction set avr1 is for the minimal AVR core, not supported by the C
+compiler, only for assembler programs (MCU types: at90s1200,
+attiny11, attiny12, attiny15, attiny28).
+</p>
+<p>Instruction set avr2 (default) is for the classic AVR core with up to
+8K program memory space (MCU types: at90s2313, at90s2323, at90s2333, at90s2343,
+attiny22, attiny26, at90s4414, at90s4433, at90s4434, at90s8515, at90c8534,
+at90s8535).
+</p>
+<p>Instruction set avr25 is for the classic AVR core with up to 8K program memory
+space plus the MOVW instruction (MCU types: attiny13, attiny13a, attiny2313,
+attiny2313a, attiny24, attiny24a, attiny4313, attiny44, attiny44a, attiny84,
+attiny84a, attiny25, attiny45, attiny85, attiny261, attiny261a, attiny461,
+attiny461a, attiny861, attiny861a, attiny87, attiny43u, attiny48, attiny88,
+attiny828, at86rf401, ata6289, ata5272).
+</p>
+<p>Instruction set avr3 is for the classic AVR core with up to 128K program
+memory space (MCU types: at43usb355, at76c711).
+</p>
+<p>Instruction set avr31 is for the classic AVR core with exactly 128K program
+memory space (MCU types: atmega103, at43usb320).
+</p>
+<p>Instruction set avr35 is for classic AVR core plus MOVW, CALL, and JMP
+instructions (MCU types: attiny167, attiny1634, at90usb82, at90usb162,
+atmega8u2, atmega16u2, atmega32u2, ata5505).
+</p>
+<p>Instruction set avr4 is for the enhanced AVR core with up to 8K program
+memory space (MCU types: atmega48, atmega48a, atmega48pa, atmega48p, atmega8,
+atmega8a, atmega88, atmega88a, atmega88p, atmega88pa, atmega8515, atmega8535,
+atmega8hva, at90pwm1, at90pwm2, at90pwm2b, at90pwm3, at90pwm3b, at90pwm81,
+ata6285, ata6286).
+</p>
+<p>Instruction set avr5 is for the enhanced AVR core with up to 128K program
+memory space (MCU types: at90pwm161, atmega16, atmega16a, atmega161, atmega162,
+atmega163, atmega164a, atmega164p, atmega164pa, atmega165, atmega165a,
+atmega165p, atmega165pa, atmega168, atmega168a, atmega168p, atmega168pa,
+atmega169, atmega169a, atmega169p, atmega169pa, atmega32, atmega323, atmega324a,
+atmega324p, atmega324pa, atmega325, atmega325a, atmega32, atmega32a, atmega323,
+atmega324a, atmega324p, atmega324pa, atmega325, atmega325a, atmega325p,
+atmega325p, atmega325pa, atmega3250, atmega3250a, atmega3250p, atmega3250pa,
+atmega328, atmega328p, atmega329, atmega329a, atmega329p, atmega329pa,
+atmega3290a, atmega3290p, atmega3290pa, atmega406, atmega64, atmega64a,
+atmega64rfr2, atmega644rfr2, atmega640, atmega644, atmega644a, atmega644p,
+atmega644pa, atmega645, atmega645a, atmega645p, atmega6450, atmega6450a,
+atmega6450p, atmega649, atmega649a, atmega649p, atmega6490, atmega6490a,
+atmega6490p, atmega16hva, atmega16hva2, atmega16hvb, atmega16hvbrevb,
+atmega32hvb, atmega32hvbrevb, atmega64hve, at90can32, at90can64, at90pwm161,
+at90pwm216, at90pwm316, atmega32c1, atmega64c1, atmega16m1, atmega32m1,
+atmega64m1, atmega16u4, atmega32u4, atmega32u6, at90usb646, at90usb647, at94k,
+at90scr100, ata5790, ata5795).
+</p>
+<p>Instruction set avr51 is for the enhanced AVR core with exactly 128K
+program memory space (MCU types: atmega128, atmega128a, atmega1280,
+atmega1281, atmega1284, atmega1284p, atmega128rfa1, atmega128rfr2,
+atmega1284rfr2, at90can128, at90usb1286, at90usb1287, m3000).
+</p>
+<p>Instruction set avr6 is for the enhanced AVR core with a 3-byte PC
+(MCU types: atmega2560, atmega2561, atmega256rfr2, atmega2564rfr2).
+</p>
+<p>Instruction set avrxmega2 is for the XMEGA AVR core with 8K to 64K
+program memory space and less than 64K data space (MCU types:
+atxmega16a4, atxmega16a4u, atxmega16c4, atxmega16d4, atxmega16x1,
+atxmega32a4, atxmega32a4u, atxmega32c4, atxmega32d4, atxmega16e5,
+atxmega8e5, atxmega32e5, atxmega32x1).
+</p>
+<p>Instruction set avrxmega3 is for the XMEGA AVR core with up to 64K
+of combined program memory and RAM, and with program memory
+visible in the RAM address space (MCU types:
+attiny212, attiny214, attiny412, attiny414, attiny416, attiny417,
+attiny814, attiny816, attiny817, attiny1614, attiny1616, attiny1617,
+attiny3214, attiny3216, attiny3217).
+</p>
+<p>Instruction set avrxmega4 is for the XMEGA AVR core with up to 64K
+program memory space and less than 64K data space (MCU types:
+atxmega64a3, atxmega64a3u, atxmega64a4u, atxmega64b1, atxmega64b3,
+atxmega64c3, atxmega64d3, atxmega64d4).
+</p>
+<p>Instruction set avrxmega5 is for the XMEGA AVR core with up to 64K
+program memory space and greater than 64K data space (MCU types:
+atxmega64a1, atxmega64a1u).
+</p>
+<p>Instruction set avrxmega6 is for the XMEGA AVR core with larger than
+64K program memory space and less than 64K data space (MCU types:
+atxmega128a3, atxmega128a3u, atxmega128c3, atxmega128d3, atxmega128d4,
+atxmega192a3, atxmega192a3u, atxmega128b1, atxmega128b3, atxmega192c3,
+atxmega192d3, atxmega256a3, atxmega256a3u, atxmega256a3b,
+atxmega256a3bu, atxmega256c3, atxmega256d3, atxmega384c3,
+atxmega256d3).
+</p>
+<p>Instruction set avrxmega7 is for the XMEGA AVR core with larger than
+64K program memory space and greater than 64K data space (MCU types:
+atxmega128a1, atxmega128a1u, atxmega128a4u).
+</p>
+<p>Instruction set avrtiny is for the ATtiny4/5/9/10/20/40
+microcontrollers.
+</p>
+<a name="index-_002dmall_002dopcodes-command_002dline-option_002c-AVR"></a>
+</dd>
+<dt><code>-mall-opcodes</code></dt>
+<dd><p>Accept all AVR opcodes, even if not supported by <code>-mmcu</code>.
+</p>
+<a name="index-_002dmno_002dskip_002dbug-command_002dline-option_002c-AVR"></a>
+</dd>
+<dt><code>-mno-skip-bug</code></dt>
+<dd><p>This option disable warnings for skipping two-word instructions.
+</p>
+<a name="index-_002dmno_002dwrap-command_002dline-option_002c-AVR"></a>
+</dd>
+<dt><code>-mno-wrap</code></dt>
+<dd><p>This option reject <code>rjmp/rcall</code> instructions with 8K wrap-around.
+</p>
+<a name="index-_002dmrmw-command_002dline-option_002c-AVR"></a>
+</dd>
+<dt><code>-mrmw</code></dt>
+<dd><p>Accept Read-Modify-Write (<code>XCH,LAC,LAS,LAT</code>) instructions.
+</p>
+<a name="index-_002dmlink_002drelax-command_002dline-option_002c-AVR"></a>
+</dd>
+<dt><code>-mlink-relax</code></dt>
+<dd><p>Enable support for link-time relaxation.  This is now on by default
+and this flag no longer has any effect.
+</p>
+<a name="index-_002dmno_002dlink_002drelax-command_002dline-option_002c-AVR"></a>
+</dd>
+<dt><code>-mno-link-relax</code></dt>
+<dd><p>Disable support for link-time relaxation.  The assembler will resolve
+relocations when it can, and may be able to better compress some debug
+information.
+</p>
+<a name="index-_002dmgcc_002disr-command_002dline-option_002c-AVR"></a>
+</dd>
+<dt><code>-mgcc-isr</code></dt>
+<dd><p>Enable the <code>__gcc_isr</code> pseudo instruction.
+</p>
+</dd>
+</dl>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="AVR-Syntax.html#AVR-Syntax" accesskey="n" rel="next">AVR Syntax</a>, Up: <a href="AVR_002dDependent.html#AVR_002dDependent" accesskey="u" rel="up">AVR-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

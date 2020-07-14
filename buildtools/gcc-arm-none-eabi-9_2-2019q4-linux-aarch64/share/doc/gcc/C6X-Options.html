@@ -1,0 +1,136 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): C6X Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): C6X Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): C6X Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Submodel-Options.html#Submodel-Options" rel="up" title="Submodel Options">
+<link href="CRIS-Options.html#CRIS-Options" rel="next" title="CRIS Options">
+<link href="Blackfin-Options.html#Blackfin-Options" rel="prev" title="Blackfin Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="C6X-Options"></a>
+<div class="header">
+<p>
+Next: <a href="CRIS-Options.html#CRIS-Options" accesskey="n" rel="next">CRIS Options</a>, Previous: <a href="Blackfin-Options.html#Blackfin-Options" accesskey="p" rel="prev">Blackfin Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="C6X-Options-1"></a>
+<h4 class="subsection">3.18.8 C6X Options</h4>
+<a name="index-C6X-Options"></a>
+
+<dl compact="compact">
+<dt><code>-march=<var>name</var></code></dt>
+<dd><a name="index-march-3"></a>
+<p>This specifies the name of the target architecture.  GCC uses this
+name to determine what kind of instructions it can emit when generating
+assembly code.  Permissible names are: &lsquo;<samp>c62x</samp>&rsquo;,
+&lsquo;<samp>c64x</samp>&rsquo;, &lsquo;<samp>c64x+</samp>&rsquo;, &lsquo;<samp>c67x</samp>&rsquo;, &lsquo;<samp>c67x+</samp>&rsquo;, &lsquo;<samp>c674x</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>-mbig-endian</code></dt>
+<dd><a name="index-mbig_002dendian-3"></a>
+<p>Generate code for a big-endian target.
+</p>
+</dd>
+<dt><code>-mlittle-endian</code></dt>
+<dd><a name="index-mlittle_002dendian-3"></a>
+<p>Generate code for a little-endian target.  This is the default.
+</p>
+</dd>
+<dt><code>-msim</code></dt>
+<dd><a name="index-msim-1"></a>
+<p>Choose startup files and linker script suitable for the simulator.
+</p>
+</dd>
+<dt><code>-msdata=default</code></dt>
+<dd><a name="index-msdata_003ddefault"></a>
+<p>Put small global and static data in the <code>.neardata</code> section,
+which is pointed to by register <code>B14</code>.  Put small uninitialized
+global and static data in the <code>.bss</code> section, which is adjacent
+to the <code>.neardata</code> section.  Put small read-only data into the
+<code>.rodata</code> section.  The corresponding sections used for large
+pieces of data are <code>.fardata</code>, <code>.far</code> and <code>.const</code>.
+</p>
+</dd>
+<dt><code>-msdata=all</code></dt>
+<dd><a name="index-msdata_003dall"></a>
+<p>Put all data, not just small objects, into the sections reserved for
+small data, and use addressing relative to the <code>B14</code> register to
+access them.
+</p>
+</dd>
+<dt><code>-msdata=none</code></dt>
+<dd><a name="index-msdata_003dnone"></a>
+<p>Make no use of the sections reserved for small data, and use absolute
+addresses to access all data.  Put all initialized global and static
+data in the <code>.fardata</code> section, and all uninitialized data in the
+<code>.far</code> section.  Put all constant data into the <code>.const</code>
+section.
+</p></dd>
+</dl>
+
+
+
+
+</body>
+</html>

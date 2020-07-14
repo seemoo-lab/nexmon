@@ -1,0 +1,127 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): x86 control-flow protection intrinsics</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): x86 control-flow protection intrinsics">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): x86 control-flow protection intrinsics">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Target-Builtins.html#Target-Builtins" rel="up" title="Target Builtins">
+<link href="Target-Format-Checks.html#Target-Format-Checks" rel="next" title="Target Format Checks">
+<link href="x86-transactional-memory-intrinsics.html#x86-transactional-memory-intrinsics" rel="prev" title="x86 transactional memory intrinsics">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="x86-control_002dflow-protection-intrinsics"></a>
+<div class="header">
+<p>
+Previous: <a href="x86-transactional-memory-intrinsics.html#x86-transactional-memory-intrinsics" accesskey="p" rel="prev">x86 transactional memory intrinsics</a>, Up: <a href="Target-Builtins.html#Target-Builtins" accesskey="u" rel="up">Target Builtins</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="x86-Control_002dFlow-Protection-Intrinsics"></a>
+<h4 class="subsection">6.60.35 x86 Control-Flow Protection Intrinsics</h4>
+
+<dl>
+<dt><a name="index-_005fget_005fssp"></a>CET Function: <em>ret_type</em> <strong>_get_ssp</strong> <em>(void)</em></dt>
+<dd><p>Get the current value of shadow stack pointer if shadow stack support
+from Intel CET is enabled in the hardware or <code>0</code> otherwise.
+The <code>ret_type</code> is <code>unsigned long long</code> for 64-bit targets 
+and <code>unsigned int</code> for 32-bit targets.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005finc_005fssp"></a>CET Function: <em>void</em> <strong>_inc_ssp</strong> <em>(unsigned int)</em></dt>
+<dd><p>Increment the current shadow stack pointer by the size specified by the
+function argument.  The argument is masked to a byte value for security
+reasons, so to increment by more than 255 bytes you must call the function
+multiple times.
+</p></dd></dl>
+
+<p>The shadow stack unwind code looks like:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#include &lt;immintrin.h&gt;
+
+/* Unwind the shadow stack for EH.  */
+#define _Unwind_Frames_Extra(x)       \
+  do                                  \
+    {                                \
+      _Unwind_Word ssp = _get_ssp (); \
+      if (ssp != 0)                   \
+        {                            \
+          _Unwind_Word tmp = (x);     \
+          while (tmp &gt; 255)           \
+            {                        \
+              _inc_ssp (tmp);         \
+              tmp -= 255;             \
+            }                        \
+          _inc_ssp (tmp);             \
+        }                            \
+    }                                \
+    while (0)
+</pre></div>
+
+<p>This code runs unconditionally on all 64-bit processors.  For 32-bit
+processors the code runs on those that support multi-byte NOP instructions.
+</p>
+
+
+
+</body>
+</html>

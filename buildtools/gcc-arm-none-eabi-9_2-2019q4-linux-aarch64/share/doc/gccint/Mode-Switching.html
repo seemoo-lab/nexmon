@@ -1,0 +1,158 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Mode Switching</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Mode Switching">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Mode Switching">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Target-Macros.html#Target-Macros" rel="up" title="Target Macros">
+<link href="Target-Attributes.html#Target-Attributes" rel="next" title="Target Attributes">
+<link href="Floating-Point.html#Floating-Point" rel="prev" title="Floating Point">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Mode-Switching"></a>
+<div class="header">
+<p>
+Next: <a href="Target-Attributes.html#Target-Attributes" accesskey="n" rel="next">Target Attributes</a>, Previous: <a href="Floating-Point.html#Floating-Point" accesskey="p" rel="prev">Floating Point</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Mode-Switching-Instructions"></a>
+<h3 class="section">18.23 Mode Switching Instructions</h3>
+<a name="index-mode-switching"></a>
+<p>The following macros control mode switching optimizations:
+</p>
+<dl>
+<dt><a name="index-OPTIMIZE_005fMODE_005fSWITCHING"></a>Macro: <strong>OPTIMIZE_MODE_SWITCHING</strong> <em>(<var>entity</var>)</em></dt>
+<dd><p>Define this macro if the port needs extra instructions inserted for mode
+switching in an optimizing compilation.
+</p>
+<p>For an example, the SH4 can perform both single and double precision
+floating point operations, but to perform a single precision operation,
+the FPSCR PR bit has to be cleared, while for a double precision
+operation, this bit has to be set.  Changing the PR bit requires a general
+purpose register as a scratch register, hence these FPSCR sets have to
+be inserted before reload, i.e. you cannot put this into instruction emitting
+or <code>TARGET_MACHINE_DEPENDENT_REORG</code>.
+</p>
+<p>You can have multiple entities that are mode-switched, and select at run time
+which entities actually need it.  <code>OPTIMIZE_MODE_SWITCHING</code> should
+return nonzero for any <var>entity</var> that needs mode-switching.
+If you define this macro, you also have to define
+<code>NUM_MODES_FOR_MODE_SWITCHING</code>, <code>TARGET_MODE_NEEDED</code>,
+<code>TARGET_MODE_PRIORITY</code> and <code>TARGET_MODE_EMIT</code>.
+<code>TARGET_MODE_AFTER</code>, <code>TARGET_MODE_ENTRY</code>, and <code>TARGET_MODE_EXIT</code>
+are optional.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-NUM_005fMODES_005fFOR_005fMODE_005fSWITCHING"></a>Macro: <strong>NUM_MODES_FOR_MODE_SWITCHING</strong></dt>
+<dd><p>If you define <code>OPTIMIZE_MODE_SWITCHING</code>, you have to define this as
+initializer for an array of integers.  Each initializer element
+N refers to an entity that needs mode switching, and specifies the number
+of different modes that might need to be set for this entity.
+The position of the initializer in the initializer&mdash;starting counting at
+zero&mdash;determines the integer that is used to refer to the mode-switched
+entity in question.
+In macros that take mode arguments / yield a mode result, modes are
+represented as numbers 0 &hellip; N - 1.  N is used to specify that no mode
+switch is needed / supplied.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fMODE_005fEMIT"></a>Target Hook: <em>void</em> <strong>TARGET_MODE_EMIT</strong> <em>(int <var>entity</var>, int <var>mode</var>, int <var>prev_mode</var>, HARD_REG_SET <var>regs_live</var>)</em></dt>
+<dd><p>Generate one or more insns to set <var>entity</var> to <var>mode</var>. <var>hard_reg_live</var> is the set of hard registers live at the point where the insn(s) are to be inserted. <var>prev_moxde</var> indicates the mode to switch from. Sets of a lower numbered entity will be emitted before sets of a higher numbered entity to a mode of the same or lower priority.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fMODE_005fNEEDED"></a>Target Hook: <em>int</em> <strong>TARGET_MODE_NEEDED</strong> <em>(int <var>entity</var>, rtx_insn *<var>insn</var>)</em></dt>
+<dd><p><var>entity</var> is an integer specifying a mode-switched entity.  If <code>OPTIMIZE_MODE_SWITCHING</code> is defined, you must define this macro to return an integer value not larger than the corresponding element in <code>NUM_MODES_FOR_MODE_SWITCHING</code>, to denote the mode that <var>entity</var> must be switched into prior to the execution of <var>insn</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fMODE_005fAFTER"></a>Target Hook: <em>int</em> <strong>TARGET_MODE_AFTER</strong> <em>(int <var>entity</var>, int <var>mode</var>, rtx_insn *<var>insn</var>)</em></dt>
+<dd><p><var>entity</var> is an integer specifying a mode-switched entity.  If this macro is defined, it is evaluated for every <var>insn</var> during mode switching.  It determines the mode that an insn results in (if different from the incoming mode).
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fMODE_005fENTRY"></a>Target Hook: <em>int</em> <strong>TARGET_MODE_ENTRY</strong> <em>(int <var>entity</var>)</em></dt>
+<dd><p>If this macro is defined, it is evaluated for every <var>entity</var> that needs mode switching.  It should evaluate to an integer, which is a mode that <var>entity</var> is assumed to be switched to at function entry.  If <code>TARGET_MODE_ENTRY</code> is defined then <code>TARGET_MODE_EXIT</code> must be defined.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fMODE_005fEXIT"></a>Target Hook: <em>int</em> <strong>TARGET_MODE_EXIT</strong> <em>(int <var>entity</var>)</em></dt>
+<dd><p>If this macro is defined, it is evaluated for every <var>entity</var> that needs mode switching.  It should evaluate to an integer, which is a mode that <var>entity</var> is assumed to be switched to at function exit.  If <code>TARGET_MODE_EXIT</code> is defined then <code>TARGET_MODE_ENTRY</code> must be defined.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fMODE_005fPRIORITY"></a>Target Hook: <em>int</em> <strong>TARGET_MODE_PRIORITY</strong> <em>(int <var>entity</var>, int <var>n</var>)</em></dt>
+<dd><p>This macro specifies the order in which modes for <var>entity</var> are processed. 0 is the highest priority, <code>NUM_MODES_FOR_MODE_SWITCHING[<var>entity</var>] - 1</code> the lowest.  The value of the macro should be an integer designating a mode for <var>entity</var>.  For any fixed <var>entity</var>, <code>mode_priority</code> (<var>entity</var>, <var>n</var>) shall be a bijection in 0 &hellip; <code>num_modes_for_mode_switching[<var>entity</var>] - 1</code>.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Target-Attributes.html#Target-Attributes" accesskey="n" rel="next">Target Attributes</a>, Previous: <a href="Floating-Point.html#Floating-Point" accesskey="p" rel="prev">Floating Point</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,219 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Defining Attributes</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Defining Attributes">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Defining Attributes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Insn-Attributes.html#Insn-Attributes" rel="up" title="Insn Attributes">
+<link href="Expressions.html#Expressions" rel="next" title="Expressions">
+<link href="Insn-Attributes.html#Insn-Attributes" rel="prev" title="Insn Attributes">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Defining-Attributes"></a>
+<div class="header">
+<p>
+Next: <a href="Expressions.html#Expressions" accesskey="n" rel="next">Expressions</a>, Up: <a href="Insn-Attributes.html#Insn-Attributes" accesskey="u" rel="up">Insn Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Defining-Attributes-and-their-Values"></a>
+<h4 class="subsection">17.19.1 Defining Attributes and their Values</h4>
+<a name="index-defining-attributes-and-their-values"></a>
+<a name="index-attributes_002c-defining"></a>
+
+<a name="index-define_005fattr"></a>
+<p>The <code>define_attr</code> expression is used to define each attribute required
+by the target machine.  It looks like:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_attr <var>name</var> <var>list-of-values</var> <var>default</var>)
+</pre></div>
+
+<p><var>name</var> is a string specifying the name of the attribute being
+defined.  Some attributes are used in a special way by the rest of the
+compiler. The <code>enabled</code> attribute can be used to conditionally
+enable or disable insn alternatives (see <a href="Disable-Insn-Alternatives.html#Disable-Insn-Alternatives">Disable Insn Alternatives</a>). The <code>predicable</code> attribute, together with a
+suitable <code>define_cond_exec</code> (see <a href="Conditional-Execution.html#Conditional-Execution">Conditional Execution</a>), can
+be used to automatically generate conditional variants of instruction
+patterns. The <code>mnemonic</code> attribute can be used to check for the
+instruction mnemonic (see <a href="Mnemonic-Attribute.html#Mnemonic-Attribute">Mnemonic Attribute</a>).  The compiler
+internally uses the names <code>ce_enabled</code> and <code>nonce_enabled</code>,
+so they should not be used elsewhere as alternative names.
+</p>
+<p><var>list-of-values</var> is either a string that specifies a comma-separated
+list of values that can be assigned to the attribute, or a null string to
+indicate that the attribute takes numeric values.
+</p>
+<p><var>default</var> is an attribute expression that gives the value of this
+attribute for insns that match patterns whose definition does not include
+an explicit value for this attribute.  See <a href="Attr-Example.html#Attr-Example">Attr Example</a>, for more
+information on the handling of defaults.  See <a href="Constant-Attributes.html#Constant-Attributes">Constant Attributes</a>,
+for information on attributes that do not depend on any particular insn.
+</p>
+<a name="index-insn_002dattr_002eh"></a>
+<p>For each defined attribute, a number of definitions are written to the
+<samp>insn-attr.h</samp> file.  For cases where an explicit set of values is
+specified for an attribute, the following are defined:
+</p>
+<ul>
+<li> A &lsquo;<samp>#define</samp>&rsquo; is written for the symbol &lsquo;<samp>HAVE_ATTR_<var>name</var></samp>&rsquo;.
+
+</li><li> An enumerated class is defined for &lsquo;<samp>attr_<var>name</var></samp>&rsquo; with
+elements of the form &lsquo;<samp><var>upper-name</var>_<var>upper-value</var></samp>&rsquo; where
+the attribute name and value are first converted to uppercase.
+
+</li><li> A function &lsquo;<samp>get_attr_<var>name</var></samp>&rsquo; is defined that is passed an insn and
+returns the attribute value for that insn.
+</li></ul>
+
+<p>For example, if the following is present in the <samp>md</samp> file:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_attr &quot;type&quot; &quot;branch,fp,load,store,arith&quot; &hellip;)
+</pre></div>
+
+<p>the following lines will be written to the file <samp>insn-attr.h</samp>.
+</p>
+<div class="smallexample">
+<pre class="smallexample">#define HAVE_ATTR_type 1
+enum attr_type {TYPE_BRANCH, TYPE_FP, TYPE_LOAD,
+                 TYPE_STORE, TYPE_ARITH};
+extern enum attr_type get_attr_type ();
+</pre></div>
+
+<p>If the attribute takes numeric values, no <code>enum</code> type will be
+defined and the function to obtain the attribute&rsquo;s value will return
+<code>int</code>.
+</p>
+<p>There are attributes which are tied to a specific meaning.  These
+attributes are not free to use for other purposes:
+</p>
+<dl compact="compact">
+<dt><code>length</code></dt>
+<dd><p>The <code>length</code> attribute is used to calculate the length of emitted
+code chunks.  This is especially important when verifying branch
+distances. See <a href="Insn-Lengths.html#Insn-Lengths">Insn Lengths</a>.
+</p>
+</dd>
+<dt><code>enabled</code></dt>
+<dd><p>The <code>enabled</code> attribute can be defined to prevent certain
+alternatives of an insn definition from being used during code
+generation. See <a href="Disable-Insn-Alternatives.html#Disable-Insn-Alternatives">Disable Insn Alternatives</a>.
+</p>
+</dd>
+<dt><code>mnemonic</code></dt>
+<dd><p>The <code>mnemonic</code> attribute can be defined to implement instruction
+specific checks in e.g. the pipeline description.
+See <a href="Mnemonic-Attribute.html#Mnemonic-Attribute">Mnemonic Attribute</a>.
+</p></dd>
+</dl>
+
+<p>For each of these special attributes, the corresponding
+&lsquo;<samp>HAVE_ATTR_<var>name</var></samp>&rsquo; &lsquo;<samp>#define</samp>&rsquo; is also written when the
+attribute is not defined; in that case, it is defined as &lsquo;<samp>0</samp>&rsquo;.
+</p>
+<a name="index-define_005fenum_005fattr"></a>
+<a name="define_005fenum_005fattr"></a><p>Another way of defining an attribute is to use:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_enum_attr &quot;<var>attr</var>&quot; &quot;<var>enum</var>&quot; <var>default</var>)
+</pre></div>
+
+<p>This works in just the same way as <code>define_attr</code>, except that
+the list of values is taken from a separate enumeration called
+<var>enum</var> (see <a href="Constant-Definitions.html#define_005fenum">define_enum</a>).  This form allows you to use
+the same list of values for several attributes without having to
+repeat the list each time.  For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_enum &quot;processor&quot; [
+  model_a
+  model_b
+  &hellip;
+])
+(define_enum_attr &quot;arch&quot; &quot;processor&quot;
+  (const (symbol_ref &quot;target_arch&quot;)))
+(define_enum_attr &quot;tune&quot; &quot;processor&quot;
+  (const (symbol_ref &quot;target_tune&quot;)))
+</pre></div>
+
+<p>defines the same attributes as:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_attr &quot;arch&quot; &quot;model_a,model_b,&hellip;&quot;
+  (const (symbol_ref &quot;target_arch&quot;)))
+(define_attr &quot;tune&quot; &quot;model_a,model_b,&hellip;&quot;
+  (const (symbol_ref &quot;target_tune&quot;)))
+</pre></div>
+
+<p>but without duplicating the processor list.  The second example defines two
+separate C enums (<code>attr_arch</code> and <code>attr_tune</code>) whereas the first
+defines a single C enum (<code>processor</code>).
+</p><hr>
+<div class="header">
+<p>
+Next: <a href="Expressions.html#Expressions" accesskey="n" rel="next">Expressions</a>, Up: <a href="Insn-Attributes.html#Insn-Attributes" accesskey="u" rel="up">Insn Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

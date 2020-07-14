@@ -1,0 +1,170 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): MCore Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): MCore Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): MCore Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Submodel-Options.html#Submodel-Options" rel="up" title="Submodel Options">
+<link href="MeP-Options.html#MeP-Options" rel="next" title="MeP Options">
+<link href="M680x0-Options.html#M680x0-Options" rel="prev" title="M680x0 Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="MCore-Options"></a>
+<div class="header">
+<p>
+Next: <a href="MeP-Options.html#MeP-Options" accesskey="n" rel="next">MeP Options</a>, Previous: <a href="M680x0-Options.html#M680x0-Options" accesskey="p" rel="prev">M680x0 Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="MCore-Options-1"></a>
+<h4 class="subsection">3.18.25 MCore Options</h4>
+<a name="index-MCore-options"></a>
+
+<p>These are the &lsquo;<samp>-m</samp>&rsquo; options defined for the Motorola M*Core
+processors.
+</p>
+<dl compact="compact">
+<dt><code>-mhardlit</code></dt>
+<dt><code>-mno-hardlit</code></dt>
+<dd><a name="index-mhardlit"></a>
+<a name="index-mno_002dhardlit"></a>
+<p>Inline constants into the code stream if it can be done in two
+instructions or less.
+</p>
+</dd>
+<dt><code>-mdiv</code></dt>
+<dt><code>-mno-div</code></dt>
+<dd><a name="index-mdiv-2"></a>
+<a name="index-mno_002ddiv-1"></a>
+<p>Use the divide instruction.  (Enabled by default).
+</p>
+</dd>
+<dt><code>-mrelax-immediate</code></dt>
+<dt><code>-mno-relax-immediate</code></dt>
+<dd><a name="index-mrelax_002dimmediate"></a>
+<a name="index-mno_002drelax_002dimmediate"></a>
+<p>Allow arbitrary-sized immediates in bit operations.
+</p>
+</dd>
+<dt><code>-mwide-bitfields</code></dt>
+<dt><code>-mno-wide-bitfields</code></dt>
+<dd><a name="index-mwide_002dbitfields"></a>
+<a name="index-mno_002dwide_002dbitfields"></a>
+<p>Always treat bit-fields as <code>int</code>-sized.
+</p>
+</dd>
+<dt><code>-m4byte-functions</code></dt>
+<dt><code>-mno-4byte-functions</code></dt>
+<dd><a name="index-m4byte_002dfunctions"></a>
+<a name="index-mno_002d4byte_002dfunctions"></a>
+<p>Force all functions to be aligned to a 4-byte boundary.
+</p>
+</dd>
+<dt><code>-mcallgraph-data</code></dt>
+<dt><code>-mno-callgraph-data</code></dt>
+<dd><a name="index-mcallgraph_002ddata"></a>
+<a name="index-mno_002dcallgraph_002ddata"></a>
+<p>Emit callgraph information.
+</p>
+</dd>
+<dt><code>-mslow-bytes</code></dt>
+<dt><code>-mno-slow-bytes</code></dt>
+<dd><a name="index-mslow_002dbytes"></a>
+<a name="index-mno_002dslow_002dbytes"></a>
+<p>Prefer word access when reading byte quantities.
+</p>
+</dd>
+<dt><code>-mlittle-endian</code></dt>
+<dt><code>-mbig-endian</code></dt>
+<dd><a name="index-mlittle_002dendian-6"></a>
+<a name="index-mbig_002dendian-6"></a>
+<p>Generate code for a little-endian target.
+</p>
+</dd>
+<dt><code>-m210</code></dt>
+<dt><code>-m340</code></dt>
+<dd><a name="index-m210"></a>
+<a name="index-m340"></a>
+<p>Generate code for the 210 processor.
+</p>
+</dd>
+<dt><code>-mno-lsim</code></dt>
+<dd><a name="index-mno_002dlsim-1"></a>
+<p>Assume that runtime support has been provided and so omit the
+simulator library (<samp>libsim.a)</samp> from the linker command line.
+</p>
+</dd>
+<dt><code>-mstack-increment=<var>size</var></code></dt>
+<dd><a name="index-mstack_002dincrement"></a>
+<p>Set the maximum amount for a single stack increment operation.  Large
+values can increase the speed of programs that contain functions
+that need a large amount of stack space, but they can also trigger a
+segmentation fault if the stack is extended too much.  The default
+value is 0x1000.
+</p>
+</dd>
+</dl>
+
+
+
+
+</body>
+</html>

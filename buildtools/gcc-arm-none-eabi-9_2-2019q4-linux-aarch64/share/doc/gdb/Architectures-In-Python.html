@@ -1,0 +1,133 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Architectures In Python</title>
+
+<meta name="description" content="Debugging with GDB: Architectures In Python">
+<meta name="keywords" content="Debugging with GDB: Architectures In Python">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Python-API.html#Python-API" rel="up" title="Python API">
+<link href="Python-Auto_002dloading.html#Python-Auto_002dloading" rel="next" title="Python Auto-loading">
+<link href="Lazy-Strings-In-Python.html#Lazy-Strings-In-Python" rel="prev" title="Lazy Strings In Python">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Architectures-In-Python"></a>
+<div class="header">
+<p>
+Previous: <a href="Lazy-Strings-In-Python.html#Lazy-Strings-In-Python" accesskey="p" rel="prev">Lazy Strings In Python</a>, Up: <a href="Python-API.html#Python-API" accesskey="u" rel="up">Python API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Python-representation-of-architectures"></a>
+<h4 class="subsubsection">23.2.2.33 Python representation of architectures</h4>
+<a name="index-Python-architectures"></a>
+
+<p><small>GDB</small> uses architecture specific parameters and artifacts in a
+number of its various computations.  An architecture is represented
+by an instance of the <code>gdb.Architecture</code> class.
+</p>
+<p>A <code>gdb.Architecture</code> class has the following methods:
+</p>
+<dl>
+<dt><a name="index-Architecture_002ename"></a>Function: <strong>Architecture.name</strong> <em>()</em></dt>
+<dd><p>Return the name (string value) of the architecture.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Architecture_002edisassemble"></a>Function: <strong>Architecture.disassemble</strong> <em>(<var>start_pc</var> <span class="roman">[</span>, <var>end_pc</var> <span class="roman">[</span>, <var>count</var><span class="roman">]]</span>)</em></dt>
+<dd><p>Return a list of disassembled instructions starting from the memory
+address <var>start_pc</var>.  The optional arguments <var>end_pc</var> and
+<var>count</var> determine the number of instructions in the returned list.
+If both the optional arguments <var>end_pc</var> and <var>count</var> are
+specified, then a list of at most <var>count</var> disassembled instructions
+whose start address falls in the closed memory address interval from
+<var>start_pc</var> to <var>end_pc</var> are returned.  If <var>end_pc</var> is not
+specified, but <var>count</var> is specified, then <var>count</var> number of
+instructions starting from the address <var>start_pc</var> are returned.  If
+<var>count</var> is not specified but <var>end_pc</var> is specified, then all
+instructions whose start address falls in the closed memory address
+interval from <var>start_pc</var> to <var>end_pc</var> are returned.  If neither
+<var>end_pc</var> nor <var>count</var> are specified, then a single instruction at
+<var>start_pc</var> is returned.  For all of these cases, each element of the
+returned list is a Python <code>dict</code> with the following string keys:
+</p>
+<dl compact="compact">
+<dt><code>addr</code></dt>
+<dd><p>The value corresponding to this key is a Python long integer capturing
+the memory address of the instruction.
+</p>
+</dd>
+<dt><code>asm</code></dt>
+<dd><p>The value corresponding to this key is a string value which represents
+the instruction with assembly language mnemonics.  The assembly
+language flavor used is the same as that specified by the current CLI
+variable <code>disassembly-flavor</code>.  See <a href="Machine-Code.html#Machine-Code">Machine Code</a>.
+</p>
+</dd>
+<dt><code>length</code></dt>
+<dd><p>The value corresponding to this key is the length (integer value) of the
+instruction in bytes.
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Lazy-Strings-In-Python.html#Lazy-Strings-In-Python" accesskey="p" rel="prev">Lazy Strings In Python</a>, Up: <a href="Python-API.html#Python-API" accesskey="u" rel="up">Python API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

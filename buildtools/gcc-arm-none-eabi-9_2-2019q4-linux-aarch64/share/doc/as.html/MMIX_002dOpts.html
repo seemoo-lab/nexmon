@@ -1,0 +1,162 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: MMIX-Opts</title>
+
+<meta name="description" content="Using as: MMIX-Opts">
+<meta name="keywords" content="Using as: MMIX-Opts">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="MMIX_002dDependent.html#MMIX_002dDependent" rel="up" title="MMIX-Dependent">
+<link href="MMIX_002dExpand.html#MMIX_002dExpand" rel="next" title="MMIX-Expand">
+<link href="MMIX_002dDependent.html#MMIX_002dDependent" rel="prev" title="MMIX-Dependent">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="MMIX_002dOpts"></a>
+<div class="header">
+<p>
+Next: <a href="MMIX_002dExpand.html#MMIX_002dExpand" accesskey="n" rel="next">MMIX-Expand</a>, Up: <a href="MMIX_002dDependent.html#MMIX_002dDependent" accesskey="u" rel="up">MMIX-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Command_002dline-Options-1"></a>
+<h4 class="subsection">9.28.1 Command-line Options</h4>
+
+<a name="index-options_002c-MMIX"></a>
+<a name="index-MMIX-options"></a>
+<p>The MMIX version of <code>as</code> has some machine-dependent options.
+</p>
+<a name="index-_002d_002dfixed_002dspecial_002dregister_002dnames-command_002dline-option_002c-MMIX"></a>
+<p>When &lsquo;<samp>--fixed-special-register-names</samp>&rsquo; is specified, only the register
+names specified in <a href="MMIX_002dRegs.html#MMIX_002dRegs">MMIX-Regs</a> are recognized in the instructions
+<code>PUT</code> and <code>GET</code>.
+</p>
+<a name="index-_002d_002dglobalize_002dsymbols-command_002dline-option_002c-MMIX"></a>
+<p>You can use the &lsquo;<samp>--globalize-symbols</samp>&rsquo; to make all symbols global.
+This option is useful when splitting up a <code>mmixal</code> program into
+several files.
+</p>
+<a name="index-_002d_002dgnu_002dsyntax-command_002dline-option_002c-MMIX"></a>
+<p>The &lsquo;<samp>--gnu-syntax</samp>&rsquo; turns off most syntax compatibility with
+<code>mmixal</code>.  Its usability is currently doubtful.
+</p>
+<a name="index-_002d_002drelax-command_002dline-option_002c-MMIX"></a>
+<p>The &lsquo;<samp>--relax</samp>&rsquo; option is not fully supported, but will eventually make
+the object file prepared for linker relaxation.
+</p>
+<a name="index-_002d_002dno_002dpredefined_002dsyms-command_002dline-option_002c-MMIX"></a>
+<p>If you want to avoid inadvertently calling a predefined symbol and would
+rather get an error, for example when using <code>as</code> with a
+compiler or other machine-generated code, specify
+&lsquo;<samp>--no-predefined-syms</samp>&rsquo;.  This turns off built-in predefined
+definitions of all such symbols, including rounding-mode symbols, segment
+symbols, &lsquo;<samp>BIT</samp>&rsquo; symbols, and <code>TRAP</code> symbols used in <code>mmix</code>
+&ldquo;system calls&rdquo;.  It also turns off predefined special-register names,
+except when used in <code>PUT</code> and <code>GET</code> instructions.
+</p>
+<a name="index-_002d_002dno_002dexpand-command_002dline-option_002c-MMIX"></a>
+<p>By default, some instructions are expanded to fit the size of the operand
+or an external symbol (see <a href="MMIX_002dExpand.html#MMIX_002dExpand">MMIX-Expand</a>).  By passing
+&lsquo;<samp>--no-expand</samp>&rsquo;, no such expansion will be done, instead causing errors
+at link time if the operand does not fit.
+</p>
+<a name="index-_002d_002dno_002dmerge_002dgregs-command_002dline-option_002c-MMIX"></a>
+<p>The <code>mmixal</code> documentation (see <a href="MMIX_002dSyntax.html#mmixsite">mmixsite</a>) specifies that global
+registers allocated with the &lsquo;<samp>GREG</samp>&rsquo; directive (see <a href="MMIX_002dPseudos.html#MMIX_002dgreg">MMIX-greg</a>) and
+initialized to the same non-zero value, will refer to the same global
+register.  This isn&rsquo;t strictly enforceable in <code>as</code> since the
+final addresses aren&rsquo;t known until link-time, but it will do an effort
+unless the &lsquo;<samp>--no-merge-gregs</samp>&rsquo; option is specified.  (Register merging
+isn&rsquo;t yet implemented in <code>ld</code>.)
+</p>
+<a name="index-_002dx-command_002dline-option_002c-MMIX"></a>
+<p><code>as</code> will warn every time it expands an instruction to fit an
+operand unless the option &lsquo;<samp>-x</samp>&rsquo; is specified.  It is believed that
+this behaviour is more useful than just mimicking <code>mmixal</code>&rsquo;s
+behaviour, in which instructions are only expanded if the &lsquo;<samp>-x</samp>&rsquo; option
+is specified, and assembly fails otherwise, when an instruction needs to
+be expanded.  It needs to be kept in mind that <code>mmixal</code> is both an
+assembler and linker, while <code>as</code> will expand instructions
+that at link stage can be contracted.  (Though linker relaxation isn&rsquo;t yet
+implemented in <code>ld</code>.)  The option &lsquo;<samp>-x</samp>&rsquo; also implies
+&lsquo;<samp>--linker-allocated-gregs</samp>&rsquo;.
+</p>
+<a name="index-_002d_002dno_002dpushj_002dstubs-command_002dline-option_002c-MMIX"></a>
+<a name="index-_002d_002dno_002dstubs-command_002dline-option_002c-MMIX"></a>
+<p>If instruction expansion is enabled, <code>as</code> can expand a
+&lsquo;<samp>PUSHJ</samp>&rsquo; instruction into a series of instructions.  The shortest
+expansion is to not expand it, but just mark the call as redirectable to a
+stub, which <code>ld</code> creates at link-time, but only if the
+original &lsquo;<samp>PUSHJ</samp>&rsquo; instruction is found not to reach the target.  The
+stub consists of the necessary instructions to form a jump to the target.
+This happens if <code>as</code> can assert that the &lsquo;<samp>PUSHJ</samp>&rsquo;
+instruction can reach such a stub.  The option &lsquo;<samp>--no-pushj-stubs</samp>&rsquo;
+disables this shorter expansion, and the longer series of instructions is
+then created at assembly-time.  The option &lsquo;<samp>--no-stubs</samp>&rsquo; is a synonym,
+intended for compatibility with future releases, where generation of stubs
+for other instructions may be implemented.
+</p>
+<a name="index-_002d_002dlinker_002dallocated_002dgregs-command_002dline-option_002c-MMIX"></a>
+<p>Usually a two-operand-expression (see <a href="MMIX_002dPseudos.html#GREG_002dbase">GREG-base</a>) without a matching
+&lsquo;<samp>GREG</samp>&rsquo; directive is treated as an error by <code>as</code>.  When
+the option &lsquo;<samp>--linker-allocated-gregs</samp>&rsquo; is in effect, they are instead
+passed through to the linker, which will allocate as many global registers
+as is needed.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="MMIX_002dExpand.html#MMIX_002dExpand" accesskey="n" rel="next">MMIX-Expand</a>, Up: <a href="MMIX_002dDependent.html#MMIX_002dDependent" accesskey="u" rel="up">MMIX-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

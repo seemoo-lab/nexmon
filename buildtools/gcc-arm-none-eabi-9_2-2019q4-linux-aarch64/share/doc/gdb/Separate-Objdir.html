@@ -1,0 +1,144 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Separate Objdir</title>
+
+<meta name="description" content="Debugging with GDB: Separate Objdir">
+<meta name="keywords" content="Debugging with GDB: Separate Objdir">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Installing-GDB.html#Installing-GDB" rel="up" title="Installing GDB">
+<link href="Config-Names.html#Config-Names" rel="next" title="Config Names">
+<link href="Running-Configure.html#Running-Configure" rel="prev" title="Running Configure">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Separate-Objdir"></a>
+<div class="header">
+<p>
+Next: <a href="Config-Names.html#Config-Names" accesskey="n" rel="next">Config Names</a>, Previous: <a href="Running-Configure.html#Running-Configure" accesskey="p" rel="prev">Running Configure</a>, Up: <a href="Installing-GDB.html#Installing-GDB" accesskey="u" rel="up">Installing GDB</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Compiling-GDB-in-Another-Directory"></a>
+<h3 class="section">C.3 Compiling <small>GDB</small> in Another Directory</h3>
+
+<p>If you want to run <small>GDB</small> versions for several host or target machines,
+you need a different <code>gdb</code> compiled for each combination of
+host and target.  <samp>configure</samp> is designed to make this easy by
+allowing you to generate each configuration in a separate subdirectory,
+rather than in the source directory.  If your <code>make</code> program
+handles the &lsquo;<samp>VPATH</samp>&rsquo; feature (<small>GNU</small> <code>make</code> does), running
+<code>make</code> in each of these directories builds the <code>gdb</code>
+program specified there.
+</p>
+<p>To build <code>gdb</code> in a separate directory, run <samp>configure</samp>
+with the &lsquo;<samp>--srcdir</samp>&rsquo; option to specify where to find the source.
+(You also need to specify a path to find <samp>configure</samp>
+itself from your working directory.  If the path to <samp>configure</samp>
+would be the same as the argument to &lsquo;<samp>--srcdir</samp>&rsquo;, you can leave out
+the &lsquo;<samp>--srcdir</samp>&rsquo; option; it is assumed.)
+</p>
+<p>For example, with version 8.3.0.20190709-git, you can build <small>GDB</small> in a
+separate directory for a Sun 4 like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">cd gdb-8.3.0.20190709-git
+mkdir ../gdb-sun4
+cd ../gdb-sun4
+../gdb-8.3.0.20190709-git/configure
+make
+</pre></div>
+
+<p>When <samp>configure</samp> builds a configuration using a remote source
+directory, it creates a tree for the binaries with the same structure
+(and using the same names) as the tree under the source directory.  In
+the example, you&rsquo;d find the Sun 4 library <samp>libiberty.a</samp> in the
+directory <samp>gdb-sun4/libiberty</samp>, and <small>GDB</small> itself in
+<samp>gdb-sun4/gdb</samp>.
+</p>
+<p>Make sure that your path to the <samp>configure</samp> script has just one
+instance of <samp>gdb</samp> in it.  If your path to <samp>configure</samp> looks
+like <samp>../gdb-8.3.0.20190709-git/gdb/configure</samp>, you are configuring only
+one subdirectory of <small>GDB</small>, not the whole package.  This leads to
+build errors about missing include files such as <samp>bfd/bfd.h</samp>.
+</p>
+<p>One popular reason to build several <small>GDB</small> configurations in separate
+directories is to configure <small>GDB</small> for cross-compiling (where
+<small>GDB</small> runs on one machine&mdash;the <em>host</em>&mdash;while debugging
+programs that run on another machine&mdash;the <em>target</em>).
+You specify a cross-debugging target by
+giving the &lsquo;<samp>--target=<var>target</var></samp>&rsquo; option to <samp>configure</samp>.
+</p>
+<p>When you run <code>make</code> to build a program or library, you must run
+it in a configured directory&mdash;whatever directory you were in when you
+called <samp>configure</samp> (or one of its subdirectories).
+</p>
+<p>The <code>Makefile</code> that <samp>configure</samp> generates in each source
+directory also runs recursively.  If you type <code>make</code> in a source
+directory such as <samp>gdb-8.3.0.20190709-git</samp> (or in a separate configured
+directory configured with &lsquo;<samp>--srcdir=<var>dirname</var>/gdb-8.3.0.20190709-git</samp>&rsquo;), you
+will build all the required libraries, and then build GDB.
+</p>
+<p>When you have multiple hosts or targets configured in separate
+directories, you can run <code>make</code> on them in parallel (for example,
+if they are NFS-mounted on each of the hosts); they will not interfere
+with each other.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Config-Names.html#Config-Names" accesskey="n" rel="next">Config Names</a>, Previous: <a href="Running-Configure.html#Running-Configure" accesskey="p" rel="prev">Running Configure</a>, Up: <a href="Installing-GDB.html#Installing-GDB" accesskey="u" rel="up">Installing GDB</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

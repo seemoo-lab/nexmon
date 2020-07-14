@@ -1,0 +1,161 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: M68K-Syntax</title>
+
+<meta name="description" content="Using as: M68K-Syntax">
+<meta name="keywords" content="Using as: M68K-Syntax">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="M68K_002dDependent.html#M68K_002dDependent" rel="up" title="M68K-Dependent">
+<link href="M68K_002dMoto_002dSyntax.html#M68K_002dMoto_002dSyntax" rel="next" title="M68K-Moto-Syntax">
+<link href="M68K_002dOpts.html#M68K_002dOpts" rel="prev" title="M68K-Opts">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="M68K_002dSyntax"></a>
+<div class="header">
+<p>
+Next: <a href="M68K_002dMoto_002dSyntax.html#M68K_002dMoto_002dSyntax" accesskey="n" rel="next">M68K-Moto-Syntax</a>, Previous: <a href="M68K_002dOpts.html#M68K_002dOpts" accesskey="p" rel="prev">M68K-Opts</a>, Up: <a href="M68K_002dDependent.html#M68K_002dDependent" accesskey="u" rel="up">M68K-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Syntax-17"></a>
+<h4 class="subsection">9.22.2 Syntax</h4>
+
+<a name="index-MIT"></a>
+<p>This syntax for the Motorola 680x0 was developed at <small>MIT</small>.
+</p>
+<a name="index-M680x0-syntax"></a>
+<a name="index-syntax_002c-M680x0"></a>
+<a name="index-M680x0-size-modifiers"></a>
+<a name="index-size-modifiers_002c-M680x0"></a>
+<p>The 680x0 version of <code>as</code> uses instructions names and
+syntax compatible with the Sun assembler.  Intervening periods are
+ignored; for example, &lsquo;<samp>movl</samp>&rsquo; is equivalent to &lsquo;<samp>mov.l</samp>&rsquo;.
+</p>
+<p>In the following table <var>apc</var> stands for any of the address registers
+(&lsquo;<samp>%a0</samp>&rsquo; through &lsquo;<samp>%a7</samp>&rsquo;), the program counter (&lsquo;<samp>%pc</samp>&rsquo;), the
+zero-address relative to the program counter (&lsquo;<samp>%zpc</samp>&rsquo;), a suppressed
+address register (&lsquo;<samp>%za0</samp>&rsquo; through &lsquo;<samp>%za7</samp>&rsquo;), or it may be omitted
+entirely.  The use of <var>size</var> means one of &lsquo;<samp>w</samp>&rsquo; or &lsquo;<samp>l</samp>&rsquo;, and
+it may be omitted, along with the leading colon, unless a scale is also
+specified.  The use of <var>scale</var> means one of &lsquo;<samp>1</samp>&rsquo;, &lsquo;<samp>2</samp>&rsquo;,
+&lsquo;<samp>4</samp>&rsquo;, or &lsquo;<samp>8</samp>&rsquo;, and it may always be omitted along with the
+leading colon.
+</p>
+<a name="index-M680x0-addressing-modes"></a>
+<a name="index-addressing-modes_002c-M680x0"></a>
+<p>The following addressing modes are understood:
+</p><dl compact="compact">
+<dt><em>Immediate</em></dt>
+<dd><p>&lsquo;<samp>#<var>number</var></samp>&rsquo;
+</p>
+</dd>
+<dt><em>Data Register</em></dt>
+<dd><p>&lsquo;<samp>%d0</samp>&rsquo; through &lsquo;<samp>%d7</samp>&rsquo;
+</p>
+</dd>
+<dt><em>Address Register</em></dt>
+<dd><p>&lsquo;<samp>%a0</samp>&rsquo; through &lsquo;<samp>%a7</samp>&rsquo;<br>
+&lsquo;<samp>%a7</samp>&rsquo; is also known as &lsquo;<samp>%sp</samp>&rsquo;, i.e., the Stack Pointer.  <code>%a6</code>
+is also known as &lsquo;<samp>%fp</samp>&rsquo;, the Frame Pointer.
+</p>
+</dd>
+<dt><em>Address Register Indirect</em></dt>
+<dd><p>&lsquo;<samp>%a0@</samp>&rsquo; through &lsquo;<samp>%a7@</samp>&rsquo;
+</p>
+</dd>
+<dt><em>Address Register Postincrement</em></dt>
+<dd><p>&lsquo;<samp>%a0@+</samp>&rsquo; through &lsquo;<samp>%a7@+</samp>&rsquo;
+</p>
+</dd>
+<dt><em>Address Register Predecrement</em></dt>
+<dd><p>&lsquo;<samp>%a0@-</samp>&rsquo; through &lsquo;<samp>%a7@-</samp>&rsquo;
+</p>
+</dd>
+<dt><em>Indirect Plus Offset</em></dt>
+<dd><p>&lsquo;<samp><var>apc</var>@(<var>number</var>)</samp>&rsquo;
+</p>
+</dd>
+<dt><em>Index</em></dt>
+<dd><p>&lsquo;<samp><var>apc</var>@(<var>number</var>,<var>register</var>:<var>size</var>:<var>scale</var>)</samp>&rsquo;
+</p>
+<p>The <var>number</var> may be omitted.
+</p>
+</dd>
+<dt><em>Postindex</em></dt>
+<dd><p>&lsquo;<samp><var>apc</var>@(<var>number</var>)@(<var>onumber</var>,<var>register</var>:<var>size</var>:<var>scale</var>)</samp>&rsquo;
+</p>
+<p>The <var>onumber</var> or the <var>register</var>, but not both, may be omitted.
+</p>
+</dd>
+<dt><em>Preindex</em></dt>
+<dd><p>&lsquo;<samp><var>apc</var>@(<var>number</var>,<var>register</var>:<var>size</var>:<var>scale</var>)@(<var>onumber</var>)</samp>&rsquo;
+</p>
+<p>The <var>number</var> may be omitted.  Omitting the <var>register</var> produces
+the Postindex addressing mode.
+</p>
+</dd>
+<dt><em>Absolute</em></dt>
+<dd><p>&lsquo;<samp><var>symbol</var></samp>&rsquo;, or &lsquo;<samp><var>digits</var></samp>&rsquo;, optionally followed by
+&lsquo;<samp>:b</samp>&rsquo;, &lsquo;<samp>:w</samp>&rsquo;, or &lsquo;<samp>:l</samp>&rsquo;.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="M68K_002dMoto_002dSyntax.html#M68K_002dMoto_002dSyntax" accesskey="n" rel="next">M68K-Moto-Syntax</a>, Previous: <a href="M68K_002dOpts.html#M68K_002dOpts" accesskey="p" rel="prev">M68K-Opts</a>, Up: <a href="M68K_002dDependent.html#M68K_002dDependent" accesskey="u" rel="up">M68K-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

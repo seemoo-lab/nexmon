@@ -1,0 +1,180 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Tree overview</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Tree overview">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Tree overview">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="GENERIC.html#GENERIC" rel="up" title="GENERIC">
+<link href="Macros-and-Functions.html#Macros-and-Functions" rel="next" title="Macros and Functions">
+<link href="Deficiencies.html#Deficiencies" rel="prev" title="Deficiencies">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Tree-overview"></a>
+<div class="header">
+<p>
+Next: <a href="Types.html#Types" accesskey="n" rel="next">Types</a>, Previous: <a href="Deficiencies.html#Deficiencies" accesskey="p" rel="prev">Deficiencies</a>, Up: <a href="GENERIC.html#GENERIC" accesskey="u" rel="up">GENERIC</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Overview-1"></a>
+<h3 class="section">11.2 Overview</h3>
+<a name="index-tree"></a>
+<a name="index-TREE_005fCODE"></a>
+
+<p>The central data structure used by the internal representation is the
+<code>tree</code>.  These nodes, while all of the C type <code>tree</code>, are of
+many varieties.  A <code>tree</code> is a pointer type, but the object to
+which it points may be of a variety of types.  From this point forward,
+we will refer to trees in ordinary type, rather than in <code>this
+font</code>, except when talking about the actual C type <code>tree</code>.
+</p>
+<p>You can tell what kind of node a particular tree is by using the
+<code>TREE_CODE</code> macro.  Many, many macros take trees as input and
+return trees as output.  However, most macros require a certain kind of
+tree node as input.  In other words, there is a type-system for trees,
+but it is not reflected in the C type-system.
+</p>
+<p>For safety, it is useful to configure GCC with <samp>--enable-checking</samp>.
+Although this results in a significant performance penalty (since all
+tree types are checked at run-time), and is therefore inappropriate in a
+release version, it is extremely helpful during the development process.
+</p>
+<p>Many macros behave as predicates.  Many, although not all, of these
+predicates end in &lsquo;<samp>_P</samp>&rsquo;.  Do not rely on the result type of these
+macros being of any particular type.  You may, however, rely on the fact
+that the type can be compared to <code>0</code>, so that statements like
+</p><div class="smallexample">
+<pre class="smallexample">if (TEST_P (t) &amp;&amp; !TEST_P (y))
+  x = 1;
+</pre></div>
+<p>and
+</p><div class="smallexample">
+<pre class="smallexample">int i = (TEST_P (t) != 0);
+</pre></div>
+<p>are legal.  Macros that return <code>int</code> values now may be changed to
+return <code>tree</code> values, or other pointers in the future.  Even those
+that continue to return <code>int</code> may return multiple nonzero codes
+where previously they returned only zero and one.  Therefore, you should
+not write code like
+</p><div class="smallexample">
+<pre class="smallexample">if (TEST_P (t) == 1)
+</pre></div>
+<p>as this code is not guaranteed to work correctly in the future.
+</p>
+<p>You should not take the address of values returned by the macros or
+functions described here.  In particular, no guarantee is given that the
+values are lvalues.
+</p>
+<p>In general, the names of macros are all in uppercase, while the names of
+functions are entirely in lowercase.  There are rare exceptions to this
+rule.  You should assume that any macro or function whose name is made
+up entirely of uppercase letters may evaluate its arguments more than
+once.  You may assume that a macro or function whose name is made up
+entirely of lowercase letters will evaluate its arguments only once.
+</p>
+<p>The <code>error_mark_node</code> is a special tree.  Its tree code is
+<code>ERROR_MARK</code>, but since there is only ever one node with that code,
+the usual practice is to compare the tree against
+<code>error_mark_node</code>.  (This test is just a test for pointer
+equality.)  If an error has occurred during front-end processing the
+flag <code>errorcount</code> will be set.  If the front end has encountered
+code it cannot handle, it will issue a message to the user and set
+<code>sorrycount</code>.  When these flags are set, any macro or function
+which normally returns a tree of a particular kind may instead return
+the <code>error_mark_node</code>.  Thus, if you intend to do any processing of
+erroneous code, you must be prepared to deal with the
+<code>error_mark_node</code>.
+</p>
+<p>Occasionally, a particular tree slot (like an operand to an expression,
+or a particular field in a declaration) will be referred to as
+&ldquo;reserved for the back end&rdquo;.  These slots are used to store RTL when
+the tree is converted to RTL for use by the GCC back end.  However, if
+that process is not taking place (e.g., if the front end is being hooked
+up to an intelligent editor), then those slots may be used by the
+back end presently in use.
+</p>
+<p>If you encounter situations that do not match this documentation, such
+as tree nodes of types not mentioned here, or macros documented to
+return entities of a particular kind that instead return entities of
+some different kind, you have found a bug, either in the front end or in
+the documentation.  Please report these bugs as you would any other
+bug.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Macros-and-Functions.html#Macros-and-Functions" accesskey="1">Macros and Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Macros and functions that can be used with all trees.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Identifiers.html#Identifiers" accesskey="2">Identifiers</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">The names of things.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Containers.html#Containers" accesskey="3">Containers</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Lists and vectors.
+</td></tr>
+</table>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Types.html#Types" accesskey="n" rel="next">Types</a>, Previous: <a href="Deficiencies.html#Deficiencies" accesskey="p" rel="prev">Deficiencies</a>, Up: <a href="GENERIC.html#GENERIC" accesskey="u" rel="up">GENERIC</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

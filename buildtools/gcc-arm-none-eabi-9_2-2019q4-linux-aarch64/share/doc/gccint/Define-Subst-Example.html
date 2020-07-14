@@ -1,0 +1,177 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Define Subst Example</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Define Subst Example">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Define Subst Example">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Define-Subst.html#Define-Subst" rel="up" title="Define Subst">
+<link href="Define-Subst-Pattern-Matching.html#Define-Subst-Pattern-Matching" rel="next" title="Define Subst Pattern Matching">
+<link href="Define-Subst.html#Define-Subst" rel="prev" title="Define Subst">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Define-Subst-Example"></a>
+<div class="header">
+<p>
+Next: <a href="Define-Subst-Pattern-Matching.html#Define-Subst-Pattern-Matching" accesskey="n" rel="next">Define Subst Pattern Matching</a>, Up: <a href="Define-Subst.html#Define-Subst" accesskey="u" rel="up">Define Subst</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="define_005fsubst-Example"></a>
+<h4 class="subsection">17.21.1 <code>define_subst</code> Example</h4>
+<a name="index-define_005fsubst-1"></a>
+
+<p>To illustrate how <code>define_subst</code> works, let us examine a simple
+template transformation.
+</p>
+<p>Suppose there are two kinds of instructions: one that touches flags and
+the other that does not.  The instructions of the second type could be
+generated with the following <code>define_subst</code>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_subst &quot;add_clobber_subst&quot;
+  [(set (match_operand:SI 0 &quot;&quot; &quot;&quot;)
+        (match_operand:SI 1 &quot;&quot; &quot;&quot;))]
+  &quot;&quot;
+  [(set (match_dup 0)
+        (match_dup 1))
+   (clobber (reg:CC FLAGS_REG))]
+</pre></div>
+
+<p>This <code>define_subst</code> can be applied to any RTL pattern containing
+<code>set</code> of mode SI and generates a copy with clobber when it is
+applied.
+</p>
+<p>Assume there is an RTL template for a <code>max</code> instruction to be used
+in <code>define_subst</code> mentioned above:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_insn &quot;maxsi&quot;
+  [(set (match_operand:SI 0 &quot;register_operand&quot; &quot;=r&quot;)
+        (max:SI
+          (match_operand:SI 1 &quot;register_operand&quot; &quot;r&quot;)
+          (match_operand:SI 2 &quot;register_operand&quot; &quot;r&quot;)))]
+  &quot;&quot;
+  &quot;max\t{%2, %1, %0|%0, %1, %2}&quot;
+ [&hellip;])
+</pre></div>
+
+<p>To mark the RTL template for <code>define_subst</code> application,
+subst-attributes are used.  They should be declared in advance:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_subst_attr &quot;add_clobber_name&quot; &quot;add_clobber_subst&quot; &quot;_noclobber&quot; &quot;_clobber&quot;)
+</pre></div>
+
+<p>Here &lsquo;<samp>add_clobber_name</samp>&rsquo; is the attribute name,
+&lsquo;<samp>add_clobber_subst</samp>&rsquo; is the name of the corresponding
+<code>define_subst</code>, the third argument (&lsquo;<samp>_noclobber</samp>&rsquo;) is the
+attribute value that would be substituted into the unchanged version of
+the source RTL template, and the last argument (&lsquo;<samp>_clobber</samp>&rsquo;) is the
+value that would be substituted into the second, transformed,
+version of the RTL template.
+</p>
+<p>Once the subst-attribute has been defined, it should be used in RTL
+templates which need to be processed by the <code>define_subst</code>.  So,
+the original RTL template should be changed:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_insn &quot;maxsi&lt;add_clobber_name&gt;&quot;
+  [(set (match_operand:SI 0 &quot;register_operand&quot; &quot;=r&quot;)
+        (max:SI
+          (match_operand:SI 1 &quot;register_operand&quot; &quot;r&quot;)
+          (match_operand:SI 2 &quot;register_operand&quot; &quot;r&quot;)))]
+  &quot;&quot;
+  &quot;max\t{%2, %1, %0|%0, %1, %2}&quot;
+ [&hellip;])
+</pre></div>
+
+<p>The result of the <code>define_subst</code> usage would look like the following:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_insn &quot;maxsi_noclobber&quot;
+  [(set (match_operand:SI 0 &quot;register_operand&quot; &quot;=r&quot;)
+        (max:SI
+          (match_operand:SI 1 &quot;register_operand&quot; &quot;r&quot;)
+          (match_operand:SI 2 &quot;register_operand&quot; &quot;r&quot;)))]
+  &quot;&quot;
+  &quot;max\t{%2, %1, %0|%0, %1, %2}&quot;
+ [&hellip;])
+(define_insn &quot;maxsi_clobber&quot;
+  [(set (match_operand:SI 0 &quot;register_operand&quot; &quot;=r&quot;)
+        (max:SI
+          (match_operand:SI 1 &quot;register_operand&quot; &quot;r&quot;)
+          (match_operand:SI 2 &quot;register_operand&quot; &quot;r&quot;)))
+   (clobber (reg:CC FLAGS_REG))]
+  &quot;&quot;
+  &quot;max\t{%2, %1, %0|%0, %1, %2}&quot;
+ [&hellip;])
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Define-Subst-Pattern-Matching.html#Define-Subst-Pattern-Matching" accesskey="n" rel="next">Define Subst Pattern Matching</a>, Up: <a href="Define-Subst.html#Define-Subst" accesskey="u" rel="up">Define Subst</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

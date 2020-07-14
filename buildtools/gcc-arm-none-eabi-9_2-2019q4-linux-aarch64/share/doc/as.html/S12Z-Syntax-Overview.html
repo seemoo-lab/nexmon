@@ -1,0 +1,130 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: S12Z Syntax Overview</title>
+
+<meta name="description" content="Using as: S12Z Syntax Overview">
+<meta name="keywords" content="Using as: S12Z Syntax Overview">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="S12Z-Syntax.html#S12Z-Syntax" rel="up" title="S12Z Syntax">
+<link href="S12Z-Addressing-Modes.html#S12Z-Addressing-Modes" rel="next" title="S12Z Addressing Modes">
+<link href="S12Z-Syntax.html#S12Z-Syntax" rel="prev" title="S12Z Syntax">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="S12Z-Syntax-Overview"></a>
+<div class="header">
+<p>
+Next: <a href="S12Z-Addressing-Modes.html#S12Z-Addressing-Modes" accesskey="n" rel="next">S12Z Addressing Modes</a>, Up: <a href="S12Z-Syntax.html#S12Z-Syntax" accesskey="u" rel="up">S12Z Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Overview-2"></a>
+<h4 class="subsubsection">9.24.2.1 Overview</h4>
+
+<p>In the S12Z syntax, the instruction name comes first and it may
+be followed by one, or by several operands.
+In most cases the maximum number of operands is three.
+Operands are separated by a comma (&lsquo;<samp>,</samp>&rsquo;).
+A comma however does not act as a separator if it appears within parentheses
+(&lsquo;<samp>()</samp>&rsquo;) or within square brackets (&lsquo;<samp>[]</samp>&rsquo;).
+<code>as</code> will complain if too many, too few or inappropriate operands
+are specified for a given instruction.
+</p>
+<p>Some instructions accept and (in certain situations require) a suffix
+indicating the size of the operand.
+The suffix is separated from the instruction name by a period (&lsquo;<samp>.</samp>&rsquo;)
+and may be one of &lsquo;<samp>b</samp>&rsquo;, &lsquo;<samp>w</samp>&rsquo;, &lsquo;<samp>p</samp>&rsquo; or &lsquo;<samp>l</samp>&rsquo; indicating
+&lsquo;byte&rsquo; (a single byte), &lsquo;word&rsquo; (2 bytes), &lsquo;pointer&rsquo; (3 bytes) or &lsquo;long&rsquo; (4 bytes)
+respectively.
+</p>
+<p>Example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">	bset.b  0xA98, #5
+	mov.b   #6, 0x2409
+	ld      d0, #4
+	mov.l   (d0, x), 0x2409
+	inc     d0
+	cmp     d0, #12
+	blt     *-4
+	lea     x, 0x2409
+	st      y,  (1, x)
+</pre></div>
+
+<a name="index-line-comment-character_002c-S12Z"></a>
+<p>The presence of a &lsquo;<samp>;</samp>&rsquo; character anywhere
+on a line indicates the start of a comment that extends to the end of
+that line.
+</p>
+<p>A &lsquo;<samp>*</samp>&rsquo; or a &lsquo;<samp>#</samp>&rsquo; character at the start of a line also
+introduces a line comment, but these characters do not work elsewhere
+on the line.  If the first character of the line is a &lsquo;<samp>#</samp>&rsquo; then as
+well as starting a comment, the line could also be logical line number
+directive (see <a href="Comments.html#Comments">Comments</a>) or a preprocessor control command
+(see <a href="Preprocessing.html#Preprocessing">Preprocessing</a>).
+</p>
+<a name="index-line-separator_002c-S12Z"></a>
+<a name="index-statement-separator_002c-S12Z"></a>
+<a name="index-S12Z-line-separator"></a>
+<p>The S12Z assembler does not currently support a line separator
+character.
+</p>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="S12Z-Addressing-Modes.html#S12Z-Addressing-Modes" accesskey="n" rel="next">S12Z Addressing Modes</a>, Up: <a href="S12Z-Syntax.html#S12Z-Syntax" accesskey="u" rel="up">S12Z Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

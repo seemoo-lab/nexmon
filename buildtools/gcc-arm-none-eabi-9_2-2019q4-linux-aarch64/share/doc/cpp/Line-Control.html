@@ -1,0 +1,139 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1987-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation.  A copy of
+the license is included in the
+section entitled "GNU Free Documentation License".
+
+This manual contains no Invariant Sections.  The Front-Cover Texts are
+(a) (see below), and the Back-Cover Texts are (b) (see below).
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The C Preprocessor: Line Control</title>
+
+<meta name="description" content="The C Preprocessor: Line Control">
+<meta name="keywords" content="The C Preprocessor: Line Control">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index-of-Directives.html#Index-of-Directives" rel="index" title="Index of Directives">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Pragmas.html#Pragmas" rel="next" title="Pragmas">
+<link href="Diagnostics.html#Diagnostics" rel="prev" title="Diagnostics">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Line-Control"></a>
+<div class="header">
+<p>
+Next: <a href="Pragmas.html#Pragmas" accesskey="n" rel="next">Pragmas</a>, Previous: <a href="Diagnostics.html#Diagnostics" accesskey="p" rel="prev">Diagnostics</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index-of-Directives.html#Index-of-Directives" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Line-Control-1"></a>
+<h2 class="chapter">6 Line Control</h2>
+<a name="index-line-control"></a>
+
+<p>The C preprocessor informs the C compiler of the location in your source
+code where each token came from.  Presently, this is just the file name
+and line number.  All the tokens resulting from macro expansion are
+reported as having appeared on the line of the source file where the
+outermost macro was used.  We intend to be more accurate in the future.
+</p>
+<p>If you write a program which generates source code, such as the
+<code>bison</code> parser generator, you may want to adjust the preprocessor&rsquo;s
+notion of the current file name and line number by hand.  Parts of the
+output from <code>bison</code> are generated from scratch, other parts come
+from a standard parser file.  The rest are copied verbatim from
+<code>bison</code>&rsquo;s input.  You would like compiler error messages and
+symbolic debuggers to be able to refer to <code>bison</code>&rsquo;s input file.
+</p>
+<a name="index-_0023line"></a>
+<p><code>bison</code> or any such program can arrange this by writing
+&lsquo;<samp>#line</samp>&rsquo; directives into the output file.  &lsquo;<samp>#line</samp>&rsquo; is a
+directive that specifies the original line number and source file name
+for subsequent input in the current preprocessor input file.
+&lsquo;<samp>#line</samp>&rsquo; has three variants:
+</p>
+<dl compact="compact">
+<dt><code>#line <var>linenum</var></code></dt>
+<dd><p><var>linenum</var> is a non-negative decimal integer constant.  It specifies
+the line number which should be reported for the following line of
+input.  Subsequent lines are counted from <var>linenum</var>.
+</p>
+</dd>
+<dt><code>#line <var>linenum</var> <var>filename</var></code></dt>
+<dd><p><var>linenum</var> is the same as for the first form, and has the same
+effect.  In addition, <var>filename</var> is a string constant.  The
+following line and all subsequent lines are reported to come from the
+file it specifies, until something else happens to change that.
+<var>filename</var> is interpreted according to the normal rules for a string
+constant: backslash escapes are interpreted.  This is different from
+&lsquo;<samp>#include</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>#line <var>anything else</var></code></dt>
+<dd><p><var>anything else</var> is checked for macro calls, which are expanded.
+The result should match one of the above two forms.
+</p></dd>
+</dl>
+
+<p>&lsquo;<samp>#line</samp>&rsquo; directives alter the results of the <code>__FILE__</code> and
+<code>__LINE__</code> predefined macros from that point on.  See <a href="Standard-Predefined-Macros.html#Standard-Predefined-Macros">Standard Predefined Macros</a>.  They do not have any effect on &lsquo;<samp>#include</samp>&rsquo;&rsquo;s
+idea of the directory containing the current file.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Pragmas.html#Pragmas" accesskey="n" rel="next">Pragmas</a>, Previous: <a href="Diagnostics.html#Diagnostics" accesskey="p" rel="prev">Diagnostics</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index-of-Directives.html#Index-of-Directives" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

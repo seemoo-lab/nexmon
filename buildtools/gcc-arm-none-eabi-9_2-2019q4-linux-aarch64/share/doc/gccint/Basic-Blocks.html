@@ -1,0 +1,217 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Basic Blocks</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Basic Blocks">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Basic Blocks">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Control-Flow.html#Control-Flow" rel="up" title="Control Flow">
+<link href="Edges.html#Edges" rel="next" title="Edges">
+<link href="Control-Flow.html#Control-Flow" rel="prev" title="Control Flow">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Basic-Blocks"></a>
+<div class="header">
+<p>
+Next: <a href="Edges.html#Edges" accesskey="n" rel="next">Edges</a>, Up: <a href="Control-Flow.html#Control-Flow" accesskey="u" rel="up">Control Flow</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Basic-Blocks-1"></a>
+<h3 class="section">15.1 Basic Blocks</h3>
+
+<a name="index-basic-block"></a>
+<a name="index-basic_005fblock"></a>
+<p>A basic block is a straight-line sequence of code with only one entry
+point and only one exit.  In GCC, basic blocks are represented using
+the <code>basic_block</code> data type.
+</p>
+<a name="index-ENTRY_005fBLOCK_005fPTR_002c-EXIT_005fBLOCK_005fPTR"></a>
+<p>Special basic blocks represent possible entry and exit points of a
+function.  These blocks are called <code>ENTRY_BLOCK_PTR</code> and
+<code>EXIT_BLOCK_PTR</code>.  These blocks do not contain any code.
+</p>
+<a name="index-BASIC_005fBLOCK"></a>
+<p>The <code>BASIC_BLOCK</code> array contains all basic blocks in an
+unspecified order.  Each <code>basic_block</code> structure has a field
+that holds a unique integer identifier <code>index</code> that is the
+index of the block in the <code>BASIC_BLOCK</code> array.
+The total number of basic blocks in the function is
+<code>n_basic_blocks</code>.  Both the basic block indices and
+the total number of basic blocks may vary during the compilation
+process, as passes reorder, create, duplicate, and destroy basic
+blocks.  The index for any block should never be greater than
+<code>last_basic_block</code>.  The indices 0 and 1 are special codes
+reserved for <code>ENTRY_BLOCK</code> and <code>EXIT_BLOCK</code>, the
+indices of <code>ENTRY_BLOCK_PTR</code> and <code>EXIT_BLOCK_PTR</code>.
+</p>
+<a name="index-next_005fbb_002c-prev_005fbb_002c-FOR_005fEACH_005fBB_002c-FOR_005fALL_005fBB"></a>
+<p>Two pointer members of the <code>basic_block</code> structure are the
+pointers <code>next_bb</code> and <code>prev_bb</code>.  These are used to keep
+doubly linked chain of basic blocks in the same order as the
+underlying instruction stream.  The chain of basic blocks is updated
+transparently by the provided API for manipulating the CFG.  The macro
+<code>FOR_EACH_BB</code> can be used to visit all the basic blocks in
+lexicographical order, except <code>ENTRY_BLOCK</code> and <code>EXIT_BLOCK</code>.
+The macro <code>FOR_ALL_BB</code> also visits all basic blocks in
+lexicographical order, including <code>ENTRY_BLOCK</code> and <code>EXIT_BLOCK</code>.
+</p>
+<a name="index-post_005forder_005fcompute_002c-inverted_005fpost_005forder_005fcompute_002c-walk_005fdominator_005ftree"></a>
+<p>The functions <code>post_order_compute</code> and <code>inverted_post_order_compute</code>
+can be used to compute topological orders of the CFG.  The orders are
+stored as vectors of basic block indices.  The <code>BASIC_BLOCK</code> array
+can be used to iterate each basic block by index.
+Dominator traversals are also possible using
+<code>walk_dominator_tree</code>.  Given two basic blocks A and B, block A
+dominates block B if A is <em>always</em> executed before B.
+</p>
+<p>Each <code>basic_block</code> also contains pointers to the first
+instruction (the <em>head</em>) and the last instruction (the <em>tail</em>)
+or <em>end</em> of the instruction stream contained in a basic block.  In
+fact, since the <code>basic_block</code> data type is used to represent
+blocks in both major intermediate representations of GCC (<code>GIMPLE</code>
+and RTL), there are pointers to the head and end of a basic block for
+both representations, stored in intermediate representation specific
+data in the <code>il</code> field of <code>struct basic_block_def</code>.
+</p>
+<a name="index-CODE_005fLABEL"></a>
+<a name="index-NOTE_005fINSN_005fBASIC_005fBLOCK"></a>
+<p>For RTL, these pointers are <code>BB_HEAD</code> and <code>BB_END</code>.
+</p>
+<a name="index-insn-notes_002c-notes"></a>
+<a name="index-NOTE_005fINSN_005fBASIC_005fBLOCK-1"></a>
+<p>In the RTL representation of a function, the instruction stream
+contains not only the &ldquo;real&rdquo; instructions, but also <em>notes</em>
+or <em>insn notes</em> (to distinguish them from <em>reg notes</em>).
+Any function that moves or duplicates the basic blocks needs
+to take care of updating of these notes.  Many of these notes expect
+that the instruction stream consists of linear regions, so updating
+can sometimes be tedious.  All types of insn notes are defined
+in <samp>insn-notes.def</samp>.
+</p>
+<p>In the RTL function representation, the instructions contained in a
+basic block always follow a <code>NOTE_INSN_BASIC_BLOCK</code>, but zero
+or more <code>CODE_LABEL</code> nodes can precede the block note.
+A basic block ends with a control flow instruction or with the last
+instruction before the next <code>CODE_LABEL</code> or
+<code>NOTE_INSN_BASIC_BLOCK</code>.
+By definition, a <code>CODE_LABEL</code> cannot appear in the middle of
+the instruction stream of a basic block.
+</p>
+<a name="index-can_005ffallthru"></a>
+<a name="index-table-jump"></a>
+<p>In addition to notes, the jump table vectors are also represented as
+&ldquo;pseudo-instructions&rdquo; inside the insn stream.  These vectors never
+appear in the basic block and should always be placed just after the
+table jump instructions referencing them.  After removing the
+table-jump it is often difficult to eliminate the code computing the
+address and referencing the vector, so cleaning up these vectors is
+postponed until after liveness analysis.   Thus the jump table vectors
+may appear in the insn stream unreferenced and without any purpose.
+Before any edge is made <em>fall-thru</em>, the existence of such
+construct in the way needs to be checked by calling
+<code>can_fallthru</code> function.
+</p>
+<a name="index-GIMPLE-statement-iterators"></a>
+<p>For the <code>GIMPLE</code> representation, the PHI nodes and statements
+contained in a basic block are in a <code>gimple_seq</code> pointed to by
+the basic block intermediate language specific pointers.
+Abstract containers and iterators are used to access the PHI nodes
+and statements in a basic blocks.  These iterators are called
+<em>GIMPLE statement iterators</em> (GSIs).  Grep for <code>^gsi</code>
+in the various <samp>gimple-*</samp> and <samp>tree-*</samp> files.
+There is a <code>gimple_stmt_iterator</code> type for iterating over
+all kinds of statement, and a <code>gphi_iterator</code> subclass for
+iterating over PHI nodes.
+The following snippet will pretty-print all PHI nodes the statements
+of the current function in the GIMPLE representation.
+</p>
+<div class="smallexample">
+<pre class="smallexample">basic_block bb;
+
+FOR_EACH_BB (bb)
+  {
+   gphi_iterator pi;
+   gimple_stmt_iterator si;
+
+   for (pi = gsi_start_phis (bb); !gsi_end_p (pi); gsi_next (&amp;pi))
+     {
+       gphi *phi = pi.phi ();
+       print_gimple_stmt (dump_file, phi, 0, TDF_SLIM);
+     }
+   for (si = gsi_start_bb (bb); !gsi_end_p (si); gsi_next (&amp;si))
+     {
+       gimple stmt = gsi_stmt (si);
+       print_gimple_stmt (dump_file, stmt, 0, TDF_SLIM);
+     }
+  }
+</pre></div>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Edges.html#Edges" accesskey="n" rel="next">Edges</a>, Up: <a href="Control-Flow.html#Control-Flow" accesskey="u" rel="up">Control Flow</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

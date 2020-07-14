@@ -1,0 +1,137 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Bundle directives</title>
+
+<meta name="description" content="Using as: Bundle directives">
+<meta name="keywords" content="Using as: Bundle directives">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Pseudo-Ops.html#Pseudo-Ops" rel="up" title="Pseudo Ops">
+<link href="Byte.html#Byte" rel="next" title="Byte">
+<link href="Balign.html#Balign" rel="prev" title="Balign">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Bundle-directives"></a>
+<div class="header">
+<p>
+Next: <a href="Byte.html#Byte" accesskey="n" rel="next">Byte</a>, Previous: <a href="Balign.html#Balign" accesskey="p" rel="prev">Balign</a>, Up: <a href="Pseudo-Ops.html#Pseudo-Ops" accesskey="u" rel="up">Pseudo Ops</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Bundle-directives-1"></a>
+<h3 class="section">7.8 Bundle directives</h3>
+<a name="g_t_002ebundle_005falign_005fmode-abs_002dexpr"></a>
+<h4 class="subsection">7.8.1 <code>.bundle_align_mode <var>abs-expr</var></code></h4>
+<a name="index-bundle_005falign_005fmode-directive"></a>
+<a name="index-bundle"></a>
+<a name="index-instruction-bundle"></a>
+<a name="index-aligned-instruction-bundle"></a>
+<p><code>.bundle_align_mode</code> enables or disables <em>aligned instruction
+bundle</em> mode.  In this mode, sequences of adjacent instructions are grouped
+into fixed-sized <em>bundles</em>.  If the argument is zero, this mode is
+disabled (which is the default state).  If the argument it not zero, it
+gives the size of an instruction bundle as a power of two (as for the
+<code>.p2align</code> directive, see <a href="P2align.html#P2align">P2align</a>).
+</p>
+<p>For some targets, it&rsquo;s an ABI requirement that no instruction may span a
+certain aligned boundary.  A <em>bundle</em> is simply a sequence of
+instructions that starts on an aligned boundary.  For example, if
+<var>abs-expr</var> is <code>5</code> then the bundle size is 32, so each aligned
+chunk of 32 bytes is a bundle.  When aligned instruction bundle mode is in
+effect, no single instruction may span a boundary between bundles.  If an
+instruction would start too close to the end of a bundle for the length of
+that particular instruction to fit within the bundle, then the space at the
+end of that bundle is filled with no-op instructions so the instruction
+starts in the next bundle.  As a corollary, it&rsquo;s an error if any single
+instruction&rsquo;s encoding is longer than the bundle size.
+</p>
+<a name="g_t_002ebundle_005flock-and-_002ebundle_005funlock"></a>
+<h4 class="subsection">7.8.2 <code>.bundle_lock</code> and <code>.bundle_unlock</code></h4>
+<a name="index-bundle_005flock-directive"></a>
+<a name="index-bundle_005funlock-directive"></a>
+<p>The <code>.bundle_lock</code> and directive <code>.bundle_unlock</code> directives
+allow explicit control over instruction bundle padding.  These directives
+are only valid when <code>.bundle_align_mode</code> has been used to enable
+aligned instruction bundle mode.  It&rsquo;s an error if they appear when
+<code>.bundle_align_mode</code> has not been used at all, or when the last
+directive was <code><span class="nolinebreak">.bundle_align_mode</span>&nbsp;0</code><!-- /@w -->.
+</p>
+<a name="index-bundle_002dlocked"></a>
+<p>For some targets, it&rsquo;s an ABI requirement that certain instructions may
+appear only as part of specified permissible sequences of multiple
+instructions, all within the same bundle.  A pair of <code>.bundle_lock</code>
+and <code>.bundle_unlock</code> directives define a <em>bundle-locked</em>
+instruction sequence.  For purposes of aligned instruction bundle mode, a
+sequence starting with <code>.bundle_lock</code> and ending with
+<code>.bundle_unlock</code> is treated as a single instruction.  That is, the
+entire sequence must fit into a single bundle and may not span a bundle
+boundary.  If necessary, no-op instructions will be inserted before the
+first instruction of the sequence so that the whole sequence starts on an
+aligned bundle boundary.  It&rsquo;s an error if the sequence is longer than the
+bundle size.
+</p>
+<p>For convenience when using <code>.bundle_lock</code> and <code>.bundle_unlock</code>
+inside assembler macros (see <a href="Macro.html#Macro">Macro</a>), bundle-locked sequences may be
+nested.  That is, a second <code>.bundle_lock</code> directive before the next
+<code>.bundle_unlock</code> directive has no effect except that it must be
+matched by another closing <code>.bundle_unlock</code> so that there is the
+same number of <code>.bundle_lock</code> and <code>.bundle_unlock</code> directives.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Byte.html#Byte" accesskey="n" rel="next">Byte</a>, Previous: <a href="Balign.html#Balign" accesskey="p" rel="prev">Balign</a>, Up: <a href="Pseudo-Ops.html#Pseudo-Ops" accesskey="u" rel="up">Pseudo Ops</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

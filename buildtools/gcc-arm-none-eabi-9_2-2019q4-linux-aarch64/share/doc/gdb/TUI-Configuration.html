@@ -1,0 +1,148 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: TUI Configuration</title>
+
+<meta name="description" content="Debugging with GDB: TUI Configuration">
+<meta name="keywords" content="Debugging with GDB: TUI Configuration">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="TUI.html#TUI" rel="up" title="TUI">
+<link href="Emacs.html#Emacs" rel="next" title="Emacs">
+<link href="TUI-Commands.html#TUI-Commands" rel="prev" title="TUI Commands">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="TUI-Configuration"></a>
+<div class="header">
+<p>
+Previous: <a href="TUI-Commands.html#TUI-Commands" accesskey="p" rel="prev">TUI Commands</a>, Up: <a href="TUI.html#TUI" accesskey="u" rel="up">TUI</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="TUI-Configuration-Variables"></a>
+<h3 class="section">25.5 TUI Configuration Variables</h3>
+<a name="index-TUI-configuration-variables"></a>
+
+<p>Several configuration variables control the appearance of TUI windows.
+</p>
+<dl compact="compact">
+<dt><code>set tui border-kind <var>kind</var></code></dt>
+<dd><a name="index-set-tui-border_002dkind"></a>
+<p>Select the border appearance for the source, assembly and register windows.
+The possible values are the following:
+</p><dl compact="compact">
+<dt><code>space</code></dt>
+<dd><p>Use a space character to draw the border.
+</p>
+</dd>
+<dt><code>ascii</code></dt>
+<dd><p>Use <small>ASCII</small> characters &lsquo;<samp>+</samp>&rsquo;, &lsquo;<samp>-</samp>&rsquo; and &lsquo;<samp>|</samp>&rsquo; to draw the border.
+</p>
+</dd>
+<dt><code>acs</code></dt>
+<dd><p>Use the Alternate Character Set to draw the border.  The border is
+drawn using character line graphics if the terminal supports them.
+</p></dd>
+</dl>
+
+</dd>
+<dt><code>set tui border-mode <var>mode</var></code></dt>
+<dd><a name="index-set-tui-border_002dmode"></a>
+</dd>
+<dt><code>set tui active-border-mode <var>mode</var></code></dt>
+<dd><a name="index-set-tui-active_002dborder_002dmode"></a>
+<p>Select the display attributes for the borders of the inactive windows
+or the active window.  The <var>mode</var> can be one of the following:
+</p><dl compact="compact">
+<dt><code>normal</code></dt>
+<dd><p>Use normal attributes to display the border.
+</p>
+</dd>
+<dt><code>standout</code></dt>
+<dd><p>Use standout mode.
+</p>
+</dd>
+<dt><code>reverse</code></dt>
+<dd><p>Use reverse video mode.
+</p>
+</dd>
+<dt><code>half</code></dt>
+<dd><p>Use half bright mode.
+</p>
+</dd>
+<dt><code>half-standout</code></dt>
+<dd><p>Use half bright and standout mode.
+</p>
+</dd>
+<dt><code>bold</code></dt>
+<dd><p>Use extra bright or bold mode.
+</p>
+</dd>
+<dt><code>bold-standout</code></dt>
+<dd><p>Use extra bright or bold and standout mode.
+</p></dd>
+</dl>
+
+</dd>
+<dt><code>set tui tab-width <var>nchars</var></code></dt>
+<dd><a name="index-set-tui-tab_002dwidth"></a>
+<a name="index-tabset"></a>
+<p>Set the width of tab stops to be <var>nchars</var> characters.  This
+setting affects the display of TAB characters in the source and
+assembly windows.
+</p></dd>
+</dl>
+
+
+
+
+</body>
+</html>

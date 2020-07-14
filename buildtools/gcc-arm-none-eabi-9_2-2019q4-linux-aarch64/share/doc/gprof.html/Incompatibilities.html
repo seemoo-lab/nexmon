@@ -1,0 +1,107 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the gprof profiler of the GNU system.
+
+Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU gprof: Incompatibilities</title>
+
+<meta name="description" content="GNU gprof: Incompatibilities">
+<meta name="keywords" content="GNU gprof: Incompatibilities">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Details.html#Details" rel="next" title="Details">
+<link href="How-do-I_003f.html#How-do-I_003f" rel="prev" title="How do I?">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Incompatibilities"></a>
+<div class="header">
+<p>
+Next: <a href="Details.html#Details" accesskey="n" rel="next">Details</a>, Previous: <a href="How-do-I_003f.html#How-do-I_003f" accesskey="p" rel="prev">How do I?</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<hr>
+<a name="Incompatibilities-with-Unix-gprof"></a>
+<h2 class="chapter">8 Incompatibilities with Unix <code>gprof</code></h2>
+
+<p><small>GNU</small> <code>gprof</code> and Berkeley Unix <code>gprof</code> use the same data
+file <samp>gmon.out</samp>, and provide essentially the same information.  But
+there are a few differences.
+</p>
+<ul>
+<li> <small>GNU</small> <code>gprof</code> uses a new, generalized file format with support
+for basic-block execution counts and non-realtime histograms.  A magic
+cookie and version number allows <code>gprof</code> to easily identify
+new style files.  Old BSD-style files can still be read.
+See <a href="File-Format.html#File-Format">Profiling Data File Format</a>.
+
+</li><li> For a recursive function, Unix <code>gprof</code> lists the function as a
+parent and as a child, with a <code>calls</code> field that lists the number
+of recursive calls.  <small>GNU</small> <code>gprof</code> omits these lines and puts
+the number of recursive calls in the primary line.
+
+</li><li> When a function is suppressed from the call graph with &lsquo;<samp>-e</samp>&rsquo;, <small>GNU</small>
+<code>gprof</code> still lists it as a subroutine of functions that call it.
+
+</li><li> <small>GNU</small> <code>gprof</code> accepts the &lsquo;<samp>-k</samp>&rsquo; with its argument
+in the form &lsquo;<samp>from/to</samp>&rsquo;, instead of &lsquo;<samp>from to</samp>&rsquo;.
+
+</li><li> In the annotated source listing,
+if there are multiple basic blocks on the same line,
+<small>GNU</small> <code>gprof</code> prints all of their counts, separated by commas.
+
+
+</li><li> The blurbs, field widths, and output formats are different.  <small>GNU</small>
+<code>gprof</code> prints blurbs after the tables, so that you can see the
+tables without skipping the blurbs.
+</li></ul>
+
+
+
+
+</body>
+</html>

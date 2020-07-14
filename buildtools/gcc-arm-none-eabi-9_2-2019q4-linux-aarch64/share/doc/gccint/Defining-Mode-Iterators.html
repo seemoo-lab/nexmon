@@ -1,0 +1,125 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Defining Mode Iterators</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Defining Mode Iterators">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Defining Mode Iterators">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Mode-Iterators.html#Mode-Iterators" rel="up" title="Mode Iterators">
+<link href="Substitutions.html#Substitutions" rel="next" title="Substitutions">
+<link href="Mode-Iterators.html#Mode-Iterators" rel="prev" title="Mode Iterators">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Defining-Mode-Iterators"></a>
+<div class="header">
+<p>
+Next: <a href="Substitutions.html#Substitutions" accesskey="n" rel="next">Substitutions</a>, Up: <a href="Mode-Iterators.html#Mode-Iterators" accesskey="u" rel="up">Mode Iterators</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Defining-Mode-Iterators-1"></a>
+<h4 class="subsubsection">17.23.1.1 Defining Mode Iterators</h4>
+<a name="index-define_005fmode_005fiterator"></a>
+
+<p>The syntax for defining a mode iterator is:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_mode_iterator <var>name</var> [(<var>mode1</var> &quot;<var>cond1</var>&quot;) &hellip; (<var>moden</var> &quot;<var>condn</var>&quot;)])
+</pre></div>
+
+<p>This allows subsequent <samp>.md</samp> file constructs to use the mode suffix
+<code>:<var>name</var></code>.  Every construct that does so will be expanded
+<var>n</var> times, once with every use of <code>:<var>name</var></code> replaced by
+<code>:<var>mode1</var></code>, once with every use replaced by <code>:<var>mode2</var></code>,
+and so on.  In the expansion for a particular <var>modei</var>, every
+C condition will also require that <var>condi</var> be true.
+</p>
+<p>For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_mode_iterator P [(SI &quot;Pmode == SImode&quot;) (DI &quot;Pmode == DImode&quot;)])
+</pre></div>
+
+<p>defines a new mode suffix <code>:P</code>.  Every construct that uses
+<code>:P</code> will be expanded twice, once with every <code>:P</code> replaced
+by <code>:SI</code> and once with every <code>:P</code> replaced by <code>:DI</code>.
+The <code>:SI</code> version will only apply if <code>Pmode == SImode</code> and
+the <code>:DI</code> version will only apply if <code>Pmode == DImode</code>.
+</p>
+<p>As with other <samp>.md</samp> conditions, an empty string is treated
+as &ldquo;always true&rdquo;.  <code>(<var>mode</var> &quot;&quot;)</code> can also be abbreviated
+to <code><var>mode</var></code>.  For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_mode_iterator GPR [SI (DI &quot;TARGET_64BIT&quot;)])
+</pre></div>
+
+<p>means that the <code>:DI</code> expansion only applies if <code>TARGET_64BIT</code>
+but that the <code>:SI</code> expansion has no such constraint.
+</p>
+<p>Iterators are applied in the order they are defined.  This can be
+significant if two iterators are used in a construct that requires
+substitutions.  See <a href="Substitutions.html#Substitutions">Substitutions</a>.
+</p>
+
+
+
+</body>
+</html>

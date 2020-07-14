@@ -1,0 +1,153 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Microsoft Windows Variable Attributes</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Microsoft Windows Variable Attributes">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Microsoft Windows Variable Attributes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Variable-Attributes.html#Variable-Attributes" rel="up" title="Variable Attributes">
+<link href="MSP430-Variable-Attributes.html#MSP430-Variable-Attributes" rel="next" title="MSP430 Variable Attributes">
+<link href="MeP-Variable-Attributes.html#MeP-Variable-Attributes" rel="prev" title="MeP Variable Attributes">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Microsoft-Windows-Variable-Attributes"></a>
+<div class="header">
+<p>
+Next: <a href="MSP430-Variable-Attributes.html#MSP430-Variable-Attributes" accesskey="n" rel="next">MSP430 Variable Attributes</a>, Previous: <a href="MeP-Variable-Attributes.html#MeP-Variable-Attributes" accesskey="p" rel="prev">MeP Variable Attributes</a>, Up: <a href="Variable-Attributes.html#Variable-Attributes" accesskey="u" rel="up">Variable Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Microsoft-Windows-Variable-Attributes-1"></a>
+<h4 class="subsection">6.34.9 Microsoft Windows Variable Attributes</h4>
+
+<p>You can use these attributes on Microsoft Windows targets.
+<a href="x86-Variable-Attributes.html#x86-Variable-Attributes">x86 Variable Attributes</a> for additional Windows compatibility
+attributes available on all x86 targets.
+</p>
+<dl compact="compact">
+<dt><code>dllimport</code></dt>
+<dt><code>dllexport</code></dt>
+<dd><a name="index-dllimport-variable-attribute"></a>
+<a name="index-dllexport-variable-attribute"></a>
+<p>The <code>dllimport</code> and <code>dllexport</code> attributes are described in
+<a href="Microsoft-Windows-Function-Attributes.html#Microsoft-Windows-Function-Attributes">Microsoft Windows Function Attributes</a>.
+</p>
+</dd>
+<dt><code>selectany</code></dt>
+<dd><a name="index-selectany-variable-attribute"></a>
+<p>The <code>selectany</code> attribute causes an initialized global variable to
+have link-once semantics.  When multiple definitions of the variable are
+encountered by the linker, the first is selected and the remainder are
+discarded.  Following usage by the Microsoft compiler, the linker is told
+<em>not</em> to warn about size or content differences of the multiple
+definitions.
+</p>
+<p>Although the primary usage of this attribute is for POD types, the
+attribute can also be applied to global C++ objects that are initialized
+by a constructor.  In this case, the static initialization and destruction
+code for the object is emitted in each translation defining the object,
+but the calls to the constructor and destructor are protected by a
+link-once guard variable.
+</p>
+<p>The <code>selectany</code> attribute is only available on Microsoft Windows
+targets.  You can use <code>__declspec (selectany)</code> as a synonym for
+<code>__attribute__ ((selectany))</code> for compatibility with other
+compilers.
+</p>
+</dd>
+<dt><code>shared</code></dt>
+<dd><a name="index-shared-variable-attribute"></a>
+<p>On Microsoft Windows, in addition to putting variable definitions in a named
+section, the section can also be shared among all running copies of an
+executable or DLL.  For example, this small program defines shared data
+by putting it in a named section <code>shared</code> and marking the section
+shareable:
+</p>
+<div class="smallexample">
+<pre class="smallexample">int foo __attribute__((section (&quot;shared&quot;), shared)) = 0;
+
+int
+main()
+{
+  /* <span class="roman">Read and write foo.  All running
+     copies see the same value.</span>  */
+  return 0;
+}
+</pre></div>
+
+<p>You may only use the <code>shared</code> attribute along with <code>section</code>
+attribute with a fully-initialized global definition because of the way
+linkers work.  See <code>section</code> attribute for more information.
+</p>
+<p>The <code>shared</code> attribute is only available on Microsoft Windows.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="MSP430-Variable-Attributes.html#MSP430-Variable-Attributes" accesskey="n" rel="next">MSP430 Variable Attributes</a>, Previous: <a href="MeP-Variable-Attributes.html#MeP-Variable-Attributes" accesskey="p" rel="prev">MeP Variable Attributes</a>, Up: <a href="Variable-Attributes.html#Variable-Attributes" accesskey="u" rel="up">Variable Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

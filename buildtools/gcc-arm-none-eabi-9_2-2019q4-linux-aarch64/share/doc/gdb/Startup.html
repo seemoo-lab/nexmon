@@ -1,0 +1,167 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Startup</title>
+
+<meta name="description" content="Debugging with GDB: Startup">
+<meta name="keywords" content="Debugging with GDB: Startup">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Invoking-GDB.html#Invoking-GDB" rel="up" title="Invoking GDB">
+<link href="Quitting-GDB.html#Quitting-GDB" rel="next" title="Quitting GDB">
+<link href="Mode-Options.html#Mode-Options" rel="prev" title="Mode Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Startup"></a>
+<div class="header">
+<p>
+Previous: <a href="Mode-Options.html#Mode-Options" accesskey="p" rel="prev">Mode Options</a>, Up: <a href="Invoking-GDB.html#Invoking-GDB" accesskey="u" rel="up">Invoking GDB</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="What-GDB-Does-During-Startup"></a>
+<h4 class="subsection">2.1.3 What <small>GDB</small> Does During Startup</h4>
+<a name="index-GDB-startup"></a>
+
+<p>Here&rsquo;s the description of what <small>GDB</small> does during session startup:
+</p>
+<ol>
+<li> Sets up the command interpreter as specified by the command line
+(see <a href="Mode-Options.html#Mode-Options">interpreter</a>).
+
+</li><li> <a name="index-init-file"></a>
+Reads the system-wide <em>init file</em> (if <samp>--with-system-gdbinit</samp> was
+used when building <small>GDB</small>; see <a href="System_002dwide-configuration.html#System_002dwide-configuration">System-wide configuration and settings</a>) and executes all the commands in
+that file.
+
+<a name="Home-Directory-Init-File"></a></li><li> Reads the init file (if any) in your home directory<a name="DOCF1" href="#FOOT1"><sup>1</sup></a> and executes all the commands in
+that file.
+
+<a name="Option-_002dinit_002deval_002dcommand"></a></li><li> Executes commands and command files specified by the &lsquo;<samp>-iex</samp>&rsquo; and
+&lsquo;<samp>-ix</samp>&rsquo; options in their specified order.  Usually you should use the
+&lsquo;<samp>-ex</samp>&rsquo; and &lsquo;<samp>-x</samp>&rsquo; options instead, but this way you can apply
+settings before <small>GDB</small> init files get executed and before inferior
+gets loaded.
+
+</li><li> Processes command line options and operands.
+
+<a name="Init-File-in-the-Current-Directory-during-Startup"></a></li><li> Reads and executes the commands from init file (if any) in the current
+working directory as long as &lsquo;<samp>set auto-load local-gdbinit</samp>&rsquo; is set to
+&lsquo;<samp>on</samp>&rsquo; (see <a href="Init-File-in-the-Current-Directory.html#Init-File-in-the-Current-Directory">Init File in the Current Directory</a>).
+This is only done if the current directory is
+different from your home directory.  Thus, you can have more than one
+init file, one generic in your home directory, and another, specific
+to the program you are debugging, in the directory where you invoke
+<small>GDB</small>.
+
+</li><li> If the command line specified a program to debug, or a process to
+attach to, or a core file, <small>GDB</small> loads any auto-loaded
+scripts provided for the program or for its loaded shared libraries.
+See <a href="Auto_002dloading.html#Auto_002dloading">Auto-loading</a>.
+
+<p>If you wish to disable the auto-loading during startup,
+you must do something like the following:
+</p>
+<div class="smallexample">
+<pre class="smallexample">$ gdb -iex &quot;set auto-load python-scripts off&quot; myprogram
+</pre></div>
+
+<p>Option &lsquo;<samp>-ex</samp>&rsquo; does not work because the auto-loading is then turned
+off too late.
+</p>
+</li><li> Executes commands and command files specified by the &lsquo;<samp>-ex</samp>&rsquo; and
+&lsquo;<samp>-x</samp>&rsquo; options in their specified order.  See <a href="Command-Files.html#Command-Files">Command Files</a>, for
+more details about <small>GDB</small> command files.
+
+</li><li> Reads the command history recorded in the <em>history file</em>.
+See <a href="Command-History.html#Command-History">Command History</a>, for more details about the command history and the
+files where <small>GDB</small> records it.
+</li></ol>
+
+<p>Init files use the same syntax as <em>command files</em> (see <a href="Command-Files.html#Command-Files">Command Files</a>) and are processed by <small>GDB</small> in the same way.  The init
+file in your home directory can set options (such as &lsquo;<samp>set
+complaints</samp>&rsquo;) that affect subsequent processing of command line options
+and operands.  Init files are not executed if you use the &lsquo;<samp>-nx</samp>&rsquo;
+option (see <a href="Mode-Options.html#Mode-Options">Choosing Modes</a>).
+</p>
+<p>To display the list of init files loaded by gdb at startup, you
+can use <kbd>gdb --help</kbd>.
+</p>
+<a name="index-init-file-name"></a>
+<a name="index-_002egdbinit"></a>
+<a name="index-gdb_002eini"></a>
+<p>The <small>GDB</small> init files are normally called <samp>.gdbinit</samp>.
+The DJGPP port of <small>GDB</small> uses the name <samp>gdb.ini</samp>, due to
+the limitations of file names imposed by DOS filesystems.  The Windows
+port of <small>GDB</small> uses the standard name, but if it finds a
+<samp>gdb.ini</samp> file in your home directory, it warns you about that
+and suggests to rename the file to the standard name.
+</p>
+
+<div class="footnote">
+<hr>
+<h4 class="footnotes-heading">Footnotes</h4>
+
+<h3><a name="FOOT1" href="#DOCF1">(1)</a></h3>
+<p>On
+DOS/Windows systems, the home directory is the one pointed to by the
+<code>HOME</code> environment variable.</p>
+</div>
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Mode-Options.html#Mode-Options" accesskey="p" rel="prev">Mode Options</a>, Up: <a href="Invoking-GDB.html#Invoking-GDB" accesskey="u" rel="up">Invoking GDB</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

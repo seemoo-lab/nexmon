@@ -1,0 +1,157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: CC0 Condition Codes</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: CC0 Condition Codes">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: CC0 Condition Codes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Condition-Code.html#Condition-Code" rel="up" title="Condition Code">
+<link href="MODE_005fCC-Condition-Codes.html#MODE_005fCC-Condition-Codes" rel="next" title="MODE_CC Condition Codes">
+<link href="Condition-Code.html#Condition-Code" rel="prev" title="Condition Code">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="CC0-Condition-Codes"></a>
+<div class="header">
+<p>
+Next: <a href="MODE_005fCC-Condition-Codes.html#MODE_005fCC-Condition-Codes" accesskey="n" rel="next">MODE_CC Condition Codes</a>, Up: <a href="Condition-Code.html#Condition-Code" accesskey="u" rel="up">Condition Code</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Representation-of-condition-codes-using-_0028cc0_0029"></a>
+<h4 class="subsection">18.15.1 Representation of condition codes using <code>(cc0)</code></h4>
+<a name="index-cc0-1"></a>
+
+<a name="index-cc_005fstatus"></a>
+<p>The file <samp>conditions.h</samp> defines a variable <code>cc_status</code> to
+describe how the condition code was computed (in case the interpretation of
+the condition code depends on the instruction that it was set by).  This
+variable contains the RTL expressions on which the condition code is
+currently based, and several standard flags.
+</p>
+<p>Sometimes additional machine-specific flags must be defined in the machine
+description header file.  It can also add additional machine-specific
+information by defining <code>CC_STATUS_MDEP</code>.
+</p>
+<dl>
+<dt><a name="index-CC_005fSTATUS_005fMDEP"></a>Macro: <strong>CC_STATUS_MDEP</strong></dt>
+<dd><p>C code for a data type which is used for declaring the <code>mdep</code>
+component of <code>cc_status</code>.  It defaults to <code>int</code>.
+</p>
+<p>This macro is not used on machines that do not use <code>cc0</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-CC_005fSTATUS_005fMDEP_005fINIT"></a>Macro: <strong>CC_STATUS_MDEP_INIT</strong></dt>
+<dd><p>A C expression to initialize the <code>mdep</code> field to &ldquo;empty&rdquo;.
+The default definition does nothing, since most machines don&rsquo;t use
+the field anyway.  If you want to use the field, you should probably
+define this macro to initialize it.
+</p>
+<p>This macro is not used on machines that do not use <code>cc0</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-NOTICE_005fUPDATE_005fCC"></a>Macro: <strong>NOTICE_UPDATE_CC</strong> <em>(<var>exp</var>, <var>insn</var>)</em></dt>
+<dd><p>A C compound statement to set the components of <code>cc_status</code>
+appropriately for an insn <var>insn</var> whose body is <var>exp</var>.  It is
+this macro&rsquo;s responsibility to recognize insns that set the condition
+code as a byproduct of other activity as well as those that explicitly
+set <code>(cc0)</code>.
+</p>
+<p>This macro is not used on machines that do not use <code>cc0</code>.
+</p>
+<p>If there are insns that do not set the condition code but do alter
+other machine registers, this macro must check to see whether they
+invalidate the expressions that the condition code is recorded as
+reflecting.  For example, on the 68000, insns that store in address
+registers do not set the condition code, which means that usually
+<code>NOTICE_UPDATE_CC</code> can leave <code>cc_status</code> unaltered for such
+insns.  But suppose that the previous insn set the condition code
+based on location &lsquo;<samp>a4@(102)</samp>&rsquo; and the current insn stores a new
+value in &lsquo;<samp>a4</samp>&rsquo;.  Although the condition code is not changed by
+this, it will no longer be true that it reflects the contents of
+&lsquo;<samp>a4@(102)</samp>&rsquo;.  Therefore, <code>NOTICE_UPDATE_CC</code> must alter
+<code>cc_status</code> in this case to say that nothing is known about the
+condition code value.
+</p>
+<p>The definition of <code>NOTICE_UPDATE_CC</code> must be prepared to deal
+with the results of peephole optimization: insns whose patterns are
+<code>parallel</code> RTXs containing various <code>reg</code>, <code>mem</code> or
+constants which are just the operands.  The RTL structure of these
+insns is not sufficient to indicate what the insns actually do.  What
+<code>NOTICE_UPDATE_CC</code> should do when it sees one is just to run
+<code>CC_STATUS_INIT</code>.
+</p>
+<p>A possible definition of <code>NOTICE_UPDATE_CC</code> is to call a function
+that looks at an attribute (see <a href="Insn-Attributes.html#Insn-Attributes">Insn Attributes</a>) named, for example,
+&lsquo;<samp>cc</samp>&rsquo;.  This avoids having detailed information about patterns in
+two places, the <samp>md</samp> file and in <code>NOTICE_UPDATE_CC</code>.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="MODE_005fCC-Condition-Codes.html#MODE_005fCC-Condition-Codes" accesskey="n" rel="next">MODE_CC Condition Codes</a>, Up: <a href="Condition-Code.html#Condition-Code" accesskey="u" rel="up">Condition Code</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Special Accessors</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Special Accessors">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Special Accessors">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="RTL.html#RTL" rel="up" title="RTL">
+<link href="Flags.html#Flags" rel="next" title="Flags">
+<link href="Accessors.html#Accessors" rel="prev" title="Accessors">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Special-Accessors"></a>
+<div class="header">
+<p>
+Next: <a href="Flags.html#Flags" accesskey="n" rel="next">Flags</a>, Previous: <a href="Accessors.html#Accessors" accesskey="p" rel="prev">Accessors</a>, Up: <a href="RTL.html#RTL" accesskey="u" rel="up">RTL</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Access-to-Special-Operands"></a>
+<h3 class="section">14.4 Access to Special Operands</h3>
+<a name="index-access-to-special-operands"></a>
+
+<p>Some RTL nodes have special annotations associated with them.
+</p>
+<dl compact="compact">
+<dt><code>MEM</code></dt>
+<dd><dl compact="compact">
+<dd><a name="index-MEM_005fALIAS_005fSET"></a>
+</dd>
+<dt><code>MEM_ALIAS_SET (<var>x</var>)</code></dt>
+<dd><p>If 0, <var>x</var> is not in any alias set, and may alias anything.  Otherwise,
+<var>x</var> can only alias <code>MEM</code>s in a conflicting alias set.  This value
+is set in a language-dependent manner in the front-end, and should not be
+altered in the back-end.  In some front-ends, these numbers may correspond
+in some way to types, or other language-level entities, but they need not,
+and the back-end makes no such assumptions.
+These set numbers are tested with <code>alias_sets_conflict_p</code>.
+</p>
+<a name="index-MEM_005fEXPR"></a>
+</dd>
+<dt><code>MEM_EXPR (<var>x</var>)</code></dt>
+<dd><p>If this register is known to hold the value of some user-level
+declaration, this is that tree node.  It may also be a
+<code>COMPONENT_REF</code>, in which case this is some field reference,
+and <code>TREE_OPERAND (<var>x</var>, 0)</code> contains the declaration,
+or another <code>COMPONENT_REF</code>, or null if there is no compile-time
+object associated with the reference.
+</p>
+<a name="index-MEM_005fOFFSET_005fKNOWN_005fP"></a>
+</dd>
+<dt><code>MEM_OFFSET_KNOWN_P (<var>x</var>)</code></dt>
+<dd><p>True if the offset of the memory reference from <code>MEM_EXPR</code> is known.
+&lsquo;<samp>MEM_OFFSET (<var>x</var>)</samp>&rsquo; provides the offset if so.
+</p>
+<a name="index-MEM_005fOFFSET"></a>
+</dd>
+<dt><code>MEM_OFFSET (<var>x</var>)</code></dt>
+<dd><p>The offset from the start of <code>MEM_EXPR</code>.  The value is only valid if
+&lsquo;<samp>MEM_OFFSET_KNOWN_P (<var>x</var>)</samp>&rsquo; is true.
+</p>
+<a name="index-MEM_005fSIZE_005fKNOWN_005fP"></a>
+</dd>
+<dt><code>MEM_SIZE_KNOWN_P (<var>x</var>)</code></dt>
+<dd><p>True if the size of the memory reference is known.
+&lsquo;<samp>MEM_SIZE (<var>x</var>)</samp>&rsquo; provides its size if so.
+</p>
+<a name="index-MEM_005fSIZE"></a>
+</dd>
+<dt><code>MEM_SIZE (<var>x</var>)</code></dt>
+<dd><p>The size in bytes of the memory reference.
+This is mostly relevant for <code>BLKmode</code> references as otherwise
+the size is implied by the mode.  The value is only valid if
+&lsquo;<samp>MEM_SIZE_KNOWN_P (<var>x</var>)</samp>&rsquo; is true.
+</p>
+<a name="index-MEM_005fALIGN"></a>
+</dd>
+<dt><code>MEM_ALIGN (<var>x</var>)</code></dt>
+<dd><p>The known alignment in bits of the memory reference.
+</p>
+<a name="index-MEM_005fADDR_005fSPACE"></a>
+</dd>
+<dt><code>MEM_ADDR_SPACE (<var>x</var>)</code></dt>
+<dd><p>The address space of the memory reference.  This will commonly be zero
+for the generic address space.
+</p></dd>
+</dl>
+
+</dd>
+<dt><code>REG</code></dt>
+<dd><dl compact="compact">
+<dd><a name="index-ORIGINAL_005fREGNO"></a>
+</dd>
+<dt><code>ORIGINAL_REGNO (<var>x</var>)</code></dt>
+<dd><p>This field holds the number the register &ldquo;originally&rdquo; had; for a
+pseudo register turned into a hard reg this will hold the old pseudo
+register number.
+</p>
+<a name="index-REG_005fEXPR"></a>
+</dd>
+<dt><code>REG_EXPR (<var>x</var>)</code></dt>
+<dd><p>If this register is known to hold the value of some user-level
+declaration, this is that tree node.
+</p>
+<a name="index-REG_005fOFFSET"></a>
+</dd>
+<dt><code>REG_OFFSET (<var>x</var>)</code></dt>
+<dd><p>If this register is known to hold the value of some user-level
+declaration, this is the offset into that logical storage.
+</p></dd>
+</dl>
+
+</dd>
+<dt><code>SYMBOL_REF</code></dt>
+<dd><dl compact="compact">
+<dd><a name="index-SYMBOL_005fREF_005fDECL"></a>
+</dd>
+<dt><code>SYMBOL_REF_DECL (<var>x</var>)</code></dt>
+<dd><p>If the <code>symbol_ref</code> <var>x</var> was created for a <code>VAR_DECL</code> or
+a <code>FUNCTION_DECL</code>, that tree is recorded here.  If this value is
+null, then <var>x</var> was created by back end code generation routines,
+and there is no associated front end symbol table entry.
+</p>
+<p><code>SYMBOL_REF_DECL</code> may also point to a tree of class <code>'c'</code>,
+that is, some sort of constant.  In this case, the <code>symbol_ref</code>
+is an entry in the per-file constant pool; again, there is no associated
+front end symbol table entry.
+</p>
+<a name="index-SYMBOL_005fREF_005fCONSTANT"></a>
+</dd>
+<dt><code>SYMBOL_REF_CONSTANT (<var>x</var>)</code></dt>
+<dd><p>If &lsquo;<samp>CONSTANT_POOL_ADDRESS_P (<var>x</var>)</samp>&rsquo; is true, this is the constant
+pool entry for <var>x</var>.  It is null otherwise.
+</p>
+<a name="index-SYMBOL_005fREF_005fDATA"></a>
+</dd>
+<dt><code>SYMBOL_REF_DATA (<var>x</var>)</code></dt>
+<dd><p>A field of opaque type used to store <code>SYMBOL_REF_DECL</code> or
+<code>SYMBOL_REF_CONSTANT</code>.
+</p>
+<a name="index-SYMBOL_005fREF_005fFLAGS"></a>
+</dd>
+<dt><code>SYMBOL_REF_FLAGS (<var>x</var>)</code></dt>
+<dd><p>In a <code>symbol_ref</code>, this is used to communicate various predicates
+about the symbol.  Some of these are common enough to be computed by
+common code, some are specific to the target.  The common bits are:
+</p>
+<dl compact="compact">
+<dd><a name="index-SYMBOL_005fREF_005fFUNCTION_005fP"></a>
+<a name="index-SYMBOL_005fFLAG_005fFUNCTION"></a>
+</dd>
+<dt><code>SYMBOL_FLAG_FUNCTION</code></dt>
+<dd><p>Set if the symbol refers to a function.
+</p>
+<a name="index-SYMBOL_005fREF_005fLOCAL_005fP"></a>
+<a name="index-SYMBOL_005fFLAG_005fLOCAL"></a>
+</dd>
+<dt><code>SYMBOL_FLAG_LOCAL</code></dt>
+<dd><p>Set if the symbol is local to this &ldquo;module&rdquo;.
+See <code>TARGET_BINDS_LOCAL_P</code>.
+</p>
+<a name="index-SYMBOL_005fREF_005fEXTERNAL_005fP"></a>
+<a name="index-SYMBOL_005fFLAG_005fEXTERNAL"></a>
+</dd>
+<dt><code>SYMBOL_FLAG_EXTERNAL</code></dt>
+<dd><p>Set if this symbol is not defined in this translation unit.
+Note that this is not the inverse of <code>SYMBOL_FLAG_LOCAL</code>.
+</p>
+<a name="index-SYMBOL_005fREF_005fSMALL_005fP"></a>
+<a name="index-SYMBOL_005fFLAG_005fSMALL"></a>
+</dd>
+<dt><code>SYMBOL_FLAG_SMALL</code></dt>
+<dd><p>Set if the symbol is located in the small data section.
+See <code>TARGET_IN_SMALL_DATA_P</code>.
+</p>
+<a name="index-SYMBOL_005fFLAG_005fTLS_005fSHIFT"></a>
+<a name="index-SYMBOL_005fREF_005fTLS_005fMODEL"></a>
+</dd>
+<dt><code>SYMBOL_REF_TLS_MODEL (<var>x</var>)</code></dt>
+<dd><p>This is a multi-bit field accessor that returns the <code>tls_model</code>
+to be used for a thread-local storage symbol.  It returns zero for
+non-thread-local symbols.
+</p>
+<a name="index-SYMBOL_005fREF_005fHAS_005fBLOCK_005fINFO_005fP"></a>
+<a name="index-SYMBOL_005fFLAG_005fHAS_005fBLOCK_005fINFO"></a>
+</dd>
+<dt><code>SYMBOL_FLAG_HAS_BLOCK_INFO</code></dt>
+<dd><p>Set if the symbol has <code>SYMBOL_REF_BLOCK</code> and
+<code>SYMBOL_REF_BLOCK_OFFSET</code> fields.
+</p>
+<a name="index-SYMBOL_005fREF_005fANCHOR_005fP"></a>
+<a name="index-SYMBOL_005fFLAG_005fANCHOR"></a>
+<a name="index-_002dfsection_002danchors"></a>
+</dd>
+<dt><code>SYMBOL_FLAG_ANCHOR</code></dt>
+<dd><p>Set if the symbol is used as a section anchor.  &ldquo;Section anchors&rdquo;
+are symbols that have a known position within an <code>object_block</code>
+and that can be used to access nearby members of that block.
+They are used to implement <samp>-fsection-anchors</samp>.
+</p>
+<p>If this flag is set, then <code>SYMBOL_FLAG_HAS_BLOCK_INFO</code> will be too.
+</p></dd>
+</dl>
+
+<p>Bits beginning with <code>SYMBOL_FLAG_MACH_DEP</code> are available for
+the target&rsquo;s use.
+</p></dd>
+</dl>
+
+<a name="index-SYMBOL_005fREF_005fBLOCK"></a>
+</dd>
+<dt><code>SYMBOL_REF_BLOCK (<var>x</var>)</code></dt>
+<dd><p>If &lsquo;<samp>SYMBOL_REF_HAS_BLOCK_INFO_P (<var>x</var>)</samp>&rsquo;, this is the
+&lsquo;<samp>object_block</samp>&rsquo; structure to which the symbol belongs,
+or <code>NULL</code> if it has not been assigned a block.
+</p>
+<a name="index-SYMBOL_005fREF_005fBLOCK_005fOFFSET"></a>
+</dd>
+<dt><code>SYMBOL_REF_BLOCK_OFFSET (<var>x</var>)</code></dt>
+<dd><p>If &lsquo;<samp>SYMBOL_REF_HAS_BLOCK_INFO_P (<var>x</var>)</samp>&rsquo;, this is the offset of <var>x</var>
+from the first object in &lsquo;<samp>SYMBOL_REF_BLOCK (<var>x</var>)</samp>&rsquo;.  The value is
+negative if <var>x</var> has not yet been assigned to a block, or it has not
+been given an offset within that block.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Flags.html#Flags" accesskey="n" rel="next">Flags</a>, Previous: <a href="Accessors.html#Accessors" accesskey="p" rel="prev">Accessors</a>, Up: <a href="RTL.html#RTL" accesskey="u" rel="up">RTL</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

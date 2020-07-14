@@ -1,0 +1,161 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: s390 Options</title>
+
+<meta name="description" content="Using as: s390 Options">
+<meta name="keywords" content="Using as: s390 Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="S_002f390_002dDependent.html#S_002f390_002dDependent" rel="up" title="S/390-Dependent">
+<link href="s390-Characters.html#s390-Characters" rel="next" title="s390 Characters">
+<link href="S_002f390_002dDependent.html#S_002f390_002dDependent" rel="prev" title="S/390-Dependent">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="s390-Options"></a>
+<div class="header">
+<p>
+Next: <a href="s390-Characters.html#s390-Characters" accesskey="n" rel="next">s390 Characters</a>, Up: <a href="S_002f390_002dDependent.html#S_002f390_002dDependent" accesskey="u" rel="up">S/390-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Options-21"></a>
+<h4 class="subsection">9.41.1 Options</h4>
+<a name="index-options-for-s390"></a>
+<a name="index-s390-options"></a>
+
+<p>The following table lists all available s390 specific options:
+</p>
+<dl compact="compact">
+<dd><a name="index-_002dm31-option_002c-s390"></a>
+<a name="index-_002dm64-option_002c-s390"></a>
+</dd>
+<dt><code>-m31 | -m64</code></dt>
+<dd><p>Select 31- or 64-bit ABI implying a word size of 32- or 64-bit.
+</p>
+<p>These options are only available with the ELF object file format, and
+require that the necessary BFD support has been included (on a 31-bit
+platform you must add &ndash;enable-64-bit-bfd on the call to the configure
+script to enable 64-bit usage and use s390x as target platform).
+</p>
+<a name="index-_002dmesa-option_002c-s390"></a>
+<a name="index-_002dmzarch-option_002c-s390"></a>
+</dd>
+<dt><code>-mesa | -mzarch</code></dt>
+<dd><p>Select the architecture mode, either the Enterprise System Architecture
+(esa) mode or the z/Architecture mode (zarch).
+</p>
+<p>The 64-bit instructions are only available with the z/Architecture mode.
+The combination of &lsquo;<samp>-m64</samp>&rsquo; and &lsquo;<samp>-mesa</samp>&rsquo; results in a warning
+message.
+</p>
+<a name="index-_002dmarch_003d-option_002c-s390"></a>
+</dd>
+<dt><code>-march=<var>CPU</var></code></dt>
+<dd><p>This option specifies the target processor. The following processor names
+are recognized:
+<code>g5</code> (or <code>arch3</code>),
+<code>g6</code>,
+<code>z900</code> (or <code>arch5</code>),
+<code>z990</code> (or <code>arch6</code>),
+<code>z9-109</code>,
+<code>z9-ec</code> (or <code>arch7</code>),
+<code>z10</code> (or <code>arch8</code>),
+<code>z196</code> (or <code>arch9</code>),
+<code>zEC12</code> (or <code>arch10</code>),
+<code>z13</code> (or <code>arch11</code>),
+<code>z14</code> (or <code>arch12</code>), and
+<code>arch13</code>).
+</p>
+<p>Assembling an instruction that is not supported on the target
+processor results in an error message.
+</p>
+<p>The processor names starting with <code>arch</code> refer to the edition
+number in the Principle of Operations manual.  They can be used as
+alternate processor names and have been added for compatibility with
+the IBM XL compiler.
+</p>
+<p><code>arch3</code>, <code>g5</code> and <code>g6</code> cannot be used with the
+&lsquo;<samp>-mzarch</samp>&rsquo; option since the z/Architecture mode is not supported
+on these processor levels.
+</p>
+<p>There is no <code>arch4</code> option supported. <code>arch4</code> matches
+<code>-march=arch5 -mesa</code>.
+</p>
+<a name="index-_002dmregnames-option_002c-s390"></a>
+</dd>
+<dt><code>-mregnames</code></dt>
+<dd><p>Allow symbolic names for registers.
+</p>
+<a name="index-_002dmno_002dregnames-option_002c-s390"></a>
+</dd>
+<dt><code>-mno-regnames</code></dt>
+<dd><p>Do not allow symbolic names for registers.
+</p>
+<a name="index-_002dmwarn_002dareg_002dzero-option_002c-s390"></a>
+</dd>
+<dt><code>-mwarn-areg-zero</code></dt>
+<dd><p>Warn whenever the operand for a base or index register has been specified
+but evaluates to zero. This can indicate the misuse of general purpose
+register 0 as an address register.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="s390-Characters.html#s390-Characters" accesskey="n" rel="next">s390 Characters</a>, Up: <a href="S_002f390_002dDependent.html#S_002f390_002dDependent" accesskey="u" rel="up">S/390-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

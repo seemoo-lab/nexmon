@@ -1,0 +1,653 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Guidelines for Diagnostics</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Guidelines for Diagnostics">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Guidelines for Diagnostics">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="User-Experience-Guidelines.html#User-Experience-Guidelines" rel="up" title="User Experience Guidelines">
+<link href="Guidelines-for-Options.html#Guidelines-for-Options" rel="next" title="Guidelines for Options">
+<link href="User-Experience-Guidelines.html#User-Experience-Guidelines" rel="prev" title="User Experience Guidelines">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Guidelines-for-Diagnostics"></a>
+<div class="header">
+<p>
+Next: <a href="Guidelines-for-Options.html#Guidelines-for-Options" accesskey="n" rel="next">Guidelines for Options</a>, Up: <a href="User-Experience-Guidelines.html#User-Experience-Guidelines" accesskey="u" rel="up">User Experience Guidelines</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Guidelines-for-Diagnostics-1"></a>
+<h3 class="section">27.1 Guidelines for Diagnostics</h3>
+<a name="index-guidelines-for-diagnostics"></a>
+<a name="index-diagnostics_002c-guidelines-for"></a>
+
+<a name="Talk-in-terms-of-the-user_0027s-code"></a>
+<h4 class="subsection">27.1.1 Talk in terms of the user&rsquo;s code</h4>
+
+<p>Diagnostics should be worded in terms of the user&rsquo;s source code, and the
+source language, rather than GCC&rsquo;s own implementation details.
+</p>
+<a name="Diagnostics-are-actionable"></a>
+<h4 class="subsection">27.1.2 Diagnostics are actionable</h4>
+<a name="index-diagnostics_002c-actionable"></a>
+
+<p>A good diagnostic is <em>actionable</em>: it should assist the user in
+taking action.
+</p>
+<p>Consider what an end user will want to do when encountering a diagnostic.
+</p>
+<p>Given an error, an end user will think: &ldquo;How do I fix this?&rdquo;
+</p>
+<p>Given a warning, an end user will think:
+</p>
+<ul>
+<li> &ldquo;Is this a real problem?&rdquo;
+</li><li> &ldquo;Do I care?&rdquo;
+</li><li> if they decide it&rsquo;s genuine: &ldquo;How do I fix this?&rdquo;
+</li></ul>
+
+<p>A good diagnostic provides pertinent information to allow the user to
+easily answer the above questions.
+</p>
+<a name="The-user_0027s-attention-is-important"></a>
+<h4 class="subsection">27.1.3 The user&rsquo;s attention is important</h4>
+
+<p>A perfect compiler would issue a warning on every aspect of the user&rsquo;s
+source code that ought to be fixed, and issue no other warnings.
+Naturally, this ideal is impossible to achieve.
+</p>
+<a name="index-signal_002dto_002dnoise-ratio-_0028metaphorical-usage-for-diagnostics_0029"></a>
+<a name="index-diagnostics_002c-false-positive"></a>
+<a name="index-diagnostics_002c-true-positive"></a>
+<a name="index-false-positive"></a>
+<a name="index-true-positive"></a>
+
+<p>Warnings should have a good <em>signal-to-noise ratio</em>: we should have few
+<em>false positives</em> (falsely issuing a warning when no warning is
+warranted) and few <em>false negatives</em> (failing to issue a warning when
+one <em>is</em> justified).
+</p>
+<p>Note that a false positive can mean, in practice, a warning that the
+user doesn&rsquo;t agree with.  Ideally a diagnostic should contain enough
+information to allow the user to make an informed choice about whether
+they should care (and how to fix it), but a balance must be drawn against
+overloading the user with irrelevant data.
+</p>
+<a name="Precision-of-Wording"></a>
+<h4 class="subsection">27.1.4 Precision of Wording</h4>
+
+<p>Provide the user with details that allow them to identify what the
+problem is.  For example, the vaguely-worded message:
+</p>
+<div class="smallexample">
+<pre class="smallexample">demo.c:1:1: warning: 'noinline' attribute ignored [-Wattributes]
+    1 | int foo __attribute__((noinline));
+      | ^~~
+</pre></div>
+
+<p>doesn&rsquo;t tell the user why the attribute was ignored, or what kind of
+entity the compiler thought the attribute was being applied to (the
+source location for the diagnostic is also poor;
+see <a href="#input_005flocation_005fexample">discussion of <code>input_location</code></a>).
+A better message would be:
+</p>
+<div class="smallexample">
+<pre class="smallexample">demo.c:1:24: warning: attribute 'noinline' on variable 'foo' was
+   ignored [-Wattributes]
+    1 | int foo __attribute__((noinline));
+      |     ~~~ ~~~~~~~~~~~~~~~^~~~~~~~~
+demo.c:1:24: note: attribute 'noinline' is only applicable to functions
+</pre></div>
+
+<p>which spells out the missing information (and fixes the location
+information, as discussed below).
+</p>
+<p>The above example uses a note to avoid a combinatorial explosion of possible
+messages.
+</p>
+<a name="Try-the-diagnostic-on-real_002dworld-code"></a>
+<h4 class="subsection">27.1.5 Try the diagnostic on real-world code</h4>
+
+<p>It&rsquo;s worth testing a new warning on many instances of real-world code,
+written by different people, and seeing what it complains about, and
+what it doesn&rsquo;t complain about.
+</p>
+<p>This may suggest heuristics that silence common false positives.
+</p>
+<p>It may also suggest ways to improve the precision of the message.
+</p>
+<a name="Make-mismatches-clear"></a>
+<h4 class="subsection">27.1.6 Make mismatches clear</h4>
+
+<p>Many diagnostics relate to a mismatch between two different places in the
+user&rsquo;s source code.  Examples include:
+</p><ul>
+<li> a type mismatch, where the type at a usage site does not match the type
+  at a declaration
+
+</li><li> the argument count at a call site does not match the parameter count
+  at the declaration
+
+</li><li> something is erroneously duplicated (e.g. an error, due to breaking a
+  uniqueness requirement, or a warning, if it&rsquo;s suggestive of a bug)
+
+</li><li> an &ldquo;opened&rdquo; syntactic construct (such as an open-parenthesis) is not
+  closed
+
+</li></ul>
+
+<p>In each case, the diagnostic should indicate <strong>both</strong> pertinent
+locations (so that the user can easily see the problem and how to fix it).
+</p>
+<p>The standard way to do this is with a note (via <code>inform</code>).  For
+example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">  auto_diagnostic_group d;
+  if (warning_at (loc, OPT_Wduplicated_cond,
+                  &quot;duplicated %&lt;if%&gt; condition&quot;))
+    inform (EXPR_LOCATION (t), &quot;previously used here&quot;);
+</pre></div>
+
+<p>which leads to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">demo.c: In function 'test':
+demo.c:5:17: warning: duplicated 'if' condition [-Wduplicated-cond]
+    5 |   else if (flag &gt; 3)
+      |            ~~~~~^~~
+demo.c:3:12: note: previously used here
+    3 |   if (flag &gt; 3)
+      |       ~~~~~^~~
+</pre></div>
+
+<p>The <code>inform</code> call should be guarded by the return value from the
+<code>warning_at</code> call so that the note isn&rsquo;t emitted when the warning
+is suppressed.
+</p>
+<p>For cases involving punctuation where the locations might be near
+each other, they can be conditionally consolidated via
+<code>gcc_rich_location::add_location_if_nearby</code>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">    auto_diagnostic_group d;
+    gcc_rich_location richloc (primary_loc);
+    bool added secondary = richloc.add_location_if_nearby (secondary_loc);
+    error_at (&amp;richloc, &quot;main message&quot;);
+    if (!added secondary)
+      inform (secondary_loc, &quot;message for secondary&quot;);
+</pre></div>
+
+<p>This will emit either one diagnostic with two locations:
+</p><div class="smallexample">
+<pre class="smallexample">  demo.c:42:10: error: main message
+    (foo)
+    ~   ^
+</pre></div>
+
+<p>or two diagnostics:
+</p>
+<div class="smallexample">
+<pre class="smallexample">  demo.c:42:4: error: main message
+    foo)
+       ^
+  demo.c:40:2: note: message for secondary
+    (
+    ^
+</pre></div>
+
+<a name="Location-Information"></a>
+<h4 class="subsection">27.1.7 Location Information</h4>
+<a name="index-diagnostics_002c-locations"></a>
+<a name="index-location-information"></a>
+<a name="index-source-code_002c-location-information"></a>
+<a name="index-caret-1"></a>
+
+<p>GCC&rsquo;s <code>location_t</code> type can support both ordinary locations,
+and locations relating to a macro expansion.
+</p>
+<p>As of GCC 6, ordinary locations changed from supporting just a
+point in the user&rsquo;s source code to supporting three points: the
+<em>caret</em> location, plus a start and a finish:
+</p>
+<div class="smallexample">
+<pre class="smallexample">      a = foo &amp;&amp; bar;
+          ~~~~^~~~~~
+          |   |    |
+          |   |    finish
+          |   caret
+          start
+</pre></div>
+
+<p>Tokens coming out of libcpp have locations of the form <code>caret == start</code>,
+such as for <code>foo</code> here:
+</p>
+<div class="smallexample">
+<pre class="smallexample">      a = foo &amp;&amp; bar;
+          ^~~
+          | |
+          | finish
+          caret == start
+</pre></div>
+
+<p>Compound expressions should be reported using the location of the
+expression as a whole, rather than just of one token within it.
+</p>
+<p>For example, in <code>-Wformat</code>, rather than underlining just the first
+token of a bad argument:
+</p>
+<div class="smallexample">
+<pre class="smallexample">   printf(&quot;hello %i %s&quot;, (long)0, &quot;world&quot;);
+                 ~^      ~
+                 %li
+</pre></div>
+
+<p>the whole of the expression should be underlined, so that the user can
+easily identify what is being referred to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">   printf(&quot;hello %i %s&quot;, (long)0, &quot;world&quot;);
+                 ~^      ~~~~~~~
+                 %li
+</pre></div>
+
+
+<p>Avoid using the <code>input_location</code> global, and the diagnostic functions
+that implicitly use it&mdash;use <code>error_at</code> and <code>warning_at</code> rather
+than <code>error</code> and <code>warning</code>, and provide the most appropriate
+<code>location_t</code> value available at that phase of the compilation.  It&rsquo;s
+possible to supply secondary <code>location_t</code> values via
+<code>rich_location</code>.
+</p>
+<a name="input_005flocation_005fexample"></a><p>For example, in the example of imprecise wording above, generating the
+diagnostic using <code>warning</code>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">  // BAD: implicitly uses <code>input_location</code>
+  warning (OPT_Wattributes, &quot;%qE attribute ignored&quot;, name);
+</pre></div>
+
+<p>leads to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">// BAD: uses <code>input_location</code>
+demo.c:1:1: warning: 'noinline' attribute ignored [-Wattributes]
+    1 | int foo __attribute__((noinline));
+      | ^~~
+</pre></div>
+
+<p>which thus happened to use the location of the <code>int</code> token, rather
+than that of the attribute.  Using <code>warning_at</code> with the location of
+the attribute, providing the location of the declaration in question
+as a secondary location, and adding a note:
+</p>
+<div class="smallexample">
+<pre class="smallexample">  auto_diagnostic_group d;
+  gcc_rich_location richloc (attrib_loc);
+  richloc.add_range (decl_loc);
+  if (warning_at (OPT_Wattributes, &amp;richloc,
+                  &quot;attribute %qE on variable %qE was ignored&quot;, name))
+    inform (attrib_loc, &quot;attribute %qE is only applicable to functions&quot;);
+</pre></div>
+
+<p>would lead to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">// OK: use location of attribute, with a secondary location
+demo.c:1:24: warning: attribute 'noinline' on variable 'foo' was
+   ignored [-Wattributes]
+    1 | int foo __attribute__((noinline));
+      |     ~~~ ~~~~~~~~~~~~~~~^~~~~~~~~
+demo.c:1:24: note: attribute 'noinline' is only applicable to functions
+</pre></div>
+
+
+<a name="Coding-Conventions"></a>
+<h4 class="subsection">27.1.8 Coding Conventions</h4>
+
+<p>See the <a href="https://gcc.gnu.org/codingconventions.html#Diagnostics">diagnostics section</a> of the GCC coding conventions.
+</p>
+<p>In the C++ front end, when comparing two types in a message, use &lsquo;<samp>%H</samp>&rsquo;
+and &lsquo;<samp>%I</samp>&rsquo; rather than &lsquo;<samp>%T</samp>&rsquo;, as this allows the diagnostics
+subsystem to highlight differences between template-based types.
+For example, rather than using &lsquo;<samp>%qT</samp>&rsquo;:
+</p>
+<div class="smallexample">
+<pre class="smallexample">  // BAD: a pair of %qT used in C++ front end for type comparison
+  error_at (loc, &quot;could not convert %qE from %qT to %qT&quot;, expr,
+            TREE_TYPE (expr), type);
+</pre></div>
+
+<p>which could lead to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">error: could not convert 'map&lt;int, double&gt;()' from 'map&lt;int,double&gt;'
+   to 'map&lt;int,int&gt;'
+</pre></div>
+
+<p>using &lsquo;<samp>%H</samp>&rsquo; and &lsquo;<samp>%I</samp>&rsquo; (via &lsquo;<samp>%qH</samp>&rsquo; and &lsquo;<samp>%qI</samp>&rsquo;):
+</p>
+<div class="smallexample">
+<pre class="smallexample">  // OK: compare types in C++ front end via %qH and %qI
+  error_at (loc, &quot;could not convert %qE from %qH to %qI&quot;, expr,
+            TREE_TYPE (expr), type);
+</pre></div>
+
+<p>allows the above output to be simplified to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">error: could not convert 'map&lt;int, double&gt;()' from 'map&lt;[...],double&gt;'
+   to 'map&lt;[...],int&gt;'
+</pre></div>
+
+<p>where the <code>double</code> and <code>int</code> are colorized to highlight them.
+</p>
+
+<a name="Group-logically_002drelated-diagnostics"></a>
+<h4 class="subsection">27.1.9 Group logically-related diagnostics</h4>
+
+<p>Use <code>auto_diagnostic_group</code> when issuing multiple related
+diagnostics (seen in various examples on this page).  This informs the
+diagnostic subsystem that all diagnostics issued within the lifetime
+of the <code>auto_diagnostic_group</code> are related.  For example,
+<samp>-fdiagnostics-format=json</samp> will treat the first diagnostic
+emitted within the group as a top-level diagnostic, and all subsequent
+diagnostics within the group as its children.
+</p>
+<a name="Quoting"></a>
+<h4 class="subsection">27.1.10 Quoting</h4>
+<p>Text should be quoted by either using the &lsquo;<samp>q</samp>&rsquo; modifier in a directive
+such as &lsquo;<samp>%qE</samp>&rsquo;, or by enclosing the quoted text in a pair of &lsquo;<samp>%&lt;</samp>&rsquo;
+and &lsquo;<samp>%&gt;</samp>&rsquo; directives, and never by using explicit quote characters.
+The directives handle the appropriate quote characters for each language
+and apply the correct color or highlighting.
+</p>
+<p>The following elements should be quoted in GCC diagnostics:
+</p>
+<ul>
+<li> Language keywords.
+</li><li> Tokens.
+</li><li> Boolean, numerical, character, and string constants that appear in the
+source code.
+</li><li> Identifiers, including function, macro, type, and variable names.
+</li></ul>
+
+<p>Other elements such as numbers that do not refer to numeric constants that
+appear in the source code should not be quoted. For example, in the message:
+</p>
+<div class="smallexample">
+<pre class="smallexample">argument %d of %qE must be a pointer type
+</pre></div>
+
+<p>since the argument number does not refer to a numerical constant in the
+source code it should not be quoted.
+</p>
+<a name="Spelling-and-Terminology"></a>
+<h4 class="subsection">27.1.11 Spelling and Terminology</h4>
+
+<p>See the <a href="https://gcc.gnu.org/codingconventions.html#Spelling
+Spelling">terminology and markup</a> section of the GCC coding conventions.
+</p>
+<a name="Fix_002dit-hints"></a>
+<h4 class="subsection">27.1.12 Fix-it hints</h4>
+<a name="index-fix_002dit-hints"></a>
+<a name="index-diagnostics-guidelines_002c-fix_002dit-hints"></a>
+
+<p>GCC&rsquo;s diagnostic subsystem can emit <em>fix-it hints</em>: small suggested
+edits to the user&rsquo;s source code.
+</p>
+<p>They are printed by default underneath the code in question.  They
+can also be viewed via <samp>-fdiagnostics-generate-patch</samp> and
+<samp>-fdiagnostics-parseable-fixits</samp>.  With the latter, an IDE
+ought to be able to offer to automatically apply the suggested fix.
+</p>
+<p>Fix-it hints contain code fragments, and thus they should not be marked
+for translation.
+</p>
+<p>Fix-it hints can be added to a diagnostic by using a <code>rich_location</code>
+rather than a <code>location_t</code> - the fix-it hints are added to the
+<code>rich_location</code> using one of the various <code>add_fixit</code> member
+functions of <code>rich_location</code>.  They are documented with
+<code>rich_location</code> in <samp>libcpp/line-map.h</samp>.
+It&rsquo;s easiest to use the <code>gcc_rich_location</code> subclass of
+<code>rich_location</code> found in <samp>gcc-rich-location.h</samp>, as this
+implicitly supplies the <code>line_table</code> variable.
+</p>
+<p>For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">   if (const char *suggestion = hint.suggestion ())
+     {
+       gcc_rich_location richloc (location);
+       richloc.add_fixit_replace (suggestion);
+       error_at (&amp;richloc,
+                 &quot;%qE does not name a type; did you mean %qs?&quot;,
+                 id, suggestion);
+     }
+</pre></div>
+
+<p>which can lead to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">spellcheck-typenames.C:73:1: error: 'singed' does not name a type; did
+   you mean 'signed'?
+   73 | singed char ch;
+      | ^~~~~~
+      | signed
+</pre></div>
+
+<p>Non-trivial edits can be built up by adding multiple fix-it hints to one
+<code>rich_location</code>.  It&rsquo;s best to express the edits in terms of the
+locations of individual tokens.  Various handy functions for adding
+fix-it hints for idiomatic C and C++ can be seen in
+<samp>gcc-rich-location.h</samp>.
+</p>
+<a name="Fix_002dit-hints-should-work"></a>
+<h4 class="subsubsection">27.1.12.1 Fix-it hints should work</h4>
+
+<p>When implementing a fix-it hint, please verify that the suggested edit
+leads to fixed, compilable code.  (Unfortunately, this currently must be
+done by hand using <samp>-fdiagnostics-generate-patch</samp>.  It would be
+good to have an automated way of verifying that fix-it hints actually fix
+the code).
+</p>
+<p>For example, a &ldquo;gotcha&rdquo; here is to forget to add a space when adding a
+missing reserved word.  Consider a C++ fix-it hint that adds
+<code>typename</code> in front of a template declaration.  A naive way to
+implement this might be:
+</p>
+<div class="smallexample">
+<pre class="smallexample">gcc_rich_location richloc (loc);
+// BAD: insertion is missing a trailing space
+richloc.add_fixit_insert_before (&quot;typename&quot;);
+error_at (&amp;richloc, &quot;need %&lt;typename%&gt; before %&lt;%T::%E%&gt; because &quot;
+                     &quot;%qT is a dependent scope&quot;,
+                     parser-&gt;scope, id, parser-&gt;scope);
+</pre></div>
+
+<p>When applied to the code, this might lead to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">T::type x;
+</pre></div>
+
+<p>being &ldquo;corrected&rdquo; to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">typenameT::type x;
+</pre></div>
+
+<p>In this case, the correct thing to do is to add a trailing space after
+<code>typename</code>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">gcc_rich_location richloc (loc);
+// OK: note that here we have a trailing space
+richloc.add_fixit_insert_before (&quot;typename &quot;);
+error_at (&amp;richloc, &quot;need %&lt;typename%&gt; before %&lt;%T::%E%&gt; because &quot;
+                     &quot;%qT is a dependent scope&quot;,
+                     parser-&gt;scope, id, parser-&gt;scope);
+</pre></div>
+
+<p>leading to this corrected code:
+</p>
+<div class="smallexample">
+<pre class="smallexample">typename T::type x;
+</pre></div>
+
+<a name="Express-deletion-in-terms-of-deletion_002c-not-replacement"></a>
+<h4 class="subsubsection">27.1.12.2 Express deletion in terms of deletion, not replacement</h4>
+
+<p>It&rsquo;s best to express deletion suggestions in terms of deletion fix-it
+hints, rather than replacement fix-it hints.  For example, consider this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">    auto_diagnostic_group d;
+    gcc_rich_location richloc (location_of (retval));
+    tree name = DECL_NAME (arg);
+    richloc.add_fixit_replace (IDENTIFIER_POINTER (name));
+    warning_at (&amp;richloc, OPT_Wredundant_move,
+                &quot;redundant move in return statement&quot;);
+</pre></div>
+
+<p>which is intended to e.g. replace a <code>std::move</code> with the underlying
+value:
+</p>
+<div class="smallexample">
+<pre class="smallexample">   return std::move (retval);
+          ~~~~~~~~~~^~~~~~~~
+          retval
+</pre></div>
+
+<p>where the change has been expressed as replacement, replacing
+with the name of the declaration.
+This works for simple cases, but consider this case:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#ifdef SOME_CONFIG_FLAG
+# define CONFIGURY_GLOBAL global_a
+#else
+# define CONFIGURY_GLOBAL global_b
+#endif
+
+int fn ()
+{
+  return std::move (CONFIGURY_GLOBAL /* some comment */);
+}
+</pre></div>
+
+<p>The above implementation erroneously strips out the macro and the
+comment in the fix-it hint:
+</p>
+<div class="smallexample">
+<pre class="smallexample">   return std::move (CONFIGURY_GLOBAL /* some comment */);
+          ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          global_a
+</pre></div>
+
+<p>and thus this resulting code:
+</p>
+<div class="smallexample">
+<pre class="smallexample">   return global_a;
+</pre></div>
+
+<p>It&rsquo;s better to do deletions in terms of deletions; deleting the
+<code>std::move (</code> and the trailing close-paren, leading to
+this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">   return std::move (CONFIGURY_GLOBAL /* some comment */);
+          ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          CONFIGURY_GLOBAL /* some comment */
+</pre></div>
+
+<p>and thus this result:
+</p>
+<div class="smallexample">
+<pre class="smallexample">   return CONFIGURY_GLOBAL /* some comment */;
+</pre></div>
+
+<p>Unfortunately, the pertinent <code>location_t</code> values are not always
+available.
+</p>
+
+<a name="Multiple-suggestions"></a>
+<h4 class="subsubsection">27.1.12.3 Multiple suggestions</h4>
+
+<p>In the rare cases where you need to suggest more than one mutually
+exclusive solution to a problem, this can be done by emitting
+multiple notes and calling
+<code>rich_location::fixits_cannot_be_auto_applied</code> on each note&rsquo;s
+<code>rich_location</code>.  If this is called, then the fix-it hints in
+the <code>rich_location</code> will be printed, but will not be added to
+generated patches.
+</p>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Guidelines-for-Options.html#Guidelines-for-Options" accesskey="n" rel="next">Guidelines for Options</a>, Up: <a href="User-Experience-Guidelines.html#User-Experience-Guidelines" accesskey="u" rel="up">User Experience Guidelines</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

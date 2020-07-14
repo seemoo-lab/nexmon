@@ -1,0 +1,256 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: M32R-Opts</title>
+
+<meta name="description" content="Using as: M32R-Opts">
+<meta name="keywords" content="Using as: M32R-Opts">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="M32R_002dDependent.html#M32R_002dDependent" rel="up" title="M32R-Dependent">
+<link href="M32R_002dDirectives.html#M32R_002dDirectives" rel="next" title="M32R-Directives">
+<link href="M32R_002dDependent.html#M32R_002dDependent" rel="prev" title="M32R-Dependent">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="M32R_002dOpts"></a>
+<div class="header">
+<p>
+Next: <a href="M32R_002dDirectives.html#M32R_002dDirectives" accesskey="n" rel="next">M32R-Directives</a>, Up: <a href="M32R_002dDependent.html#M32R_002dDependent" accesskey="u" rel="up">M32R-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="M32R-Options"></a>
+<h4 class="subsection">9.21.1 M32R Options</h4>
+
+<a name="index-options_002c-M32R"></a>
+<a name="index-M32R-options"></a>
+
+<p>The Renesas M32R version of <code>as</code> has a few machine
+dependent options:
+</p>
+<dl compact="compact">
+<dt><code>-m32rx</code></dt>
+<dd><a name="index-_002dm32rx-option_002c-M32RX"></a>
+<a name="index-architecture-options_002c-M32RX"></a>
+<a name="index-M32R-architecture-options"></a>
+<p><code>as</code> can assemble code for several different members of the
+Renesas M32R family.  Normally the default is to assemble code for
+the M32R microprocessor.  This option may be used to change the default
+to the M32RX microprocessor, which adds some more instructions to the
+basic M32R instruction set, and some additional parameters to some of
+the original instructions.
+</p>
+</dd>
+<dt><code>-m32r2</code></dt>
+<dd><a name="index-_002dm32rx-option_002c-M32R2"></a>
+<a name="index-architecture-options_002c-M32R2"></a>
+<a name="index-M32R-architecture-options-1"></a>
+<p>This option changes the target processor to the M32R2
+microprocessor.
+</p>
+</dd>
+<dt><code>-m32r</code></dt>
+<dd><a name="index-_002dm32r-option_002c-M32R"></a>
+<a name="index-architecture-options_002c-M32R"></a>
+<a name="index-M32R-architecture-options-2"></a>
+<p>This option can be used to restore the assembler&rsquo;s default behaviour of
+assembling for the M32R microprocessor.  This can be useful if the
+default has been changed by a previous command-line option.
+</p>
+</dd>
+<dt><code>-little</code></dt>
+<dd><a name="index-_002dlittle-option_002c-M32R"></a>
+<p>This option tells the assembler to produce little-endian code and
+data.  The default is dependent upon how the toolchain was
+configured.
+</p>
+</dd>
+<dt><code>-EL</code></dt>
+<dd><a name="index-_002dEL-option_002c-M32R"></a>
+<p>This is a synonym for <em>-little</em>.
+</p>
+</dd>
+<dt><code>-big</code></dt>
+<dd><a name="index-_002dbig-option_002c-M32R"></a>
+<p>This option tells the assembler to produce big-endian code and
+data.
+</p>
+</dd>
+<dt><code>-EB</code></dt>
+<dd><a name="index-_002dEB-option_002c-M32R"></a>
+<p>This is a synonym for <em>-big</em>.
+</p>
+</dd>
+<dt><code>-KPIC</code></dt>
+<dd><a name="index-_002dKPIC-option_002c-M32R"></a>
+<a name="index-PIC-code-generation-for-M32R"></a>
+<p>This option specifies that the output of the assembler should be
+marked as position-independent code (PIC).
+</p>
+</dd>
+<dt><code>-parallel</code></dt>
+<dd><a name="index-_002dparallel-option_002c-M32RX"></a>
+<p>This option tells the assembler to attempts to combine two sequential
+instructions into a single, parallel instruction, where it is legal to
+do so.
+</p>
+</dd>
+<dt><code>-no-parallel</code></dt>
+<dd><a name="index-_002dno_002dparallel-option_002c-M32RX"></a>
+<p>This option disables a previously enabled <em>-parallel</em> option.
+</p>
+</dd>
+<dt><code>-no-bitinst</code></dt>
+<dd><a name="index-_002dno_002dbitinst_002c-M32R2"></a>
+<p>This option disables the support for the extended bit-field
+instructions provided by the M32R2.  If this support needs to be
+re-enabled the <em>-bitinst</em> switch can be used to restore it.
+</p>
+</dd>
+<dt><code>-O</code></dt>
+<dd><a name="index-_002dO-option_002c-M32RX"></a>
+<p>This option tells the assembler to attempt to optimize the
+instructions that it produces.  This includes filling delay slots and
+converting sequential instructions into parallel ones.  This option
+implies <em>-parallel</em>.
+</p>
+</dd>
+<dt><code>-warn-explicit-parallel-conflicts</code></dt>
+<dd><a name="index-_002dwarn_002dexplicit_002dparallel_002dconflicts-option_002c-M32RX"></a>
+<p>Instructs <code>as</code> to produce warning messages when
+questionable parallel instructions are encountered.  This option is
+enabled by default, but <code>gcc</code> disables it when it invokes
+<code>as</code> directly.  Questionable instructions are those whose
+behaviour would be different if they were executed sequentially.  For
+example the code fragment &lsquo;<samp>mv r1, r2 || mv r3, r1</samp>&rsquo; produces a
+different result from &lsquo;<samp>mv r1, r2 \n mv r3, r1</samp>&rsquo; since the former
+moves r1 into r3 and then r2 into r1, whereas the later moves r2 into r1
+and r3.
+</p>
+</dd>
+<dt><code>-Wp</code></dt>
+<dd><a name="index-_002dWp-option_002c-M32RX"></a>
+<p>This is a shorter synonym for the <em>-warn-explicit-parallel-conflicts</em>
+option.
+</p>
+</dd>
+<dt><code>-no-warn-explicit-parallel-conflicts</code></dt>
+<dd><a name="index-_002dno_002dwarn_002dexplicit_002dparallel_002dconflicts-option_002c-M32RX"></a>
+<p>Instructs <code>as</code> not to produce warning messages when
+questionable parallel instructions are encountered.
+</p>
+</dd>
+<dt><code>-Wnp</code></dt>
+<dd><a name="index-_002dWnp-option_002c-M32RX"></a>
+<p>This is a shorter synonym for the <em>-no-warn-explicit-parallel-conflicts</em>
+option.
+</p>
+</dd>
+<dt><code>-ignore-parallel-conflicts</code></dt>
+<dd><a name="index-_002dignore_002dparallel_002dconflicts-option_002c-M32RX"></a>
+<p>This option tells the assembler&rsquo;s to stop checking parallel
+instructions for constraint violations.  This ability is provided for
+hardware vendors testing chip designs and should not be used under
+normal circumstances.
+</p>
+</dd>
+<dt><code>-no-ignore-parallel-conflicts</code></dt>
+<dd><a name="index-_002dno_002dignore_002dparallel_002dconflicts-option_002c-M32RX"></a>
+<p>This option restores the assembler&rsquo;s default behaviour of checking
+parallel instructions to detect constraint violations.
+</p>
+</dd>
+<dt><code>-Ip</code></dt>
+<dd><a name="index-_002dIp-option_002c-M32RX"></a>
+<p>This is a shorter synonym for the <em>-ignore-parallel-conflicts</em>
+option.
+</p>
+</dd>
+<dt><code>-nIp</code></dt>
+<dd><a name="index-_002dnIp-option_002c-M32RX"></a>
+<p>This is a shorter synonym for the <em>-no-ignore-parallel-conflicts</em>
+option.
+</p>
+</dd>
+<dt><code>-warn-unmatched-high</code></dt>
+<dd><a name="index-_002dwarn_002dunmatched_002dhigh-option_002c-M32R"></a>
+<p>This option tells the assembler to produce a warning message if a
+<code>.high</code> pseudo op is encountered without a matching <code>.low</code>
+pseudo op.  The presence of such an unmatched pseudo op usually
+indicates a programming error.
+</p>
+</dd>
+<dt><code>-no-warn-unmatched-high</code></dt>
+<dd><a name="index-_002dno_002dwarn_002dunmatched_002dhigh-option_002c-M32R"></a>
+<p>Disables a previously enabled <em>-warn-unmatched-high</em> option.
+</p>
+</dd>
+<dt><code>-Wuh</code></dt>
+<dd><a name="index-_002dWuh-option_002c-M32RX"></a>
+<p>This is a shorter synonym for the <em>-warn-unmatched-high</em> option.
+</p>
+</dd>
+<dt><code>-Wnuh</code></dt>
+<dd><a name="index-_002dWnuh-option_002c-M32RX"></a>
+<p>This is a shorter synonym for the <em>-no-warn-unmatched-high</em> option.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="M32R_002dDirectives.html#M32R_002dDirectives" accesskey="n" rel="next">M32R-Directives</a>, Up: <a href="M32R_002dDependent.html#M32R_002dDependent" accesskey="u" rel="up">M32R-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,237 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: GDB/MI Output Syntax</title>
+
+<meta name="description" content="Debugging with GDB: GDB/MI Output Syntax">
+<meta name="keywords" content="Debugging with GDB: GDB/MI Output Syntax">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="GDB_002fMI-Command-Syntax.html#GDB_002fMI-Command-Syntax" rel="up" title="GDB/MI Command Syntax">
+<link href="GDB_002fMI-Compatibility-with-CLI.html#GDB_002fMI-Compatibility-with-CLI" rel="next" title="GDB/MI Compatibility with CLI">
+<link href="GDB_002fMI-Input-Syntax.html#GDB_002fMI-Input-Syntax" rel="prev" title="GDB/MI Input Syntax">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="GDB_002fMI-Output-Syntax"></a>
+<div class="header">
+<p>
+Previous: <a href="GDB_002fMI-Input-Syntax.html#GDB_002fMI-Input-Syntax" accesskey="p" rel="prev">GDB/MI Input Syntax</a>, Up: <a href="GDB_002fMI-Command-Syntax.html#GDB_002fMI-Command-Syntax" accesskey="u" rel="up">GDB/MI Command Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="GDB_002fMI-Output-Syntax-1"></a>
+<h4 class="subsection">27.2.2 <small>GDB/MI</small> Output Syntax</h4>
+
+<a name="index-output-syntax-of-GDB_002fMI"></a>
+<a name="index-GDB_002fMI_002c-output-syntax"></a>
+<p>The output from <small>GDB/MI</small> consists of zero or more out-of-band records
+followed, optionally, by a single result record.  This result record
+is for the most recent command.  The sequence of output records is
+terminated by &lsquo;<samp>(gdb)</samp>&rsquo;.
+</p>
+<p>If an input command was prefixed with a <code><var>token</var></code> then the
+corresponding output for that command will also be prefixed by that same
+<var>token</var>.
+</p>
+<dl compact="compact">
+<dt><code><var>output</var> &rarr;</code></dt>
+<dd><p><code>( <var>out-of-band-record</var> )* [ <var>result-record</var> ] &quot;(gdb)&quot; <var>nl</var></code>
+</p>
+</dd>
+<dt><code><var>result-record</var> &rarr;</code></dt>
+<dd><p><code> [ <var>token</var> ] &quot;^&quot; <var>result-class</var> ( &quot;,&quot; <var>result</var> )* <var>nl</var></code>
+</p>
+</dd>
+<dt><code><var>out-of-band-record</var> &rarr;</code></dt>
+<dd><p><code><var>async-record</var> | <var>stream-record</var></code>
+</p>
+</dd>
+<dt><code><var>async-record</var> &rarr;</code></dt>
+<dd><p><code><var>exec-async-output</var> | <var>status-async-output</var> | <var>notify-async-output</var></code>
+</p>
+</dd>
+<dt><code><var>exec-async-output</var> &rarr;</code></dt>
+<dd><p><code>[ <var>token</var> ] &quot;*&quot; <var>async-output nl</var></code>
+</p>
+</dd>
+<dt><code><var>status-async-output</var> &rarr;</code></dt>
+<dd><p><code>[ <var>token</var> ] &quot;+&quot; <var>async-output nl</var></code>
+</p>
+</dd>
+<dt><code><var>notify-async-output</var> &rarr;</code></dt>
+<dd><p><code>[ <var>token</var> ] &quot;=&quot; <var>async-output nl</var></code>
+</p>
+</dd>
+<dt><code><var>async-output</var> &rarr;</code></dt>
+<dd><p><code><var>async-class</var> ( &quot;,&quot; <var>result</var> )*</code>
+</p>
+</dd>
+<dt><code><var>result-class</var> &rarr;</code></dt>
+<dd><p><code>&quot;done&quot; | &quot;running&quot; | &quot;connected&quot; | &quot;error&quot; | &quot;exit&quot;</code>
+</p>
+</dd>
+<dt><code><var>async-class</var> &rarr;</code></dt>
+<dd><p><code>&quot;stopped&quot; | <var>others</var></code> (where <var>others</var> will be added
+depending on the needs&mdash;this is still in development).
+</p>
+</dd>
+<dt><code><var>result</var> &rarr;</code></dt>
+<dd><p><code> <var>variable</var> &quot;=&quot; <var>value</var></code>
+</p>
+</dd>
+<dt><code><var>variable</var> &rarr;</code></dt>
+<dd><p><code> <var>string</var> </code>
+</p>
+</dd>
+<dt><code><var>value</var> &rarr;</code></dt>
+<dd><p><code> <var>const</var> | <var>tuple</var> | <var>list</var> </code>
+</p>
+</dd>
+<dt><code><var>const</var> &rarr;</code></dt>
+<dd><p><code><var>c-string</var></code>
+</p>
+</dd>
+<dt><code><var>tuple</var> &rarr;</code></dt>
+<dd><p><code> &quot;{}&quot; | &quot;{&quot; <var>result</var> ( &quot;,&quot; <var>result</var> )* &quot;}&quot; </code>
+</p>
+</dd>
+<dt><code><var>list</var> &rarr;</code></dt>
+<dd><p><code> &quot;[]&quot; | &quot;[&quot; <var>value</var> ( &quot;,&quot; <var>value</var> )* &quot;]&quot; | &quot;[&quot;
+<var>result</var> ( &quot;,&quot; <var>result</var> )* &quot;]&quot; </code>
+</p>
+</dd>
+<dt><code><var>stream-record</var> &rarr;</code></dt>
+<dd><p><code><var>console-stream-output</var> | <var>target-stream-output</var> | <var>log-stream-output</var></code>
+</p>
+</dd>
+<dt><code><var>console-stream-output</var> &rarr;</code></dt>
+<dd><p><code>&quot;~&quot; <var>c-string nl</var></code>
+</p>
+</dd>
+<dt><code><var>target-stream-output</var> &rarr;</code></dt>
+<dd><p><code>&quot;@&quot; <var>c-string nl</var></code>
+</p>
+</dd>
+<dt><code><var>log-stream-output</var> &rarr;</code></dt>
+<dd><p><code>&quot;&amp;&quot; <var>c-string nl</var></code>
+</p>
+</dd>
+<dt><code><var>nl</var> &rarr;</code></dt>
+<dd><p><code>CR | CR-LF</code>
+</p>
+</dd>
+<dt><code><var>token</var> &rarr;</code></dt>
+<dd><p><em>any sequence of digits</em>.
+</p></dd>
+</dl>
+
+<p>Notes:
+</p>
+<ul>
+<li> All output sequences end in a single line containing a period.
+
+</li><li> The <code><var>token</var></code> is from the corresponding request.  Note that
+for all async output, while the token is allowed by the grammar and
+may be output by future versions of <small>GDB</small> for select async
+output messages, it is generally omitted.  Frontends should treat
+all async output as reporting general changes in the state of the
+target and there should be no need to associate async output to any
+prior command.
+
+</li><li> <a name="index-status-output-in-GDB_002fMI"></a>
+<var>status-async-output</var> contains on-going status information about the
+progress of a slow operation.  It can be discarded.  All status output is
+prefixed by &lsquo;<samp>+</samp>&rsquo;.
+
+</li><li> <a name="index-async-output-in-GDB_002fMI"></a>
+<var>exec-async-output</var> contains asynchronous state change on the target
+(stopped, started, disappeared).  All async output is prefixed by
+&lsquo;<samp>*</samp>&rsquo;.
+
+</li><li> <a name="index-notify-output-in-GDB_002fMI"></a>
+<var>notify-async-output</var> contains supplementary information that the
+client should handle (e.g., a new breakpoint information).  All notify
+output is prefixed by &lsquo;<samp>=</samp>&rsquo;.
+
+</li><li> <a name="index-console-output-in-GDB_002fMI"></a>
+<var>console-stream-output</var> is output that should be displayed as is in the
+console.  It is the textual response to a CLI command.  All the console
+output is prefixed by &lsquo;<samp>~</samp>&rsquo;.
+
+</li><li> <a name="index-target-output-in-GDB_002fMI"></a>
+<var>target-stream-output</var> is the output produced by the target program.
+All the target output is prefixed by &lsquo;<samp>@</samp>&rsquo;.
+
+</li><li> <a name="index-log-output-in-GDB_002fMI"></a>
+<var>log-stream-output</var> is output text coming from <small>GDB</small>&rsquo;s internals, for
+instance messages that should be displayed as part of an error log.  All
+the log output is prefixed by &lsquo;<samp>&amp;</samp>&rsquo;.
+
+</li><li> <a name="index-list-output-in-GDB_002fMI"></a>
+New <small>GDB/MI</small> commands should only output <var>lists</var> containing
+<var>values</var>.
+
+
+</li></ul>
+
+<p>See <a href="GDB_002fMI-Stream-Records.html#GDB_002fMI-Stream-Records"><small>GDB/MI</small> Stream Records</a>, for more
+details about the various output records.
+</p>
+<hr>
+<div class="header">
+<p>
+Previous: <a href="GDB_002fMI-Input-Syntax.html#GDB_002fMI-Input-Syntax" accesskey="p" rel="prev">GDB/MI Input Syntax</a>, Up: <a href="GDB_002fMI-Command-Syntax.html#GDB_002fMI-Command-Syntax" accesskey="u" rel="up">GDB/MI Command Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

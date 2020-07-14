@@ -1,0 +1,1138 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): ARM Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): ARM Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): ARM Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Submodel-Options.html#Submodel-Options" rel="up" title="Submodel Options">
+<link href="AVR-Options.html#AVR-Options" rel="next" title="AVR Options">
+<link href="ARC-Options.html#ARC-Options" rel="prev" title="ARC Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="ARM-Options"></a>
+<div class="header">
+<p>
+Next: <a href="AVR-Options.html#AVR-Options" accesskey="n" rel="next">AVR Options</a>, Previous: <a href="ARC-Options.html#ARC-Options" accesskey="p" rel="prev">ARC Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="ARM-Options-1"></a>
+<h4 class="subsection">3.18.5 ARM Options</h4>
+<a name="index-ARM-options"></a>
+
+<p>These &lsquo;<samp>-m</samp>&rsquo; options are defined for the ARM port:
+</p>
+<dl compact="compact">
+<dt><code>-mabi=<var>name</var></code></dt>
+<dd><a name="index-mabi-1"></a>
+<p>Generate code for the specified ABI.  Permissible values are: &lsquo;<samp>apcs-gnu</samp>&rsquo;,
+&lsquo;<samp>atpcs</samp>&rsquo;, &lsquo;<samp>aapcs</samp>&rsquo;, &lsquo;<samp>aapcs-linux</samp>&rsquo; and &lsquo;<samp>iwmmxt</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>-mapcs-frame</code></dt>
+<dd><a name="index-mapcs_002dframe"></a>
+<p>Generate a stack frame that is compliant with the ARM Procedure Call
+Standard for all functions, even if this is not strictly necessary for
+correct execution of the code.  Specifying <samp>-fomit-frame-pointer</samp>
+with this option causes the stack frames not to be generated for
+leaf functions.  The default is <samp>-mno-apcs-frame</samp>.
+This option is deprecated.
+</p>
+</dd>
+<dt><code>-mapcs</code></dt>
+<dd><a name="index-mapcs"></a>
+<p>This is a synonym for <samp>-mapcs-frame</samp> and is deprecated.
+</p>
+
+</dd>
+<dt><code>-mthumb-interwork</code></dt>
+<dd><a name="index-mthumb_002dinterwork"></a>
+<p>Generate code that supports calling between the ARM and Thumb
+instruction sets.  Without this option, on pre-v5 architectures, the
+two instruction sets cannot be reliably used inside one program.  The
+default is <samp>-mno-thumb-interwork</samp>, since slightly larger code
+is generated when <samp>-mthumb-interwork</samp> is specified.  In AAPCS
+configurations this option is meaningless.
+</p>
+</dd>
+<dt><code>-mno-sched-prolog</code></dt>
+<dd><a name="index-mno_002dsched_002dprolog"></a>
+<a name="index-msched_002dprolog"></a>
+<p>Prevent the reordering of instructions in the function prologue, or the
+merging of those instruction with the instructions in the function&rsquo;s
+body.  This means that all functions start with a recognizable set
+of instructions (or in fact one of a choice from a small set of
+different function prologues), and this information can be used to
+locate the start of functions inside an executable piece of code.  The
+default is <samp>-msched-prolog</samp>.
+</p>
+</dd>
+<dt><code>-mfloat-abi=<var>name</var></code></dt>
+<dd><a name="index-mfloat_002dabi"></a>
+<p>Specifies which floating-point ABI to use.  Permissible values
+are: &lsquo;<samp>soft</samp>&rsquo;, &lsquo;<samp>softfp</samp>&rsquo; and &lsquo;<samp>hard</samp>&rsquo;.
+</p>
+<p>Specifying &lsquo;<samp>soft</samp>&rsquo; causes GCC to generate output containing
+library calls for floating-point operations.
+&lsquo;<samp>softfp</samp>&rsquo; allows the generation of code using hardware floating-point
+instructions, but still uses the soft-float calling conventions.
+&lsquo;<samp>hard</samp>&rsquo; allows generation of floating-point instructions
+and uses FPU-specific calling conventions.
+</p>
+<p>The default depends on the specific target configuration.  Note that
+the hard-float and soft-float ABIs are not link-compatible; you must
+compile your entire program with the same ABI, and link with a
+compatible set of libraries.
+</p>
+</dd>
+<dt><code>-mgeneral-regs-only</code></dt>
+<dd><a name="index-mgeneral_002dregs_002donly-1"></a>
+<p>Generate code which uses only the general-purpose registers.  This will prevent
+the compiler from using floating-point and Advanced SIMD registers but will not
+impose any restrictions on the assembler.
+</p>
+</dd>
+<dt><code>-mlittle-endian</code></dt>
+<dd><a name="index-mlittle_002dendian-2"></a>
+<p>Generate code for a processor running in little-endian mode.  This is
+the default for all standard configurations.
+</p>
+</dd>
+<dt><code>-mbig-endian</code></dt>
+<dd><a name="index-mbig_002dendian-2"></a>
+<p>Generate code for a processor running in big-endian mode; the default is
+to compile code for a little-endian processor.
+</p>
+</dd>
+<dt><code>-mbe8</code></dt>
+<dt><code>-mbe32</code></dt>
+<dd><a name="index-mbe8"></a>
+<p>When linking a big-endian image select between BE8 and BE32 formats.
+The option has no effect for little-endian images and is ignored.  The
+default is dependent on the selected target architecture.  For ARMv6
+and later architectures the default is BE8, for older architectures
+the default is BE32.  BE32 format has been deprecated by ARM.
+</p>
+</dd>
+<dt><code>-march=<var>name</var><span class="roman">[</span>+extension&hellip;<span class="roman">]</span></code></dt>
+<dd><a name="index-march-2"></a>
+<p>This specifies the name of the target ARM architecture.  GCC uses this
+name to determine what kind of instructions it can emit when generating
+assembly code.  This option can be used in conjunction with or instead
+of the <samp>-mcpu=</samp> option.
+</p>
+<p>Permissible names are:
+&lsquo;<samp>armv4t</samp>&rsquo;,
+&lsquo;<samp>armv5t</samp>&rsquo;, &lsquo;<samp>armv5te</samp>&rsquo;,
+&lsquo;<samp>armv6</samp>&rsquo;, &lsquo;<samp>armv6j</samp>&rsquo;, &lsquo;<samp>armv6k</samp>&rsquo;, &lsquo;<samp>armv6kz</samp>&rsquo;, &lsquo;<samp>armv6t2</samp>&rsquo;,
+&lsquo;<samp>armv6z</samp>&rsquo;, &lsquo;<samp>armv6zk</samp>&rsquo;,
+&lsquo;<samp>armv7</samp>&rsquo;, &lsquo;<samp>armv7-a</samp>&rsquo;, &lsquo;<samp>armv7ve</samp>&rsquo;, 
+&lsquo;<samp>armv8-a</samp>&rsquo;, &lsquo;<samp>armv8.1-a</samp>&rsquo;, &lsquo;<samp>armv8.2-a</samp>&rsquo;, &lsquo;<samp>armv8.3-a</samp>&rsquo;,
+&lsquo;<samp>armv8.4-a</samp>&rsquo;,
+&lsquo;<samp>armv8.5-a</samp>&rsquo;,
+&lsquo;<samp>armv7-r</samp>&rsquo;,
+&lsquo;<samp>armv8-r</samp>&rsquo;,
+&lsquo;<samp>armv6-m</samp>&rsquo;, &lsquo;<samp>armv6s-m</samp>&rsquo;,
+&lsquo;<samp>armv7-m</samp>&rsquo;, &lsquo;<samp>armv7e-m</samp>&rsquo;,
+&lsquo;<samp>armv8-m.base</samp>&rsquo;, &lsquo;<samp>armv8-m.main</samp>&rsquo;,
+&lsquo;<samp>iwmmxt</samp>&rsquo; and &lsquo;<samp>iwmmxt2</samp>&rsquo;.
+</p>
+<p>Additionally, the following architectures, which lack support for the
+Thumb execution state, are recognized but support is deprecated: &lsquo;<samp>armv4</samp>&rsquo;.
+</p>
+<p>Many of the architectures support extensions.  These can be added by
+appending &lsquo;<samp>+<var>extension</var></samp>&rsquo; to the architecture name.  Extension
+options are processed in order and capabilities accumulate.  An extension
+will also enable any necessary base extensions
+upon which it depends.  For example, the &lsquo;<samp>+crypto</samp>&rsquo; extension
+will always enable the &lsquo;<samp>+simd</samp>&rsquo; extension.  The exception to the
+additive construction is for extensions that are prefixed with
+&lsquo;<samp>+no&hellip;</samp>&rsquo;: these extensions disable the specified option and
+any other extensions that may depend on the presence of that
+extension.
+</p>
+<p>For example, &lsquo;<samp>-march=armv7-a+simd+nofp+vfpv4</samp>&rsquo; is equivalent to
+writing &lsquo;<samp>-march=armv7-a+vfpv4</samp>&rsquo; since the &lsquo;<samp>+simd</samp>&rsquo; option is
+entirely disabled by the &lsquo;<samp>+nofp</samp>&rsquo; option that follows it.
+</p>
+<p>Most extension names are generically named, but have an effect that is
+dependent upon the architecture to which it is applied.  For example,
+the &lsquo;<samp>+simd</samp>&rsquo; option can be applied to both &lsquo;<samp>armv7-a</samp>&rsquo; and
+&lsquo;<samp>armv8-a</samp>&rsquo; architectures, but will enable the original ARMv7-A
+Advanced SIMD (Neon) extensions for &lsquo;<samp>armv7-a</samp>&rsquo; and the ARMv8-A
+variant for &lsquo;<samp>armv8-a</samp>&rsquo;.
+</p>
+<p>The table below lists the supported extensions for each architecture.
+Architectures not mentioned do not support any extensions.
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>armv5te</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>armv6</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>armv6j</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>armv6k</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>armv6kz</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>armv6t2</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>armv6z</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>armv6zk</samp>&rsquo;</dt>
+<dd><dl compact="compact">
+<dt>&lsquo;<samp>+fp</samp>&rsquo;</dt>
+<dd><p>The VFPv2 floating-point instructions.  The extension &lsquo;<samp>+vfpv2</samp>&rsquo; can be
+used as an alias for this extension.
+</p>
+</dd>
+<dt>&lsquo;<samp>+nofp</samp>&rsquo;</dt>
+<dd><p>Disable the floating-point instructions.
+</p></dd>
+</dl>
+
+</dd>
+<dt>&lsquo;<samp>armv7</samp>&rsquo;</dt>
+<dd><p>The common subset of the ARMv7-A, ARMv7-R and ARMv7-M architectures.
+</p><dl compact="compact">
+<dt>&lsquo;<samp>+fp</samp>&rsquo;</dt>
+<dd><p>The VFPv3 floating-point instructions, with 16 double-precision
+registers.  The extension &lsquo;<samp>+vfpv3-d16</samp>&rsquo; can be used as an alias
+for this extension.  Note that floating-point is not supported by the
+base ARMv7-M architecture, but is compatible with both the ARMv7-A and
+ARMv7-R architectures.
+</p>
+</dd>
+<dt>&lsquo;<samp>+nofp</samp>&rsquo;</dt>
+<dd><p>Disable the floating-point instructions.
+</p></dd>
+</dl>
+
+</dd>
+<dt>&lsquo;<samp>armv7-a</samp>&rsquo;</dt>
+<dd><dl compact="compact">
+<dt>&lsquo;<samp>+mp</samp>&rsquo;</dt>
+<dd><p>The multiprocessing extension.
+</p>
+</dd>
+<dt>&lsquo;<samp>+sec</samp>&rsquo;</dt>
+<dd><p>The security extension.
+</p>
+</dd>
+<dt>&lsquo;<samp>+fp</samp>&rsquo;</dt>
+<dd><p>The VFPv3 floating-point instructions, with 16 double-precision
+registers.  The extension &lsquo;<samp>+vfpv3-d16</samp>&rsquo; can be used as an alias
+for this extension.
+</p>
+</dd>
+<dt>&lsquo;<samp>+simd</samp>&rsquo;</dt>
+<dd><p>The Advanced SIMD (Neon) v1 and the VFPv3 floating-point instructions.
+The extensions &lsquo;<samp>+neon</samp>&rsquo; and &lsquo;<samp>+neon-vfpv3</samp>&rsquo; can be used as aliases
+for this extension.
+</p>
+</dd>
+<dt>&lsquo;<samp>+vfpv3</samp>&rsquo;</dt>
+<dd><p>The VFPv3 floating-point instructions, with 32 double-precision
+registers.
+</p>
+</dd>
+<dt>&lsquo;<samp>+vfpv3-d16-fp16</samp>&rsquo;</dt>
+<dd><p>The VFPv3 floating-point instructions, with 16 double-precision
+registers and the half-precision floating-point conversion operations.
+</p>
+</dd>
+<dt>&lsquo;<samp>+vfpv3-fp16</samp>&rsquo;</dt>
+<dd><p>The VFPv3 floating-point instructions, with 32 double-precision
+registers and the half-precision floating-point conversion operations.
+</p>
+</dd>
+<dt>&lsquo;<samp>+vfpv4-d16</samp>&rsquo;</dt>
+<dd><p>The VFPv4 floating-point instructions, with 16 double-precision
+registers.
+</p>
+</dd>
+<dt>&lsquo;<samp>+vfpv4</samp>&rsquo;</dt>
+<dd><p>The VFPv4 floating-point instructions, with 32 double-precision
+registers.
+</p>
+</dd>
+<dt>&lsquo;<samp>+neon-fp16</samp>&rsquo;</dt>
+<dd><p>The Advanced SIMD (Neon) v1 and the VFPv3 floating-point instructions, with
+the half-precision floating-point conversion operations.
+</p>
+</dd>
+<dt>&lsquo;<samp>+neon-vfpv4</samp>&rsquo;</dt>
+<dd><p>The Advanced SIMD (Neon) v2 and the VFPv4 floating-point instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>+nosimd</samp>&rsquo;</dt>
+<dd><p>Disable the Advanced SIMD instructions (does not disable floating point).
+</p>
+</dd>
+<dt>&lsquo;<samp>+nofp</samp>&rsquo;</dt>
+<dd><p>Disable the floating-point and Advanced SIMD instructions.
+</p></dd>
+</dl>
+
+</dd>
+<dt>&lsquo;<samp>armv7ve</samp>&rsquo;</dt>
+<dd><p>The extended version of the ARMv7-A architecture with support for
+virtualization.
+</p><dl compact="compact">
+<dt>&lsquo;<samp>+fp</samp>&rsquo;</dt>
+<dd><p>The VFPv4 floating-point instructions, with 16 double-precision registers.
+The extension &lsquo;<samp>+vfpv4-d16</samp>&rsquo; can be used as an alias for this extension.
+</p>
+</dd>
+<dt>&lsquo;<samp>+simd</samp>&rsquo;</dt>
+<dd><p>The Advanced SIMD (Neon) v2 and the VFPv4 floating-point instructions.  The
+extension &lsquo;<samp>+neon-vfpv4</samp>&rsquo; can be used as an alias for this extension.
+</p>
+</dd>
+<dt>&lsquo;<samp>+vfpv3-d16</samp>&rsquo;</dt>
+<dd><p>The VFPv3 floating-point instructions, with 16 double-precision
+registers.
+</p>
+</dd>
+<dt>&lsquo;<samp>+vfpv3</samp>&rsquo;</dt>
+<dd><p>The VFPv3 floating-point instructions, with 32 double-precision
+registers.
+</p>
+</dd>
+<dt>&lsquo;<samp>+vfpv3-d16-fp16</samp>&rsquo;</dt>
+<dd><p>The VFPv3 floating-point instructions, with 16 double-precision
+registers and the half-precision floating-point conversion operations.
+</p>
+</dd>
+<dt>&lsquo;<samp>+vfpv3-fp16</samp>&rsquo;</dt>
+<dd><p>The VFPv3 floating-point instructions, with 32 double-precision
+registers and the half-precision floating-point conversion operations.
+</p>
+</dd>
+<dt>&lsquo;<samp>+vfpv4-d16</samp>&rsquo;</dt>
+<dd><p>The VFPv4 floating-point instructions, with 16 double-precision
+registers.
+</p>
+</dd>
+<dt>&lsquo;<samp>+vfpv4</samp>&rsquo;</dt>
+<dd><p>The VFPv4 floating-point instructions, with 32 double-precision
+registers.
+</p>
+</dd>
+<dt>&lsquo;<samp>+neon</samp>&rsquo;</dt>
+<dd><p>The Advanced SIMD (Neon) v1 and the VFPv3 floating-point instructions.
+The extension &lsquo;<samp>+neon-vfpv3</samp>&rsquo; can be used as an alias for this extension.
+</p>
+</dd>
+<dt>&lsquo;<samp>+neon-fp16</samp>&rsquo;</dt>
+<dd><p>The Advanced SIMD (Neon) v1 and the VFPv3 floating-point instructions, with
+the half-precision floating-point conversion operations.
+</p>
+</dd>
+<dt>&lsquo;<samp>+nosimd</samp>&rsquo;</dt>
+<dd><p>Disable the Advanced SIMD instructions (does not disable floating point).
+</p>
+</dd>
+<dt>&lsquo;<samp>+nofp</samp>&rsquo;</dt>
+<dd><p>Disable the floating-point and Advanced SIMD instructions.
+</p></dd>
+</dl>
+
+</dd>
+<dt>&lsquo;<samp>armv8-a</samp>&rsquo;</dt>
+<dd><dl compact="compact">
+<dt>&lsquo;<samp>+crc</samp>&rsquo;</dt>
+<dd><p>The Cyclic Redundancy Check (CRC) instructions.
+</p></dd>
+<dt>&lsquo;<samp>+simd</samp>&rsquo;</dt>
+<dd><p>The ARMv8-A Advanced SIMD and floating-point instructions.
+</p></dd>
+<dt>&lsquo;<samp>+crypto</samp>&rsquo;</dt>
+<dd><p>The cryptographic instructions.
+</p></dd>
+<dt>&lsquo;<samp>+nocrypto</samp>&rsquo;</dt>
+<dd><p>Disable the cryptographic instructions.
+</p></dd>
+<dt>&lsquo;<samp>+nofp</samp>&rsquo;</dt>
+<dd><p>Disable the floating-point, Advanced SIMD and cryptographic instructions.
+</p></dd>
+<dt>&lsquo;<samp>+sb</samp>&rsquo;</dt>
+<dd><p>Speculation Barrier Instruction.
+</p></dd>
+<dt>&lsquo;<samp>+predres</samp>&rsquo;</dt>
+<dd><p>Execution and Data Prediction Restriction Instructions.
+</p></dd>
+</dl>
+
+</dd>
+<dt>&lsquo;<samp>armv8.1-a</samp>&rsquo;</dt>
+<dd><dl compact="compact">
+<dt>&lsquo;<samp>+simd</samp>&rsquo;</dt>
+<dd><p>The ARMv8.1-A Advanced SIMD and floating-point instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>+crypto</samp>&rsquo;</dt>
+<dd><p>The cryptographic instructions.  This also enables the Advanced SIMD and
+floating-point instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>+nocrypto</samp>&rsquo;</dt>
+<dd><p>Disable the cryptographic instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>+nofp</samp>&rsquo;</dt>
+<dd><p>Disable the floating-point, Advanced SIMD and cryptographic instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>+sb</samp>&rsquo;</dt>
+<dd><p>Speculation Barrier Instruction.
+</p>
+</dd>
+<dt>&lsquo;<samp>+predres</samp>&rsquo;</dt>
+<dd><p>Execution and Data Prediction Restriction Instructions.
+</p></dd>
+</dl>
+
+</dd>
+<dt>&lsquo;<samp>armv8.2-a</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>armv8.3-a</samp>&rsquo;</dt>
+<dd><dl compact="compact">
+<dt>&lsquo;<samp>+fp16</samp>&rsquo;</dt>
+<dd><p>The half-precision floating-point data processing instructions.
+This also enables the Advanced SIMD and floating-point instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>+fp16fml</samp>&rsquo;</dt>
+<dd><p>The half-precision floating-point fmla extension.  This also enables
+the half-precision floating-point extension and Advanced SIMD and
+floating-point instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>+simd</samp>&rsquo;</dt>
+<dd><p>The ARMv8.1-A Advanced SIMD and floating-point instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>+crypto</samp>&rsquo;</dt>
+<dd><p>The cryptographic instructions.  This also enables the Advanced SIMD and
+floating-point instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>+dotprod</samp>&rsquo;</dt>
+<dd><p>Enable the Dot Product extension.  This also enables Advanced SIMD instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>+nocrypto</samp>&rsquo;</dt>
+<dd><p>Disable the cryptographic extension.
+</p>
+</dd>
+<dt>&lsquo;<samp>+nofp</samp>&rsquo;</dt>
+<dd><p>Disable the floating-point, Advanced SIMD and cryptographic instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>+sb</samp>&rsquo;</dt>
+<dd><p>Speculation Barrier Instruction.
+</p>
+</dd>
+<dt>&lsquo;<samp>+predres</samp>&rsquo;</dt>
+<dd><p>Execution and Data Prediction Restriction Instructions.
+</p></dd>
+</dl>
+
+</dd>
+<dt>&lsquo;<samp>armv8.4-a</samp>&rsquo;</dt>
+<dd><dl compact="compact">
+<dt>&lsquo;<samp>+fp16</samp>&rsquo;</dt>
+<dd><p>The half-precision floating-point data processing instructions.
+This also enables the Advanced SIMD and floating-point instructions as well
+as the Dot Product extension and the half-precision floating-point fmla
+extension.
+</p>
+</dd>
+<dt>&lsquo;<samp>+simd</samp>&rsquo;</dt>
+<dd><p>The ARMv8.3-A Advanced SIMD and floating-point instructions as well as the
+Dot Product extension.
+</p>
+</dd>
+<dt>&lsquo;<samp>+crypto</samp>&rsquo;</dt>
+<dd><p>The cryptographic instructions.  This also enables the Advanced SIMD and
+floating-point instructions as well as the Dot Product extension.
+</p>
+</dd>
+<dt>&lsquo;<samp>+nocrypto</samp>&rsquo;</dt>
+<dd><p>Disable the cryptographic extension.
+</p>
+</dd>
+<dt>&lsquo;<samp>+nofp</samp>&rsquo;</dt>
+<dd><p>Disable the floating-point, Advanced SIMD and cryptographic instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>+sb</samp>&rsquo;</dt>
+<dd><p>Speculation Barrier Instruction.
+</p>
+</dd>
+<dt>&lsquo;<samp>+predres</samp>&rsquo;</dt>
+<dd><p>Execution and Data Prediction Restriction Instructions.
+</p></dd>
+</dl>
+
+</dd>
+<dt>&lsquo;<samp>armv8.5-a</samp>&rsquo;</dt>
+<dd><dl compact="compact">
+<dt>&lsquo;<samp>+fp16</samp>&rsquo;</dt>
+<dd><p>The half-precision floating-point data processing instructions.
+This also enables the Advanced SIMD and floating-point instructions as well
+as the Dot Product extension and the half-precision floating-point fmla
+extension.
+</p>
+</dd>
+<dt>&lsquo;<samp>+simd</samp>&rsquo;</dt>
+<dd><p>The ARMv8.3-A Advanced SIMD and floating-point instructions as well as the
+Dot Product extension.
+</p>
+</dd>
+<dt>&lsquo;<samp>+crypto</samp>&rsquo;</dt>
+<dd><p>The cryptographic instructions.  This also enables the Advanced SIMD and
+floating-point instructions as well as the Dot Product extension.
+</p>
+</dd>
+<dt>&lsquo;<samp>+nocrypto</samp>&rsquo;</dt>
+<dd><p>Disable the cryptographic extension.
+</p>
+</dd>
+<dt>&lsquo;<samp>+nofp</samp>&rsquo;</dt>
+<dd><p>Disable the floating-point, Advanced SIMD and cryptographic instructions.
+</p></dd>
+</dl>
+
+</dd>
+<dt>&lsquo;<samp>armv7-r</samp>&rsquo;</dt>
+<dd><dl compact="compact">
+<dt>&lsquo;<samp>+fp.sp</samp>&rsquo;</dt>
+<dd><p>The single-precision VFPv3 floating-point instructions.  The extension
+&lsquo;<samp>+vfpv3xd</samp>&rsquo; can be used as an alias for this extension.
+</p>
+</dd>
+<dt>&lsquo;<samp>+fp</samp>&rsquo;</dt>
+<dd><p>The VFPv3 floating-point instructions with 16 double-precision registers.
+The extension +vfpv3-d16 can be used as an alias for this extension.
+</p>
+</dd>
+<dt>&lsquo;<samp>+vfpv3xd-d16-fp16</samp>&rsquo;</dt>
+<dd><p>The single-precision VFPv3 floating-point instructions with 16 double-precision
+registers and the half-precision floating-point conversion operations.
+</p>
+</dd>
+<dt>&lsquo;<samp>+vfpv3-d16-fp16</samp>&rsquo;</dt>
+<dd><p>The VFPv3 floating-point instructions with 16 double-precision
+registers and the half-precision floating-point conversion operations.
+</p>
+</dd>
+<dt>&lsquo;<samp>+nofp</samp>&rsquo;</dt>
+<dd><p>Disable the floating-point extension.
+</p>
+</dd>
+<dt>&lsquo;<samp>+idiv</samp>&rsquo;</dt>
+<dd><p>The ARM-state integer division instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>+noidiv</samp>&rsquo;</dt>
+<dd><p>Disable the ARM-state integer division extension.
+</p></dd>
+</dl>
+
+</dd>
+<dt>&lsquo;<samp>armv7e-m</samp>&rsquo;</dt>
+<dd><dl compact="compact">
+<dt>&lsquo;<samp>+fp</samp>&rsquo;</dt>
+<dd><p>The single-precision VFPv4 floating-point instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>+fpv5</samp>&rsquo;</dt>
+<dd><p>The single-precision FPv5 floating-point instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>+fp.dp</samp>&rsquo;</dt>
+<dd><p>The single- and double-precision FPv5 floating-point instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>+nofp</samp>&rsquo;</dt>
+<dd><p>Disable the floating-point extensions.
+</p></dd>
+</dl>
+
+</dd>
+<dt>&lsquo;<samp>armv8-m.main</samp>&rsquo;</dt>
+<dd><dl compact="compact">
+<dt>&lsquo;<samp>+dsp</samp>&rsquo;</dt>
+<dd><p>The DSP instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>+nodsp</samp>&rsquo;</dt>
+<dd><p>Disable the DSP extension.
+</p>
+</dd>
+<dt>&lsquo;<samp>+fp</samp>&rsquo;</dt>
+<dd><p>The single-precision floating-point instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>+fp.dp</samp>&rsquo;</dt>
+<dd><p>The single- and double-precision floating-point instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>+nofp</samp>&rsquo;</dt>
+<dd><p>Disable the floating-point extension.
+</p></dd>
+</dl>
+
+</dd>
+<dt>&lsquo;<samp>armv8-r</samp>&rsquo;</dt>
+<dd><dl compact="compact">
+<dt>&lsquo;<samp>+crc</samp>&rsquo;</dt>
+<dd><p>The Cyclic Redundancy Check (CRC) instructions.
+</p></dd>
+<dt>&lsquo;<samp>+fp.sp</samp>&rsquo;</dt>
+<dd><p>The single-precision FPv5 floating-point instructions.
+</p></dd>
+<dt>&lsquo;<samp>+simd</samp>&rsquo;</dt>
+<dd><p>The ARMv8-A Advanced SIMD and floating-point instructions.
+</p></dd>
+<dt>&lsquo;<samp>+crypto</samp>&rsquo;</dt>
+<dd><p>The cryptographic instructions.
+</p></dd>
+<dt>&lsquo;<samp>+nocrypto</samp>&rsquo;</dt>
+<dd><p>Disable the cryptographic instructions.
+</p></dd>
+<dt>&lsquo;<samp>+nofp</samp>&rsquo;</dt>
+<dd><p>Disable the floating-point, Advanced SIMD and cryptographic instructions.
+</p></dd>
+</dl>
+
+</dd>
+</dl>
+
+<p><samp>-march=native</samp> causes the compiler to auto-detect the architecture
+of the build computer.  At present, this feature is only supported on
+GNU/Linux, and not all architectures are recognized.  If the auto-detect
+is unsuccessful the option has no effect.
+</p>
+</dd>
+<dt><code>-mtune=<var>name</var></code></dt>
+<dd><a name="index-mtune-4"></a>
+<p>This option specifies the name of the target ARM processor for
+which GCC should tune the performance of the code.
+For some ARM implementations better performance can be obtained by using
+this option.
+Permissible names are: &lsquo;<samp>arm7tdmi</samp>&rsquo;, &lsquo;<samp>arm7tdmi-s</samp>&rsquo;, &lsquo;<samp>arm710t</samp>&rsquo;,
+&lsquo;<samp>arm720t</samp>&rsquo;, &lsquo;<samp>arm740t</samp>&rsquo;, &lsquo;<samp>strongarm</samp>&rsquo;, &lsquo;<samp>strongarm110</samp>&rsquo;,
+&lsquo;<samp>strongarm1100</samp>&rsquo;, 0&lsquo;<samp>strongarm1110</samp>&rsquo;, &lsquo;<samp>arm8</samp>&rsquo;, &lsquo;<samp>arm810</samp>&rsquo;,
+&lsquo;<samp>arm9</samp>&rsquo;, &lsquo;<samp>arm9e</samp>&rsquo;, &lsquo;<samp>arm920</samp>&rsquo;, &lsquo;<samp>arm920t</samp>&rsquo;, &lsquo;<samp>arm922t</samp>&rsquo;,
+&lsquo;<samp>arm946e-s</samp>&rsquo;, &lsquo;<samp>arm966e-s</samp>&rsquo;, &lsquo;<samp>arm968e-s</samp>&rsquo;, &lsquo;<samp>arm926ej-s</samp>&rsquo;,
+&lsquo;<samp>arm940t</samp>&rsquo;, &lsquo;<samp>arm9tdmi</samp>&rsquo;, &lsquo;<samp>arm10tdmi</samp>&rsquo;, &lsquo;<samp>arm1020t</samp>&rsquo;,
+&lsquo;<samp>arm1026ej-s</samp>&rsquo;, &lsquo;<samp>arm10e</samp>&rsquo;, &lsquo;<samp>arm1020e</samp>&rsquo;, &lsquo;<samp>arm1022e</samp>&rsquo;,
+&lsquo;<samp>arm1136j-s</samp>&rsquo;, &lsquo;<samp>arm1136jf-s</samp>&rsquo;, &lsquo;<samp>mpcore</samp>&rsquo;, &lsquo;<samp>mpcorenovfp</samp>&rsquo;,
+&lsquo;<samp>arm1156t2-s</samp>&rsquo;, &lsquo;<samp>arm1156t2f-s</samp>&rsquo;, &lsquo;<samp>arm1176jz-s</samp>&rsquo;, &lsquo;<samp>arm1176jzf-s</samp>&rsquo;,
+&lsquo;<samp>generic-armv7-a</samp>&rsquo;, &lsquo;<samp>cortex-a5</samp>&rsquo;, &lsquo;<samp>cortex-a7</samp>&rsquo;, &lsquo;<samp>cortex-a8</samp>&rsquo;,
+&lsquo;<samp>cortex-a9</samp>&rsquo;, &lsquo;<samp>cortex-a12</samp>&rsquo;, &lsquo;<samp>cortex-a15</samp>&rsquo;, &lsquo;<samp>cortex-a17</samp>&rsquo;,
+&lsquo;<samp>cortex-a32</samp>&rsquo;, &lsquo;<samp>cortex-a35</samp>&rsquo;, &lsquo;<samp>cortex-a53</samp>&rsquo;, &lsquo;<samp>cortex-a55</samp>&rsquo;,
+&lsquo;<samp>cortex-a57</samp>&rsquo;, &lsquo;<samp>cortex-a72</samp>&rsquo;, &lsquo;<samp>cortex-a73</samp>&rsquo;, &lsquo;<samp>cortex-a75</samp>&rsquo;,
+&lsquo;<samp>cortex-a76</samp>&rsquo;, &lsquo;<samp>ares</samp>&rsquo;, &lsquo;<samp>cortex-r4</samp>&rsquo;, &lsquo;<samp>cortex-r4f</samp>&rsquo;,
+&lsquo;<samp>cortex-r5</samp>&rsquo;, &lsquo;<samp>cortex-r7</samp>&rsquo;, &lsquo;<samp>cortex-r8</samp>&rsquo;, &lsquo;<samp>cortex-r52</samp>&rsquo;,
+&lsquo;<samp>cortex-m0</samp>&rsquo;, &lsquo;<samp>cortex-m0plus</samp>&rsquo;, &lsquo;<samp>cortex-m1</samp>&rsquo;, &lsquo;<samp>cortex-m3</samp>&rsquo;,
+&lsquo;<samp>cortex-m4</samp>&rsquo;, &lsquo;<samp>cortex-m7</samp>&rsquo;, &lsquo;<samp>cortex-m23</samp>&rsquo;, &lsquo;<samp>cortex-m33</samp>&rsquo;,
+&lsquo;<samp>cortex-m1.small-multiply</samp>&rsquo;, &lsquo;<samp>cortex-m0.small-multiply</samp>&rsquo;,
+&lsquo;<samp>cortex-m0plus.small-multiply</samp>&rsquo;, &lsquo;<samp>exynos-m1</samp>&rsquo;, &lsquo;<samp>marvell-pj4</samp>&rsquo;,
+&lsquo;<samp>neoverse-n1</samp>&rsquo;, &lsquo;<samp>xscale</samp>&rsquo;, &lsquo;<samp>iwmmxt</samp>&rsquo;, &lsquo;<samp>iwmmxt2</samp>&rsquo;,
+&lsquo;<samp>ep9312</samp>&rsquo;, &lsquo;<samp>fa526</samp>&rsquo;, &lsquo;<samp>fa626</samp>&rsquo;, &lsquo;<samp>fa606te</samp>&rsquo;, &lsquo;<samp>fa626te</samp>&rsquo;,
+&lsquo;<samp>fmp626</samp>&rsquo;, &lsquo;<samp>fa726te</samp>&rsquo;, &lsquo;<samp>xgene1</samp>&rsquo;.
+</p>
+<p>Additionally, this option can specify that GCC should tune the performance
+of the code for a big.LITTLE system.  Permissible names are:
+&lsquo;<samp>cortex-a15.cortex-a7</samp>&rsquo;, &lsquo;<samp>cortex-a17.cortex-a7</samp>&rsquo;,
+&lsquo;<samp>cortex-a57.cortex-a53</samp>&rsquo;, &lsquo;<samp>cortex-a72.cortex-a53</samp>&rsquo;,
+&lsquo;<samp>cortex-a72.cortex-a35</samp>&rsquo;, &lsquo;<samp>cortex-a73.cortex-a53</samp>&rsquo;,
+&lsquo;<samp>cortex-a75.cortex-a55</samp>&rsquo;, &lsquo;<samp>cortex-a76.cortex-a55</samp>&rsquo;.
+</p>
+<p><samp>-mtune=generic-<var>arch</var></samp> specifies that GCC should tune the
+performance for a blend of processors within architecture <var>arch</var>.
+The aim is to generate code that run well on the current most popular
+processors, balancing between optimizations that benefit some CPUs in the
+range, and avoiding performance pitfalls of other CPUs.  The effects of
+this option may change in future GCC versions as CPU models come and go.
+</p>
+<p><samp>-mtune</samp> permits the same extension options as <samp>-mcpu</samp>, but
+the extension options do not affect the tuning of the generated code.
+</p>
+<p><samp>-mtune=native</samp> causes the compiler to auto-detect the CPU
+of the build computer.  At present, this feature is only supported on
+GNU/Linux, and not all architectures are recognized.  If the auto-detect is
+unsuccessful the option has no effect.
+</p>
+</dd>
+<dt><code>-mcpu=<var>name</var><span class="roman">[</span>+extension&hellip;<span class="roman">]</span></code></dt>
+<dd><a name="index-mcpu-2"></a>
+<p>This specifies the name of the target ARM processor.  GCC uses this name
+to derive the name of the target ARM architecture (as if specified
+by <samp>-march</samp>) and the ARM processor type for which to tune for
+performance (as if specified by <samp>-mtune</samp>).  Where this option
+is used in conjunction with <samp>-march</samp> or <samp>-mtune</samp>,
+those options take precedence over the appropriate part of this option.
+</p>
+<p>Many of the supported CPUs implement optional architectural
+extensions.  Where this is so the architectural extensions are
+normally enabled by default.  If implementations that lack the
+extension exist, then the extension syntax can be used to disable
+those extensions that have been omitted.  For floating-point and
+Advanced SIMD (Neon) instructions, the settings of the options
+<samp>-mfloat-abi</samp> and <samp>-mfpu</samp> must also be considered:
+floating-point and Advanced SIMD instructions will only be used if
+<samp>-mfloat-abi</samp> is not set to &lsquo;<samp>soft</samp>&rsquo;; and any setting of
+<samp>-mfpu</samp> other than &lsquo;<samp>auto</samp>&rsquo; will override the available
+floating-point and SIMD extension instructions.
+</p>
+<p>For example, &lsquo;<samp>cortex-a9</samp>&rsquo; can be found in three major
+configurations: integer only, with just a floating-point unit or with
+floating-point and Advanced SIMD.  The default is to enable all the
+instructions, but the extensions &lsquo;<samp>+nosimd</samp>&rsquo; and &lsquo;<samp>+nofp</samp>&rsquo; can
+be used to disable just the SIMD or both the SIMD and floating-point
+instructions respectively.
+</p>
+<p>Permissible names for this option are the same as those for
+<samp>-mtune</samp>.
+</p>
+<p>The following extension options are common to the listed CPUs:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>+nodsp</samp>&rsquo;</dt>
+<dd><p>Disable the DSP instructions on &lsquo;<samp>cortex-m33</samp>&rsquo;.
+</p>
+</dd>
+<dt>&lsquo;<samp>+nofp</samp>&rsquo;</dt>
+<dd><p>Disables the floating-point instructions on &lsquo;<samp>arm9e</samp>&rsquo;,
+&lsquo;<samp>arm946e-s</samp>&rsquo;, &lsquo;<samp>arm966e-s</samp>&rsquo;, &lsquo;<samp>arm968e-s</samp>&rsquo;, &lsquo;<samp>arm10e</samp>&rsquo;,
+&lsquo;<samp>arm1020e</samp>&rsquo;, &lsquo;<samp>arm1022e</samp>&rsquo;, &lsquo;<samp>arm926ej-s</samp>&rsquo;,
+&lsquo;<samp>arm1026ej-s</samp>&rsquo;, &lsquo;<samp>cortex-r5</samp>&rsquo;, &lsquo;<samp>cortex-r7</samp>&rsquo;, &lsquo;<samp>cortex-r8</samp>&rsquo;,
+&lsquo;<samp>cortex-m4</samp>&rsquo;, &lsquo;<samp>cortex-m7</samp>&rsquo; and &lsquo;<samp>cortex-m33</samp>&rsquo;.
+Disables the floating-point and SIMD instructions on
+&lsquo;<samp>generic-armv7-a</samp>&rsquo;, &lsquo;<samp>cortex-a5</samp>&rsquo;, &lsquo;<samp>cortex-a7</samp>&rsquo;,
+&lsquo;<samp>cortex-a8</samp>&rsquo;, &lsquo;<samp>cortex-a9</samp>&rsquo;, &lsquo;<samp>cortex-a12</samp>&rsquo;,
+&lsquo;<samp>cortex-a15</samp>&rsquo;, &lsquo;<samp>cortex-a17</samp>&rsquo;, &lsquo;<samp>cortex-a15.cortex-a7</samp>&rsquo;,
+&lsquo;<samp>cortex-a17.cortex-a7</samp>&rsquo;, &lsquo;<samp>cortex-a32</samp>&rsquo;, &lsquo;<samp>cortex-a35</samp>&rsquo;,
+&lsquo;<samp>cortex-a53</samp>&rsquo; and &lsquo;<samp>cortex-a55</samp>&rsquo;.
+</p>
+</dd>
+<dt>&lsquo;<samp>+nofp.dp</samp>&rsquo;</dt>
+<dd><p>Disables the double-precision component of the floating-point instructions
+on &lsquo;<samp>cortex-r5</samp>&rsquo;, &lsquo;<samp>cortex-r7</samp>&rsquo;, &lsquo;<samp>cortex-r8</samp>&rsquo;, &lsquo;<samp>cortex-r52</samp>&rsquo; and
+&lsquo;<samp>cortex-m7</samp>&rsquo;.
+</p>
+</dd>
+<dt>&lsquo;<samp>+nosimd</samp>&rsquo;</dt>
+<dd><p>Disables the SIMD (but not floating-point) instructions on
+&lsquo;<samp>generic-armv7-a</samp>&rsquo;, &lsquo;<samp>cortex-a5</samp>&rsquo;, &lsquo;<samp>cortex-a7</samp>&rsquo;
+and &lsquo;<samp>cortex-a9</samp>&rsquo;.
+</p>
+</dd>
+<dt>&lsquo;<samp>+crypto</samp>&rsquo;</dt>
+<dd><p>Enables the cryptographic instructions on &lsquo;<samp>cortex-a32</samp>&rsquo;,
+&lsquo;<samp>cortex-a35</samp>&rsquo;, &lsquo;<samp>cortex-a53</samp>&rsquo;, &lsquo;<samp>cortex-a55</samp>&rsquo;, &lsquo;<samp>cortex-a57</samp>&rsquo;,
+&lsquo;<samp>cortex-a72</samp>&rsquo;, &lsquo;<samp>cortex-a73</samp>&rsquo;, &lsquo;<samp>cortex-a75</samp>&rsquo;, &lsquo;<samp>exynos-m1</samp>&rsquo;,
+&lsquo;<samp>xgene1</samp>&rsquo;, &lsquo;<samp>cortex-a57.cortex-a53</samp>&rsquo;, &lsquo;<samp>cortex-a72.cortex-a53</samp>&rsquo;,
+&lsquo;<samp>cortex-a73.cortex-a35</samp>&rsquo;, &lsquo;<samp>cortex-a73.cortex-a53</samp>&rsquo; and
+&lsquo;<samp>cortex-a75.cortex-a55</samp>&rsquo;.
+</p></dd>
+</dl>
+
+<p>Additionally the &lsquo;<samp>generic-armv7-a</samp>&rsquo; pseudo target defaults to
+VFPv3 with 16 double-precision registers.  It supports the following
+extension options: &lsquo;<samp>mp</samp>&rsquo;, &lsquo;<samp>sec</samp>&rsquo;, &lsquo;<samp>vfpv3-d16</samp>&rsquo;,
+&lsquo;<samp>vfpv3</samp>&rsquo;, &lsquo;<samp>vfpv3-d16-fp16</samp>&rsquo;, &lsquo;<samp>vfpv3-fp16</samp>&rsquo;,
+&lsquo;<samp>vfpv4-d16</samp>&rsquo;, &lsquo;<samp>vfpv4</samp>&rsquo;, &lsquo;<samp>neon</samp>&rsquo;, &lsquo;<samp>neon-vfpv3</samp>&rsquo;,
+&lsquo;<samp>neon-fp16</samp>&rsquo;, &lsquo;<samp>neon-vfpv4</samp>&rsquo;.  The meanings are the same as for
+the extensions to <samp>-march=armv7-a</samp>.
+</p>
+<p><samp>-mcpu=generic-<var>arch</var></samp> is also permissible, and is
+equivalent to <samp>-march=<var>arch</var> -mtune=generic-<var>arch</var></samp>.
+See <samp>-mtune</samp> for more information.
+</p>
+<p><samp>-mcpu=native</samp> causes the compiler to auto-detect the CPU
+of the build computer.  At present, this feature is only supported on
+GNU/Linux, and not all architectures are recognized.  If the auto-detect
+is unsuccessful the option has no effect.
+</p>
+</dd>
+<dt><code>-mfpu=<var>name</var></code></dt>
+<dd><a name="index-mfpu-1"></a>
+<p>This specifies what floating-point hardware (or hardware emulation) is
+available on the target.  Permissible names are: &lsquo;<samp>auto</samp>&rsquo;, &lsquo;<samp>vfpv2</samp>&rsquo;,
+&lsquo;<samp>vfpv3</samp>&rsquo;,
+&lsquo;<samp>vfpv3-fp16</samp>&rsquo;, &lsquo;<samp>vfpv3-d16</samp>&rsquo;, &lsquo;<samp>vfpv3-d16-fp16</samp>&rsquo;, &lsquo;<samp>vfpv3xd</samp>&rsquo;,
+&lsquo;<samp>vfpv3xd-fp16</samp>&rsquo;, &lsquo;<samp>neon-vfpv3</samp>&rsquo;, &lsquo;<samp>neon-fp16</samp>&rsquo;, &lsquo;<samp>vfpv4</samp>&rsquo;,
+&lsquo;<samp>vfpv4-d16</samp>&rsquo;, &lsquo;<samp>fpv4-sp-d16</samp>&rsquo;, &lsquo;<samp>neon-vfpv4</samp>&rsquo;,
+&lsquo;<samp>fpv5-d16</samp>&rsquo;, &lsquo;<samp>fpv5-sp-d16</samp>&rsquo;,
+&lsquo;<samp>fp-armv8</samp>&rsquo;, &lsquo;<samp>neon-fp-armv8</samp>&rsquo; and &lsquo;<samp>crypto-neon-fp-armv8</samp>&rsquo;.
+Note that &lsquo;<samp>neon</samp>&rsquo; is an alias for &lsquo;<samp>neon-vfpv3</samp>&rsquo; and &lsquo;<samp>vfp</samp>&rsquo;
+is an alias for &lsquo;<samp>vfpv2</samp>&rsquo;.
+</p>
+<p>The setting &lsquo;<samp>auto</samp>&rsquo; is the default and is special.  It causes the
+compiler to select the floating-point and Advanced SIMD instructions
+based on the settings of <samp>-mcpu</samp> and <samp>-march</samp>.
+</p>
+<p>If the selected floating-point hardware includes the NEON extension
+(e.g. <samp>-mfpu=neon</samp>), note that floating-point
+operations are not generated by GCC&rsquo;s auto-vectorization pass unless
+<samp>-funsafe-math-optimizations</samp> is also specified.  This is
+because NEON hardware does not fully implement the IEEE 754 standard for
+floating-point arithmetic (in particular denormal values are treated as
+zero), so the use of NEON instructions may lead to a loss of precision.
+</p>
+<p>You can also set the fpu name at function level by using the <code>target(&quot;fpu=&quot;)</code> function attributes (see <a href="ARM-Function-Attributes.html#ARM-Function-Attributes">ARM Function Attributes</a>) or pragmas (see <a href="Function-Specific-Option-Pragmas.html#Function-Specific-Option-Pragmas">Function Specific Option Pragmas</a>).
+</p>
+</dd>
+<dt><code>-mfp16-format=<var>name</var></code></dt>
+<dd><a name="index-mfp16_002dformat"></a>
+<p>Specify the format of the <code>__fp16</code> half-precision floating-point type.
+Permissible names are &lsquo;<samp>none</samp>&rsquo;, &lsquo;<samp>ieee</samp>&rsquo;, and &lsquo;<samp>alternative</samp>&rsquo;;
+the default is &lsquo;<samp>none</samp>&rsquo;, in which case the <code>__fp16</code> type is not
+defined.  See <a href="Half_002dPrecision.html#Half_002dPrecision">Half-Precision</a>, for more information.
+</p>
+</dd>
+<dt><code>-mstructure-size-boundary=<var>n</var></code></dt>
+<dd><a name="index-mstructure_002dsize_002dboundary"></a>
+<p>The sizes of all structures and unions are rounded up to a multiple
+of the number of bits set by this option.  Permissible values are 8, 32
+and 64.  The default value varies for different toolchains.  For the COFF
+targeted toolchain the default value is 8.  A value of 64 is only allowed
+if the underlying ABI supports it.
+</p>
+<p>Specifying a larger number can produce faster, more efficient code, but
+can also increase the size of the program.  Different values are potentially
+incompatible.  Code compiled with one value cannot necessarily expect to
+work with code or libraries compiled with another value, if they exchange
+information using structures or unions.
+</p>
+<p>This option is deprecated.
+</p>
+</dd>
+<dt><code>-mabort-on-noreturn</code></dt>
+<dd><a name="index-mabort_002don_002dnoreturn"></a>
+<p>Generate a call to the function <code>abort</code> at the end of a
+<code>noreturn</code> function.  It is executed if the function tries to
+return.
+</p>
+</dd>
+<dt><code>-mlong-calls</code></dt>
+<dt><code>-mno-long-calls</code></dt>
+<dd><a name="index-mlong_002dcalls-2"></a>
+<a name="index-mno_002dlong_002dcalls"></a>
+<p>Tells the compiler to perform function calls by first loading the
+address of the function into a register and then performing a subroutine
+call on this register.  This switch is needed if the target function
+lies outside of the 64-megabyte addressing range of the offset-based
+version of subroutine call instruction.
+</p>
+<p>Even if this switch is enabled, not all function calls are turned
+into long calls.  The heuristic is that static functions, functions
+that have the <code>short_call</code> attribute, functions that are inside
+the scope of a <code>#pragma no_long_calls</code> directive, and functions whose
+definitions have already been compiled within the current compilation
+unit are not turned into long calls.  The exceptions to this rule are
+that weak function definitions, functions with the <code>long_call</code>
+attribute or the <code>section</code> attribute, and functions that are within
+the scope of a <code>#pragma long_calls</code> directive are always
+turned into long calls.
+</p>
+<p>This feature is not enabled by default.  Specifying
+<samp>-mno-long-calls</samp> restores the default behavior, as does
+placing the function calls within the scope of a <code>#pragma
+long_calls_off</code> directive.  Note these switches have no effect on how
+the compiler generates code to handle function calls via function
+pointers.
+</p>
+</dd>
+<dt><code>-msingle-pic-base</code></dt>
+<dd><a name="index-msingle_002dpic_002dbase"></a>
+<p>Treat the register used for PIC addressing as read-only, rather than
+loading it in the prologue for each function.  The runtime system is
+responsible for initializing this register with an appropriate value
+before execution begins.
+</p>
+</dd>
+<dt><code>-mpic-register=<var>reg</var></code></dt>
+<dd><a name="index-mpic_002dregister"></a>
+<p>Specify the register to be used for PIC addressing.
+For standard PIC base case, the default is any suitable register
+determined by compiler.  For single PIC base case, the default is
+&lsquo;<samp>R9</samp>&rsquo; if target is EABI based or stack-checking is enabled,
+otherwise the default is &lsquo;<samp>R10</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>-mpic-data-is-text-relative</code></dt>
+<dd><a name="index-mpic_002ddata_002dis_002dtext_002drelative"></a>
+<p>Assume that the displacement between the text and data segments is fixed
+at static link time.  This permits using PC-relative addressing
+operations to access data known to be in the data segment.  For
+non-VxWorks RTP targets, this option is enabled by default.  When
+disabled on such targets, it will enable <samp>-msingle-pic-base</samp> by
+default.
+</p>
+</dd>
+<dt><code>-mpoke-function-name</code></dt>
+<dd><a name="index-mpoke_002dfunction_002dname"></a>
+<p>Write the name of each function into the text section, directly
+preceding the function prologue.  The generated code is similar to this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">     t0
+         .ascii &quot;arm_poke_function_name&quot;, 0
+         .align
+     t1
+         .word 0xff000000 + (t1 - t0)
+     arm_poke_function_name
+         mov     ip, sp
+         stmfd   sp!, {fp, ip, lr, pc}
+         sub     fp, ip, #4
+</pre></div>
+
+<p>When performing a stack backtrace, code can inspect the value of
+<code>pc</code> stored at <code>fp + 0</code>.  If the trace function then looks at
+location <code>pc - 12</code> and the top 8 bits are set, then we know that
+there is a function name embedded immediately preceding this location
+and has length <code>((pc[-3]) &amp; 0xff000000)</code>.
+</p>
+</dd>
+<dt><code>-mthumb</code></dt>
+<dt><code>-marm</code></dt>
+<dd><a name="index-marm"></a>
+<a name="index-mthumb"></a>
+
+<p>Select between generating code that executes in ARM and Thumb
+states.  The default for most configurations is to generate code
+that executes in ARM state, but the default can be changed by
+configuring GCC with the <samp>--with-mode=</samp><var>state</var>
+configure option.
+</p>
+<p>You can also override the ARM and Thumb mode for each function
+by using the <code>target(&quot;thumb&quot;)</code> and <code>target(&quot;arm&quot;)</code> function attributes
+(see <a href="ARM-Function-Attributes.html#ARM-Function-Attributes">ARM Function Attributes</a>) or pragmas (see <a href="Function-Specific-Option-Pragmas.html#Function-Specific-Option-Pragmas">Function Specific Option Pragmas</a>).
+</p>
+</dd>
+<dt><code>-mflip-thumb</code></dt>
+<dd><a name="index-mflip_002dthumb"></a>
+<p>Switch ARM/Thumb modes on alternating functions.
+This option is provided for regression testing of mixed Thumb/ARM code
+generation, and is not intended for ordinary use in compiling code.
+</p>
+</dd>
+<dt><code>-mtpcs-frame</code></dt>
+<dd><a name="index-mtpcs_002dframe"></a>
+<p>Generate a stack frame that is compliant with the Thumb Procedure Call
+Standard for all non-leaf functions.  (A leaf function is one that does
+not call any other functions.)  The default is <samp>-mno-tpcs-frame</samp>.
+</p>
+</dd>
+<dt><code>-mtpcs-leaf-frame</code></dt>
+<dd><a name="index-mtpcs_002dleaf_002dframe"></a>
+<p>Generate a stack frame that is compliant with the Thumb Procedure Call
+Standard for all leaf functions.  (A leaf function is one that does
+not call any other functions.)  The default is <samp>-mno-apcs-leaf-frame</samp>.
+</p>
+</dd>
+<dt><code>-mcallee-super-interworking</code></dt>
+<dd><a name="index-mcallee_002dsuper_002dinterworking"></a>
+<p>Gives all externally visible functions in the file being compiled an ARM
+instruction set header which switches to Thumb mode before executing the
+rest of the function.  This allows these functions to be called from
+non-interworking code.  This option is not valid in AAPCS configurations
+because interworking is enabled by default.
+</p>
+</dd>
+<dt><code>-mcaller-super-interworking</code></dt>
+<dd><a name="index-mcaller_002dsuper_002dinterworking"></a>
+<p>Allows calls via function pointers (including virtual functions) to
+execute correctly regardless of whether the target code has been
+compiled for interworking or not.  There is a small overhead in the cost
+of executing a function pointer if this option is enabled.  This option
+is not valid in AAPCS configurations because interworking is enabled
+by default.
+</p>
+</dd>
+<dt><code>-mtp=<var>name</var></code></dt>
+<dd><a name="index-mtp"></a>
+<p>Specify the access model for the thread local storage pointer.  The valid
+models are &lsquo;<samp>soft</samp>&rsquo;, which generates calls to <code>__aeabi_read_tp</code>,
+&lsquo;<samp>cp15</samp>&rsquo;, which fetches the thread pointer from <code>cp15</code> directly
+(supported in the arm6k architecture), and &lsquo;<samp>auto</samp>&rsquo;, which uses the
+best available method for the selected processor.  The default setting is
+&lsquo;<samp>auto</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>-mtls-dialect=<var>dialect</var></code></dt>
+<dd><a name="index-mtls_002ddialect"></a>
+<p>Specify the dialect to use for accessing thread local storage.  Two
+<var>dialect</var>s are supported&mdash;&lsquo;<samp>gnu</samp>&rsquo; and &lsquo;<samp>gnu2</samp>&rsquo;.  The
+&lsquo;<samp>gnu</samp>&rsquo; dialect selects the original GNU scheme for supporting
+local and global dynamic TLS models.  The &lsquo;<samp>gnu2</samp>&rsquo; dialect
+selects the GNU descriptor scheme, which provides better performance
+for shared libraries.  The GNU descriptor scheme is compatible with
+the original scheme, but does require new assembler, linker and
+library support.  Initial and local exec TLS models are unaffected by
+this option and always use the original scheme.
+</p>
+</dd>
+<dt><code>-mword-relocations</code></dt>
+<dd><a name="index-mword_002drelocations"></a>
+<p>Only generate absolute relocations on word-sized values (i.e. R_ARM_ABS32).
+This is enabled by default on targets (uClinux, SymbianOS) where the runtime
+loader imposes this restriction, and when <samp>-fpic</samp> or <samp>-fPIC</samp>
+is specified. This option conflicts with <samp>-mslow-flash-data</samp>.
+</p>
+</dd>
+<dt><code>-mfix-cortex-m3-ldrd</code></dt>
+<dd><a name="index-mfix_002dcortex_002dm3_002dldrd"></a>
+<p>Some Cortex-M3 cores can cause data corruption when <code>ldrd</code> instructions
+with overlapping destination and base registers are used.  This option avoids
+generating these instructions.  This option is enabled by default when
+<samp>-mcpu=cortex-m3</samp> is specified.
+</p>
+</dd>
+<dt><code>-munaligned-access</code></dt>
+<dt><code>-mno-unaligned-access</code></dt>
+<dd><a name="index-munaligned_002daccess"></a>
+<a name="index-mno_002dunaligned_002daccess"></a>
+<p>Enables (or disables) reading and writing of 16- and 32- bit values
+from addresses that are not 16- or 32- bit aligned.  By default
+unaligned access is disabled for all pre-ARMv6, all ARMv6-M and for
+ARMv8-M Baseline architectures, and enabled for all other
+architectures.  If unaligned access is not enabled then words in packed
+data structures are accessed a byte at a time.
+</p>
+<p>The ARM attribute <code>Tag_CPU_unaligned_access</code> is set in the
+generated object file to either true or false, depending upon the
+setting of this option.  If unaligned access is enabled then the
+preprocessor symbol <code>__ARM_FEATURE_UNALIGNED</code> is also
+defined.
+</p>
+</dd>
+<dt><code>-mneon-for-64bits</code></dt>
+<dd><a name="index-mneon_002dfor_002d64bits"></a>
+<p>Enables using Neon to handle scalar 64-bits operations. This is
+disabled by default since the cost of moving data from core registers
+to Neon is high.
+</p>
+</dd>
+<dt><code>-mslow-flash-data</code></dt>
+<dd><a name="index-mslow_002dflash_002ddata"></a>
+<p>Assume loading data from flash is slower than fetching instruction.
+Therefore literal load is minimized for better performance.
+This option is only supported when compiling for ARMv7 M-profile and
+off by default. It conflicts with <samp>-mword-relocations</samp>.
+</p>
+</dd>
+<dt><code>-masm-syntax-unified</code></dt>
+<dd><a name="index-masm_002dsyntax_002dunified"></a>
+<p>Assume inline assembler is using unified asm syntax.  The default is
+currently off which implies divided syntax.  This option has no impact
+on Thumb2. However, this may change in future releases of GCC.
+Divided syntax should be considered deprecated.
+</p>
+</dd>
+<dt><code>-mrestrict-it</code></dt>
+<dd><a name="index-mrestrict_002dit"></a>
+<p>Restricts generation of IT blocks to conform to the rules of ARMv8-A.
+IT blocks can only contain a single 16-bit instruction from a select
+set of instructions. This option is on by default for ARMv8-A Thumb mode.
+</p>
+</dd>
+<dt><code>-mprint-tune-info</code></dt>
+<dd><a name="index-mprint_002dtune_002dinfo"></a>
+<p>Print CPU tuning information as comment in assembler file.  This is
+an option used only for regression testing of the compiler and not
+intended for ordinary use in compiling code.  This option is disabled
+by default.
+</p>
+</dd>
+<dt><code>-mverbose-cost-dump</code></dt>
+<dd><a name="index-mverbose_002dcost_002ddump-1"></a>
+<p>Enable verbose cost model dumping in the debug dump files.  This option is
+provided for use in debugging the compiler.
+</p>
+</dd>
+<dt><code>-mpure-code</code></dt>
+<dd><a name="index-mpure_002dcode"></a>
+<p>Do not allow constant data to be placed in code sections.
+Additionally, when compiling for ELF object format give all text sections the
+ELF processor-specific section attribute <code>SHF_ARM_PURECODE</code>.  This option
+is only available when generating non-pic code for M-profile targets with the
+MOVT instruction.
+</p>
+</dd>
+<dt><code>-mcmse</code></dt>
+<dd><a name="index-mcmse"></a>
+<p>Generate secure code as per the &quot;ARMv8-M Security Extensions: Requirements on
+Development Tools Engineering Specification&quot;, which can be found on
+<a href="http://infocenter.arm.com/help/topic/com.arm.doc.ecm0359818/ECM0359818_armv8m_security_extensions_reqs_on_dev_tools_1_0.pdf">http://infocenter.arm.com/help/topic/com.arm.doc.ecm0359818/ECM0359818_armv8m_security_extensions_reqs_on_dev_tools_1_0.pdf</a>.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="AVR-Options.html#AVR-Options" accesskey="n" rel="next">AVR Options</a>, Previous: <a href="ARC-Options.html#ARC-Options" accesskey="p" rel="prev">ARC Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Basic Statements</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Basic Statements">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Basic Statements">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Statements.html#Statements" rel="up" title="Statements">
+<link href="Blocks.html#Blocks" rel="next" title="Blocks">
+<link href="Statements.html#Statements" rel="prev" title="Statements">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Basic-Statements"></a>
+<div class="header">
+<p>
+Next: <a href="Blocks.html#Blocks" accesskey="n" rel="next">Blocks</a>, Up: <a href="Statements.html#Statements" accesskey="u" rel="up">Statements</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Basic-Statements-1"></a>
+<h4 class="subsection">11.7.1 Basic Statements</h4>
+<a name="index-Basic-Statements"></a>
+
+<dl compact="compact">
+<dt><code>ASM_EXPR</code></dt>
+<dd>
+<p>Used to represent an inline assembly statement.  For an inline assembly
+statement like:
+</p><div class="smallexample">
+<pre class="smallexample">asm (&quot;mov x, y&quot;);
+</pre></div>
+<p>The <code>ASM_STRING</code> macro will return a <code>STRING_CST</code> node for
+<code>&quot;mov x, y&quot;</code>.  If the original statement made use of the
+extended-assembly syntax, then <code>ASM_OUTPUTS</code>,
+<code>ASM_INPUTS</code>, and <code>ASM_CLOBBERS</code> will be the outputs, inputs,
+and clobbers for the statement, represented as <code>STRING_CST</code> nodes.
+The extended-assembly syntax looks like:
+</p><div class="smallexample">
+<pre class="smallexample">asm (&quot;fsinx %1,%0&quot; : &quot;=f&quot; (result) : &quot;f&quot; (angle));
+</pre></div>
+<p>The first string is the <code>ASM_STRING</code>, containing the instruction
+template.  The next two strings are the output and inputs, respectively;
+this statement has no clobbers.  As this example indicates, &ldquo;plain&rdquo;
+assembly statements are merely a special case of extended assembly
+statements; they have no cv-qualifiers, outputs, inputs, or clobbers.
+All of the strings will be <code>NUL</code>-terminated, and will contain no
+embedded <code>NUL</code>-characters.
+</p>
+<p>If the assembly statement is declared <code>volatile</code>, or if the
+statement was not an extended assembly statement, and is therefore
+implicitly volatile, then the predicate <code>ASM_VOLATILE_P</code> will hold
+of the <code>ASM_EXPR</code>.
+</p>
+</dd>
+<dt><code>DECL_EXPR</code></dt>
+<dd>
+<p>Used to represent a local declaration.  The <code>DECL_EXPR_DECL</code> macro
+can be used to obtain the entity declared.  This declaration may be a
+<code>LABEL_DECL</code>, indicating that the label declared is a local label.
+(As an extension, GCC allows the declaration of labels with scope.)  In
+C, this declaration may be a <code>FUNCTION_DECL</code>, indicating the
+use of the GCC nested function extension.  For more information,
+see <a href="Functions.html#Functions">Functions</a>.
+</p>
+</dd>
+<dt><code>LABEL_EXPR</code></dt>
+<dd>
+<p>Used to represent a label.  The <code>LABEL_DECL</code> declared by this
+statement can be obtained with the <code>LABEL_EXPR_LABEL</code> macro.  The
+<code>IDENTIFIER_NODE</code> giving the name of the label can be obtained from
+the <code>LABEL_DECL</code> with <code>DECL_NAME</code>.
+</p>
+</dd>
+<dt><code>GOTO_EXPR</code></dt>
+<dd>
+<p>Used to represent a <code>goto</code> statement.  The <code>GOTO_DESTINATION</code> will
+usually be a <code>LABEL_DECL</code>.  However, if the &ldquo;computed goto&rdquo; extension
+has been used, the <code>GOTO_DESTINATION</code> will be an arbitrary expression
+indicating the destination.  This expression will always have pointer type.
+</p>
+</dd>
+<dt><code>RETURN_EXPR</code></dt>
+<dd>
+<p>Used to represent a <code>return</code> statement.  Operand 0 represents the
+value to return.  It should either be the <code>RESULT_DECL</code> for the
+containing function, or a <code>MODIFY_EXPR</code> or <code>INIT_EXPR</code>
+setting the function&rsquo;s <code>RESULT_DECL</code>.  It will be
+<code>NULL_TREE</code> if the statement was just
+</p><div class="smallexample">
+<pre class="smallexample">return;
+</pre></div>
+
+</dd>
+<dt><code>LOOP_EXPR</code></dt>
+<dd><p>These nodes represent &ldquo;infinite&rdquo; loops.  The <code>LOOP_EXPR_BODY</code>
+represents the body of the loop.  It should be executed forever, unless
+an <code>EXIT_EXPR</code> is encountered.
+</p>
+</dd>
+<dt><code>EXIT_EXPR</code></dt>
+<dd><p>These nodes represent conditional exits from the nearest enclosing
+<code>LOOP_EXPR</code>.  The single operand is the condition; if it is
+nonzero, then the loop should be exited.  An <code>EXIT_EXPR</code> will only
+appear within a <code>LOOP_EXPR</code>.
+</p>
+</dd>
+<dt><code>SWITCH_STMT</code></dt>
+<dd>
+<p>Used to represent a <code>switch</code> statement.  The <code>SWITCH_STMT_COND</code>
+is the expression on which the switch is occurring.  See the documentation
+for an <code>IF_STMT</code> for more information on the representation used
+for the condition.  The <code>SWITCH_STMT_BODY</code> is the body of the switch
+statement.   The <code>SWITCH_STMT_TYPE</code> is the original type of switch
+expression as given in the source, before any compiler conversions.
+</p>
+</dd>
+<dt><code>CASE_LABEL_EXPR</code></dt>
+<dd>
+<p>Use to represent a <code>case</code> label, range of <code>case</code> labels, or a
+<code>default</code> label.  If <code>CASE_LOW</code> is <code>NULL_TREE</code>, then this is a
+<code>default</code> label.  Otherwise, if <code>CASE_HIGH</code> is <code>NULL_TREE</code>, then
+this is an ordinary <code>case</code> label.  In this case, <code>CASE_LOW</code> is
+an expression giving the value of the label.  Both <code>CASE_LOW</code> and
+<code>CASE_HIGH</code> are <code>INTEGER_CST</code> nodes.  These values will have
+the same type as the condition expression in the switch statement.
+</p>
+<p>Otherwise, if both <code>CASE_LOW</code> and <code>CASE_HIGH</code> are defined, the
+statement is a range of case labels.  Such statements originate with the
+extension that allows users to write things of the form:
+</p><div class="smallexample">
+<pre class="smallexample">case 2 ... 5:
+</pre></div>
+<p>The first value will be <code>CASE_LOW</code>, while the second will be
+<code>CASE_HIGH</code>.
+</p>
+</dd>
+<dt><code>DEBUG_BEGIN_STMT</code></dt>
+<dd>
+<p>Marks the beginning of a source statement, for purposes of debug
+information generation.
+</p>
+</dd>
+</dl>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Blocks.html#Blocks" accesskey="n" rel="next">Blocks</a>, Up: <a href="Statements.html#Statements" accesskey="u" rel="up">Statements</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,267 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Register Basics</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Register Basics">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Register Basics">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Registers.html#Registers" rel="up" title="Registers">
+<link href="Allocation-Order.html#Allocation-Order" rel="next" title="Allocation Order">
+<link href="Registers.html#Registers" rel="prev" title="Registers">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Register-Basics"></a>
+<div class="header">
+<p>
+Next: <a href="Allocation-Order.html#Allocation-Order" accesskey="n" rel="next">Allocation Order</a>, Up: <a href="Registers.html#Registers" accesskey="u" rel="up">Registers</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Basic-Characteristics-of-Registers"></a>
+<h4 class="subsection">18.7.1 Basic Characteristics of Registers</h4>
+
+<p>Registers have various characteristics.
+</p>
+<dl>
+<dt><a name="index-FIRST_005fPSEUDO_005fREGISTER"></a>Macro: <strong>FIRST_PSEUDO_REGISTER</strong></dt>
+<dd><p>Number of hardware registers known to the compiler.  They receive
+numbers 0 through <code>FIRST_PSEUDO_REGISTER-1</code>; thus, the first
+pseudo register&rsquo;s number really is assigned the number
+<code>FIRST_PSEUDO_REGISTER</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-FIXED_005fREGISTERS"></a>Macro: <strong>FIXED_REGISTERS</strong></dt>
+<dd><a name="index-fixed-register"></a>
+<p>An initializer that says which registers are used for fixed purposes
+all throughout the compiled code and are therefore not available for
+general allocation.  These would include the stack pointer, the frame
+pointer (except on machines where that can be used as a general
+register when no frame pointer is needed), the program counter on
+machines where that is considered one of the addressable registers,
+and any other numbered register with a standard use.
+</p>
+<p>This information is expressed as a sequence of numbers, separated by
+commas and surrounded by braces.  The <var>n</var>th number is 1 if
+register <var>n</var> is fixed, 0 otherwise.
+</p>
+<p>The table initialized from this macro, and the table initialized by
+the following one, may be overridden at run time either automatically,
+by the actions of the macro <code>CONDITIONAL_REGISTER_USAGE</code>, or by
+the user with the command options <samp>-ffixed-<var>reg</var></samp>,
+<samp>-fcall-used-<var>reg</var></samp> and <samp>-fcall-saved-<var>reg</var></samp>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-CALL_005fUSED_005fREGISTERS"></a>Macro: <strong>CALL_USED_REGISTERS</strong></dt>
+<dd><a name="index-call_002dused-register"></a>
+<a name="index-call_002dclobbered-register"></a>
+<a name="index-call_002dsaved-register"></a>
+<p>Like <code>FIXED_REGISTERS</code> but has 1 for each register that is
+clobbered (in general) by function calls as well as for fixed
+registers.  This macro therefore identifies the registers that are not
+available for general allocation of values that must live across
+function calls.
+</p>
+<p>If a register has 0 in <code>CALL_USED_REGISTERS</code>, the compiler
+automatically saves it on function entry and restores it on function
+exit, if the register is used within the function.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-CALL_005fREALLY_005fUSED_005fREGISTERS"></a>Macro: <strong>CALL_REALLY_USED_REGISTERS</strong></dt>
+<dd><a name="index-call_002dused-register-1"></a>
+<a name="index-call_002dclobbered-register-1"></a>
+<a name="index-call_002dsaved-register-1"></a>
+<p>Like <code>CALL_USED_REGISTERS</code> except this macro doesn&rsquo;t require
+that the entire set of <code>FIXED_REGISTERS</code> be included.
+(<code>CALL_USED_REGISTERS</code> must be a superset of <code>FIXED_REGISTERS</code>).
+This macro is optional.  If not specified, it defaults to the value
+of <code>CALL_USED_REGISTERS</code>.
+</p></dd></dl>
+
+<a name="index-call_002dused-register-2"></a>
+<a name="index-call_002dclobbered-register-2"></a>
+<a name="index-call_002dsaved-register-2"></a>
+<dl>
+<dt><a name="index-TARGET_005fHARD_005fREGNO_005fCALL_005fPART_005fCLOBBERED"></a>Target Hook: <em>bool</em> <strong>TARGET_HARD_REGNO_CALL_PART_CLOBBERED</strong> <em>(rtx_insn *<var>insn</var>, unsigned int <var>regno</var>, machine_mode <var>mode</var>)</em></dt>
+<dd><p>This hook should return true if <var>regno</var> is partly call-saved and
+partly call-clobbered, and if a value of mode <var>mode</var> would be partly
+clobbered by call instruction <var>insn</var>.  If <var>insn</var> is NULL then it
+should return true if any call could partly clobber the register.
+For example, if the low 32 bits of <var>regno</var> are preserved across a call
+but higher bits are clobbered, this hook should return true for a 64-bit
+mode but false for a 32-bit mode.
+</p>
+<p>The default implementation returns false, which is correct
+for targets that don&rsquo;t have partly call-clobbered registers.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fREMOVE_005fEXTRA_005fCALL_005fPRESERVED_005fREGS"></a>Target Hook: <em>void</em> <strong>TARGET_REMOVE_EXTRA_CALL_PRESERVED_REGS</strong> <em>(rtx_insn *<var>insn</var>, HARD_REG_SET *<var>used_regs</var>)</em></dt>
+<dd><p>This hook removes registers from the set of call-clobbered registers
+ in <var>used_regs</var> if, contrary to the default rules, something guarantees
+ that &lsquo;<samp>insn</samp>&rsquo; preserves those registers.  For example, some targets
+ support variant ABIs in which functions preserve more registers than
+ normal functions would.  Removing those extra registers from <var>used_regs</var>
+ can lead to better register allocation.
+</p> 
+<p>The default implementation does nothing, which is always safe.
+ Defining the hook is purely an optimization.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fRETURN_005fCALL_005fWITH_005fMAX_005fCLOBBERS"></a>Target Hook: <em>rtx_insn *</em> <strong>TARGET_RETURN_CALL_WITH_MAX_CLOBBERS</strong> <em>(rtx_insn *<var>call_1</var>, rtx_insn *<var>call_2</var>)</em></dt>
+<dd><p>This hook returns a pointer to the call that partially clobbers the
+most registers.  If a platform supports multiple ABIs where the registers
+that are partially clobbered may vary, this function compares two
+calls and returns a pointer to the one that clobbers the most registers.
+If both calls clobber the same registers, <var>call_1</var> must be returned.
+</p>
+<p>The registers clobbered in different ABIs must be a proper subset or
+superset of all other ABIs.  <var>call_1</var> must always be a call insn,
+call_2 may be NULL or a call insn.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fGET_005fMULTILIB_005fABI_005fNAME"></a>Target Hook: <em>const char *</em> <strong>TARGET_GET_MULTILIB_ABI_NAME</strong> <em>(void)</em></dt>
+<dd><p>This hook returns name of multilib ABI name.
+</p></dd></dl>
+
+<a name="index-fixed_005fregs"></a>
+<a name="index-call_005fused_005fregs"></a>
+<a name="index-global_005fregs"></a>
+<a name="index-reg_005fnames"></a>
+<a name="index-reg_005fclass_005fcontents"></a>
+<dl>
+<dt><a name="index-TARGET_005fCONDITIONAL_005fREGISTER_005fUSAGE"></a>Target Hook: <em>void</em> <strong>TARGET_CONDITIONAL_REGISTER_USAGE</strong> <em>(void)</em></dt>
+<dd><p>This hook may conditionally modify five variables
+<code>fixed_regs</code>, <code>call_used_regs</code>, <code>global_regs</code>,
+<code>reg_names</code>, and <code>reg_class_contents</code>, to take into account
+any dependence of these register sets on target flags.  The first three
+of these are of type <code>char []</code> (interpreted as boolean vectors).
+<code>global_regs</code> is a <code>const char *[]</code>, and
+<code>reg_class_contents</code> is a <code>HARD_REG_SET</code>.  Before the macro is
+called, <code>fixed_regs</code>, <code>call_used_regs</code>,
+<code>reg_class_contents</code>, and <code>reg_names</code> have been initialized
+from <code>FIXED_REGISTERS</code>, <code>CALL_USED_REGISTERS</code>,
+<code>REG_CLASS_CONTENTS</code>, and <code>REGISTER_NAMES</code>, respectively.
+<code>global_regs</code> has been cleared, and any <samp>-ffixed-<var>reg</var></samp>,
+<samp>-fcall-used-<var>reg</var></samp> and <samp>-fcall-saved-<var>reg</var></samp>
+command options have been applied.
+</p>
+<a name="index-disabling-certain-registers"></a>
+<a name="index-controlling-register-usage"></a>
+<p>If the usage of an entire class of registers depends on the target
+flags, you may indicate this to GCC by using this macro to modify
+<code>fixed_regs</code> and <code>call_used_regs</code> to 1 for each of the
+registers in the classes which should not be used by GCC.  Also make
+<code>define_register_constraint</code>s return <code>NO_REGS</code> for constraints
+that shouldn&rsquo;t be used.
+</p>
+<p>(However, if this class is not included in <code>GENERAL_REGS</code> and all
+of the insn patterns whose constraints permit this class are
+controlled by target switches, then GCC will automatically avoid using
+these registers when the target switches are opposed to them.)
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-INCOMING_005fREGNO"></a>Macro: <strong>INCOMING_REGNO</strong> <em>(<var>out</var>)</em></dt>
+<dd><p>Define this macro if the target machine has register windows.  This C
+expression returns the register number as seen by the called function
+corresponding to the register number <var>out</var> as seen by the calling
+function.  Return <var>out</var> if register number <var>out</var> is not an
+outbound register.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-OUTGOING_005fREGNO"></a>Macro: <strong>OUTGOING_REGNO</strong> <em>(<var>in</var>)</em></dt>
+<dd><p>Define this macro if the target machine has register windows.  This C
+expression returns the register number as seen by the calling function
+corresponding to the register number <var>in</var> as seen by the called
+function.  Return <var>in</var> if register number <var>in</var> is not an inbound
+register.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-LOCAL_005fREGNO"></a>Macro: <strong>LOCAL_REGNO</strong> <em>(<var>regno</var>)</em></dt>
+<dd><p>Define this macro if the target machine has register windows.  This C
+expression returns true if the register is call-saved but is in the
+register window.  Unlike most call-saved registers, such registers
+need not be explicitly restored on function exit or during non-local
+gotos.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-PC_005fREGNUM"></a>Macro: <strong>PC_REGNUM</strong></dt>
+<dd><p>If the program counter has a register number, define this as that
+register number.  Otherwise, do not define it.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Allocation-Order.html#Allocation-Order" accesskey="n" rel="next">Allocation Order</a>, Up: <a href="Registers.html#Registers" accesskey="u" rel="up">Registers</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

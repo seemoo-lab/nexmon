@@ -1,0 +1,320 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: gdb man</title>
+
+<meta name="description" content="Debugging with GDB: gdb man">
+<meta name="keywords" content="Debugging with GDB: gdb man">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Man-Pages.html#Man-Pages" rel="up" title="Man Pages">
+<link href="gdbserver-man.html#gdbserver-man" rel="next" title="gdbserver man">
+<link href="Man-Pages.html#Man-Pages" rel="prev" title="Man Pages">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="gdb-man"></a>
+<div class="header">
+<p>
+Next: <a href="gdbserver-man.html#gdbserver-man" accesskey="n" rel="next">gdbserver man</a>, Up: <a href="Man-Pages.html#Man-Pages" accesskey="u" rel="up">Man Pages</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<h4 class="node-heading">gdb man</h4>
+<a name="gdb-man-1"></a>
+<h3 class="heading">gdb man</h3>
+
+
+<p>gdb [<samp>-help</samp>] [<samp>-nh</samp>] [<samp>-nx</samp>] [<samp>-q</samp>]
+[<samp>-batch</samp>] [<samp>-cd=</samp><var>dir</var>] [<samp>-f</samp>]
+[<samp>-b</samp>&nbsp;<!-- /@w --><var>bps</var>]
+    [<samp>-tty=</samp><var>dev</var>] [<samp>-s</samp> <var>symfile</var>]
+[<samp>-e</samp>&nbsp;<!-- /@w --><var>prog</var>] [<samp>-se</samp>&nbsp;<!-- /@w --><var>prog</var>]
+[<samp>-c</samp>&nbsp;<!-- /@w --><var>core</var>] [<samp>-p</samp>&nbsp;<!-- /@w --><var>procID</var>]
+    [<samp>-x</samp>&nbsp;<!-- /@w --><var>cmds</var>] [<samp>-d</samp>&nbsp;<!-- /@w --><var>dir</var>]
+[<var>prog</var>|<var>prog</var> <var>procID</var>|<var>prog</var> <var>core</var>]
+</p>
+<p>The purpose of a debugger such as <small>GDB</small> is to allow you to see what is
+going on &ldquo;inside&rdquo; another program while it executes &ndash; or what another
+program was doing at the moment it crashed.
+</p>
+<p><small>GDB</small> can do four main kinds of things (plus other things in support of
+these) to help you catch bugs in the act:
+</p>
+<ul>
+<li> Start your program, specifying anything that might affect its behavior.
+
+</li><li> Make your program stop on specified conditions.
+
+</li><li> Examine what has happened, when your program has stopped.
+
+</li><li> Change things in your program, so you can experiment with correcting the
+effects of one bug and go on to learn about another.
+</li></ul>
+
+<p>You can use <small>GDB</small> to debug programs written in C, C<tt>++</tt>, Fortran and
+Modula-2.
+</p>
+<p><small>GDB</small> is invoked with the shell command <code>gdb</code>.  Once started, it reads
+commands from the terminal until you tell it to exit with the <small>GDB</small>
+command <code>quit</code>.  You can get online help from <small>GDB</small> itself
+by using the command <code>help</code>.
+</p>
+<p>You can run <code>gdb</code> with no arguments or options; but the most
+usual way to start <small>GDB</small> is with one argument or two, specifying an
+executable program as the argument:
+</p>
+<div class="smallexample">
+<pre class="smallexample">gdb program
+</pre></div>
+
+<p>You can also start with both an executable program and a core file specified:
+</p>
+<div class="smallexample">
+<pre class="smallexample">gdb program core
+</pre></div>
+
+<p>You can, instead, specify a process ID as a second argument, if you want
+to debug a running process:
+</p>
+<div class="smallexample">
+<pre class="smallexample">gdb program 1234
+gdb -p 1234
+</pre></div>
+
+<p>would attach <small>GDB</small> to process <code>1234</code> (unless you also have a file
+named <samp>1234</samp>; <small>GDB</small> does check for a core file first).
+With option <samp>-p</samp> you can omit the <var>program</var> filename.
+</p>
+<p>Here are some of the most frequently needed <small>GDB</small> commands:
+</p>
+<dl compact="compact">
+<dt><code>break [<var>file</var>:]<var>function</var></code></dt>
+<dd><p>Set a breakpoint at <var>function</var> (in <var>file</var>).
+</p>
+</dd>
+<dt><code>run [<var>arglist</var>]</code></dt>
+<dd><p>Start your program (with <var>arglist</var>, if specified).
+</p>
+</dd>
+<dt><code>bt</code></dt>
+<dd><p>Backtrace: display the program stack.
+</p>
+</dd>
+<dt><code>print <var>expr</var></code></dt>
+<dd><p>Display the value of an expression.
+</p>
+</dd>
+<dt><code>c</code></dt>
+<dd><p>Continue running your program (after stopping, e.g. at a breakpoint).
+</p>
+</dd>
+<dt><code>next</code></dt>
+<dd><p>Execute next program line (after stopping); step <em>over</em> any
+function calls in the line.
+</p>
+</dd>
+<dt><code>edit [<var>file</var>:]<var>function</var></code></dt>
+<dd><p>look at the program line where it is presently stopped.
+</p>
+</dd>
+<dt><code>list [<var>file</var>:]<var>function</var></code></dt>
+<dd><p>type the text of the program in the vicinity of where it is presently stopped.
+</p>
+</dd>
+<dt><code>step</code></dt>
+<dd><p>Execute next program line (after stopping); step <em>into</em> any
+function calls in the line.
+</p>
+</dd>
+<dt><code>help [<var>name</var>]</code></dt>
+<dd><p>Show information about <small>GDB</small> command <var>name</var>, or general information
+about using <small>GDB</small>.
+</p>
+</dd>
+<dt><code>quit</code></dt>
+<dd><p>Exit from <small>GDB</small>.
+</p></dd>
+</dl>
+
+
+<p>Any arguments other than options specify an executable
+file and core file (or process ID); that is, the first argument
+encountered with no
+associated option flag is equivalent to a <samp>-se</samp> option, and the second,
+if any, is equivalent to a <samp>-c</samp> option if it&rsquo;s the name of a file.
+Many options have
+both long and short forms; both are shown here.  The long forms are also
+recognized if you truncate them, so long as enough of the option is
+present to be unambiguous.  (If you prefer, you can flag option
+arguments with <samp>+</samp> rather than <samp>-</samp>, though we illustrate the
+more usual convention.)
+</p>
+<p>All the options and command line arguments you give are processed
+in sequential order.  The order makes a difference when the <samp>-x</samp>
+option is used.
+</p>
+<dl compact="compact">
+<dt><code>-help</code></dt>
+<dt><code>-h</code></dt>
+<dd><p>List all options, with brief explanations.
+</p>
+</dd>
+<dt><code>-symbols=<var>file</var></code></dt>
+<dt><code>-s <var>file</var></code></dt>
+<dd><p>Read symbol table from file <var>file</var>.
+</p>
+</dd>
+<dt><code>-write</code></dt>
+<dd><p>Enable writing into executable and core files.
+</p>
+</dd>
+<dt><code>-exec=<var>file</var></code></dt>
+<dt><code>-e <var>file</var></code></dt>
+<dd><p>Use file <var>file</var> as the executable file to execute when
+appropriate, and for examining pure data in conjunction with a core
+dump.
+</p>
+</dd>
+<dt><code>-se=<var>file</var></code></dt>
+<dd><p>Read symbol table from file <var>file</var> and use it as the executable
+file.
+</p>
+</dd>
+<dt><code>-core=<var>file</var></code></dt>
+<dt><code>-c <var>file</var></code></dt>
+<dd><p>Use file <var>file</var> as a core dump to examine.
+</p>
+</dd>
+<dt><code>-command=<var>file</var></code></dt>
+<dt><code>-x <var>file</var></code></dt>
+<dd><p>Execute <small>GDB</small> commands from file <var>file</var>.
+</p>
+</dd>
+<dt><code>-ex <var>command</var></code></dt>
+<dd><p>Execute given <small>GDB</small> <var>command</var>.
+</p>
+</dd>
+<dt><code>-directory=<var>directory</var></code></dt>
+<dt><code>-d <var>directory</var></code></dt>
+<dd><p>Add <var>directory</var> to the path to search for source files.
+</p>
+</dd>
+<dt><code>-nh</code></dt>
+<dd><p>Do not execute commands from <samp>~/.gdbinit</samp>.
+</p>
+</dd>
+<dt><code>-nx</code></dt>
+<dt><code>-n</code></dt>
+<dd><p>Do not execute commands from any <samp>.gdbinit</samp> initialization files.
+</p>
+</dd>
+<dt><code>-quiet</code></dt>
+<dt><code>-q</code></dt>
+<dd><p>&ldquo;Quiet&rdquo;.  Do not print the introductory and copyright messages.  These
+messages are also suppressed in batch mode.
+</p>
+</dd>
+<dt><code>-batch</code></dt>
+<dd><p>Run in batch mode.  Exit with status <code>0</code> after processing all the command
+files specified with <samp>-x</samp> (and <samp>.gdbinit</samp>, if not inhibited).
+Exit with nonzero status if an error occurs in executing the <small>GDB</small>
+commands in the command files.
+</p>
+<p>Batch mode may be useful for running <small>GDB</small> as a filter, for example to
+download and run a program on another computer; in order to make this
+more useful, the message
+</p>
+<div class="smallexample">
+<pre class="smallexample">Program exited normally.
+</pre></div>
+
+<p>(which is ordinarily issued whenever a program running under <small>GDB</small> control
+terminates) is not issued when running in batch mode.
+</p>
+</dd>
+<dt><code>-cd=<var>directory</var></code></dt>
+<dd><p>Run <small>GDB</small> using <var>directory</var> as its working directory,
+instead of the current directory.
+</p>
+</dd>
+<dt><code>-fullname</code></dt>
+<dt><code>-f</code></dt>
+<dd><p>Emacs sets this option when it runs <small>GDB</small> as a subprocess.  It tells
+<small>GDB</small> to output the full file name and line number in a standard,
+recognizable fashion each time a stack frame is displayed (which
+includes each time the program stops).  This recognizable format looks
+like two &lsquo;<samp>\032</samp>&rsquo; characters, followed by the file name, line number
+and character position separated by colons, and a newline.  The
+Emacs-to-<small>GDB</small> interface program uses the two &lsquo;<samp>\032</samp>&rsquo;
+characters as a signal to display the source code for the frame.
+</p>
+</dd>
+<dt><code>-b <var>bps</var></code></dt>
+<dd><p>Set the line speed (baud rate or bits per second) of any serial
+interface used by <small>GDB</small> for remote debugging.
+</p>
+</dd>
+<dt><code>-tty=<var>device</var></code></dt>
+<dd><p>Run using <var>device</var> for your program&rsquo;s standard input and output.
+</p></dd>
+</dl>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="gdbserver-man.html#gdbserver-man" accesskey="n" rel="next">gdbserver man</a>, Up: <a href="Man-Pages.html#Man-Pages" accesskey="u" rel="up">Man Pages</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU linker LD
+(GNU Toolchain for the A-profile Architecture 9.2-2019.12 (arm-9.10))
+version 2.33.1.
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>LD: H8/300</title>
+
+<meta name="description" content="LD: H8/300">
+<meta name="keywords" content="LD: H8/300">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="LD-Index.html#LD-Index" rel="index" title="LD Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Machine-Dependent.html#Machine-Dependent" rel="up" title="Machine Dependent">
+<link href="M68HC11_002f68HC12.html#M68HC11_002f68HC12" rel="next" title="M68HC11/68HC12">
+<link href="Machine-Dependent.html#Machine-Dependent" rel="prev" title="Machine Dependent">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="H8_002f300"></a>
+<div class="header">
+<p>
+Next: <a href="M68HC11_002f68HC12.html#M68HC11_002f68HC12" accesskey="n" rel="next">M68HC11/68HC12</a>, Up: <a href="Machine-Dependent.html#Machine-Dependent" accesskey="u" rel="up">Machine Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="ld-and-the-H8_002f300"></a>
+<h3 class="section">4.1 <code>ld</code> and the H8/300</h3>
+
+<a name="index-H8_002f300-support"></a>
+<p>For the H8/300, <code>ld</code> can perform these global optimizations when
+you specify the &lsquo;<samp>--relax</samp>&rsquo; command-line option.
+</p>
+<dl compact="compact">
+<dd><a name="index-relaxing-on-H8_002f300"></a>
+</dd>
+<dt><em>relaxing address modes</em></dt>
+<dd><p><code>ld</code> finds all <code>jsr</code> and <code>jmp</code> instructions whose
+targets are within eight bits, and turns them into eight-bit
+program-counter relative <code>bsr</code> and <code>bra</code> instructions,
+respectively.
+</p>
+<a name="index-synthesizing-on-H8_002f300"></a>
+</dd>
+<dt><em>synthesizing instructions</em></dt>
+<dd><p><code>ld</code> finds all <code>mov.b</code> instructions which use the
+sixteen-bit absolute address form, but refer to the top
+page of memory, and changes them to use the eight-bit address form.
+(That is: the linker turns &lsquo;<samp>mov.b <code>@</code><var>aa</var>:16</samp>&rsquo; into
+&lsquo;<samp>mov.b <code>@</code><var>aa</var>:8</samp>&rsquo; whenever the address <var>aa</var> is in the
+top page of memory).
+</p>
+<p><code>ld</code> finds all <code>mov</code> instructions which use the register
+indirect with 32-bit displacement addressing mode, but use a small
+displacement inside 16-bit displacement range, and changes them to use
+the 16-bit displacement form.  (That is: the linker turns &lsquo;<samp>mov.b
+<code>@</code><var>d</var>:32,ERx</samp>&rsquo; into &lsquo;<samp>mov.b <code>@</code><var>d</var>:16,ERx</samp>&rsquo;
+whenever the displacement <var>d</var> is in the 16 bit signed integer
+range. Only implemented in ELF-format ld).
+</p>
+</dd>
+<dt><em>bit manipulation instructions</em></dt>
+<dd><p><code>ld</code> finds all bit manipulation instructions like <code>band, bclr,
+biand, bild, bior, bist, bixor, bld, bnot, bor, bset, bst, btst, bxor</code>
+which use 32 bit and 16 bit absolute address form, but refer to the top
+page of memory, and changes them to use the 8 bit address form.
+(That is: the linker turns &lsquo;<samp>bset #xx:3,<code>@</code><var>aa</var>:32</samp>&rsquo; into
+&lsquo;<samp>bset #xx:3,<code>@</code><var>aa</var>:8</samp>&rsquo; whenever the address <var>aa</var> is in
+the top page of memory).
+</p>
+</dd>
+<dt><em>system control instructions</em></dt>
+<dd><p><code>ld</code> finds all <code>ldc.w, stc.w</code> instructions which use the
+32 bit absolute address form, but refer to the top page of memory, and
+changes them to use 16 bit address form.
+(That is: the linker turns &lsquo;<samp>ldc.w <code>@</code><var>aa</var>:32,ccr</samp>&rsquo; into
+&lsquo;<samp>ldc.w <code>@</code><var>aa</var>:16,ccr</samp>&rsquo; whenever the address <var>aa</var> is in
+the top page of memory).
+</p></dd>
+</dl>
+
+
+
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="M68HC11_002f68HC12.html#M68HC11_002f68HC12" accesskey="n" rel="next">M68HC11/68HC12</a>, Up: <a href="Machine-Dependent.html#Machine-Dependent" accesskey="u" rel="up">Machine Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

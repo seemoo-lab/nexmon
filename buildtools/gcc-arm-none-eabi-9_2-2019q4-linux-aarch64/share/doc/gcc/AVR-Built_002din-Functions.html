@@ -1,0 +1,196 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): AVR Built-in Functions</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): AVR Built-in Functions">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): AVR Built-in Functions">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Target-Builtins.html#Target-Builtins" rel="up" title="Target Builtins">
+<link href="Blackfin-Built_002din-Functions.html#Blackfin-Built_002din-Functions" rel="next" title="Blackfin Built-in Functions">
+<link href="ARM-ARMv8_002dM-Security-Extensions.html#ARM-ARMv8_002dM-Security-Extensions" rel="prev" title="ARM ARMv8-M Security Extensions">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="AVR-Built_002din-Functions"></a>
+<div class="header">
+<p>
+Next: <a href="Blackfin-Built_002din-Functions.html#Blackfin-Built_002din-Functions" accesskey="n" rel="next">Blackfin Built-in Functions</a>, Previous: <a href="ARM-ARMv8_002dM-Security-Extensions.html#ARM-ARMv8_002dM-Security-Extensions" accesskey="p" rel="prev">ARM ARMv8-M Security Extensions</a>, Up: <a href="Target-Builtins.html#Target-Builtins" accesskey="u" rel="up">Target Builtins</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="AVR-Built_002din-Functions-1"></a>
+<h4 class="subsection">6.60.10 AVR Built-in Functions</h4>
+
+<p>For each built-in function for AVR, there is an equally named,
+uppercase built-in macro defined. That way users can easily query if
+or if not a specific built-in is implemented or not. For example, if
+<code>__builtin_avr_nop</code> is available the macro
+<code>__BUILTIN_AVR_NOP</code> is defined to <code>1</code> and undefined otherwise.
+</p>
+<dl compact="compact">
+<dt><code>void __builtin_avr_nop (void)</code></dt>
+<dt><code>void __builtin_avr_sei (void)</code></dt>
+<dt><code>void __builtin_avr_cli (void)</code></dt>
+<dt><code>void __builtin_avr_sleep (void)</code></dt>
+<dt><code>void __builtin_avr_wdr (void)</code></dt>
+<dt><code>unsigned char __builtin_avr_swap (unsigned char)</code></dt>
+<dt><code>unsigned int __builtin_avr_fmul (unsigned char, unsigned char)</code></dt>
+<dt><code>int __builtin_avr_fmuls (char, char)</code></dt>
+<dt><code>int __builtin_avr_fmulsu (char, unsigned char)</code></dt>
+<dd><p>These built-in functions map to the respective machine
+instruction, i.e. <code>nop</code>, <code>sei</code>, <code>cli</code>, <code>sleep</code>,
+<code>wdr</code>, <code>swap</code>, <code>fmul</code>, <code>fmuls</code>
+resp. <code>fmulsu</code>. The three <code>fmul*</code> built-ins are implemented
+as library call if no hardware multiplier is available.
+</p>
+</dd>
+<dt><code>void __builtin_avr_delay_cycles (unsigned long ticks)</code></dt>
+<dd><p>Delay execution for <var>ticks</var> cycles. Note that this
+built-in does not take into account the effect of interrupts that
+might increase delay time. <var>ticks</var> must be a compile-time
+integer constant; delays with a variable number of cycles are not supported.
+</p>
+</dd>
+<dt><code>char __builtin_avr_flash_segment (const __memx void*)</code></dt>
+<dd><p>This built-in takes a byte address to the 24-bit
+<a href="Named-Address-Spaces.html#AVR-Named-Address-Spaces">address space</a> <code>__memx</code> and returns
+the number of the flash segment (the 64 KiB chunk) where the address
+points to.  Counting starts at <code>0</code>.
+If the address does not point to flash memory, return <code>-1</code>.
+</p>
+</dd>
+<dt><code>uint8_t __builtin_avr_insert_bits (uint32_t map, uint8_t bits, uint8_t val)</code></dt>
+<dd><p>Insert bits from <var>bits</var> into <var>val</var> and return the resulting
+value. The nibbles of <var>map</var> determine how the insertion is
+performed: Let <var>X</var> be the <var>n</var>-th nibble of <var>map</var>
+</p><ol>
+<li> If <var>X</var> is <code>0xf</code>,
+then the <var>n</var>-th bit of <var>val</var> is returned unaltered.
+
+</li><li> If X is in the range 0&hellip;7,
+then the <var>n</var>-th result bit is set to the <var>X</var>-th bit of <var>bits</var>
+
+</li><li> If X is in the range 8&hellip;<code>0xe</code>,
+then the <var>n</var>-th result bit is undefined.
+</li></ol>
+
+<p>One typical use case for this built-in is adjusting input and
+output values to non-contiguous port layouts. Some examples:
+</p>
+<div class="smallexample">
+<pre class="smallexample">// same as val, bits is unused
+__builtin_avr_insert_bits (0xffffffff, bits, val)
+</pre></div>
+
+<div class="smallexample">
+<pre class="smallexample">// same as bits, val is unused
+__builtin_avr_insert_bits (0x76543210, bits, val)
+</pre></div>
+
+<div class="smallexample">
+<pre class="smallexample">// same as rotating bits by 4
+__builtin_avr_insert_bits (0x32107654, bits, 0)
+</pre></div>
+
+<div class="smallexample">
+<pre class="smallexample">// high nibble of result is the high nibble of val
+// low nibble of result is the low nibble of bits
+__builtin_avr_insert_bits (0xffff3210, bits, val)
+</pre></div>
+
+<div class="smallexample">
+<pre class="smallexample">// reverse the bit order of bits
+__builtin_avr_insert_bits (0x01234567, bits, 0)
+</pre></div>
+
+</dd>
+<dt><code>void __builtin_avr_nops (unsigned count)</code></dt>
+<dd><p>Insert <var>count</var> <code>NOP</code> instructions.
+The number of instructions must be a compile-time integer constant.
+</p>
+</dd>
+</dl>
+
+<p>There are many more AVR-specific built-in functions that are used to
+implement the ISO/IEC TR 18037 &ldquo;Embedded C&rdquo; fixed-point functions of
+section 7.18a.6.  You don&rsquo;t need to use these built-ins directly.
+Instead, use the declarations as supplied by the <code>stdfix.h</code> header
+with GNU-C99:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#include &lt;stdfix.h&gt;
+
+// Re-interpret the bit representation of unsigned 16-bit
+// integer <var>uval</var> as Q-format 0.16 value.
+unsigned fract get_bits (uint_ur_t uval)
+{
+    return urbits (uval);
+}
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Blackfin-Built_002din-Functions.html#Blackfin-Built_002din-Functions" accesskey="n" rel="next">Blackfin Built-in Functions</a>, Previous: <a href="ARM-ARMv8_002dM-Security-Extensions.html#ARM-ARMv8_002dM-Security-Extensions" accesskey="p" rel="prev">ARM ARMv8-M Security Extensions</a>, Up: <a href="Target-Builtins.html#Target-Builtins" accesskey="u" rel="up">Target Builtins</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

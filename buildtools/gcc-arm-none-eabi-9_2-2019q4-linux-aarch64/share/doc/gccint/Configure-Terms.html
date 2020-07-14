@@ -1,0 +1,144 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Configure Terms</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Configure Terms">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Configure Terms">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Source-Tree.html#Source-Tree" rel="up" title="Source Tree">
+<link href="Top-Level.html#Top-Level" rel="next" title="Top Level">
+<link href="Source-Tree.html#Source-Tree" rel="prev" title="Source Tree">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Configure-Terms"></a>
+<div class="header">
+<p>
+Next: <a href="Top-Level.html#Top-Level" accesskey="n" rel="next">Top Level</a>, Up: <a href="Source-Tree.html#Source-Tree" accesskey="u" rel="up">Source Tree</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Configure-Terms-and-History"></a>
+<h3 class="section">6.1 Configure Terms and History</h3>
+<a name="index-configure-terms"></a>
+<a name="index-canadian"></a>
+
+<p>The configure and build process has a long and colorful history, and can
+be confusing to anyone who doesn&rsquo;t know why things are the way they are.
+While there are other documents which describe the configuration process
+in detail, here are a few things that everyone working on GCC should
+know.
+</p>
+<p>There are three system names that the build knows about: the machine you
+are building on (<em>build</em>), the machine that you are building for
+(<em>host</em>), and the machine that GCC will produce code for
+(<em>target</em>).  When you configure GCC, you specify these with
+<samp>--build=</samp>, <samp>--host=</samp>, and <samp>--target=</samp>.
+</p>
+<p>Specifying the host without specifying the build should be avoided, as
+<code>configure</code> may (and once did) assume that the host you specify
+is also the build, which may not be true.
+</p>
+<p>If build, host, and target are all the same, this is called a
+<em>native</em>.  If build and host are the same but target is different,
+this is called a <em>cross</em>.  If build, host, and target are all
+different this is called a <em>canadian</em> (for obscure reasons dealing
+with Canada&rsquo;s political party and the background of the person working
+on the build at that time).  If host and target are the same, but build
+is different, you are using a cross-compiler to build a native for a
+different system.  Some people call this a <em>host-x-host</em>,
+<em>crossed native</em>, or <em>cross-built native</em>.  If build and target
+are the same, but host is different, you are using a cross compiler to
+build a cross compiler that produces code for the machine you&rsquo;re
+building on.  This is rare, so there is no common way of describing it.
+There is a proposal to call this a <em>crossback</em>.
+</p>
+<p>If build and host are the same, the GCC you are building will also be
+used to build the target libraries (like <code>libstdc++</code>).  If build and host
+are different, you must have already built and installed a cross
+compiler that will be used to build the target libraries (if you
+configured with <samp>--target=foo-bar</samp>, this compiler will be called
+<code>foo-bar-gcc</code>).
+</p>
+<p>In the case of target libraries, the machine you&rsquo;re building for is the
+machine you specified with <samp>--target</samp>.  So, build is the machine
+you&rsquo;re building on (no change there), host is the machine you&rsquo;re
+building for (the target libraries are built for the target, so host is
+the target you specified), and target doesn&rsquo;t apply (because you&rsquo;re not
+building a compiler, you&rsquo;re building libraries).  The configure/make
+process will adjust these variables as needed.  It also sets
+<code>$with_cross_host</code> to the original <samp>--host</samp> value in case you
+need it.
+</p>
+<p>The <code>libiberty</code> support library is built up to three times: once
+for the host, once for the target (even if they are the same), and once
+for the build if build and host are different.  This allows it to be
+used by all programs which are generated in the course of the build
+process.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Top-Level.html#Top-Level" accesskey="n" rel="next">Top Level</a>, Up: <a href="Source-Tree.html#Source-Tree" accesskey="u" rel="up">Source Tree</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

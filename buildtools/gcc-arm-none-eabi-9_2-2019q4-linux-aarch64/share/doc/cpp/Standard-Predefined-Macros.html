@@ -1,0 +1,239 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1987-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation.  A copy of
+the license is included in the
+section entitled "GNU Free Documentation License".
+
+This manual contains no Invariant Sections.  The Front-Cover Texts are
+(a) (see below), and the Back-Cover Texts are (b) (see below).
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The C Preprocessor: Standard Predefined Macros</title>
+
+<meta name="description" content="The C Preprocessor: Standard Predefined Macros">
+<meta name="keywords" content="The C Preprocessor: Standard Predefined Macros">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index-of-Directives.html#Index-of-Directives" rel="index" title="Index of Directives">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Predefined-Macros.html#Predefined-Macros" rel="up" title="Predefined Macros">
+<link href="Common-Predefined-Macros.html#Common-Predefined-Macros" rel="next" title="Common Predefined Macros">
+<link href="Predefined-Macros.html#Predefined-Macros" rel="prev" title="Predefined Macros">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Standard-Predefined-Macros"></a>
+<div class="header">
+<p>
+Next: <a href="Common-Predefined-Macros.html#Common-Predefined-Macros" accesskey="n" rel="next">Common Predefined Macros</a>, Up: <a href="Predefined-Macros.html#Predefined-Macros" accesskey="u" rel="up">Predefined Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index-of-Directives.html#Index-of-Directives" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Standard-Predefined-Macros-1"></a>
+<h4 class="subsection">3.7.1 Standard Predefined Macros</h4>
+<a name="index-standard-predefined-macros_002e"></a>
+
+<p>The standard predefined macros are specified by the relevant
+language standards, so they are available with all compilers that
+implement those standards.  Older compilers may not provide all of
+them.  Their names all start with double underscores.
+</p>
+<dl compact="compact">
+<dt><code>__FILE__</code></dt>
+<dd><p>This macro expands to the name of the current input file, in the form of
+a C string constant.  This is the path by which the preprocessor opened
+the file, not the short name specified in &lsquo;<samp>#include</samp>&rsquo; or as the
+input file name argument.  For example,
+<code>&quot;/usr/local/include/myheader.h&quot;</code> is a possible expansion of this
+macro.
+</p>
+</dd>
+<dt><code>__LINE__</code></dt>
+<dd><p>This macro expands to the current input line number, in the form of a
+decimal integer constant.  While we call it a predefined macro, it&rsquo;s
+a pretty strange macro, since its &ldquo;definition&rdquo; changes with each
+new line of source code.
+</p></dd>
+</dl>
+
+<p><code>__FILE__</code> and <code>__LINE__</code> are useful in generating an error
+message to report an inconsistency detected by the program; the message
+can state the source line at which the inconsistency was detected.  For
+example,
+</p>
+<div class="smallexample">
+<pre class="smallexample">fprintf (stderr, &quot;Internal error: &quot;
+                 &quot;negative string length &quot;
+                 &quot;%d at %s, line %d.&quot;,
+         length, __FILE__, __LINE__);
+</pre></div>
+
+<p>An &lsquo;<samp>#include</samp>&rsquo; directive changes the expansions of <code>__FILE__</code>
+and <code>__LINE__</code> to correspond to the included file.  At the end of
+that file, when processing resumes on the input file that contained
+the &lsquo;<samp>#include</samp>&rsquo; directive, the expansions of <code>__FILE__</code> and
+<code>__LINE__</code> revert to the values they had before the
+&lsquo;<samp>#include</samp>&rsquo; (but <code>__LINE__</code> is then incremented by one as
+processing moves to the line after the &lsquo;<samp>#include</samp>&rsquo;).
+</p>
+<p>A &lsquo;<samp>#line</samp>&rsquo; directive changes <code>__LINE__</code>, and may change
+<code>__FILE__</code> as well.  See <a href="Line-Control.html#Line-Control">Line Control</a>.
+</p>
+<p>C99 introduced <code>__func__</code>, and GCC has provided <code>__FUNCTION__</code>
+for a long time.  Both of these are strings containing the name of the
+current function (there are slight semantic differences; see the GCC
+manual).  Neither of them is a macro; the preprocessor does not know the
+name of the current function.  They tend to be useful in conjunction
+with <code>__FILE__</code> and <code>__LINE__</code>, though.
+</p>
+<dl compact="compact">
+<dt><code>__DATE__</code></dt>
+<dd><p>This macro expands to a string constant that describes the date on which
+the preprocessor is being run.  The string constant contains eleven
+characters and looks like <code>&quot;Feb&nbsp;12&nbsp;1996&quot;<!-- /@w --></code>.  If the day of the
+month is less than 10, it is padded with a space on the left.
+</p>
+<p>If GCC cannot determine the current date, it will emit a warning message
+(once per compilation) and <code>__DATE__</code> will expand to
+<code>&quot;???&nbsp;??&nbsp;????&quot;<!-- /@w --></code>.
+</p>
+</dd>
+<dt><code>__TIME__</code></dt>
+<dd><p>This macro expands to a string constant that describes the time at
+which the preprocessor is being run.  The string constant contains
+eight characters and looks like <code>&quot;23:59:01&quot;</code>.
+</p>
+<p>If GCC cannot determine the current time, it will emit a warning message
+(once per compilation) and <code>__TIME__</code> will expand to
+<code>&quot;??:??:??&quot;</code>.
+</p>
+</dd>
+<dt><code>__STDC__</code></dt>
+<dd><p>In normal operation, this macro expands to the constant 1, to signify
+that this compiler conforms to ISO Standard C.  If GNU CPP is used with
+a compiler other than GCC, this is not necessarily true; however, the
+preprocessor always conforms to the standard unless the
+<samp>-traditional-cpp</samp> option is used.
+</p>
+<p>This macro is not defined if the <samp>-traditional-cpp</samp> option is used.
+</p>
+<p>On some hosts, the system compiler uses a different convention, where
+<code>__STDC__</code> is normally 0, but is 1 if the user specifies strict
+conformance to the C Standard.  CPP follows the host convention when
+processing system header files, but when processing user files
+<code>__STDC__</code> is always 1.  This has been reported to cause problems;
+for instance, some versions of Solaris provide X Windows headers that
+expect <code>__STDC__</code> to be either undefined or 1.  See <a href="Invocation.html#Invocation">Invocation</a>.
+</p>
+</dd>
+<dt><code>__STDC_VERSION__</code></dt>
+<dd><p>This macro expands to the C Standard&rsquo;s version number, a long integer
+constant of the form <code><var>yyyy</var><var>mm</var>L</code> where <var>yyyy</var> and
+<var>mm</var> are the year and month of the Standard version.  This signifies
+which version of the C Standard the compiler conforms to.  Like
+<code>__STDC__</code>, this is not necessarily accurate for the entire
+implementation, unless GNU CPP is being used with GCC.
+</p>
+<p>The value <code>199409L</code> signifies the 1989 C standard as amended in
+1994, which is the current default; the value <code>199901L</code> signifies
+the 1999 revision of the C standard; the value <code>201112L</code>
+signifies the 2011 revision of the C standard; the value
+<code>201710L</code> signifies the 2017 revision of the C standard (which is
+otherwise identical to the 2011 version apart from correction of
+defects).  An unspecified value larger than <code>201710L</code> is used for
+the experimental <samp>-std=c2x</samp> and <samp>-std=gnu2x</samp> modes.
+</p>
+<p>This macro is not defined if the <samp>-traditional-cpp</samp> option is
+used, nor when compiling C++ or Objective-C.
+</p>
+</dd>
+<dt><code>__STDC_HOSTED__</code></dt>
+<dd><p>This macro is defined, with value 1, if the compiler&rsquo;s target is a
+<em>hosted environment</em>.  A hosted environment has the complete
+facilities of the standard C library available.
+</p>
+</dd>
+<dt><code>__cplusplus</code></dt>
+<dd><p>This macro is defined when the C++ compiler is in use.  You can use
+<code>__cplusplus</code> to test whether a header is compiled by a C compiler
+or a C++ compiler.  This macro is similar to <code>__STDC_VERSION__</code>, in
+that it expands to a version number.  Depending on the language standard
+selected, the value of the macro is
+<code>199711L</code> for the 1998 C++ standard,
+<code>201103L</code> for the 2011 C++ standard,
+<code>201402L</code> for the 2014 C++ standard,
+<code>201703L</code> for the 2017 C++ standard,
+or an unspecified value strictly larger than <code>201703L</code> for the
+experimental languages enabled by <samp>-std=c++2a</samp> and
+<samp>-std=gnu++2a</samp>.
+</p>
+</dd>
+<dt><code>__OBJC__</code></dt>
+<dd><p>This macro is defined, with value 1, when the Objective-C compiler is in
+use.  You can use <code>__OBJC__</code> to test whether a header is compiled
+by a C compiler or an Objective-C compiler.
+</p>
+</dd>
+<dt><code>__ASSEMBLER__</code></dt>
+<dd><p>This macro is defined with value 1 when preprocessing assembly
+language.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Common-Predefined-Macros.html#Common-Predefined-Macros" accesskey="n" rel="next">Common Predefined Macros</a>, Up: <a href="Predefined-Macros.html#Predefined-Macros" accesskey="u" rel="up">Predefined Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index-of-Directives.html#Index-of-Directives" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

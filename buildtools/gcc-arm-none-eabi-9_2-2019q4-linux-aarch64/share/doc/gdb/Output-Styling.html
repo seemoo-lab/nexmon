@@ -1,0 +1,169 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Output Styling</title>
+
+<meta name="description" content="Debugging with GDB: Output Styling">
+<meta name="keywords" content="Debugging with GDB: Output Styling">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Controlling-GDB.html#Controlling-GDB" rel="up" title="Controlling GDB">
+<link href="Numbers.html#Numbers" rel="next" title="Numbers">
+<link href="Screen-Size.html#Screen-Size" rel="prev" title="Screen Size">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Output-Styling"></a>
+<div class="header">
+<p>
+Next: <a href="Numbers.html#Numbers" accesskey="n" rel="next">Numbers</a>, Previous: <a href="Screen-Size.html#Screen-Size" accesskey="p" rel="prev">Screen Size</a>, Up: <a href="Controlling-GDB.html#Controlling-GDB" accesskey="u" rel="up">Controlling GDB</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Output-Styling-1"></a>
+<h3 class="section">22.5 Output Styling</h3>
+<a name="index-styling"></a>
+<a name="index-colors"></a>
+
+<a name="index-set-style"></a>
+<a name="index-show-style"></a>
+<p><small>GDB</small> can style its output on a capable terminal.  This is
+enabled by default on most systems, but disabled by default when in
+batch mode (see <a href="Mode-Options.html#Mode-Options">Mode Options</a>).  Various style settings are available;
+and styles can also be disabled entirely.
+</p>
+<dl compact="compact">
+<dt><code>set style enabled &lsquo;<samp>on|off</samp>&rsquo;</code></dt>
+<dd><p>Enable or disable all styling.  The default is host-dependent, with
+most hosts defaulting to &lsquo;<samp>on</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>show style enabled</code></dt>
+<dd><p>Show the current state of styling.
+</p>
+</dd>
+<dt><code>set style sources &lsquo;<samp>on|off</samp>&rsquo;</code></dt>
+<dd><p>Enable or disable source code styling.  This affects whether source
+code, such as the output of the <code>list</code> command, is styled.  Note
+that source styling only works if styling in general is enabled, and
+if <small>GDB</small> was linked with the GNU Source Highlight library.  The
+default is &lsquo;<samp>on</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>show style sources</code></dt>
+<dd><p>Show the current state of source code styling.
+</p></dd>
+</dl>
+
+<p>Subcommands of <code>set style</code> control specific forms of styling.
+These subcommands all follow the same pattern: each style-able object
+can be styled with a foreground color, a background color, and an
+intensity.
+</p>
+<p>For example, the style of file names can be controlled using the
+<code>set style filename</code> group of commands:
+</p>
+<dl compact="compact">
+<dt><code>set style filename background <var>color</var></code></dt>
+<dd><p>Set the background to <var>color</var>.  Valid colors are &lsquo;<samp>none</samp>&rsquo;
+(meaning the terminal&rsquo;s default color), &lsquo;<samp>black</samp>&rsquo;, &lsquo;<samp>red</samp>&rsquo;,
+&lsquo;<samp>green</samp>&rsquo;, &lsquo;<samp>yellow</samp>&rsquo;, &lsquo;<samp>blue</samp>&rsquo;, &lsquo;<samp>magenta</samp>&rsquo;, &lsquo;<samp>cyan</samp>&rsquo;,
+and&lsquo;<samp>white</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>set style filename foreground <var>color</var></code></dt>
+<dd><p>Set the foreground to <var>color</var>.  Valid colors are &lsquo;<samp>none</samp>&rsquo;
+(meaning the terminal&rsquo;s default color), &lsquo;<samp>black</samp>&rsquo;, &lsquo;<samp>red</samp>&rsquo;,
+&lsquo;<samp>green</samp>&rsquo;, &lsquo;<samp>yellow</samp>&rsquo;, &lsquo;<samp>blue</samp>&rsquo;, &lsquo;<samp>magenta</samp>&rsquo;, &lsquo;<samp>cyan</samp>&rsquo;,
+and&lsquo;<samp>white</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>set style filename intensity <var>value</var></code></dt>
+<dd><p>Set the intensity to <var>value</var>.  Valid intensities are &lsquo;<samp>normal</samp>&rsquo;
+(the default), &lsquo;<samp>bold</samp>&rsquo;, and &lsquo;<samp>dim</samp>&rsquo;.
+</p></dd>
+</dl>
+
+<p>The style-able objects are:
+</p><dl compact="compact">
+<dt><code>filename</code></dt>
+<dd><p>Control the styling of file names.  By default, this style&rsquo;s
+foreground color is green.
+</p>
+</dd>
+<dt><code>function</code></dt>
+<dd><p>Control the styling of function names.  These are managed with the
+<code>set style function</code> family of commands.  By default, this
+style&rsquo;s foreground color is yellow.
+</p>
+</dd>
+<dt><code>variable</code></dt>
+<dd><p>Control the styling of variable names.  These are managed with the
+<code>set style variable</code> family of commands.  By default, this style&rsquo;s
+foreground color is cyan.
+</p>
+</dd>
+<dt><code>address</code></dt>
+<dd><p>Control the styling of addresses.  These are managed with the
+<code>set style address</code> family of commands.  By default, this style&rsquo;s
+foreground color is blue.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Numbers.html#Numbers" accesskey="n" rel="next">Numbers</a>, Previous: <a href="Screen-Size.html#Screen-Size" accesskey="p" rel="prev">Screen Size</a>, Up: <a href="Controlling-GDB.html#Controlling-GDB" accesskey="u" rel="up">Controlling GDB</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

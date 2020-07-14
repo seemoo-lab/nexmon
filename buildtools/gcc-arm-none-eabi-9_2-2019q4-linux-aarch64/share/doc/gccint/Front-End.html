@@ -1,0 +1,164 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Front End</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Front End">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Front End">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="gcc-Directory.html#gcc-Directory" rel="up" title="gcc Directory">
+<link href="Front-End-Directory.html#Front-End-Directory" rel="next" title="Front End Directory">
+<link href="Miscellaneous-Docs.html#Miscellaneous-Docs" rel="prev" title="Miscellaneous Docs">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Front-End"></a>
+<div class="header">
+<p>
+Next: <a href="Back-End.html#Back-End" accesskey="n" rel="next">Back End</a>, Previous: <a href="Documentation.html#Documentation" accesskey="p" rel="prev">Documentation</a>, Up: <a href="gcc-Directory.html#gcc-Directory" accesskey="u" rel="up">gcc Directory</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Anatomy-of-a-Language-Front-End"></a>
+<h4 class="subsection">6.3.8 Anatomy of a Language Front End</h4>
+
+<p>A front end for a language in GCC has the following parts:
+</p>
+<ul>
+<li> A directory <samp><var>language</var></samp> under <samp>gcc</samp> containing source
+files for that front end.  See <a href="Front-End-Directory.html#Front-End-Directory">The Front End
+<samp><var>language</var></samp> Directory</a>, for details.
+</li><li> A mention of the language in the list of supported languages in
+<samp>gcc/doc/install.texi</samp>.
+</li><li> A mention of the name under which the language&rsquo;s runtime library is
+recognized by <samp>--enable-shared=<var>package</var></samp> in the
+documentation of that option in <samp>gcc/doc/install.texi</samp>.
+</li><li> A mention of any special prerequisites for building the front end in
+the documentation of prerequisites in <samp>gcc/doc/install.texi</samp>.
+</li><li> Details of contributors to that front end in
+<samp>gcc/doc/contrib.texi</samp>.  If the details are in that front end&rsquo;s
+own manual then there should be a link to that manual&rsquo;s list in
+<samp>contrib.texi</samp>.
+</li><li> Information about support for that language in
+<samp>gcc/doc/frontends.texi</samp>.
+</li><li> Information about standards for that language, and the front end&rsquo;s
+support for them, in <samp>gcc/doc/standards.texi</samp>.  This may be a
+link to such information in the front end&rsquo;s own manual.
+</li><li> Details of source file suffixes for that language and <samp>-x
+<var>lang</var></samp> options supported, in <samp>gcc/doc/invoke.texi</samp>.
+</li><li> Entries in <code>default_compilers</code> in <samp>gcc.c</samp> for source file
+suffixes for that language.
+</li><li> Preferably testsuites, which may be under <samp>gcc/testsuite</samp> or
+runtime library directories.  FIXME: document somewhere how to write
+testsuite harnesses.
+</li><li> Probably a runtime library for the language, outside the <samp>gcc</samp>
+directory.  FIXME: document this further.
+</li><li> Details of the directories of any runtime libraries in
+<samp>gcc/doc/sourcebuild.texi</samp>.
+</li><li> Check targets in <samp>Makefile.def</samp> for the top-level <samp>Makefile</samp>
+to check just the compiler or the compiler and runtime library for the
+language.
+</li></ul>
+
+<p>If the front end is added to the official GCC source repository, the
+following are also necessary:
+</p>
+<ul>
+<li> At least one Bugzilla component for bugs in that front end and runtime
+libraries.  This category needs to be added to the Bugzilla database.
+</li><li> Normally, one or more maintainers of that front end listed in
+<samp>MAINTAINERS</samp>.
+</li><li> Mentions on the GCC web site in <samp>index.html</samp> and
+<samp>frontends.html</samp>, with any relevant links on
+<samp>readings.html</samp>.  (Front ends that are not an official part of
+GCC may also be listed on <samp>frontends.html</samp>, with relevant links.)
+</li><li> A news item on <samp>index.html</samp>, and possibly an announcement on the
+<a href="mailto:gcc-announce@gcc.gnu.org">gcc-announce@gcc.gnu.org</a> mailing list.
+</li><li> The front end&rsquo;s manuals should be mentioned in
+<samp>maintainer-scripts/update_web_docs_svn</samp> (see <a href="Texinfo-Manuals.html#Texinfo-Manuals">Texinfo Manuals</a>)
+and the online manuals should be linked to from
+<samp>onlinedocs/index.html</samp>.
+</li><li> Any old releases or CVS repositories of the front end, before its
+inclusion in GCC, should be made available on the GCC FTP site
+<a href="ftp://gcc.gnu.org/pub/gcc/old-releases/">ftp://gcc.gnu.org/pub/gcc/old-releases/</a>.
+</li><li> The release and snapshot script <samp>maintainer-scripts/gcc_release</samp>
+should be updated to generate appropriate tarballs for this front end.
+</li><li> If this front end includes its own version files that include the
+current date, <samp>maintainer-scripts/update_version</samp> should be
+updated accordingly.
+</li></ul>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Front-End-Directory.html#Front-End-Directory" accesskey="1">Front End Directory</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">The front end <samp><var>language</var></samp> directory.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Front-End-Config.html#Front-End-Config" accesskey="2">Front End Config</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">The front end <samp>config-lang.in</samp> file.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Front-End-Makefile.html#Front-End-Makefile" accesskey="3">Front End Makefile</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">The front end <samp>Make-lang.in</samp> file.
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Back-End.html#Back-End" accesskey="n" rel="next">Back End</a>, Previous: <a href="Documentation.html#Documentation" accesskey="p" rel="prev">Documentation</a>, Up: <a href="gcc-Directory.html#gcc-Directory" accesskey="u" rel="up">gcc Directory</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

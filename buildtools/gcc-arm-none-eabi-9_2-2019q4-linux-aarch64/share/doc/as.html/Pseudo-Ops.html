@@ -1,0 +1,339 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Pseudo Ops</title>
+
+<meta name="description" content="Using as: Pseudo Ops">
+<meta name="keywords" content="Using as: Pseudo Ops">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Abort.html#Abort" rel="next" title="Abort">
+<link href="Infix-Ops.html#Infix-Ops" rel="prev" title="Infix Ops">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Pseudo-Ops"></a>
+<div class="header">
+<p>
+Next: <a href="Object-Attributes.html#Object-Attributes" accesskey="n" rel="next">Object Attributes</a>, Previous: <a href="Expressions.html#Expressions" accesskey="p" rel="prev">Expressions</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Assembler-Directives"></a>
+<h2 class="chapter">7 Assembler Directives</h2>
+
+<a name="index-directives_002c-machine-independent"></a>
+<a name="index-pseudo_002dops_002c-machine-independent"></a>
+<a name="index-machine-independent-directives"></a>
+<p>All assembler directives have names that begin with a period (&lsquo;<samp>.</samp>&rsquo;).
+The names are case insensitive for most targets, and usually written
+in lower case.
+</p>
+<p>This chapter discusses directives that are available regardless of the
+target machine configuration for the <small>GNU</small> assembler.
+Some machine configurations provide additional directives.
+See <a href="Machine-Dependencies.html#Machine-Dependencies">Machine Dependencies</a>.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Abort.html#Abort" accesskey="1">Abort</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.abort</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="ABORT-_0028COFF_0029.html#ABORT-_0028COFF_0029" accesskey="2">ABORT (COFF)</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.ABORT</code>
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Align.html#Align" accesskey="3">Align</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.align <var>abs-expr</var> , <var>abs-expr</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Altmacro.html#Altmacro" accesskey="4">Altmacro</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.altmacro</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Ascii.html#Ascii" accesskey="5">Ascii</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.ascii &quot;<var>string</var>&quot;</code>&hellip;
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Asciz.html#Asciz" accesskey="6">Asciz</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.asciz &quot;<var>string</var>&quot;</code>&hellip;
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Balign.html#Balign" accesskey="7">Balign</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.balign <var>abs-expr</var> , <var>abs-expr</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Bundle-directives.html#Bundle-directives" accesskey="8">Bundle directives</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.bundle_align_mode <var>abs-expr</var></code>, etc
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Byte.html#Byte" accesskey="9">Byte</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.byte <var>expressions</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="CFI-directives.html#CFI-directives">CFI directives</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.cfi_startproc [simple]</code>, <code>.cfi_endproc</code>, etc.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Comm.html#Comm">Comm</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.comm <var>symbol</var> , <var>length</var> </code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Data.html#Data">Data</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.data <var>subsection</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Dc.html#Dc">Dc</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.dc[<var>size</var>] <var>expressions</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Dcb.html#Dcb">Dcb</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.dcb[<var>size</var>] <var>number</var> [,<var>fill</var>]</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Ds.html#Ds">Ds</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.ds[<var>size</var>] <var>number</var> [,<var>fill</var>]</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Def.html#Def">Def</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.def <var>name</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Desc.html#Desc">Desc</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.desc <var>symbol</var>, <var>abs-expression</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Dim.html#Dim">Dim</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.dim</code>
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Double.html#Double">Double</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.double <var>flonums</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Eject.html#Eject">Eject</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.eject</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Else.html#Else">Else</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.else</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Elseif.html#Elseif">Elseif</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.elseif</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="End.html#End">End</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.end</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Endef.html#Endef">Endef</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.endef</code>
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Endfunc.html#Endfunc">Endfunc</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.endfunc</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Endif.html#Endif">Endif</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.endif</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Equ.html#Equ">Equ</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.equ <var>symbol</var>, <var>expression</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Equiv.html#Equiv">Equiv</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.equiv <var>symbol</var>, <var>expression</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Eqv.html#Eqv">Eqv</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.eqv <var>symbol</var>, <var>expression</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Err.html#Err">Err</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.err</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Error.html#Error">Error</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.error <var>string</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Exitm.html#Exitm">Exitm</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.exitm</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Extern.html#Extern">Extern</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.extern</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Fail.html#Fail">Fail</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.fail</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="File.html#File">File</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.file</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Fill.html#Fill">Fill</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.fill <var>repeat</var> , <var>size</var> , <var>value</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Float.html#Float">Float</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.float <var>flonums</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Func.html#Func">Func</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.func</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Global.html#Global">Global</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.global <var>symbol</var></code>, <code>.globl <var>symbol</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Gnu_005fattribute.html#Gnu_005fattribute">Gnu_attribute</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.gnu_attribute <var>tag</var>,<var>value</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Hidden.html#Hidden">Hidden</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.hidden <var>names</var></code>
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="hword.html#hword">hword</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.hword <var>expressions</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Ident.html#Ident">Ident</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.ident</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="If.html#If">If</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.if <var>absolute expression</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Incbin.html#Incbin">Incbin</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.incbin &quot;<var>file</var>&quot;[,<var>skip</var>[,<var>count</var>]]</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Include.html#Include">Include</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.include &quot;<var>file</var>&quot;</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Int.html#Int">Int</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.int <var>expressions</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Internal.html#Internal">Internal</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.internal <var>names</var></code>
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Irp.html#Irp">Irp</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.irp <var>symbol</var>,<var>values</var></code>&hellip;
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Irpc.html#Irpc">Irpc</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.irpc <var>symbol</var>,<var>values</var></code>&hellip;
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Lcomm.html#Lcomm">Lcomm</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.lcomm <var>symbol</var> , <var>length</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Lflags.html#Lflags">Lflags</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.lflags</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Line.html#Line">Line</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.line <var>line-number</var></code>
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Linkonce.html#Linkonce">Linkonce</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.linkonce [<var>type</var>]</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="List.html#List">List</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.list</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Ln.html#Ln">Ln</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.ln <var>line-number</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Loc.html#Loc">Loc</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.loc <var>fileno</var> <var>lineno</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Loc_005fmark_005flabels.html#Loc_005fmark_005flabels">Loc_mark_labels</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.loc_mark_labels <var>enable</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Local.html#Local">Local</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.local <var>names</var></code>
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Long.html#Long">Long</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.long <var>expressions</var></code>
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Macro.html#Macro">Macro</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.macro <var>name</var> <var>args</var></code>&hellip;
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="MRI.html#MRI">MRI</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.mri <var>val</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Noaltmacro.html#Noaltmacro">Noaltmacro</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.noaltmacro</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Nolist.html#Nolist">Nolist</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.nolist</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Nops.html#Nops">Nops</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.nops <var>size</var>[, <var>control</var>]</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Octa.html#Octa">Octa</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.octa <var>bignums</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Offset.html#Offset">Offset</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.offset <var>loc</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Org.html#Org">Org</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.org <var>new-lc</var>, <var>fill</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="P2align.html#P2align">P2align</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.p2align <var>abs-expr</var>, <var>abs-expr</var>, <var>abs-expr</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="PopSection.html#PopSection">PopSection</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.popsection</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Previous.html#Previous">Previous</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.previous</code>
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Print.html#Print">Print</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.print <var>string</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Protected.html#Protected">Protected</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.protected <var>names</var></code>
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Psize.html#Psize">Psize</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.psize <var>lines</var>, <var>columns</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Purgem.html#Purgem">Purgem</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.purgem <var>name</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="PushSection.html#PushSection">PushSection</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.pushsection <var>name</var></code>
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Quad.html#Quad">Quad</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.quad <var>bignums</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Reloc.html#Reloc">Reloc</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.reloc <var>offset</var>, <var>reloc_name</var>[, <var>expression</var>]</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Rept.html#Rept">Rept</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.rept <var>count</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Sbttl.html#Sbttl">Sbttl</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.sbttl &quot;<var>subheading</var>&quot;</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Scl.html#Scl">Scl</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.scl <var>class</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Section.html#Section">Section</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.section <var>name</var>[, <var>flags</var>]</code>
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Set.html#Set">Set</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.set <var>symbol</var>, <var>expression</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Short.html#Short">Short</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.short <var>expressions</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Single.html#Single">Single</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.single <var>flonums</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Size.html#Size">Size</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.size [<var>name</var> , <var>expression</var>]</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Skip.html#Skip">Skip</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.skip <var>size</var> [,<var>fill</var>]</code>
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Sleb128.html#Sleb128">Sleb128</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.sleb128 <var>expressions</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Space.html#Space">Space</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.space <var>size</var> [,<var>fill</var>]</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Stab.html#Stab">Stab</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.stabd, .stabn, .stabs</code>
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="String.html#String">String</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.string &quot;<var>str</var>&quot;</code>, <code>.string8 &quot;<var>str</var>&quot;</code>, <code>.string16 &quot;<var>str</var>&quot;</code>, <code>.string32 &quot;<var>str</var>&quot;</code>, <code>.string64 &quot;<var>str</var>&quot;</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Struct.html#Struct">Struct</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.struct <var>expression</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="SubSection.html#SubSection">SubSection</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.subsection</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Symver.html#Symver">Symver</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.symver <var>name</var>,<var>name2@nodename</var></code>
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Tag.html#Tag">Tag</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.tag <var>structname</var></code>
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Text.html#Text">Text</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.text <var>subsection</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Title.html#Title">Title</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.title &quot;<var>heading</var>&quot;</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Type.html#Type">Type</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.type &lt;<var>int</var> | <var>name</var> , <var>type description</var>&gt;</code>
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Uleb128.html#Uleb128">Uleb128</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.uleb128 <var>expressions</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Val.html#Val">Val</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.val <var>addr</var></code>
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Version.html#Version">Version</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.version &quot;<var>string</var>&quot;</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="VTableEntry.html#VTableEntry">VTableEntry</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.vtable_entry <var>table</var>, <var>offset</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="VTableInherit.html#VTableInherit">VTableInherit</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.vtable_inherit <var>child</var>, <var>parent</var></code>
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Warning.html#Warning">Warning</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.warning <var>string</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Weak.html#Weak">Weak</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.weak <var>names</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Weakref.html#Weakref">Weakref</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.weakref <var>alias</var>, <var>symbol</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Word.html#Word">Word</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.word <var>expressions</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Zero.html#Zero">Zero</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.zero <var>size</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="2byte.html#g_t2byte">2byte</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.2byte <var>expressions</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="4byte.html#g_t4byte">4byte</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.4byte <var>expressions</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="8byte.html#g_t8byte">8byte</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><code>.8byte <var>bignums</var></code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Deprecated.html#Deprecated">Deprecated</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Deprecated Directives
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Object-Attributes.html#Object-Attributes" accesskey="n" rel="next">Object Attributes</a>, Previous: <a href="Expressions.html#Expressions" accesskey="p" rel="prev">Expressions</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

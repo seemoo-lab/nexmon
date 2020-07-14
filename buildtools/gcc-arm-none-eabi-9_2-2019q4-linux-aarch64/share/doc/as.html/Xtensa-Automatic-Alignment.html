@@ -1,0 +1,126 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Xtensa Automatic Alignment</title>
+
+<meta name="description" content="Using as: Xtensa Automatic Alignment">
+<meta name="keywords" content="Using as: Xtensa Automatic Alignment">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Xtensa-Optimizations.html#Xtensa-Optimizations" rel="up" title="Xtensa Optimizations">
+<link href="Xtensa-Relaxation.html#Xtensa-Relaxation" rel="next" title="Xtensa Relaxation">
+<link href="Density-Instructions.html#Density-Instructions" rel="prev" title="Density Instructions">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Xtensa-Automatic-Alignment"></a>
+<div class="header">
+<p>
+Previous: <a href="Density-Instructions.html#Density-Instructions" accesskey="p" rel="prev">Density Instructions</a>, Up: <a href="Xtensa-Optimizations.html#Xtensa-Optimizations" accesskey="u" rel="up">Xtensa Optimizations</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Automatic-Instruction-Alignment"></a>
+<h4 class="subsubsection">9.55.3.2 Automatic Instruction Alignment</h4>
+<a name="index-alignment-of-LOOP-instructions"></a>
+<a name="index-alignment-of-branch-targets"></a>
+<a name="index-LOOP-instructions_002c-alignment"></a>
+<a name="index-branch-target-alignment"></a>
+
+<p>The Xtensa assembler will automatically align certain instructions, both
+to optimize performance and to satisfy architectural requirements.
+</p>
+<p>As an optimization to improve performance, the assembler attempts to
+align branch targets so they do not cross instruction fetch boundaries.
+(Xtensa processors can be configured with either 32-bit or 64-bit
+instruction fetch widths.)  An
+instruction immediately following a call is treated as a branch target
+in this context, because it will be the target of a return from the
+call.  This alignment has the potential to reduce branch penalties at
+some expense in code size.
+This optimization is enabled by default.  You can disable it with the
+&lsquo;<samp>--no-target-align</samp>&rsquo; command-line option (see <a href="Xtensa-Options.html#Xtensa-Options">Command-line Options</a>).
+</p>
+<p>The target alignment optimization is done without adding instructions
+that could increase the execution time of the program.  If there are
+density instructions in the code preceding a target, the assembler can
+change the target alignment by widening some of those instructions to
+the equivalent 24-bit instructions.  Extra bytes of padding can be
+inserted immediately following unconditional jump and return
+instructions.
+This approach is usually successful in aligning many, but not all,
+branch targets.
+</p>
+<p>The <code>LOOP</code> family of instructions must be aligned such that the
+first instruction in the loop body does not cross an instruction fetch
+boundary (e.g., with a 32-bit fetch width, a <code>LOOP</code> instruction
+must be on either a 1 or 2 mod 4 byte boundary).  The assembler knows
+about this restriction and inserts the minimal number of 2 or 3 byte
+no-op instructions to satisfy it.  When no-op instructions are added,
+any label immediately preceding the original loop will be moved in order
+to refer to the loop instruction, not the newly generated no-op
+instruction.  To preserve binary compatibility across processors with
+different fetch widths, the assembler conservatively assumes a 32-bit
+fetch width when aligning <code>LOOP</code> instructions (except if the first
+instruction in the loop is a 64-bit instruction).
+</p>
+<p>Previous versions of the assembler automatically aligned <code>ENTRY</code>
+instructions to 4-byte boundaries, but that alignment is now the
+programmer&rsquo;s responsibility.
+</p>
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Density-Instructions.html#Density-Instructions" accesskey="p" rel="prev">Density Instructions</a>, Up: <a href="Xtensa-Optimizations.html#Xtensa-Optimizations" accesskey="u" rel="up">Xtensa Optimizations</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

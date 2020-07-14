@@ -1,0 +1,132 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Miscellaneous routines</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Miscellaneous routines">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Miscellaneous routines">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Libgcc.html#Libgcc" rel="up" title="Libgcc">
+<link href="Languages.html#Languages" rel="next" title="Languages">
+<link href="Exception-handling-routines.html#Exception-handling-routines" rel="prev" title="Exception handling routines">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Miscellaneous-routines"></a>
+<div class="header">
+<p>
+Previous: <a href="Exception-handling-routines.html#Exception-handling-routines" accesskey="p" rel="prev">Exception handling routines</a>, Up: <a href="Libgcc.html#Libgcc" accesskey="u" rel="up">Libgcc</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Miscellaneous-runtime-library-routines"></a>
+<h3 class="section">4.6 Miscellaneous runtime library routines</h3>
+
+<a name="Cache-control-functions"></a>
+<h4 class="subsection">4.6.1 Cache control functions</h4>
+<dl>
+<dt><a name="index-_005f_005fclear_005fcache"></a>Runtime Function: <em>void</em> <strong>__clear_cache</strong> <em>(char *<var>beg</var>, char *<var>end</var>)</em></dt>
+<dd><p>This function clears the instruction cache between <var>beg</var> and <var>end</var>.
+</p></dd></dl>
+
+<a name="Split-stack-functions-and-variables"></a>
+<h4 class="subsection">4.6.2 Split stack functions and variables</h4>
+<dl>
+<dt><a name="index-_005f_005fsplitstack_005ffind"></a>Runtime Function: <em>void *</em> <strong>__splitstack_find</strong> <em>(void *<var>segment_arg</var>, void *<var>sp</var>, size_t <var>len</var>, void **<var>next_segment</var>, void **<var>next_sp</var>, void **<var>initial_sp</var>)</em></dt>
+<dd><p>When using <samp>-fsplit-stack</samp>, this call may be used to iterate
+over the stack segments.  It may be called like this:
+</p><div class="smallexample">
+<pre class="smallexample">  void *next_segment = NULL;
+  void *next_sp = NULL;
+  void *initial_sp = NULL;
+  void *stack;
+  size_t stack_size;
+  while ((stack = __splitstack_find (next_segment, next_sp,
+                                     &amp;stack_size, &amp;next_segment,
+                                     &amp;next_sp, &amp;initial_sp))
+         != NULL)
+    {
+      /* Stack segment starts at stack and is
+         stack_size bytes long.  */
+    }
+</pre></div>
+
+<p>There is no way to iterate over the stack segments of a different
+thread.  However, what is permitted is for one thread to call this
+with the <var>segment_arg</var> and <var>sp</var> arguments NULL, to pass
+<var>next_segment</var>, <var>next_sp</var>, and <var>initial_sp</var> to a different
+thread, and then to suspend one way or another.  A different thread
+may run the subsequent <code>__splitstack_find</code> iterations.  Of
+course, this will only work if the first thread is suspended while the
+second thread is calling <code>__splitstack_find</code>.  If not, the second
+thread could be looking at the stack while it is changing, and
+anything could happen.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fmorestack_005fsegments"></a>Variable: <strong>__morestack_segments</strong></dt>
+<dt><a name="index-_005f_005fmorestack_005fcurrent_005fsegment"></a>Variable: <strong>__morestack_current_segment</strong></dt>
+<dt><a name="index-_005f_005fmorestack_005finitial_005fsp"></a>Variable: <strong>__morestack_initial_sp</strong></dt>
+<dd><p>Internal variables used by the <samp>-fsplit-stack</samp> implementation.
+</p></dd></dl>
+
+
+
+
+</body>
+</html>

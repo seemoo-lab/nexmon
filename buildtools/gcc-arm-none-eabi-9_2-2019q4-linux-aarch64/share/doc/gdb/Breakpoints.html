@@ -1,0 +1,168 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Breakpoints</title>
+
+<meta name="description" content="Debugging with GDB: Breakpoints">
+<meta name="keywords" content="Debugging with GDB: Breakpoints">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Stopping.html#Stopping" rel="up" title="Stopping">
+<link href="Set-Breaks.html#Set-Breaks" rel="next" title="Set Breaks">
+<link href="Stopping.html#Stopping" rel="prev" title="Stopping">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Breakpoints"></a>
+<div class="header">
+<p>
+Next: <a href="Continuing-and-Stepping.html#Continuing-and-Stepping" accesskey="n" rel="next">Continuing and Stepping</a>, Up: <a href="Stopping.html#Stopping" accesskey="u" rel="up">Stopping</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Breakpoints_002c-Watchpoints_002c-and-Catchpoints"></a>
+<h3 class="section">5.1 Breakpoints, Watchpoints, and Catchpoints</h3>
+
+<a name="index-breakpoints"></a>
+<p>A <em>breakpoint</em> makes your program stop whenever a certain point in
+the program is reached.  For each breakpoint, you can add conditions to
+control in finer detail whether your program stops.  You can set
+breakpoints with the <code>break</code> command and its variants (see <a href="Set-Breaks.html#Set-Breaks">Setting Breakpoints</a>), to specify the place where your program
+should stop by line number, function name or exact address in the
+program.
+</p>
+<p>On some systems, you can set breakpoints in shared libraries before
+the executable is run.
+</p>
+<a name="index-watchpoints"></a>
+<a name="index-data-breakpoints"></a>
+<a name="index-memory-tracing"></a>
+<a name="index-breakpoint-on-memory-address"></a>
+<a name="index-breakpoint-on-variable-modification"></a>
+<p>A <em>watchpoint</em> is a special breakpoint that stops your program
+when the value of an expression changes.  The expression may be a value
+of a variable, or it could involve values of one or more variables
+combined by operators, such as &lsquo;<samp>a + b</samp>&rsquo;.  This is sometimes called
+<em>data breakpoints</em>.  You must use a different command to set
+watchpoints (see <a href="Set-Watchpoints.html#Set-Watchpoints">Setting Watchpoints</a>), but aside
+from that, you can manage a watchpoint like any other breakpoint: you
+enable, disable, and delete both breakpoints and watchpoints using the
+same commands.
+</p>
+<p>You can arrange to have values from your program displayed automatically
+whenever <small>GDB</small> stops at a breakpoint.  See <a href="Auto-Display.html#Auto-Display">Automatic Display</a>.
+</p>
+<a name="index-catchpoints"></a>
+<a name="index-breakpoint-on-events"></a>
+<p>A <em>catchpoint</em> is another special breakpoint that stops your program
+when a certain kind of event occurs, such as the throwing of a C<tt>++</tt>
+exception or the loading of a library.  As with watchpoints, you use a
+different command to set a catchpoint (see <a href="Set-Catchpoints.html#Set-Catchpoints">Setting
+Catchpoints</a>), but aside from that, you can manage a catchpoint like any
+other breakpoint.  (To stop when your program receives a signal, use the
+<code>handle</code> command; see <a href="Signals.html#Signals">Signals</a>.)
+</p>
+<a name="index-breakpoint-numbers"></a>
+<a name="index-numbers-for-breakpoints"></a>
+<p><small>GDB</small> assigns a number to each breakpoint, watchpoint, or
+catchpoint when you create it; these numbers are successive integers
+starting with one.  In many of the commands for controlling various
+features of breakpoints you use the breakpoint number to say which
+breakpoint you want to change.  Each breakpoint may be <em>enabled</em> or
+<em>disabled</em>; if disabled, it has no effect on your program until you
+enable it again.
+</p>
+<a name="index-breakpoint-ranges"></a>
+<a name="index-breakpoint-lists"></a>
+<a name="index-ranges-of-breakpoints"></a>
+<a name="index-lists-of-breakpoints"></a>
+<p>Some <small>GDB</small> commands accept a space-separated list of breakpoints
+on which to operate.  A list element can be either a single breakpoint number,
+like &lsquo;<samp>5</samp>&rsquo;, or a range of such numbers, like &lsquo;<samp>5-7</samp>&rsquo;.
+When a breakpoint list is given to a command, all breakpoints in that list
+are operated on.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Set-Breaks.html#Set-Breaks" accesskey="1">Set Breaks</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Setting breakpoints
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Set-Watchpoints.html#Set-Watchpoints" accesskey="2">Set Watchpoints</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Setting watchpoints
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Set-Catchpoints.html#Set-Catchpoints" accesskey="3">Set Catchpoints</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Setting catchpoints
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Delete-Breaks.html#Delete-Breaks" accesskey="4">Delete Breaks</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Deleting breakpoints
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Disabling.html#Disabling" accesskey="5">Disabling</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Disabling breakpoints
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Conditions.html#Conditions" accesskey="6">Conditions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Break conditions
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Break-Commands.html#Break-Commands" accesskey="7">Break Commands</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Breakpoint command lists
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Dynamic-Printf.html#Dynamic-Printf" accesskey="8">Dynamic Printf</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Dynamic printf
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Save-Breakpoints.html#Save-Breakpoints" accesskey="9">Save Breakpoints</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How to save breakpoints in a file
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Static-Probe-Points.html#Static-Probe-Points">Static Probe Points</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Listing static probe points
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Error-in-Breakpoints.html#Error-in-Breakpoints">Error in Breakpoints</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">&ldquo;Cannot insert breakpoints&rdquo;
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Breakpoint_002drelated-Warnings.html#Breakpoint_002drelated-Warnings">Breakpoint-related Warnings</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">&ldquo;Breakpoint address adjusted...&rdquo;
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Continuing-and-Stepping.html#Continuing-and-Stepping" accesskey="n" rel="next">Continuing and Stepping</a>, Up: <a href="Stopping.html#Stopping" accesskey="u" rel="up">Stopping</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

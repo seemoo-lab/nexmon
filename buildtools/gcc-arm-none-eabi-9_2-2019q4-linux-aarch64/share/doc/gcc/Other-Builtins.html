@@ -1,0 +1,1733 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Other Builtins</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Other Builtins">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Other Builtins">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-Extensions.html#C-Extensions" rel="up" title="C Extensions">
+<link href="Target-Builtins.html#Target-Builtins" rel="next" title="Target Builtins">
+<link href="Object-Size-Checking.html#Object-Size-Checking" rel="prev" title="Object Size Checking">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Other-Builtins"></a>
+<div class="header">
+<p>
+Next: <a href="Target-Builtins.html#Target-Builtins" accesskey="n" rel="next">Target Builtins</a>, Previous: <a href="Object-Size-Checking.html#Object-Size-Checking" accesskey="p" rel="prev">Object Size Checking</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Other-Built_002din-Functions-Provided-by-GCC"></a>
+<h3 class="section">6.59 Other Built-in Functions Provided by GCC</h3>
+<a name="index-built_002din-functions-1"></a>
+<a name="index-_005f_005fbuiltin_005falloca"></a>
+<a name="index-_005f_005fbuiltin_005falloca_005fwith_005falign"></a>
+<a name="index-_005f_005fbuiltin_005falloca_005fwith_005falign_005fand_005fmax"></a>
+<a name="index-_005f_005fbuiltin_005fcall_005fwith_005fstatic_005fchain"></a>
+<a name="index-_005f_005fbuiltin_005fextend_005fpointer"></a>
+<a name="index-_005f_005fbuiltin_005ffpclassify"></a>
+<a name="index-_005f_005fbuiltin_005fhas_005fattribute"></a>
+<a name="index-_005f_005fbuiltin_005fisfinite"></a>
+<a name="index-_005f_005fbuiltin_005fisnormal"></a>
+<a name="index-_005f_005fbuiltin_005fisgreater"></a>
+<a name="index-_005f_005fbuiltin_005fisgreaterequal"></a>
+<a name="index-_005f_005fbuiltin_005fisinf_005fsign"></a>
+<a name="index-_005f_005fbuiltin_005fisless"></a>
+<a name="index-_005f_005fbuiltin_005fislessequal"></a>
+<a name="index-_005f_005fbuiltin_005fislessgreater"></a>
+<a name="index-_005f_005fbuiltin_005fisunordered"></a>
+<a name="index-_005f_005fbuiltin_005fobject_005fsize-2"></a>
+<a name="index-_005f_005fbuiltin_005fpowi"></a>
+<a name="index-_005f_005fbuiltin_005fpowif"></a>
+<a name="index-_005f_005fbuiltin_005fpowil"></a>
+<a name="index-_005f_005fbuiltin_005fspeculation_005fsafe_005fvalue"></a>
+<a name="index-_005fExit"></a>
+<a name="index-_005fexit"></a>
+<a name="index-abort"></a>
+<a name="index-abs"></a>
+<a name="index-acos"></a>
+<a name="index-acosf"></a>
+<a name="index-acosh"></a>
+<a name="index-acoshf"></a>
+<a name="index-acoshl"></a>
+<a name="index-acosl"></a>
+<a name="index-alloca"></a>
+<a name="index-asin"></a>
+<a name="index-asinf"></a>
+<a name="index-asinh"></a>
+<a name="index-asinhf"></a>
+<a name="index-asinhl"></a>
+<a name="index-asinl"></a>
+<a name="index-atan"></a>
+<a name="index-atan2"></a>
+<a name="index-atan2f"></a>
+<a name="index-atan2l"></a>
+<a name="index-atanf"></a>
+<a name="index-atanh"></a>
+<a name="index-atanhf"></a>
+<a name="index-atanhl"></a>
+<a name="index-atanl"></a>
+<a name="index-bcmp"></a>
+<a name="index-bzero"></a>
+<a name="index-cabs"></a>
+<a name="index-cabsf"></a>
+<a name="index-cabsl"></a>
+<a name="index-cacos"></a>
+<a name="index-cacosf"></a>
+<a name="index-cacosh"></a>
+<a name="index-cacoshf"></a>
+<a name="index-cacoshl"></a>
+<a name="index-cacosl"></a>
+<a name="index-calloc"></a>
+<a name="index-carg"></a>
+<a name="index-cargf"></a>
+<a name="index-cargl"></a>
+<a name="index-casin"></a>
+<a name="index-casinf"></a>
+<a name="index-casinh"></a>
+<a name="index-casinhf"></a>
+<a name="index-casinhl"></a>
+<a name="index-casinl"></a>
+<a name="index-catan"></a>
+<a name="index-catanf"></a>
+<a name="index-catanh"></a>
+<a name="index-catanhf"></a>
+<a name="index-catanhl"></a>
+<a name="index-catanl"></a>
+<a name="index-cbrt"></a>
+<a name="index-cbrtf"></a>
+<a name="index-cbrtl"></a>
+<a name="index-ccos"></a>
+<a name="index-ccosf"></a>
+<a name="index-ccosh"></a>
+<a name="index-ccoshf"></a>
+<a name="index-ccoshl"></a>
+<a name="index-ccosl"></a>
+<a name="index-ceil"></a>
+<a name="index-ceilf"></a>
+<a name="index-ceill"></a>
+<a name="index-cexp"></a>
+<a name="index-cexpf"></a>
+<a name="index-cexpl"></a>
+<a name="index-cimag"></a>
+<a name="index-cimagf"></a>
+<a name="index-cimagl"></a>
+<a name="index-clog"></a>
+<a name="index-clogf"></a>
+<a name="index-clogl"></a>
+<a name="index-clog10"></a>
+<a name="index-clog10f"></a>
+<a name="index-clog10l"></a>
+<a name="index-conj"></a>
+<a name="index-conjf"></a>
+<a name="index-conjl"></a>
+<a name="index-copysign"></a>
+<a name="index-copysignf"></a>
+<a name="index-copysignl"></a>
+<a name="index-cos"></a>
+<a name="index-cosf"></a>
+<a name="index-cosh"></a>
+<a name="index-coshf"></a>
+<a name="index-coshl"></a>
+<a name="index-cosl"></a>
+<a name="index-cpow"></a>
+<a name="index-cpowf"></a>
+<a name="index-cpowl"></a>
+<a name="index-cproj"></a>
+<a name="index-cprojf"></a>
+<a name="index-cprojl"></a>
+<a name="index-creal"></a>
+<a name="index-crealf"></a>
+<a name="index-creall"></a>
+<a name="index-csin"></a>
+<a name="index-csinf"></a>
+<a name="index-csinh"></a>
+<a name="index-csinhf"></a>
+<a name="index-csinhl"></a>
+<a name="index-csinl"></a>
+<a name="index-csqrt"></a>
+<a name="index-csqrtf"></a>
+<a name="index-csqrtl"></a>
+<a name="index-ctan"></a>
+<a name="index-ctanf"></a>
+<a name="index-ctanh"></a>
+<a name="index-ctanhf"></a>
+<a name="index-ctanhl"></a>
+<a name="index-ctanl"></a>
+<a name="index-dcgettext"></a>
+<a name="index-dgettext"></a>
+<a name="index-drem"></a>
+<a name="index-dremf"></a>
+<a name="index-dreml"></a>
+<a name="index-erf"></a>
+<a name="index-erfc"></a>
+<a name="index-erfcf"></a>
+<a name="index-erfcl"></a>
+<a name="index-erff"></a>
+<a name="index-erfl"></a>
+<a name="index-exit"></a>
+<a name="index-exp"></a>
+<a name="index-exp10"></a>
+<a name="index-exp10f"></a>
+<a name="index-exp10l"></a>
+<a name="index-exp2"></a>
+<a name="index-exp2f"></a>
+<a name="index-exp2l"></a>
+<a name="index-expf"></a>
+<a name="index-expl"></a>
+<a name="index-expm1"></a>
+<a name="index-expm1f"></a>
+<a name="index-expm1l"></a>
+<a name="index-fabs"></a>
+<a name="index-fabsf"></a>
+<a name="index-fabsl"></a>
+<a name="index-fdim"></a>
+<a name="index-fdimf"></a>
+<a name="index-fdiml"></a>
+<a name="index-ffs"></a>
+<a name="index-floor"></a>
+<a name="index-floorf"></a>
+<a name="index-floorl"></a>
+<a name="index-fma"></a>
+<a name="index-fmaf"></a>
+<a name="index-fmal"></a>
+<a name="index-fmax"></a>
+<a name="index-fmaxf"></a>
+<a name="index-fmaxl"></a>
+<a name="index-fmin"></a>
+<a name="index-fminf"></a>
+<a name="index-fminl"></a>
+<a name="index-fmod"></a>
+<a name="index-fmodf"></a>
+<a name="index-fmodl"></a>
+<a name="index-fprintf"></a>
+<a name="index-fprintf_005funlocked"></a>
+<a name="index-fputs"></a>
+<a name="index-fputs_005funlocked"></a>
+<a name="index-frexp"></a>
+<a name="index-frexpf"></a>
+<a name="index-frexpl"></a>
+<a name="index-fscanf"></a>
+<a name="index-gamma"></a>
+<a name="index-gammaf"></a>
+<a name="index-gammal"></a>
+<a name="index-gamma_005fr"></a>
+<a name="index-gammaf_005fr"></a>
+<a name="index-gammal_005fr"></a>
+<a name="index-gettext"></a>
+<a name="index-hypot"></a>
+<a name="index-hypotf"></a>
+<a name="index-hypotl"></a>
+<a name="index-ilogb"></a>
+<a name="index-ilogbf"></a>
+<a name="index-ilogbl"></a>
+<a name="index-imaxabs"></a>
+<a name="index-index"></a>
+<a name="index-isalnum"></a>
+<a name="index-isalpha"></a>
+<a name="index-isascii"></a>
+<a name="index-isblank"></a>
+<a name="index-iscntrl"></a>
+<a name="index-isdigit"></a>
+<a name="index-isgraph"></a>
+<a name="index-islower"></a>
+<a name="index-isprint"></a>
+<a name="index-ispunct"></a>
+<a name="index-isspace"></a>
+<a name="index-isupper"></a>
+<a name="index-iswalnum"></a>
+<a name="index-iswalpha"></a>
+<a name="index-iswblank"></a>
+<a name="index-iswcntrl"></a>
+<a name="index-iswdigit"></a>
+<a name="index-iswgraph"></a>
+<a name="index-iswlower"></a>
+<a name="index-iswprint"></a>
+<a name="index-iswpunct"></a>
+<a name="index-iswspace"></a>
+<a name="index-iswupper"></a>
+<a name="index-iswxdigit"></a>
+<a name="index-isxdigit"></a>
+<a name="index-j0"></a>
+<a name="index-j0f"></a>
+<a name="index-j0l"></a>
+<a name="index-j1"></a>
+<a name="index-j1f"></a>
+<a name="index-j1l"></a>
+<a name="index-jn"></a>
+<a name="index-jnf"></a>
+<a name="index-jnl"></a>
+<a name="index-labs"></a>
+<a name="index-ldexp"></a>
+<a name="index-ldexpf"></a>
+<a name="index-ldexpl"></a>
+<a name="index-lgamma"></a>
+<a name="index-lgammaf"></a>
+<a name="index-lgammal"></a>
+<a name="index-lgamma_005fr"></a>
+<a name="index-lgammaf_005fr"></a>
+<a name="index-lgammal_005fr"></a>
+<a name="index-llabs"></a>
+<a name="index-llrint"></a>
+<a name="index-llrintf"></a>
+<a name="index-llrintl"></a>
+<a name="index-llround"></a>
+<a name="index-llroundf"></a>
+<a name="index-llroundl"></a>
+<a name="index-log"></a>
+<a name="index-log10"></a>
+<a name="index-log10f"></a>
+<a name="index-log10l"></a>
+<a name="index-log1p"></a>
+<a name="index-log1pf"></a>
+<a name="index-log1pl"></a>
+<a name="index-log2"></a>
+<a name="index-log2f"></a>
+<a name="index-log2l"></a>
+<a name="index-logb"></a>
+<a name="index-logbf"></a>
+<a name="index-logbl"></a>
+<a name="index-logf"></a>
+<a name="index-logl"></a>
+<a name="index-lrint"></a>
+<a name="index-lrintf"></a>
+<a name="index-lrintl"></a>
+<a name="index-lround"></a>
+<a name="index-lroundf"></a>
+<a name="index-lroundl"></a>
+<a name="index-malloc"></a>
+<a name="index-memchr"></a>
+<a name="index-memcmp"></a>
+<a name="index-memcpy"></a>
+<a name="index-mempcpy"></a>
+<a name="index-memset"></a>
+<a name="index-modf"></a>
+<a name="index-modff"></a>
+<a name="index-modfl"></a>
+<a name="index-nearbyint"></a>
+<a name="index-nearbyintf"></a>
+<a name="index-nearbyintl"></a>
+<a name="index-nextafter"></a>
+<a name="index-nextafterf"></a>
+<a name="index-nextafterl"></a>
+<a name="index-nexttoward"></a>
+<a name="index-nexttowardf"></a>
+<a name="index-nexttowardl"></a>
+<a name="index-pow"></a>
+<a name="index-pow10"></a>
+<a name="index-pow10f"></a>
+<a name="index-pow10l"></a>
+<a name="index-powf"></a>
+<a name="index-powl"></a>
+<a name="index-printf"></a>
+<a name="index-printf_005funlocked"></a>
+<a name="index-putchar"></a>
+<a name="index-puts"></a>
+<a name="index-remainder"></a>
+<a name="index-remainderf"></a>
+<a name="index-remainderl"></a>
+<a name="index-remquo"></a>
+<a name="index-remquof"></a>
+<a name="index-remquol"></a>
+<a name="index-rindex"></a>
+<a name="index-rint"></a>
+<a name="index-rintf"></a>
+<a name="index-rintl"></a>
+<a name="index-round"></a>
+<a name="index-roundf"></a>
+<a name="index-roundl"></a>
+<a name="index-scalb"></a>
+<a name="index-scalbf"></a>
+<a name="index-scalbl"></a>
+<a name="index-scalbln"></a>
+<a name="index-scalblnf"></a>
+<a name="index-scalblnf-1"></a>
+<a name="index-scalbn"></a>
+<a name="index-scalbnf"></a>
+<a name="index-scanfnl"></a>
+<a name="index-signbit"></a>
+<a name="index-signbitf"></a>
+<a name="index-signbitl"></a>
+<a name="index-signbitd32"></a>
+<a name="index-signbitd64"></a>
+<a name="index-signbitd128"></a>
+<a name="index-significand"></a>
+<a name="index-significandf"></a>
+<a name="index-significandl"></a>
+<a name="index-sin"></a>
+<a name="index-sincos"></a>
+<a name="index-sincosf"></a>
+<a name="index-sincosl"></a>
+<a name="index-sinf"></a>
+<a name="index-sinh"></a>
+<a name="index-sinhf"></a>
+<a name="index-sinhl"></a>
+<a name="index-sinl"></a>
+<a name="index-snprintf"></a>
+<a name="index-sprintf"></a>
+<a name="index-sqrt"></a>
+<a name="index-sqrtf"></a>
+<a name="index-sqrtl"></a>
+<a name="index-sscanf"></a>
+<a name="index-stpcpy"></a>
+<a name="index-stpncpy"></a>
+<a name="index-strcasecmp"></a>
+<a name="index-strcat"></a>
+<a name="index-strchr"></a>
+<a name="index-strcmp"></a>
+<a name="index-strcpy"></a>
+<a name="index-strcspn"></a>
+<a name="index-strdup"></a>
+<a name="index-strfmon"></a>
+<a name="index-strftime"></a>
+<a name="index-strlen"></a>
+<a name="index-strncasecmp"></a>
+<a name="index-strncat"></a>
+<a name="index-strncmp"></a>
+<a name="index-strncpy"></a>
+<a name="index-strndup"></a>
+<a name="index-strnlen"></a>
+<a name="index-strpbrk"></a>
+<a name="index-strrchr"></a>
+<a name="index-strspn"></a>
+<a name="index-strstr"></a>
+<a name="index-tan"></a>
+<a name="index-tanf"></a>
+<a name="index-tanh"></a>
+<a name="index-tanhf"></a>
+<a name="index-tanhl"></a>
+<a name="index-tanl"></a>
+<a name="index-tgamma"></a>
+<a name="index-tgammaf"></a>
+<a name="index-tgammal"></a>
+<a name="index-toascii"></a>
+<a name="index-tolower"></a>
+<a name="index-toupper"></a>
+<a name="index-towlower"></a>
+<a name="index-towupper"></a>
+<a name="index-trunc"></a>
+<a name="index-truncf"></a>
+<a name="index-truncl"></a>
+<a name="index-vfprintf"></a>
+<a name="index-vfscanf"></a>
+<a name="index-vprintf"></a>
+<a name="index-vscanf"></a>
+<a name="index-vsnprintf"></a>
+<a name="index-vsprintf"></a>
+<a name="index-vsscanf"></a>
+<a name="index-y0"></a>
+<a name="index-y0f"></a>
+<a name="index-y0l"></a>
+<a name="index-y1"></a>
+<a name="index-y1f"></a>
+<a name="index-y1l"></a>
+<a name="index-yn"></a>
+<a name="index-ynf"></a>
+<a name="index-ynl"></a>
+
+<p>GCC provides a large number of built-in functions other than the ones
+mentioned above.  Some of these are for internal use in the processing
+of exceptions or variable-length argument lists and are not
+documented here because they may change from time to time; we do not
+recommend general use of these functions.
+</p>
+<p>The remaining functions are provided for optimization purposes.
+</p>
+<p>With the exception of built-ins that have library equivalents such as
+the standard C library functions discussed below, or that expand to
+library calls, GCC built-in functions are always expanded inline and
+thus do not have corresponding entry points and their address cannot
+be obtained.  Attempting to use them in an expression other than
+a function call results in a compile-time error.
+</p>
+<a name="index-fno_002dbuiltin-3"></a>
+<p>GCC includes built-in versions of many of the functions in the standard
+C library.  These functions come in two forms: one whose names start with
+the <code>__builtin_</code> prefix, and the other without.  Both forms have the
+same type (including prototype), the same address (when their address is
+taken), and the same meaning as the C library functions even if you specify
+the <samp>-fno-builtin</samp> option see <a href="C-Dialect-Options.html#C-Dialect-Options">C Dialect Options</a>).  Many of these
+functions are only optimized in certain cases; if they are not optimized in
+a particular case, a call to the library function is emitted.
+</p>
+<a name="index-ansi-2"></a>
+<a name="index-std-2"></a>
+<p>Outside strict ISO C mode (<samp>-ansi</samp>, <samp>-std=c90</samp>,
+<samp>-std=c99</samp> or <samp>-std=c11</samp>), the functions
+<code>_exit</code>, <code>alloca</code>, <code>bcmp</code>, <code>bzero</code>,
+<code>dcgettext</code>, <code>dgettext</code>, <code>dremf</code>, <code>dreml</code>,
+<code>drem</code>, <code>exp10f</code>, <code>exp10l</code>, <code>exp10</code>, <code>ffsll</code>,
+<code>ffsl</code>, <code>ffs</code>, <code>fprintf_unlocked</code>,
+<code>fputs_unlocked</code>, <code>gammaf</code>, <code>gammal</code>, <code>gamma</code>,
+<code>gammaf_r</code>, <code>gammal_r</code>, <code>gamma_r</code>, <code>gettext</code>,
+<code>index</code>, <code>isascii</code>, <code>j0f</code>, <code>j0l</code>, <code>j0</code>,
+<code>j1f</code>, <code>j1l</code>, <code>j1</code>, <code>jnf</code>, <code>jnl</code>, <code>jn</code>,
+<code>lgammaf_r</code>, <code>lgammal_r</code>, <code>lgamma_r</code>, <code>mempcpy</code>,
+<code>pow10f</code>, <code>pow10l</code>, <code>pow10</code>, <code>printf_unlocked</code>,
+<code>rindex</code>, <code>scalbf</code>, <code>scalbl</code>, <code>scalb</code>,
+<code>signbit</code>, <code>signbitf</code>, <code>signbitl</code>, <code>signbitd32</code>,
+<code>signbitd64</code>, <code>signbitd128</code>, <code>significandf</code>,
+<code>significandl</code>, <code>significand</code>, <code>sincosf</code>,
+<code>sincosl</code>, <code>sincos</code>, <code>stpcpy</code>, <code>stpncpy</code>,
+<code>strcasecmp</code>, <code>strdup</code>, <code>strfmon</code>, <code>strncasecmp</code>,
+<code>strndup</code>, <code>strnlen</code>, <code>toascii</code>, <code>y0f</code>, <code>y0l</code>,
+<code>y0</code>, <code>y1f</code>, <code>y1l</code>, <code>y1</code>, <code>ynf</code>, <code>ynl</code> and
+<code>yn</code>
+may be handled as built-in functions.
+All these functions have corresponding versions
+prefixed with <code>__builtin_</code>, which may be used even in strict C90
+mode.
+</p>
+<p>The ISO C99 functions
+<code>_Exit</code>, <code>acoshf</code>, <code>acoshl</code>, <code>acosh</code>, <code>asinhf</code>,
+<code>asinhl</code>, <code>asinh</code>, <code>atanhf</code>, <code>atanhl</code>, <code>atanh</code>,
+<code>cabsf</code>, <code>cabsl</code>, <code>cabs</code>, <code>cacosf</code>, <code>cacoshf</code>,
+<code>cacoshl</code>, <code>cacosh</code>, <code>cacosl</code>, <code>cacos</code>,
+<code>cargf</code>, <code>cargl</code>, <code>carg</code>, <code>casinf</code>, <code>casinhf</code>,
+<code>casinhl</code>, <code>casinh</code>, <code>casinl</code>, <code>casin</code>,
+<code>catanf</code>, <code>catanhf</code>, <code>catanhl</code>, <code>catanh</code>,
+<code>catanl</code>, <code>catan</code>, <code>cbrtf</code>, <code>cbrtl</code>, <code>cbrt</code>,
+<code>ccosf</code>, <code>ccoshf</code>, <code>ccoshl</code>, <code>ccosh</code>, <code>ccosl</code>,
+<code>ccos</code>, <code>cexpf</code>, <code>cexpl</code>, <code>cexp</code>, <code>cimagf</code>,
+<code>cimagl</code>, <code>cimag</code>, <code>clogf</code>, <code>clogl</code>, <code>clog</code>,
+<code>conjf</code>, <code>conjl</code>, <code>conj</code>, <code>copysignf</code>, <code>copysignl</code>,
+<code>copysign</code>, <code>cpowf</code>, <code>cpowl</code>, <code>cpow</code>, <code>cprojf</code>,
+<code>cprojl</code>, <code>cproj</code>, <code>crealf</code>, <code>creall</code>, <code>creal</code>,
+<code>csinf</code>, <code>csinhf</code>, <code>csinhl</code>, <code>csinh</code>, <code>csinl</code>,
+<code>csin</code>, <code>csqrtf</code>, <code>csqrtl</code>, <code>csqrt</code>, <code>ctanf</code>,
+<code>ctanhf</code>, <code>ctanhl</code>, <code>ctanh</code>, <code>ctanl</code>, <code>ctan</code>,
+<code>erfcf</code>, <code>erfcl</code>, <code>erfc</code>, <code>erff</code>, <code>erfl</code>,
+<code>erf</code>, <code>exp2f</code>, <code>exp2l</code>, <code>exp2</code>, <code>expm1f</code>,
+<code>expm1l</code>, <code>expm1</code>, <code>fdimf</code>, <code>fdiml</code>, <code>fdim</code>,
+<code>fmaf</code>, <code>fmal</code>, <code>fmaxf</code>, <code>fmaxl</code>, <code>fmax</code>,
+<code>fma</code>, <code>fminf</code>, <code>fminl</code>, <code>fmin</code>, <code>hypotf</code>,
+<code>hypotl</code>, <code>hypot</code>, <code>ilogbf</code>, <code>ilogbl</code>, <code>ilogb</code>,
+<code>imaxabs</code>, <code>isblank</code>, <code>iswblank</code>, <code>lgammaf</code>,
+<code>lgammal</code>, <code>lgamma</code>, <code>llabs</code>, <code>llrintf</code>, <code>llrintl</code>,
+<code>llrint</code>, <code>llroundf</code>, <code>llroundl</code>, <code>llround</code>,
+<code>log1pf</code>, <code>log1pl</code>, <code>log1p</code>, <code>log2f</code>, <code>log2l</code>,
+<code>log2</code>, <code>logbf</code>, <code>logbl</code>, <code>logb</code>, <code>lrintf</code>,
+<code>lrintl</code>, <code>lrint</code>, <code>lroundf</code>, <code>lroundl</code>,
+<code>lround</code>, <code>nearbyintf</code>, <code>nearbyintl</code>, <code>nearbyint</code>,
+<code>nextafterf</code>, <code>nextafterl</code>, <code>nextafter</code>,
+<code>nexttowardf</code>, <code>nexttowardl</code>, <code>nexttoward</code>,
+<code>remainderf</code>, <code>remainderl</code>, <code>remainder</code>, <code>remquof</code>,
+<code>remquol</code>, <code>remquo</code>, <code>rintf</code>, <code>rintl</code>, <code>rint</code>,
+<code>roundf</code>, <code>roundl</code>, <code>round</code>, <code>scalblnf</code>,
+<code>scalblnl</code>, <code>scalbln</code>, <code>scalbnf</code>, <code>scalbnl</code>,
+<code>scalbn</code>, <code>snprintf</code>, <code>tgammaf</code>, <code>tgammal</code>,
+<code>tgamma</code>, <code>truncf</code>, <code>truncl</code>, <code>trunc</code>,
+<code>vfscanf</code>, <code>vscanf</code>, <code>vsnprintf</code> and <code>vsscanf</code>
+are handled as built-in functions
+except in strict ISO C90 mode (<samp>-ansi</samp> or <samp>-std=c90</samp>).
+</p>
+<p>There are also built-in versions of the ISO C99 functions
+<code>acosf</code>, <code>acosl</code>, <code>asinf</code>, <code>asinl</code>, <code>atan2f</code>,
+<code>atan2l</code>, <code>atanf</code>, <code>atanl</code>, <code>ceilf</code>, <code>ceill</code>,
+<code>cosf</code>, <code>coshf</code>, <code>coshl</code>, <code>cosl</code>, <code>expf</code>,
+<code>expl</code>, <code>fabsf</code>, <code>fabsl</code>, <code>floorf</code>, <code>floorl</code>,
+<code>fmodf</code>, <code>fmodl</code>, <code>frexpf</code>, <code>frexpl</code>, <code>ldexpf</code>,
+<code>ldexpl</code>, <code>log10f</code>, <code>log10l</code>, <code>logf</code>, <code>logl</code>,
+<code>modfl</code>, <code>modf</code>, <code>powf</code>, <code>powl</code>, <code>sinf</code>,
+<code>sinhf</code>, <code>sinhl</code>, <code>sinl</code>, <code>sqrtf</code>, <code>sqrtl</code>,
+<code>tanf</code>, <code>tanhf</code>, <code>tanhl</code> and <code>tanl</code>
+that are recognized in any mode since ISO C90 reserves these names for
+the purpose to which ISO C99 puts them.  All these functions have
+corresponding versions prefixed with <code>__builtin_</code>.
+</p>
+<p>There are also built-in functions <code>__builtin_fabsf<var>n</var></code>,
+<code>__builtin_fabsf<var>n</var>x</code>, <code>__builtin_copysignf<var>n</var></code> and
+<code>__builtin_copysignf<var>n</var>x</code>, corresponding to the TS 18661-3
+functions <code>fabsf<var>n</var></code>, <code>fabsf<var>n</var>x</code>,
+<code>copysignf<var>n</var></code> and <code>copysignf<var>n</var>x</code>, for supported
+types <code>_Float<var>n</var></code> and <code>_Float<var>n</var>x</code>.
+</p>
+<p>There are also GNU extension functions <code>clog10</code>, <code>clog10f</code> and
+<code>clog10l</code> which names are reserved by ISO C99 for future use.
+All these functions have versions prefixed with <code>__builtin_</code>.
+</p>
+<p>The ISO C94 functions
+<code>iswalnum</code>, <code>iswalpha</code>, <code>iswcntrl</code>, <code>iswdigit</code>,
+<code>iswgraph</code>, <code>iswlower</code>, <code>iswprint</code>, <code>iswpunct</code>,
+<code>iswspace</code>, <code>iswupper</code>, <code>iswxdigit</code>, <code>towlower</code> and
+<code>towupper</code>
+are handled as built-in functions
+except in strict ISO C90 mode (<samp>-ansi</samp> or <samp>-std=c90</samp>).
+</p>
+<p>The ISO C90 functions
+<code>abort</code>, <code>abs</code>, <code>acos</code>, <code>asin</code>, <code>atan2</code>,
+<code>atan</code>, <code>calloc</code>, <code>ceil</code>, <code>cosh</code>, <code>cos</code>,
+<code>exit</code>, <code>exp</code>, <code>fabs</code>, <code>floor</code>, <code>fmod</code>,
+<code>fprintf</code>, <code>fputs</code>, <code>frexp</code>, <code>fscanf</code>,
+<code>isalnum</code>, <code>isalpha</code>, <code>iscntrl</code>, <code>isdigit</code>,
+<code>isgraph</code>, <code>islower</code>, <code>isprint</code>, <code>ispunct</code>,
+<code>isspace</code>, <code>isupper</code>, <code>isxdigit</code>, <code>tolower</code>,
+<code>toupper</code>, <code>labs</code>, <code>ldexp</code>, <code>log10</code>, <code>log</code>,
+<code>malloc</code>, <code>memchr</code>, <code>memcmp</code>, <code>memcpy</code>,
+<code>memset</code>, <code>modf</code>, <code>pow</code>, <code>printf</code>, <code>putchar</code>,
+<code>puts</code>, <code>scanf</code>, <code>sinh</code>, <code>sin</code>, <code>snprintf</code>,
+<code>sprintf</code>, <code>sqrt</code>, <code>sscanf</code>, <code>strcat</code>,
+<code>strchr</code>, <code>strcmp</code>, <code>strcpy</code>, <code>strcspn</code>,
+<code>strlen</code>, <code>strncat</code>, <code>strncmp</code>, <code>strncpy</code>,
+<code>strpbrk</code>, <code>strrchr</code>, <code>strspn</code>, <code>strstr</code>,
+<code>tanh</code>, <code>tan</code>, <code>vfprintf</code>, <code>vprintf</code> and <code>vsprintf</code>
+are all recognized as built-in functions unless
+<samp>-fno-builtin</samp> is specified (or <samp>-fno-builtin-<var>function</var></samp>
+is specified for an individual function).  All of these functions have
+corresponding versions prefixed with <code>__builtin_</code>.
+</p>
+<p>GCC provides built-in versions of the ISO C99 floating-point comparison
+macros that avoid raising exceptions for unordered operands.  They have
+the same names as the standard macros ( <code>isgreater</code>,
+<code>isgreaterequal</code>, <code>isless</code>, <code>islessequal</code>,
+<code>islessgreater</code>, and <code>isunordered</code>) , with <code>__builtin_</code>
+prefixed.  We intend for a library implementor to be able to simply
+<code>#define</code> each standard macro to its built-in equivalent.
+In the same fashion, GCC provides <code>fpclassify</code>, <code>isfinite</code>,
+<code>isinf_sign</code>, <code>isnormal</code> and <code>signbit</code> built-ins used with
+<code>__builtin_</code> prefixed.  The <code>isinf</code> and <code>isnan</code>
+built-in functions appear both with and without the <code>__builtin_</code> prefix.
+</p>
+<dl>
+<dt><a name="index-_002a_005f_005fbuiltin_005falloca"></a>Built-in Function: <em>void</em> <strong>*__builtin_alloca</strong> <em>(size_t size)</em></dt>
+<dd><p>The <code>__builtin_alloca</code> function must be called at block scope.
+The function allocates an object <var>size</var> bytes large on the stack
+of the calling function.  The object is aligned on the default stack
+alignment boundary for the target determined by the
+<code>__BIGGEST_ALIGNMENT__</code> macro.  The <code>__builtin_alloca</code>
+function returns a pointer to the first byte of the allocated object.
+The lifetime of the allocated object ends just before the calling
+function returns to its caller.   This is so even when
+<code>__builtin_alloca</code> is called within a nested block.
+</p>
+<p>For example, the following function allocates eight objects of <code>n</code>
+bytes each on the stack, storing a pointer to each in consecutive elements
+of the array <code>a</code>.  It then passes the array to function <code>g</code>
+which can safely use the storage pointed to by each of the array elements.
+</p>
+<div class="smallexample">
+<pre class="smallexample">void f (unsigned n)
+{
+  void *a [8];
+  for (int i = 0; i != 8; ++i)
+    a [i] = __builtin_alloca (n);
+
+  g (a, n);   // <span class="roman">safe</span>
+}
+</pre></div>
+
+<p>Since the <code>__builtin_alloca</code> function doesn&rsquo;t validate its argument
+it is the responsibility of its caller to make sure the argument doesn&rsquo;t
+cause it to exceed the stack size limit.
+The <code>__builtin_alloca</code> function is provided to make it possible to
+allocate on the stack arrays of bytes with an upper bound that may be
+computed at run time.  Since C99 Variable Length Arrays offer
+similar functionality under a portable, more convenient, and safer
+interface they are recommended instead, in both C99 and C++ programs
+where GCC provides them as an extension.
+See <a href="Variable-Length.html#Variable-Length">Variable Length</a>, for details.
+</p>
+</dd></dl>
+
+<dl>
+<dt><a name="index-_002a_005f_005fbuiltin_005falloca_005fwith_005falign"></a>Built-in Function: <em>void</em> <strong>*__builtin_alloca_with_align</strong> <em>(size_t size, size_t alignment)</em></dt>
+<dd><p>The <code>__builtin_alloca_with_align</code> function must be called at block
+scope.  The function allocates an object <var>size</var> bytes large on
+the stack of the calling function.  The allocated object is aligned on
+the boundary specified by the argument <var>alignment</var> whose unit is given
+in bits (not bytes).  The <var>size</var> argument must be positive and not
+exceed the stack size limit.  The <var>alignment</var> argument must be a constant
+integer expression that evaluates to a power of 2 greater than or equal to
+<code>CHAR_BIT</code> and less than some unspecified maximum.  Invocations
+with other values are rejected with an error indicating the valid bounds.
+The function returns a pointer to the first byte of the allocated object.
+The lifetime of the allocated object ends at the end of the block in which
+the function was called.  The allocated storage is released no later than
+just before the calling function returns to its caller, but may be released
+at the end of the block in which the function was called.
+</p>
+<p>For example, in the following function the call to <code>g</code> is unsafe
+because when <code>overalign</code> is non-zero, the space allocated by
+<code>__builtin_alloca_with_align</code> may have been released at the end
+of the <code>if</code> statement in which it was called.
+</p>
+<div class="smallexample">
+<pre class="smallexample">void f (unsigned n, bool overalign)
+{
+  void *p;
+  if (overalign)
+    p = __builtin_alloca_with_align (n, 64 /* bits */);
+  else
+    p = __builtin_alloc (n);
+
+  g (p, n);   // <span class="roman">unsafe</span>
+}
+</pre></div>
+
+<p>Since the <code>__builtin_alloca_with_align</code> function doesn&rsquo;t validate its
+<var>size</var> argument it is the responsibility of its caller to make sure
+the argument doesn&rsquo;t cause it to exceed the stack size limit.
+The <code>__builtin_alloca_with_align</code> function is provided to make
+it possible to allocate on the stack overaligned arrays of bytes with
+an upper bound that may be computed at run time.  Since C99
+Variable Length Arrays offer the same functionality under
+a portable, more convenient, and safer interface they are recommended
+instead, in both C99 and C++ programs where GCC provides them as
+an extension.  See <a href="Variable-Length.html#Variable-Length">Variable Length</a>, for details.
+</p>
+</dd></dl>
+
+<dl>
+<dt><a name="index-_002a_005f_005fbuiltin_005falloca_005fwith_005falign_005fand_005fmax"></a>Built-in Function: <em>void</em> <strong>*__builtin_alloca_with_align_and_max</strong> <em>(size_t size, size_t alignment, size_t max_size)</em></dt>
+<dd><p>Similar to <code>__builtin_alloca_with_align</code> but takes an extra argument
+specifying an upper bound for <var>size</var> in case its value cannot be computed
+at compile time, for use by <samp>-fstack-usage</samp>, <samp>-Wstack-usage</samp>
+and <samp>-Walloca-larger-than</samp>.  <var>max_size</var> must be a constant integer
+expression, it has no effect on code generation and no attempt is made to
+check its compatibility with <var>size</var>.
+</p>
+</dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fhas_005fattribute-1"></a>Built-in Function: <em>bool</em> <strong>__builtin_has_attribute</strong> <em>(<var>type-or-expression</var>, <var>attribute</var>)</em></dt>
+<dd><p>The <code>__builtin_has_attribute</code> function evaluates to an integer constant
+expression equal to <code>true</code> if the symbol or type referenced by
+the <var>type-or-expression</var> argument has been declared with
+the <var>attribute</var> referenced by the second argument.  For
+an <var>type-or-expression</var> argument that does not reference a symbol,
+since attributes do not apply to expressions the built-in consider
+the type of the argument.  Neither argument is evaluated.
+The <var>type-or-expression</var> argument is subject to the same
+restrictions as the argument to <code>typeof</code> (see <a href="Typeof.html#Typeof">Typeof</a>).  The
+<var>attribute</var> argument is an attribute name optionally followed by
+a comma-separated list of arguments enclosed in parentheses.  Both forms
+of attribute names&mdash;with and without double leading and trailing
+underscores&mdash;are recognized.  See <a href="Attribute-Syntax.html#Attribute-Syntax">Attribute Syntax</a>, for details.
+When no attribute arguments are specified for an attribute that expects
+one or more arguments the function returns <code>true</code> if
+<var>type-or-expression</var> has been declared with the attribute regardless
+of the attribute argument values.  Arguments provided for an attribute
+that expects some are validated and matched up to the provided number.
+The function returns <code>true</code> if all provided arguments match.  For
+example, the first call to the function below evaluates to <code>true</code>
+because <code>x</code> is declared with the <code>aligned</code> attribute but
+the second call evaluates to <code>false</code> because <code>x</code> is declared
+<code>aligned (8)</code> and not <code>aligned (4)</code>.
+</p>
+<div class="smallexample">
+<pre class="smallexample">__attribute__ ((aligned (8))) int x;
+_Static_assert (__builtin_has_attribute (x, aligned), &quot;aligned&quot;);
+_Static_assert (!__builtin_has_attribute (x, aligned (4)), &quot;aligned (4)&quot;);
+</pre></div>
+
+<p>Due to a limitation the <code>__builtin_has_attribute</code> function returns
+<code>false</code> for the <code>mode</code> attribute even if the type or variable
+referenced by the <var>type-or-expression</var> argument was declared with one.
+The function is also not supported with labels, and in C with enumerators.
+</p>
+<p>Note that unlike the <code>__has_attribute</code> preprocessor operator which
+is suitable for use in <code>#if</code> preprocessing directives
+<code>__builtin_has_attribute</code> is an intrinsic function that is not
+recognized in such contexts.
+</p>
+</dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fspeculation_005fsafe_005fvalue-1"></a>Built-in Function: <em><var>type</var></em> <strong>__builtin_speculation_safe_value</strong> <em>(<var>type</var> val, <var>type</var> failval)</em></dt>
+<dd>
+<p>This built-in function can be used to help mitigate against unsafe
+speculative execution.  <var>type</var> may be any integral type or any
+pointer type.
+</p>
+<ol>
+<li> If the CPU is not speculatively executing the code, then <var>val</var>
+is returned.
+</li><li> If the CPU is executing speculatively then either:
+<ul>
+<li> The function may cause execution to pause until it is known that the
+code is no-longer being executed speculatively (in which case
+<var>val</var> can be returned, as above); or
+</li><li> The function may use target-dependent speculation tracking state to cause
+<var>failval</var> to be returned when it is known that speculative
+execution has incorrectly predicted a conditional branch operation.
+</li></ul>
+</li></ol>
+
+<p>The second argument, <var>failval</var>, is optional and defaults to zero
+if omitted.
+</p>
+<p>GCC defines the preprocessor macro
+<code>__HAVE_BUILTIN_SPECULATION_SAFE_VALUE</code> for targets that have been
+updated to support this builtin.
+</p>
+<p>The built-in function can be used where a variable appears to be used in a
+safe way, but the CPU, due to speculative execution may temporarily ignore
+the bounds checks.  Consider, for example, the following function:
+</p>
+<div class="smallexample">
+<pre class="smallexample">int array[500];
+int f (unsigned untrusted_index)
+{
+  if (untrusted_index &lt; 500)
+    return array[untrusted_index];
+  return 0;
+}
+</pre></div>
+
+<p>If the function is called repeatedly with <code>untrusted_index</code> less
+than the limit of 500, then a branch predictor will learn that the
+block of code that returns a value stored in <code>array</code> will be
+executed.  If the function is subsequently called with an
+out-of-range value it will still try to execute that block of code
+first until the CPU determines that the prediction was incorrect
+(the CPU will unwind any incorrect operations at that point).
+However, depending on how the result of the function is used, it might be
+possible to leave traces in the cache that can reveal what was stored
+at the out-of-bounds location.  The built-in function can be used to
+provide some protection against leaking data in this way by changing
+the code to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">int array[500];
+int f (unsigned untrusted_index)
+{
+  if (untrusted_index &lt; 500)
+    return array[__builtin_speculation_safe_value (untrusted_index)];
+  return 0;
+}
+</pre></div>
+
+<p>The built-in function will either cause execution to stall until the
+conditional branch has been fully resolved, or it may permit
+speculative execution to continue, but using 0 instead of
+<code>untrusted_value</code> if that exceeds the limit.
+</p>
+<p>If accessing any memory location is potentially unsafe when speculative
+execution is incorrect, then the code can be rewritten as
+</p>
+<div class="smallexample">
+<pre class="smallexample">int array[500];
+int f (unsigned untrusted_index)
+{
+  if (untrusted_index &lt; 500)
+    return *__builtin_speculation_safe_value (&amp;array[untrusted_index], NULL);
+  return 0;
+}
+</pre></div>
+
+<p>which will cause a <code>NULL</code> pointer to be used for the unsafe case.
+</p>
+</dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005ftypes_005fcompatible_005fp"></a>Built-in Function: <em>int</em> <strong>__builtin_types_compatible_p</strong> <em>(<var>type1</var>, <var>type2</var>)</em></dt>
+<dd>
+<p>You can use the built-in function <code>__builtin_types_compatible_p</code> to
+determine whether two types are the same.
+</p>
+<p>This built-in function returns 1 if the unqualified versions of the
+types <var>type1</var> and <var>type2</var> (which are types, not expressions) are
+compatible, 0 otherwise.  The result of this built-in function can be
+used in integer constant expressions.
+</p>
+<p>This built-in function ignores top level qualifiers (e.g., <code>const</code>,
+<code>volatile</code>).  For example, <code>int</code> is equivalent to <code>const
+int</code>.
+</p>
+<p>The type <code>int[]</code> and <code>int[5]</code> are compatible.  On the other
+hand, <code>int</code> and <code>char *</code> are not compatible, even if the size
+of their types, on the particular architecture are the same.  Also, the
+amount of pointer indirection is taken into account when determining
+similarity.  Consequently, <code>short *</code> is not similar to
+<code>short **</code>.  Furthermore, two types that are typedefed are
+considered compatible if their underlying types are compatible.
+</p>
+<p>An <code>enum</code> type is not considered to be compatible with another
+<code>enum</code> type even if both are compatible with the same integer
+type; this is what the C standard specifies.
+For example, <code>enum {foo, bar}</code> is not similar to
+<code>enum {hot, dog}</code>.
+</p>
+<p>You typically use this function in code whose execution varies
+depending on the arguments&rsquo; types.  For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#define foo(x)                                                  \
+  ({                                                           \
+    typeof (x) tmp = (x);                                       \
+    if (__builtin_types_compatible_p (typeof (x), long double)) \
+      tmp = foo_long_double (tmp);                              \
+    else if (__builtin_types_compatible_p (typeof (x), double)) \
+      tmp = foo_double (tmp);                                   \
+    else if (__builtin_types_compatible_p (typeof (x), float))  \
+      tmp = foo_float (tmp);                                    \
+    else                                                        \
+      abort ();                                                 \
+    tmp;                                                        \
+  })
+</pre></div>
+
+<p><em>Note:</em> This construct is only available for C.
+</p>
+</dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fcall_005fwith_005fstatic_005fchain-1"></a>Built-in Function: <em><var>type</var></em> <strong>__builtin_call_with_static_chain</strong> <em>(<var>call_exp</var>, <var>pointer_exp</var>)</em></dt>
+<dd>
+<p>The <var>call_exp</var> expression must be a function call, and the
+<var>pointer_exp</var> expression must be a pointer.  The <var>pointer_exp</var>
+is passed to the function call in the target&rsquo;s static chain location.
+The result of builtin is the result of the function call.
+</p>
+<p><em>Note:</em> This builtin is only available for C.
+This builtin can be used to call Go closures from C.
+</p>
+</dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fchoose_005fexpr"></a>Built-in Function: <em><var>type</var></em> <strong>__builtin_choose_expr</strong> <em>(<var>const_exp</var>, <var>exp1</var>, <var>exp2</var>)</em></dt>
+<dd>
+<p>You can use the built-in function <code>__builtin_choose_expr</code> to
+evaluate code depending on the value of a constant expression.  This
+built-in function returns <var>exp1</var> if <var>const_exp</var>, which is an
+integer constant expression, is nonzero.  Otherwise it returns <var>exp2</var>.
+</p>
+<p>This built-in function is analogous to the &lsquo;<samp>? :</samp>&rsquo; operator in C,
+except that the expression returned has its type unaltered by promotion
+rules.  Also, the built-in function does not evaluate the expression
+that is not chosen.  For example, if <var>const_exp</var> evaluates to <code>true</code>,
+<var>exp2</var> is not evaluated even if it has side effects.
+</p>
+<p>This built-in function can return an lvalue if the chosen argument is an
+lvalue.
+</p>
+<p>If <var>exp1</var> is returned, the return type is the same as <var>exp1</var>&rsquo;s
+type.  Similarly, if <var>exp2</var> is returned, its return type is the same
+as <var>exp2</var>.
+</p>
+<p>Example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#define foo(x)                                                    \
+  __builtin_choose_expr (                                         \
+    __builtin_types_compatible_p (typeof (x), double),            \
+    foo_double (x),                                               \
+    __builtin_choose_expr (                                       \
+      __builtin_types_compatible_p (typeof (x), float),           \
+      foo_float (x),                                              \
+      /* <span class="roman">The void expression results in a compile-time error</span>  \
+         <span class="roman">when assigning the result to something.</span>  */          \
+      (void)0))
+</pre></div>
+
+<p><em>Note:</em> This construct is only available for C.  Furthermore, the
+unused expression (<var>exp1</var> or <var>exp2</var> depending on the value of
+<var>const_exp</var>) may still generate syntax errors.  This may change in
+future revisions.
+</p>
+</dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005ftgmath"></a>Built-in Function: <em><var>type</var></em> <strong>__builtin_tgmath</strong> <em>(<var>functions</var>, <var>arguments</var>)</em></dt>
+<dd>
+<p>The built-in function <code>__builtin_tgmath</code>, available only for C
+and Objective-C, calls a function determined according to the rules of
+<code>&lt;tgmath.h&gt;</code> macros.  It is intended to be used in
+implementations of that header, so that expansions of macros from that
+header only expand each of their arguments once, to avoid problems
+when calls to such macros are nested inside the arguments of other
+calls to such macros; in addition, it results in better diagnostics
+for invalid calls to <code>&lt;tgmath.h&gt;</code> macros than implementations
+using other GNU C language features.  For example, the <code>pow</code>
+type-generic macro might be defined as:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#define pow(a, b) __builtin_tgmath (powf, pow, powl, \
+                                    cpowf, cpow, cpowl, a, b)
+</pre></div>
+
+<p>The arguments to <code>__builtin_tgmath</code> are at least two pointers to
+functions, followed by the arguments to the type-generic macro (which
+will be passed as arguments to the selected function).  All the
+pointers to functions must be pointers to prototyped functions, none
+of which may have variable arguments, and all of which must have the
+same number of parameters; the number of parameters of the first
+function determines how many arguments to <code>__builtin_tgmath</code> are
+interpreted as function pointers, and how many as the arguments to the
+called function.
+</p>
+<p>The types of the specified functions must all be different, but
+related to each other in the same way as a set of functions that may
+be selected between by a macro in <code>&lt;tgmath.h&gt;</code>.  This means that
+the functions are parameterized by a floating-point type <var>t</var>,
+different for each such function.  The function return types may all
+be the same type, or they may be <var>t</var> for each function, or they
+may be the real type corresponding to <var>t</var> for each function (if
+some of the types <var>t</var> are complex).  Likewise, for each parameter
+position, the type of the parameter in that position may always be the
+same type, or may be <var>t</var> for each function (this case must apply
+for at least one parameter position), or may be the real type
+corresponding to <var>t</var> for each function.
+</p>
+<p>The standard rules for <code>&lt;tgmath.h&gt;</code> macros are used to find a
+common type <var>u</var> from the types of the arguments for parameters
+whose types vary between the functions; complex integer types (a GNU
+extension) are treated like <code>_Complex double</code> for this purpose
+(or <code>_Complex _Float64</code> if all the function return types are the
+same <code>_Float<var>n</var></code> or <code>_Float<var>n</var>x</code> type).
+If the function return types vary, or are all the same integer type,
+the function called is the one for which <var>t</var> is <var>u</var>, and it is
+an error if there is no such function.  If the function return types
+are all the same floating-point type, the type-generic macro is taken
+to be one of those from TS 18661 that rounds the result to a narrower
+type; if there is a function for which <var>t</var> is <var>u</var>, it is
+called, and otherwise the first function, if any, for which <var>t</var>
+has at least the range and precision of <var>u</var> is called, and it is
+an error if there is no such function.
+</p>
+</dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fcomplex"></a>Built-in Function: <em><var>type</var></em> <strong>__builtin_complex</strong> <em>(<var>real</var>, <var>imag</var>)</em></dt>
+<dd>
+<p>The built-in function <code>__builtin_complex</code> is provided for use in
+implementing the ISO C11 macros <code>CMPLXF</code>, <code>CMPLX</code> and
+<code>CMPLXL</code>.  <var>real</var> and <var>imag</var> must have the same type, a
+real binary floating-point type, and the result has the corresponding
+complex type with real and imaginary parts <var>real</var> and <var>imag</var>.
+Unlike &lsquo;<samp><var>real</var> + I * <var>imag</var></samp>&rsquo;, this works even when
+infinities, NaNs and negative zeros are involved.
+</p>
+</dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fconstant_005fp"></a>Built-in Function: <em>int</em> <strong>__builtin_constant_p</strong> <em>(<var>exp</var>)</em></dt>
+<dd><p>You can use the built-in function <code>__builtin_constant_p</code> to
+determine if a value is known to be constant at compile time and hence
+that GCC can perform constant-folding on expressions involving that
+value.  The argument of the function is the value to test.  The function
+returns the integer 1 if the argument is known to be a compile-time
+constant and 0 if it is not known to be a compile-time constant.  A
+return of 0 does not indicate that the value is <em>not</em> a constant,
+but merely that GCC cannot prove it is a constant with the specified
+value of the <samp>-O</samp> option.
+</p>
+<p>You typically use this function in an embedded application where
+memory is a critical resource.  If you have some complex calculation,
+you may want it to be folded if it involves constants, but need to call
+a function if it does not.  For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#define Scale_Value(X)      \
+  (__builtin_constant_p (X) \
+  ? ((X) * SCALE + OFFSET) : Scale (X))
+</pre></div>
+
+<p>You may use this built-in function in either a macro or an inline
+function.  However, if you use it in an inlined function and pass an
+argument of the function as the argument to the built-in, GCC 
+never returns 1 when you call the inline function with a string constant
+or compound literal (see <a href="Compound-Literals.html#Compound-Literals">Compound Literals</a>) and does not return 1
+when you pass a constant numeric value to the inline function unless you
+specify the <samp>-O</samp> option.
+</p>
+<p>You may also use <code>__builtin_constant_p</code> in initializers for static
+data.  For instance, you can write
+</p>
+<div class="smallexample">
+<pre class="smallexample">static const int table[] = {
+   __builtin_constant_p (EXPRESSION) ? (EXPRESSION) : -1,
+   /* <span class="roman">&hellip;</span> */
+};
+</pre></div>
+
+<p>This is an acceptable initializer even if <var>EXPRESSION</var> is not a
+constant expression, including the case where
+<code>__builtin_constant_p</code> returns 1 because <var>EXPRESSION</var> can be
+folded to a constant but <var>EXPRESSION</var> contains operands that are
+not otherwise permitted in a static initializer (for example,
+<code>0 &amp;&amp; foo ()</code>).  GCC must be more conservative about evaluating the
+built-in in this case, because it has no opportunity to perform
+optimization.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fis_005fconstant_005fevaluated"></a>Built-in Function: <em>bool</em> <strong>__builtin_is_constant_evaluated</strong> <em>(void)</em></dt>
+<dd><p>The <code>__builtin_is_constant_evaluated</code> function is available only
+in C++.  The built-in is intended to be used by implementations of
+the <code>std::is_constant_evaluated</code> C++ function.  Programs should make
+use of the latter function rather than invoking the built-in directly.
+</p>
+<p>The main use case of the built-in is to determine whether a <code>constexpr</code>
+function is being called in a <code>constexpr</code> context.  A call to
+the function evaluates to a core constant expression with the value
+<code>true</code> if and only if it occurs within the evaluation of an expression
+or conversion that is manifestly constant-evaluated as defined in the C++
+standard.  Manifestly constant-evaluated contexts include constant-expressions,
+the conditions of <code>constexpr if</code> statements, constraint-expressions, and
+initializers of variables usable in constant expressions.   For more details
+refer to the latest revision of the C++ standard.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fexpect"></a>Built-in Function: <em>long</em> <strong>__builtin_expect</strong> <em>(long <var>exp</var>, long <var>c</var>)</em></dt>
+<dd><a name="index-fprofile_002darcs-1"></a>
+<p>You may use <code>__builtin_expect</code> to provide the compiler with
+branch prediction information.  In general, you should prefer to
+use actual profile feedback for this (<samp>-fprofile-arcs</samp>), as
+programmers are notoriously bad at predicting how their programs
+actually perform.  However, there are applications in which this
+data is hard to collect.
+</p>
+<p>The return value is the value of <var>exp</var>, which should be an integral
+expression.  The semantics of the built-in are that it is expected that
+<var>exp</var> == <var>c</var>.  For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">if (__builtin_expect (x, 0))
+  foo ();
+</pre></div>
+
+<p>indicates that we do not expect to call <code>foo</code>, since
+we expect <code>x</code> to be zero.  Since you are limited to integral
+expressions for <var>exp</var>, you should use constructions such as
+</p>
+<div class="smallexample">
+<pre class="smallexample">if (__builtin_expect (ptr != NULL, 1))
+  foo (*ptr);
+</pre></div>
+
+<p>when testing pointer or floating-point values.
+</p>
+<p>For the purposes of branch prediction optimizations, the probability that
+a <code>__builtin_expect</code> expression is <code>true</code> is controlled by GCC&rsquo;s
+<code>builtin-expect-probability</code> parameter, which defaults to 90%.  
+You can also use <code>__builtin_expect_with_probability</code> to explicitly 
+assign a probability value to individual expressions.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fexpect_005fwith_005fprobability"></a>Built-in Function: <em>long</em> <strong>__builtin_expect_with_probability</strong></dt>
+<dd><p>(long <var>exp</var>, long <var>c</var>, double <var>probability</var>)
+</p>
+<p>This function has the same semantics as <code>__builtin_expect</code>,
+but the caller provides the expected probability that <var>exp</var> == <var>c</var>.
+The last argument, <var>probability</var>, is a floating-point value in the
+range 0.0 to 1.0, inclusive.  The <var>probability</var> argument must be
+constant floating-point expression.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005ftrap"></a>Built-in Function: <em>void</em> <strong>__builtin_trap</strong> <em>(void)</em></dt>
+<dd><p>This function causes the program to exit abnormally.  GCC implements
+this function by using a target-dependent mechanism (such as
+intentionally executing an illegal instruction) or by calling
+<code>abort</code>.  The mechanism used may vary from release to release so
+you should not rely on any particular implementation.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005funreachable"></a>Built-in Function: <em>void</em> <strong>__builtin_unreachable</strong> <em>(void)</em></dt>
+<dd><p>If control flow reaches the point of the <code>__builtin_unreachable</code>,
+the program is undefined.  It is useful in situations where the
+compiler cannot deduce the unreachability of the code.
+</p>
+<p>One such case is immediately following an <code>asm</code> statement that
+either never terminates, or one that transfers control elsewhere
+and never returns.  In this example, without the
+<code>__builtin_unreachable</code>, GCC issues a warning that control
+reaches the end of a non-void function.  It also generates code
+to return after the <code>asm</code>.
+</p>
+<div class="smallexample">
+<pre class="smallexample">int f (int c, int v)
+{
+  if (c)
+    {
+      return v;
+    }
+  else
+    {
+      asm(&quot;jmp error_handler&quot;);
+      __builtin_unreachable ();
+    }
+}
+</pre></div>
+
+<p>Because the <code>asm</code> statement unconditionally transfers control out
+of the function, control never reaches the end of the function
+body.  The <code>__builtin_unreachable</code> is in fact unreachable and
+communicates this fact to the compiler.
+</p>
+<p>Another use for <code>__builtin_unreachable</code> is following a call a
+function that never returns but that is not declared
+<code>__attribute__((noreturn))</code>, as in this example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">void function_that_never_returns (void);
+
+int g (int c)
+{
+  if (c)
+    {
+      return 1;
+    }
+  else
+    {
+      function_that_never_returns ();
+      __builtin_unreachable ();
+    }
+}
+</pre></div>
+
+</dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fassume_005faligned"></a>Built-in Function: <em>void *</em> <strong>__builtin_assume_aligned</strong> <em>(const void *<var>exp</var>, size_t <var>align</var>, ...)</em></dt>
+<dd><p>This function returns its first argument, and allows the compiler
+to assume that the returned pointer is at least <var>align</var> bytes
+aligned.  This built-in can have either two or three arguments,
+if it has three, the third argument should have integer type, and
+if it is nonzero means misalignment offset.  For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">void *x = __builtin_assume_aligned (arg, 16);
+</pre></div>
+
+<p>means that the compiler can assume <code>x</code>, set to <code>arg</code>, is at least
+16-byte aligned, while:
+</p>
+<div class="smallexample">
+<pre class="smallexample">void *x = __builtin_assume_aligned (arg, 32, 8);
+</pre></div>
+
+<p>means that the compiler can assume for <code>x</code>, set to <code>arg</code>, that
+<code>(char *) x - 8</code> is 32-byte aligned.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fLINE"></a>Built-in Function: <em>int</em> <strong>__builtin_LINE</strong> <em>()</em></dt>
+<dd><p>This function is the equivalent of the preprocessor <code>__LINE__</code>
+macro and returns a constant integer expression that evaluates to
+the line number of the invocation of the built-in.  When used as a C++
+default argument for a function <var>F</var>, it returns the line number
+of the call to <var>F</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fFUNCTION"></a>Built-in Function: <em>const char *</em> <strong>__builtin_FUNCTION</strong> <em>()</em></dt>
+<dd><p>This function is the equivalent of the <code>__FUNCTION__</code> symbol
+and returns an address constant pointing to the name of the function
+from which the built-in was invoked, or the empty string if
+the invocation is not at function scope.  When used as a C++ default
+argument for a function <var>F</var>, it returns the name of <var>F</var>&rsquo;s
+caller or the empty string if the call was not made at function
+scope.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fFILE"></a>Built-in Function: <em>const char *</em> <strong>__builtin_FILE</strong> <em>()</em></dt>
+<dd><p>This function is the equivalent of the preprocessor <code>__FILE__</code>
+macro and returns an address constant pointing to the file name
+containing the invocation of the built-in, or the empty string if
+the invocation is not at function scope.  When used as a C++ default
+argument for a function <var>F</var>, it returns the file name of the call
+to <var>F</var> or the empty string if the call was not made at function
+scope.
+</p>
+<p>For example, in the following, each call to function <code>foo</code> will
+print a line similar to <code>&quot;file.c:123: foo: message&quot;</code> with the name
+of the file and the line number of the <code>printf</code> call, the name of
+the function <code>foo</code>, followed by the word <code>message</code>.
+</p>
+<div class="smallexample">
+<pre class="smallexample">const char*
+function (const char *func = __builtin_FUNCTION ())
+{
+  return func;
+}
+
+void foo (void)
+{
+  printf (&quot;%s:%i: %s: message\n&quot;, file (), line (), function ());
+}
+</pre></div>
+
+</dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005f_005f_005fclear_005fcache"></a>Built-in Function: <em>void</em> <strong>__builtin___clear_cache</strong> <em>(void *<var>begin</var>, void *<var>end</var>)</em></dt>
+<dd><p>This function is used to flush the processor&rsquo;s instruction cache for
+the region of memory between <var>begin</var> inclusive and <var>end</var>
+exclusive.  Some targets require that the instruction cache be
+flushed, after modifying memory containing code, in order to obtain
+deterministic behavior.
+</p>
+<p>If the target does not require instruction cache flushes,
+<code>__builtin___clear_cache</code> has no effect.  Otherwise either
+instructions are emitted in-line to clear the instruction cache or a
+call to the <code>__clear_cache</code> function in libgcc is made.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fprefetch"></a>Built-in Function: <em>void</em> <strong>__builtin_prefetch</strong> <em>(const void *<var>addr</var>, ...)</em></dt>
+<dd><p>This function is used to minimize cache-miss latency by moving data into
+a cache before it is accessed.
+You can insert calls to <code>__builtin_prefetch</code> into code for which
+you know addresses of data in memory that is likely to be accessed soon.
+If the target supports them, data prefetch instructions are generated.
+If the prefetch is done early enough before the access then the data will
+be in the cache by the time it is accessed.
+</p>
+<p>The value of <var>addr</var> is the address of the memory to prefetch.
+There are two optional arguments, <var>rw</var> and <var>locality</var>.
+The value of <var>rw</var> is a compile-time constant one or zero; one
+means that the prefetch is preparing for a write to the memory address
+and zero, the default, means that the prefetch is preparing for a read.
+The value <var>locality</var> must be a compile-time constant integer between
+zero and three.  A value of zero means that the data has no temporal
+locality, so it need not be left in the cache after the access.  A value
+of three means that the data has a high degree of temporal locality and
+should be left in all levels of cache possible.  Values of one and two
+mean, respectively, a low or moderate degree of temporal locality.  The
+default is three.
+</p>
+<div class="smallexample">
+<pre class="smallexample">for (i = 0; i &lt; n; i++)
+  {
+    a[i] = a[i] + b[i];
+    __builtin_prefetch (&amp;a[i+j], 1, 1);
+    __builtin_prefetch (&amp;b[i+j], 0, 1);
+    /* <span class="roman">&hellip;</span> */
+  }
+</pre></div>
+
+<p>Data prefetch does not generate faults if <var>addr</var> is invalid, but
+the address expression itself must be valid.  For example, a prefetch
+of <code>p-&gt;next</code> does not fault if <code>p-&gt;next</code> is not a valid
+address, but evaluation faults if <code>p</code> is not a valid address.
+</p>
+<p>If the target does not support data prefetch, the address expression
+is evaluated if it includes side effects but no other code is generated
+and GCC does not issue a warning.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fobject_005fsize-3"></a>Built-in Function: <em>size_t</em> <strong>__builtin_object_size</strong> <em>(const void * <var>ptr</var>, int <var>type</var>)</em></dt>
+<dd><p>Returns the size of an object pointed to by <var>ptr</var>.  See <a href="Object-Size-Checking.html#Object-Size-Checking">Object Size Checking</a>, for a detailed description of the function.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fhuge_005fval"></a>Built-in Function: <em>double</em> <strong>__builtin_huge_val</strong> <em>(void)</em></dt>
+<dd><p>Returns a positive infinity, if supported by the floating-point format,
+else <code>DBL_MAX</code>.  This function is suitable for implementing the
+ISO C macro <code>HUGE_VAL</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fhuge_005fvalf"></a>Built-in Function: <em>float</em> <strong>__builtin_huge_valf</strong> <em>(void)</em></dt>
+<dd><p>Similar to <code>__builtin_huge_val</code>, except the return type is <code>float</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fhuge_005fvall"></a>Built-in Function: <em>long double</em> <strong>__builtin_huge_vall</strong> <em>(void)</em></dt>
+<dd><p>Similar to <code>__builtin_huge_val</code>, except the return
+type is <code>long double</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-n"></a>Built-in Function: <em>_Float</em> <strong><var>n</var></strong> <em>__builtin_huge_valf<var>n</var> (void)</em></dt>
+<dd><p>Similar to <code>__builtin_huge_val</code>, except the return type is
+<code>_Float<var>n</var></code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-n-1"></a>Built-in Function: <em>_Float</em> <strong><var>n</var></strong> <em>x __builtin_huge_valf<var>n</var>x (void)</em></dt>
+<dd><p>Similar to <code>__builtin_huge_val</code>, except the return type is
+<code>_Float<var>n</var>x</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005ffpclassify-1"></a>Built-in Function: <em>int</em> <strong>__builtin_fpclassify</strong> <em>(int, int, int, int, int, ...)</em></dt>
+<dd><p>This built-in implements the C99 fpclassify functionality.  The first
+five int arguments should be the target library&rsquo;s notion of the
+possible FP classes and are used for return values.  They must be
+constant values and they must appear in this order: <code>FP_NAN</code>,
+<code>FP_INFINITE</code>, <code>FP_NORMAL</code>, <code>FP_SUBNORMAL</code> and
+<code>FP_ZERO</code>.  The ellipsis is for exactly one floating-point value
+to classify.  GCC treats the last argument as type-generic, which
+means it does not do default promotion from float to double.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005finf"></a>Built-in Function: <em>double</em> <strong>__builtin_inf</strong> <em>(void)</em></dt>
+<dd><p>Similar to <code>__builtin_huge_val</code>, except a warning is generated
+if the target floating-point format does not support infinities.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005finfd32"></a>Built-in Function: <em>_Decimal32</em> <strong>__builtin_infd32</strong> <em>(void)</em></dt>
+<dd><p>Similar to <code>__builtin_inf</code>, except the return type is <code>_Decimal32</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005finfd64"></a>Built-in Function: <em>_Decimal64</em> <strong>__builtin_infd64</strong> <em>(void)</em></dt>
+<dd><p>Similar to <code>__builtin_inf</code>, except the return type is <code>_Decimal64</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005finfd128"></a>Built-in Function: <em>_Decimal128</em> <strong>__builtin_infd128</strong> <em>(void)</em></dt>
+<dd><p>Similar to <code>__builtin_inf</code>, except the return type is <code>_Decimal128</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005finff"></a>Built-in Function: <em>float</em> <strong>__builtin_inff</strong> <em>(void)</em></dt>
+<dd><p>Similar to <code>__builtin_inf</code>, except the return type is <code>float</code>.
+This function is suitable for implementing the ISO C99 macro <code>INFINITY</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005finfl"></a>Built-in Function: <em>long double</em> <strong>__builtin_infl</strong> <em>(void)</em></dt>
+<dd><p>Similar to <code>__builtin_inf</code>, except the return
+type is <code>long double</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-n-2"></a>Built-in Function: <em>_Float</em> <strong><var>n</var></strong> <em>__builtin_inff<var>n</var> (void)</em></dt>
+<dd><p>Similar to <code>__builtin_inf</code>, except the return
+type is <code>_Float<var>n</var></code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-n-3"></a>Built-in Function: <em>_Float</em> <strong><var>n</var></strong> <em>__builtin_inff<var>n</var>x (void)</em></dt>
+<dd><p>Similar to <code>__builtin_inf</code>, except the return
+type is <code>_Float<var>n</var>x</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fisinf_005fsign-1"></a>Built-in Function: <em>int</em> <strong>__builtin_isinf_sign</strong> <em>(...)</em></dt>
+<dd><p>Similar to <code>isinf</code>, except the return value is -1 for
+an argument of <code>-Inf</code> and 1 for an argument of <code>+Inf</code>.
+Note while the parameter list is an
+ellipsis, this function only accepts exactly one floating-point
+argument.  GCC treats this parameter as type-generic, which means it
+does not do default promotion from float to double.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fnan"></a>Built-in Function: <em>double</em> <strong>__builtin_nan</strong> <em>(const char *str)</em></dt>
+<dd><p>This is an implementation of the ISO C99 function <code>nan</code>.
+</p>
+<p>Since ISO C99 defines this function in terms of <code>strtod</code>, which we
+do not implement, a description of the parsing is in order.  The string
+is parsed as by <code>strtol</code>; that is, the base is recognized by
+leading &lsquo;<samp>0</samp>&rsquo; or &lsquo;<samp>0x</samp>&rsquo; prefixes.  The number parsed is placed
+in the significand such that the least significant bit of the number
+is at the least significant bit of the significand.  The number is
+truncated to fit the significand field provided.  The significand is
+forced to be a quiet NaN.
+</p>
+<p>This function, if given a string literal all of which would have been
+consumed by <code>strtol</code>, is evaluated early enough that it is considered a
+compile-time constant.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fnand32"></a>Built-in Function: <em>_Decimal32</em> <strong>__builtin_nand32</strong> <em>(const char *str)</em></dt>
+<dd><p>Similar to <code>__builtin_nan</code>, except the return type is <code>_Decimal32</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fnand64"></a>Built-in Function: <em>_Decimal64</em> <strong>__builtin_nand64</strong> <em>(const char *str)</em></dt>
+<dd><p>Similar to <code>__builtin_nan</code>, except the return type is <code>_Decimal64</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fnand128"></a>Built-in Function: <em>_Decimal128</em> <strong>__builtin_nand128</strong> <em>(const char *str)</em></dt>
+<dd><p>Similar to <code>__builtin_nan</code>, except the return type is <code>_Decimal128</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fnanf"></a>Built-in Function: <em>float</em> <strong>__builtin_nanf</strong> <em>(const char *str)</em></dt>
+<dd><p>Similar to <code>__builtin_nan</code>, except the return type is <code>float</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fnanl"></a>Built-in Function: <em>long double</em> <strong>__builtin_nanl</strong> <em>(const char *str)</em></dt>
+<dd><p>Similar to <code>__builtin_nan</code>, except the return type is <code>long double</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-n-4"></a>Built-in Function: <em>_Float</em> <strong><var>n</var></strong> <em>__builtin_nanf<var>n</var> (const char *str)</em></dt>
+<dd><p>Similar to <code>__builtin_nan</code>, except the return type is
+<code>_Float<var>n</var></code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-n-5"></a>Built-in Function: <em>_Float</em> <strong><var>n</var></strong> <em>x __builtin_nanf<var>n</var>x (const char *str)</em></dt>
+<dd><p>Similar to <code>__builtin_nan</code>, except the return type is
+<code>_Float<var>n</var>x</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fnans"></a>Built-in Function: <em>double</em> <strong>__builtin_nans</strong> <em>(const char *str)</em></dt>
+<dd><p>Similar to <code>__builtin_nan</code>, except the significand is forced
+to be a signaling NaN.  The <code>nans</code> function is proposed by
+<a href="http://www.open-std.org/jtc1/sc22/wg14/www/docs/n965.htm">WG14 N965</a>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fnansf"></a>Built-in Function: <em>float</em> <strong>__builtin_nansf</strong> <em>(const char *str)</em></dt>
+<dd><p>Similar to <code>__builtin_nans</code>, except the return type is <code>float</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fnansl"></a>Built-in Function: <em>long double</em> <strong>__builtin_nansl</strong> <em>(const char *str)</em></dt>
+<dd><p>Similar to <code>__builtin_nans</code>, except the return type is <code>long double</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-n-6"></a>Built-in Function: <em>_Float</em> <strong><var>n</var></strong> <em>__builtin_nansf<var>n</var> (const char *str)</em></dt>
+<dd><p>Similar to <code>__builtin_nans</code>, except the return type is
+<code>_Float<var>n</var></code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-n-7"></a>Built-in Function: <em>_Float</em> <strong><var>n</var></strong> <em>x __builtin_nansf<var>n</var>x (const char *str)</em></dt>
+<dd><p>Similar to <code>__builtin_nans</code>, except the return type is
+<code>_Float<var>n</var>x</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fffs"></a>Built-in Function: <em>int</em> <strong>__builtin_ffs</strong> <em>(int x)</em></dt>
+<dd><p>Returns one plus the index of the least significant 1-bit of <var>x</var>, or
+if <var>x</var> is zero, returns zero.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fclz"></a>Built-in Function: <em>int</em> <strong>__builtin_clz</strong> <em>(unsigned int x)</em></dt>
+<dd><p>Returns the number of leading 0-bits in <var>x</var>, starting at the most
+significant bit position.  If <var>x</var> is 0, the result is undefined.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fctz"></a>Built-in Function: <em>int</em> <strong>__builtin_ctz</strong> <em>(unsigned int x)</em></dt>
+<dd><p>Returns the number of trailing 0-bits in <var>x</var>, starting at the least
+significant bit position.  If <var>x</var> is 0, the result is undefined.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fclrsb"></a>Built-in Function: <em>int</em> <strong>__builtin_clrsb</strong> <em>(int x)</em></dt>
+<dd><p>Returns the number of leading redundant sign bits in <var>x</var>, i.e. the
+number of bits following the most significant bit that are identical
+to it.  There are no special cases for 0 or other values. 
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fpopcount"></a>Built-in Function: <em>int</em> <strong>__builtin_popcount</strong> <em>(unsigned int x)</em></dt>
+<dd><p>Returns the number of 1-bits in <var>x</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fparity"></a>Built-in Function: <em>int</em> <strong>__builtin_parity</strong> <em>(unsigned int x)</em></dt>
+<dd><p>Returns the parity of <var>x</var>, i.e. the number of 1-bits in <var>x</var>
+modulo 2.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fffsl"></a>Built-in Function: <em>int</em> <strong>__builtin_ffsl</strong> <em>(long)</em></dt>
+<dd><p>Similar to <code>__builtin_ffs</code>, except the argument type is
+<code>long</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fclzl"></a>Built-in Function: <em>int</em> <strong>__builtin_clzl</strong> <em>(unsigned long)</em></dt>
+<dd><p>Similar to <code>__builtin_clz</code>, except the argument type is
+<code>unsigned long</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fctzl"></a>Built-in Function: <em>int</em> <strong>__builtin_ctzl</strong> <em>(unsigned long)</em></dt>
+<dd><p>Similar to <code>__builtin_ctz</code>, except the argument type is
+<code>unsigned long</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fclrsbl"></a>Built-in Function: <em>int</em> <strong>__builtin_clrsbl</strong> <em>(long)</em></dt>
+<dd><p>Similar to <code>__builtin_clrsb</code>, except the argument type is
+<code>long</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fpopcountl"></a>Built-in Function: <em>int</em> <strong>__builtin_popcountl</strong> <em>(unsigned long)</em></dt>
+<dd><p>Similar to <code>__builtin_popcount</code>, except the argument type is
+<code>unsigned long</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fparityl"></a>Built-in Function: <em>int</em> <strong>__builtin_parityl</strong> <em>(unsigned long)</em></dt>
+<dd><p>Similar to <code>__builtin_parity</code>, except the argument type is
+<code>unsigned long</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fffsll"></a>Built-in Function: <em>int</em> <strong>__builtin_ffsll</strong> <em>(long long)</em></dt>
+<dd><p>Similar to <code>__builtin_ffs</code>, except the argument type is
+<code>long long</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fclzll"></a>Built-in Function: <em>int</em> <strong>__builtin_clzll</strong> <em>(unsigned long long)</em></dt>
+<dd><p>Similar to <code>__builtin_clz</code>, except the argument type is
+<code>unsigned long long</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fctzll"></a>Built-in Function: <em>int</em> <strong>__builtin_ctzll</strong> <em>(unsigned long long)</em></dt>
+<dd><p>Similar to <code>__builtin_ctz</code>, except the argument type is
+<code>unsigned long long</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fclrsbll"></a>Built-in Function: <em>int</em> <strong>__builtin_clrsbll</strong> <em>(long long)</em></dt>
+<dd><p>Similar to <code>__builtin_clrsb</code>, except the argument type is
+<code>long long</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fpopcountll"></a>Built-in Function: <em>int</em> <strong>__builtin_popcountll</strong> <em>(unsigned long long)</em></dt>
+<dd><p>Similar to <code>__builtin_popcount</code>, except the argument type is
+<code>unsigned long long</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fparityll"></a>Built-in Function: <em>int</em> <strong>__builtin_parityll</strong> <em>(unsigned long long)</em></dt>
+<dd><p>Similar to <code>__builtin_parity</code>, except the argument type is
+<code>unsigned long long</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fpowi-1"></a>Built-in Function: <em>double</em> <strong>__builtin_powi</strong> <em>(double, int)</em></dt>
+<dd><p>Returns the first argument raised to the power of the second.  Unlike the
+<code>pow</code> function no guarantees about precision and rounding are made.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fpowif-1"></a>Built-in Function: <em>float</em> <strong>__builtin_powif</strong> <em>(float, int)</em></dt>
+<dd><p>Similar to <code>__builtin_powi</code>, except the argument and return types
+are <code>float</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fpowil-1"></a>Built-in Function: <em>long double</em> <strong>__builtin_powil</strong> <em>(long double, int)</em></dt>
+<dd><p>Similar to <code>__builtin_powi</code>, except the argument and return types
+are <code>long double</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fbswap16"></a>Built-in Function: <em>uint16_t</em> <strong>__builtin_bswap16</strong> <em>(uint16_t x)</em></dt>
+<dd><p>Returns <var>x</var> with the order of the bytes reversed; for example,
+<code>0xaabb</code> becomes <code>0xbbaa</code>.  Byte here always means
+exactly 8 bits.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fbswap32"></a>Built-in Function: <em>uint32_t</em> <strong>__builtin_bswap32</strong> <em>(uint32_t x)</em></dt>
+<dd><p>Similar to <code>__builtin_bswap16</code>, except the argument and return types
+are 32 bit.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fbswap64"></a>Built-in Function: <em>uint64_t</em> <strong>__builtin_bswap64</strong> <em>(uint64_t x)</em></dt>
+<dd><p>Similar to <code>__builtin_bswap32</code>, except the argument and return types
+are 64 bit.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fextend_005fpointer-1"></a>Built-in Function: <em>Pmode</em> <strong>__builtin_extend_pointer</strong> <em>(void * x)</em></dt>
+<dd><p>On targets where the user visible pointer size is smaller than the size
+of an actual hardware address this function returns the extended user
+pointer.  Targets where this is true included ILP32 mode on x86_64 or
+Aarch64.  This function is mainly useful when writing inline assembly
+code.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fgoacc_005fparlevel_005fid"></a>Built-in Function: <em>int</em> <strong>__builtin_goacc_parlevel_id</strong> <em>(int x)</em></dt>
+<dd><p>Returns the openacc gang, worker or vector id depending on whether <var>x</var> is
+0, 1 or 2.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fgoacc_005fparlevel_005fsize"></a>Built-in Function: <em>int</em> <strong>__builtin_goacc_parlevel_size</strong> <em>(int x)</em></dt>
+<dd><p>Returns the openacc gang, worker or vector size depending on whether <var>x</var> is
+0, 1 or 2.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Target-Builtins.html#Target-Builtins" accesskey="n" rel="next">Target Builtins</a>, Previous: <a href="Object-Size-Checking.html#Object-Size-Checking" accesskey="p" rel="prev">Object Size Checking</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

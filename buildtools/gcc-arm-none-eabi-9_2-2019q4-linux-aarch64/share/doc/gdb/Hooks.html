@@ -1,0 +1,160 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Hooks</title>
+
+<meta name="description" content="Debugging with GDB: Hooks">
+<meta name="keywords" content="Debugging with GDB: Hooks">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Sequences.html#Sequences" rel="up" title="Sequences">
+<link href="Command-Files.html#Command-Files" rel="next" title="Command Files">
+<link href="Define.html#Define" rel="prev" title="Define">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Hooks"></a>
+<div class="header">
+<p>
+Next: <a href="Command-Files.html#Command-Files" accesskey="n" rel="next">Command Files</a>, Previous: <a href="Define.html#Define" accesskey="p" rel="prev">Define</a>, Up: <a href="Sequences.html#Sequences" accesskey="u" rel="up">Sequences</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="User_002ddefined-Command-Hooks"></a>
+<h4 class="subsection">23.1.2 User-defined Command Hooks</h4>
+<a name="index-command-hooks"></a>
+<a name="index-hooks_002c-for-commands"></a>
+<a name="index-hooks_002c-pre_002dcommand"></a>
+
+<a name="index-hook"></a>
+<p>You may define <em>hooks</em>, which are a special kind of user-defined
+command.  Whenever you run the command &lsquo;<samp>foo</samp>&rsquo;, if the user-defined
+command &lsquo;<samp>hook-foo</samp>&rsquo; exists, it is executed (with no arguments)
+before that command.
+</p>
+<a name="index-hooks_002c-post_002dcommand"></a>
+<a name="index-hookpost"></a>
+<p>A hook may also be defined which is run after the command you executed.
+Whenever you run the command &lsquo;<samp>foo</samp>&rsquo;, if the user-defined command
+&lsquo;<samp>hookpost-foo</samp>&rsquo; exists, it is executed (with no arguments) after
+that command.  Post-execution hooks may exist simultaneously with
+pre-execution hooks, for the same command.
+</p>
+<p>It is valid for a hook to call the command which it hooks.  If this
+occurs, the hook is not re-executed, thereby avoiding infinite recursion.
+</p>
+
+<a name="index-stop_002c-a-pseudo_002dcommand"></a>
+<p>In addition, a pseudo-command, &lsquo;<samp>stop</samp>&rsquo; exists.  Defining
+(&lsquo;<samp>hook-stop</samp>&rsquo;) makes the associated commands execute every time
+execution stops in your program: before breakpoint commands are run,
+displays are printed, or the stack frame is printed.
+</p>
+<p>For example, to ignore <code>SIGALRM</code> signals while
+single-stepping, but treat them normally during normal execution,
+you could define:
+</p>
+<div class="smallexample">
+<pre class="smallexample">define hook-stop
+handle SIGALRM nopass
+end
+
+define hook-run
+handle SIGALRM pass
+end
+
+define hook-continue
+handle SIGALRM pass
+end
+</pre></div>
+
+<p>As a further example, to hook at the beginning and end of the <code>echo</code>
+command, and to add extra text to the beginning and end of the message,
+you could define:
+</p>
+<div class="smallexample">
+<pre class="smallexample">define hook-echo
+echo &lt;&lt;&lt;---
+end
+
+define hookpost-echo
+echo ---&gt;&gt;&gt;\n
+end
+
+(gdb) echo Hello World
+&lt;&lt;&lt;---Hello World---&gt;&gt;&gt;
+(gdb)
+
+</pre></div>
+
+<p>You can define a hook for any single-word command in <small>GDB</small>, but
+not for command aliases; you should define a hook for the basic command
+name, e.g.  <code>backtrace</code> rather than <code>bt</code>.
+You can hook a multi-word command by adding <code>hook-</code> or
+<code>hookpost-</code> to the last word of the command, e.g.
+&lsquo;<samp>define target hook-remote</samp>&rsquo; to add a hook to &lsquo;<samp>target remote</samp>&rsquo;.
+</p>
+<p>If an error occurs during the execution of your hook, execution of
+<small>GDB</small> commands stops and <small>GDB</small> issues a prompt
+(before the command that you actually typed had a chance to run).
+</p>
+<p>If you try to define a hook which does not match any known command, you
+get a warning from the <code>define</code> command.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Command-Files.html#Command-Files" accesskey="n" rel="next">Command Files</a>, Previous: <a href="Define.html#Define" accesskey="p" rel="prev">Define</a>, Up: <a href="Sequences.html#Sequences" accesskey="u" rel="up">Sequences</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

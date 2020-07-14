@@ -1,0 +1,800 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Insns</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Insns">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Insns">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="RTL.html#RTL" rel="up" title="RTL">
+<link href="Calls.html#Calls" rel="next" title="Calls">
+<link href="Debug-Information.html#Debug-Information" rel="prev" title="Debug Information">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Insns"></a>
+<div class="header">
+<p>
+Next: <a href="Calls.html#Calls" accesskey="n" rel="next">Calls</a>, Previous: <a href="Debug-Information.html#Debug-Information" accesskey="p" rel="prev">Debug Information</a>, Up: <a href="RTL.html#RTL" accesskey="u" rel="up">RTL</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Insns-1"></a>
+<h3 class="section">14.19 Insns</h3>
+<a name="index-insns"></a>
+
+<p>The RTL representation of the code for a function is a doubly-linked
+chain of objects called <em>insns</em>.  Insns are expressions with
+special codes that are used for no other purpose.  Some insns are
+actual instructions; others represent dispatch tables for <code>switch</code>
+statements; others represent labels to jump to or various sorts of
+declarative information.
+</p>
+<p>In addition to its own specific data, each insn must have a unique
+id-number that distinguishes it from all other insns in the current
+function (after delayed branch scheduling, copies of an insn with the
+same id-number may be present in multiple places in a function, but
+these copies will always be identical and will only appear inside a
+<code>sequence</code>), and chain pointers to the preceding and following
+insns.  These three fields occupy the same position in every insn,
+independent of the expression code of the insn.  They could be accessed
+with <code>XEXP</code> and <code>XINT</code>, but instead three special macros are
+always used:
+</p>
+<dl compact="compact">
+<dd><a name="index-INSN_005fUID"></a>
+</dd>
+<dt><code>INSN_UID (<var>i</var>)</code></dt>
+<dd><p>Accesses the unique id of insn <var>i</var>.
+</p>
+<a name="index-PREV_005fINSN"></a>
+</dd>
+<dt><code>PREV_INSN (<var>i</var>)</code></dt>
+<dd><p>Accesses the chain pointer to the insn preceding <var>i</var>.
+If <var>i</var> is the first insn, this is a null pointer.
+</p>
+<a name="index-NEXT_005fINSN"></a>
+</dd>
+<dt><code>NEXT_INSN (<var>i</var>)</code></dt>
+<dd><p>Accesses the chain pointer to the insn following <var>i</var>.
+If <var>i</var> is the last insn, this is a null pointer.
+</p></dd>
+</dl>
+
+<a name="index-get_005finsns"></a>
+<a name="index-get_005flast_005finsn"></a>
+<p>The first insn in the chain is obtained by calling <code>get_insns</code>; the
+last insn is the result of calling <code>get_last_insn</code>.  Within the
+chain delimited by these insns, the <code>NEXT_INSN</code> and
+<code>PREV_INSN</code> pointers must always correspond: if <var>insn</var> is not
+the first insn,
+</p>
+<div class="smallexample">
+<pre class="smallexample">NEXT_INSN (PREV_INSN (<var>insn</var>)) == <var>insn</var>
+</pre></div>
+
+<p>is always true and if <var>insn</var> is not the last insn,
+</p>
+<div class="smallexample">
+<pre class="smallexample">PREV_INSN (NEXT_INSN (<var>insn</var>)) == <var>insn</var>
+</pre></div>
+
+<p>is always true.
+</p>
+<p>After delay slot scheduling, some of the insns in the chain might be
+<code>sequence</code> expressions, which contain a vector of insns.  The value
+of <code>NEXT_INSN</code> in all but the last of these insns is the next insn
+in the vector; the value of <code>NEXT_INSN</code> of the last insn in the vector
+is the same as the value of <code>NEXT_INSN</code> for the <code>sequence</code> in
+which it is contained.  Similar rules apply for <code>PREV_INSN</code>.
+</p>
+<p>This means that the above invariants are not necessarily true for insns
+inside <code>sequence</code> expressions.  Specifically, if <var>insn</var> is the
+first insn in a <code>sequence</code>, <code>NEXT_INSN (PREV_INSN (<var>insn</var>))</code>
+is the insn containing the <code>sequence</code> expression, as is the value
+of <code>PREV_INSN (NEXT_INSN (<var>insn</var>))</code> if <var>insn</var> is the last
+insn in the <code>sequence</code> expression.  You can use these expressions
+to find the containing <code>sequence</code> expression.
+</p>
+<p>Every insn has one of the following expression codes:
+</p>
+<dl compact="compact">
+<dd><a name="index-insn"></a>
+</dd>
+<dt><code>insn</code></dt>
+<dd><p>The expression code <code>insn</code> is used for instructions that do not jump
+and do not do function calls.  <code>sequence</code> expressions are always
+contained in insns with code <code>insn</code> even if one of those insns
+should jump or do function calls.
+</p>
+<p>Insns with code <code>insn</code> have four additional fields beyond the three
+mandatory ones listed above.  These four are described in a table below.
+</p>
+<a name="index-jump_005finsn"></a>
+</dd>
+<dt><code>jump_insn</code></dt>
+<dd><p>The expression code <code>jump_insn</code> is used for instructions that may
+jump (or, more generally, may contain <code>label_ref</code> expressions to
+which <code>pc</code> can be set in that instruction).  If there is an
+instruction to return from the current function, it is recorded as a
+<code>jump_insn</code>.
+</p>
+<a name="index-JUMP_005fLABEL"></a>
+<p><code>jump_insn</code> insns have the same extra fields as <code>insn</code> insns,
+accessed in the same way and in addition contain a field
+<code>JUMP_LABEL</code> which is defined once jump optimization has completed.
+</p>
+<p>For simple conditional and unconditional jumps, this field contains
+the <code>code_label</code> to which this insn will (possibly conditionally)
+branch.  In a more complex jump, <code>JUMP_LABEL</code> records one of the
+labels that the insn refers to; other jump target labels are recorded
+as <code>REG_LABEL_TARGET</code> notes.  The exception is <code>addr_vec</code>
+and <code>addr_diff_vec</code>, where <code>JUMP_LABEL</code> is <code>NULL_RTX</code>
+and the only way to find the labels is to scan the entire body of the
+insn.
+</p>
+<p>Return insns count as jumps, but their <code>JUMP_LABEL</code> is <code>RETURN</code>
+or <code>SIMPLE_RETURN</code>.
+</p>
+<a name="index-call_005finsn"></a>
+</dd>
+<dt><code>call_insn</code></dt>
+<dd><p>The expression code <code>call_insn</code> is used for instructions that may do
+function calls.  It is important to distinguish these instructions because
+they imply that certain registers and memory locations may be altered
+unpredictably.
+</p>
+<a name="index-CALL_005fINSN_005fFUNCTION_005fUSAGE"></a>
+<p><code>call_insn</code> insns have the same extra fields as <code>insn</code> insns,
+accessed in the same way and in addition contain a field
+<code>CALL_INSN_FUNCTION_USAGE</code>, which contains a list (chain of
+<code>expr_list</code> expressions) containing <code>use</code>, <code>clobber</code> and
+sometimes <code>set</code> expressions that denote hard registers and
+<code>mem</code>s used or clobbered by the called function.
+</p>
+<p>A <code>mem</code> generally points to a stack slot in which arguments passed
+to the libcall by reference (see <a href="Register-Arguments.html#Register-Arguments">TARGET_PASS_BY_REFERENCE</a>) are stored.  If the argument is
+caller-copied (see <a href="Register-Arguments.html#Register-Arguments">TARGET_CALLEE_COPIES</a>),
+the stack slot will be mentioned in <code>clobber</code> and <code>use</code>
+entries; if it&rsquo;s callee-copied, only a <code>use</code> will appear, and the
+<code>mem</code> may point to addresses that are not stack slots.
+</p>
+<p>Registers occurring inside a <code>clobber</code> in this list augment
+registers specified in <code>CALL_USED_REGISTERS</code> (see <a href="Register-Basics.html#Register-Basics">Register Basics</a>).
+</p>
+<p>If the list contains a <code>set</code> involving two registers, it indicates
+that the function returns one of its arguments.  Such a <code>set</code> may
+look like a no-op if the same register holds the argument and the return
+value.
+</p>
+<a name="index-code_005flabel"></a>
+<a name="index-CODE_005fLABEL_005fNUMBER"></a>
+</dd>
+<dt><code>code_label</code></dt>
+<dd><p>A <code>code_label</code> insn represents a label that a jump insn can jump
+to.  It contains two special fields of data in addition to the three
+standard ones.  <code>CODE_LABEL_NUMBER</code> is used to hold the <em>label
+number</em>, a number that identifies this label uniquely among all the
+labels in the compilation (not just in the current function).
+Ultimately, the label is represented in the assembler output as an
+assembler label, usually of the form &lsquo;<samp>L<var>n</var></samp>&rsquo; where <var>n</var> is
+the label number.
+</p>
+<p>When a <code>code_label</code> appears in an RTL expression, it normally
+appears within a <code>label_ref</code> which represents the address of
+the label, as a number.
+</p>
+<p>Besides as a <code>code_label</code>, a label can also be represented as a
+<code>note</code> of type <code>NOTE_INSN_DELETED_LABEL</code>.
+</p>
+<a name="index-LABEL_005fNUSES"></a>
+<p>The field <code>LABEL_NUSES</code> is only defined once the jump optimization
+phase is completed.  It contains the number of times this label is
+referenced in the current function.
+</p>
+<a name="index-LABEL_005fKIND"></a>
+<a name="index-SET_005fLABEL_005fKIND"></a>
+<a name="index-LABEL_005fALT_005fENTRY_005fP"></a>
+<a name="index-alternate-entry-points"></a>
+<p>The field <code>LABEL_KIND</code> differentiates four different types of
+labels: <code>LABEL_NORMAL</code>, <code>LABEL_STATIC_ENTRY</code>,
+<code>LABEL_GLOBAL_ENTRY</code>, and <code>LABEL_WEAK_ENTRY</code>.  The only labels
+that do not have type <code>LABEL_NORMAL</code> are <em>alternate entry
+points</em> to the current function.  These may be static (visible only in
+the containing translation unit), global (exposed to all translation
+units), or weak (global, but can be overridden by another symbol with the
+same name).
+</p>
+<p>Much of the compiler treats all four kinds of label identically.  Some
+of it needs to know whether or not a label is an alternate entry point;
+for this purpose, the macro <code>LABEL_ALT_ENTRY_P</code> is provided.  It is
+equivalent to testing whether &lsquo;<samp>LABEL_KIND (label) == LABEL_NORMAL</samp>&rsquo;.
+The only place that cares about the distinction between static, global,
+and weak alternate entry points, besides the front-end code that creates
+them, is the function <code>output_alternate_entry_point</code>, in
+<samp>final.c</samp>.
+</p>
+<p>To set the kind of a label, use the <code>SET_LABEL_KIND</code> macro.
+</p>
+<a name="index-jump_005ftable_005fdata"></a>
+</dd>
+<dt><code>jump_table_data</code></dt>
+<dd><p>A <code>jump_table_data</code> insn is a placeholder for the jump-table data
+of a <code>casesi</code> or <code>tablejump</code> insn.  They are placed after
+a <code>tablejump_p</code> insn.  A <code>jump_table_data</code> insn is not part o
+a basic blockm but it is associated with the basic block that ends with
+the <code>tablejump_p</code> insn.  The <code>PATTERN</code> of a <code>jump_table_data</code>
+is always either an <code>addr_vec</code> or an <code>addr_diff_vec</code>, and a
+<code>jump_table_data</code> insn is always preceded by a <code>code_label</code>.
+The <code>tablejump_p</code> insn refers to that <code>code_label</code> via its
+<code>JUMP_LABEL</code>.
+</p>
+<a name="index-barrier"></a>
+</dd>
+<dt><code>barrier</code></dt>
+<dd><p>Barriers are placed in the instruction stream when control cannot flow
+past them.  They are placed after unconditional jump instructions to
+indicate that the jumps are unconditional and after calls to
+<code>volatile</code> functions, which do not return (e.g., <code>exit</code>).
+They contain no information beyond the three standard fields.
+</p>
+<a name="index-note"></a>
+<a name="index-NOTE_005fLINE_005fNUMBER"></a>
+<a name="index-NOTE_005fSOURCE_005fFILE"></a>
+</dd>
+<dt><code>note</code></dt>
+<dd><p><code>note</code> insns are used to represent additional debugging and
+declarative information.  They contain two nonstandard fields, an
+integer which is accessed with the macro <code>NOTE_LINE_NUMBER</code> and a
+string accessed with <code>NOTE_SOURCE_FILE</code>.
+</p>
+<p>If <code>NOTE_LINE_NUMBER</code> is positive, the note represents the
+position of a source line and <code>NOTE_SOURCE_FILE</code> is the source file name
+that the line came from.  These notes control generation of line
+number data in the assembler output.
+</p>
+<p>Otherwise, <code>NOTE_LINE_NUMBER</code> is not really a line number but a
+code with one of the following values (and <code>NOTE_SOURCE_FILE</code>
+must contain a null pointer):
+</p>
+<dl compact="compact">
+<dd><a name="index-NOTE_005fINSN_005fDELETED"></a>
+</dd>
+<dt><code>NOTE_INSN_DELETED</code></dt>
+<dd><p>Such a note is completely ignorable.  Some passes of the compiler
+delete insns by altering them into notes of this kind.
+</p>
+<a name="index-NOTE_005fINSN_005fDELETED_005fLABEL"></a>
+</dd>
+<dt><code>NOTE_INSN_DELETED_LABEL</code></dt>
+<dd><p>This marks what used to be a <code>code_label</code>, but was not used for other
+purposes than taking its address and was transformed to mark that no
+code jumps to it.
+</p>
+<a name="index-NOTE_005fINSN_005fBLOCK_005fBEG"></a>
+<a name="index-NOTE_005fINSN_005fBLOCK_005fEND"></a>
+</dd>
+<dt><code>NOTE_INSN_BLOCK_BEG</code></dt>
+<dt><code>NOTE_INSN_BLOCK_END</code></dt>
+<dd><p>These types of notes indicate the position of the beginning and end
+of a level of scoping of variable names.  They control the output
+of debugging information.
+</p>
+<a name="index-NOTE_005fINSN_005fEH_005fREGION_005fBEG"></a>
+<a name="index-NOTE_005fINSN_005fEH_005fREGION_005fEND"></a>
+</dd>
+<dt><code>NOTE_INSN_EH_REGION_BEG</code></dt>
+<dt><code>NOTE_INSN_EH_REGION_END</code></dt>
+<dd><p>These types of notes indicate the position of the beginning and end of a
+level of scoping for exception handling.  <code>NOTE_EH_HANDLER</code>
+identifies which region is associated with these notes.
+</p>
+<a name="index-NOTE_005fINSN_005fFUNCTION_005fBEG"></a>
+</dd>
+<dt><code>NOTE_INSN_FUNCTION_BEG</code></dt>
+<dd><p>Appears at the start of the function body, after the function
+prologue.
+</p>
+<a name="index-NOTE_005fINSN_005fVAR_005fLOCATION"></a>
+<a name="index-NOTE_005fVAR_005fLOCATION"></a>
+</dd>
+<dt><code>NOTE_INSN_VAR_LOCATION</code></dt>
+<dd><p>This note is used to generate variable location debugging information.
+It indicates that the user variable in its <code>VAR_LOCATION</code> operand
+is at the location given in the RTL expression, or holds a value that
+can be computed by evaluating the RTL expression from that static
+point in the program up to the next such note for the same user
+variable.
+</p>
+<a name="index-NOTE_005fINSN_005fBEGIN_005fSTMT"></a>
+</dd>
+<dt><code>NOTE_INSN_BEGIN_STMT</code></dt>
+<dd><p>This note is used to generate <code>is_stmt</code> markers in line number
+debuggign information.  It indicates the beginning of a user
+statement.
+</p>
+<a name="index-NOTE_005fINSN_005fINLINE_005fENTRY"></a>
+</dd>
+<dt><code>NOTE_INSN_INLINE_ENTRY</code></dt>
+<dd><p>This note is used to generate <code>entry_pc</code> for inlined subroutines in
+debugging information.  It indicates an inspection point at which all
+arguments for the inlined function have been bound, and before its first
+statement.
+</p>
+</dd>
+</dl>
+
+<p>These codes are printed symbolically when they appear in debugging dumps.
+</p>
+<a name="index-debug_005finsn"></a>
+<a name="index-INSN_005fVAR_005fLOCATION"></a>
+</dd>
+<dt><code>debug_insn</code></dt>
+<dd><p>The expression code <code>debug_insn</code> is used for pseudo-instructions
+that hold debugging information for variable tracking at assignments
+(see <samp>-fvar-tracking-assignments</samp> option).  They are the RTL
+representation of <code>GIMPLE_DEBUG</code> statements
+(<a href="GIMPLE_005fDEBUG.html#GIMPLE_005fDEBUG"><code>GIMPLE_DEBUG</code></a>), with a <code>VAR_LOCATION</code> operand that
+binds a user variable tree to an RTL representation of the
+<code>value</code> in the corresponding statement.  A <code>DEBUG_EXPR</code> in
+it stands for the value bound to the corresponding
+<code>DEBUG_EXPR_DECL</code>.
+</p>
+<p><code>GIMPLE_DEBUG_BEGIN_STMT</code> and <code>GIMPLE_DEBUG_INLINE_ENTRY</code> are
+expanded to RTL as a <code>DEBUG_INSN</code> with a <code>DEBUG_MARKER</code>
+<code>PATTERN</code>; the difference is the RTL mode: the former&rsquo;s
+<code>DEBUG_MARKER</code> is <code>VOIDmode</code>, whereas the latter is
+<code>BLKmode</code>; information about the inlined function can be taken from
+the lexical block encoded in the <code>INSN_LOCATION</code>.  These
+<code>DEBUG_INSN</code>s, that do not carry <code>VAR_LOCATION</code> information,
+just <code>DEBUG_MARKER</code>s, can be detected by testing
+<code>DEBUG_MARKER_INSN_P</code>, whereas those that do can be recognized as
+<code>DEBUG_BIND_INSN_P</code>.
+</p>
+<p>Throughout optimization passes, <code>DEBUG_INSN</code>s are not reordered
+with respect to each other, particularly during scheduling.  Binding
+information is kept in pseudo-instruction form, so that, unlike notes,
+it gets the same treatment and adjustments that regular instructions
+would.  It is the variable tracking pass that turns these
+pseudo-instructions into <code>NOTE_INSN_VAR_LOCATION</code>,
+<code>NOTE_INSN_BEGIN_STMT</code> and <code>NOTE_INSN_INLINE_ENTRY</code> notes,
+analyzing control flow, value equivalences and changes to registers and
+memory referenced in value expressions, propagating the values of debug
+temporaries and determining expressions that can be used to compute the
+value of each user variable at as many points (ranges, actually) in the
+program as possible.
+</p>
+<p>Unlike <code>NOTE_INSN_VAR_LOCATION</code>, the value expression in an
+<code>INSN_VAR_LOCATION</code> denotes a value at that specific point in the
+program, rather than an expression that can be evaluated at any later
+point before an overriding <code>VAR_LOCATION</code> is encountered.  E.g.,
+if a user variable is bound to a <code>REG</code> and then a subsequent insn
+modifies the <code>REG</code>, the note location would keep mapping the user
+variable to the register across the insn, whereas the insn location
+would keep the variable bound to the value, so that the variable
+tracking pass would emit another location note for the variable at the
+point in which the register is modified.
+</p>
+</dd>
+</dl>
+
+<a name="index-TImode_002c-in-insn"></a>
+<a name="index-HImode_002c-in-insn"></a>
+<a name="index-QImode_002c-in-insn"></a>
+<p>The machine mode of an insn is normally <code>VOIDmode</code>, but some
+phases use the mode for various purposes.
+</p>
+<p>The common subexpression elimination pass sets the mode of an insn to
+<code>QImode</code> when it is the first insn in a block that has already
+been processed.
+</p>
+<p>The second Haifa scheduling pass, for targets that can multiple issue,
+sets the mode of an insn to <code>TImode</code> when it is believed that the
+instruction begins an issue group.  That is, when the instruction
+cannot issue simultaneously with the previous.  This may be relied on
+by later passes, in particular machine-dependent reorg.
+</p>
+<p>Here is a table of the extra fields of <code>insn</code>, <code>jump_insn</code>
+and <code>call_insn</code> insns:
+</p>
+<dl compact="compact">
+<dd><a name="index-PATTERN"></a>
+</dd>
+<dt><code>PATTERN (<var>i</var>)</code></dt>
+<dd><p>An expression for the side effect performed by this insn.  This must
+be one of the following codes: <code>set</code>, <code>call</code>, <code>use</code>,
+<code>clobber</code>, <code>return</code>, <code>simple_return</code>, <code>asm_input</code>,
+<code>asm_output</code>, <code>addr_vec</code>, <code>addr_diff_vec</code>,
+<code>trap_if</code>, <code>unspec</code>, <code>unspec_volatile</code>,
+<code>parallel</code>, <code>cond_exec</code>, or <code>sequence</code>.  If it is a
+<code>parallel</code>, each element of the <code>parallel</code> must be one these
+codes, except that <code>parallel</code> expressions cannot be nested and
+<code>addr_vec</code> and <code>addr_diff_vec</code> are not permitted inside a
+<code>parallel</code> expression.
+</p>
+<a name="index-INSN_005fCODE"></a>
+</dd>
+<dt><code>INSN_CODE (<var>i</var>)</code></dt>
+<dd><p>An integer that says which pattern in the machine description matches
+this insn, or -1 if the matching has not yet been attempted.
+</p>
+<p>Such matching is never attempted and this field remains -1 on an insn
+whose pattern consists of a single <code>use</code>, <code>clobber</code>,
+<code>asm_input</code>, <code>addr_vec</code> or <code>addr_diff_vec</code> expression.
+</p>
+<a name="index-asm_005fnoperands"></a>
+<p>Matching is also never attempted on insns that result from an <code>asm</code>
+statement.  These contain at least one <code>asm_operands</code> expression.
+The function <code>asm_noperands</code> returns a non-negative value for
+such insns.
+</p>
+<p>In the debugging output, this field is printed as a number followed by
+a symbolic representation that locates the pattern in the <samp>md</samp>
+file as some small positive or negative offset from a named pattern.
+</p>
+<a name="index-LOG_005fLINKS"></a>
+</dd>
+<dt><code>LOG_LINKS (<var>i</var>)</code></dt>
+<dd><p>A list (chain of <code>insn_list</code> expressions) giving information about
+dependencies between instructions within a basic block.  Neither a jump
+nor a label may come between the related insns.  These are only used by
+the schedulers and by combine.  This is a deprecated data structure.
+Def-use and use-def chains are now preferred.
+</p>
+<a name="index-REG_005fNOTES"></a>
+</dd>
+<dt><code>REG_NOTES (<var>i</var>)</code></dt>
+<dd><p>A list (chain of <code>expr_list</code>, <code>insn_list</code> and <code>int_list</code>
+expressions) giving miscellaneous information about the insn.  It is often
+information pertaining to the registers used in this insn.
+</p></dd>
+</dl>
+
+<p>The <code>LOG_LINKS</code> field of an insn is a chain of <code>insn_list</code>
+expressions.  Each of these has two operands: the first is an insn,
+and the second is another <code>insn_list</code> expression (the next one in
+the chain).  The last <code>insn_list</code> in the chain has a null pointer
+as second operand.  The significant thing about the chain is which
+insns appear in it (as first operands of <code>insn_list</code>
+expressions).  Their order is not significant.
+</p>
+<p>This list is originally set up by the flow analysis pass; it is a null
+pointer until then.  Flow only adds links for those data dependencies
+which can be used for instruction combination.  For each insn, the flow
+analysis pass adds a link to insns which store into registers values
+that are used for the first time in this insn.
+</p>
+<p>The <code>REG_NOTES</code> field of an insn is a chain similar to the
+<code>LOG_LINKS</code> field but it includes <code>expr_list</code> and <code>int_list</code>
+expressions in addition to <code>insn_list</code> expressions.  There are several
+kinds of register notes, which are distinguished by the machine mode, which
+in a register note is really understood as being an <code>enum reg_note</code>.
+The first operand <var>op</var> of the note is data whose meaning depends on
+the kind of note.
+</p>
+<a name="index-REG_005fNOTE_005fKIND"></a>
+<a name="index-PUT_005fREG_005fNOTE_005fKIND"></a>
+<p>The macro <code>REG_NOTE_KIND (<var>x</var>)</code> returns the kind of
+register note.  Its counterpart, the macro <code>PUT_REG_NOTE_KIND
+(<var>x</var>, <var>newkind</var>)</code> sets the register note type of <var>x</var> to be
+<var>newkind</var>.
+</p>
+<p>Register notes are of three classes: They may say something about an
+input to an insn, they may say something about an output of an insn, or
+they may create a linkage between two insns.  There are also a set
+of values that are only used in <code>LOG_LINKS</code>.
+</p>
+<p>These register notes annotate inputs to an insn:
+</p>
+<dl compact="compact">
+<dd><a name="index-REG_005fDEAD"></a>
+</dd>
+<dt><code>REG_DEAD</code></dt>
+<dd><p>The value in <var>op</var> dies in this insn; that is to say, altering the
+value immediately after this insn would not affect the future behavior
+of the program.
+</p>
+<p>It does not follow that the register <var>op</var> has no useful value after
+this insn since <var>op</var> is not necessarily modified by this insn.
+Rather, no subsequent instruction uses the contents of <var>op</var>.
+</p>
+<a name="index-REG_005fUNUSED"></a>
+</dd>
+<dt><code>REG_UNUSED</code></dt>
+<dd><p>The register <var>op</var> being set by this insn will not be used in a
+subsequent insn.  This differs from a <code>REG_DEAD</code> note, which
+indicates that the value in an input will not be used subsequently.
+These two notes are independent; both may be present for the same
+register.
+</p>
+<a name="index-REG_005fINC"></a>
+</dd>
+<dt><code>REG_INC</code></dt>
+<dd><p>The register <var>op</var> is incremented (or decremented; at this level
+there is no distinction) by an embedded side effect inside this insn.
+This means it appears in a <code>post_inc</code>, <code>pre_inc</code>,
+<code>post_dec</code> or <code>pre_dec</code> expression.
+</p>
+<a name="index-REG_005fNONNEG"></a>
+</dd>
+<dt><code>REG_NONNEG</code></dt>
+<dd><p>The register <var>op</var> is known to have a nonnegative value when this
+insn is reached.  This is used by special looping instructions
+that terminate when the register goes negative.
+</p>
+<p>The <code>REG_NONNEG</code> note is added only to &lsquo;<samp>doloop_end</samp>&rsquo;
+insns, if its pattern uses a <code>ge</code> condition.
+</p>
+<a name="index-REG_005fLABEL_005fOPERAND"></a>
+</dd>
+<dt><code>REG_LABEL_OPERAND</code></dt>
+<dd><p>This insn uses <var>op</var>, a <code>code_label</code> or a <code>note</code> of type
+<code>NOTE_INSN_DELETED_LABEL</code>, but is not a <code>jump_insn</code>, or it
+is a <code>jump_insn</code> that refers to the operand as an ordinary
+operand.  The label may still eventually be a jump target, but if so
+in an indirect jump in a subsequent insn.  The presence of this note
+allows jump optimization to be aware that <var>op</var> is, in fact, being
+used, and flow optimization to build an accurate flow graph.
+</p>
+<a name="index-REG_005fLABEL_005fTARGET"></a>
+</dd>
+<dt><code>REG_LABEL_TARGET</code></dt>
+<dd><p>This insn is a <code>jump_insn</code> but not an <code>addr_vec</code> or
+<code>addr_diff_vec</code>.  It uses <var>op</var>, a <code>code_label</code> as a
+direct or indirect jump target.  Its purpose is similar to that of
+<code>REG_LABEL_OPERAND</code>.  This note is only present if the insn has
+multiple targets; the last label in the insn (in the highest numbered
+insn-field) goes into the <code>JUMP_LABEL</code> field and does not have a
+<code>REG_LABEL_TARGET</code> note.  See <a href="#Insns">JUMP_LABEL</a>.
+</p>
+<a name="index-REG_005fSETJMP"></a>
+</dd>
+<dt><code>REG_SETJMP</code></dt>
+<dd><p>Appears attached to each <code>CALL_INSN</code> to <code>setjmp</code> or a
+related function.
+</p></dd>
+</dl>
+
+<p>The following notes describe attributes of outputs of an insn:
+</p>
+<dl compact="compact">
+<dd><a name="index-REG_005fEQUIV"></a>
+<a name="index-REG_005fEQUAL"></a>
+</dd>
+<dt><code>REG_EQUIV</code></dt>
+<dt><code>REG_EQUAL</code></dt>
+<dd><p>This note is only valid on an insn that sets only one register and
+indicates that that register will be equal to <var>op</var> at run time; the
+scope of this equivalence differs between the two types of notes.  The
+value which the insn explicitly copies into the register may look
+different from <var>op</var>, but they will be equal at run time.  If the
+output of the single <code>set</code> is a <code>strict_low_part</code> or
+<code>zero_extract</code> expression, the note refers to the register that
+is contained in its first operand.
+</p>
+<p>For <code>REG_EQUIV</code>, the register is equivalent to <var>op</var> throughout
+the entire function, and could validly be replaced in all its
+occurrences by <var>op</var>.  (&ldquo;Validly&rdquo; here refers to the data flow of
+the program; simple replacement may make some insns invalid.)  For
+example, when a constant is loaded into a register that is never
+assigned any other value, this kind of note is used.
+</p>
+<p>When a parameter is copied into a pseudo-register at entry to a function,
+a note of this kind records that the register is equivalent to the stack
+slot where the parameter was passed.  Although in this case the register
+may be set by other insns, it is still valid to replace the register
+by the stack slot throughout the function.
+</p>
+<p>A <code>REG_EQUIV</code> note is also used on an instruction which copies a
+register parameter into a pseudo-register at entry to a function, if
+there is a stack slot where that parameter could be stored.  Although
+other insns may set the pseudo-register, it is valid for the compiler to
+replace the pseudo-register by stack slot throughout the function,
+provided the compiler ensures that the stack slot is properly
+initialized by making the replacement in the initial copy instruction as
+well.  This is used on machines for which the calling convention
+allocates stack space for register parameters.  See
+<code>REG_PARM_STACK_SPACE</code> in <a href="Stack-Arguments.html#Stack-Arguments">Stack Arguments</a>.
+</p>
+<p>In the case of <code>REG_EQUAL</code>, the register that is set by this insn
+will be equal to <var>op</var> at run time at the end of this insn but not
+necessarily elsewhere in the function.  In this case, <var>op</var>
+is typically an arithmetic expression.  For example, when a sequence of
+insns such as a library call is used to perform an arithmetic operation,
+this kind of note is attached to the insn that produces or copies the
+final value.
+</p>
+<p>These two notes are used in different ways by the compiler passes.
+<code>REG_EQUAL</code> is used by passes prior to register allocation (such as
+common subexpression elimination and loop optimization) to tell them how
+to think of that value.  <code>REG_EQUIV</code> notes are used by register
+allocation to indicate that there is an available substitute expression
+(either a constant or a <code>mem</code> expression for the location of a
+parameter on the stack) that may be used in place of a register if
+insufficient registers are available.
+</p>
+<p>Except for stack homes for parameters, which are indicated by a
+<code>REG_EQUIV</code> note and are not useful to the early optimization
+passes and pseudo registers that are equivalent to a memory location
+throughout their entire life, which is not detected until later in
+the compilation, all equivalences are initially indicated by an attached
+<code>REG_EQUAL</code> note.  In the early stages of register allocation, a
+<code>REG_EQUAL</code> note is changed into a <code>REG_EQUIV</code> note if
+<var>op</var> is a constant and the insn represents the only set of its
+destination register.
+</p>
+<p>Thus, compiler passes prior to register allocation need only check for
+<code>REG_EQUAL</code> notes and passes subsequent to register allocation
+need only check for <code>REG_EQUIV</code> notes.
+</p></dd>
+</dl>
+
+<p>These notes describe linkages between insns.  They occur in pairs: one
+insn has one of a pair of notes that points to a second insn, which has
+the inverse note pointing back to the first insn.
+</p>
+<dl compact="compact">
+<dd><a name="index-REG_005fCC_005fSETTER"></a>
+<a name="index-REG_005fCC_005fUSER"></a>
+</dd>
+<dt><code>REG_CC_SETTER</code></dt>
+<dt><code>REG_CC_USER</code></dt>
+<dd><p>On machines that use <code>cc0</code>, the insns which set and use <code>cc0</code>
+set and use <code>cc0</code> are adjacent.  However, when branch delay slot
+filling is done, this may no longer be true.  In this case a
+<code>REG_CC_USER</code> note will be placed on the insn setting <code>cc0</code> to
+point to the insn using <code>cc0</code> and a <code>REG_CC_SETTER</code> note will
+be placed on the insn using <code>cc0</code> to point to the insn setting
+<code>cc0</code>.
+</p></dd>
+</dl>
+
+<p>These values are only used in the <code>LOG_LINKS</code> field, and indicate
+the type of dependency that each link represents.  Links which indicate
+a data dependence (a read after write dependence) do not use any code,
+they simply have mode <code>VOIDmode</code>, and are printed without any
+descriptive text.
+</p>
+<dl compact="compact">
+<dd><a name="index-REG_005fDEP_005fTRUE"></a>
+</dd>
+<dt><code>REG_DEP_TRUE</code></dt>
+<dd><p>This indicates a true dependence (a read after write dependence).
+</p>
+<a name="index-REG_005fDEP_005fOUTPUT"></a>
+</dd>
+<dt><code>REG_DEP_OUTPUT</code></dt>
+<dd><p>This indicates an output dependence (a write after write dependence).
+</p>
+<a name="index-REG_005fDEP_005fANTI"></a>
+</dd>
+<dt><code>REG_DEP_ANTI</code></dt>
+<dd><p>This indicates an anti dependence (a write after read dependence).
+</p>
+</dd>
+</dl>
+
+<p>These notes describe information gathered from gcov profile data.  They
+are stored in the <code>REG_NOTES</code> field of an insn.
+</p>
+<dl compact="compact">
+<dd><a name="index-REG_005fBR_005fPROB"></a>
+</dd>
+<dt><code>REG_BR_PROB</code></dt>
+<dd><p>This is used to specify the ratio of branches to non-branches of a
+branch insn according to the profile data.  The note is represented
+as an <code>int_list</code> expression whose integer value is an encoding
+of <code>profile_probability</code> type.  <code>profile_probability</code> provide
+member function <code>from_reg_br_prob_note</code> and <code>to_reg_br_prob_note</code>
+to extract and store the probability into the RTL encoding.
+</p>
+<a name="index-REG_005fBR_005fPRED"></a>
+</dd>
+<dt><code>REG_BR_PRED</code></dt>
+<dd><p>These notes are found in JUMP insns after delayed branch scheduling
+has taken place.  They indicate both the direction and the likelihood
+of the JUMP.  The format is a bitmask of ATTR_FLAG_* values.
+</p>
+<a name="index-REG_005fFRAME_005fRELATED_005fEXPR"></a>
+</dd>
+<dt><code>REG_FRAME_RELATED_EXPR</code></dt>
+<dd><p>This is used on an RTX_FRAME_RELATED_P insn wherein the attached expression
+is used in place of the actual insn pattern.  This is done in cases where
+the pattern is either complex or misleading.
+</p></dd>
+</dl>
+
+<p>The note <code>REG_CALL_NOCF_CHECK</code> is used in conjunction with the
+<samp>-fcf-protection=branch</samp> option.  The note is set if a
+<code>nocf_check</code> attribute is specified for a function type or a
+pointer to function type.  The note is stored in the <code>REG_NOTES</code>
+field of an insn.
+</p>
+<dl compact="compact">
+<dd><a name="index-REG_005fCALL_005fNOCF_005fCHECK"></a>
+</dd>
+<dt><code>REG_CALL_NOCF_CHECK</code></dt>
+<dd><p>Users have control through the <code>nocf_check</code> attribute to identify
+which calls to a function should be skipped from control-flow instrumentation
+when the option <samp>-fcf-protection=branch</samp> is specified.  The compiler
+puts a <code>REG_CALL_NOCF_CHECK</code> note on each <code>CALL_INSN</code> instruction
+that has a function type marked with a <code>nocf_check</code> attribute.
+</p></dd>
+</dl>
+
+<p>For convenience, the machine mode in an <code>insn_list</code> or
+<code>expr_list</code> is printed using these symbolic codes in debugging dumps.
+</p>
+<a name="index-insn_005flist"></a>
+<a name="index-expr_005flist"></a>
+<p>The only difference between the expression codes <code>insn_list</code> and
+<code>expr_list</code> is that the first operand of an <code>insn_list</code> is
+assumed to be an insn and is printed in debugging dumps as the insn&rsquo;s
+unique id; the first operand of an <code>expr_list</code> is printed in the
+ordinary way as an expression.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Calls.html#Calls" accesskey="n" rel="next">Calls</a>, Previous: <a href="Debug-Information.html#Debug-Information" accesskey="p" rel="prev">Debug Information</a>, Up: <a href="RTL.html#RTL" accesskey="u" rel="up">RTL</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

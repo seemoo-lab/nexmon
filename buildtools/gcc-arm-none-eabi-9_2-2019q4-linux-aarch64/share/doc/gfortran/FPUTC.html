@@ -1,0 +1,151 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: FPUTC</title>
+
+<meta name="description" content="The GNU Fortran Compiler: FPUTC">
+<meta name="keywords" content="The GNU Fortran Compiler: FPUTC">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Intrinsic-Procedures.html#Intrinsic-Procedures" rel="up" title="Intrinsic Procedures">
+<link href="FRACTION.html#FRACTION" rel="next" title="FRACTION">
+<link href="FPUT.html#FPUT" rel="prev" title="FPUT">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="FPUTC"></a>
+<div class="header">
+<p>
+Next: <a href="FRACTION.html#FRACTION" accesskey="n" rel="next">FRACTION</a>, Previous: <a href="FPUT.html#FPUT" accesskey="p" rel="prev">FPUT</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="FPUTC-_002d_002d_002d-Write-a-single-character-in-stream-mode"></a>
+<h3 class="section">9.113 <code>FPUTC</code> &mdash; Write a single character in stream mode</h3>
+<a name="index-FPUTC"></a>
+<a name="index-write-character_002c-stream-mode-1"></a>
+<a name="index-stream-mode_002c-write-character-1"></a>
+<a name="index-file-operation_002c-write-character-1"></a>
+
+<dl compact="compact">
+<dt><em>Description</em>:</dt>
+<dd><p>Write a single character in stream mode by bypassing normal formatted 
+output. Stream I/O should not be mixed with normal record-oriented 
+(formatted or unformatted) I/O on the same unit; the results are unpredictable.
+</p>
+<p>This intrinsic is provided in both subroutine and function forms; however,
+only one form can be used in any given program unit.
+</p>
+<p>Note that the <code>FGET</code> intrinsic is provided for backwards compatibility with 
+<code>g77</code>.  GNU Fortran provides the Fortran 2003 Stream facility.
+Programmers should consider the use of new stream IO feature in new code 
+for future portability. See also <a href="Fortran-2003-status.html#Fortran-2003-status">Fortran 2003 status</a>.
+</p>
+</dd>
+<dt><em>Standard</em>:</dt>
+<dd><p>GNU extension
+</p>
+</dd>
+<dt><em>Class</em>:</dt>
+<dd><p>Subroutine, function
+</p>
+</dd>
+<dt><em>Syntax</em>:</dt>
+<dd><table>
+<tr><td width="80%"><code>CALL FPUTC(UNIT, C [, STATUS])</code></td></tr>
+<tr><td width="80%"><code>STATUS = FPUTC(UNIT, C)</code></td></tr>
+</table>
+
+</dd>
+<dt><em>Arguments</em>:</dt>
+<dd><table>
+<tr><td width="15%"><var>UNIT</var></td><td width="70%">The type shall be <code>INTEGER</code>.</td></tr>
+<tr><td width="15%"><var>C</var></td><td width="70%">The type shall be <code>CHARACTER</code> and of default
+kind.</td></tr>
+<tr><td width="15%"><var>STATUS</var></td><td width="70%">(Optional) status flag of type <code>INTEGER</code>.
+Returns 0 on success, -1 on end-of-file and a system specific positive
+error code otherwise.</td></tr>
+</table>
+
+</dd>
+<dt><em>Example</em>:</dt>
+<dd><div class="smallexample">
+<pre class="smallexample">PROGRAM test_fputc
+  CHARACTER(len=10) :: str = &quot;gfortran&quot;
+  INTEGER :: fd = 42, i
+
+  OPEN(UNIT = fd, FILE = &quot;out&quot;, ACTION = &quot;WRITE&quot;, STATUS=&quot;NEW&quot;)
+  DO i = 1, len_trim(str)
+    CALL fputc(fd, str(i:i))
+  END DO
+  CLOSE(fd)
+END PROGRAM
+</pre></div>
+
+</dd>
+<dt><em>See also</em>:</dt>
+<dd><p><a href="FPUT.html#FPUT">FPUT</a>, <a href="FGET.html#FGET">FGET</a>, <a href="FGETC.html#FGETC">FGETC</a>
+</p></dd>
+</dl>
+
+
+
+
+
+
+</body>
+</html>

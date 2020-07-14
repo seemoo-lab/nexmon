@@ -1,0 +1,113 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Containers</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Containers">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Containers">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Tree-overview.html#Tree-overview" rel="up" title="Tree overview">
+<link href="Types.html#Types" rel="next" title="Types">
+<link href="Identifiers.html#Identifiers" rel="prev" title="Identifiers">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Containers"></a>
+<div class="header">
+<p>
+Previous: <a href="Identifiers.html#Identifiers" accesskey="p" rel="prev">Identifiers</a>, Up: <a href="Tree-overview.html#Tree-overview" accesskey="u" rel="up">Tree overview</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Containers-1"></a>
+<h4 class="subsection">11.2.3 Containers</h4>
+<a name="index-container"></a>
+<a name="index-list"></a>
+<a name="index-vector"></a>
+<a name="index-TREE_005fLIST"></a>
+<a name="index-TREE_005fVEC"></a>
+<a name="index-TREE_005fPURPOSE"></a>
+<a name="index-TREE_005fVALUE"></a>
+<a name="index-TREE_005fVEC_005fLENGTH"></a>
+<a name="index-TREE_005fVEC_005fELT"></a>
+
+<p>Two common container data structures can be represented directly with
+tree nodes.  A <code>TREE_LIST</code> is a singly linked list containing two
+trees per node.  These are the <code>TREE_PURPOSE</code> and <code>TREE_VALUE</code>
+of each node.  (Often, the <code>TREE_PURPOSE</code> contains some kind of
+tag, or additional information, while the <code>TREE_VALUE</code> contains the
+majority of the payload.  In other cases, the <code>TREE_PURPOSE</code> is
+simply <code>NULL_TREE</code>, while in still others both the
+<code>TREE_PURPOSE</code> and <code>TREE_VALUE</code> are of equal stature.)  Given
+one <code>TREE_LIST</code> node, the next node is found by following the
+<code>TREE_CHAIN</code>.  If the <code>TREE_CHAIN</code> is <code>NULL_TREE</code>, then
+you have reached the end of the list.
+</p>
+<p>A <code>TREE_VEC</code> is a simple vector.  The <code>TREE_VEC_LENGTH</code> is an
+integer (not a tree) giving the number of nodes in the vector.  The
+nodes themselves are accessed using the <code>TREE_VEC_ELT</code> macro, which
+takes two arguments.  The first is the <code>TREE_VEC</code> in question; the
+second is an integer indicating which element in the vector is desired.
+The elements are indexed from zero.
+</p>
+
+
+
+
+</body>
+</html>

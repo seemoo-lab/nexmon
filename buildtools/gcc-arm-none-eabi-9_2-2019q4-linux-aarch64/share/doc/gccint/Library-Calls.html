@@ -1,0 +1,204 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Library Calls</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Library Calls">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Library Calls">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Target-Macros.html#Target-Macros" rel="up" title="Target Macros">
+<link href="Addressing-Modes.html#Addressing-Modes" rel="next" title="Addressing Modes">
+<link href="Trampolines.html#Trampolines" rel="prev" title="Trampolines">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Library-Calls"></a>
+<div class="header">
+<p>
+Next: <a href="Addressing-Modes.html#Addressing-Modes" accesskey="n" rel="next">Addressing Modes</a>, Previous: <a href="Trampolines.html#Trampolines" accesskey="p" rel="prev">Trampolines</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Implicit-Calls-to-Library-Routines"></a>
+<h3 class="section">18.12 Implicit Calls to Library Routines</h3>
+<a name="index-library-subroutine-names"></a>
+<a name="index-libgcc_002ea"></a>
+
+<p>Here is an explanation of implicit calls to library routines.
+</p>
+<dl>
+<dt><a name="index-DECLARE_005fLIBRARY_005fRENAMES"></a>Macro: <strong>DECLARE_LIBRARY_RENAMES</strong></dt>
+<dd><p>This macro, if defined, should expand to a piece of C code that will get
+expanded when compiling functions for libgcc.a.  It can be used to
+provide alternate names for GCC&rsquo;s internal library functions if there
+are ABI-mandated names that the compiler should provide.
+</p></dd></dl>
+
+<a name="index-set_005foptab_005flibfunc"></a>
+<a name="index-init_005fone_005flibfunc"></a>
+<dl>
+<dt><a name="index-TARGET_005fINIT_005fLIBFUNCS"></a>Target Hook: <em>void</em> <strong>TARGET_INIT_LIBFUNCS</strong> <em>(void)</em></dt>
+<dd><p>This hook should declare additional library routines or rename
+existing ones, using the functions <code>set_optab_libfunc</code> and
+<code>init_one_libfunc</code> defined in <samp>optabs.c</samp>.
+<code>init_optabs</code> calls this macro after initializing all the normal
+library routines.
+</p>
+<p>The default is to do nothing.  Most ports don&rsquo;t need to define this hook.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fLIBFUNC_005fGNU_005fPREFIX"></a>Target Hook: <em>bool</em> <strong>TARGET_LIBFUNC_GNU_PREFIX</strong></dt>
+<dd><p>If false (the default), internal library routines start with two
+underscores.  If set to true, these routines start with <code>__gnu_</code>
+instead.  E.g., <code>__muldi3</code> changes to <code>__gnu_muldi3</code>.  This
+currently only affects functions defined in <samp>libgcc2.c</samp>.  If this
+is set to true, the <samp>tm.h</samp> file must also
+<code>#define LIBGCC2_GNU_PREFIX</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-FLOAT_005fLIB_005fCOMPARE_005fRETURNS_005fBOOL"></a>Macro: <strong>FLOAT_LIB_COMPARE_RETURNS_BOOL</strong> <em>(<var>mode</var>, <var>comparison</var>)</em></dt>
+<dd><p>This macro should return <code>true</code> if the library routine that
+implements the floating point comparison operator <var>comparison</var> in
+mode <var>mode</var> will return a boolean, and <var>false</var> if it will
+return a tristate.
+</p>
+<p>GCC&rsquo;s own floating point libraries return tristates from the
+comparison operators, so the default returns false always.  Most ports
+don&rsquo;t need to define this macro.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fLIB_005fINT_005fCMP_005fBIASED"></a>Macro: <strong>TARGET_LIB_INT_CMP_BIASED</strong></dt>
+<dd><p>This macro should evaluate to <code>true</code> if the integer comparison
+functions (like <code>__cmpdi2</code>) return 0 to indicate that the first
+operand is smaller than the second, 1 to indicate that they are equal,
+and 2 to indicate that the first operand is greater than the second.
+If this macro evaluates to <code>false</code> the comparison functions return
+-1, 0, and 1 instead of 0, 1, and 2.  If the target uses the routines
+in <samp>libgcc.a</samp>, you do not need to define this macro.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fHAS_005fNO_005fHW_005fDIVIDE"></a>Macro: <strong>TARGET_HAS_NO_HW_DIVIDE</strong></dt>
+<dd><p>This macro should be defined if the target has no hardware divide
+instructions.  If this macro is defined, GCC will use an algorithm which
+make use of simple logical and arithmetic operations for 64-bit
+division.  If the macro is not defined, GCC will use an algorithm which
+make use of a 64-bit by 32-bit divide primitive.
+</p></dd></dl>
+
+<a name="index-EDOM_002c-implicit-usage"></a>
+<a name="index-matherr"></a>
+<dl>
+<dt><a name="index-TARGET_005fEDOM"></a>Macro: <strong>TARGET_EDOM</strong></dt>
+<dd><p>The value of <code>EDOM</code> on the target machine, as a C integer constant
+expression.  If you don&rsquo;t define this macro, GCC does not attempt to
+deposit the value of <code>EDOM</code> into <code>errno</code> directly.  Look in
+<samp>/usr/include/errno.h</samp> to find the value of <code>EDOM</code> on your
+system.
+</p>
+<p>If you do not define <code>TARGET_EDOM</code>, then compiled code reports
+domain errors by calling the library function and letting it report the
+error.  If mathematical functions on your system use <code>matherr</code> when
+there is an error, then you should leave <code>TARGET_EDOM</code> undefined so
+that <code>matherr</code> is used normally.
+</p></dd></dl>
+
+<a name="index-errno_002c-implicit-usage"></a>
+<dl>
+<dt><a name="index-GEN_005fERRNO_005fRTX"></a>Macro: <strong>GEN_ERRNO_RTX</strong></dt>
+<dd><p>Define this macro as a C expression to create an rtl expression that
+refers to the global &ldquo;variable&rdquo; <code>errno</code>.  (On certain systems,
+<code>errno</code> may not actually be a variable.)  If you don&rsquo;t define this
+macro, a reasonable default is used.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fLIBC_005fHAS_005fFUNCTION"></a>Target Hook: <em>bool</em> <strong>TARGET_LIBC_HAS_FUNCTION</strong> <em>(enum function_class <var>fn_class</var>)</em></dt>
+<dd><p>This hook determines whether a function from a class of functions
+<var>fn_class</var> is present at the runtime.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-NEXT_005fOBJC_005fRUNTIME"></a>Macro: <strong>NEXT_OBJC_RUNTIME</strong></dt>
+<dd><p>Set this macro to 1 to use the &quot;NeXT&quot; Objective-C message sending conventions
+by default.  This calling convention involves passing the object, the selector
+and the method arguments all at once to the method-lookup library function.
+This is the usual setting when targeting Darwin/Mac OS X systems, which have
+the NeXT runtime installed.
+</p>
+<p>If the macro is set to 0, the &quot;GNU&quot; Objective-C message sending convention
+will be used by default.  This convention passes just the object and the
+selector to the method-lookup function, which returns a pointer to the method.
+</p>
+<p>In either case, it remains possible to select code-generation for the alternate
+scheme, by means of compiler command line switches.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Addressing-Modes.html#Addressing-Modes" accesskey="n" rel="next">Addressing Modes</a>, Previous: <a href="Trampolines.html#Trampolines" accesskey="p" rel="prev">Trampolines</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

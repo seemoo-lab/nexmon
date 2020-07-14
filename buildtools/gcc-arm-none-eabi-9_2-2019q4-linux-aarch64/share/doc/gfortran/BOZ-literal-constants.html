@@ -1,0 +1,135 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: BOZ literal constants</title>
+
+<meta name="description" content="The GNU Fortran Compiler: BOZ literal constants">
+<meta name="keywords" content="The GNU Fortran Compiler: BOZ literal constants">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Extensions-implemented-in-GNU-Fortran.html#Extensions-implemented-in-GNU-Fortran" rel="up" title="Extensions implemented in GNU Fortran">
+<link href="Real-array-indices.html#Real-array-indices" rel="next" title="Real array indices">
+<link href="Q-exponent_002dletter.html#Q-exponent_002dletter" rel="prev" title="Q exponent-letter">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="BOZ-literal-constants"></a>
+<div class="header">
+<p>
+Next: <a href="Real-array-indices.html#Real-array-indices" accesskey="n" rel="next">Real array indices</a>, Previous: <a href="Q-exponent_002dletter.html#Q-exponent_002dletter" accesskey="p" rel="prev"><code>Q</code> exponent-letter</a>, Up: <a href="Extensions-implemented-in-GNU-Fortran.html#Extensions-implemented-in-GNU-Fortran" accesskey="u" rel="up">Extensions implemented in GNU Fortran</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="BOZ-literal-constants-1"></a>
+<h4 class="subsection">6.1.9 BOZ literal constants</h4>
+<a name="index-BOZ-literal-constants"></a>
+
+<p>Besides decimal constants, Fortran also supports binary (<code>b</code>),
+octal (<code>o</code>) and hexadecimal (<code>z</code>) integer constants.  The
+syntax is: &lsquo;<samp>prefix quote digits quote</samp>&rsquo;, were the prefix is
+either <code>b</code>, <code>o</code> or <code>z</code>, quote is either <code>'</code> or
+<code>&quot;</code> and the digits are for binary <code>0</code> or <code>1</code>, for
+octal between <code>0</code> and <code>7</code>, and for hexadecimal between
+<code>0</code> and <code>F</code>.  (Example: <code>b'01011101'</code>.)
+</p>
+<p>Up to Fortran 95, BOZ literals were only allowed to initialize
+integer variables in DATA statements.  Since Fortran 2003 BOZ literals
+are also allowed as argument of <code>REAL</code>, <code>DBLE</code>, <code>INT</code>
+and <code>CMPLX</code>; the result is the same as if the integer BOZ
+literal had been converted by <code>TRANSFER</code> to, respectively,
+<code>real</code>, <code>double precision</code>, <code>integer</code> or <code>complex</code>.
+As GNU Fortran extension the intrinsic procedures <code>FLOAT</code>,
+<code>DFLOAT</code>, <code>COMPLEX</code> and <code>DCMPLX</code> are treated alike.
+</p>
+<p>As an extension, GNU Fortran allows hexadecimal BOZ literal constants to
+be specified using the <code>X</code> prefix, in addition to the standard
+<code>Z</code> prefix.  The BOZ literal can also be specified by adding a
+suffix to the string, for example, <code>Z'ABC'</code> and <code>'ABC'Z</code> are
+equivalent.
+</p>
+<p>Furthermore, GNU Fortran allows using BOZ literal constants outside
+DATA statements and the four intrinsic functions allowed by Fortran 2003.
+In DATA statements, in direct assignments, where the right-hand side
+only contains a BOZ literal constant, and for old-style initializers of
+the form <code>integer i /o'0173'/</code>, the constant is transferred
+as if <code>TRANSFER</code> had been used; for <code>COMPLEX</code> numbers, only
+the real part is initialized unless <code>CMPLX</code> is used.  In all other
+cases, the BOZ literal constant is converted to an <code>INTEGER</code> value with
+the largest decimal representation.  This value is then converted
+numerically to the type and kind of the variable in question.
+(For instance, <code>real :: r = b'0000001' + 1</code> initializes <code>r</code>
+with <code>2.0</code>.) As different compilers implement the extension
+differently, one should be careful when doing bitwise initialization
+of non-integer variables.
+</p>
+<p>Note that initializing an <code>INTEGER</code> variable with a statement such
+as <code>DATA i/Z'FFFFFFFF'/</code> will give an integer overflow error rather
+than the desired result of <em>-1</em> when <code>i</code> is a 32-bit integer
+on a system that supports 64-bit integers.  The &lsquo;<samp>-fno-range-check</samp>&rsquo;
+option can be used as a workaround for legacy code that initializes
+integers in this manner.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Real-array-indices.html#Real-array-indices" accesskey="n" rel="next">Real array indices</a>, Previous: <a href="Q-exponent_002dletter.html#Q-exponent_002dletter" accesskey="p" rel="prev"><code>Q</code> exponent-letter</a>, Up: <a href="Extensions-implemented-in-GNU-Fortran.html#Extensions-implemented-in-GNU-Fortran" accesskey="u" rel="up">Extensions implemented in GNU Fortran</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

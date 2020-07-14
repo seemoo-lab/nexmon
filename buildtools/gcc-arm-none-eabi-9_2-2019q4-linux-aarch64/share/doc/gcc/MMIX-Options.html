@@ -1,0 +1,182 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): MMIX Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): MMIX Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): MMIX Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Submodel-Options.html#Submodel-Options" rel="up" title="Submodel Options">
+<link href="MN10300-Options.html#MN10300-Options" rel="next" title="MN10300 Options">
+<link href="MIPS-Options.html#MIPS-Options" rel="prev" title="MIPS Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="MMIX-Options"></a>
+<div class="header">
+<p>
+Next: <a href="MN10300-Options.html#MN10300-Options" accesskey="n" rel="next">MN10300 Options</a>, Previous: <a href="MIPS-Options.html#MIPS-Options" accesskey="p" rel="prev">MIPS Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="MMIX-Options-1"></a>
+<h4 class="subsection">3.18.29 MMIX Options</h4>
+<a name="index-MMIX-Options"></a>
+
+<p>These options are defined for the MMIX:
+</p>
+<dl compact="compact">
+<dt><code>-mlibfuncs</code></dt>
+<dt><code>-mno-libfuncs</code></dt>
+<dd><a name="index-mlibfuncs"></a>
+<a name="index-mno_002dlibfuncs"></a>
+<p>Specify that intrinsic library functions are being compiled, passing all
+values in registers, no matter the size.
+</p>
+</dd>
+<dt><code>-mepsilon</code></dt>
+<dt><code>-mno-epsilon</code></dt>
+<dd><a name="index-mepsilon"></a>
+<a name="index-mno_002depsilon"></a>
+<p>Generate floating-point comparison instructions that compare with respect
+to the <code>rE</code> epsilon register.
+</p>
+</dd>
+<dt><code>-mabi=mmixware</code></dt>
+<dt><code>-mabi=gnu</code></dt>
+<dd><a name="index-mabi_003dmmixware"></a>
+<a name="index-mabi_003dgnu"></a>
+<p>Generate code that passes function parameters and return values that (in
+the called function) are seen as registers <code>$0</code> and up, as opposed to
+the GNU ABI which uses global registers <code>$231</code> and up.
+</p>
+</dd>
+<dt><code>-mzero-extend</code></dt>
+<dt><code>-mno-zero-extend</code></dt>
+<dd><a name="index-mzero_002dextend"></a>
+<a name="index-mno_002dzero_002dextend"></a>
+<p>When reading data from memory in sizes shorter than 64 bits, use (do not
+use) zero-extending load instructions by default, rather than
+sign-extending ones.
+</p>
+</dd>
+<dt><code>-mknuthdiv</code></dt>
+<dt><code>-mno-knuthdiv</code></dt>
+<dd><a name="index-mknuthdiv"></a>
+<a name="index-mno_002dknuthdiv"></a>
+<p>Make the result of a division yielding a remainder have the same sign as
+the divisor.  With the default, <samp>-mno-knuthdiv</samp>, the sign of the
+remainder follows the sign of the dividend.  Both methods are
+arithmetically valid, the latter being almost exclusively used.
+</p>
+</dd>
+<dt><code>-mtoplevel-symbols</code></dt>
+<dt><code>-mno-toplevel-symbols</code></dt>
+<dd><a name="index-mtoplevel_002dsymbols"></a>
+<a name="index-mno_002dtoplevel_002dsymbols"></a>
+<p>Prepend (do not prepend) a &lsquo;<samp>:</samp>&rsquo; to all global symbols, so the assembly
+code can be used with the <code>PREFIX</code> assembly directive.
+</p>
+</dd>
+<dt><code>-melf</code></dt>
+<dd><a name="index-melf-1"></a>
+<p>Generate an executable in the ELF format, rather than the default
+&lsquo;<samp>mmo</samp>&rsquo; format used by the <code>mmix</code> simulator.
+</p>
+</dd>
+<dt><code>-mbranch-predict</code></dt>
+<dt><code>-mno-branch-predict</code></dt>
+<dd><a name="index-mbranch_002dpredict"></a>
+<a name="index-mno_002dbranch_002dpredict"></a>
+<p>Use (do not use) the probable-branch instructions, when static branch
+prediction indicates a probable branch.
+</p>
+</dd>
+<dt><code>-mbase-addresses</code></dt>
+<dt><code>-mno-base-addresses</code></dt>
+<dd><a name="index-mbase_002daddresses"></a>
+<a name="index-mno_002dbase_002daddresses"></a>
+<p>Generate (do not generate) code that uses <em>base addresses</em>.  Using a
+base address automatically generates a request (handled by the assembler
+and the linker) for a constant to be set up in a global register.  The
+register is used for one or more base address requests within the range 0
+to 255 from the value held in the register.  The generally leads to short
+and fast code, but the number of different data items that can be
+addressed is limited.  This means that a program that uses lots of static
+data may require <samp>-mno-base-addresses</samp>.
+</p>
+</dd>
+<dt><code>-msingle-exit</code></dt>
+<dt><code>-mno-single-exit</code></dt>
+<dd><a name="index-msingle_002dexit"></a>
+<a name="index-mno_002dsingle_002dexit"></a>
+<p>Force (do not force) generated code to have a single exit point in each
+function.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="MN10300-Options.html#MN10300-Options" accesskey="n" rel="next">MN10300 Options</a>, Previous: <a href="MIPS-Options.html#MIPS-Options" accesskey="p" rel="prev">MIPS Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

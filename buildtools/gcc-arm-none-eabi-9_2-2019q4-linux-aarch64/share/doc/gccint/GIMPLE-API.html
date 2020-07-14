@@ -1,0 +1,133 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: GIMPLE API</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: GIMPLE API">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: GIMPLE API">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Match-and-Simplify.html#Match-and-Simplify" rel="up" title="Match and Simplify">
+<link href="The-Language.html#The-Language" rel="next" title="The Language">
+<link href="Match-and-Simplify.html#Match-and-Simplify" rel="prev" title="Match and Simplify">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="GIMPLE-API"></a>
+<div class="header">
+<p>
+Next: <a href="The-Language.html#The-Language" accesskey="n" rel="next">The Language</a>, Up: <a href="Match-and-Simplify.html#Match-and-Simplify" accesskey="u" rel="up">Match and Simplify</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="GIMPLE-API-1"></a>
+<h3 class="section">26.1 GIMPLE API</h3>
+<a name="index-GIMPLE-API"></a>
+
+<dl>
+<dt><a name="index-gimple_005fsimplify"></a>GIMPLE function: <em>tree</em> <strong>gimple_simplify</strong> <em>(enum tree_code, tree, tree, gimple_seq *, tree (*)(tree))</em></dt>
+<dt><a name="index-gimple_005fsimplify-1"></a>GIMPLE function: <em>tree</em> <strong>gimple_simplify</strong> <em>(enum tree_code, tree, tree, tree, gimple_seq *, tree (*)(tree))</em></dt>
+<dt><a name="index-gimple_005fsimplify-2"></a>GIMPLE function: <em>tree</em> <strong>gimple_simplify</strong> <em>(enum tree_code, tree, tree, tree, tree, gimple_seq *, tree (*)(tree))</em></dt>
+<dt><a name="index-gimple_005fsimplify-3"></a>GIMPLE function: <em>tree</em> <strong>gimple_simplify</strong> <em>(enum built_in_function, tree, tree, gimple_seq *, tree (*)(tree))</em></dt>
+<dt><a name="index-gimple_005fsimplify-4"></a>GIMPLE function: <em>tree</em> <strong>gimple_simplify</strong> <em>(enum built_in_function, tree, tree, tree, gimple_seq *, tree (*)(tree))</em></dt>
+<dt><a name="index-gimple_005fsimplify-5"></a>GIMPLE function: <em>tree</em> <strong>gimple_simplify</strong> <em>(enum built_in_function, tree, tree, tree, tree, gimple_seq *, tree (*)(tree))</em></dt>
+<dd><p>The main GIMPLE API entry to the expression simplifications mimicing
+that of the GENERIC fold_{unary,binary,ternary} functions.
+</p></dd></dl>
+
+<p>thus providing n-ary overloads for operation or function.  The
+additional arguments are a gimple_seq where built statements are
+inserted on (if <code>NULL</code> then simplifications requiring new statements
+are not performed) and a valueization hook that can be used to
+tie simplifications to a SSA lattice.
+</p>
+<p>In addition to those APIs <code>fold_stmt</code> is overloaded with
+a valueization hook:
+</p>
+<dl>
+<dt><a name="index-_0028gimple_005fstmt_005fiterator"></a>bool: <em>fold_stmt</em> <strong>(gimple_stmt_iterator</strong> <em>*, tree (*)(tree));</em></dt>
+</dl>
+
+
+<p>Ontop of these a <code>fold_buildN</code>-like API for GIMPLE is introduced:
+</p>
+<dl>
+<dt><a name="index-gimple_005fbuild"></a>GIMPLE function: <em>tree</em> <strong>gimple_build</strong> <em>(gimple_seq *, location_t, enum tree_code, tree, tree, tree (*valueize) (tree) = NULL);</em></dt>
+<dt><a name="index-gimple_005fbuild-1"></a>GIMPLE function: <em>tree</em> <strong>gimple_build</strong> <em>(gimple_seq *, location_t, enum tree_code, tree, tree, tree, tree (*valueize) (tree) = NULL);</em></dt>
+<dt><a name="index-gimple_005fbuild-2"></a>GIMPLE function: <em>tree</em> <strong>gimple_build</strong> <em>(gimple_seq *, location_t, enum tree_code, tree, tree, tree, tree, tree (*valueize) (tree) = NULL);</em></dt>
+<dt><a name="index-gimple_005fbuild-3"></a>GIMPLE function: <em>tree</em> <strong>gimple_build</strong> <em>(gimple_seq *, location_t, enum built_in_function, tree, tree, tree (*valueize) (tree) = NULL);</em></dt>
+<dt><a name="index-gimple_005fbuild-4"></a>GIMPLE function: <em>tree</em> <strong>gimple_build</strong> <em>(gimple_seq *, location_t, enum built_in_function, tree, tree, tree, tree (*valueize) (tree) = NULL);</em></dt>
+<dt><a name="index-gimple_005fbuild-5"></a>GIMPLE function: <em>tree</em> <strong>gimple_build</strong> <em>(gimple_seq *, location_t, enum built_in_function, tree, tree, tree, tree, tree (*valueize) (tree) = NULL);</em></dt>
+<dt><a name="index-gimple_005fconvert"></a>GIMPLE function: <em>tree</em> <strong>gimple_convert</strong> <em>(gimple_seq *, location_t, tree, tree);</em></dt>
+</dl>
+
+<p>which is supposed to replace <code>force_gimple_operand (fold_buildN (...), ...)</code>
+and calls to <code>fold_convert</code>.  Overloads without the <code>location_t</code>
+argument exist.  Built statements are inserted on the provided sequence
+and simplification is performed using the optional valueization hook.
+</p>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="The-Language.html#The-Language" accesskey="n" rel="next">The Language</a>, Up: <a href="Match-and-Simplify.html#Match-and-Simplify" accesskey="u" rel="up">Match and Simplify</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

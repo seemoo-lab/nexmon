@@ -1,0 +1,151 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: _gfortran_caf_get_by_ref</title>
+
+<meta name="description" content="The GNU Fortran Compiler: _gfortran_caf_get_by_ref">
+<meta name="keywords" content="The GNU Fortran Compiler: _gfortran_caf_get_by_ref">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Function-ABI-Documentation.html#Function-ABI-Documentation" rel="up" title="Function ABI Documentation">
+<link href="_005fgfortran_005fcaf_005fsendget_005fby_005fref.html#g_t_005fgfortran_005fcaf_005fsendget_005fby_005fref" rel="next" title="_gfortran_caf_sendget_by_ref">
+<link href="_005fgfortran_005fcaf_005fsend_005fby_005fref.html#g_t_005fgfortran_005fcaf_005fsend_005fby_005fref" rel="prev" title="_gfortran_caf_send_by_ref">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="g_t_005fgfortran_005fcaf_005fget_005fby_005fref"></a>
+<div class="header">
+<p>
+Next: <a href="_005fgfortran_005fcaf_005fsendget_005fby_005fref.html#g_t_005fgfortran_005fcaf_005fsendget_005fby_005fref" accesskey="n" rel="next">_gfortran_caf_sendget_by_ref</a>, Previous: <a href="_005fgfortran_005fcaf_005fsend_005fby_005fref.html#g_t_005fgfortran_005fcaf_005fsend_005fby_005fref" accesskey="p" rel="prev">_gfortran_caf_send_by_ref</a>, Up: <a href="Function-ABI-Documentation.html#Function-ABI-Documentation" accesskey="u" rel="up">Function ABI Documentation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="g_t_005fgfortran_005fcaf_005fget_005fby_005fref-_002d_002d_002d-Getting-data-from-a-remote-image-using-enhanced-references"></a>
+<h4 class="subsection">8.2.15 <code>_gfortran_caf_get_by_ref</code> &mdash; Getting data from a remote image using enhanced references</h4>
+<a name="index-Coarray_002c-_005fgfortran_005fcaf_005fget_005fby_005fref"></a>
+
+<dl compact="compact">
+<dt><em>Description</em>:</dt>
+<dd><p>Called to get a scalar, an array section or a whole array from a remote image
+identified by the <var>image_index</var>.
+</p>
+</dd>
+<dt><em>Syntax</em>:</dt>
+<dd><p><code>void _gfortran_caf_get_by_ref (caf_token_t token, int image_index,
+caf_reference_t *refs, gfc_descriptor_t *dst, int dst_kind, int src_kind,
+bool may_require_tmp, bool dst_reallocatable, int *stat, int src_type)</code>
+</p>
+</dd>
+<dt><em>Arguments</em>:</dt>
+<dd><table>
+<tr><td width="15%"><var>token</var></td><td width="70%">intent(in)  An opaque pointer identifying the coarray.</td></tr>
+<tr><td width="15%"><var>image_index</var></td><td width="70%">intent(in)  The ID of the remote image; must be a
+positive number.</td></tr>
+<tr><td width="15%"><var>refs</var></td><td width="70%">intent(in) The references to apply to the remote structure
+to get the data.</td></tr>
+<tr><td width="15%"><var>dst</var></td><td width="70%">intent(in) Array descriptor of the local array to store
+the data transferred from the remote image.  May be reallocated where needed
+and when <var>DST_REALLOCATABLE</var> allows it.</td></tr>
+<tr><td width="15%"><var>dst_kind</var></td><td width="70%">intent(in)  Kind of the destination argument</td></tr>
+<tr><td width="15%"><var>src_kind</var></td><td width="70%">intent(in)  Kind of the source argument</td></tr>
+<tr><td width="15%"><var>may_require_tmp</var></td><td width="70%">intent(in)  The variable is <code>false</code> when
+it is known at compile time that the <var>dest</var> and <var>src</var> either cannot
+overlap or overlap (fully or partially) such that walking <var>src</var> and
+<var>dest</var> in element wise element order (honoring the stride value) will not
+lead to wrong results.  Otherwise, the value is <code>true</code>.</td></tr>
+<tr><td width="15%"><var>dst_reallocatable</var></td><td width="70%">intent(in)  Set when <var>DST</var> is of
+allocatable or pointer type and its refs allow reallocation, i.e., the full
+array or a component is referenced.</td></tr>
+<tr><td width="15%"><var>stat</var></td><td width="70%">intent(out) When non-<code>NULL</code> give the result of the
+operation, i.e., zero on success and non-zero on error.  When <code>NULL</code> and an
+error occurs, then an error message is printed and the program is terminated.</td></tr>
+<tr><td width="15%"><var>src_type</var></td><td width="70%">intent(in)  Give the type of the source.  When the
+source is not an array, than the precise type, e.g. of a component in a
+derived type, is not known, but provided here.</td></tr>
+</table>
+
+</dd>
+<dt><em>NOTES</em></dt>
+<dd><p>It is permitted to have <code>image_index</code> equal the current image; the memory
+of the send-to and the send-from might (partially) overlap in that case.  The
+implementation has to take care that it handles this case, e.g. using
+<code>memmove</code> which handles (partially) overlapping memory.  If
+<var>may_require_tmp</var> is true, the library might additionally create a
+temporary variable, unless additional checks show that this is not required
+(e.g. because walking backward is possible or because both arrays are
+contiguous and <code>memmove</code> takes care of overlap issues).
+</p>
+<p>Note that the library has to handle numeric-type conversion and for strings,
+padding and different character kinds.
+</p>
+<p>Because of the more complicated references possible some operations may be
+unsupported by certain libraries.  The library is expected to issue a precise
+error message why the operation is not permitted.
+</p></dd>
+</dl>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="_005fgfortran_005fcaf_005fsendget_005fby_005fref.html#g_t_005fgfortran_005fcaf_005fsendget_005fby_005fref" accesskey="n" rel="next">_gfortran_caf_sendget_by_ref</a>, Previous: <a href="_005fgfortran_005fcaf_005fsend_005fby_005fref.html#g_t_005fgfortran_005fcaf_005fsend_005fby_005fref" accesskey="p" rel="prev">_gfortran_caf_send_by_ref</a>, Up: <a href="Function-ABI-Documentation.html#Function-ABI-Documentation" accesskey="u" rel="up">Function ABI Documentation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

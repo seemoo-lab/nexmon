@@ -1,0 +1,297 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Tuple representation</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Tuple representation">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Tuple representation">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="GIMPLE.html#GIMPLE" rel="up" title="GIMPLE">
+<link href="Class-hierarchy-of-GIMPLE-statements.html#Class-hierarchy-of-GIMPLE-statements" rel="next" title="Class hierarchy of GIMPLE statements">
+<link href="GIMPLE.html#GIMPLE" rel="prev" title="GIMPLE">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Tuple-representation"></a>
+<div class="header">
+<p>
+Next: <a href="Class-hierarchy-of-GIMPLE-statements.html#Class-hierarchy-of-GIMPLE-statements" accesskey="n" rel="next">Class hierarchy of GIMPLE statements</a>, Up: <a href="GIMPLE.html#GIMPLE" accesskey="u" rel="up">GIMPLE</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Tuple-representation-1"></a>
+<h3 class="section">12.1 Tuple representation</h3>
+<a name="index-tuples"></a>
+
+<p>GIMPLE instructions are tuples of variable size divided in two
+groups: a header describing the instruction and its locations,
+and a variable length body with all the operands. Tuples are
+organized into a hierarchy with 3 main classes of tuples.
+</p>
+<a name="gimple-_0028gsbase_0029"></a>
+<h4 class="subsection">12.1.1 <code>gimple</code> (gsbase)</h4>
+<a name="index-gimple"></a>
+
+<p>This is the root of the hierarchy, it holds basic information
+needed by most GIMPLE statements. There are some fields that
+may not be relevant to every GIMPLE statement, but those were
+moved into the base structure to take advantage of holes left by
+other fields (thus making the structure more compact).  The
+structure takes 4 words (32 bytes) on 64 bit hosts:
+</p>
+<table>
+<tr><td>Field</td><td>Size (bits)</td></tr>
+<tr><td><code>code</code></td><td>8</td></tr>
+<tr><td><code>subcode</code></td><td>16</td></tr>
+<tr><td><code>no_warning</code></td><td>1</td></tr>
+<tr><td><code>visited</code></td><td>1</td></tr>
+<tr><td><code>nontemporal_move</code></td><td>1</td></tr>
+<tr><td><code>plf</code></td><td>2</td></tr>
+<tr><td><code>modified</code></td><td>1</td></tr>
+<tr><td><code>has_volatile_ops</code></td><td>1</td></tr>
+<tr><td><code>references_memory_p</code></td><td>1</td></tr>
+<tr><td><code>uid</code></td><td>32</td></tr>
+<tr><td><code>location</code></td><td>32</td></tr>
+<tr><td><code>num_ops</code></td><td>32</td></tr>
+<tr><td><code>bb</code></td><td>64</td></tr>
+<tr><td><code>block</code></td><td>63</td></tr>
+<tr><td>Total size</td><td>32 bytes</td></tr>
+</table>
+
+<ul>
+<li> <code>code</code>
+Main identifier for a GIMPLE instruction.
+
+</li><li> <code>subcode</code>
+Used to distinguish different variants of the same basic
+instruction or provide flags applicable to a given code. The
+<code>subcode</code> flags field has different uses depending on the code of
+the instruction, but mostly it distinguishes instructions of the
+same family. The most prominent use of this field is in
+assignments, where subcode indicates the operation done on the
+RHS of the assignment. For example, a = b + c is encoded as
+<code>GIMPLE_ASSIGN &lt;PLUS_EXPR, a, b, c&gt;</code>.
+
+</li><li> <code>no_warning</code>
+Bitflag to indicate whether a warning has already been issued on
+this statement.
+
+</li><li> <code>visited</code>
+General purpose &ldquo;visited&rdquo; marker. Set and cleared by each pass
+when needed.
+
+</li><li> <code>nontemporal_move</code>
+Bitflag used in assignments that represent non-temporal moves.
+Although this bitflag is only used in assignments, it was moved
+into the base to take advantage of the bit holes left by the
+previous fields.
+
+</li><li> <code>plf</code>
+Pass Local Flags. This 2-bit mask can be used as general purpose
+markers by any pass. Passes are responsible for clearing and
+setting these two flags accordingly.
+
+</li><li> <code>modified</code>
+Bitflag to indicate whether the statement has been modified.
+Used mainly by the operand scanner to determine when to re-scan a
+statement for operands.
+
+</li><li> <code>has_volatile_ops</code>
+Bitflag to indicate whether this statement contains operands that
+have been marked volatile.
+
+</li><li> <code>references_memory_p</code>
+Bitflag to indicate whether this statement contains memory
+references (i.e., its operands are either global variables, or
+pointer dereferences or anything that must reside in memory).
+
+</li><li> <code>uid</code>
+This is an unsigned integer used by passes that want to assign
+IDs to every statement. These IDs must be assigned and used by
+each pass.
+
+</li><li> <code>location</code>
+This is a <code>location_t</code> identifier to specify source code
+location for this statement. It is inherited from the front
+end.
+
+</li><li> <code>num_ops</code>
+Number of operands that this statement has. This specifies the
+size of the operand vector embedded in the tuple. Only used in
+some tuples, but it is declared in the base tuple to take
+advantage of the 32-bit hole left by the previous fields.
+
+</li><li> <code>bb</code>
+Basic block holding the instruction.
+
+</li><li> <code>block</code>
+Lexical block holding this statement.  Also used for debug
+information generation.
+</li></ul>
+
+<a name="gimple_005fstatement_005fwith_005fops"></a>
+<h4 class="subsection">12.1.2 <code>gimple_statement_with_ops</code></h4>
+<a name="index-gimple_005fstatement_005fwith_005fops"></a>
+
+<p>This tuple is actually split in two:
+<code>gimple_statement_with_ops_base</code> and
+<code>gimple_statement_with_ops</code>. This is needed to accommodate the
+way the operand vector is allocated. The operand vector is
+defined to be an array of 1 element. So, to allocate a dynamic
+number of operands, the memory allocator (<code>gimple_alloc</code>) simply
+allocates enough memory to hold the structure itself plus <code>N
+- 1</code> operands which run &ldquo;off the end&rdquo; of the structure. For
+example, to allocate space for a tuple with 3 operands,
+<code>gimple_alloc</code> reserves <code>sizeof (struct
+gimple_statement_with_ops) + 2 * sizeof (tree)</code> bytes.
+</p>
+<p>On the other hand, several fields in this tuple need to be shared
+with the <code>gimple_statement_with_memory_ops</code> tuple. So, these
+common fields are placed in <code>gimple_statement_with_ops_base</code> which
+is then inherited from the other two tuples.
+</p>
+
+<table>
+<tr><td><code>gsbase</code></td><td>256</td></tr>
+<tr><td><code>def_ops</code></td><td>64</td></tr>
+<tr><td><code>use_ops</code></td><td>64</td></tr>
+<tr><td><code>op</code></td><td><code>num_ops</code> * 64</td></tr>
+<tr><td>Total size</td><td>48 + 8 * <code>num_ops</code> bytes</td></tr>
+</table>
+
+<ul>
+<li> <code>gsbase</code>
+Inherited from <code>struct gimple</code>.
+
+</li><li> <code>def_ops</code>
+Array of pointers into the operand array indicating all the slots that
+contain a variable written-to by the statement. This array is
+also used for immediate use chaining. Note that it would be
+possible to not rely on this array, but the changes required to
+implement this are pretty invasive.
+
+</li><li> <code>use_ops</code>
+Similar to <code>def_ops</code> but for variables read by the statement.
+
+</li><li> <code>op</code>
+Array of trees with <code>num_ops</code> slots.
+</li></ul>
+
+<a name="gimple_005fstatement_005fwith_005fmemory_005fops"></a>
+<h4 class="subsection">12.1.3 <code>gimple_statement_with_memory_ops</code></h4>
+
+<p>This tuple is essentially identical to <code>gimple_statement_with_ops</code>,
+except that it contains 4 additional fields to hold vectors
+related memory stores and loads.  Similar to the previous case,
+the structure is split in two to accommodate for the operand
+vector (<code>gimple_statement_with_memory_ops_base</code> and
+<code>gimple_statement_with_memory_ops</code>).
+</p>
+
+<table>
+<tr><td>Field</td><td>Size (bits)</td></tr>
+<tr><td><code>gsbase</code></td><td>256</td></tr>
+<tr><td><code>def_ops</code></td><td>64</td></tr>
+<tr><td><code>use_ops</code></td><td>64</td></tr>
+<tr><td><code>vdef_ops</code></td><td>64</td></tr>
+<tr><td><code>vuse_ops</code></td><td>64</td></tr>
+<tr><td><code>stores</code></td><td>64</td></tr>
+<tr><td><code>loads</code></td><td>64</td></tr>
+<tr><td><code>op</code></td><td><code>num_ops</code> * 64</td></tr>
+<tr><td>Total size</td><td>80 + 8 * <code>num_ops</code> bytes</td></tr>
+</table>
+
+<ul>
+<li> <code>vdef_ops</code>
+Similar to <code>def_ops</code> but for <code>VDEF</code> operators. There is
+one entry per memory symbol written by this statement. This is
+used to maintain the memory SSA use-def and def-def chains.
+
+</li><li> <code>vuse_ops</code>
+Similar to <code>use_ops</code> but for <code>VUSE</code> operators. There is
+one entry per memory symbol loaded by this statement. This is
+used to maintain the memory SSA use-def chains.
+
+</li><li> <code>stores</code>
+Bitset with all the UIDs for the symbols written-to by the
+statement.  This is different than <code>vdef_ops</code> in that all the
+affected symbols are mentioned in this set.  If memory
+partitioning is enabled, the <code>vdef_ops</code> vector will refer to memory
+partitions. Furthermore, no SSA information is stored in this
+set.
+
+</li><li> <code>loads</code>
+Similar to <code>stores</code>, but for memory loads. (Note that there
+is some amount of redundancy here, it should be possible to
+reduce memory utilization further by removing these sets).
+</li></ul>
+
+<p>All the other tuples are defined in terms of these three basic
+ones. Each tuple will add some fields.
+</p>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Class-hierarchy-of-GIMPLE-statements.html#Class-hierarchy-of-GIMPLE-statements" accesskey="n" rel="next">Class hierarchy of GIMPLE statements</a>, Up: <a href="GIMPLE.html#GIMPLE" accesskey="u" rel="up">GIMPLE</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

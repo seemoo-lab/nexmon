@@ -1,0 +1,170 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: SYSTEM_CLOCK</title>
+
+<meta name="description" content="The GNU Fortran Compiler: SYSTEM_CLOCK">
+<meta name="keywords" content="The GNU Fortran Compiler: SYSTEM_CLOCK">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Intrinsic-Procedures.html#Intrinsic-Procedures" rel="up" title="Intrinsic Procedures">
+<link href="TAN.html#TAN" rel="next" title="TAN">
+<link href="SYSTEM.html#SYSTEM" rel="prev" title="SYSTEM">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="SYSTEM_005fCLOCK"></a>
+<div class="header">
+<p>
+Next: <a href="TAN.html#TAN" accesskey="n" rel="next">TAN</a>, Previous: <a href="SYSTEM.html#SYSTEM" accesskey="p" rel="prev">SYSTEM</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="SYSTEM_005fCLOCK-_002d_002d_002d-Time-function"></a>
+<h3 class="section">9.265 <code>SYSTEM_CLOCK</code> &mdash; Time function</h3>
+<a name="index-SYSTEM_005fCLOCK"></a>
+<a name="index-time_002c-clock-ticks-2"></a>
+<a name="index-clock-ticks-2"></a>
+
+<dl compact="compact">
+<dt><em>Description</em>:</dt>
+<dd><p>Determines the <var>COUNT</var> of a processor clock since an unspecified
+time in the past modulo <var>COUNT_MAX</var>, <var>COUNT_RATE</var> determines
+the number of clock ticks per second.  If the platform supports a
+monotonic clock, that clock is used and can, depending on the platform
+clock implementation, provide up to nanosecond resolution.  If a
+monotonic clock is not available, the implementation falls back to a
+realtime clock.
+</p>
+<p><var>COUNT_RATE</var> is system dependent and can vary depending on the kind of
+the arguments. For <var>kind=4</var> arguments (and smaller integer kinds),
+<var>COUNT</var> represents milliseconds, while for <var>kind=8</var> arguments (and
+larger integer kinds), <var>COUNT</var> typically represents micro- or
+nanoseconds depending on resolution of the underlying platform clock.
+<var>COUNT_MAX</var> usually equals <code>HUGE(COUNT_MAX)</code>. Note that the
+millisecond resolution of the <var>kind=4</var> version implies that the
+<var>COUNT</var> will wrap around in roughly 25 days. In order to avoid issues
+with the wrap around and for more precise timing, please use the
+<var>kind=8</var> version.
+</p>
+<p>If there is no clock, or querying the clock fails, <var>COUNT</var> is set
+to <code>-HUGE(COUNT)</code>, and <var>COUNT_RATE</var> and <var>COUNT_MAX</var> are
+set to zero.
+</p>
+<p>When running on a platform using the GNU C library (glibc) version
+2.16 or older, or a derivative thereof, the high resolution monotonic
+clock is available only when linking with the <var>rt</var> library.  This
+can be done explicitly by adding the <code>-lrt</code> flag when linking the
+application, but is also done implicitly when using OpenMP.
+</p>
+<p>On the Windows platform, the version with <var>kind=4</var> arguments uses
+the <code>GetTickCount</code> function, whereas the <var>kind=8</var> version
+uses <code>QueryPerformanceCounter</code> and
+<code>QueryPerformanceCounterFrequency</code>. For more information, and
+potential caveats, please see the platform documentation.
+</p>
+</dd>
+<dt><em>Standard</em>:</dt>
+<dd><p>Fortran 95 and later
+</p>
+</dd>
+<dt><em>Class</em>:</dt>
+<dd><p>Subroutine
+</p>
+</dd>
+<dt><em>Syntax</em>:</dt>
+<dd><p><code>CALL SYSTEM_CLOCK([COUNT, COUNT_RATE, COUNT_MAX])</code>
+</p>
+</dd>
+<dt><em>Arguments</em>:</dt>
+<dd><table>
+<tr><td width="15%"><var>COUNT</var></td><td width="70%">(Optional) shall be a scalar of type 
+<code>INTEGER</code> with <code>INTENT(OUT)</code>.</td></tr>
+<tr><td width="15%"><var>COUNT_RATE</var></td><td width="70%">(Optional) shall be a scalar of type 
+<code>INTEGER</code> or <code>REAL</code>, with <code>INTENT(OUT)</code>.</td></tr>
+<tr><td width="15%"><var>COUNT_MAX</var></td><td width="70%">(Optional) shall be a scalar of type 
+<code>INTEGER</code> with <code>INTENT(OUT)</code>.</td></tr>
+</table>
+
+</dd>
+<dt><em>Example</em>:</dt>
+<dd><div class="smallexample">
+<pre class="smallexample">PROGRAM test_system_clock
+  INTEGER :: count, count_rate, count_max
+  CALL SYSTEM_CLOCK(count, count_rate, count_max)
+  WRITE(*,*) count, count_rate, count_max
+END PROGRAM
+</pre></div>
+
+</dd>
+<dt><em>See also</em>:</dt>
+<dd><p><a href="DATE_005fAND_005fTIME.html#DATE_005fAND_005fTIME">DATE_AND_TIME</a>, <a href="CPU_005fTIME.html#CPU_005fTIME">CPU_TIME</a>
+</p></dd>
+</dl>
+
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="TAN.html#TAN" accesskey="n" rel="next">TAN</a>, Previous: <a href="SYSTEM.html#SYSTEM" accesskey="p" rel="prev">SYSTEM</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: TUI Single Key Mode</title>
+
+<meta name="description" content="Debugging with GDB: TUI Single Key Mode">
+<meta name="keywords" content="Debugging with GDB: TUI Single Key Mode">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="TUI.html#TUI" rel="up" title="TUI">
+<link href="TUI-Commands.html#TUI-Commands" rel="next" title="TUI Commands">
+<link href="TUI-Keys.html#TUI-Keys" rel="prev" title="TUI Keys">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="TUI-Single-Key-Mode"></a>
+<div class="header">
+<p>
+Next: <a href="TUI-Commands.html#TUI-Commands" accesskey="n" rel="next">TUI Commands</a>, Previous: <a href="TUI-Keys.html#TUI-Keys" accesskey="p" rel="prev">TUI Keys</a>, Up: <a href="TUI.html#TUI" accesskey="u" rel="up">TUI</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="TUI-Single-Key-Mode-1"></a>
+<h3 class="section">25.3 TUI Single Key Mode</h3>
+<a name="index-TUI-single-key-mode"></a>
+
+<p>The TUI also provides a <em>SingleKey</em> mode, which binds several
+frequently used <small>GDB</small> commands to single keys.  Type <kbd>C-x s</kbd> to
+switch into this mode, where the following key bindings are used:
+</p>
+<dl compact="compact">
+<dd><a name="index-c-_0028SingleKey-TUI-key_0029"></a>
+</dd>
+<dt><kbd>c</kbd></dt>
+<dd><p>continue
+</p>
+<a name="index-d-_0028SingleKey-TUI-key_0029"></a>
+</dd>
+<dt><kbd>d</kbd></dt>
+<dd><p>down
+</p>
+<a name="index-f-_0028SingleKey-TUI-key_0029"></a>
+</dd>
+<dt><kbd>f</kbd></dt>
+<dd><p>finish
+</p>
+<a name="index-n-_0028SingleKey-TUI-key_0029"></a>
+</dd>
+<dt><kbd>n</kbd></dt>
+<dd><p>next
+</p>
+<a name="index-o-_0028SingleKey-TUI-key_0029"></a>
+</dd>
+<dt><kbd>o</kbd></dt>
+<dd><p>nexti.  The shortcut letter &lsquo;<samp>o</samp>&rsquo; stands for &ldquo;step Over&rdquo;.
+</p>
+<a name="index-q-_0028SingleKey-TUI-key_0029"></a>
+</dd>
+<dt><kbd>q</kbd></dt>
+<dd><p>exit the SingleKey mode.
+</p>
+<a name="index-r-_0028SingleKey-TUI-key_0029"></a>
+</dd>
+<dt><kbd>r</kbd></dt>
+<dd><p>run
+</p>
+<a name="index-s-_0028SingleKey-TUI-key_0029"></a>
+</dd>
+<dt><kbd>s</kbd></dt>
+<dd><p>step
+</p>
+<a name="index-i-_0028SingleKey-TUI-key_0029"></a>
+</dd>
+<dt><kbd>i</kbd></dt>
+<dd><p>stepi.  The shortcut letter &lsquo;<samp>i</samp>&rsquo; stands for &ldquo;step Into&rdquo;.
+</p>
+<a name="index-u-_0028SingleKey-TUI-key_0029"></a>
+</dd>
+<dt><kbd>u</kbd></dt>
+<dd><p>up
+</p>
+<a name="index-v-_0028SingleKey-TUI-key_0029"></a>
+</dd>
+<dt><kbd>v</kbd></dt>
+<dd><p>info locals
+</p>
+<a name="index-w-_0028SingleKey-TUI-key_0029"></a>
+</dd>
+<dt><kbd>w</kbd></dt>
+<dd><p>where
+</p></dd>
+</dl>
+
+<p>Other keys temporarily switch to the <small>GDB</small> command prompt.
+The key that was pressed is inserted in the editing buffer so that
+it is possible to type most <small>GDB</small> commands without interaction
+with the TUI SingleKey mode.  Once the command is entered the TUI
+SingleKey mode is restored.  The only way to permanently leave
+this mode is by typing <kbd>q</kbd> or <kbd>C-x s</kbd>.
+</p>
+
+
+
+
+</body>
+</html>

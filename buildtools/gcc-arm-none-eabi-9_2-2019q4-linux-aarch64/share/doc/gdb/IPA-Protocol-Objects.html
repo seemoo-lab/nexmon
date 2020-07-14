@@ -1,0 +1,152 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: IPA Protocol Objects</title>
+
+<meta name="description" content="Debugging with GDB: IPA Protocol Objects">
+<meta name="keywords" content="Debugging with GDB: IPA Protocol Objects">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="In_002dProcess-Agent-Protocol.html#In_002dProcess-Agent-Protocol" rel="up" title="In-Process Agent Protocol">
+<link href="IPA-Protocol-Commands.html#IPA-Protocol-Commands" rel="next" title="IPA Protocol Commands">
+<link href="In_002dProcess-Agent-Protocol.html#In_002dProcess-Agent-Protocol" rel="prev" title="In-Process Agent Protocol">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="IPA-Protocol-Objects"></a>
+<div class="header">
+<p>
+Next: <a href="IPA-Protocol-Commands.html#IPA-Protocol-Commands" accesskey="n" rel="next">IPA Protocol Commands</a>, Up: <a href="In_002dProcess-Agent-Protocol.html#In_002dProcess-Agent-Protocol" accesskey="u" rel="up">In-Process Agent Protocol</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="IPA-Protocol-Objects-1"></a>
+<h4 class="subsection">30.1.1 IPA Protocol Objects</h4>
+<a name="index-ipa-protocol-objects"></a>
+
+<p>The commands sent to and results received from agent may contain some
+complex data types called <em>objects</em>.
+</p>
+<p>The in-process agent is running on the same machine with <small>GDB</small>
+or GDBserver, so it doesn&rsquo;t have to handle as much differences between
+two ends as remote protocol (see <a href="Remote-Protocol.html#Remote-Protocol">Remote Protocol</a>) tries to handle.
+However, there are still some differences of two ends in two processes:
+</p>
+<ol>
+<li> word size.  On some 64-bit machines, <small>GDB</small> or GDBserver can be
+compiled as a 64-bit executable, while in-process agent is a 32-bit one.
+</li><li> ABI.  Some machines may have multiple types of ABI, <small>GDB</small> or
+GDBserver is compiled with one, and in-process agent is compiled with
+the other one.
+</li></ol>
+
+<p>Here are the IPA Protocol Objects:
+</p>
+<ol>
+<li> agent expression object.  It represents an agent expression
+(see <a href="Agent-Expressions.html#Agent-Expressions">Agent Expressions</a>).
+<a name="agent-expression-object"></a></li><li> tracepoint action object.  It represents a tracepoint action
+(see <a href="Tracepoint-Actions.html#Tracepoint-Actions">Tracepoint Action Lists</a>) to collect registers,
+memory, static trace data and to evaluate expression.
+<a name="tracepoint-action-object"></a></li><li> tracepoint object.  It represents a tracepoint (see <a href="Tracepoints.html#Tracepoints">Tracepoints</a>).
+<a name="tracepoint-object"></a>
+</li></ol>
+
+<p>The following table describes important attributes of each IPA protocol
+object:
+</p>
+<table>
+<thead><tr><th width="30%">Name</th><th width="20%">Size</th><th width="50%">Description</th></tr></thead>
+<tr><td width="30%"><em>agent expression object</em></td><td width="20%"></td><td width="50%"></td></tr>
+<tr><td width="30%">length</td><td width="20%">4</td><td width="50%">length of bytes code</td></tr>
+<tr><td width="30%">byte code</td><td width="20%"><var>length</var></td><td width="50%">contents of byte code</td></tr>
+<tr><td width="30%"><em>tracepoint action for collecting memory</em></td><td width="20%"></td><td width="50%"></td></tr>
+<tr><td width="30%">&rsquo;M&rsquo;</td><td width="20%">1</td><td width="50%">type of tracepoint action</td></tr>
+<tr><td width="30%">addr</td><td width="20%">8</td><td width="50%">if <var>basereg</var> is &lsquo;<samp>-1</samp>&rsquo;, <var>addr</var> is the
+address of the lowest byte to collect, otherwise <var>addr</var> is the offset
+of <var>basereg</var> for memory collecting.</td></tr>
+<tr><td width="30%">len</td><td width="20%">8</td><td width="50%">length of memory for collecting</td></tr>
+<tr><td width="30%">basereg</td><td width="20%">4</td><td width="50%">the register number containing the starting
+memory address for collecting.</td></tr>
+<tr><td width="30%"><em>tracepoint action for collecting registers</em></td><td width="20%"></td><td width="50%"></td></tr>
+<tr><td width="30%">&rsquo;R&rsquo;</td><td width="20%">1</td><td width="50%">type of tracepoint action</td></tr>
+<tr><td width="30%"><em>tracepoint action for collecting static trace data</em></td><td width="20%"></td><td width="50%"></td></tr>
+<tr><td width="30%">&rsquo;L&rsquo;</td><td width="20%">1</td><td width="50%">type of tracepoint action</td></tr>
+<tr><td width="30%"><em>tracepoint action for expression evaluation</em></td><td width="20%"></td><td width="50%"></td></tr>
+<tr><td width="30%">&rsquo;X&rsquo;</td><td width="20%">1</td><td width="50%">type of tracepoint action</td></tr>
+<tr><td width="30%">agent expression</td><td width="20%">length of</td><td width="50%"><a href="#agent-expression-object">agent expression object</a></td></tr>
+<tr><td width="30%"><em>tracepoint object</em></td><td width="20%"></td><td width="50%"></td></tr>
+<tr><td width="30%">number</td><td width="20%">4</td><td width="50%">number of tracepoint</td></tr>
+<tr><td width="30%">address</td><td width="20%">8</td><td width="50%">address of tracepoint inserted on</td></tr>
+<tr><td width="30%">type</td><td width="20%">4</td><td width="50%">type of tracepoint</td></tr>
+<tr><td width="30%">enabled</td><td width="20%">1</td><td width="50%">enable or disable of tracepoint</td></tr>
+<tr><td width="30%">step_count</td><td width="20%">8</td><td width="50%">step</td></tr>
+<tr><td width="30%">pass_count</td><td width="20%">8</td><td width="50%">pass</td></tr>
+<tr><td width="30%">numactions</td><td width="20%">4</td><td width="50%">number of tracepoint actions</td></tr>
+<tr><td width="30%">hit count</td><td width="20%">8</td><td width="50%">hit count</td></tr>
+<tr><td width="30%">trace frame usage</td><td width="20%">8</td><td width="50%">trace frame usage</td></tr>
+<tr><td width="30%">compiled_cond</td><td width="20%">8</td><td width="50%">compiled condition</td></tr>
+<tr><td width="30%">orig_size</td><td width="20%">8</td><td width="50%">orig size</td></tr>
+<tr><td width="30%">condition</td><td width="20%">4 if condition is NULL otherwise length of
+<a href="#agent-expression-object">agent expression object</a></td><td width="50%">zero if condition is NULL, otherwise is
+<a href="#agent-expression-object">agent expression object</a></td></tr>
+<tr><td width="30%">actions</td><td width="20%">variable</td><td width="50%">numactions number of <a href="#tracepoint-action-object">tracepoint action object</a></td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="IPA-Protocol-Commands.html#IPA-Protocol-Commands" accesskey="n" rel="next">IPA Protocol Commands</a>, Up: <a href="In_002dProcess-Agent-Protocol.html#In_002dProcess-Agent-Protocol" accesskey="u" rel="up">In-Process Agent Protocol</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

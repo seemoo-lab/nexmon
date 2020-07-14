@@ -1,0 +1,157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Machine Desc</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Machine Desc">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Machine Desc">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Overview.html#Overview" rel="next" title="Overview">
+<link href="Dependency-analysis.html#Dependency-analysis" rel="prev" title="Dependency analysis">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Machine-Desc"></a>
+<div class="header">
+<p>
+Next: <a href="Target-Macros.html#Target-Macros" accesskey="n" rel="next">Target Macros</a>, Previous: <a href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation" accesskey="p" rel="prev">Loop Analysis and Representation</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Machine-Descriptions"></a>
+<h2 class="chapter">17 Machine Descriptions</h2>
+<a name="index-machine-descriptions"></a>
+
+<p>A machine description has two parts: a file of instruction patterns
+(<samp>.md</samp> file) and a C header file of macro definitions.
+</p>
+<p>The <samp>.md</samp> file for a target machine contains a pattern for each
+instruction that the target machine supports (or at least each instruction
+that is worth telling the compiler about).  It may also contain comments.
+A semicolon causes the rest of the line to be a comment, unless the semicolon
+is inside a quoted string.
+</p>
+<p>See the next chapter for information on the C header file.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Overview.html#Overview" accesskey="1">Overview</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How the machine description is used.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Patterns.html#Patterns" accesskey="2">Patterns</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How to write instruction patterns.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Example.html#Example" accesskey="3">Example</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">An explained example of a <code>define_insn</code> pattern.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="RTL-Template.html#RTL-Template" accesskey="4">RTL Template</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">The RTL template defines what insns match a pattern.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Output-Template.html#Output-Template" accesskey="5">Output Template</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">The output template says how to make assembler code
+                        from such an insn.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Output-Statement.html#Output-Statement" accesskey="6">Output Statement</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">For more generality, write C code to output
+                        the assembler code.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Predicates.html#Predicates" accesskey="7">Predicates</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Controlling what kinds of operands can be used
+                        for an insn.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Constraints.html#Constraints" accesskey="8">Constraints</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Fine-tuning operand selection.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Standard-Names.html#Standard-Names" accesskey="9">Standard Names</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Names mark patterns to use for code generation.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Pattern-Ordering.html#Pattern-Ordering">Pattern Ordering</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">When the order of patterns makes a difference.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Dependent-Patterns.html#Dependent-Patterns">Dependent Patterns</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Having one pattern may make you need another.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Jump-Patterns.html#Jump-Patterns">Jump Patterns</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Special considerations for patterns for jump insns.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Looping-Patterns.html#Looping-Patterns">Looping Patterns</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How to define patterns for special looping insns.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Insn-Canonicalizations.html#Insn-Canonicalizations">Insn Canonicalizations</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Canonicalization of Instructions
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Expander-Definitions.html#Expander-Definitions">Expander Definitions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Generating a sequence of several RTL insns
+                        for a standard operation.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Insn-Splitting.html#Insn-Splitting">Insn Splitting</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Splitting Instructions into Multiple Instructions.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Including-Patterns.html#Including-Patterns">Including Patterns</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Including Patterns in Machine Descriptions.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Peephole-Definitions.html#Peephole-Definitions">Peephole Definitions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Defining machine-specific peephole optimizations.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Insn-Attributes.html#Insn-Attributes">Insn Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Specifying the value of attributes for generated insns.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Conditional-Execution.html#Conditional-Execution">Conditional Execution</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Generating <code>define_insn</code> patterns for
+                         predication.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Define-Subst.html#Define-Subst">Define Subst</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Generating <code>define_insn</code> and <code>define_expand</code>
+			patterns from other patterns.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Constant-Definitions.html#Constant-Definitions">Constant Definitions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Defining symbolic constants that can be used in the
+                        md file.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Iterators.html#Iterators">Iterators</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Using iterators to generate patterns from a template.
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Target-Macros.html#Target-Macros" accesskey="n" rel="next">Target Macros</a>, Previous: <a href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation" accesskey="p" rel="prev">Loop Analysis and Representation</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

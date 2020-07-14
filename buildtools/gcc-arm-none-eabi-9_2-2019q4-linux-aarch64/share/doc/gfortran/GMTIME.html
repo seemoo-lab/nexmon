@@ -1,0 +1,145 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: GMTIME</title>
+
+<meta name="description" content="The GNU Fortran Compiler: GMTIME">
+<meta name="keywords" content="The GNU Fortran Compiler: GMTIME">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Intrinsic-Procedures.html#Intrinsic-Procedures" rel="up" title="Intrinsic Procedures">
+<link href="HOSTNM.html#HOSTNM" rel="next" title="HOSTNM">
+<link href="GETUID.html#GETUID" rel="prev" title="GETUID">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="GMTIME"></a>
+<div class="header">
+<p>
+Next: <a href="HOSTNM.html#HOSTNM" accesskey="n" rel="next">HOSTNM</a>, Previous: <a href="GETUID.html#GETUID" accesskey="p" rel="prev">GETUID</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="GMTIME-_002d_002d_002d-Convert-time-to-GMT-info"></a>
+<h3 class="section">9.131 <code>GMTIME</code> &mdash; Convert time to GMT info</h3>
+<a name="index-GMTIME"></a>
+<a name="index-time_002c-conversion-to-GMT-info"></a>
+
+<dl compact="compact">
+<dt><em>Description</em>:</dt>
+<dd><p>Given a system time value <var>TIME</var> (as provided by the <a href="TIME.html#TIME">TIME</a>
+intrinsic), fills <var>VALUES</var> with values extracted from it appropriate
+to the UTC time zone (Universal Coordinated Time, also known in some
+countries as GMT, Greenwich Mean Time), using <code>gmtime(3)</code>.
+</p>
+<p>This intrinsic routine is provided for backwards compatibility with 
+GNU Fortran 77.  In new code, programmers should consider the use of 
+the <a href="DATE_005fAND_005fTIME.html#DATE_005fAND_005fTIME">DATE_AND_TIME</a> intrinsic defined by the Fortran 95
+standard.
+</p>
+</dd>
+<dt><em>Standard</em>:</dt>
+<dd><p>GNU extension
+</p>
+</dd>
+<dt><em>Class</em>:</dt>
+<dd><p>Subroutine
+</p>
+</dd>
+<dt><em>Syntax</em>:</dt>
+<dd><p><code>CALL GMTIME(TIME, VALUES)</code>
+</p>
+</dd>
+<dt><em>Arguments</em>:</dt>
+<dd><table>
+<tr><td width="15%"><var>TIME</var></td><td width="70%">An <code>INTEGER</code> scalar expression
+corresponding to a system time, with <code>INTENT(IN)</code>.</td></tr>
+<tr><td width="15%"><var>VALUES</var></td><td width="70%">A default <code>INTEGER</code> array with 9 elements,
+with <code>INTENT(OUT)</code>.</td></tr>
+</table>
+
+</dd>
+<dt><em>Return value</em>:</dt>
+<dd><p>The elements of <var>VALUES</var> are assigned as follows:
+</p><ol>
+<li> Seconds after the minute, range 0&ndash;59 or 0&ndash;61 to allow for leap
+seconds
+</li><li> Minutes after the hour, range 0&ndash;59
+</li><li> Hours past midnight, range 0&ndash;23
+</li><li> Day of month, range 1&ndash;31
+</li><li> Number of months since January, range 0&ndash;11
+</li><li> Years since 1900
+</li><li> Number of days since Sunday, range 0&ndash;6
+</li><li> Days since January 1, range 0&ndash;365
+</li><li> Daylight savings indicator: positive if daylight savings is in
+effect, zero if not, and negative if the information is not available.
+</li></ol>
+
+</dd>
+<dt><em>See also</em>:</dt>
+<dd><p><a href="DATE_005fAND_005fTIME.html#DATE_005fAND_005fTIME">DATE_AND_TIME</a>, <a href="CTIME.html#CTIME">CTIME</a>, <a href="LTIME.html#LTIME">LTIME</a>, <a href="TIME.html#TIME">TIME</a>, <a href="TIME8.html#TIME8">TIME8</a>
+</p>
+</dd>
+</dl>
+
+
+
+
+
+
+</body>
+</html>

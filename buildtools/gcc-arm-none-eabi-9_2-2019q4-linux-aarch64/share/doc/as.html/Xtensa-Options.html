@@ -1,0 +1,180 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Xtensa Options</title>
+
+<meta name="description" content="Using as: Xtensa Options">
+<meta name="keywords" content="Using as: Xtensa Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Xtensa_002dDependent.html#Xtensa_002dDependent" rel="up" title="Xtensa-Dependent">
+<link href="Xtensa-Syntax.html#Xtensa-Syntax" rel="next" title="Xtensa Syntax">
+<link href="Xtensa_002dDependent.html#Xtensa_002dDependent" rel="prev" title="Xtensa-Dependent">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Xtensa-Options"></a>
+<div class="header">
+<p>
+Next: <a href="Xtensa-Syntax.html#Xtensa-Syntax" accesskey="n" rel="next">Xtensa Syntax</a>, Up: <a href="Xtensa_002dDependent.html#Xtensa_002dDependent" accesskey="u" rel="up">Xtensa-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Command_002dline-Options-2"></a>
+<h4 class="subsection">9.55.1 Command-line Options</h4>
+
+<dl compact="compact">
+<dt><code>--text-section-literals | --no-text-section-literals</code></dt>
+<dd><a name="index-_002d_002dtext_002dsection_002dliterals"></a>
+<a name="index-_002d_002dno_002dtext_002dsection_002dliterals"></a>
+<p>Control the treatment of literal pools.  The default is
+&lsquo;<samp>--no-text-section-literals</samp>&rsquo;, which places literals in
+separate sections in the output file.  This allows the literal pool to be
+placed in a data RAM/ROM.  With &lsquo;<samp>--text-section-literals</samp>&rsquo;, the
+literals are interspersed in the text section in order to keep them as
+close as possible to their references.  This may be necessary for large
+assembly files, where the literals would otherwise be out of range of the
+<code>L32R</code> instructions in the text section.  Literals are grouped into
+pools following <code>.literal_position</code> directives or preceding
+<code>ENTRY</code> instructions.  These options only affect literals referenced
+via PC-relative <code>L32R</code> instructions; literals for absolute mode
+<code>L32R</code> instructions are handled separately.
+See <a href="Literal-Directive.html#Literal-Directive">literal</a>.
+</p>
+</dd>
+<dt><code>--auto-litpools | --no-auto-litpools</code></dt>
+<dd><a name="index-_002d_002dauto_002dlitpools"></a>
+<a name="index-_002d_002dno_002dauto_002dlitpools"></a>
+<p>Control the treatment of literal pools.  The default is
+&lsquo;<samp>--no-auto-litpools</samp>&rsquo;, which in the absence of
+&lsquo;<samp>--text-section-literals</samp>&rsquo; places literals in separate sections
+in the output file.  This allows the literal pool to be placed in a data
+RAM/ROM.  With &lsquo;<samp>--auto-litpools</samp>&rsquo;, the literals are interspersed
+in the text section in order to keep them as close as possible to their
+references, explicit <code>.literal_position</code> directives are not
+required.  This may be necessary for very large functions, where single
+literal pool at the beginning of the function may not be reachable by
+<code>L32R</code> instructions at the end.  These options only affect
+literals referenced via PC-relative <code>L32R</code> instructions; literals
+for absolute mode <code>L32R</code> instructions are handled separately.
+When used together with &lsquo;<samp>--text-section-literals</samp>&rsquo;,
+&lsquo;<samp>--auto-litpools</samp>&rsquo; takes precedence.
+See <a href="Literal-Directive.html#Literal-Directive">literal</a>.
+</p>
+</dd>
+<dt><code>--absolute-literals | --no-absolute-literals</code></dt>
+<dd><a name="index-_002d_002dabsolute_002dliterals"></a>
+<a name="index-_002d_002dno_002dabsolute_002dliterals"></a>
+<p>Indicate to the assembler whether <code>L32R</code> instructions use absolute
+or PC-relative addressing.  If the processor includes the absolute
+addressing option, the default is to use absolute <code>L32R</code>
+relocations.  Otherwise, only the PC-relative <code>L32R</code> relocations
+can be used.
+</p>
+</dd>
+<dt><code>--target-align | --no-target-align</code></dt>
+<dd><a name="index-_002d_002dtarget_002dalign"></a>
+<a name="index-_002d_002dno_002dtarget_002dalign"></a>
+<p>Enable or disable automatic alignment to reduce branch penalties at some
+expense in code size.  See <a href="Xtensa-Automatic-Alignment.html#Xtensa-Automatic-Alignment">Automatic
+Instruction Alignment</a>.  This optimization is enabled by default.  Note
+that the assembler will always align instructions like <code>LOOP</code> that
+have fixed alignment requirements.
+</p>
+</dd>
+<dt><code>--longcalls | --no-longcalls</code></dt>
+<dd><a name="index-_002d_002dlongcalls"></a>
+<a name="index-_002d_002dno_002dlongcalls"></a>
+<p>Enable or disable transformation of call instructions to allow calls
+across a greater range of addresses.  See <a href="Xtensa-Call-Relaxation.html#Xtensa-Call-Relaxation">Function Call Relaxation</a>.  This option should be used when call
+targets can potentially be out of range.  It may degrade both code size
+and performance, but the linker can generally optimize away the
+unnecessary overhead when a call ends up within range.  The default is
+&lsquo;<samp>--no-longcalls</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>--transform | --no-transform</code></dt>
+<dd><a name="index-_002d_002dtransform"></a>
+<a name="index-_002d_002dno_002dtransform"></a>
+<p>Enable or disable all assembler transformations of Xtensa instructions,
+including both relaxation and optimization.  The default is
+&lsquo;<samp>--transform</samp>&rsquo;; &lsquo;<samp>--no-transform</samp>&rsquo; should only be used in the
+rare cases when the instructions must be exactly as specified in the
+assembly source.  Using &lsquo;<samp>--no-transform</samp>&rsquo; causes out of range
+instruction operands to be errors.
+</p>
+</dd>
+<dt><code>--rename-section <var>oldname</var>=<var>newname</var></code></dt>
+<dd><a name="index-_002d_002drename_002dsection"></a>
+<p>Rename the <var>oldname</var> section to <var>newname</var>.  This option can be used
+multiple times to rename multiple sections.
+</p>
+</dd>
+<dt><code>--trampolines | --no-trampolines</code></dt>
+<dd><a name="index-_002d_002dtrampolines"></a>
+<a name="index-_002d_002dno_002dtrampolines"></a>
+<p>Enable or disable transformation of jump instructions to allow jumps
+across a greater range of addresses.  See <a href="Xtensa-Jump-Relaxation.html#Xtensa-Jump-Relaxation">Jump Trampolines</a>.  This option should be used when jump targets can
+potentially be out of range.  In the absence of such jumps this option
+does not affect code size or performance.  The default is
+&lsquo;<samp>--trampolines</samp>&rsquo;.
+</p></dd>
+</dl>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Xtensa-Syntax.html#Xtensa-Syntax" accesskey="n" rel="next">Xtensa Syntax</a>, Up: <a href="Xtensa_002dDependent.html#Xtensa_002dDependent" accesskey="u" rel="up">Xtensa-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

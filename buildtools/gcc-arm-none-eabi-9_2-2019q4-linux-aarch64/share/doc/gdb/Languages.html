@@ -1,0 +1,106 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Languages</title>
+
+<meta name="description" content="Debugging with GDB: Languages">
+<meta name="keywords" content="Debugging with GDB: Languages">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Setting.html#Setting" rel="next" title="Setting">
+<link href="Overlay-Sample-Program.html#Overlay-Sample-Program" rel="prev" title="Overlay Sample Program">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Languages"></a>
+<div class="header">
+<p>
+Next: <a href="Symbols.html#Symbols" accesskey="n" rel="next">Symbols</a>, Previous: <a href="Overlays.html#Overlays" accesskey="p" rel="prev">Overlays</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Using-GDB-with-Different-Languages"></a>
+<h2 class="chapter">15 Using <small>GDB</small> with Different Languages</h2>
+<a name="index-languages"></a>
+
+<p>Although programming languages generally have common aspects, they are
+rarely expressed in the same manner.  For instance, in ANSI C,
+dereferencing a pointer <code>p</code> is accomplished by <code>*p</code>, but in
+Modula-2, it is accomplished by <code>p^</code>.  Values can also be
+represented (and displayed) differently.  Hex numbers in C appear as
+&lsquo;<samp>0x1ae</samp>&rsquo;, while in Modula-2 they appear as &lsquo;<samp>1AEH</samp>&rsquo;.
+</p>
+<a name="index-working-language"></a>
+<p>Language-specific information is built into <small>GDB</small> for some languages,
+allowing you to express operations like the above in your program&rsquo;s
+native language, and allowing <small>GDB</small> to output values in a manner
+consistent with the syntax of your program&rsquo;s native language.  The
+language you use to build expressions is called the <em>working
+language</em>.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Setting.html#Setting" accesskey="1">Setting</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Switching between source languages
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Show.html#Show" accesskey="2">Show</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Displaying the language
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Checks.html#Checks" accesskey="3">Checks</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Type and range checks
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Supported-Languages.html#Supported-Languages" accesskey="4">Supported Languages</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Supported languages
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Unsupported-Languages.html#Unsupported-Languages" accesskey="5">Unsupported Languages</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Unsupported languages
+</td></tr>
+</table>
+
+
+
+
+</body>
+</html>

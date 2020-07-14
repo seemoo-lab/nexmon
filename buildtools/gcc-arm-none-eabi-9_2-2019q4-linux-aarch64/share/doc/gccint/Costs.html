@@ -1,0 +1,565 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Costs</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Costs">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Costs">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Target-Macros.html#Target-Macros" rel="up" title="Target Macros">
+<link href="Scheduling.html#Scheduling" rel="next" title="Scheduling">
+<link href="MODE_005fCC-Condition-Codes.html#MODE_005fCC-Condition-Codes" rel="prev" title="MODE_CC Condition Codes">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Costs"></a>
+<div class="header">
+<p>
+Next: <a href="Scheduling.html#Scheduling" accesskey="n" rel="next">Scheduling</a>, Previous: <a href="Condition-Code.html#Condition-Code" accesskey="p" rel="prev">Condition Code</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Describing-Relative-Costs-of-Operations"></a>
+<h3 class="section">18.16 Describing Relative Costs of Operations</h3>
+<a name="index-costs-of-instructions"></a>
+<a name="index-relative-costs"></a>
+<a name="index-speed-of-instructions"></a>
+
+<p>These macros let you describe the relative speed of various operations
+on the target machine.
+</p>
+<dl>
+<dt><a name="index-REGISTER_005fMOVE_005fCOST"></a>Macro: <strong>REGISTER_MOVE_COST</strong> <em>(<var>mode</var>, <var>from</var>, <var>to</var>)</em></dt>
+<dd><p>A C expression for the cost of moving data of mode <var>mode</var> from a
+register in class <var>from</var> to one in class <var>to</var>.  The classes are
+expressed using the enumeration values such as <code>GENERAL_REGS</code>.  A
+value of 2 is the default; other values are interpreted relative to
+that.
+</p>
+<p>It is not required that the cost always equal 2 when <var>from</var> is the
+same as <var>to</var>; on some machines it is expensive to move between
+registers if they are not general registers.
+</p>
+<p>If reload sees an insn consisting of a single <code>set</code> between two
+hard registers, and if <code>REGISTER_MOVE_COST</code> applied to their
+classes returns a value of 2, reload does not check to ensure that the
+constraints of the insn are met.  Setting a cost of other than 2 will
+allow reload to verify that the constraints are met.  You should do this
+if the &lsquo;<samp>mov<var>m</var></samp>&rsquo; pattern&rsquo;s constraints do not allow such copying.
+</p>
+<p>These macros are obsolete, new ports should use the target hook
+<code>TARGET_REGISTER_MOVE_COST</code> instead.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fREGISTER_005fMOVE_005fCOST"></a>Target Hook: <em>int</em> <strong>TARGET_REGISTER_MOVE_COST</strong> <em>(machine_mode <var>mode</var>, reg_class_t <var>from</var>, reg_class_t <var>to</var>)</em></dt>
+<dd><p>This target hook should return the cost of moving data of mode <var>mode</var>
+from a register in class <var>from</var> to one in class <var>to</var>.  The classes
+are expressed using the enumeration values such as <code>GENERAL_REGS</code>.
+A value of 2 is the default; other values are interpreted relative to
+that.
+</p>
+<p>It is not required that the cost always equal 2 when <var>from</var> is the
+same as <var>to</var>; on some machines it is expensive to move between
+registers if they are not general registers.
+</p>
+<p>If reload sees an insn consisting of a single <code>set</code> between two
+hard registers, and if <code>TARGET_REGISTER_MOVE_COST</code> applied to their
+classes returns a value of 2, reload does not check to ensure that the
+constraints of the insn are met.  Setting a cost of other than 2 will
+allow reload to verify that the constraints are met.  You should do this
+if the &lsquo;<samp>mov<var>m</var></samp>&rsquo; pattern&rsquo;s constraints do not allow such copying.
+</p>
+<p>The default version of this function returns 2.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-MEMORY_005fMOVE_005fCOST"></a>Macro: <strong>MEMORY_MOVE_COST</strong> <em>(<var>mode</var>, <var>class</var>, <var>in</var>)</em></dt>
+<dd><p>A C expression for the cost of moving data of mode <var>mode</var> between a
+register of class <var>class</var> and memory; <var>in</var> is zero if the value
+is to be written to memory, nonzero if it is to be read in.  This cost
+is relative to those in <code>REGISTER_MOVE_COST</code>.  If moving between
+registers and memory is more expensive than between two registers, you
+should define this macro to express the relative cost.
+</p>
+<p>If you do not define this macro, GCC uses a default cost of 4 plus
+the cost of copying via a secondary reload register, if one is
+needed.  If your machine requires a secondary reload register to copy
+between memory and a register of <var>class</var> but the reload mechanism is
+more complex than copying via an intermediate, define this macro to
+reflect the actual cost of the move.
+</p>
+<p>GCC defines the function <code>memory_move_secondary_cost</code> if
+secondary reloads are needed.  It computes the costs due to copying via
+a secondary register.  If your machine copies from memory using a
+secondary register in the conventional way but the default base value of
+4 is not correct for your machine, define this macro to add some other
+value to the result of that function.  The arguments to that function
+are the same as to this macro.
+</p>
+<p>These macros are obsolete, new ports should use the target hook
+<code>TARGET_MEMORY_MOVE_COST</code> instead.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fMEMORY_005fMOVE_005fCOST"></a>Target Hook: <em>int</em> <strong>TARGET_MEMORY_MOVE_COST</strong> <em>(machine_mode <var>mode</var>, reg_class_t <var>rclass</var>, bool <var>in</var>)</em></dt>
+<dd><p>This target hook should return the cost of moving data of mode <var>mode</var>
+between a register of class <var>rclass</var> and memory; <var>in</var> is <code>false</code>
+if the value is to be written to memory, <code>true</code> if it is to be read in.
+This cost is relative to those in <code>TARGET_REGISTER_MOVE_COST</code>.
+If moving between registers and memory is more expensive than between two
+registers, you should add this target hook to express the relative cost.
+</p>
+<p>If you do not add this target hook, GCC uses a default cost of 4 plus
+the cost of copying via a secondary reload register, if one is
+needed.  If your machine requires a secondary reload register to copy
+between memory and a register of <var>rclass</var> but the reload mechanism is
+more complex than copying via an intermediate, use this target hook to
+reflect the actual cost of the move.
+</p>
+<p>GCC defines the function <code>memory_move_secondary_cost</code> if
+secondary reloads are needed.  It computes the costs due to copying via
+a secondary register.  If your machine copies from memory using a
+secondary register in the conventional way but the default base value of
+4 is not correct for your machine, use this target hook to add some other
+value to the result of that function.  The arguments to that function
+are the same as to this target hook.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-BRANCH_005fCOST"></a>Macro: <strong>BRANCH_COST</strong> <em>(<var>speed_p</var>, <var>predictable_p</var>)</em></dt>
+<dd><p>A C expression for the cost of a branch instruction.  A value of 1 is
+the default; other values are interpreted relative to that. Parameter
+<var>speed_p</var> is true when the branch in question should be optimized
+for speed.  When it is false, <code>BRANCH_COST</code> should return a value
+optimal for code size rather than performance.  <var>predictable_p</var> is
+true for well-predicted branches. On many architectures the
+<code>BRANCH_COST</code> can be reduced then.
+</p></dd></dl>
+
+<p>Here are additional macros which do not specify precise relative costs,
+but only that certain actions are more expensive than GCC would
+ordinarily expect.
+</p>
+<dl>
+<dt><a name="index-SLOW_005fBYTE_005fACCESS"></a>Macro: <strong>SLOW_BYTE_ACCESS</strong></dt>
+<dd><p>Define this macro as a C expression which is nonzero if accessing less
+than a word of memory (i.e. a <code>char</code> or a <code>short</code>) is no
+faster than accessing a word of memory, i.e., if such access
+require more than one instruction or if there is no difference in cost
+between byte and (aligned) word loads.
+</p>
+<p>When this macro is not defined, the compiler will access a field by
+finding the smallest containing object; when it is defined, a fullword
+load will be used if alignment permits.  Unless bytes accesses are
+faster than word accesses, using word accesses is preferable since it
+may eliminate subsequent memory access if subsequent accesses occur to
+other fields in the same word of the structure, but to different bytes.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fSLOW_005fUNALIGNED_005fACCESS"></a>Target Hook: <em>bool</em> <strong>TARGET_SLOW_UNALIGNED_ACCESS</strong> <em>(machine_mode <var>mode</var>, unsigned int <var>align</var>)</em></dt>
+<dd><p>This hook returns true if memory accesses described by the
+<var>mode</var> and <var>alignment</var> parameters have a cost many times greater
+than aligned accesses, for example if they are emulated in a trap handler.
+This hook is invoked only for unaligned accesses, i.e. when
+<code><var>alignment</var> &lt; GET_MODE_ALIGNMENT (<var>mode</var>)</code>.
+</p>
+<p>When this hook returns true, the compiler will act as if
+<code>STRICT_ALIGNMENT</code> were true when generating code for block
+moves.  This can cause significantly more instructions to be produced.
+Therefore, do not make this hook return true if unaligned accesses only
+add a cycle or two to the time for a memory access.
+</p>
+<p>The hook must return true whenever <code>STRICT_ALIGNMENT</code> is true.
+The default implementation returns <code>STRICT_ALIGNMENT</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-MOVE_005fRATIO"></a>Macro: <strong>MOVE_RATIO</strong> <em>(<var>speed</var>)</em></dt>
+<dd><p>The threshold of number of scalar memory-to-memory move insns, <em>below</em>
+which a sequence of insns should be generated instead of a
+string move insn or a library call.  Increasing the value will always
+make code faster, but eventually incurs high cost in increased code size.
+</p>
+<p>Note that on machines where the corresponding move insn is a
+<code>define_expand</code> that emits a sequence of insns, this macro counts
+the number of such sequences.
+</p>
+<p>The parameter <var>speed</var> is true if the code is currently being
+optimized for speed rather than size.
+</p>
+<p>If you don&rsquo;t define this, a reasonable default is used.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fUSE_005fBY_005fPIECES_005fINFRASTRUCTURE_005fP"></a>Target Hook: <em>bool</em> <strong>TARGET_USE_BY_PIECES_INFRASTRUCTURE_P</strong> <em>(unsigned HOST_WIDE_INT <var>size</var>, unsigned int <var>alignment</var>, enum by_pieces_operation <var>op</var>, bool <var>speed_p</var>)</em></dt>
+<dd><p>GCC will attempt several strategies when asked to copy between
+two areas of memory, or to set, clear or store to memory, for example
+when copying a <code>struct</code>. The <code>by_pieces</code> infrastructure
+implements such memory operations as a sequence of load, store or move
+insns.  Alternate strategies are to expand the
+<code>movmem</code> or <code>setmem</code> optabs, to emit a library call, or to emit
+unit-by-unit, loop-based operations.
+</p>
+<p>This target hook should return true if, for a memory operation with a
+given <var>size</var> and <var>alignment</var>, using the <code>by_pieces</code>
+infrastructure is expected to result in better code generation.
+Both <var>size</var> and <var>alignment</var> are measured in terms of storage
+units.
+</p>
+<p>The parameter <var>op</var> is one of: <code>CLEAR_BY_PIECES</code>,
+<code>MOVE_BY_PIECES</code>, <code>SET_BY_PIECES</code>, <code>STORE_BY_PIECES</code> or
+<code>COMPARE_BY_PIECES</code>.  These describe the type of memory operation
+under consideration.
+</p>
+<p>The parameter <var>speed_p</var> is true if the code is currently being
+optimized for speed rather than size.
+</p>
+<p>Returning true for higher values of <var>size</var> can improve code generation
+for speed if the target does not provide an implementation of the
+<code>movmem</code> or <code>setmem</code> standard names, if the <code>movmem</code> or
+<code>setmem</code> implementation would be more expensive than a sequence of
+insns, or if the overhead of a library call would dominate that of
+the body of the memory operation.
+</p>
+<p>Returning true for higher values of <code>size</code> may also cause an increase
+in code size, for example where the number of insns emitted to perform a
+move would be greater than that of a library call.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fCOMPARE_005fBY_005fPIECES_005fBRANCH_005fRATIO"></a>Target Hook: <em>int</em> <strong>TARGET_COMPARE_BY_PIECES_BRANCH_RATIO</strong> <em>(machine_mode <var>mode</var>)</em></dt>
+<dd><p>When expanding a block comparison in MODE, gcc can try to reduce the
+number of branches at the expense of more memory operations.  This hook
+allows the target to override the default choice.  It should return the
+factor by which branches should be reduced over the plain expansion with
+one comparison per <var>mode</var>-sized piece.  A port can also prevent a
+particular mode from being used for block comparisons by returning a
+negative number from this hook.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-MOVE_005fMAX_005fPIECES"></a>Macro: <strong>MOVE_MAX_PIECES</strong></dt>
+<dd><p>A C expression used by <code>move_by_pieces</code> to determine the largest unit
+a load or store used to copy memory is.  Defaults to <code>MOVE_MAX</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-STORE_005fMAX_005fPIECES"></a>Macro: <strong>STORE_MAX_PIECES</strong></dt>
+<dd><p>A C expression used by <code>store_by_pieces</code> to determine the largest unit
+a store used to memory is.  Defaults to <code>MOVE_MAX_PIECES</code>, or two times
+the size of <code>HOST_WIDE_INT</code>, whichever is smaller.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-COMPARE_005fMAX_005fPIECES"></a>Macro: <strong>COMPARE_MAX_PIECES</strong></dt>
+<dd><p>A C expression used by <code>compare_by_pieces</code> to determine the largest unit
+a load or store used to compare memory is.  Defaults to
+<code>MOVE_MAX_PIECES</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-CLEAR_005fRATIO"></a>Macro: <strong>CLEAR_RATIO</strong> <em>(<var>speed</var>)</em></dt>
+<dd><p>The threshold of number of scalar move insns, <em>below</em> which a sequence
+of insns should be generated to clear memory instead of a string clear insn
+or a library call.  Increasing the value will always make code faster, but
+eventually incurs high cost in increased code size.
+</p>
+<p>The parameter <var>speed</var> is true if the code is currently being
+optimized for speed rather than size.
+</p>
+<p>If you don&rsquo;t define this, a reasonable default is used.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-SET_005fRATIO"></a>Macro: <strong>SET_RATIO</strong> <em>(<var>speed</var>)</em></dt>
+<dd><p>The threshold of number of scalar move insns, <em>below</em> which a sequence
+of insns should be generated to set memory to a constant value, instead of
+a block set insn or a library call.
+Increasing the value will always make code faster, but
+eventually incurs high cost in increased code size.
+</p>
+<p>The parameter <var>speed</var> is true if the code is currently being
+optimized for speed rather than size.
+</p>
+<p>If you don&rsquo;t define this, it defaults to the value of <code>MOVE_RATIO</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-USE_005fLOAD_005fPOST_005fINCREMENT"></a>Macro: <strong>USE_LOAD_POST_INCREMENT</strong> <em>(<var>mode</var>)</em></dt>
+<dd><p>A C expression used to determine whether a load postincrement is a good
+thing to use for a given mode.  Defaults to the value of
+<code>HAVE_POST_INCREMENT</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-USE_005fLOAD_005fPOST_005fDECREMENT"></a>Macro: <strong>USE_LOAD_POST_DECREMENT</strong> <em>(<var>mode</var>)</em></dt>
+<dd><p>A C expression used to determine whether a load postdecrement is a good
+thing to use for a given mode.  Defaults to the value of
+<code>HAVE_POST_DECREMENT</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-USE_005fLOAD_005fPRE_005fINCREMENT"></a>Macro: <strong>USE_LOAD_PRE_INCREMENT</strong> <em>(<var>mode</var>)</em></dt>
+<dd><p>A C expression used to determine whether a load preincrement is a good
+thing to use for a given mode.  Defaults to the value of
+<code>HAVE_PRE_INCREMENT</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-USE_005fLOAD_005fPRE_005fDECREMENT"></a>Macro: <strong>USE_LOAD_PRE_DECREMENT</strong> <em>(<var>mode</var>)</em></dt>
+<dd><p>A C expression used to determine whether a load predecrement is a good
+thing to use for a given mode.  Defaults to the value of
+<code>HAVE_PRE_DECREMENT</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-USE_005fSTORE_005fPOST_005fINCREMENT"></a>Macro: <strong>USE_STORE_POST_INCREMENT</strong> <em>(<var>mode</var>)</em></dt>
+<dd><p>A C expression used to determine whether a store postincrement is a good
+thing to use for a given mode.  Defaults to the value of
+<code>HAVE_POST_INCREMENT</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-USE_005fSTORE_005fPOST_005fDECREMENT"></a>Macro: <strong>USE_STORE_POST_DECREMENT</strong> <em>(<var>mode</var>)</em></dt>
+<dd><p>A C expression used to determine whether a store postdecrement is a good
+thing to use for a given mode.  Defaults to the value of
+<code>HAVE_POST_DECREMENT</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-USE_005fSTORE_005fPRE_005fINCREMENT"></a>Macro: <strong>USE_STORE_PRE_INCREMENT</strong> <em>(<var>mode</var>)</em></dt>
+<dd><p>This macro is used to determine whether a store preincrement is a good
+thing to use for a given mode.  Defaults to the value of
+<code>HAVE_PRE_INCREMENT</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-USE_005fSTORE_005fPRE_005fDECREMENT"></a>Macro: <strong>USE_STORE_PRE_DECREMENT</strong> <em>(<var>mode</var>)</em></dt>
+<dd><p>This macro is used to determine whether a store predecrement is a good
+thing to use for a given mode.  Defaults to the value of
+<code>HAVE_PRE_DECREMENT</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-NO_005fFUNCTION_005fCSE"></a>Macro: <strong>NO_FUNCTION_CSE</strong></dt>
+<dd><p>Define this macro to be true if it is as good or better to call a constant
+function address than to call an address kept in a register.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-LOGICAL_005fOP_005fNON_005fSHORT_005fCIRCUIT"></a>Macro: <strong>LOGICAL_OP_NON_SHORT_CIRCUIT</strong></dt>
+<dd><p>Define this macro if a non-short-circuit operation produced by
+&lsquo;<samp>fold_range_test ()</samp>&rsquo; is optimal.  This macro defaults to true if
+<code>BRANCH_COST</code> is greater than or equal to the value 2.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fOPTAB_005fSUPPORTED_005fP"></a>Target Hook: <em>bool</em> <strong>TARGET_OPTAB_SUPPORTED_P</strong> <em>(int <var>op</var>, machine_mode <var>mode1</var>, machine_mode <var>mode2</var>, optimization_type <var>opt_type</var>)</em></dt>
+<dd><p>Return true if the optimizers should use optab <var>op</var> with
+modes <var>mode1</var> and <var>mode2</var> for optimization type <var>opt_type</var>.
+The optab is known to have an associated <samp>.md</samp> instruction
+whose C condition is true.  <var>mode2</var> is only meaningful for conversion
+optabs; for direct optabs it is a copy of <var>mode1</var>.
+</p>
+<p>For example, when called with <var>op</var> equal to <code>rint_optab</code> and
+<var>mode1</var> equal to <code>DFmode</code>, the hook should say whether the
+optimizers should use optab <code>rintdf2</code>.
+</p>
+<p>The default hook returns true for all inputs.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fRTX_005fCOSTS"></a>Target Hook: <em>bool</em> <strong>TARGET_RTX_COSTS</strong> <em>(rtx <var>x</var>, machine_mode <var>mode</var>, int <var>outer_code</var>, int <var>opno</var>, int *<var>total</var>, bool <var>speed</var>)</em></dt>
+<dd><p>This target hook describes the relative costs of RTL expressions.
+</p>
+<p>The cost may depend on the precise form of the expression, which is
+available for examination in <var>x</var>, and the fact that <var>x</var> appears
+as operand <var>opno</var> of an expression with rtx code <var>outer_code</var>.
+That is, the hook can assume that there is some rtx <var>y</var> such
+that &lsquo;<samp>GET_CODE (<var>y</var>) == <var>outer_code</var></samp>&rsquo; and such that
+either (a) &lsquo;<samp>XEXP (<var>y</var>, <var>opno</var>) == <var>x</var></samp>&rsquo; or
+(b) &lsquo;<samp>XVEC (<var>y</var>, <var>opno</var>)</samp>&rsquo; contains <var>x</var>.
+</p>
+<p><var>mode</var> is <var>x</var>&rsquo;s machine mode, or for cases like <code>const_int</code> that
+do not have a mode, the mode in which <var>x</var> is used.
+</p>
+<p>In implementing this hook, you can use the construct
+<code>COSTS_N_INSNS (<var>n</var>)</code> to specify a cost equal to <var>n</var> fast
+instructions.
+</p>
+<p>On entry to the hook, <code>*<var>total</var></code> contains a default estimate
+for the cost of the expression.  The hook should modify this value as
+necessary.  Traditionally, the default costs are <code>COSTS_N_INSNS (5)</code>
+for multiplications, <code>COSTS_N_INSNS (7)</code> for division and modulus
+operations, and <code>COSTS_N_INSNS (1)</code> for all other operations.
+</p>
+<p>When optimizing for code size, i.e. when <code>speed</code> is
+false, this target hook should be used to estimate the relative
+size cost of an expression, again relative to <code>COSTS_N_INSNS</code>.
+</p>
+<p>The hook returns true when all subexpressions of <var>x</var> have been
+processed, and false when <code>rtx_cost</code> should recurse.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fADDRESS_005fCOST"></a>Target Hook: <em>int</em> <strong>TARGET_ADDRESS_COST</strong> <em>(rtx <var>address</var>, machine_mode <var>mode</var>, addr_space_t <var>as</var>, bool <var>speed</var>)</em></dt>
+<dd><p>This hook computes the cost of an addressing mode that contains
+<var>address</var>.  If not defined, the cost is computed from
+the <var>address</var> expression and the <code>TARGET_RTX_COST</code> hook.
+</p>
+<p>For most CISC machines, the default cost is a good approximation of the
+true cost of the addressing mode.  However, on RISC machines, all
+instructions normally have the same length and execution time.  Hence
+all addresses will have equal costs.
+</p>
+<p>In cases where more than one form of an address is known, the form with
+the lowest cost will be used.  If multiple forms have the same, lowest,
+cost, the one that is the most complex will be used.
+</p>
+<p>For example, suppose an address that is equal to the sum of a register
+and a constant is used twice in the same basic block.  When this macro
+is not defined, the address will be computed in a register and memory
+references will be indirect through that register.  On machines where
+the cost of the addressing mode containing the sum is no higher than
+that of a simple indirect reference, this will produce an additional
+instruction and possibly require an additional register.  Proper
+specification of this macro eliminates this overhead for such machines.
+</p>
+<p>This hook is never called with an invalid address.
+</p>
+<p>On machines where an address involving more than one register is as
+cheap as an address computation involving only one register, defining
+<code>TARGET_ADDRESS_COST</code> to reflect this can cause two registers to
+be live over a region of code where only one would have been if
+<code>TARGET_ADDRESS_COST</code> were not defined in that manner.  This effect
+should be considered in the definition of this macro.  Equivalent costs
+should probably only be given to addresses with different numbers of
+registers on machines with lots of registers.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fINSN_005fCOST"></a>Target Hook: <em>int</em> <strong>TARGET_INSN_COST</strong> <em>(rtx_insn *<var>insn</var>, bool <var>speed</var>)</em></dt>
+<dd><p>This target hook describes the relative costs of RTL instructions.
+</p>
+<p>In implementing this hook, you can use the construct
+<code>COSTS_N_INSNS (<var>n</var>)</code> to specify a cost equal to <var>n</var> fast
+instructions.
+</p>
+<p>When optimizing for code size, i.e. when <code>speed</code> is
+false, this target hook should be used to estimate the relative
+size cost of an expression, again relative to <code>COSTS_N_INSNS</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fMAX_005fNOCE_005fIFCVT_005fSEQ_005fCOST"></a>Target Hook: <em>unsigned int</em> <strong>TARGET_MAX_NOCE_IFCVT_SEQ_COST</strong> <em>(edge <var>e</var>)</em></dt>
+<dd><p>This hook returns a value in the same units as <code>TARGET_RTX_COSTS</code>,
+giving the maximum acceptable cost for a sequence generated by the RTL
+if-conversion pass when conditional execution is not available.
+The RTL if-conversion pass attempts to convert conditional operations
+that would require a branch to a series of unconditional operations and
+<code>mov<var>mode</var>cc</code> insns.  This hook returns the maximum cost of the
+unconditional instructions and the <code>mov<var>mode</var>cc</code> insns.
+RTL if-conversion is cancelled if the cost of the converted sequence
+is greater than the value returned by this hook.
+</p>
+<p><code>e</code> is the edge between the basic block containing the conditional
+branch to the basic block which would be executed if the condition
+were true.
+</p>
+<p>The default implementation of this hook uses the
+<code>max-rtl-if-conversion-[un]predictable</code> parameters if they are set,
+and uses a multiple of <code>BRANCH_COST</code> otherwise.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fNOCE_005fCONVERSION_005fPROFITABLE_005fP"></a>Target Hook: <em>bool</em> <strong>TARGET_NOCE_CONVERSION_PROFITABLE_P</strong> <em>(rtx_insn *<var>seq</var>, struct noce_if_info *<var>if_info</var>)</em></dt>
+<dd><p>This hook returns true if the instruction sequence <code>seq</code> is a good
+candidate as a replacement for the if-convertible sequence described in
+<code>if_info</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fNO_005fSPECULATION_005fIN_005fDELAY_005fSLOTS_005fP"></a>Target Hook: <em>bool</em> <strong>TARGET_NO_SPECULATION_IN_DELAY_SLOTS_P</strong> <em>(void)</em></dt>
+<dd><p>This predicate controls the use of the eager delay slot filler to disallow
+speculatively executed instructions being placed in delay slots.  Targets
+such as certain MIPS architectures possess both branches with and without
+delay slots.  As the eager delay slot filler can decrease performance,
+disabling it is beneficial when ordinary branches are available.  Use of
+delay slot branches filled using the basic filler is often still desirable
+as the delay slot can hide a pipeline bubble.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fESTIMATED_005fPOLY_005fVALUE"></a>Target Hook: <em>HOST_WIDE_INT</em> <strong>TARGET_ESTIMATED_POLY_VALUE</strong> <em>(poly_int64 <var>val</var>)</em></dt>
+<dd><p>Return an estimate of the runtime value of <var>val</var>, for use in
+things like cost calculations or profiling frequencies.  The default
+implementation returns the lowest possible value of <var>val</var>.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Scheduling.html#Scheduling" accesskey="n" rel="next">Scheduling</a>, Previous: <a href="Condition-Code.html#Condition-Code" accesskey="p" rel="prev">Condition Code</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Python API</title>
+
+<meta name="description" content="Debugging with GDB: Python API">
+<meta name="keywords" content="Debugging with GDB: Python API">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Python.html#Python" rel="up" title="Python">
+<link href="Basic-Python.html#Basic-Python" rel="next" title="Basic Python">
+<link href="Python-Commands.html#Python-Commands" rel="prev" title="Python Commands">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Python-API"></a>
+<div class="header">
+<p>
+Next: <a href="Python-Auto_002dloading.html#Python-Auto_002dloading" accesskey="n" rel="next">Python Auto-loading</a>, Previous: <a href="Python-Commands.html#Python-Commands" accesskey="p" rel="prev">Python Commands</a>, Up: <a href="Python.html#Python" accesskey="u" rel="up">Python</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Python-API-1"></a>
+<h4 class="subsection">23.2.2 Python API</h4>
+<a name="index-python-api"></a>
+<a name="index-programming-in-python"></a>
+
+<p>You can get quick online help for <small>GDB</small>&rsquo;s Python API by issuing
+the command <kbd>python&nbsp;help&nbsp;(gdb)</kbd><!-- /@w -->.
+</p>
+<p>Functions and methods which have two or more optional arguments allow
+them to be specified using keyword syntax.  This allows passing some
+optional arguments while skipping others.  Example:
+<code><span class="nolinebreak">gdb.some_function</span>&nbsp;('foo',&nbsp;bar&nbsp;=&nbsp;1,&nbsp;baz&nbsp;=&nbsp;2)</code><!-- /@w -->.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Basic-Python.html#Basic-Python" accesskey="1">Basic Python</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Basic Python Functions.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Exception-Handling.html#Exception-Handling" accesskey="2">Exception Handling</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How Python exceptions are translated.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Values-From-Inferior.html#Values-From-Inferior" accesskey="3">Values From Inferior</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Python representation of values.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Types-In-Python.html#Types-In-Python" accesskey="4">Types In Python</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Python representation of types.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Pretty-Printing-API.html#Pretty-Printing-API" accesskey="5">Pretty Printing API</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Pretty-printing values.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Selecting-Pretty_002dPrinters.html#Selecting-Pretty_002dPrinters" accesskey="6">Selecting Pretty-Printers</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How GDB chooses a pretty-printer.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Writing-a-Pretty_002dPrinter.html#Writing-a-Pretty_002dPrinter" accesskey="7">Writing a Pretty-Printer</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Writing a Pretty-Printer.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Type-Printing-API.html#Type-Printing-API" accesskey="8">Type Printing API</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Pretty-printing types.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Frame-Filter-API.html#Frame-Filter-API" accesskey="9">Frame Filter API</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Filtering Frames.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Frame-Decorator-API.html#Frame-Decorator-API">Frame Decorator API</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Decorating Frames.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Writing-a-Frame-Filter.html#Writing-a-Frame-Filter">Writing a Frame Filter</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Writing a Frame Filter.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Unwinding-Frames-in-Python.html#Unwinding-Frames-in-Python">Unwinding Frames in Python</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Writing frame unwinder.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Xmethods-In-Python.html#Xmethods-In-Python">Xmethods In Python</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Adding and replacing methods of C++ classes.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Xmethod-API.html#Xmethod-API">Xmethod API</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Xmethod types.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Writing-an-Xmethod.html#Writing-an-Xmethod">Writing an Xmethod</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Writing an xmethod.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Inferiors-In-Python.html#Inferiors-In-Python">Inferiors In Python</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Python representation of inferiors (processes)
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Events-In-Python.html#Events-In-Python">Events In Python</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Listening for events from <small>GDB</small>.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Threads-In-Python.html#Threads-In-Python">Threads In Python</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Accessing inferior threads from Python.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Recordings-In-Python.html#Recordings-In-Python">Recordings In Python</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Accessing recordings from Python.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Commands-In-Python.html#Commands-In-Python">Commands In Python</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Implementing new commands in Python.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Parameters-In-Python.html#Parameters-In-Python">Parameters In Python</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Adding new <small>GDB</small> parameters.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Functions-In-Python.html#Functions-In-Python">Functions In Python</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Writing new convenience functions.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Progspaces-In-Python.html#Progspaces-In-Python">Progspaces In Python</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Program spaces.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Objfiles-In-Python.html#Objfiles-In-Python">Objfiles In Python</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Object files.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Frames-In-Python.html#Frames-In-Python">Frames In Python</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Accessing inferior stack frames from Python.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Blocks-In-Python.html#Blocks-In-Python">Blocks In Python</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Accessing blocks from Python.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Symbols-In-Python.html#Symbols-In-Python">Symbols In Python</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Python representation of symbols.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Symbol-Tables-In-Python.html#Symbol-Tables-In-Python">Symbol Tables In Python</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Python representation of symbol tables.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Line-Tables-In-Python.html#Line-Tables-In-Python">Line Tables In Python</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Python representation of line tables.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Breakpoints-In-Python.html#Breakpoints-In-Python">Breakpoints In Python</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Manipulating breakpoints using Python.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Finish-Breakpoints-in-Python.html#Finish-Breakpoints-in-Python">Finish Breakpoints in Python</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Setting Breakpoints on function return
+                                using Python.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Lazy-Strings-In-Python.html#Lazy-Strings-In-Python">Lazy Strings In Python</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Python representation of lazy strings.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Architectures-In-Python.html#Architectures-In-Python">Architectures In Python</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Python representation of architectures.
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Python-Auto_002dloading.html#Python-Auto_002dloading" accesskey="n" rel="next">Python Auto-loading</a>, Previous: <a href="Python-Commands.html#Python-Commands" accesskey="p" rel="prev">Python Commands</a>, Up: <a href="Python.html#Python" accesskey="u" rel="up">Python</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

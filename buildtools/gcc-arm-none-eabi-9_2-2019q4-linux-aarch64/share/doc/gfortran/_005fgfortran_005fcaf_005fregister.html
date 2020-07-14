@@ -1,0 +1,165 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: _gfortran_caf_register</title>
+
+<meta name="description" content="The GNU Fortran Compiler: _gfortran_caf_register">
+<meta name="keywords" content="The GNU Fortran Compiler: _gfortran_caf_register">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Function-ABI-Documentation.html#Function-ABI-Documentation" rel="up" title="Function ABI Documentation">
+<link href="_005fgfortran_005fcaf_005fderegister.html#g_t_005fgfortran_005fcaf_005fderegister" rel="next" title="_gfortran_caf_deregister">
+<link href="_005fgfortran_005fcaf_005fstopped_005fimages.html#g_t_005fgfortran_005fcaf_005fstopped_005fimages" rel="prev" title="_gfortran_caf_stopped_images">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="g_t_005fgfortran_005fcaf_005fregister"></a>
+<div class="header">
+<p>
+Next: <a href="_005fgfortran_005fcaf_005fderegister.html#g_t_005fgfortran_005fcaf_005fderegister" accesskey="n" rel="next">_gfortran_caf_deregister</a>, Previous: <a href="_005fgfortran_005fcaf_005fstopped_005fimages.html#g_t_005fgfortran_005fcaf_005fstopped_005fimages" accesskey="p" rel="prev">_gfortran_caf_stopped_images</a>, Up: <a href="Function-ABI-Documentation.html#Function-ABI-Documentation" accesskey="u" rel="up">Function ABI Documentation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="g_t_005fgfortran_005fcaf_005fregister-_002d_002d_002d-Registering-coarrays"></a>
+<h4 class="subsection">8.2.8 <code>_gfortran_caf_register</code> &mdash; Registering coarrays</h4>
+<a name="index-Coarray_002c-_005fgfortran_005fcaf_005fregister"></a>
+
+<dl compact="compact">
+<dt><em>Description</em>:</dt>
+<dd><p>Registers memory for a coarray and creates a token to identify the coarray.  The
+routine is called for both coarrays with <code>SAVE</code> attribute and using an
+explicit <code>ALLOCATE</code> statement.  If an error occurs and <var>STAT</var> is a
+<code>NULL</code> pointer, the function shall abort with printing an error message
+and starting the error termination.  If no error occurs and <var>STAT</var> is
+present, it shall be set to zero.  Otherwise, it shall be set to a positive
+value and, if not-<code>NULL</code>, <var>ERRMSG</var> shall be set to a string describing
+the failure.  The routine shall register the memory provided in the
+<code>DATA</code>-component of the array descriptor <var>DESC</var>, when that component
+is non-<code>NULL</code>, else it shall allocate sufficient memory and provide a
+pointer to it in the <code>DATA</code>-component of <var>DESC</var>.  The array descriptor
+has rank zero, when a scalar object is to be registered and the array
+descriptor may be invalid after the call to <code>_gfortran_caf_register</code>.
+When an array is to be allocated the descriptor persists.
+</p>
+<p>For <code>CAF_REGTYPE_COARRAY_STATIC</code> and <code>CAF_REGTYPE_COARRAY_ALLOC</code>,
+the passed size is the byte size requested.  For <code>CAF_REGTYPE_LOCK_STATIC</code>,
+<code>CAF_REGTYPE_LOCK_ALLOC</code> and <code>CAF_REGTYPE_CRITICAL</code> it is the array
+size or one for a scalar.
+</p>
+<p>When <code>CAF_REGTYPE_COARRAY_ALLOC_REGISTER_ONLY</code> is used, then only a token
+for an allocatable or pointer component is created.  The <code>SIZE</code> parameter
+is not used then.  On the contrary when
+<code>CAF_REGTYPE_COARRAY_ALLOC_ALLOCATE_ONLY</code> is specified, then the
+<var>token</var> needs to be registered by a previous call with regtype
+<code>CAF_REGTYPE_COARRAY_ALLOC_REGISTER_ONLY</code> and either the memory specified
+in the <var>DESC</var>&rsquo;s data-ptr is registered or allocate when the data-ptr is
+<code>NULL</code>.
+</p>
+</dd>
+<dt><em>Syntax</em>:</dt>
+<dd><p><code>void caf_register (size_t size, caf_register_t type, caf_token_t *token,
+gfc_descriptor_t *desc, int *stat, char *errmsg, size_t errmsg_len)</code>
+</p>
+</dd>
+<dt><em>Arguments</em>:</dt>
+<dd><table>
+<tr><td width="15%"><var>size</var></td><td width="70%">For normal coarrays, the byte size of the coarray to be
+allocated; for lock types and event types, the number of elements.</td></tr>
+<tr><td width="15%"><var>type</var></td><td width="70%">one of the caf_register_t types.</td></tr>
+<tr><td width="15%"><var>token</var></td><td width="70%">intent(out) An opaque pointer identifying the coarray.</td></tr>
+<tr><td width="15%"><var>desc</var></td><td width="70%">intent(inout) The (pseudo) array descriptor.</td></tr>
+<tr><td width="15%"><var>stat</var></td><td width="70%">intent(out) For allocatable coarrays, stores the STAT=;
+may be <code>NULL</code></td></tr>
+<tr><td width="15%"><var>errmsg</var></td><td width="70%">intent(out) When an error occurs, this will be set to
+an error message; may be <code>NULL</code></td></tr>
+<tr><td width="15%"><var>errmsg_len</var></td><td width="70%">the buffer size of errmsg.</td></tr>
+</table>
+
+</dd>
+<dt><em>NOTES</em></dt>
+<dd><p>Nonallocatable coarrays have to be registered prior use from remote images.
+In order to guarantee this, they have to be registered before the main
+program. This can be achieved by creating constructor functions. That is what
+GCC does such that also for nonallocatable coarrays the memory is allocated and
+no static memory is used.  The token permits to identify the coarray; to the
+processor, the token is a nonaliasing pointer. The library can, for instance,
+store the base address of the coarray in the token, some handle or a more
+complicated struct.  The library may also store the array descriptor
+<var>DESC</var> when its rank is non-zero.
+</p>
+<p>For lock types, the value shall only be used for checking the allocation
+status. Note that for critical blocks, the locking is only required on one
+image; in the locking statement, the processor shall always pass an
+image index of one for critical-block lock variables
+(<code>CAF_REGTYPE_CRITICAL</code>). For lock types and critical-block variables,
+the initial value shall be unlocked (or, respecitively, not in critical
+section) such as the value false; for event types, the initial state should
+be no event, e.g. zero.
+</p></dd>
+</dl>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="_005fgfortran_005fcaf_005fderegister.html#g_t_005fgfortran_005fcaf_005fderegister" accesskey="n" rel="next">_gfortran_caf_deregister</a>, Previous: <a href="_005fgfortran_005fcaf_005fstopped_005fimages.html#g_t_005fgfortran_005fcaf_005fstopped_005fimages" accesskey="p" rel="prev">_gfortran_caf_stopped_images</a>, Up: <a href="Function-ABI-Documentation.html#Function-ABI-Documentation" accesskey="u" rel="up">Function ABI Documentation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

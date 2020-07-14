@@ -1,0 +1,145 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: C and C++ Trees</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: C and C++ Trees">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: C and C++ Trees">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="GENERIC.html#GENERIC" rel="up" title="GENERIC">
+<link href="Types-for-C_002b_002b.html#Types-for-C_002b_002b" rel="next" title="Types for C++">
+<link href="Language_002ddependent-trees.html#Language_002ddependent-trees" rel="prev" title="Language-dependent trees">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="C-and-C_002b_002b-Trees"></a>
+<div class="header">
+<p>
+Next: <a href="Java-Trees.html#Java-Trees" accesskey="n" rel="next">Java Trees</a>, Previous: <a href="Language_002ddependent-trees.html#Language_002ddependent-trees" accesskey="p" rel="prev">Language-dependent trees</a>, Up: <a href="GENERIC.html#GENERIC" accesskey="u" rel="up">GENERIC</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="C-and-C_002b_002b-Trees-1"></a>
+<h3 class="section">11.10 C and C++ Trees</h3>
+
+<p>This section documents the internal representation used by GCC to
+represent C and C++ source programs.  When presented with a C or C++
+source program, GCC parses the program, performs semantic analysis
+(including the generation of error messages), and then produces the
+internal representation described here.  This representation contains a
+complete representation for the entire translation unit provided as
+input to the front end.  This representation is then typically processed
+by a code-generator in order to produce machine code, but could also be
+used in the creation of source browsers, intelligent editors, automatic
+documentation generators, interpreters, and any other programs needing
+the ability to process C or C++ code.
+</p>
+<p>This section explains the internal representation.  In particular, it
+documents the internal representation for C and C++ source
+constructs, and the macros, functions, and variables that can be used to
+access these constructs.  The C++ representation is largely a superset
+of the representation used in the C front end.  There is only one
+construct used in C that does not appear in the C++ front end and that
+is the GNU &ldquo;nested function&rdquo; extension.  Many of the macros documented
+here do not apply in C because the corresponding language constructs do
+not appear in C.
+</p>
+<p>The C and C++ front ends generate a mix of GENERIC trees and ones
+specific to C and C++.  These language-specific trees are higher-level
+constructs than the ones in GENERIC to make the parser&rsquo;s job easier.
+This section describes those trees that aren&rsquo;t part of GENERIC as well
+as aspects of GENERIC trees that are treated in a language-specific
+manner.
+</p>
+<p>If you are developing a &ldquo;back end&rdquo;, be it is a code-generator or some
+other tool, that uses this representation, you may occasionally find
+that you need to ask questions not easily answered by the functions and
+macros available here.  If that situation occurs, it is quite likely
+that GCC already supports the functionality you desire, but that the
+interface is simply not documented here.  In that case, you should ask
+the GCC maintainers (via mail to <a href="mailto:gcc@gcc.gnu.org">gcc@gcc.gnu.org</a>) about
+documenting the functionality you require.  Similarly, if you find
+yourself writing functions that do not deal directly with your back end,
+but instead might be useful to other people using the GCC front end, you
+should submit your patches for inclusion in GCC.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Types-for-C_002b_002b.html#Types-for-C_002b_002b" accesskey="1">Types for C++</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Fundamental and aggregate types.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Namespaces.html#Namespaces" accesskey="2">Namespaces</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Namespaces.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Classes.html#Classes" accesskey="3">Classes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Classes.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Functions-for-C_002b_002b.html#Functions-for-C_002b_002b" accesskey="4">Functions for C++</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Overloading and accessors for C++.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Statements-for-C_002b_002b.html#Statements-for-C_002b_002b" accesskey="5">Statements for C++</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Statements specific to C and C++.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="C_002b_002b-Expressions.html#C_002b_002b-Expressions" accesskey="6">C++ Expressions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">From <code>typeid</code> to <code>throw</code>.
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Java-Trees.html#Java-Trees" accesskey="n" rel="next">Java Trees</a>, Previous: <a href="Language_002ddependent-trees.html#Language_002ddependent-trees" accesskey="p" rel="prev">Language-dependent trees</a>, Up: <a href="GENERIC.html#GENERIC" accesskey="u" rel="up">GENERIC</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

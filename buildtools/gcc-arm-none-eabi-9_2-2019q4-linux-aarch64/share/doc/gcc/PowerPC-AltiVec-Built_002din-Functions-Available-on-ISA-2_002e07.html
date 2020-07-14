@@ -1,0 +1,467 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): PowerPC AltiVec Built-in Functions Available on ISA 2.07</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): PowerPC AltiVec Built-in Functions Available on ISA 2.07">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): PowerPC AltiVec Built-in Functions Available on ISA 2.07">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="PowerPC-AltiVec_002fVSX-Built_002din-Functions.html#PowerPC-AltiVec_002fVSX-Built_002din-Functions" rel="up" title="PowerPC AltiVec/VSX Built-in Functions">
+<link href="PowerPC-AltiVec-Built_002din-Functions-Available-on-ISA-3_002e0.html#PowerPC-AltiVec-Built_002din-Functions-Available-on-ISA-3_002e0" rel="next" title="PowerPC AltiVec Built-in Functions Available on ISA 3.0">
+<link href="PowerPC-AltiVec-Built_002din-Functions-Available-on-ISA-2_002e06.html#PowerPC-AltiVec-Built_002din-Functions-Available-on-ISA-2_002e06" rel="prev" title="PowerPC AltiVec Built-in Functions Available on ISA 2.06">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="PowerPC-AltiVec-Built_002din-Functions-Available-on-ISA-2_002e07"></a>
+<div class="header">
+<p>
+Next: <a href="PowerPC-AltiVec-Built_002din-Functions-Available-on-ISA-3_002e0.html#PowerPC-AltiVec-Built_002din-Functions-Available-on-ISA-3_002e0" accesskey="n" rel="next">PowerPC AltiVec Built-in Functions Available on ISA 3.0</a>, Previous: <a href="PowerPC-AltiVec-Built_002din-Functions-Available-on-ISA-2_002e06.html#PowerPC-AltiVec-Built_002din-Functions-Available-on-ISA-2_002e06" accesskey="p" rel="prev">PowerPC AltiVec Built-in Functions Available on ISA 2.06</a>, Up: <a href="PowerPC-AltiVec_002fVSX-Built_002din-Functions.html#PowerPC-AltiVec_002fVSX-Built_002din-Functions" accesskey="u" rel="up">PowerPC AltiVec/VSX Built-in Functions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="PowerPC-AltiVec-Built_002din-Functions-Available-on-ISA-2_002e07-1"></a>
+<h4 class="subsubsection">6.60.22.3 PowerPC AltiVec Built-in Functions Available on ISA 2.07</h4>
+
+<p>If the ISA 2.07 additions to the vector/scalar (power8-vector)
+instruction set are available, the following additional functions are
+available for both 32-bit and 64-bit targets.  For 64-bit targets, you
+can use <var>vector long</var> instead of <var>vector long long</var>,
+<var>vector bool long</var> instead of <var>vector bool long long</var>, and
+<var>vector unsigned long</var> instead of <var>vector unsigned long long</var>.
+</p>
+<div class="smallexample">
+<pre class="smallexample">vector signed char vec_neg (vector signed char);
+vector signed short vec_neg (vector signed short);
+vector signed int vec_neg (vector signed int);
+vector signed long long vec_neg (vector signed long long);
+vector float  char vec_neg (vector float);
+vector double vec_neg (vector double);
+
+vector signed int vec_signed2 (vector double, vector double);
+
+vector signed int vec_unsigned2 (vector double, vector double);
+
+vector long long vec_abs (vector long long);
+
+vector long long vec_add (vector long long, vector long long);
+vector unsigned long long vec_add (vector unsigned long long,
+                                   vector unsigned long long);
+
+int vec_all_eq (vector long long, vector long long);
+int vec_all_eq (vector unsigned long long, vector unsigned long long);
+int vec_all_ge (vector long long, vector long long);
+int vec_all_ge (vector unsigned long long, vector unsigned long long);
+int vec_all_gt (vector long long, vector long long);
+int vec_all_gt (vector unsigned long long, vector unsigned long long);
+int vec_all_le (vector long long, vector long long);
+int vec_all_le (vector unsigned long long, vector unsigned long long);
+int vec_all_lt (vector long long, vector long long);
+int vec_all_lt (vector unsigned long long, vector unsigned long long);
+int vec_all_ne (vector long long, vector long long);
+int vec_all_ne (vector unsigned long long, vector unsigned long long);
+
+int vec_any_eq (vector long long, vector long long);
+int vec_any_eq (vector unsigned long long, vector unsigned long long);
+int vec_any_ge (vector long long, vector long long);
+int vec_any_ge (vector unsigned long long, vector unsigned long long);
+int vec_any_gt (vector long long, vector long long);
+int vec_any_gt (vector unsigned long long, vector unsigned long long);
+int vec_any_le (vector long long, vector long long);
+int vec_any_le (vector unsigned long long, vector unsigned long long);
+int vec_any_lt (vector long long, vector long long);
+int vec_any_lt (vector unsigned long long, vector unsigned long long);
+int vec_any_ne (vector long long, vector long long);
+int vec_any_ne (vector unsigned long long, vector unsigned long long);
+
+vector bool long long vec_cmpeq (vector bool long long, vector bool long long);
+
+vector long long vec_eqv (vector long long, vector long long);
+vector long long vec_eqv (vector bool long long, vector long long);
+vector long long vec_eqv (vector long long, vector bool long long);
+vector unsigned long long vec_eqv (vector unsigned long long, vector unsigned long long);
+vector unsigned long long vec_eqv (vector bool long long, vector unsigned long long);
+vector unsigned long long vec_eqv (vector unsigned long long,
+                                   vector bool long long);
+vector int vec_eqv (vector int, vector int);
+vector int vec_eqv (vector bool int, vector int);
+vector int vec_eqv (vector int, vector bool int);
+vector unsigned int vec_eqv (vector unsigned int, vector unsigned int);
+vector unsigned int vec_eqv (vector bool unsigned int, vector unsigned int);
+vector unsigned int vec_eqv (vector unsigned int, vector bool unsigned int);
+vector short vec_eqv (vector short, vector short);
+vector short vec_eqv (vector bool short, vector short);
+vector short vec_eqv (vector short, vector bool short);
+vector unsigned short vec_eqv (vector unsigned short, vector unsigned short);
+vector unsigned short vec_eqv (vector bool unsigned short, vector unsigned short);
+vector unsigned short vec_eqv (vector unsigned short, vector bool unsigned short);
+vector signed char vec_eqv (vector signed char, vector signed char);
+vector signed char vec_eqv (vector bool signed char, vector signed char);
+vector signed char vec_eqv (vector signed char, vector bool signed char);
+vector unsigned char vec_eqv (vector unsigned char, vector unsigned char);
+vector unsigned char vec_eqv (vector bool unsigned char, vector unsigned char);
+vector unsigned char vec_eqv (vector unsigned char, vector bool unsigned char);
+
+vector long long vec_max (vector long long, vector long long);
+vector unsigned long long vec_max (vector unsigned long long,
+                                   vector unsigned long long);
+
+vector signed int vec_mergee (vector signed int, vector signed int);
+vector unsigned int vec_mergee (vector unsigned int, vector unsigned int);
+vector bool int vec_mergee (vector bool int, vector bool int);
+
+vector signed int vec_mergeo (vector signed int, vector signed int);
+vector unsigned int vec_mergeo (vector unsigned int, vector unsigned int);
+vector bool int vec_mergeo (vector bool int, vector bool int);
+
+vector long long vec_min (vector long long, vector long long);
+vector unsigned long long vec_min (vector unsigned long long,
+                                   vector unsigned long long);
+
+vector signed long long vec_nabs (vector signed long long);
+
+vector long long vec_nand (vector long long, vector long long);
+vector long long vec_nand (vector bool long long, vector long long);
+vector long long vec_nand (vector long long, vector bool long long);
+vector unsigned long long vec_nand (vector unsigned long long,
+                                    vector unsigned long long);
+vector unsigned long long vec_nand (vector bool long long, vector unsigned long long);
+vector unsigned long long vec_nand (vector unsigned long long, vector bool long long);
+vector int vec_nand (vector int, vector int);
+vector int vec_nand (vector bool int, vector int);
+vector int vec_nand (vector int, vector bool int);
+vector unsigned int vec_nand (vector unsigned int, vector unsigned int);
+vector unsigned int vec_nand (vector bool unsigned int, vector unsigned int);
+vector unsigned int vec_nand (vector unsigned int, vector bool unsigned int);
+vector short vec_nand (vector short, vector short);
+vector short vec_nand (vector bool short, vector short);
+vector short vec_nand (vector short, vector bool short);
+vector unsigned short vec_nand (vector unsigned short, vector unsigned short);
+vector unsigned short vec_nand (vector bool unsigned short, vector unsigned short);
+vector unsigned short vec_nand (vector unsigned short, vector bool unsigned short);
+vector signed char vec_nand (vector signed char, vector signed char);
+vector signed char vec_nand (vector bool signed char, vector signed char);
+vector signed char vec_nand (vector signed char, vector bool signed char);
+vector unsigned char vec_nand (vector unsigned char, vector unsigned char);
+vector unsigned char vec_nand (vector bool unsigned char, vector unsigned char);
+vector unsigned char vec_nand (vector unsigned char, vector bool unsigned char);
+
+vector long long vec_orc (vector long long, vector long long);
+vector long long vec_orc (vector bool long long, vector long long);
+vector long long vec_orc (vector long long, vector bool long long);
+vector unsigned long long vec_orc (vector unsigned long long,
+                                   vector unsigned long long);
+vector unsigned long long vec_orc (vector bool long long, vector unsigned long long);
+vector unsigned long long vec_orc (vector unsigned long long, vector bool long long);
+vector int vec_orc (vector int, vector int);
+vector int vec_orc (vector bool int, vector int);
+vector int vec_orc (vector int, vector bool int);
+vector unsigned int vec_orc (vector unsigned int, vector unsigned int);
+vector unsigned int vec_orc (vector bool unsigned int, vector unsigned int);
+vector unsigned int vec_orc (vector unsigned int, vector bool unsigned int);
+vector short vec_orc (vector short, vector short);
+vector short vec_orc (vector bool short, vector short);
+vector short vec_orc (vector short, vector bool short);
+vector unsigned short vec_orc (vector unsigned short, vector unsigned short);
+vector unsigned short vec_orc (vector bool unsigned short, vector unsigned short);
+vector unsigned short vec_orc (vector unsigned short, vector bool unsigned short);
+vector signed char vec_orc (vector signed char, vector signed char);
+vector signed char vec_orc (vector bool signed char, vector signed char);
+vector signed char vec_orc (vector signed char, vector bool signed char);
+vector unsigned char vec_orc (vector unsigned char, vector unsigned char);
+vector unsigned char vec_orc (vector bool unsigned char, vector unsigned char);
+vector unsigned char vec_orc (vector unsigned char, vector bool unsigned char);
+
+vector int vec_pack (vector long long, vector long long);
+vector unsigned int vec_pack (vector unsigned long long, vector unsigned long long);
+vector bool int vec_pack (vector bool long long, vector bool long long);
+vector float vec_pack (vector double, vector double);
+
+vector int vec_packs (vector long long, vector long long);
+vector unsigned int vec_packs (vector unsigned long long, vector unsigned long long);
+
+vector unsigned char vec_packsu (vector signed short, vector signed short)
+vector unsigned char vec_packsu (vector unsigned short, vector unsigned short)
+vector unsigned short int vec_packsu (vector signed int, vector signed int);
+vector unsigned short int vec_packsu (vector unsigned int, vector unsigned int);
+vector unsigned int vec_packsu (vector long long, vector long long);
+vector unsigned int vec_packsu (vector unsigned long long, vector unsigned long long);
+vector unsigned int vec_packsu (vector signed long long, vector signed long long);
+
+vector unsigned char vec_popcnt (vector signed char);
+vector unsigned char vec_popcnt (vector unsigned char);
+vector unsigned short vec_popcnt (vector signed short);
+vector unsigned short vec_popcnt (vector unsigned short);
+vector unsigned int vec_popcnt (vector signed int);
+vector unsigned int vec_popcnt (vector unsigned int);
+vector unsigned long long vec_popcnt (vector signed long long);
+vector unsigned long long vec_popcnt (vector unsigned long long);
+
+vector long long vec_rl (vector long long, vector unsigned long long);
+vector long long vec_rl (vector unsigned long long, vector unsigned long long);
+
+vector long long vec_sl (vector long long, vector unsigned long long);
+vector long long vec_sl (vector unsigned long long, vector unsigned long long);
+
+vector long long vec_sr (vector long long, vector unsigned long long);
+vector unsigned long long char vec_sr (vector unsigned long long,
+                                       vector unsigned long long);
+
+vector long long vec_sra (vector long long, vector unsigned long long);
+vector unsigned long long vec_sra (vector unsigned long long,
+                                   vector unsigned long long);
+
+vector long long vec_sub (vector long long, vector long long);
+vector unsigned long long vec_sub (vector unsigned long long,
+                                   vector unsigned long long);
+
+vector long long vec_unpackh (vector int);
+vector unsigned long long vec_unpackh (vector unsigned int);
+
+vector long long vec_unpackl (vector int);
+vector unsigned long long vec_unpackl (vector unsigned int);
+
+vector long long vec_vaddudm (vector long long, vector long long);
+vector long long vec_vaddudm (vector bool long long, vector long long);
+vector long long vec_vaddudm (vector long long, vector bool long long);
+vector unsigned long long vec_vaddudm (vector unsigned long long,
+                                       vector unsigned long long);
+vector unsigned long long vec_vaddudm (vector bool unsigned long long,
+                                       vector unsigned long long);
+vector unsigned long long vec_vaddudm (vector unsigned long long,
+                                       vector bool unsigned long long);
+
+vector long long vec_vbpermq (vector signed char, vector signed char);
+vector long long vec_vbpermq (vector unsigned char, vector unsigned char);
+
+vector unsigned char vec_bperm (vector unsigned char, vector unsigned char);
+vector unsigned char vec_bperm (vector unsigned long long, vector unsigned char);
+vector unsigned long long vec_bperm (vector unsigned __int128, vector unsigned char);
+
+vector long long vec_cntlz (vector long long);
+vector unsigned long long vec_cntlz (vector unsigned long long);
+vector int vec_cntlz (vector int);
+vector unsigned int vec_cntlz (vector int);
+vector short vec_cntlz (vector short);
+vector unsigned short vec_cntlz (vector unsigned short);
+vector signed char vec_cntlz (vector signed char);
+vector unsigned char vec_cntlz (vector unsigned char);
+
+vector long long vec_vclz (vector long long);
+vector unsigned long long vec_vclz (vector unsigned long long);
+vector int vec_vclz (vector int);
+vector unsigned int vec_vclz (vector int);
+vector short vec_vclz (vector short);
+vector unsigned short vec_vclz (vector unsigned short);
+vector signed char vec_vclz (vector signed char);
+vector unsigned char vec_vclz (vector unsigned char);
+
+vector signed char vec_vclzb (vector signed char);
+vector unsigned char vec_vclzb (vector unsigned char);
+
+vector long long vec_vclzd (vector long long);
+vector unsigned long long vec_vclzd (vector unsigned long long);
+
+vector short vec_vclzh (vector short);
+vector unsigned short vec_vclzh (vector unsigned short);
+
+vector int vec_vclzw (vector int);
+vector unsigned int vec_vclzw (vector int);
+
+vector signed char vec_vgbbd (vector signed char);
+vector unsigned char vec_vgbbd (vector unsigned char);
+
+vector long long vec_vmaxsd (vector long long, vector long long);
+
+vector unsigned long long vec_vmaxud (vector unsigned long long,
+                                      unsigned vector long long);
+
+vector long long vec_vminsd (vector long long, vector long long);
+
+vector unsigned long long vec_vminud (vector long long, vector long long);
+
+vector int vec_vpksdss (vector long long, vector long long);
+vector unsigned int vec_vpksdss (vector long long, vector long long);
+
+vector unsigned int vec_vpkudus (vector unsigned long long,
+                                 vector unsigned long long);
+
+vector int vec_vpkudum (vector long long, vector long long);
+vector unsigned int vec_vpkudum (vector unsigned long long,
+                                 vector unsigned long long);
+vector bool int vec_vpkudum (vector bool long long, vector bool long long);
+
+vector long long vec_vpopcnt (vector long long);
+vector unsigned long long vec_vpopcnt (vector unsigned long long);
+vector int vec_vpopcnt (vector int);
+vector unsigned int vec_vpopcnt (vector int);
+vector short vec_vpopcnt (vector short);
+vector unsigned short vec_vpopcnt (vector unsigned short);
+vector signed char vec_vpopcnt (vector signed char);
+vector unsigned char vec_vpopcnt (vector unsigned char);
+
+vector signed char vec_vpopcntb (vector signed char);
+vector unsigned char vec_vpopcntb (vector unsigned char);
+
+vector long long vec_vpopcntd (vector long long);
+vector unsigned long long vec_vpopcntd (vector unsigned long long);
+
+vector short vec_vpopcnth (vector short);
+vector unsigned short vec_vpopcnth (vector unsigned short);
+
+vector int vec_vpopcntw (vector int);
+vector unsigned int vec_vpopcntw (vector int);
+
+vector long long vec_vrld (vector long long, vector unsigned long long);
+vector unsigned long long vec_vrld (vector unsigned long long,
+                                    vector unsigned long long);
+
+vector long long vec_vsld (vector long long, vector unsigned long long);
+vector long long vec_vsld (vector unsigned long long,
+                           vector unsigned long long);
+
+vector long long vec_vsrad (vector long long, vector unsigned long long);
+vector unsigned long long vec_vsrad (vector unsigned long long,
+                                     vector unsigned long long);
+
+vector long long vec_vsrd (vector long long, vector unsigned long long);
+vector unsigned long long char vec_vsrd (vector unsigned long long,
+                                         vector unsigned long long);
+
+vector long long vec_vsubudm (vector long long, vector long long);
+vector long long vec_vsubudm (vector bool long long, vector long long);
+vector long long vec_vsubudm (vector long long, vector bool long long);
+vector unsigned long long vec_vsubudm (vector unsigned long long,
+                                       vector unsigned long long);
+vector unsigned long long vec_vsubudm (vector bool long long,
+                                       vector unsigned long long);
+vector unsigned long long vec_vsubudm (vector unsigned long long,
+                                       vector bool long long);
+
+vector long long vec_vupkhsw (vector int);
+vector unsigned long long vec_vupkhsw (vector unsigned int);
+
+vector long long vec_vupklsw (vector int);
+vector unsigned long long vec_vupklsw (vector int);
+</pre></div>
+
+<p>If the ISA 2.07 additions to the vector/scalar (power8-vector)
+instruction set are available, the following additional functions are
+available for 64-bit targets.  New vector types
+(<var>vector __int128</var> and <var>vector __uint128</var>) are available
+to hold the <var>__int128</var> and <var>__uint128</var> types to use these
+builtins.
+</p>
+<p>The normal vector extract, and set operations work on
+<var>vector __int128</var> and <var>vector __uint128</var> types,
+but the index value must be 0.
+</p>
+<div class="smallexample">
+<pre class="smallexample">vector __int128 vec_vaddcuq (vector __int128, vector __int128);
+vector __uint128 vec_vaddcuq (vector __uint128, vector __uint128);
+
+vector __int128 vec_vadduqm (vector __int128, vector __int128);
+vector __uint128 vec_vadduqm (vector __uint128, vector __uint128);
+
+vector __int128 vec_vaddecuq (vector __int128, vector __int128,
+                                vector __int128);
+vector __uint128 vec_vaddecuq (vector __uint128, vector __uint128,
+                                 vector __uint128);
+
+vector __int128 vec_vaddeuqm (vector __int128, vector __int128,
+                                vector __int128);
+vector __uint128 vec_vaddeuqm (vector __uint128, vector __uint128,
+                                 vector __uint128);
+
+vector __int128 vec_vsubecuq (vector __int128, vector __int128,
+                                vector __int128);
+vector __uint128 vec_vsubecuq (vector __uint128, vector __uint128,
+                                 vector __uint128);
+
+vector __int128 vec_vsubeuqm (vector __int128, vector __int128,
+                                vector __int128);
+vector __uint128 vec_vsubeuqm (vector __uint128, vector __uint128,
+                                 vector __uint128);
+
+vector __int128 vec_vsubcuq (vector __int128, vector __int128);
+vector __uint128 vec_vsubcuq (vector __uint128, vector __uint128);
+
+__int128 vec_vsubuqm (__int128, __int128);
+__uint128 vec_vsubuqm (__uint128, __uint128);
+
+vector __int128 __builtin_bcdadd (vector __int128, vector __int128, const int);
+int __builtin_bcdadd_lt (vector __int128, vector __int128, const int);
+int __builtin_bcdadd_eq (vector __int128, vector __int128, const int);
+int __builtin_bcdadd_gt (vector __int128, vector __int128, const int);
+int __builtin_bcdadd_ov (vector __int128, vector __int128, const int);
+vector __int128 __builtin_bcdsub (vector __int128, vector __int128, const int);
+int __builtin_bcdsub_lt (vector __int128, vector __int128, const int);
+int __builtin_bcdsub_eq (vector __int128, vector __int128, const int);
+int __builtin_bcdsub_gt (vector __int128, vector __int128, const int);
+int __builtin_bcdsub_ov (vector __int128, vector __int128, const int);
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="PowerPC-AltiVec-Built_002din-Functions-Available-on-ISA-3_002e0.html#PowerPC-AltiVec-Built_002din-Functions-Available-on-ISA-3_002e0" accesskey="n" rel="next">PowerPC AltiVec Built-in Functions Available on ISA 3.0</a>, Previous: <a href="PowerPC-AltiVec-Built_002din-Functions-Available-on-ISA-2_002e06.html#PowerPC-AltiVec-Built_002din-Functions-Available-on-ISA-2_002e06" accesskey="p" rel="prev">PowerPC AltiVec Built-in Functions Available on ISA 2.06</a>, Up: <a href="PowerPC-AltiVec_002fVSX-Built_002din-Functions.html#PowerPC-AltiVec_002fVSX-Built_002din-Functions" accesskey="u" rel="up">PowerPC AltiVec/VSX Built-in Functions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

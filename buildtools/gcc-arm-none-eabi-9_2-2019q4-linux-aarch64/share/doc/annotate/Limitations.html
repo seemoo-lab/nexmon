@@ -1,0 +1,141 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1994-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GDB&rsquo;s Obsolete Annotations: Limitations</title>
+
+<meta name="description" content="GDB&rsquo;s Obsolete Annotations: Limitations">
+<meta name="keywords" content="GDB&rsquo;s Obsolete Annotations: Limitations">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Migrating-to-GDB_002fMI.html#Migrating-to-GDB_002fMI" rel="next" title="Migrating to GDB/MI">
+<link href="Annotations-Overview.html#Annotations-Overview" rel="prev" title="Annotations Overview">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Limitations"></a>
+<div class="header">
+<p>
+Next: <a href="Migrating-to-GDB_002fMI.html#Migrating-to-GDB_002fMI" accesskey="n" rel="next">Migrating to GDB/MI</a>, Previous: <a href="Annotations-Overview.html#Annotations-Overview" accesskey="p" rel="prev">Annotations Overview</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<hr>
+<a name="Limitations-of-the-Annotation-Interface"></a>
+<h2 class="chapter">2 Limitations of the Annotation Interface</h2>
+
+<p>The level two annotations mechanism is known to have a number of
+technical and architectural limitations.  As a consequence, in 2001,
+with the release of <small>GDB</small> 5.1 and the addition of <small>GDB/MI</small>,
+the annotation interface was marked as deprecated.
+</p>
+<p>This chapter discusses the known problems.
+</p>
+<a name="Dependant-on-CLI-output"></a>
+<h3 class="section">2.1 Dependant on <small>CLI</small> output</h3>
+
+<p>The annotation interface works by interspersing markups with
+<small>GDB</small> normal command-line interpreter output.  Unfortunately, this
+makes the annotation client dependant on not just the annotations, but
+also the <small>CLI</small> output.  This is because the client is forced to
+assume that specific <small>GDB</small> commands provide specific information.
+Any change to <small>GDB</small>&rsquo;s <small>CLI</small> output modifies or removes that
+information and, consequently, likely breaks the client.
+</p>
+<p>Since the <small>GDB/MI</small> output is independent of the <small>CLI</small>, it does not
+have this problem.
+</p>
+<a name="Scalability"></a>
+<h3 class="section">2.2 Scalability</h3>
+
+<p>The annotation interface relies on value annotations (see <a href="Value-Annotations.html#Value-Annotations">Value Annotations</a>) and the display mechanism as a way of obtaining up-to-date
+value information.  These mechanisms are not scalable.
+</p>
+<p>In a graphical environment, where many values can be displayed
+simultaneously, a serious performance problem occurs when the client
+tries to first extract from <small>GDB</small>, and then re-display, all those
+values.  The client should instead only request and update the values
+that changed.
+</p>
+<p>The <small>GDB/MI</small> Variable Objects provide just that mechanism.
+</p>
+<a name="Correctness"></a>
+<h3 class="section">2.3 Correctness</h3>
+
+<p>The annotation interface assumes that a variable&rsquo;s value can only be
+changed when the target is running.  This assumption is not correct.  A
+single assignment to a single variable can result in the entire target,
+and all displayed values, needing an update.
+</p>
+<p>The <small>GDB/MI</small> Variable Objects include a mechanism for efficiently
+reporting such changes.
+</p>
+<a name="Reliability"></a>
+<h3 class="section">2.4 Reliability</h3>
+
+<p>The <small>GDB/MI</small> interface includes a dedicated test directory
+(<samp>gdb/gdb.mi</samp>), and any addition or fix to <small>GDB/MI</small> must include
+testsuite changes.
+</p>
+<a name="Maintainability"></a>
+<h3 class="section">2.5 Maintainability</h3>
+
+<p>The annotation mechanism was implemented by interspersing <small>CLI</small> print
+statements with various annotations.  As a consequence, any <small>CLI</small>
+output change can alter the annotation output.
+</p>
+<p>Since the <small>GDB/MI</small> output is independent of the <small>CLI</small>, and the
+<small>GDB/MI</small> is increasingly implemented independent of the <small>CLI</small>
+code, its long term maintenance is much easier.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Migrating-to-GDB_002fMI.html#Migrating-to-GDB_002fMI" accesskey="n" rel="next">Migrating to GDB/MI</a>, Previous: <a href="Annotations-Overview.html#Annotations-Overview" accesskey="p" rel="prev">Annotations Overview</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+
+
+
+</body>
+</html>

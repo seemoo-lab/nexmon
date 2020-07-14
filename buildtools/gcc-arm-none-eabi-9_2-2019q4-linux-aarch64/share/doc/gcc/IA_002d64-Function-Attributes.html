@@ -1,0 +1,111 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): IA-64 Function Attributes</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): IA-64 Function Attributes">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): IA-64 Function Attributes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Function-Attributes.html#Function-Attributes" rel="up" title="Function Attributes">
+<link href="M32C-Function-Attributes.html#M32C-Function-Attributes" rel="next" title="M32C Function Attributes">
+<link href="H8_002f300-Function-Attributes.html#H8_002f300-Function-Attributes" rel="prev" title="H8/300 Function Attributes">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="IA_002d64-Function-Attributes"></a>
+<div class="header">
+<p>
+Next: <a href="M32C-Function-Attributes.html#M32C-Function-Attributes" accesskey="n" rel="next">M32C Function Attributes</a>, Previous: <a href="H8_002f300-Function-Attributes.html#H8_002f300-Function-Attributes" accesskey="p" rel="prev">H8/300 Function Attributes</a>, Up: <a href="Function-Attributes.html#Function-Attributes" accesskey="u" rel="up">Function Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="IA_002d64-Function-Attributes-1"></a>
+<h4 class="subsection">6.33.12 IA-64 Function Attributes</h4>
+
+<p>These function attributes are supported on IA-64 targets:
+</p>
+<dl compact="compact">
+<dt><code>syscall_linkage</code></dt>
+<dd><a name="index-syscall_005flinkage-function-attribute_002c-IA_002d64"></a>
+<p>This attribute is used to modify the IA-64 calling convention by marking
+all input registers as live at all function exits.  This makes it possible
+to restart a system call after an interrupt without having to save/restore
+the input registers.  This also prevents kernel data from leaking into
+application code.
+</p>
+</dd>
+<dt><code>version_id</code></dt>
+<dd><a name="index-version_005fid-function-attribute_002c-IA_002d64"></a>
+<p>This IA-64 HP-UX attribute, attached to a global variable or function, renames a
+symbol to contain a version string, thus allowing for function level
+versioning.  HP-UX system header files may use function level versioning
+for some system calls.
+</p>
+<div class="smallexample">
+<pre class="smallexample">extern int foo () __attribute__((version_id (&quot;20040821&quot;)));
+</pre></div>
+
+<p>Calls to <code>foo</code> are mapped to calls to <code>foo{20040821}</code>.
+</p></dd>
+</dl>
+
+
+
+
+</body>
+</html>

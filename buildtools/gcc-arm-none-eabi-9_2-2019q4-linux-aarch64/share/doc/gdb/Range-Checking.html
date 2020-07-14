@@ -1,0 +1,140 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Range Checking</title>
+
+<meta name="description" content="Debugging with GDB: Range Checking">
+<meta name="keywords" content="Debugging with GDB: Range Checking">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Checks.html#Checks" rel="up" title="Checks">
+<link href="Supported-Languages.html#Supported-Languages" rel="next" title="Supported Languages">
+<link href="Type-Checking.html#Type-Checking" rel="prev" title="Type Checking">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Range-Checking"></a>
+<div class="header">
+<p>
+Previous: <a href="Type-Checking.html#Type-Checking" accesskey="p" rel="prev">Type Checking</a>, Up: <a href="Checks.html#Checks" accesskey="u" rel="up">Checks</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="An-Overview-of-Range-Checking"></a>
+<h4 class="subsection">15.3.2 An Overview of Range Checking</h4>
+
+<p>In some languages (such as Modula-2), it is an error to exceed the
+bounds of a type; this is enforced with run-time checks.  Such range
+checking is meant to ensure program correctness by making sure
+computations do not overflow, or indices on an array element access do
+not exceed the bounds of the array.
+</p>
+<p>For expressions you use in <small>GDB</small> commands, you can tell
+<small>GDB</small> to treat range errors in one of three ways: ignore them,
+always treat them as errors and abandon the expression, or issue
+warnings but evaluate the expression anyway.
+</p>
+<p>A range error can result from numerical overflow, from exceeding an
+array index bound, or when you type a constant that is not a member
+of any type.  Some languages, however, do not treat overflows as an
+error.  In many implementations of C, mathematical overflow causes the
+result to &ldquo;wrap around&rdquo; to lower values&mdash;for example, if <var>m</var> is
+the largest integer value, and <var>s</var> is the smallest, then
+</p>
+<div class="smallexample">
+<pre class="smallexample"><var>m</var> + 1 &rArr; <var>s</var>
+</pre></div>
+
+<p>This, too, is specific to individual languages, and in some cases
+specific to individual compilers or machines.  See <a href="Supported-Languages.html#Supported-Languages">Supported Languages</a>, for further details on specific languages.
+</p>
+<p><small>GDB</small> provides some additional commands for controlling the range checker:
+</p>
+<a name="index-set-check-range"></a>
+<a name="index-show-check-range"></a>
+<dl compact="compact">
+<dt><code>set check range auto</code></dt>
+<dd><p>Set range checking on or off based on the current working language.
+See <a href="Supported-Languages.html#Supported-Languages">Supported Languages</a>, for the default settings for
+each language.
+</p>
+</dd>
+<dt><code>set check range on</code></dt>
+<dt><code>set check range off</code></dt>
+<dd><p>Set range checking on or off, overriding the default setting for the
+current working language.  A warning is issued if the setting does not
+match the language default.  If a range error occurs and range checking is on,
+then a message is printed and evaluation of the expression is aborted.
+</p>
+</dd>
+<dt><code>set check range warn</code></dt>
+<dd><p>Output messages when the <small>GDB</small> range checker detects a range error,
+but attempt to evaluate the expression anyway.  Evaluating the
+expression may still be impossible for other reasons, such as accessing
+memory that the process does not own (a typical example from many Unix
+systems).
+</p>
+</dd>
+<dt><code>show range</code></dt>
+<dd><p>Show the current setting of the range checker, and whether or not it is
+being set automatically by <small>GDB</small>.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Type-Checking.html#Type-Checking" accesskey="p" rel="prev">Type Checking</a>, Up: <a href="Checks.html#Checks" accesskey="u" rel="up">Checks</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

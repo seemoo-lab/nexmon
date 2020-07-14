@@ -1,0 +1,123 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Z80 Opcodes</title>
+
+<meta name="description" content="Using as: Z80 Opcodes">
+<meta name="keywords" content="Using as: Z80 Opcodes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Z80_002dDependent.html#Z80_002dDependent" rel="up" title="Z80-Dependent">
+<link href="Z8000_002dDependent.html#Z8000_002dDependent" rel="next" title="Z8000-Dependent">
+<link href="Z80-Directives.html#Z80-Directives" rel="prev" title="Z80 Directives">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Z80-Opcodes"></a>
+<div class="header">
+<p>
+Previous: <a href="Z80-Directives.html#Z80-Directives" accesskey="p" rel="prev">Z80 Directives</a>, Up: <a href="Z80_002dDependent.html#Z80_002dDependent" accesskey="u" rel="up">Z80-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Opcodes-22"></a>
+<h4 class="subsection">9.56.5 Opcodes</h4>
+<p>In line with common practice, Z80 mnemonics are used for both the Z80 and
+the R800.
+</p>
+<p>In many instructions it is possible to use one of the half index
+registers (&lsquo;<samp>ixl</samp>&rsquo;,&lsquo;<samp>ixh</samp>&rsquo;,&lsquo;<samp>iyl</samp>&rsquo;,&lsquo;<samp>iyh</samp>&rsquo;) in stead of an
+8-bit general purpose register. This yields instructions that are
+documented on the R800 and undocumented on the Z80.
+Similarly <code>in f,(c)</code> is documented on the R800 and undocumented on
+the Z80.
+</p>
+<p>The assembler also supports the following undocumented Z80-instructions,
+that have not been adopted in the R800 instruction set:
+</p><dl compact="compact">
+<dt><code>out (c),0</code></dt>
+<dd><p>Sends zero to the port pointed to by register c.
+</p>
+</dd>
+<dt><code>sli <var>m</var></code></dt>
+<dd><p>Equivalent to <code><var>m</var> = (<var>m</var>&lt;&lt;1)+1</code>, the operand <var>m</var> can
+be any operand that is valid for &lsquo;<samp>sla</samp>&rsquo;. One can use &lsquo;<samp>sll</samp>&rsquo; as a
+synonym for &lsquo;<samp>sli</samp>&rsquo;.
+</p>
+</dd>
+<dt><code><var>op</var> (ix+<var>d</var>), <var>r</var></code></dt>
+<dd><p>This is equivalent to
+</p>
+<div class="example">
+<pre class="example">ld <var>r</var>, (ix+<var>d</var>)
+<var>opc</var> <var>r</var>
+ld (ix+<var>d</var>), <var>r</var>
+</pre></div>
+
+<p>The operation &lsquo;<samp><var>opc</var></samp>&rsquo; may be any of &lsquo;<samp>res <var>b</var>,</samp>&rsquo;,
+&lsquo;<samp>set <var>b</var>,</samp>&rsquo;, &lsquo;<samp>rl</samp>&rsquo;, &lsquo;<samp>rlc</samp>&rsquo;, &lsquo;<samp>rr</samp>&rsquo;, &lsquo;<samp>rrc</samp>&rsquo;,
+&lsquo;<samp>sla</samp>&rsquo;, &lsquo;<samp>sli</samp>&rsquo;, &lsquo;<samp>sra</samp>&rsquo; and &lsquo;<samp>srl</samp>&rsquo;, and the register
+&lsquo;<samp><var>r</var></samp>&rsquo; may be any of &lsquo;<samp>a</samp>&rsquo;, &lsquo;<samp>b</samp>&rsquo;, &lsquo;<samp>c</samp>&rsquo;, &lsquo;<samp>d</samp>&rsquo;,
+&lsquo;<samp>e</samp>&rsquo;, &lsquo;<samp>h</samp>&rsquo; and &lsquo;<samp>l</samp>&rsquo;.
+</p>
+</dd>
+<dt><code><var>opc</var> (iy+<var>d</var>), <var>r</var></code></dt>
+<dd><p>As above, but with &lsquo;<samp>iy</samp>&rsquo; instead of &lsquo;<samp>ix</samp>&rsquo;.
+</p></dd>
+</dl>
+
+<p>The web site at <a href="http://www.z80.info">http://www.z80.info</a> is a good starting place to
+find more information on programming the Z80.
+</p>
+
+
+
+
+</body>
+</html>

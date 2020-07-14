@@ -1,0 +1,198 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Omissions from Ada</title>
+
+<meta name="description" content="Debugging with GDB: Omissions from Ada">
+<meta name="keywords" content="Debugging with GDB: Omissions from Ada">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Ada.html#Ada" rel="up" title="Ada">
+<link href="Additions-to-Ada.html#Additions-to-Ada" rel="next" title="Additions to Ada">
+<link href="Ada-Mode-Intro.html#Ada-Mode-Intro" rel="prev" title="Ada Mode Intro">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Omissions-from-Ada"></a>
+<div class="header">
+<p>
+Next: <a href="Additions-to-Ada.html#Additions-to-Ada" accesskey="n" rel="next">Additions to Ada</a>, Previous: <a href="Ada-Mode-Intro.html#Ada-Mode-Intro" accesskey="p" rel="prev">Ada Mode Intro</a>, Up: <a href="Ada.html#Ada" accesskey="u" rel="up">Ada</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Omissions-from-Ada-1"></a>
+<h4 class="subsubsection">15.4.10.2 Omissions from Ada</h4>
+<a name="index-Ada_002c-omissions-from"></a>
+
+<p>Here are the notable omissions from the subset:
+</p>
+<ul>
+<li> Only a subset of the attributes are supported:
+
+<ul class="no-bullet">
+<li>- <tt>'First</tt>, <tt>'Last</tt>, and <tt>'Length</tt>
+ on array objects (not on types and subtypes).
+
+</li><li>- <tt>'Min</tt> and <tt>'Max</tt>.  
+
+</li><li>- <tt>'Pos</tt> and <tt>'Val</tt>. 
+
+</li><li>- <tt>'Tag</tt>.
+
+</li><li>- <tt>'Range</tt> on array objects (not subtypes), but only as the right
+operand of the membership (<code>in</code>) operator.
+
+</li><li>- <tt>'Access</tt>, <tt>'Unchecked_Access</tt>, and 
+<tt>'Unrestricted_Access</tt> (a GNAT extension).
+
+</li><li>- <tt>'Address</tt>.
+</li></ul>
+
+</li><li> The names in
+<code>Characters.Latin_1</code> are not available and
+concatenation is not implemented.  Thus, escape characters in strings are 
+not currently available.
+
+</li><li> Equality tests (&lsquo;<samp>=</samp>&rsquo; and &lsquo;<samp>/=</samp>&rsquo;) on arrays test for bitwise
+equality of representations.  They will generally work correctly
+for strings and arrays whose elements have integer or enumeration types.
+They may not work correctly for arrays whose element
+types have user-defined equality, for arrays of real values 
+(in particular, IEEE-conformant floating point, because of negative
+zeroes and NaNs), and for arrays whose elements contain unused bits with
+indeterminate values.  
+
+</li><li> The other component-by-component array operations (<code>and</code>, <code>or</code>, 
+<code>xor</code>, <code>not</code>, and relational tests other than equality)
+are not implemented. 
+
+</li><li> <a name="index-array-aggregates-_0028Ada_0029"></a>
+<a name="index-record-aggregates-_0028Ada_0029"></a>
+<a name="index-aggregates-_0028Ada_0029"></a>
+There is limited support for array and record aggregates.  They are
+permitted only on the right sides of assignments, as in these examples:
+
+<div class="smallexample">
+<pre class="smallexample">(gdb) set An_Array := (1, 2, 3, 4, 5, 6)
+(gdb) set An_Array := (1, others =&gt; 0)
+(gdb) set An_Array := (0|4 =&gt; 1, 1..3 =&gt; 2, 5 =&gt; 6)
+(gdb) set A_2D_Array := ((1, 2, 3), (4, 5, 6), (7, 8, 9))
+(gdb) set A_Record := (1, &quot;Peter&quot;, True);
+(gdb) set A_Record := (Name =&gt; &quot;Peter&quot;, Id =&gt; 1, Alive =&gt; True)
+</pre></div>
+
+<p>Changing a
+discriminant&rsquo;s value by assigning an aggregate has an
+undefined effect if that discriminant is used within the record.
+However, you can first modify discriminants by directly assigning to
+them (which normally would not be allowed in Ada), and then performing an
+aggregate assignment.  For example, given a variable <code>A_Rec</code> 
+declared to have a type such as:
+</p>
+<div class="smallexample">
+<pre class="smallexample">type Rec (Len : Small_Integer := 0) is record
+    Id : Integer;
+    Vals : IntArray (1 .. Len);
+end record;
+</pre></div>
+
+<p>you can assign a value with a different size of <code>Vals</code> with two
+assignments:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) set A_Rec.Len := 4
+(gdb) set A_Rec := (Id =&gt; 42, Vals =&gt; (1, 2, 3, 4))
+</pre></div>
+
+<p>As this example also illustrates, <small>GDB</small> is very loose about the usual
+rules concerning aggregates.  You may leave out some of the
+components of an array or record aggregate (such as the <code>Len</code> 
+component in the assignment to <code>A_Rec</code> above); they will retain their
+original values upon assignment.  You may freely use dynamic values as
+indices in component associations.  You may even use overlapping or
+redundant component associations, although which component values are
+assigned in such cases is not defined.
+</p>
+</li><li> Calls to dispatching subprograms are not implemented.
+
+</li><li> The overloading algorithm is much more limited (i.e., less selective)
+than that of real Ada.  It makes only limited use of the context in
+which a subexpression appears to resolve its meaning, and it is much
+looser in its rules for allowing type matches.  As a result, some
+function calls will be ambiguous, and the user will be asked to choose
+the proper resolution.
+
+</li><li> The <code>new</code> operator is not implemented.
+
+</li><li> Entry calls are not implemented.
+
+</li><li> Aside from printing, arithmetic operations on the native VAX floating-point 
+formats are not supported.
+
+</li><li> It is not possible to slice a packed array.
+
+</li><li> The names <code>True</code> and <code>False</code>, when not part of a qualified name, 
+are interpreted as if implicitly prefixed by <code>Standard</code>, regardless of 
+context.
+Should your program
+redefine these names in a package or procedure (at best a dubious practice),
+you will have to use fully qualified names to access their new definitions.
+</li></ul>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Additions-to-Ada.html#Additions-to-Ada" accesskey="n" rel="next">Additions to Ada</a>, Previous: <a href="Ada-Mode-Intro.html#Ada-Mode-Intro" accesskey="p" rel="prev">Ada Mode Intro</a>, Up: <a href="Ada.html#Ada" accesskey="u" rel="up">Ada</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

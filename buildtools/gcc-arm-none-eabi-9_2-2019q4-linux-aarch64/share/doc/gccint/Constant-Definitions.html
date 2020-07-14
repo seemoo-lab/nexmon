@@ -1,0 +1,256 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Constant Definitions</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Constant Definitions">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Constant Definitions">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Machine-Desc.html#Machine-Desc" rel="up" title="Machine Desc">
+<link href="Iterators.html#Iterators" rel="next" title="Iterators">
+<link href="Define-Subst-Output-Template.html#Define-Subst-Output-Template" rel="prev" title="Define Subst Output Template">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Constant-Definitions"></a>
+<div class="header">
+<p>
+Next: <a href="Iterators.html#Iterators" accesskey="n" rel="next">Iterators</a>, Previous: <a href="Define-Subst.html#Define-Subst" accesskey="p" rel="prev">Define Subst</a>, Up: <a href="Machine-Desc.html#Machine-Desc" accesskey="u" rel="up">Machine Desc</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Constant-Definitions-1"></a>
+<h3 class="section">17.22 Constant Definitions</h3>
+<a name="index-constant-definitions"></a>
+<a name="index-define_005fconstants"></a>
+
+<p>Using literal constants inside instruction patterns reduces legibility and
+can be a maintenance problem.
+</p>
+<p>To overcome this problem, you may use the <code>define_constants</code>
+expression.  It contains a vector of name-value pairs.  From that
+point on, wherever any of the names appears in the MD file, it is as
+if the corresponding value had been written instead.  You may use
+<code>define_constants</code> multiple times; each appearance adds more
+constants to the table.  It is an error to redefine a constant with
+a different value.
+</p>
+<p>To come back to the a29k load multiple example, instead of
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_insn &quot;&quot;
+  [(match_parallel 0 &quot;load_multiple_operation&quot;
+     [(set (match_operand:SI 1 &quot;gpc_reg_operand&quot; &quot;=r&quot;)
+           (match_operand:SI 2 &quot;memory_operand&quot; &quot;m&quot;))
+      (use (reg:SI 179))
+      (clobber (reg:SI 179))])]
+  &quot;&quot;
+  &quot;loadm 0,0,%1,%2&quot;)
+</pre></div>
+
+<p>You could write:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_constants [
+    (R_BP 177)
+    (R_FC 178)
+    (R_CR 179)
+    (R_Q  180)
+])
+
+(define_insn &quot;&quot;
+  [(match_parallel 0 &quot;load_multiple_operation&quot;
+     [(set (match_operand:SI 1 &quot;gpc_reg_operand&quot; &quot;=r&quot;)
+           (match_operand:SI 2 &quot;memory_operand&quot; &quot;m&quot;))
+      (use (reg:SI R_CR))
+      (clobber (reg:SI R_CR))])]
+  &quot;&quot;
+  &quot;loadm 0,0,%1,%2&quot;)
+</pre></div>
+
+<p>The constants that are defined with a define_constant are also output
+in the insn-codes.h header file as #defines.
+</p>
+<a name="index-enumerations"></a>
+<a name="index-define_005fc_005fenum"></a>
+<p>You can also use the machine description file to define enumerations.
+Like the constants defined by <code>define_constant</code>, these enumerations
+are visible to both the machine description file and the main C code.
+</p>
+<p>The syntax is as follows:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_c_enum &quot;<var>name</var>&quot; [
+  <var>value0</var>
+  <var>value1</var>
+  &hellip;
+  <var>valuen</var>
+])
+</pre></div>
+
+<p>This definition causes the equivalent of the following C code to appear
+in <samp>insn-constants.h</samp>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">enum <var>name</var> {
+  <var>value0</var> = 0,
+  <var>value1</var> = 1,
+  &hellip;
+  <var>valuen</var> = <var>n</var>
+};
+#define NUM_<var>cname</var>_VALUES (<var>n</var> + 1)
+</pre></div>
+
+<p>where <var>cname</var> is the capitalized form of <var>name</var>.
+It also makes each <var>valuei</var> available in the machine description
+file, just as if it had been declared with:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_constants [(<var>valuei</var> <var>i</var>)])
+</pre></div>
+
+<p>Each <var>valuei</var> is usually an upper-case identifier and usually
+begins with <var>cname</var>.
+</p>
+<p>You can split the enumeration definition into as many statements as
+you like.  The above example is directly equivalent to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_c_enum &quot;<var>name</var>&quot; [<var>value0</var>])
+(define_c_enum &quot;<var>name</var>&quot; [<var>value1</var>])
+&hellip;
+(define_c_enum &quot;<var>name</var>&quot; [<var>valuen</var>])
+</pre></div>
+
+<p>Splitting the enumeration helps to improve the modularity of each
+individual <code>.md</code> file.  For example, if a port defines its
+synchronization instructions in a separate <samp>sync.md</samp> file,
+it is convenient to define all synchronization-specific enumeration
+values in <samp>sync.md</samp> rather than in the main <samp>.md</samp> file.
+</p>
+<p>Some enumeration names have special significance to GCC:
+</p>
+<dl compact="compact">
+<dt><code>unspecv</code></dt>
+<dd><a name="index-unspec_005fvolatile-1"></a>
+<p>If an enumeration called <code>unspecv</code> is defined, GCC will use it
+when printing out <code>unspec_volatile</code> expressions.  For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_c_enum &quot;unspecv&quot; [
+  UNSPECV_BLOCKAGE
+])
+</pre></div>
+
+<p>causes GCC to print &lsquo;<samp>(unspec_volatile &hellip; 0)</samp>&rsquo; as:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(unspec_volatile ... UNSPECV_BLOCKAGE)
+</pre></div>
+
+</dd>
+<dt><code>unspec</code></dt>
+<dd><a name="index-unspec-1"></a>
+<p>If an enumeration called <code>unspec</code> is defined, GCC will use
+it when printing out <code>unspec</code> expressions.  GCC will also use
+it when printing out <code>unspec_volatile</code> expressions unless an
+<code>unspecv</code> enumeration is also defined.  You can therefore
+decide whether to keep separate enumerations for volatile and
+non-volatile expressions or whether to use the same enumeration
+for both.
+</p></dd>
+</dl>
+
+<a name="index-define_005fenum"></a>
+<a name="define_005fenum"></a><p>Another way of defining an enumeration is to use <code>define_enum</code>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_enum &quot;<var>name</var>&quot; [
+  <var>value0</var>
+  <var>value1</var>
+  &hellip;
+  <var>valuen</var>
+])
+</pre></div>
+
+<p>This directive implies:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_c_enum &quot;<var>name</var>&quot; [
+  <var>cname</var>_<var>cvalue0</var>
+  <var>cname</var>_<var>cvalue1</var>
+  &hellip;
+  <var>cname</var>_<var>cvaluen</var>
+])
+</pre></div>
+
+<a name="index-define_005fenum_005fattr-1"></a>
+<p>where <var>cvaluei</var> is the capitalized form of <var>valuei</var>.
+However, unlike <code>define_c_enum</code>, the enumerations defined
+by <code>define_enum</code> can be used in attribute specifications
+(see <a href="Defining-Attributes.html#define_005fenum_005fattr">define_enum_attr</a>).
+</p><hr>
+<div class="header">
+<p>
+Next: <a href="Iterators.html#Iterators" accesskey="n" rel="next">Iterators</a>, Previous: <a href="Define-Subst.html#Define-Subst" accesskey="p" rel="prev">Define Subst</a>, Up: <a href="Machine-Desc.html#Machine-Desc" accesskey="u" rel="up">Machine Desc</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

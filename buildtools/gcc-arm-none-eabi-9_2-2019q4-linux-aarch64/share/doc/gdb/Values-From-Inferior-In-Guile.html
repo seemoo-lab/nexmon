@@ -1,0 +1,501 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Values From Inferior In Guile</title>
+
+<meta name="description" content="Debugging with GDB: Values From Inferior In Guile">
+<meta name="keywords" content="Debugging with GDB: Values From Inferior In Guile">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Guile-API.html#Guile-API" rel="up" title="Guile API">
+<link href="Arithmetic-In-Guile.html#Arithmetic-In-Guile" rel="next" title="Arithmetic In Guile">
+<link href="Guile-Exception-Handling.html#Guile-Exception-Handling" rel="prev" title="Guile Exception Handling">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Values-From-Inferior-In-Guile"></a>
+<div class="header">
+<p>
+Next: <a href="Arithmetic-In-Guile.html#Arithmetic-In-Guile" accesskey="n" rel="next">Arithmetic In Guile</a>, Previous: <a href="Guile-Exception-Handling.html#Guile-Exception-Handling" accesskey="p" rel="prev">Guile Exception Handling</a>, Up: <a href="Guile-API.html#Guile-API" accesskey="u" rel="up">Guile API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Values-From-Inferior-In-Guile-1"></a>
+<h4 class="subsubsection">23.3.3.5 Values From Inferior In Guile</h4>
+<a name="index-values-from-inferior_002c-in-guile"></a>
+<a name="index-guile_002c-working-with-values-from-inferior"></a>
+
+<a name="index-_003cgdb_003avalue_003e"></a>
+<p><small>GDB</small> provides values it obtains from the inferior program in
+an object of type <code>&lt;gdb:value&gt;</code>.  <small>GDB</small> uses this object
+for its internal bookkeeping of the inferior&rsquo;s values, and for
+fetching values when necessary.
+</p>
+<p><small>GDB</small> does not memoize <code>&lt;gdb:value&gt;</code> objects.
+<code>make-value</code> always returns a fresh object.
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) guile (eq? (make-value 1) (make-value 1))
+$1 = #f
+(gdb) guile (equal? (make-value 1) (make-value 1))
+$1 = #t
+</pre></div>
+
+<p>A <code>&lt;gdb:value&gt;</code> that represents a function can be executed via
+inferior function call with <code>value-call</code>.
+Any arguments provided to the call must match the function&rsquo;s prototype,
+and must be provided in the order specified by that prototype.
+</p>
+<p>For example, <code>some-val</code> is a <code>&lt;gdb:value&gt;</code> instance
+representing a function that takes two integers as arguments.  To
+execute this function, call it like so:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define result (value-call some-val 10 20))
+</pre></div>
+
+<p>Any values returned from a function call are <code>&lt;gdb:value&gt;</code> objects.
+</p>
+<p>Note: Unlike Python scripting in <small>GDB</small>,
+inferior values that are simple scalars cannot be used directly in
+Scheme expressions that are valid for the value&rsquo;s data type.
+For example, <code>(+ (parse-and-eval &quot;int_variable&quot;) 2)</code> does not work.
+And inferior values that are structures or instances of some class cannot
+be accessed using any special syntax, instead <code>value-field</code> must be used.
+</p>
+<p>The following value-related procedures are provided by the
+<code>(gdb)</code> module.
+</p>
+<dl>
+<dt><a name="index-value_003f"></a>Scheme Procedure: <strong>value?</strong> <em>object</em></dt>
+<dd><p>Return <code>#t</code> if <var>object</var> is a <code>&lt;gdb:value&gt;</code> object.
+Otherwise return <code>#f</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-make_002dvalue"></a>Scheme Procedure: <strong>make-value</strong> <em>value <span class="roman">[</span>#:type type<span class="roman">]</span></em></dt>
+<dd><p>Many Scheme values can be converted directly to a <code>&lt;gdb:value&gt;</code>
+with this procedure.  If <var>type</var> is specified, the result is a value
+of this type, and if <var>value</var> can&rsquo;t be represented with this type
+an exception is thrown.  Otherwise the type of the result is determined from
+<var>value</var> as described below.
+</p>
+<p>See <a href="Architectures-In-Guile.html#Architectures-In-Guile">Architectures In Guile</a>, for a list of the builtin
+types for an architecture.
+</p>
+<p>Here&rsquo;s how Scheme values are converted when <var>type</var> argument to
+<code>make-value</code> is not specified:
+</p>
+<dl compact="compact">
+<dt>Scheme boolean</dt>
+<dd><p>A Scheme boolean is converted the boolean type for the current language.
+</p>
+</dd>
+<dt>Scheme integer</dt>
+<dd><p>A Scheme integer is converted to the first of a C <code>int</code>,
+<code>unsigned int</code>, <code>long</code>, <code>unsigned long</code>,
+<code>long long</code> or <code>unsigned long long</code> type
+for the current architecture that can represent the value.
+</p>
+<p>If the Scheme integer cannot be represented as a target integer
+an <code>out-of-range</code> exception is thrown.
+</p>
+</dd>
+<dt>Scheme real</dt>
+<dd><p>A Scheme real is converted to the C <code>double</code> type for the
+current architecture.
+</p>
+</dd>
+<dt>Scheme string</dt>
+<dd><p>A Scheme string is converted to a string in the current target
+language using the current target encoding.
+Characters that cannot be represented in the current target encoding
+are replaced with the corresponding escape sequence.  This is Guile&rsquo;s
+<code>SCM_FAILED_CONVERSION_ESCAPE_SEQUENCE</code> conversion strategy
+(see <a href="http://www.gnu.org/software/guile/manual/html_node/Strings.html#Strings">Strings</a> in <cite>GNU Guile Reference Manual</cite>).
+</p>
+<p>Passing <var>type</var> is not supported in this case,
+if it is provided a <code>wrong-type-arg</code> exception is thrown.
+</p>
+</dd>
+<dt><code>&lt;gdb:lazy-string&gt;</code></dt>
+<dd><p>If <var>value</var> is a <code>&lt;gdb:lazy-string&gt;</code> object (see <a href="Lazy-Strings-In-Guile.html#Lazy-Strings-In-Guile">Lazy Strings In Guile</a>), then the <code>lazy-string-&gt;value</code> procedure is called, and
+its result is used.
+</p>
+<p>Passing <var>type</var> is not supported in this case,
+if it is provided a <code>wrong-type-arg</code> exception is thrown.
+</p>
+</dd>
+<dt>Scheme bytevector</dt>
+<dd><p>If <var>value</var> is a Scheme bytevector and <var>type</var> is provided,
+<var>value</var> must be the same size, in bytes, of values of type <var>type</var>,
+and the result is essentially created by using <code>memcpy</code>.
+</p>
+<p>If <var>value</var> is a Scheme bytevector and <var>type</var> is not provided,
+the result is an array of type <code>uint8</code> of the same length.
+</p></dd>
+</dl>
+</dd></dl>
+
+<a name="index-optimized-out-value-in-guile"></a>
+<dl>
+<dt><a name="index-value_002doptimized_002dout_003f"></a>Scheme Procedure: <strong>value-optimized-out?</strong> <em>value</em></dt>
+<dd><p>Return <code>#t</code> if the compiler optimized out <var>value</var>,
+thus it is not available for fetching from the inferior.
+Otherwise return <code>#f</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-value_002daddress"></a>Scheme Procedure: <strong>value-address</strong> <em>value</em></dt>
+<dd><p>If <var>value</var> is addressable, returns a
+<code>&lt;gdb:value&gt;</code> object representing the address.
+Otherwise, <code>#f</code> is returned.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-value_002dtype"></a>Scheme Procedure: <strong>value-type</strong> <em>value</em></dt>
+<dd><p>Return the type of <var>value</var> as a <code>&lt;gdb:type&gt;</code> object
+(see <a href="Types-In-Guile.html#Types-In-Guile">Types In Guile</a>).
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-value_002ddynamic_002dtype"></a>Scheme Procedure: <strong>value-dynamic-type</strong> <em>value</em></dt>
+<dd><p>Return the dynamic type of <var>value</var>.  This uses C<tt>++</tt> run-time
+type information (<acronym>RTTI</acronym>) to determine the dynamic type of the
+value.  If the value is of class type, it will return the class in
+which the value is embedded, if any.  If the value is of pointer or
+reference to a class type, it will compute the dynamic type of the
+referenced object, and return a pointer or reference to that type,
+respectively.  In all other cases, it will return the value&rsquo;s static
+type.
+</p>
+<p>Note that this feature will only work when debugging a C<tt>++</tt> program
+that includes <acronym>RTTI</acronym> for the object in question.  Otherwise,
+it will just return the static type of the value as in <kbd>ptype foo</kbd>.
+See <a href="Symbols.html#Symbols">ptype</a>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-value_002dcast"></a>Scheme Procedure: <strong>value-cast</strong> <em>value type</em></dt>
+<dd><p>Return a new instance of <code>&lt;gdb:value&gt;</code> that is the result of
+casting <var>value</var> to the type described by <var>type</var>, which must
+be a <code>&lt;gdb:type&gt;</code> object.  If the cast cannot be performed for some
+reason, this method throws an exception.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-value_002ddynamic_002dcast"></a>Scheme Procedure: <strong>value-dynamic-cast</strong> <em>value type</em></dt>
+<dd><p>Like <code>value-cast</code>, but works as if the C<tt>++</tt> <code>dynamic_cast</code>
+operator were used.  Consult a C<tt>++</tt> reference for details.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-value_002dreinterpret_002dcast"></a>Scheme Procedure: <strong>value-reinterpret-cast</strong> <em>value type</em></dt>
+<dd><p>Like <code>value-cast</code>, but works as if the C<tt>++</tt> <code>reinterpret_cast</code>
+operator were used.  Consult a C<tt>++</tt> reference for details.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-value_002ddereference"></a>Scheme Procedure: <strong>value-dereference</strong> <em>value</em></dt>
+<dd><p>For pointer data types, this method returns a new <code>&lt;gdb:value&gt;</code> object
+whose contents is the object pointed to by <var>value</var>.  For example, if
+<code>foo</code> is a C pointer to an <code>int</code>, declared in your C program as
+</p>
+<div class="smallexample">
+<pre class="smallexample">int *foo;
+</pre></div>
+
+<p>then you can use the corresponding <code>&lt;gdb:value&gt;</code> to access what
+<code>foo</code> points to like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define bar (value-dereference foo))
+</pre></div>
+
+<p>The result <code>bar</code> will be a <code>&lt;gdb:value&gt;</code> object holding the
+value pointed to by <code>foo</code>.
+</p>
+<p>A similar function <code>value-referenced-value</code> exists which also
+returns <code>&lt;gdb:value&gt;</code> objects corresonding to the values pointed to
+by pointer values (and additionally, values referenced by reference
+values).  However, the behavior of <code>value-dereference</code>
+differs from <code>value-referenced-value</code> by the fact that the
+behavior of <code>value-dereference</code> is identical to applying the C
+unary operator <code>*</code> on a given value.  For example, consider a
+reference to a pointer <code>ptrref</code>, declared in your C<tt>++</tt> program
+as
+</p>
+<div class="smallexample">
+<pre class="smallexample">typedef int *intptr;
+...
+int val = 10;
+intptr ptr = &amp;val;
+intptr &amp;ptrref = ptr;
+</pre></div>
+
+<p>Though <code>ptrref</code> is a reference value, one can apply the method
+<code>value-dereference</code> to the <code>&lt;gdb:value&gt;</code> object corresponding
+to it and obtain a <code>&lt;gdb:value&gt;</code> which is identical to that
+corresponding to <code>val</code>.  However, if you apply the method
+<code>value-referenced-value</code>, the result would be a <code>&lt;gdb:value&gt;</code>
+object identical to that corresponding to <code>ptr</code>.
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define scm-ptrref (parse-and-eval &quot;ptrref&quot;))
+(define scm-val (value-dereference scm-ptrref))
+(define scm-ptr (value-referenced-value scm-ptrref))
+</pre></div>
+
+<p>The <code>&lt;gdb:value&gt;</code> object <code>scm-val</code> is identical to that
+corresponding to <code>val</code>, and <code>scm-ptr</code> is identical to that
+corresponding to <code>ptr</code>.  In general, <code>value-dereference</code> can
+be applied whenever the C unary operator <code>*</code> can be applied
+to the corresponding C value.  For those cases where applying both
+<code>value-dereference</code> and <code>value-referenced-value</code> is allowed,
+the results obtained need not be identical (as we have seen in the above
+example).  The results are however identical when applied on
+<code>&lt;gdb:value&gt;</code> objects corresponding to pointers (<code>&lt;gdb:value&gt;</code>
+objects with type code <code>TYPE_CODE_PTR</code>) in a C/C<tt>++</tt> program.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-value_002dreferenced_002dvalue"></a>Scheme Procedure: <strong>value-referenced-value</strong> <em>value</em></dt>
+<dd><p>For pointer or reference data types, this method returns a new
+<code>&lt;gdb:value&gt;</code> object corresponding to the value referenced by the
+pointer/reference value.  For pointer data types,
+<code>value-dereference</code> and <code>value-referenced-value</code> produce
+identical results.  The difference between these methods is that
+<code>value-dereference</code> cannot get the values referenced by reference
+values.  For example, consider a reference to an <code>int</code>, declared
+in your C<tt>++</tt> program as
+</p>
+<div class="smallexample">
+<pre class="smallexample">int val = 10;
+int &amp;ref = val;
+</pre></div>
+
+<p>then applying <code>value-dereference</code> to the <code>&lt;gdb:value&gt;</code> object
+corresponding to <code>ref</code> will result in an error, while applying
+<code>value-referenced-value</code> will result in a <code>&lt;gdb:value&gt;</code> object
+identical to that corresponding to <code>val</code>.
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define scm-ref (parse-and-eval &quot;ref&quot;))
+(define err-ref (value-dereference scm-ref))      ;; error
+(define scm-val (value-referenced-value scm-ref)) ;; ok
+</pre></div>
+
+<p>The <code>&lt;gdb:value&gt;</code> object <code>scm-val</code> is identical to that
+corresponding to <code>val</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-value_002dfield"></a>Scheme Procedure: <strong>value-field</strong> <em>value field-name</em></dt>
+<dd><p>Return field <var>field-name</var> from <code>&lt;gdb:value&gt;</code> object <var>value</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-value_002dsubscript"></a>Scheme Procedure: <strong>value-subscript</strong> <em>value index</em></dt>
+<dd><p>Return the value of array <var>value</var> at index <var>index</var>.
+The <var>value</var> argument must be a subscriptable <code>&lt;gdb:value&gt;</code> object.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-value_002dcall"></a>Scheme Procedure: <strong>value-call</strong> <em>value arg-list</em></dt>
+<dd><p>Perform an inferior function call, taking <var>value</var> as a pointer
+to the function to call.
+Each element of list <var>arg-list</var> must be a &lt;gdb:value&gt; object or an object
+that can be converted to a value.
+The result is the value returned by the function.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-value_002d_003ebool"></a>Scheme Procedure: <strong>value-&gt;bool</strong> <em>value</em></dt>
+<dd><p>Return the Scheme boolean representing <code>&lt;gdb:value&gt;</code> <var>value</var>.
+The value must be &ldquo;integer like&rdquo;.  Pointers are ok.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-value_002d_003einteger"></a>Scheme Procedure: <strong>value-&gt;integer</strong></dt>
+<dd><p>Return the Scheme integer representing <code>&lt;gdb:value&gt;</code> <var>value</var>.
+The value must be &ldquo;integer like&rdquo;.  Pointers are ok.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-value_002d_003ereal"></a>Scheme Procedure: <strong>value-&gt;real</strong></dt>
+<dd><p>Return the Scheme real number representing <code>&lt;gdb:value&gt;</code> <var>value</var>.
+The value must be a number.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-value_002d_003ebytevector"></a>Scheme Procedure: <strong>value-&gt;bytevector</strong></dt>
+<dd><p>Return a Scheme bytevector with the raw contents of <code>&lt;gdb:value&gt;</code>
+<var>value</var>.  No transformation, endian or otherwise, is performed.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-value_002d_003estring"></a>Scheme Procedure: <strong>value-&gt;string</strong> <em>value <span class="roman">[</span>#:encoding encoding<span class="roman">]</span> <span class="roman">[</span>#:errors errors<span class="roman">]</span> <span class="roman">[</span>#:length length<span class="roman">]</span></em></dt>
+<dd><p>If <var>value&gt;</var> represents a string, then this method
+converts the contents to a Guile string.  Otherwise, this method will
+throw an exception.
+</p>
+<p>Values are interpreted as strings according to the rules of the
+current language.  If the optional length argument is given, the
+string will be converted to that length, and will include any embedded
+zeroes that the string may contain.  Otherwise, for languages
+where the string is zero-terminated, the entire string will be
+converted.
+</p>
+<p>For example, in C-like languages, a value is a string if it is a pointer
+to or an array of characters or ints of type <code>wchar_t</code>, <code>char16_t</code>,
+or <code>char32_t</code>.
+</p>
+<p>If the optional <var>encoding</var> argument is given, it must be a string
+naming the encoding of the string in the <code>&lt;gdb:value&gt;</code>, such as
+<code>&quot;ascii&quot;</code>, <code>&quot;iso-8859-6&quot;</code> or <code>&quot;utf-8&quot;</code>.  It accepts
+the same encodings as the corresponding argument to Guile&rsquo;s
+<code>scm_from_stringn</code> function, and the Guile codec machinery will be used
+to convert the string.  If <var>encoding</var> is not given, or if
+<var>encoding</var> is the empty string, then either the <code>target-charset</code>
+(see <a href="Character-Sets.html#Character-Sets">Character Sets</a>) will be used, or a language-specific encoding
+will be used, if the current language is able to supply one.
+</p>
+<p>The optional <var>errors</var> argument is one of <code>#f</code>, <code>error</code> or
+<code>substitute</code>.  <code>error</code> and <code>substitute</code> must be symbols.
+If <var>errors</var> is not specified, or if its value is <code>#f</code>, then the
+default conversion strategy is used, which is set with the Scheme function
+<code>set-port-conversion-strategy!</code>.
+If the value is <code>'error</code> then an exception is thrown if there is any
+conversion error.  If the value is <code>'substitute</code> then any conversion
+error is replaced with question marks.
+See <a href="http://www.gnu.org/software/guile/manual/html_node/Strings.html#Strings">Strings</a> in <cite>GNU Guile Reference Manual</cite>.
+</p>
+<p>If the optional <var>length</var> argument is given, the string will be
+fetched and converted to the given length.
+The length must be a Scheme integer and not a <code>&lt;gdb:value&gt;</code> integer.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-value_002d_003elazy_002dstring"></a>Scheme Procedure: <strong>value-&gt;lazy-string</strong> <em>value <span class="roman">[</span>#:encoding encoding<span class="roman">]</span> <span class="roman">[</span>#:length length<span class="roman">]</span></em></dt>
+<dd><p>If this <code>&lt;gdb:value&gt;</code> represents a string, then this method
+converts <var>value</var> to a <code>&lt;gdb:lazy-string</code> (see <a href="Lazy-Strings-In-Guile.html#Lazy-Strings-In-Guile">Lazy Strings In Guile</a>).  Otherwise, this method will throw an exception.
+</p>
+<p>If the optional <var>encoding</var> argument is given, it must be a string
+naming the encoding of the <code>&lt;gdb:lazy-string</code>.  Some examples are:
+<code>&quot;ascii&quot;</code>, <code>&quot;iso-8859-6&quot;</code> or <code>&quot;utf-8&quot;</code>.  If the
+<var>encoding</var> argument is an encoding that <small>GDB</small> does not
+recognize, <small>GDB</small> will raise an error.
+</p>
+<p>When a lazy string is printed, the <small>GDB</small> encoding machinery is
+used to convert the string during printing.  If the optional
+<var>encoding</var> argument is not provided, or is an empty string,
+<small>GDB</small> will automatically select the encoding most suitable for
+the string type.  For further information on encoding in <small>GDB</small>
+please see <a href="Character-Sets.html#Character-Sets">Character Sets</a>.
+</p>
+<p>If the optional <var>length</var> argument is given, the string will be
+fetched and encoded to the length of characters specified.  If
+the <var>length</var> argument is not provided, the string will be fetched
+and encoded until a null of appropriate width is found.
+The length must be a Scheme integer and not a <code>&lt;gdb:value&gt;</code> integer.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-value_002dlazy_003f"></a>Scheme Procedure: <strong>value-lazy?</strong> <em>value</em></dt>
+<dd><p>Return <code>#t</code> if <var>value</var> has not yet been fetched
+from the inferior.
+Otherwise return <code>#f</code>.
+<small>GDB</small> does not fetch values until necessary, for efficiency.
+For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define myval (parse-and-eval &quot;somevar&quot;))
+</pre></div>
+
+<p>The value of <code>somevar</code> is not fetched at this time.  It will be
+fetched when the value is needed, or when the <code>fetch-lazy</code>
+procedure is invoked.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-make_002dlazy_002dvalue"></a>Scheme Procedure: <strong>make-lazy-value</strong> <em>type address</em></dt>
+<dd><p>Return a <code>&lt;gdb:value&gt;</code> that will be lazily fetched from the
+target.  The object of type <code>&lt;gdb:type&gt;</code> whose value to fetch is
+specified by its <var>type</var> and its target memory <var>address</var>, which
+is a Scheme integer.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-value_002dfetch_002dlazy_0021"></a>Scheme Procedure: <strong>value-fetch-lazy!</strong> <em>value</em></dt>
+<dd><p>If <var>value</var> is a lazy value (<code>(value-lazy? value)</code> is <code>#t</code>),
+then the value is fetched from the inferior.
+Any errors that occur in the process will produce a Guile exception.
+</p>
+<p>If <var>value</var> is not a lazy value, this method has no effect.
+</p>
+<p>The result of this function is unspecified.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-value_002dprint"></a>Scheme Procedure: <strong>value-print</strong> <em>value</em></dt>
+<dd><p>Return the string representation (print form) of <code>&lt;gdb:value&gt;</code>
+<var>value</var>.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Arithmetic-In-Guile.html#Arithmetic-In-Guile" accesskey="n" rel="next">Arithmetic In Guile</a>, Previous: <a href="Guile-Exception-Handling.html#Guile-Exception-Handling" accesskey="p" rel="prev">Guile Exception Handling</a>, Up: <a href="Guile-API.html#Guile-API" accesskey="u" rel="up">Guile API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

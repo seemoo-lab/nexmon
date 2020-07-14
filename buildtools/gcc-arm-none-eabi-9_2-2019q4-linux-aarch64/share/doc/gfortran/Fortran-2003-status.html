@@ -1,0 +1,247 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: Fortran 2003 status</title>
+
+<meta name="description" content="The GNU Fortran Compiler: Fortran 2003 status">
+<meta name="keywords" content="The GNU Fortran Compiler: Fortran 2003 status">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Fortran-standards-status.html#Fortran-standards-status" rel="up" title="Fortran standards status">
+<link href="Fortran-2008-status.html#Fortran-2008-status" rel="next" title="Fortran 2008 status">
+<link href="Fortran-standards-status.html#Fortran-standards-status" rel="prev" title="Fortran standards status">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Fortran-2003-status"></a>
+<div class="header">
+<p>
+Next: <a href="Fortran-2008-status.html#Fortran-2008-status" accesskey="n" rel="next">Fortran 2008 status</a>, Up: <a href="Fortran-standards-status.html#Fortran-standards-status" accesskey="u" rel="up">Fortran standards status</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Fortran-2003-status-1"></a>
+<h3 class="section">4.1 Fortran 2003 status</h3>
+
+<p>GNU Fortran supports several Fortran 2003 features; an incomplete
+list can be found below.  See also the
+<a href="https://gcc.gnu.org/wiki/Fortran2003">wiki page</a> about Fortran 2003.
+</p>
+<ul>
+<li> Procedure pointers including procedure-pointer components with
+<code>PASS</code> attribute.
+
+</li><li> Procedures which are bound to a derived type (type-bound procedures)
+including <code>PASS</code>, <code>PROCEDURE</code> and <code>GENERIC</code>, and
+operators bound to a type.
+
+</li><li> Abstract interfaces and type extension with the possibility to
+override type-bound procedures or to have deferred binding.
+
+</li><li> Polymorphic entities (&ldquo;<code>CLASS</code>&rdquo;) for derived types and unlimited
+polymorphism (&ldquo;<code>CLASS(*)</code>&rdquo;) &ndash; including <code>SAME_TYPE_AS</code>,
+<code>EXTENDS_TYPE_OF</code> and <code>SELECT TYPE</code> for scalars and arrays and
+finalization.
+
+</li><li> Generic interface names, which have the same name as derived types,
+are now supported. This allows one to write constructor functions.  Note
+that Fortran does not support static constructor functions.  For static
+variables, only default initialization or structure-constructor
+initialization are available.
+
+</li><li> The <code>ASSOCIATE</code> construct.
+
+</li><li> Interoperability with C including enumerations,
+
+</li><li> In structure constructors the components with default values may be
+omitted.
+
+</li><li> Extensions to the <code>ALLOCATE</code> statement, allowing for a
+type-specification with type parameter and for allocation and initialization
+from a <code>SOURCE=</code> expression; <code>ALLOCATE</code> and <code>DEALLOCATE</code>
+optionally return an error message string via <code>ERRMSG=</code>.
+
+</li><li> Reallocation on assignment: If an intrinsic assignment is
+used, an allocatable variable on the left-hand side is automatically allocated
+(if unallocated) or reallocated (if the shape is different). Currently, scalar
+deferred character length left-hand sides are correctly handled but arrays
+are not yet fully implemented.
+
+</li><li> Deferred-length character variables and scalar deferred-length character
+components of derived types are supported. (Note that array-valued compoents
+are not yet implemented.)
+
+</li><li> Transferring of allocations via <code>MOVE_ALLOC</code>.
+
+</li><li> The <code>PRIVATE</code> and <code>PUBLIC</code> attributes may be given individually
+to derived-type components.
+
+</li><li> In pointer assignments, the lower bound may be specified and
+the remapping of elements is supported.
+
+</li><li> For pointers an <code>INTENT</code> may be specified which affect the
+association status not the value of the pointer target.
+
+</li><li> Intrinsics <code>command_argument_count</code>, <code>get_command</code>,
+<code>get_command_argument</code>, and <code>get_environment_variable</code>.
+
+</li><li> Support for Unicode characters (ISO 10646) and UTF-8, including
+the <code>SELECTED_CHAR_KIND</code> and <code>NEW_LINE</code> intrinsic functions.
+
+</li><li> Support for binary, octal and hexadecimal (BOZ) constants in the
+intrinsic functions <code>INT</code>, <code>REAL</code>, <code>CMPLX</code> and <code>DBLE</code>.
+
+</li><li> Support for namelist variables with allocatable and pointer
+attribute and nonconstant length type parameter.
+
+</li><li> <a name="index-array_002c-constructors"></a>
+<a name="index-_005b_002e_002e_002e_005d"></a>
+Array constructors using square brackets.  That is, <code>[...]</code> rather
+than <code>(/.../)</code>.  Type-specification for array constructors like
+<code>(/ some-type :: ... /)</code>.
+
+</li><li> Extensions to the specification and initialization expressions,
+including the support for intrinsics with real and complex arguments.
+
+</li><li> Support for the asynchronous input/output.
+
+</li><li> <a name="index-FLUSH-statement"></a>
+<a name="index-statement_002c-FLUSH"></a>
+<code>FLUSH</code> statement.
+
+</li><li> <a name="index-IOMSG_003d-specifier"></a>
+<code>IOMSG=</code> specifier for I/O statements.
+
+</li><li> <a name="index-ENUM-statement"></a>
+<a name="index-ENUMERATOR-statement"></a>
+<a name="index-statement_002c-ENUM"></a>
+<a name="index-statement_002c-ENUMERATOR"></a>
+<a name="index-fshort_002denums-1"></a>
+Support for the declaration of enumeration constants via the
+<code>ENUM</code> and <code>ENUMERATOR</code> statements.  Interoperability with
+<code>gcc</code> is guaranteed also for the case where the
+<code>-fshort-enums</code> command line option is given.
+
+</li><li> <a name="index-TR-15581"></a>
+TR 15581:
+<ul>
+<li> <a name="index-ALLOCATABLE-dummy-arguments"></a>
+<code>ALLOCATABLE</code> dummy arguments.
+</li><li> <a name="index-ALLOCATABLE-function-results"></a>
+<code>ALLOCATABLE</code> function results
+</li><li> <a name="index-ALLOCATABLE-components-of-derived-types"></a>
+<code>ALLOCATABLE</code> components of derived types
+</li></ul>
+
+</li><li> <a name="index-STREAM-I_002fO"></a>
+<a name="index-ACCESS_003d_0027STREAM_0027-I_002fO"></a>
+The <code>OPEN</code> statement supports the <code>ACCESS='STREAM'</code> specifier,
+allowing I/O without any record structure.
+
+</li><li> Namelist input/output for internal files.
+
+</li><li> Minor I/O features: Rounding during formatted output, using of
+a decimal comma instead of a decimal point, setting whether a plus sign
+should appear for positive numbers. On systems where <code>strtod</code> honours
+the rounding mode, the rounding mode is also supported for input.
+
+</li><li> <a name="index-PROTECTED-statement"></a>
+<a name="index-statement_002c-PROTECTED"></a>
+The <code>PROTECTED</code> statement and attribute.
+
+</li><li> <a name="index-VALUE-statement"></a>
+<a name="index-statement_002c-VALUE"></a>
+The <code>VALUE</code> statement and attribute.
+
+</li><li> <a name="index-VOLATILE-statement"></a>
+<a name="index-statement_002c-VOLATILE"></a>
+The <code>VOLATILE</code> statement and attribute.
+
+</li><li> <a name="index-IMPORT-statement"></a>
+<a name="index-statement_002c-IMPORT"></a>
+The <code>IMPORT</code> statement, allowing to import
+host-associated derived types.
+
+</li><li> The intrinsic modules <code>ISO_FORTRAN_ENVIRONMENT</code> is supported,
+which contains parameters of the I/O units, storage sizes. Additionally,
+procedures for C interoperability are available in the <code>ISO_C_BINDING</code>
+module.
+
+</li><li> <a name="index-USE_002c-INTRINSIC-statement"></a>
+<a name="index-statement_002c-USE_002c-INTRINSIC"></a>
+<a name="index-ISO_005fFORTRAN_005fENV-statement"></a>
+<a name="index-statement_002c-ISO_005fFORTRAN_005fENV"></a>
+<code>USE</code> statement with <code>INTRINSIC</code> and <code>NON_INTRINSIC</code>
+attribute; supported intrinsic modules: <code>ISO_FORTRAN_ENV</code>,
+<code>ISO_C_BINDING</code>, <code>OMP_LIB</code> and <code>OMP_LIB_KINDS</code>,
+and <code>OPENACC</code>.
+
+</li><li> Renaming of operators in the <code>USE</code> statement.
+
+</li></ul>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Fortran-2008-status.html#Fortran-2008-status" accesskey="n" rel="next">Fortran 2008 status</a>, Up: <a href="Fortran-standards-status.html#Fortran-standards-status" accesskey="u" rel="up">Fortran standards status</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

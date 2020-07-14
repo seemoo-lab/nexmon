@@ -1,0 +1,309 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Makefile</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Makefile">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Makefile">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="gcc-Directory.html#gcc-Directory" rel="up" title="gcc Directory">
+<link href="Library-Files.html#Library-Files" rel="next" title="Library Files">
+<link href="Build.html#Build" rel="prev" title="Build">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Makefile"></a>
+<div class="header">
+<p>
+Next: <a href="Library-Files.html#Library-Files" accesskey="n" rel="next">Library Files</a>, Previous: <a href="Build.html#Build" accesskey="p" rel="prev">Build</a>, Up: <a href="gcc-Directory.html#gcc-Directory" accesskey="u" rel="up">gcc Directory</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Makefile-Targets"></a>
+<h4 class="subsection">6.3.4 Makefile Targets</h4>
+<a name="index-makefile-targets"></a>
+<a name="index-targets_002c-makefile"></a>
+
+<p>These targets are available from the &lsquo;<samp>gcc</samp>&rsquo; directory:
+</p>
+<dl compact="compact">
+<dt><code>all</code></dt>
+<dd><p>This is the default target.  Depending on what your build/host/target
+configuration is, it coordinates all the things that need to be built.
+</p>
+</dd>
+<dt><code>doc</code></dt>
+<dd><p>Produce info-formatted documentation and man pages.  Essentially it
+calls &lsquo;<samp>make man</samp>&rsquo; and &lsquo;<samp>make info</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>dvi</code></dt>
+<dd><p>Produce DVI-formatted documentation.
+</p>
+</dd>
+<dt><code>pdf</code></dt>
+<dd><p>Produce PDF-formatted documentation.
+</p>
+</dd>
+<dt><code>html</code></dt>
+<dd><p>Produce HTML-formatted documentation.
+</p>
+</dd>
+<dt><code>man</code></dt>
+<dd><p>Generate man pages.
+</p>
+</dd>
+<dt><code>info</code></dt>
+<dd><p>Generate info-formatted pages.
+</p>
+</dd>
+<dt><code>mostlyclean</code></dt>
+<dd><p>Delete the files made while building the compiler.
+</p>
+</dd>
+<dt><code>clean</code></dt>
+<dd><p>That, and all the other files built by &lsquo;<samp>make all</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>distclean</code></dt>
+<dd><p>That, and all the files created by <code>configure</code>.
+</p>
+</dd>
+<dt><code>maintainer-clean</code></dt>
+<dd><p>Distclean plus any file that can be generated from other files.  Note
+that additional tools may be required beyond what is normally needed to
+build GCC.
+</p>
+</dd>
+<dt><code>srcextra</code></dt>
+<dd><p>Generates files in the source directory that are not version-controlled but
+should go into a release tarball.
+</p>
+</dd>
+<dt><code>srcinfo</code></dt>
+<dt><code>srcman</code></dt>
+<dd><p>Copies the info-formatted and manpage documentation into the source
+directory usually for the purpose of generating a release tarball.
+</p>
+</dd>
+<dt><code>install</code></dt>
+<dd><p>Installs GCC.
+</p>
+</dd>
+<dt><code>uninstall</code></dt>
+<dd><p>Deletes installed files, though this is not supported.
+</p>
+</dd>
+<dt><code>check</code></dt>
+<dd><p>Run the testsuite.  This creates a <samp>testsuite</samp> subdirectory that
+has various <samp>.sum</samp> and <samp>.log</samp> files containing the results of
+the testing.  You can run subsets with, for example, &lsquo;<samp>make check-gcc</samp>&rsquo;.
+You can specify specific tests by setting <code>RUNTESTFLAGS</code> to be the name
+of the <samp>.exp</samp> file, optionally followed by (for some tests) an equals
+and a file wildcard, like:
+</p>
+<div class="smallexample">
+<pre class="smallexample">make check-gcc RUNTESTFLAGS=&quot;execute.exp=19980413-*&quot;
+</pre></div>
+
+<p>Note that running the testsuite may require additional tools be
+installed, such as Tcl or DejaGnu.
+</p></dd>
+</dl>
+
+<p>The toplevel tree from which you start GCC compilation is not
+the GCC directory, but rather a complex Makefile that coordinates
+the various steps of the build, including bootstrapping the compiler
+and using the new compiler to build target libraries.
+</p>
+<p>When GCC is configured for a native configuration, the default action
+for <code>make</code> is to do a full three-stage bootstrap.  This means
+that GCC is built three times&mdash;once with the native compiler, once with
+the native-built compiler it just built, and once with the compiler it
+built the second time.  In theory, the last two should produce the same
+results, which &lsquo;<samp>make compare</samp>&rsquo; can check.  Each stage is configured
+separately and compiled into a separate directory, to minimize problems
+due to ABI incompatibilities between the native compiler and GCC.
+</p>
+<p>If you do a change, rebuilding will also start from the first stage
+and &ldquo;bubble&rdquo; up the change through the three stages.  Each stage
+is taken from its build directory (if it had been built previously),
+rebuilt, and copied to its subdirectory.  This will allow you to, for
+example, continue a bootstrap after fixing a bug which causes the
+stage2 build to crash.  It does not provide as good coverage of the
+compiler as bootstrapping from scratch, but it ensures that the new
+code is syntactically correct (e.g., that you did not use GCC extensions
+by mistake), and avoids spurious bootstrap comparison
+failures<a name="DOCF1" href="#FOOT1"><sup>1</sup></a>.
+</p>
+<p>Other targets available from the top level include:
+</p>
+<dl compact="compact">
+<dt><code>bootstrap-lean</code></dt>
+<dd><p>Like <code>bootstrap</code>, except that the various stages are removed once
+they&rsquo;re no longer needed.  This saves disk space.
+</p>
+</dd>
+<dt><code>bootstrap2</code></dt>
+<dt><code>bootstrap2-lean</code></dt>
+<dd><p>Performs only the first two stages of bootstrap.  Unlike a three-stage
+bootstrap, this does not perform a comparison to test that the compiler
+is running properly.  Note that the disk space required by a &ldquo;lean&rdquo;
+bootstrap is approximately independent of the number of stages.
+</p>
+</dd>
+<dt><code>stage<var>N</var>-bubble (<var>N</var> = 1&hellip;4, profile, feedback)</code></dt>
+<dd><p>Rebuild all the stages up to <var>N</var>, with the appropriate flags,
+&ldquo;bubbling&rdquo; the changes as described above.
+</p>
+</dd>
+<dt><code>all-stage<var>N</var> (<var>N</var> = 1&hellip;4, profile, feedback)</code></dt>
+<dd><p>Assuming that stage <var>N</var> has already been built, rebuild it with the
+appropriate flags.  This is rarely needed.
+</p>
+</dd>
+<dt><code>cleanstrap</code></dt>
+<dd><p>Remove everything (&lsquo;<samp>make clean</samp>&rsquo;) and rebuilds (&lsquo;<samp>make bootstrap</samp>&rsquo;).
+</p>
+</dd>
+<dt><code>compare</code></dt>
+<dd><p>Compares the results of stages 2 and 3.  This ensures that the compiler
+is running properly, since it should produce the same object files
+regardless of how it itself was compiled.
+</p>
+</dd>
+<dt><code>profiledbootstrap</code></dt>
+<dd><p>Builds a compiler with profiling feedback information.  In this case,
+the second and third stages are named &lsquo;<samp>profile</samp>&rsquo; and &lsquo;<samp>feedback</samp>&rsquo;,
+respectively.  For more information, see the installation instructions.
+</p>
+</dd>
+<dt><code>restrap</code></dt>
+<dd><p>Restart a bootstrap, so that everything that was not built with
+the system compiler is rebuilt.
+</p>
+</dd>
+<dt><code>stage<var>N</var>-start (<var>N</var> = 1&hellip;4, profile, feedback)</code></dt>
+<dd><p>For each package that is bootstrapped, rename directories so that,
+for example, <samp>gcc</samp> points to the stage<var>N</var> GCC, compiled
+with the stage<var>N-1</var> GCC<a name="DOCF2" href="#FOOT2"><sup>2</sup></a>.
+</p>
+<p>You will invoke this target if you need to test or debug the
+stage<var>N</var> GCC.  If you only need to execute GCC (but you need
+not run &lsquo;<samp>make</samp>&rsquo; either to rebuild it or to run test suites),
+you should be able to work directly in the <samp>stage<var>N</var>-gcc</samp>
+directory.  This makes it easier to debug multiple stages in
+parallel.
+</p>
+</dd>
+<dt><code>stage</code></dt>
+<dd><p>For each package that is bootstrapped, relocate its build directory
+to indicate its stage.  For example, if the <samp>gcc</samp> directory
+points to the stage2 GCC, after invoking this target it will be
+renamed to <samp>stage2-gcc</samp>.
+</p>
+</dd>
+</dl>
+
+<p>If you wish to use non-default GCC flags when compiling the stage2 and
+stage3 compilers, set <code>BOOT_CFLAGS</code> on the command line when doing
+&lsquo;<samp>make</samp>&rsquo;.
+</p>
+<p>Usually, the first stage only builds the languages that the compiler
+is written in: typically, C and maybe Ada.  If you are debugging a
+miscompilation of a different stage2 front-end (for example, of the
+Fortran front-end), you may want to have front-ends for other languages
+in the first stage as well.  To do so, set <code>STAGE1_LANGUAGES</code>
+on the command line when doing &lsquo;<samp>make</samp>&rsquo;.
+</p>
+<p>For example, in the aforementioned scenario of debugging a Fortran
+front-end miscompilation caused by the stage1 compiler, you may need a
+command like
+</p>
+<div class="example">
+<pre class="example">make stage2-bubble STAGE1_LANGUAGES=c,fortran
+</pre></div>
+
+<p>Alternatively, you can use per-language targets to build and test
+languages that are not enabled by default in stage1.  For example,
+<code>make f951</code> will build a Fortran compiler even in the stage1
+build directory.
+</p>
+
+<div class="footnote">
+<hr>
+<h4 class="footnotes-heading">Footnotes</h4>
+
+<h3><a name="FOOT1" href="#DOCF1">(1)</a></h3>
+<p>Except if the compiler was buggy and miscompiled
+some of the files that were not modified.  In this case, it&rsquo;s best
+to use <code>make restrap</code>.</p>
+<h3><a name="FOOT2" href="#DOCF2">(2)</a></h3>
+<p>Customarily, the system compiler
+is also termed the <samp>stage0</samp> GCC.</p>
+</div>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Library-Files.html#Library-Files" accesskey="n" rel="next">Library Files</a>, Previous: <a href="Build.html#Build" accesskey="p" rel="prev">Build</a>, Up: <a href="gcc-Directory.html#gcc-Directory" accesskey="u" rel="up">gcc Directory</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

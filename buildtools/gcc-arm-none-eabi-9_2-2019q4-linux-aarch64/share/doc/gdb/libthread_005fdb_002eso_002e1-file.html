@@ -1,0 +1,113 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: libthread_db.so.1 file</title>
+
+<meta name="description" content="Debugging with GDB: libthread_db.so.1 file">
+<meta name="keywords" content="Debugging with GDB: libthread_db.so.1 file">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Auto_002dloading.html#Auto_002dloading" rel="up" title="Auto-loading">
+<link href="Auto_002dloading-safe-path.html#Auto_002dloading-safe-path" rel="next" title="Auto-loading safe path">
+<link href="Init-File-in-the-Current-Directory.html#Init-File-in-the-Current-Directory" rel="prev" title="Init File in the Current Directory">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="libthread_005fdb_002eso_002e1-file"></a>
+<div class="header">
+<p>
+Next: <a href="Auto_002dloading-safe-path.html#Auto_002dloading-safe-path" accesskey="n" rel="next">Auto-loading safe path</a>, Previous: <a href="Init-File-in-the-Current-Directory.html#Init-File-in-the-Current-Directory" accesskey="p" rel="prev">Init File in the Current Directory</a>, Up: <a href="Auto_002dloading.html#Auto_002dloading" accesskey="u" rel="up">Auto-loading</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Automatically-loading-thread-debugging-library"></a>
+<h4 class="subsection">22.8.2 Automatically loading thread debugging library</h4>
+<a name="index-auto_002dloading-libthread_005fdb_002eso_002e1"></a>
+
+<p>This feature is currently present only on <small>GNU</small>/Linux native hosts.
+</p>
+<p><small>GDB</small> reads in some cases thread debugging library from places specific
+to the inferior (see <a href="Threads.html#set-libthread_002ddb_002dsearch_002dpath">set libthread-db-search-path</a>).
+</p>
+<p>The special &lsquo;<samp>libthread-db-search-path</samp>&rsquo; entry &lsquo;<samp>$sdir</samp>&rsquo; is processed
+without checking this &lsquo;<samp>set auto-load libthread-db</samp>&rsquo; switch as system
+libraries have to be trusted in general.  In all other cases of
+&lsquo;<samp>libthread-db-search-path</samp>&rsquo; entries <small>GDB</small> checks first if &lsquo;<samp>set
+auto-load libthread-db</samp>&rsquo; is enabled before trying to open such thread debugging
+library.
+</p>
+<p>Note that loading of this debugging library also requires accordingly configured
+<code>auto-load safe-path</code> (see <a href="Auto_002dloading-safe-path.html#Auto_002dloading-safe-path">Auto-loading safe path</a>).
+</p>
+<dl compact="compact">
+<dd><a name="set-auto_002dload-libthread_002ddb"></a><a name="index-set-auto_002dload-libthread_002ddb"></a>
+</dd>
+<dt><code>set auto-load libthread-db [on|off]</code></dt>
+<dd><p>Enable or disable the auto-loading of inferior specific thread debugging library.
+</p>
+<a name="show-auto_002dload-libthread_002ddb"></a><a name="index-show-auto_002dload-libthread_002ddb"></a>
+</dd>
+<dt><code>show auto-load libthread-db</code></dt>
+<dd><p>Show whether auto-loading of inferior specific thread debugging library is
+enabled or disabled.
+</p>
+<a name="info-auto_002dload-libthread_002ddb"></a><a name="index-info-auto_002dload-libthread_002ddb"></a>
+</dd>
+<dt><code>info auto-load libthread-db</code></dt>
+<dd><p>Print the list of all loaded inferior specific thread debugging libraries and
+for each such library print list of inferior <var>pid</var>s using it.
+</p></dd>
+</dl>
+
+
+
+
+</body>
+</html>

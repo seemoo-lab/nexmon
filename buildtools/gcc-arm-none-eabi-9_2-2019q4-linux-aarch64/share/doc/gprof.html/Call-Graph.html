@@ -1,0 +1,147 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the gprof profiler of the GNU system.
+
+Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU gprof: Call Graph</title>
+
+<meta name="description" content="GNU gprof: Call Graph">
+<meta name="keywords" content="GNU gprof: Call Graph">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Output.html#Output" rel="up" title="Output">
+<link href="Primary.html#Primary" rel="next" title="Primary">
+<link href="Flat-Profile.html#Flat-Profile" rel="prev" title="Flat Profile">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Call-Graph"></a>
+<div class="header">
+<p>
+Next: <a href="Line_002dby_002dline.html#Line_002dby_002dline" accesskey="n" rel="next">Line-by-line</a>, Previous: <a href="Flat-Profile.html#Flat-Profile" accesskey="p" rel="prev">Flat Profile</a>, Up: <a href="Output.html#Output" accesskey="u" rel="up">Output</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<hr>
+<a name="The-Call-Graph"></a>
+<h3 class="section">5.2 The Call Graph</h3>
+<a name="index-call-graph"></a>
+
+<p>The <em>call graph</em> shows how much time was spent in each function
+and its children.  From this information, you can find functions that,
+while they themselves may not have used much time, called other
+functions that did use unusual amounts of time.
+</p>
+<p>Here is a sample call from a small program.  This call came from the
+same <code>gprof</code> run as the flat profile example in the previous
+section.
+</p>
+<div class="smallexample">
+<pre class="smallexample">granularity: each sample hit covers 2 byte(s) for 20.00% of 0.05 seconds
+
+index % time    self  children    called     name
+                                                 &lt;spontaneous&gt;
+[1]    100.0    0.00    0.05                 start [1]
+                0.00    0.05       1/1           main [2]
+                0.00    0.00       1/2           on_exit [28]
+                0.00    0.00       1/1           exit [59]
+-----------------------------------------------
+                0.00    0.05       1/1           start [1]
+[2]    100.0    0.00    0.05       1         main [2]
+                0.00    0.05       1/1           report [3]
+-----------------------------------------------
+                0.00    0.05       1/1           main [2]
+[3]    100.0    0.00    0.05       1         report [3]
+                0.00    0.03       8/8           timelocal [6]
+                0.00    0.01       1/1           print [9]
+                0.00    0.01       9/9           fgets [12]
+                0.00    0.00      12/34          strncmp &lt;cycle 1&gt; [40]
+                0.00    0.00       8/8           lookup [20]
+                0.00    0.00       1/1           fopen [21]
+                0.00    0.00       8/8           chewtime [24]
+                0.00    0.00       8/16          skipspace [44]
+-----------------------------------------------
+[4]     59.8    0.01        0.02       8+472     &lt;cycle 2 as a whole&gt; [4]
+                0.01        0.02     244+260         offtime &lt;cycle 2&gt; [7]
+                0.00        0.00     236+1           tzset &lt;cycle 2&gt; [26]
+-----------------------------------------------
+</pre></div>
+
+<p>The lines full of dashes divide this table into <em>entries</em>, one for each
+function.  Each entry has one or more lines.
+</p>
+<p>In each entry, the primary line is the one that starts with an index number
+in square brackets.  The end of this line says which function the entry is
+for.  The preceding lines in the entry describe the callers of this
+function and the following lines describe its subroutines (also called
+<em>children</em> when we speak of the call graph).
+</p>
+<p>The entries are sorted by time spent in the function and its subroutines.
+</p>
+<p>The internal profiling function <code>mcount</code> (see <a href="Flat-Profile.html#Flat-Profile">The
+Flat Profile</a>) is never mentioned in the call graph.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Primary.html#Primary" accesskey="1">Primary</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Details of the primary line&rsquo;s contents.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Callers.html#Callers" accesskey="2">Callers</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Details of caller-lines&rsquo; contents.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Subroutines.html#Subroutines" accesskey="3">Subroutines</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Details of subroutine-lines&rsquo; contents.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Cycles.html#Cycles" accesskey="4">Cycles</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">When there are cycles of recursion,
+                   such as <code>a</code> calls <code>b</code> calls <code>a</code>&hellip;
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Line_002dby_002dline.html#Line_002dby_002dline" accesskey="n" rel="next">Line-by-line</a>, Previous: <a href="Flat-Profile.html#Flat-Profile" accesskey="p" rel="prev">Flat Profile</a>, Up: <a href="Output.html#Output" accesskey="u" rel="up">Output</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+
+
+
+</body>
+</html>

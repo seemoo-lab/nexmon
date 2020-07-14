@@ -1,0 +1,137 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: C_ASSOCIATED</title>
+
+<meta name="description" content="The GNU Fortran Compiler: C_ASSOCIATED">
+<meta name="keywords" content="The GNU Fortran Compiler: C_ASSOCIATED">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Intrinsic-Procedures.html#Intrinsic-Procedures" rel="up" title="Intrinsic Procedures">
+<link href="C_005fF_005fPOINTER.html#C_005fF_005fPOINTER" rel="next" title="C_F_POINTER">
+<link href="BTEST.html#BTEST" rel="prev" title="BTEST">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="C_005fASSOCIATED"></a>
+<div class="header">
+<p>
+Next: <a href="C_005fF_005fPOINTER.html#C_005fF_005fPOINTER" accesskey="n" rel="next">C_F_POINTER</a>, Previous: <a href="BTEST.html#BTEST" accesskey="p" rel="prev">BTEST</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="C_005fASSOCIATED-_002d_002d_002d-Status-of-a-C-pointer"></a>
+<h3 class="section">9.52 <code>C_ASSOCIATED</code> &mdash; Status of a C pointer</h3>
+<a name="index-C_005fASSOCIATED"></a>
+<a name="index-association-status_002c-C-pointer"></a>
+<a name="index-pointer_002c-C-association-status"></a>
+
+<dl compact="compact">
+<dt><em>Description</em>:</dt>
+<dd><p><code>C_ASSOCIATED(c_ptr_1[, c_ptr_2])</code> determines the status of the C pointer
+<var>c_ptr_1</var> or if <var>c_ptr_1</var> is associated with the target <var>c_ptr_2</var>.
+</p>
+</dd>
+<dt><em>Standard</em>:</dt>
+<dd><p>Fortran 2003 and later
+</p>
+</dd>
+<dt><em>Class</em>:</dt>
+<dd><p>Inquiry function
+</p>
+</dd>
+<dt><em>Syntax</em>:</dt>
+<dd><p><code>RESULT = C_ASSOCIATED(c_ptr_1[, c_ptr_2])</code>
+</p>
+</dd>
+<dt><em>Arguments</em>:</dt>
+<dd><table>
+<tr><td width="15%"><var>c_ptr_1</var></td><td width="70%">Scalar of the type <code>C_PTR</code> or <code>C_FUNPTR</code>.</td></tr>
+<tr><td width="15%"><var>c_ptr_2</var></td><td width="70%">(Optional) Scalar of the same type as <var>c_ptr_1</var>.</td></tr>
+</table>
+
+</dd>
+<dt><em>Return value</em>:</dt>
+<dd><p>The return value is of type <code>LOGICAL</code>; it is <code>.false.</code> if either
+<var>c_ptr_1</var> is a C NULL pointer or if <var>c_ptr1</var> and <var>c_ptr_2</var>
+point to different addresses.
+</p>
+</dd>
+<dt><em>Example</em>:</dt>
+<dd><div class="smallexample">
+<pre class="smallexample">subroutine association_test(a,b)
+  use iso_c_binding, only: c_associated, c_loc, c_ptr
+  implicit none
+  real, pointer :: a
+  type(c_ptr) :: b
+  if(c_associated(b, c_loc(a))) &amp;
+     stop 'b and a do not point to same target'
+end subroutine association_test
+</pre></div>
+
+</dd>
+<dt><em>See also</em>:</dt>
+<dd><p><a href="C_005fLOC.html#C_005fLOC">C_LOC</a>, <a href="C_005fFUNLOC.html#C_005fFUNLOC">C_FUNLOC</a>
+</p></dd>
+</dl>
+
+
+
+
+
+</body>
+</html>

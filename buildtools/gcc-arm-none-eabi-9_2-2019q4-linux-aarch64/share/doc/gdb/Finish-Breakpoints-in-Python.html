@@ -1,0 +1,133 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Finish Breakpoints in Python</title>
+
+<meta name="description" content="Debugging with GDB: Finish Breakpoints in Python">
+<meta name="keywords" content="Debugging with GDB: Finish Breakpoints in Python">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Python-API.html#Python-API" rel="up" title="Python API">
+<link href="Lazy-Strings-In-Python.html#Lazy-Strings-In-Python" rel="next" title="Lazy Strings In Python">
+<link href="Breakpoints-In-Python.html#Breakpoints-In-Python" rel="prev" title="Breakpoints In Python">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Finish-Breakpoints-in-Python"></a>
+<div class="header">
+<p>
+Next: <a href="Lazy-Strings-In-Python.html#Lazy-Strings-In-Python" accesskey="n" rel="next">Lazy Strings In Python</a>, Previous: <a href="Breakpoints-In-Python.html#Breakpoints-In-Python" accesskey="p" rel="prev">Breakpoints In Python</a>, Up: <a href="Python-API.html#Python-API" accesskey="u" rel="up">Python API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Finish-Breakpoints"></a>
+<h4 class="subsubsection">23.2.2.31 Finish Breakpoints</h4>
+
+<a name="index-python-finish-breakpoints"></a>
+<a name="index-gdb_002eFinishBreakpoint"></a>
+
+<p>A finish breakpoint is a temporary breakpoint set at the return address of
+a frame, based on the <code>finish</code> command.  <code>gdb.FinishBreakpoint</code>
+extends <code>gdb.Breakpoint</code>.  The underlying breakpoint will be disabled 
+and deleted when the execution will run out of the breakpoint scope (i.e. 
+<code>Breakpoint.stop</code> or <code>FinishBreakpoint.out_of_scope</code> triggered).
+Finish breakpoints are thread specific and must be create with the right 
+thread selected.  
+</p> 
+<dl>
+<dt><a name="index-FinishBreakpoint_002e_005f_005finit_005f_005f"></a>Function: <strong>FinishBreakpoint.__init__</strong> <em>(<span class="roman">[</span>frame<span class="roman">]</span> <span class="roman">[</span>, internal<span class="roman">]</span>)</em></dt>
+<dd><p>Create a finish breakpoint at the return address of the <code>gdb.Frame</code>
+object <var>frame</var>.  If <var>frame</var> is not provided, this defaults to the
+newest frame.  The optional <var>internal</var> argument allows the breakpoint to
+become invisible to the user.  See <a href="Breakpoints-In-Python.html#Breakpoints-In-Python">Breakpoints In Python</a>, for further 
+details about this argument.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-FinishBreakpoint_002eout_005fof_005fscope"></a>Function: <strong>FinishBreakpoint.out_of_scope</strong> <em>(self)</em></dt>
+<dd><p>In some circumstances (e.g. <code>longjmp</code>, C<tt>++</tt> exceptions, <small>GDB</small> 
+<code>return</code> command, &hellip;), a function may not properly terminate, and
+thus never hit the finish breakpoint.  When <small>GDB</small> notices such a
+situation, the <code>out_of_scope</code> callback will be triggered.
+</p>
+<p>You may want to sub-class <code>gdb.FinishBreakpoint</code> and override this
+method:
+</p>
+<div class="smallexample">
+<pre class="smallexample">class MyFinishBreakpoint (gdb.FinishBreakpoint)
+    def stop (self):
+        print &quot;normal finish&quot;
+        return True
+    
+    def out_of_scope ():
+        print &quot;abnormal finish&quot;
+</pre></div>
+</dd></dl>
+
+<dl>
+<dt><a name="index-FinishBreakpoint_002ereturn_005fvalue"></a>Variable: <strong>FinishBreakpoint.return_value</strong></dt>
+<dd><p>When <small>GDB</small> is stopped at a finish breakpoint and the frame 
+used to build the <code>gdb.FinishBreakpoint</code> object had debug symbols, this
+attribute will contain a <code>gdb.Value</code> object corresponding to the return
+value of the function.  The value will be <code>None</code> if the function return 
+type is <code>void</code> or if the return value was not computable.  This attribute
+is not writable.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Lazy-Strings-In-Python.html#Lazy-Strings-In-Python" accesskey="n" rel="next">Lazy Strings In Python</a>, Previous: <a href="Breakpoints-In-Python.html#Breakpoints-In-Python" accesskey="p" rel="prev">Breakpoints In Python</a>, Up: <a href="Python-API.html#Python-API" accesskey="u" rel="up">Python API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

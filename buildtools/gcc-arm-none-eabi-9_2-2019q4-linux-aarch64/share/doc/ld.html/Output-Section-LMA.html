@@ -1,0 +1,163 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU linker LD
+(GNU Toolchain for the A-profile Architecture 9.2-2019.12 (arm-9.10))
+version 2.33.1.
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>LD: Output Section LMA</title>
+
+<meta name="description" content="LD: Output Section LMA">
+<meta name="keywords" content="LD: Output Section LMA">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="LD-Index.html#LD-Index" rel="index" title="LD Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Output-Section-Attributes.html#Output-Section-Attributes" rel="up" title="Output Section Attributes">
+<link href="Forced-Output-Alignment.html#Forced-Output-Alignment" rel="next" title="Forced Output Alignment">
+<link href="Output-Section-Type.html#Output-Section-Type" rel="prev" title="Output Section Type">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Output-Section-LMA"></a>
+<div class="header">
+<p>
+Next: <a href="Forced-Output-Alignment.html#Forced-Output-Alignment" accesskey="n" rel="next">Forced Output Alignment</a>, Previous: <a href="Output-Section-Type.html#Output-Section-Type" accesskey="p" rel="prev">Output Section Type</a>, Up: <a href="Output-Section-Attributes.html#Output-Section-Attributes" accesskey="u" rel="up">Output Section Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Output-Section-LMA-1"></a>
+<h4 class="subsubsection">3.6.8.2 Output Section LMA</h4>
+<a name="index-AT_003elma_005fregion"></a>
+<a name="index-AT_0028lma_0029"></a>
+<a name="index-load-address"></a>
+<a name="index-section-load-address"></a>
+<p>Every section has a virtual address (VMA) and a load address (LMA); see
+<a href="Basic-Script-Concepts.html#Basic-Script-Concepts">Basic Script Concepts</a>.  The virtual address is specified by the
+see <a href="Output-Section-Address.html#Output-Section-Address">Output Section Address</a> described earlier.  The load address is
+specified by the <code>AT</code> or <code>AT&gt;</code> keywords.  Specifying a load
+address is optional.
+</p>
+<p>The <code>AT</code> keyword takes an expression as an argument.  This
+specifies the exact load address of the section.  The <code>AT&gt;</code> keyword
+takes the name of a memory region as an argument.  See <a href="MEMORY.html#MEMORY">MEMORY</a>.  The
+load address of the section is set to the next free address in the
+region, aligned to the section&rsquo;s alignment requirements.
+</p>
+<p>If neither <code>AT</code> nor <code>AT&gt;</code> is specified for an allocatable
+section, the linker will use the following heuristic to determine the
+load address:
+</p>
+<ul>
+<li> If the section has a specific VMA address, then this is used as
+the LMA address as well.
+
+</li><li> If the section is not allocatable then its LMA is set to its VMA.
+
+</li><li> Otherwise if a memory region can be found that is compatible
+with the current section, and this region contains at least one
+section, then the LMA is set so the difference between the
+VMA and LMA is the same as the difference between the VMA and LMA of
+the last section in the located region.
+
+</li><li> If no memory regions have been declared then a default region
+that covers the entire address space is used in the previous step.
+
+</li><li> If no suitable region could be found, or there was no previous
+section then the LMA is set equal to the VMA.
+</li></ul>
+
+<a name="index-ROM-initialized-data"></a>
+<a name="index-initialized-data-in-ROM"></a>
+<p>This feature is designed to make it easy to build a ROM image.  For
+example, the following linker script creates three output sections: one
+called &lsquo;<samp>.text</samp>&rsquo;, which starts at <code>0x1000</code>, one called
+&lsquo;<samp>.mdata</samp>&rsquo;, which is loaded at the end of the &lsquo;<samp>.text</samp>&rsquo; section
+even though its VMA is <code>0x2000</code>, and one called &lsquo;<samp>.bss</samp>&rsquo; to hold
+uninitialized data at address <code>0x3000</code>.  The symbol <code>_data</code> is
+defined with the value <code>0x2000</code>, which shows that the location
+counter holds the VMA value, not the LMA value.
+</p>
+<div class="smallexample">
+<pre class="smallexample">SECTIONS
+  {
+  .text 0x1000 : { *(.text) _etext = . ; }
+  .mdata 0x2000 :
+    AT ( ADDR (.text) + SIZEOF (.text) )
+    { _data = . ; *(.data); _edata = . ;  }
+  .bss 0x3000 :
+    { _bstart = . ;  *(.bss) *(COMMON) ; _bend = . ;}
+}
+</pre></div>
+
+<p>The run-time initialization code for use with a program generated with
+this linker script would include something like the following, to copy
+the initialized data from the ROM image to its runtime address.  Notice
+how this code takes advantage of the symbols defined by the linker
+script.
+</p>
+<div class="smallexample">
+<pre class="smallexample">extern char _etext, _data, _edata, _bstart, _bend;
+char *src = &amp;_etext;
+char *dst = &amp;_data;
+
+/* ROM has data at end of text; copy it.  */
+while (dst &lt; &amp;_edata)
+  *dst++ = *src++;
+
+/* Zero bss.  */
+for (dst = &amp;_bstart; dst&lt; &amp;_bend; dst++)
+  *dst = 0;
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Forced-Output-Alignment.html#Forced-Output-Alignment" accesskey="n" rel="next">Forced Output Alignment</a>, Previous: <a href="Output-Section-Type.html#Output-Section-Type" accesskey="p" rel="prev">Output Section Type</a>, Up: <a href="Output-Section-Attributes.html#Output-Section-Attributes" accesskey="u" rel="up">Output Section Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

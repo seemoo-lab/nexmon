@@ -1,0 +1,178 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the gprof profiler of the GNU system.
+
+Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU gprof: Top</title>
+
+<meta name="description" content="GNU gprof: Top">
+<meta name="keywords" content="GNU gprof: Top">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="#Top" rel="start" title="Top">
+<link href="#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="../dir/index.html" rel="up" title="(dir)">
+<link href="Introduction.html#Introduction" rel="next" title="Introduction">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<h1 class="settitle" align="center">GNU gprof</h1>
+
+
+
+
+
+<a name="SEC_Contents"></a>
+<h2 class="contents-heading">Table of Contents</h2>
+
+<div class="contents">
+
+<ul class="no-bullet">
+  <li><a name="toc-Introduction-to-Profiling" href="Introduction.html#Introduction">1 Introduction to Profiling</a></li>
+  <li><a name="toc-Compiling-a-Program-for-Profiling" href="Compiling.html#Compiling">2 Compiling a Program for Profiling</a></li>
+  <li><a name="toc-Executing-the-Program" href="Executing.html#Executing">3 Executing the Program</a></li>
+  <li><a name="toc-gprof-Command-Summary" href="Invoking.html#Invoking">4 <code>gprof</code> Command Summary</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Output-Options-1" href="Output-Options.html#Output-Options">4.1 Output Options</a></li>
+    <li><a name="toc-Analysis-Options-1" href="Analysis-Options.html#Analysis-Options">4.2 Analysis Options</a></li>
+    <li><a name="toc-Miscellaneous-Options-1" href="Miscellaneous-Options.html#Miscellaneous-Options">4.3 Miscellaneous Options</a></li>
+    <li><a name="toc-Deprecated-Options-1" href="Deprecated-Options.html#Deprecated-Options">4.4 Deprecated Options</a></li>
+    <li><a name="toc-Symspecs-1" href="Symspecs.html#Symspecs">4.5 Symspecs</a></li>
+  </ul></li>
+  <li><a name="toc-Interpreting-gprof_0027s-Output" href="Output.html#Output">5 Interpreting <code>gprof</code>&rsquo;s Output</a>
+  <ul class="no-bullet">
+    <li><a name="toc-The-Flat-Profile" href="Flat-Profile.html#Flat-Profile">5.1 The Flat Profile</a></li>
+    <li><a name="toc-The-Call-Graph" href="Call-Graph.html#Call-Graph">5.2 The Call Graph</a>
+    <ul class="no-bullet">
+      <li><a name="toc-The-Primary-Line" href="Primary.html#Primary">5.2.1 The Primary Line</a></li>
+      <li><a name="toc-Lines-for-a-Function_0027s-Callers" href="Callers.html#Callers">5.2.2 Lines for a Function&rsquo;s Callers</a></li>
+      <li><a name="toc-Lines-for-a-Function_0027s-Subroutines" href="Subroutines.html#Subroutines">5.2.3 Lines for a Function&rsquo;s Subroutines</a></li>
+      <li><a name="toc-How-Mutually-Recursive-Functions-Are-Described" href="Cycles.html#Cycles">5.2.4 How Mutually Recursive Functions Are Described</a></li>
+    </ul></li>
+    <li><a name="toc-Line_002dby_002dline-Profiling" href="Line_002dby_002dline.html#Line_002dby_002dline">5.3 Line-by-line Profiling</a></li>
+    <li><a name="toc-The-Annotated-Source-Listing" href="Annotated-Source.html#Annotated-Source">5.4 The Annotated Source Listing</a></li>
+  </ul></li>
+  <li><a name="toc-Inaccuracy-of-gprof-Output" href="Inaccuracy.html#Inaccuracy">6 Inaccuracy of <code>gprof</code> Output</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Statistical-Sampling-Error" href="Sampling-Error.html#Sampling-Error">6.1 Statistical Sampling Error</a></li>
+    <li><a name="toc-Estimating-children-Times" href="Assumptions.html#Assumptions">6.2 Estimating <code>children</code> Times</a></li>
+  </ul></li>
+  <li><a name="toc-Answers-to-Common-Questions" href="How-do-I_003f.html#How-do-I_003f">7 Answers to Common Questions</a></li>
+  <li><a name="toc-Incompatibilities-with-Unix-gprof" href="Incompatibilities.html#Incompatibilities">8 Incompatibilities with Unix <code>gprof</code></a></li>
+  <li><a name="toc-Details-of-Profiling" href="Details.html#Details">9 Details of Profiling</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Implementation-of-Profiling" href="Implementation.html#Implementation">9.1 Implementation of Profiling</a></li>
+    <li><a name="toc-Profiling-Data-File-Format" href="File-Format.html#File-Format">9.2 Profiling Data File Format</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Histogram-Records" href="File-Format.html#Histogram-Records">9.2.1 Histogram Records</a></li>
+      <li><a name="toc-Call_002dGraph-Records" href="File-Format.html#Call_002dGraph-Records">9.2.2 Call-Graph Records</a></li>
+      <li><a name="toc-Basic_002dBlock-Execution-Count-Records" href="File-Format.html#Basic_002dBlock-Execution-Count-Records">9.2.3 Basic-Block Execution Count Records</a></li>
+    </ul></li>
+    <li><a name="toc-gprof_0027s-Internal-Operation" href="Internals.html#Internals">9.3 <code>gprof</code>&rsquo;s Internal Operation</a></li>
+    <li><a name="toc-Debugging-gprof" href="Debugging.html#Debugging">9.4 Debugging <code>gprof</code></a></li>
+  </ul></li>
+  <li><a name="toc-GNU-Free-Documentation-License-1" href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License">Appendix A GNU Free Documentation License</a></li>
+</ul>
+</div>
+
+
+<a name="Top"></a>
+<div class="header">
+<p>
+Next: <a href="Introduction.html#Introduction" accesskey="n" rel="next">Introduction</a>, Up: <a href="../dir/index.html" accesskey="u" rel="up">(dir)</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<hr>
+<a name="Profiling-a-Program_003a-Where-Does-It-Spend-Its-Time_003f"></a>
+<h1 class="top">Profiling a Program: Where Does It Spend Its Time?</h1>
+
+<p>This manual describes the <small>GNU</small> profiler, <code>gprof</code>, and how you
+can use it to determine which parts of a program are taking most of the
+execution time.  We assume that you know how to write, compile, and
+execute programs.  <small>GNU</small> <code>gprof</code> was written by Jay Fenlason.
+</p>
+<p>This manual is for <code>gprof</code>
+(GNU Toolchain for the A-profile Architecture 9.2-2019.12 (arm-9.10))
+version 2.33.1.
+</p>
+<p>This document is distributed under the terms of the GNU Free
+Documentation License version 1.3.  A copy of the license is included
+in the section entitled &ldquo;GNU Free Documentation License&rdquo;.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Introduction.html#Introduction" accesskey="1">Introduction</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">What profiling means, and why it is useful.
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Compiling.html#Compiling" accesskey="2">Compiling</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How to compile your program for profiling.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Executing.html#Executing" accesskey="3">Executing</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Executing your program to generate profile data
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Invoking.html#Invoking" accesskey="4">Invoking</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How to run <code>gprof</code>, and its options
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Output.html#Output" accesskey="5">Output</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Interpreting <code>gprof</code>&rsquo;s output
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Inaccuracy.html#Inaccuracy" accesskey="6">Inaccuracy</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Potential problems you should be aware of
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="How-do-I_003f.html#How-do-I_003f" accesskey="7">How do I?</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Answers to common questions
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Incompatibilities.html#Incompatibilities" accesskey="8">Incompatibilities</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">(between <small>GNU</small> <code>gprof</code> and Unix <code>gprof</code>.)
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Details.html#Details" accesskey="9">Details</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Details of how profiling is done
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License">GNU Free Documentation License</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">GNU Free Documentation License
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Introduction.html#Introduction" accesskey="n" rel="next">Introduction</a>, Up: <a href="../dir/index.html" accesskey="u" rel="up">(dir)</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+
+
+
+</body>
+</html>

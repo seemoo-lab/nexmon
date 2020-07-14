@@ -1,0 +1,172 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: AVR-Modifiers</title>
+
+<meta name="description" content="Using as: AVR-Modifiers">
+<meta name="keywords" content="Using as: AVR-Modifiers">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="AVR-Syntax.html#AVR-Syntax" rel="up" title="AVR Syntax">
+<link href="AVR-Opcodes.html#AVR-Opcodes" rel="next" title="AVR Opcodes">
+<link href="AVR_002dRegs.html#AVR_002dRegs" rel="prev" title="AVR-Regs">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="AVR_002dModifiers"></a>
+<div class="header">
+<p>
+Previous: <a href="AVR_002dRegs.html#AVR_002dRegs" accesskey="p" rel="prev">AVR-Regs</a>, Up: <a href="AVR-Syntax.html#AVR-Syntax" accesskey="u" rel="up">AVR Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Relocatable-Expression-Modifiers"></a>
+<h4 class="subsubsection">9.5.2.3 Relocatable Expression Modifiers</h4>
+
+<a name="index-AVR-modifiers"></a>
+<a name="index-syntax_002c-AVR"></a>
+
+<p>The assembler supports several modifiers when using relocatable addresses
+in AVR instruction operands.  The general syntax is the following:
+</p>
+<div class="smallexample">
+<pre class="smallexample">modifier(relocatable-expression)
+</pre></div>
+
+<dl compact="compact">
+<dd><a name="index-symbol-modifiers"></a>
+
+</dd>
+<dt><code>lo8</code></dt>
+<dd>
+<p>This modifier allows you to use bits 0 through 7 of
+an address expression as 8 bit relocatable expression.
+</p>
+</dd>
+<dt><code>hi8</code></dt>
+<dd>
+<p>This modifier allows you to use bits 7 through 15 of an address expression
+as 8 bit relocatable expression.  This is useful with, for example, the
+AVR &lsquo;<samp>ldi</samp>&rsquo; instruction and &lsquo;<samp>lo8</samp>&rsquo; modifier.
+</p>
+<p>For example
+</p>
+<div class="smallexample">
+<pre class="smallexample">ldi r26, lo8(sym+10)
+ldi r27, hi8(sym+10)
+</pre></div>
+
+</dd>
+<dt><code>hh8</code></dt>
+<dd>
+<p>This modifier allows you to use bits 16 through 23 of
+an address expression as 8 bit relocatable expression.
+Also, can be useful for loading 32 bit constants.
+</p>
+</dd>
+<dt><code>hlo8</code></dt>
+<dd>
+<p>Synonym of &lsquo;<samp>hh8</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>hhi8</code></dt>
+<dd>
+<p>This modifier allows you to use bits 24 through 31 of
+an expression as 8 bit expression. This is useful with, for example, the
+AVR &lsquo;<samp>ldi</samp>&rsquo; instruction and &lsquo;<samp>lo8</samp>&rsquo;, &lsquo;<samp>hi8</samp>&rsquo;, &lsquo;<samp>hlo8</samp>&rsquo;,
+&lsquo;<samp>hhi8</samp>&rsquo;, modifier.
+</p>
+<p>For example
+</p>
+<div class="smallexample">
+<pre class="smallexample">ldi r26, lo8(285774925)
+ldi r27, hi8(285774925)
+ldi r28, hlo8(285774925)
+ldi r29, hhi8(285774925)
+; r29,r28,r27,r26 = 285774925
+</pre></div>
+
+</dd>
+<dt><code>pm_lo8</code></dt>
+<dd>
+<p>This modifier allows you to use bits 0 through 7 of
+an address expression as 8 bit relocatable expression.
+This modifier useful for addressing data or code from
+Flash/Program memory. The using of &lsquo;<samp>pm_lo8</samp>&rsquo; similar
+to &lsquo;<samp>lo8</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>pm_hi8</code></dt>
+<dd>
+<p>This modifier allows you to use bits 8 through 15 of
+an address expression as 8 bit relocatable expression.
+This modifier useful for addressing data or code from
+Flash/Program memory.
+</p>
+</dd>
+<dt><code>pm_hh8</code></dt>
+<dd>
+<p>This modifier allows you to use bits 15 through 23 of
+an address expression as 8 bit relocatable expression.
+This modifier useful for addressing data or code from
+Flash/Program memory.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="AVR_002dRegs.html#AVR_002dRegs" accesskey="p" rel="prev">AVR-Regs</a>, Up: <a href="AVR-Syntax.html#AVR-Syntax" accesskey="u" rel="up">AVR Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

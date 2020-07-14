@@ -1,0 +1,132 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Symver</title>
+
+<meta name="description" content="Using as: Symver">
+<meta name="keywords" content="Using as: Symver">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Pseudo-Ops.html#Pseudo-Ops" rel="up" title="Pseudo Ops">
+<link href="Tag.html#Tag" rel="next" title="Tag">
+<link href="SubSection.html#SubSection" rel="prev" title="SubSection">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Symver"></a>
+<div class="header">
+<p>
+Next: <a href="Tag.html#Tag" accesskey="n" rel="next">Tag</a>, Previous: <a href="SubSection.html#SubSection" accesskey="p" rel="prev">SubSection</a>, Up: <a href="Pseudo-Ops.html#Pseudo-Ops" accesskey="u" rel="up">Pseudo Ops</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="g_t_002esymver"></a>
+<h3 class="section">7.94 <code>.symver</code></h3>
+<a name="index-symver-directive"></a>
+<a name="index-symbol-versioning"></a>
+<a name="index-versions-of-symbols"></a>
+<p>Use the <code>.symver</code> directive to bind symbols to specific version nodes
+within a source file.  This is only supported on ELF platforms, and is
+typically used when assembling files to be linked into a shared library.
+There are cases where it may make sense to use this in objects to be bound
+into an application itself so as to override a versioned symbol from a
+shared library.
+</p>
+<p>For ELF targets, the <code>.symver</code> directive can be used like this:
+</p><div class="smallexample">
+<pre class="smallexample">.symver <var>name</var>, <var>name2@nodename</var>
+</pre></div>
+<p>If the symbol <var>name</var> is defined within the file
+being assembled, the <code>.symver</code> directive effectively creates a symbol
+alias with the name <var>name2@nodename</var>, and in fact the main reason that we
+just don&rsquo;t try and create a regular alias is that the <var>@</var> character isn&rsquo;t
+permitted in symbol names.  The <var>name2</var> part of the name is the actual name
+of the symbol by which it will be externally referenced.  The name <var>name</var>
+itself is merely a name of convenience that is used so that it is possible to
+have definitions for multiple versions of a function within a single source
+file, and so that the compiler can unambiguously know which version of a
+function is being mentioned.  The <var>nodename</var> portion of the alias should be
+the name of a node specified in the version script supplied to the linker when
+building a shared library.  If you are attempting to override a versioned
+symbol from a shared library, then <var>nodename</var> should correspond to the
+nodename of the symbol you are trying to override.
+</p>
+<p>If the symbol <var>name</var> is not defined within the file being assembled, all
+references to <var>name</var> will be changed to <var>name2@nodename</var>.  If no
+reference to <var>name</var> is made, <var>name2@nodename</var> will be removed from the
+symbol table.
+</p>
+<p>Another usage of the <code>.symver</code> directive is:
+</p><div class="smallexample">
+<pre class="smallexample">.symver <var>name</var>, <var>name2@@nodename</var>
+</pre></div>
+<p>In this case, the symbol <var>name</var> must exist and be defined within
+the file being assembled. It is similar to <var>name2@nodename</var>. The
+difference is <var>name2@@nodename</var> will also be used to resolve
+references to <var>name2</var> by the linker.
+</p>
+<p>The third usage of the <code>.symver</code> directive is:
+</p><div class="smallexample">
+<pre class="smallexample">.symver <var>name</var>, <var>name2@@@nodename</var>
+</pre></div>
+<p>When <var>name</var> is not defined within the
+file being assembled, it is treated as <var>name2@nodename</var>. When
+<var>name</var> is defined within the file being assembled, the symbol
+name, <var>name</var>, will be changed to <var>name2@@nodename</var>.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Tag.html#Tag" accesskey="n" rel="next">Tag</a>, Previous: <a href="SubSection.html#SubSection" accesskey="p" rel="prev">SubSection</a>, Up: <a href="Pseudo-Ops.html#Pseudo-Ops" accesskey="u" rel="up">Pseudo Ops</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

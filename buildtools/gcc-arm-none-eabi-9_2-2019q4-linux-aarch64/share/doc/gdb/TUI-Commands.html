@@ -1,0 +1,237 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: TUI Commands</title>
+
+<meta name="description" content="Debugging with GDB: TUI Commands">
+<meta name="keywords" content="Debugging with GDB: TUI Commands">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="TUI.html#TUI" rel="up" title="TUI">
+<link href="TUI-Configuration.html#TUI-Configuration" rel="next" title="TUI Configuration">
+<link href="TUI-Single-Key-Mode.html#TUI-Single-Key-Mode" rel="prev" title="TUI Single Key Mode">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="TUI-Commands"></a>
+<div class="header">
+<p>
+Next: <a href="TUI-Configuration.html#TUI-Configuration" accesskey="n" rel="next">TUI Configuration</a>, Previous: <a href="TUI-Single-Key-Mode.html#TUI-Single-Key-Mode" accesskey="p" rel="prev">TUI Single Key Mode</a>, Up: <a href="TUI.html#TUI" accesskey="u" rel="up">TUI</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="TUI_002dspecific-Commands"></a>
+<h3 class="section">25.4 TUI-specific Commands</h3>
+<a name="index-TUI-commands"></a>
+
+<p>The TUI has specific commands to control the text windows.
+These commands are always available, even when <small>GDB</small> is not in
+the TUI mode.  When <small>GDB</small> is in the standard mode, most
+of these commands will automatically switch to the TUI mode.
+</p>
+<p>Note that if <small>GDB</small>&rsquo;s <code>stdout</code> is not connected to a
+terminal, or <small>GDB</small> has been started with the machine interface
+interpreter (see <a href="GDB_002fMI.html#GDB_002fMI">The <small>GDB/MI</small> Interface</a>), most of
+these commands will fail with an error, because it would not be
+possible or desirable to enable curses window management.
+</p>
+<dl compact="compact">
+<dt><code>tui enable</code></dt>
+<dd><a name="index-tui-enable"></a>
+<p>Activate TUI mode.  The last active TUI window layout will be used if
+TUI mode has prevsiouly been used in the current debugging session,
+otherwise a default layout is used.
+</p>
+</dd>
+<dt><code>tui disable</code></dt>
+<dd><a name="index-tui-disable"></a>
+<p>Disable TUI mode, returning to the console interpreter.
+</p>
+</dd>
+<dt><code>info win</code></dt>
+<dd><a name="index-info-win"></a>
+<p>List and give the size of all displayed windows.
+</p>
+</dd>
+<dt><code>layout <var>name</var></code></dt>
+<dd><a name="index-layout"></a>
+<p>Changes which TUI windows are displayed.  In each layout the command
+window is always displayed, the <var>name</var> parameter controls which
+additional windows are displayed, and can be any of the following:
+</p>
+<dl compact="compact">
+<dt><code>next</code></dt>
+<dd><p>Display the next layout.
+</p>
+</dd>
+<dt><code>prev</code></dt>
+<dd><p>Display the previous layout.
+</p>
+</dd>
+<dt><code>src</code></dt>
+<dd><p>Display the source and command windows.
+</p>
+</dd>
+<dt><code>asm</code></dt>
+<dd><p>Display the assembly and command windows.
+</p>
+</dd>
+<dt><code>split</code></dt>
+<dd><p>Display the source, assembly, and command windows.
+</p>
+</dd>
+<dt><code>regs</code></dt>
+<dd><p>When in <code>src</code> layout display the register, source, and command
+windows.  When in <code>asm</code> or <code>split</code> layout display the
+register, assembler, and command windows.
+</p></dd>
+</dl>
+
+</dd>
+<dt><code>focus <var>name</var></code></dt>
+<dd><a name="index-focus"></a>
+<p>Changes which TUI window is currently active for scrolling.  The
+<var>name</var> parameter can be any of the following:
+</p>
+<dl compact="compact">
+<dt><code>next</code></dt>
+<dd><p>Make the next window active for scrolling.
+</p>
+</dd>
+<dt><code>prev</code></dt>
+<dd><p>Make the previous window active for scrolling.
+</p>
+</dd>
+<dt><code>src</code></dt>
+<dd><p>Make the source window active for scrolling.
+</p>
+</dd>
+<dt><code>asm</code></dt>
+<dd><p>Make the assembly window active for scrolling.
+</p>
+</dd>
+<dt><code>regs</code></dt>
+<dd><p>Make the register window active for scrolling.
+</p>
+</dd>
+<dt><code>cmd</code></dt>
+<dd><p>Make the command window active for scrolling.
+</p></dd>
+</dl>
+
+</dd>
+<dt><code>refresh</code></dt>
+<dd><a name="index-refresh"></a>
+<p>Refresh the screen.  This is similar to typing <kbd>C-L</kbd>.
+</p>
+</dd>
+<dt><code>tui reg <var>group</var></code></dt>
+<dd><a name="index-tui-reg"></a>
+<p>Changes the register group displayed in the tui register window to
+<var>group</var>.  If the register window is not currently displayed this
+command will cause the register window to be displayed.  The list of
+register groups, as well as their order is target specific. The
+following groups are available on most targets:
+</p><dl compact="compact">
+<dt><code>next</code></dt>
+<dd><p>Repeatedly selecting this group will cause the display to cycle
+through all of the available register groups.
+</p>
+</dd>
+<dt><code>prev</code></dt>
+<dd><p>Repeatedly selecting this group will cause the display to cycle
+through all of the available register groups in the reverse order to
+<var>next</var>.
+</p>
+</dd>
+<dt><code>general</code></dt>
+<dd><p>Display the general registers.
+</p></dd>
+<dt><code>float</code></dt>
+<dd><p>Display the floating point registers.
+</p></dd>
+<dt><code>system</code></dt>
+<dd><p>Display the system registers.
+</p></dd>
+<dt><code>vector</code></dt>
+<dd><p>Display the vector registers.
+</p></dd>
+<dt><code>all</code></dt>
+<dd><p>Display all registers.
+</p></dd>
+</dl>
+
+</dd>
+<dt><code>update</code></dt>
+<dd><a name="index-update"></a>
+<p>Update the source window and the current execution point.
+</p>
+</dd>
+<dt><code>winheight <var>name</var> +<var>count</var></code></dt>
+<dt><code>winheight <var>name</var> -<var>count</var></code></dt>
+<dd><a name="index-winheight"></a>
+<p>Change the height of the window <var>name</var> by <var>count</var>
+lines.  Positive counts increase the height, while negative counts
+decrease it.  The <var>name</var> parameter can be one of <code>src</code> (the
+source window), <code>cmd</code> (the command window), <code>asm</code> (the
+disassembly window), or <code>regs</code> (the register display window).
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="TUI-Configuration.html#TUI-Configuration" accesskey="n" rel="next">TUI Configuration</a>, Previous: <a href="TUI-Single-Key-Mode.html#TUI-Single-Key-Mode" accesskey="p" rel="prev">TUI Single Key Mode</a>, Up: <a href="TUI.html#TUI" accesskey="u" rel="up">TUI</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

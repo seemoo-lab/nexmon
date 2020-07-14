@@ -1,0 +1,376 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Section</title>
+
+<meta name="description" content="Using as: Section">
+<meta name="keywords" content="Using as: Section">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Pseudo-Ops.html#Pseudo-Ops" rel="up" title="Pseudo Ops">
+<link href="Set.html#Set" rel="next" title="Set">
+<link href="Scl.html#Scl" rel="prev" title="Scl">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Section"></a>
+<div class="header">
+<p>
+Next: <a href="Set.html#Set" accesskey="n" rel="next">Set</a>, Previous: <a href="Scl.html#Scl" accesskey="p" rel="prev">Scl</a>, Up: <a href="Pseudo-Ops.html#Pseudo-Ops" accesskey="u" rel="up">Pseudo Ops</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="g_t_002esection-name"></a>
+<h3 class="section">7.82 <code>.section <var>name</var></code></h3>
+
+<a name="index-named-section"></a>
+<p>Use the <code>.section</code> directive to assemble the following code into a section
+named <var>name</var>.
+</p>
+<p>This directive is only supported for targets that actually support arbitrarily
+named sections; on <code>a.out</code> targets, for example, it is not accepted, even
+with a standard <code>a.out</code> section name.
+</p>
+<a name="COFF-Version"></a>
+<h4 class="subheading">COFF Version</h4>
+
+<a name="index-section-directive-_0028COFF-version_0029"></a>
+<p>For COFF targets, the <code>.section</code> directive is used in one of the following
+ways:
+</p>
+<div class="smallexample">
+<pre class="smallexample">.section <var>name</var>[, &quot;<var>flags</var>&quot;]
+.section <var>name</var>[, <var>subsection</var>]
+</pre></div>
+
+<p>If the optional argument is quoted, it is taken as flags to use for the
+section.  Each flag is a single character.  The following flags are recognized:
+</p>
+<dl compact="compact">
+<dt><code>b</code></dt>
+<dd><p>bss section (uninitialized data)
+</p></dd>
+<dt><code>n</code></dt>
+<dd><p>section is not loaded
+</p></dd>
+<dt><code>w</code></dt>
+<dd><p>writable section
+</p></dd>
+<dt><code>d</code></dt>
+<dd><p>data section
+</p></dd>
+<dt><code>e</code></dt>
+<dd><p>exclude section from linking
+</p></dd>
+<dt><code>r</code></dt>
+<dd><p>read-only section
+</p></dd>
+<dt><code>x</code></dt>
+<dd><p>executable section
+</p></dd>
+<dt><code>s</code></dt>
+<dd><p>shared section (meaningful for PE targets)
+</p></dd>
+<dt><code>a</code></dt>
+<dd><p>ignored.  (For compatibility with the ELF version)
+</p></dd>
+<dt><code>y</code></dt>
+<dd><p>section is not readable (meaningful for PE targets)
+</p></dd>
+<dt><code>0-9</code></dt>
+<dd><p>single-digit power-of-two section alignment (GNU extension)
+</p></dd>
+</dl>
+
+<p>If no flags are specified, the default flags depend upon the section name.  If
+the section name is not recognized, the default will be for the section to be
+loaded and writable.  Note the <code>n</code> and <code>w</code> flags remove attributes
+from the section, rather than adding them, so if they are used on their own it
+will be as if no flags had been specified at all.
+</p>
+<p>If the optional argument to the <code>.section</code> directive is not quoted, it is
+taken as a subsection number (see <a href="Sub_002dSections.html#Sub_002dSections">Sub-Sections</a>).
+</p>
+<a name="ELF-Version"></a>
+<h4 class="subheading">ELF Version</h4>
+
+<a name="index-Section-Stack-3"></a>
+<p>This is one of the ELF section stack manipulation directives.  The others are
+<code>.subsection</code> (see <a href="SubSection.html#SubSection">SubSection</a>), <code>.pushsection</code>
+(see <a href="PushSection.html#PushSection">PushSection</a>), <code>.popsection</code> (see <a href="PopSection.html#PopSection">PopSection</a>), and
+<code>.previous</code> (see <a href="Previous.html#Previous">Previous</a>).
+</p>
+<a name="index-section-directive-_0028ELF-version_0029"></a>
+<p>For ELF targets, the <code>.section</code> directive is used like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">.section <var>name</var> [, &quot;<var>flags</var>&quot;[, @<var>type</var>[,<var>flag_specific_arguments</var>]]]
+</pre></div>
+
+<a name="Section-Name-Substitutions"></a><a name="index-_002d_002dsectname_002dsubst"></a>
+<a name="index-section-name-substitution"></a>
+<p>If the &lsquo;<samp>--sectname-subst</samp>&rsquo; command-line option is provided, the <var>name</var>
+argument may contain a substitution sequence. Only <code>%S</code> is supported
+at the moment, and substitutes the current section name. For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">.macro exception_code
+.section %S.exception
+[exception code here]
+.previous
+.endm
+
+.text
+[code]
+exception_code
+[...]
+
+.section .init
+[init code]
+exception_code
+[...]
+</pre></div>
+
+<p>The two <code>exception_code</code> invocations above would create the
+<code>.text.exception</code> and <code>.init.exception</code> sections respectively.
+This is useful e.g. to discriminate between ancillary sections that are
+tied to setup code to be discarded after use from ancillary sections that
+need to stay resident without having to define multiple <code>exception_code</code>
+macros just for that purpose.
+</p>
+<p>The optional <var>flags</var> argument is a quoted string which may contain any
+combination of the following characters:
+</p>
+<dl compact="compact">
+<dt><code>a</code></dt>
+<dd><p>section is allocatable
+</p></dd>
+<dt><code>d</code></dt>
+<dd><p>section is a GNU_MBIND section
+</p></dd>
+<dt><code>e</code></dt>
+<dd><p>section is excluded from executable and shared library.
+</p></dd>
+<dt><code>w</code></dt>
+<dd><p>section is writable
+</p></dd>
+<dt><code>x</code></dt>
+<dd><p>section is executable
+</p></dd>
+<dt><code>M</code></dt>
+<dd><p>section is mergeable
+</p></dd>
+<dt><code>S</code></dt>
+<dd><p>section contains zero terminated strings
+</p></dd>
+<dt><code>G</code></dt>
+<dd><p>section is a member of a section group
+</p></dd>
+<dt><code>T</code></dt>
+<dd><p>section is used for thread-local-storage
+</p></dd>
+<dt><code>?</code></dt>
+<dd><p>section is a member of the previously-current section&rsquo;s group, if any
+</p></dd>
+<dt><code><code>&lt;number&gt;</code></code></dt>
+<dd><p>a numeric value indicating the bits to be set in the ELF section header&rsquo;s flags
+field.  Note - if one or more of the alphabetic characters described above is
+also included in the flags field, their bit values will be ORed into the
+resulting value.
+</p></dd>
+<dt><code><code>&lt;target specific&gt;</code></code></dt>
+<dd><p>some targets extend this list with their own flag characters
+</p></dd>
+</dl>
+
+<p>Note - once a section&rsquo;s flags have been set they cannot be changed.  There are
+a few exceptions to this rule however.  Processor and application specific
+flags can be added to an already defined section.  The <code>.interp</code>,
+<code>.strtab</code> and <code>.symtab</code> sections can have the allocate flag
+(<code>a</code>) set after they are initially defined, and the <code>.note-GNU-stack</code>
+section may have the executable (<code>x</code>) flag added.
+</p>
+<p>The optional <var>type</var> argument may contain one of the following constants:
+</p>
+<dl compact="compact">
+<dt><code>@progbits</code></dt>
+<dd><p>section contains data
+</p></dd>
+<dt><code>@nobits</code></dt>
+<dd><p>section does not contain data (i.e., section only occupies space)
+</p></dd>
+<dt><code>@note</code></dt>
+<dd><p>section contains data which is used by things other than the program
+</p></dd>
+<dt><code>@init_array</code></dt>
+<dd><p>section contains an array of pointers to init functions
+</p></dd>
+<dt><code>@fini_array</code></dt>
+<dd><p>section contains an array of pointers to finish functions
+</p></dd>
+<dt><code>@preinit_array</code></dt>
+<dd><p>section contains an array of pointers to pre-init functions
+</p></dd>
+<dt><code>@<code>&lt;number&gt;</code></code></dt>
+<dd><p>a numeric value to be set as the ELF section header&rsquo;s type field.
+</p></dd>
+<dt><code>@<code>&lt;target specific&gt;</code></code></dt>
+<dd><p>some targets extend this list with their own types
+</p></dd>
+</dl>
+
+<p>Many targets only support the first three section types.  The type may be
+enclosed in double quotes if necessary.
+</p>
+<p>Note on targets where the <code>@</code> character is the start of a comment (eg
+ARM) then another character is used instead.  For example the ARM port uses the
+<code>%</code> character.
+</p>
+<p>Note - some sections, eg <code>.text</code> and <code>.data</code> are considered to be
+special and have fixed types.  Any attempt to declare them with a different
+type will generate an error from the assembler.
+</p>
+<p>If <var>flags</var> contains the <code>M</code> symbol then the <var>type</var> argument must
+be specified as well as an extra argument&mdash;<var>entsize</var>&mdash;like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">.section <var>name</var> , &quot;<var>flags</var>&quot;M, @<var>type</var>, <var>entsize</var>
+</pre></div>
+
+<p>Sections with the <code>M</code> flag but not <code>S</code> flag must contain fixed size
+constants, each <var>entsize</var> octets long. Sections with both <code>M</code> and
+<code>S</code> must contain zero terminated strings where each character is
+<var>entsize</var> bytes long. The linker may remove duplicates within sections with
+the same name, same entity size and same flags.  <var>entsize</var> must be an
+absolute expression.  For sections with both <code>M</code> and <code>S</code>, a string
+which is a suffix of a larger string is considered a duplicate.  Thus
+<code>&quot;def&quot;</code> will be merged with <code>&quot;abcdef&quot;</code>;  A reference to the first
+<code>&quot;def&quot;</code> will be changed to a reference to <code>&quot;abcdef&quot;+3</code>.
+</p>
+<p>If <var>flags</var> contains the <code>G</code> symbol then the <var>type</var> argument must
+be present along with an additional field like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">.section <var>name</var> , &quot;<var>flags</var>&quot;G, @<var>type</var>, <var>GroupName</var>[, <var>linkage</var>]
+</pre></div>
+
+<p>The <var>GroupName</var> field specifies the name of the section group to which this
+particular section belongs.  The optional linkage field can contain:
+</p>
+<dl compact="compact">
+<dt><code>comdat</code></dt>
+<dd><p>indicates that only one copy of this section should be retained
+</p></dd>
+<dt><code>.gnu.linkonce</code></dt>
+<dd><p>an alias for comdat
+</p></dd>
+</dl>
+
+<p>Note: if both the <var>M</var> and <var>G</var> flags are present then the fields for
+the Merge flag should come first, like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">.section <var>name</var> , &quot;<var>flags</var>&quot;MG, @<var>type</var>, <var>entsize</var>, <var>GroupName</var>[, <var>linkage</var>]
+</pre></div>
+
+<p>If <var>flags</var> contains the <code>?</code> symbol then it may not also contain the
+<code>G</code> symbol and the <var>GroupName</var> or <var>linkage</var> fields should not be
+present.  Instead, <code>?</code> says to consider the section that&rsquo;s current before
+this directive.  If that section used <code>G</code>, then the new section will use
+<code>G</code> with those same <var>GroupName</var> and <var>linkage</var> fields implicitly.
+If not, then the <code>?</code> symbol has no effect.
+</p>
+<p>If no flags are specified, the default flags depend upon the section name.  If
+the section name is not recognized, the default will be for the section to have
+none of the above flags: it will not be allocated in memory, nor writable, nor
+executable.  The section will contain data.
+</p>
+<p>For ELF targets, the assembler supports another type of <code>.section</code>
+directive for compatibility with the Solaris assembler:
+</p>
+<div class="smallexample">
+<pre class="smallexample">.section &quot;<var>name</var>&quot;[, <var>flags</var>...]
+</pre></div>
+
+<p>Note that the section name is quoted.  There may be a sequence of comma
+separated flags:
+</p>
+<dl compact="compact">
+<dt><code>#alloc</code></dt>
+<dd><p>section is allocatable
+</p></dd>
+<dt><code>#write</code></dt>
+<dd><p>section is writable
+</p></dd>
+<dt><code>#execinstr</code></dt>
+<dd><p>section is executable
+</p></dd>
+<dt><code>#exclude</code></dt>
+<dd><p>section is excluded from executable and shared library.
+</p></dd>
+<dt><code>#tls</code></dt>
+<dd><p>section is used for thread local storage
+</p></dd>
+</dl>
+
+<p>This directive replaces the current section and subsection.  See the
+contents of the gas testsuite directory <code>gas/testsuite/gas/elf</code> for
+some examples of how this directive and the other section stack directives
+work.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Set.html#Set" accesskey="n" rel="next">Set</a>, Previous: <a href="Scl.html#Scl" accesskey="p" rel="prev">Scl</a>, Up: <a href="Pseudo-Ops.html#Pseudo-Ops" accesskey="u" rel="up">Pseudo Ops</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

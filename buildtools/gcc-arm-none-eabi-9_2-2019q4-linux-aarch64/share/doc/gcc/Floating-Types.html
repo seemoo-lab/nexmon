@@ -1,0 +1,171 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Floating Types</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Floating Types">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Floating Types">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-Extensions.html#C-Extensions" rel="up" title="C Extensions">
+<link href="Half_002dPrecision.html#Half_002dPrecision" rel="next" title="Half-Precision">
+<link href="Complex.html#Complex" rel="prev" title="Complex">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Floating-Types"></a>
+<div class="header">
+<p>
+Next: <a href="Half_002dPrecision.html#Half_002dPrecision" accesskey="n" rel="next">Half-Precision</a>, Previous: <a href="Complex.html#Complex" accesskey="p" rel="prev">Complex</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Additional-Floating-Types"></a>
+<h3 class="section">6.12 Additional Floating Types</h3>
+<a name="index-additional-floating-types"></a>
+<a name="index-_005fFloatn-data-types"></a>
+<a name="index-_005fFloatnx-data-types"></a>
+<a name="index-_005f_005ffloat80-data-type"></a>
+<a name="index-_005f_005ffloat128-data-type"></a>
+<a name="index-_005f_005fibm128-data-type"></a>
+<a name="index-w-floating-point-suffix"></a>
+<a name="index-q-floating-point-suffix"></a>
+<a name="index-W-floating-point-suffix"></a>
+<a name="index-Q-floating-point-suffix"></a>
+
+<p>ISO/IEC TS 18661-3:2015 defines C support for additional floating
+types <code>_Float<var>n</var></code> and <code>_Float<var>n</var>x</code>, and GCC supports
+these type names; the set of types supported depends on the target
+architecture.  These types are not supported when compiling C++.
+Constants with these types use suffixes <code>f<var>n</var></code> or
+<code>F<var>n</var></code> and <code>f<var>n</var>x</code> or <code>F<var>n</var>x</code>.  These type
+names can be used together with <code>_Complex</code> to declare complex
+types.
+</p>
+<p>As an extension, GNU C and GNU C++ support additional floating
+types, which are not supported by all targets.
+</p><ul>
+<li> <code>__float128</code> is available on i386, x86_64, IA-64, and
+hppa HP-UX, as well as on PowerPC GNU/Linux targets that enable
+the vector scalar (VSX) instruction set.  <code>__float128</code> supports
+the 128-bit floating type.  On i386, x86_64, PowerPC, and IA-64
+other than HP-UX, <code>__float128</code> is an alias for <code>_Float128</code>.
+On hppa and IA-64 HP-UX, <code>__float128</code> is an alias for <code>long
+double</code>.
+
+</li><li> <code>__float80</code> is available on the i386, x86_64, and IA-64
+targets, and supports the 80-bit (<code>XFmode</code>) floating type.  It is
+an alias for the type name <code>_Float64x</code> on these targets.
+
+</li><li> <code>__ibm128</code> is available on PowerPC targets, and provides
+access to the IBM extended double format which is the current format
+used for <code>long double</code>.  When <code>long double</code> transitions to
+<code>__float128</code> on PowerPC in the future, <code>__ibm128</code> will remain
+for use in conversions between the two types.
+</li></ul>
+
+<p>Support for these additional types includes the arithmetic operators:
+add, subtract, multiply, divide; unary arithmetic operators;
+relational operators; equality operators; and conversions to and from
+integer and other floating types.  Use a suffix &lsquo;<samp>w</samp>&rsquo; or &lsquo;<samp>W</samp>&rsquo;
+in a literal constant of type <code>__float80</code> or type
+<code>__ibm128</code>.  Use a suffix &lsquo;<samp>q</samp>&rsquo; or &lsquo;<samp>Q</samp>&rsquo; for <code>_float128</code>.
+</p>
+<p>In order to use <code>_Float128</code>, <code>__float128</code>, and <code>__ibm128</code>
+on PowerPC Linux systems, you must use the <samp>-mfloat128</samp> option. It is
+expected in future versions of GCC that <code>_Float128</code> and <code>__float128</code>
+will be enabled automatically.
+</p>
+<p>The <code>_Float128</code> type is supported on all systems where
+<code>__float128</code> is supported or where <code>long double</code> has the
+IEEE binary128 format.  The <code>_Float64x</code> type is supported on all
+systems where <code>__float128</code> is supported.  The <code>_Float32</code>
+type is supported on all systems supporting IEEE binary32; the
+<code>_Float64</code> and <code>_Float32x</code> types are supported on all systems
+supporting IEEE binary64.  The <code>_Float16</code> type is supported on AArch64
+systems by default, and on ARM systems when the IEEE format for 16-bit
+floating-point types is selected with <samp>-mfp16-format=ieee</samp>.
+GCC does not currently support <code>_Float128x</code> on any systems.
+</p>
+<p>On the i386, x86_64, IA-64, and HP-UX targets, you can declare complex
+types using the corresponding internal complex type, <code>XCmode</code> for
+<code>__float80</code> type and <code>TCmode</code> for <code>__float128</code> type:
+</p>
+<div class="smallexample">
+<pre class="smallexample">typedef _Complex float __attribute__((mode(TC))) _Complex128;
+typedef _Complex float __attribute__((mode(XC))) _Complex80;
+</pre></div>
+
+<p>On the PowerPC Linux VSX targets, you can declare complex types using
+the corresponding internal complex type, <code>KCmode</code> for
+<code>__float128</code> type and <code>ICmode</code> for <code>__ibm128</code> type:
+</p>
+<div class="smallexample">
+<pre class="smallexample">typedef _Complex float __attribute__((mode(KC))) _Complex_float128;
+typedef _Complex float __attribute__((mode(IC))) _Complex_ibm128;
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Half_002dPrecision.html#Half_002dPrecision" accesskey="n" rel="next">Half-Precision</a>, Previous: <a href="Complex.html#Complex" accesskey="p" rel="prev">Complex</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

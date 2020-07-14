@@ -1,0 +1,140 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Automatic Overlay Debugging</title>
+
+<meta name="description" content="Debugging with GDB: Automatic Overlay Debugging">
+<meta name="keywords" content="Debugging with GDB: Automatic Overlay Debugging">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Overlays.html#Overlays" rel="up" title="Overlays">
+<link href="Overlay-Sample-Program.html#Overlay-Sample-Program" rel="next" title="Overlay Sample Program">
+<link href="Overlay-Commands.html#Overlay-Commands" rel="prev" title="Overlay Commands">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Automatic-Overlay-Debugging"></a>
+<div class="header">
+<p>
+Next: <a href="Overlay-Sample-Program.html#Overlay-Sample-Program" accesskey="n" rel="next">Overlay Sample Program</a>, Previous: <a href="Overlay-Commands.html#Overlay-Commands" accesskey="p" rel="prev">Overlay Commands</a>, Up: <a href="Overlays.html#Overlays" accesskey="u" rel="up">Overlays</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Automatic-Overlay-Debugging-1"></a>
+<h3 class="section">14.3 Automatic Overlay Debugging</h3>
+<a name="index-automatic-overlay-debugging"></a>
+
+<p><small>GDB</small> can automatically track which overlays are mapped and which
+are not, given some simple co-operation from the overlay manager in the
+inferior.  If you enable automatic overlay debugging with the
+<code>overlay auto</code> command (see <a href="Overlay-Commands.html#Overlay-Commands">Overlay Commands</a>), <small>GDB</small>
+looks in the inferior&rsquo;s memory for certain variables describing the
+current state of the overlays.
+</p>
+<p>Here are the variables your overlay manager must define to support
+<small>GDB</small>&rsquo;s automatic overlay debugging:
+</p>
+<dl compact="compact">
+<dt><code>_ovly_table</code>:</dt>
+<dd><p>This variable must be an array of the following structures:
+</p>
+<div class="smallexample">
+<pre class="smallexample">struct
+{
+  /* The overlay's mapped address.  */
+  unsigned long vma;
+
+  /* The size of the overlay, in bytes.  */
+  unsigned long size;
+
+  /* The overlay's load address.  */
+  unsigned long lma;
+
+  /* Non-zero if the overlay is currently mapped;
+     zero otherwise.  */
+  unsigned long mapped;
+}
+</pre></div>
+
+</dd>
+<dt><code>_novlys</code>:</dt>
+<dd><p>This variable must be a four-byte signed integer, holding the total
+number of elements in <code>_ovly_table</code>.
+</p>
+</dd>
+</dl>
+
+<p>To decide whether a particular overlay is mapped or not, <small>GDB</small>
+looks for an entry in <code><span class="nolinebreak">_ovly_table</span></code><!-- /@w --> whose <code>vma</code> and
+<code>lma</code> members equal the VMA and LMA of the overlay&rsquo;s section in the
+executable file.  When <small>GDB</small> finds a matching entry, it consults
+the entry&rsquo;s <code>mapped</code> member to determine whether the overlay is
+currently mapped.
+</p>
+<p>In addition, your overlay manager may define a function called
+<code>_ovly_debug_event</code>.  If this function is defined, <small>GDB</small>
+will silently set a breakpoint there.  If the overlay manager then
+calls this function whenever it has changed the overlay table, this
+will enable <small>GDB</small> to accurately keep track of which overlays
+are in program memory, and update any breakpoints that may be set
+in overlays.  This will allow breakpoints to work even if the
+overlays are kept in ROM or other non-writable memory while they
+are not being executed.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Overlay-Sample-Program.html#Overlay-Sample-Program" accesskey="n" rel="next">Overlay Sample Program</a>, Previous: <a href="Overlay-Commands.html#Overlay-Commands" accesskey="p" rel="prev">Overlay Commands</a>, Up: <a href="Overlays.html#Overlays" accesskey="u" rel="up">Overlays</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

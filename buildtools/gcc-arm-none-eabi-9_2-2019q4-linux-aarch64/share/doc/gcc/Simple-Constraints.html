@@ -1,0 +1,307 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Simple Constraints</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Simple Constraints">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Simple Constraints">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Constraints.html#Constraints" rel="up" title="Constraints">
+<link href="Multi_002dAlternative.html#Multi_002dAlternative" rel="next" title="Multi-Alternative">
+<link href="Constraints.html#Constraints" rel="prev" title="Constraints">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Simple-Constraints"></a>
+<div class="header">
+<p>
+Next: <a href="Multi_002dAlternative.html#Multi_002dAlternative" accesskey="n" rel="next">Multi-Alternative</a>, Up: <a href="Constraints.html#Constraints" accesskey="u" rel="up">Constraints</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Simple-Constraints-1"></a>
+<h4 class="subsubsection">6.47.3.1 Simple Constraints</h4>
+<a name="index-simple-constraints"></a>
+
+<p>The simplest kind of constraint is a string full of letters, each of
+which describes one kind of operand that is permitted.  Here are
+the letters that are allowed:
+</p>
+<dl compact="compact">
+<dt>whitespace</dt>
+<dd><p>Whitespace characters are ignored and can be inserted at any position
+except the first.  This enables each alternative for different operands to
+be visually aligned in the machine description even if they have different
+number of constraints and modifiers.
+</p>
+<a name="index-m-in-constraint"></a>
+<a name="index-memory-references-in-constraints"></a>
+</dd>
+<dt>&lsquo;<samp>m</samp>&rsquo;</dt>
+<dd><p>A memory operand is allowed, with any kind of address that the machine
+supports in general.
+Note that the letter used for the general memory constraint can be
+re-defined by a back end using the <code>TARGET_MEM_CONSTRAINT</code> macro.
+</p>
+<a name="index-offsettable-address"></a>
+<a name="index-o-in-constraint"></a>
+</dd>
+<dt>&lsquo;<samp>o</samp>&rsquo;</dt>
+<dd><p>A memory operand is allowed, but only if the address is
+<em>offsettable</em>.  This means that adding a small integer (actually,
+the width in bytes of the operand, as determined by its machine mode)
+may be added to the address and the result is also a valid memory
+address.
+</p>
+<a name="index-autoincrement_002fdecrement-addressing"></a>
+<p>For example, an address which is constant is offsettable; so is an
+address that is the sum of a register and a constant (as long as a
+slightly larger constant is also within the range of address-offsets
+supported by the machine); but an autoincrement or autodecrement
+address is not offsettable.  More complicated indirect/indexed
+addresses may or may not be offsettable depending on the other
+addressing modes that the machine supports.
+</p>
+<p>Note that in an output operand which can be matched by another
+operand, the constraint letter &lsquo;<samp>o</samp>&rsquo; is valid only when accompanied
+by both &lsquo;<samp>&lt;</samp>&rsquo; (if the target machine has predecrement addressing)
+and &lsquo;<samp>&gt;</samp>&rsquo; (if the target machine has preincrement addressing).
+</p>
+<a name="index-V-in-constraint"></a>
+</dd>
+<dt>&lsquo;<samp>V</samp>&rsquo;</dt>
+<dd><p>A memory operand that is not offsettable.  In other words, anything that
+would fit the &lsquo;<samp>m</samp>&rsquo; constraint but not the &lsquo;<samp>o</samp>&rsquo; constraint.
+</p>
+<a name="index-_003c-in-constraint"></a>
+</dd>
+<dt>&lsquo;<samp>&lt;</samp>&rsquo;</dt>
+<dd><p>A memory operand with autodecrement addressing (either predecrement or
+postdecrement) is allowed.  In inline <code>asm</code> this constraint is only
+allowed if the operand is used exactly once in an instruction that can
+handle the side effects.  Not using an operand with &lsquo;<samp>&lt;</samp>&rsquo; in constraint
+string in the inline <code>asm</code> pattern at all or using it in multiple
+instructions isn&rsquo;t valid, because the side effects wouldn&rsquo;t be performed
+or would be performed more than once.  Furthermore, on some targets
+the operand with &lsquo;<samp>&lt;</samp>&rsquo; in constraint string must be accompanied by
+special instruction suffixes like <code>%U0</code> instruction suffix on PowerPC
+or <code>%P0</code> on IA-64.
+</p>
+<a name="index-_003e-in-constraint"></a>
+</dd>
+<dt>&lsquo;<samp>&gt;</samp>&rsquo;</dt>
+<dd><p>A memory operand with autoincrement addressing (either preincrement or
+postincrement) is allowed.  In inline <code>asm</code> the same restrictions
+as for &lsquo;<samp>&lt;</samp>&rsquo; apply.
+</p>
+<a name="index-r-in-constraint"></a>
+<a name="index-registers-in-constraints"></a>
+</dd>
+<dt>&lsquo;<samp>r</samp>&rsquo;</dt>
+<dd><p>A register operand is allowed provided that it is in a general
+register.
+</p>
+<a name="index-constants-in-constraints"></a>
+<a name="index-i-in-constraint"></a>
+</dd>
+<dt>&lsquo;<samp>i</samp>&rsquo;</dt>
+<dd><p>An immediate integer operand (one with constant value) is allowed.
+This includes symbolic constants whose values will be known only at
+assembly time or later.
+</p>
+<a name="index-n-in-constraint"></a>
+</dd>
+<dt>&lsquo;<samp>n</samp>&rsquo;</dt>
+<dd><p>An immediate integer operand with a known numeric value is allowed.
+Many systems cannot support assembly-time constants for operands less
+than a word wide.  Constraints for these operands should use &lsquo;<samp>n</samp>&rsquo;
+rather than &lsquo;<samp>i</samp>&rsquo;.
+</p>
+<a name="index-I-in-constraint"></a>
+</dd>
+<dt>&lsquo;<samp>I</samp>&rsquo;, &lsquo;<samp>J</samp>&rsquo;, &lsquo;<samp>K</samp>&rsquo;, &hellip; &lsquo;<samp>P</samp>&rsquo;</dt>
+<dd><p>Other letters in the range &lsquo;<samp>I</samp>&rsquo; through &lsquo;<samp>P</samp>&rsquo; may be defined in
+a machine-dependent fashion to permit immediate integer operands with
+explicit integer values in specified ranges.  For example, on the
+68000, &lsquo;<samp>I</samp>&rsquo; is defined to stand for the range of values 1 to 8.
+This is the range permitted as a shift count in the shift
+instructions.
+</p>
+<a name="index-E-in-constraint"></a>
+</dd>
+<dt>&lsquo;<samp>E</samp>&rsquo;</dt>
+<dd><p>An immediate floating operand (expression code <code>const_double</code>) is
+allowed, but only if the target floating point format is the same as
+that of the host machine (on which the compiler is running).
+</p>
+<a name="index-F-in-constraint"></a>
+</dd>
+<dt>&lsquo;<samp>F</samp>&rsquo;</dt>
+<dd><p>An immediate floating operand (expression code <code>const_double</code> or
+<code>const_vector</code>) is allowed.
+</p>
+<a name="index-G-in-constraint"></a>
+<a name="index-H-in-constraint"></a>
+</dd>
+<dt>&lsquo;<samp>G</samp>&rsquo;, &lsquo;<samp>H</samp>&rsquo;</dt>
+<dd><p>&lsquo;<samp>G</samp>&rsquo; and &lsquo;<samp>H</samp>&rsquo; may be defined in a machine-dependent fashion to
+permit immediate floating operands in particular ranges of values.
+</p>
+<a name="index-s-in-constraint"></a>
+</dd>
+<dt>&lsquo;<samp>s</samp>&rsquo;</dt>
+<dd><p>An immediate integer operand whose value is not an explicit integer is
+allowed.
+</p>
+<p>This might appear strange; if an insn allows a constant operand with a
+value not known at compile time, it certainly must allow any known
+value.  So why use &lsquo;<samp>s</samp>&rsquo; instead of &lsquo;<samp>i</samp>&rsquo;?  Sometimes it allows
+better code to be generated.
+</p>
+<p>For example, on the 68000 in a fullword instruction it is possible to
+use an immediate operand; but if the immediate value is between -128
+and 127, better code results from loading the value into a register and
+using the register.  This is because the load into the register can be
+done with a &lsquo;<samp>moveq</samp>&rsquo; instruction.  We arrange for this to happen
+by defining the letter &lsquo;<samp>K</samp>&rsquo; to mean &ldquo;any integer outside the
+range -128 to 127&rdquo;, and then specifying &lsquo;<samp>Ks</samp>&rsquo; in the operand
+constraints.
+</p>
+<a name="index-g-in-constraint"></a>
+</dd>
+<dt>&lsquo;<samp>g</samp>&rsquo;</dt>
+<dd><p>Any register, memory or immediate integer operand is allowed, except for
+registers that are not general registers.
+</p>
+<a name="index-X-in-constraint"></a>
+</dd>
+<dt>&lsquo;<samp>X</samp>&rsquo;</dt>
+<dd><p>Any operand whatsoever is allowed.
+</p>
+<a name="index-0-in-constraint"></a>
+<a name="index-digits-in-constraint"></a>
+</dd>
+<dt>&lsquo;<samp>0</samp>&rsquo;, &lsquo;<samp>1</samp>&rsquo;, &lsquo;<samp>2</samp>&rsquo;, &hellip; &lsquo;<samp>9</samp>&rsquo;</dt>
+<dd><p>An operand that matches the specified operand number is allowed.  If a
+digit is used together with letters within the same alternative, the
+digit should come last.
+</p>
+<p>This number is allowed to be more than a single digit.  If multiple
+digits are encountered consecutively, they are interpreted as a single
+decimal integer.  There is scant chance for ambiguity, since to-date
+it has never been desirable that &lsquo;<samp>10</samp>&rsquo; be interpreted as matching
+either operand 1 <em>or</em> operand 0.  Should this be desired, one
+can use multiple alternatives instead.
+</p>
+<a name="index-matching-constraint"></a>
+<a name="index-constraint_002c-matching"></a>
+<p>This is called a <em>matching constraint</em> and what it really means is
+that the assembler has only a single operand that fills two roles
+which <code>asm</code> distinguishes.  For example, an add instruction uses
+two input operands and an output operand, but on most CISC
+machines an add instruction really has only two operands, one of them an
+input-output operand:
+</p>
+<div class="smallexample">
+<pre class="smallexample">addl #35,r12
+</pre></div>
+
+<p>Matching constraints are used in these circumstances.
+More precisely, the two operands that match must include one input-only
+operand and one output-only operand.  Moreover, the digit must be a
+smaller number than the number of the operand that uses it in the
+constraint.
+</p>
+
+<a name="index-load-address-instruction"></a>
+<a name="index-push-address-instruction"></a>
+<a name="index-address-constraints"></a>
+<a name="index-p-in-constraint"></a>
+</dd>
+<dt>&lsquo;<samp>p</samp>&rsquo;</dt>
+<dd><p>An operand that is a valid memory address is allowed.  This is
+for &ldquo;load address&rdquo; and &ldquo;push address&rdquo; instructions.
+</p>
+<a name="index-address_005foperand"></a>
+<p>&lsquo;<samp>p</samp>&rsquo; in the constraint must be accompanied by <code>address_operand</code>
+as the predicate in the <code>match_operand</code>.  This predicate interprets
+the mode specified in the <code>match_operand</code> as the mode of the memory
+reference for which the address would be valid.
+</p>
+<a name="index-other-register-constraints"></a>
+<a name="index-extensible-constraints"></a>
+</dd>
+<dt><var>other-letters</var></dt>
+<dd><p>Other letters can be defined in machine-dependent fashion to stand for
+particular classes of registers or other arbitrary operand types.
+&lsquo;<samp>d</samp>&rsquo;, &lsquo;<samp>a</samp>&rsquo; and &lsquo;<samp>f</samp>&rsquo; are defined on the 68000/68020 to stand
+for data, address and floating point registers.
+</p></dd>
+</dl>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Multi_002dAlternative.html#Multi_002dAlternative" accesskey="n" rel="next">Multi-Alternative</a>, Up: <a href="Constraints.html#Constraints" accesskey="u" rel="up">Constraints</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Adding a new GIMPLE statement code</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Adding a new GIMPLE statement code">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Adding a new GIMPLE statement code">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="GIMPLE.html#GIMPLE" rel="up" title="GIMPLE">
+<link href="Statement-and-operand-traversals.html#Statement-and-operand-traversals" rel="next" title="Statement and operand traversals">
+<link href="Sequence-iterators.html#Sequence-iterators" rel="prev" title="Sequence iterators">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Adding-a-new-GIMPLE-statement-code"></a>
+<div class="header">
+<p>
+Next: <a href="Statement-and-operand-traversals.html#Statement-and-operand-traversals" accesskey="n" rel="next">Statement and operand traversals</a>, Previous: <a href="Sequence-iterators.html#Sequence-iterators" accesskey="p" rel="prev">Sequence iterators</a>, Up: <a href="GIMPLE.html#GIMPLE" accesskey="u" rel="up">GIMPLE</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Adding-a-new-GIMPLE-statement-code-1"></a>
+<h3 class="section">12.11 Adding a new GIMPLE statement code</h3>
+<a name="index-Adding-a-new-GIMPLE-statement-code"></a>
+
+<p>The first step in adding a new GIMPLE statement code, is
+modifying the file <code>gimple.def</code>, which contains all the GIMPLE
+codes.  Then you must add a corresponding gimple subclass
+located in <code>gimple.h</code>.  This in turn, will require you to add a
+corresponding <code>GTY</code> tag in <code>gsstruct.def</code>, and code to handle
+this tag in <code>gss_for_code</code> which is located in <code>gimple.c</code>.
+</p>
+<p>In order for the garbage collector to know the size of the
+structure you created in <code>gimple.h</code>, you need to add a case to
+handle your new GIMPLE statement in <code>gimple_size</code> which is located
+in <code>gimple.c</code>.
+</p>
+<p>You will probably want to create a function to build the new
+gimple statement in <code>gimple.c</code>.  The function should be called
+<code>gimple_build_<var>new-tuple-name</var></code>, and should return the new tuple
+as a pointer to the appropriate gimple subclass.
+</p>
+<p>If your new statement requires accessors for any members or
+operands it may have, put simple inline accessors in
+<code>gimple.h</code> and any non-trivial accessors in <code>gimple.c</code> with a
+corresponding prototype in <code>gimple.h</code>.
+</p>
+<p>You should add the new statement subclass to the class hierarchy diagram
+in <code>gimple.texi</code>.
+</p>
+
+
+
+
+</body>
+</html>

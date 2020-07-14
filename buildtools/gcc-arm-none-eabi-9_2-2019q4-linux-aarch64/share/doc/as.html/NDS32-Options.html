@@ -1,0 +1,190 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: NDS32 Options</title>
+
+<meta name="description" content="Using as: NDS32 Options">
+<meta name="keywords" content="Using as: NDS32 Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="NDS32_002dDependent.html#NDS32_002dDependent" rel="up" title="NDS32-Dependent">
+<link href="NDS32-Syntax.html#NDS32-Syntax" rel="next" title="NDS32 Syntax">
+<link href="NDS32_002dDependent.html#NDS32_002dDependent" rel="prev" title="NDS32-Dependent">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="NDS32-Options"></a>
+<div class="header">
+<p>
+Next: <a href="NDS32-Syntax.html#NDS32-Syntax" accesskey="n" rel="next">NDS32 Syntax</a>, Up: <a href="NDS32_002dDependent.html#NDS32_002dDependent" accesskey="u" rel="up">NDS32-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="NDS32-Options-1"></a>
+<h4 class="subsection">9.30.1 NDS32 Options</h4>
+
+<a name="index-NDS32-options"></a>
+<a name="index-options-for-NDS32"></a>
+<p>The NDS32 configurations of <small>GNU</small> <code>as</code> support these
+special options:
+</p>
+<dl compact="compact">
+<dt><code>-O1</code></dt>
+<dd><p>Optimize for performance.
+</p>
+</dd>
+<dt><code>-Os</code></dt>
+<dd><p>Optimize for space.
+</p>
+</dd>
+<dt><code>-EL</code></dt>
+<dd><p>Produce little endian data output.
+</p>
+</dd>
+<dt><code>-EB</code></dt>
+<dd><p>Produce little endian data output.
+</p>
+</dd>
+<dt><code>-mpic</code></dt>
+<dd><p>Generate PIC.
+</p>
+</dd>
+<dt><code>-mno-fp-as-gp-relax</code></dt>
+<dd><p>Suppress fp-as-gp relaxation for this file.
+</p>
+</dd>
+<dt><code>-mb2bb-relax</code></dt>
+<dd><p>Back-to-back branch optimization.
+</p>
+</dd>
+<dt><code>-mno-all-relax</code></dt>
+<dd><p>Suppress all relaxation for this file.
+</p>
+</dd>
+<dt><code>-march=&lt;arch name&gt;</code></dt>
+<dd><p>Assemble for architecture &lt;arch name&gt; which could be v3, v3j, v3m, v3f,
+v3s, v2, v2j, v2f, v2s.
+</p>
+</dd>
+<dt><code>-mbaseline=&lt;baseline&gt;</code></dt>
+<dd><p>Assemble for baseline &lt;baseline&gt; which could be v2, v3, v3m.
+</p>
+</dd>
+<dt><code>-mfpu-freg=<var>FREG</var></code></dt>
+<dd><p>Specify a FPU configuration.
+</p><dl compact="compact">
+<dt><code>0      8 SP /  4 DP registers</code></dt>
+<dt><code>1     16 SP /  8 DP registers</code></dt>
+<dt><code>2     32 SP / 16 DP registers</code></dt>
+<dt><code>3     32 SP / 32 DP registers</code></dt>
+</dl>
+
+</dd>
+<dt><code>-mabi=<var>abi</var></code></dt>
+<dd><p>Specify a abi version &lt;abi&gt; could be v1, v2, v2fp, v2fpp.
+</p>
+</dd>
+<dt><code>-m[no-]mac</code></dt>
+<dd><p>Enable/Disable Multiply instructions support.
+</p>
+</dd>
+<dt><code>-m[no-]div</code></dt>
+<dd><p>Enable/Disable Divide instructions support.
+</p>
+</dd>
+<dt><code>-m[no-]16bit-ext</code></dt>
+<dd><p>Enable/Disable 16-bit extension
+</p>
+</dd>
+<dt><code>-m[no-]dx-regs</code></dt>
+<dd><p>Enable/Disable d0/d1 registers
+</p>
+</dd>
+<dt><code>-m[no-]perf-ext</code></dt>
+<dd><p>Enable/Disable Performance extension
+</p>
+</dd>
+<dt><code>-m[no-]perf2-ext</code></dt>
+<dd><p>Enable/Disable Performance extension 2
+</p>
+</dd>
+<dt><code>-m[no-]string-ext</code></dt>
+<dd><p>Enable/Disable String extension
+</p>
+</dd>
+<dt><code>-m[no-]reduced-regs</code></dt>
+<dd><p>Enable/Disable Reduced Register configuration (GPR16) option
+</p>
+</dd>
+<dt><code>-m[no-]audio-isa-ext</code></dt>
+<dd><p>Enable/Disable AUDIO ISA extension
+</p>
+</dd>
+<dt><code>-m[no-]fpu-sp-ext</code></dt>
+<dd><p>Enable/Disable FPU SP extension
+</p>
+</dd>
+<dt><code>-m[no-]fpu-dp-ext</code></dt>
+<dd><p>Enable/Disable FPU DP extension
+</p>
+</dd>
+<dt><code>-m[no-]fpu-fma</code></dt>
+<dd><p>Enable/Disable FPU fused-multiply-add instructions
+</p>
+</dd>
+<dt><code>-mall-ext</code></dt>
+<dd><p>Turn on all extensions and instructions support
+</p></dd>
+</dl>
+
+
+
+
+</body>
+</html>

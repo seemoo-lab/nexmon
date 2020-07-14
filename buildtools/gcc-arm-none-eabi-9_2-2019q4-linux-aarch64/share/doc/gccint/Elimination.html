@@ -1,0 +1,172 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Elimination</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Elimination">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Elimination">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Stack-and-Calling.html#Stack-and-Calling" rel="up" title="Stack and Calling">
+<link href="Stack-Arguments.html#Stack-Arguments" rel="next" title="Stack Arguments">
+<link href="Frame-Registers.html#Frame-Registers" rel="prev" title="Frame Registers">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Elimination"></a>
+<div class="header">
+<p>
+Next: <a href="Stack-Arguments.html#Stack-Arguments" accesskey="n" rel="next">Stack Arguments</a>, Previous: <a href="Frame-Registers.html#Frame-Registers" accesskey="p" rel="prev">Frame Registers</a>, Up: <a href="Stack-and-Calling.html#Stack-and-Calling" accesskey="u" rel="up">Stack and Calling</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Eliminating-Frame-Pointer-and-Arg-Pointer"></a>
+<h4 class="subsection">18.9.5 Eliminating Frame Pointer and Arg Pointer</h4>
+
+<p>This is about eliminating the frame pointer and arg pointer.
+</p>
+<dl>
+<dt><a name="index-TARGET_005fFRAME_005fPOINTER_005fREQUIRED"></a>Target Hook: <em>bool</em> <strong>TARGET_FRAME_POINTER_REQUIRED</strong> <em>(void)</em></dt>
+<dd><p>This target hook should return <code>true</code> if a function must have and use
+a frame pointer.  This target hook is called in the reload pass.  If its return
+value is <code>true</code> the function will have a frame pointer.
+</p>
+<p>This target hook can in principle examine the current function and decide
+according to the facts, but on most machines the constant <code>false</code> or the
+constant <code>true</code> suffices.  Use <code>false</code> when the machine allows code
+to be generated with no frame pointer, and doing so saves some time or space.
+Use <code>true</code> when there is no possible advantage to avoiding a frame
+pointer.
+</p>
+<p>In certain cases, the compiler does not know how to produce valid code
+without a frame pointer.  The compiler recognizes those cases and
+automatically gives the function a frame pointer regardless of what
+<code>targetm.frame_pointer_required</code> returns.  You don&rsquo;t need to worry about
+them.
+</p>
+<p>In a function that does not require a frame pointer, the frame pointer
+register can be allocated for ordinary usage, unless you mark it as a
+fixed register.  See <code>FIXED_REGISTERS</code> for more information.
+</p>
+<p>Default return value is <code>false</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-ELIMINABLE_005fREGS"></a>Macro: <strong>ELIMINABLE_REGS</strong></dt>
+<dd><p>This macro specifies a table of register pairs used to eliminate
+unneeded registers that point into the stack frame.
+</p>
+<p>The definition of this macro is a list of structure initializations, each
+of which specifies an original and replacement register.
+</p>
+<p>On some machines, the position of the argument pointer is not known until
+the compilation is completed.  In such a case, a separate hard register
+must be used for the argument pointer.  This register can be eliminated by
+replacing it with either the frame pointer or the argument pointer,
+depending on whether or not the frame pointer has been eliminated.
+</p>
+<p>In this case, you might specify:
+</p><div class="smallexample">
+<pre class="smallexample">#define ELIMINABLE_REGS  \
+{{ARG_POINTER_REGNUM, STACK_POINTER_REGNUM}, \
+ {ARG_POINTER_REGNUM, FRAME_POINTER_REGNUM}, \
+ {FRAME_POINTER_REGNUM, STACK_POINTER_REGNUM}}
+</pre></div>
+
+<p>Note that the elimination of the argument pointer with the stack pointer is
+specified first since that is the preferred elimination.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fCAN_005fELIMINATE"></a>Target Hook: <em>bool</em> <strong>TARGET_CAN_ELIMINATE</strong> <em>(const int <var>from_reg</var>, const int <var>to_reg</var>)</em></dt>
+<dd><p>This target hook should return <code>true</code> if the compiler is allowed to
+try to replace register number <var>from_reg</var> with register number
+<var>to_reg</var>.  This target hook will usually be <code>true</code>, since most of the
+cases preventing register elimination are things that the compiler already
+knows about.
+</p>
+<p>Default return value is <code>true</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-INITIAL_005fELIMINATION_005fOFFSET"></a>Macro: <strong>INITIAL_ELIMINATION_OFFSET</strong> <em>(<var>from-reg</var>, <var>to-reg</var>, <var>offset-var</var>)</em></dt>
+<dd><p>This macro returns the initial difference between the specified pair
+of registers.  The value would be computed from information
+such as the result of <code>get_frame_size ()</code> and the tables of
+registers <code>df_regs_ever_live_p</code> and <code>call_used_regs</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fCOMPUTE_005fFRAME_005fLAYOUT"></a>Target Hook: <em>void</em> <strong>TARGET_COMPUTE_FRAME_LAYOUT</strong> <em>(void)</em></dt>
+<dd><p>This target hook is called once each time the frame layout needs to be
+recalculated.  The calculations can be cached by the target and can then
+be used by <code>INITIAL_ELIMINATION_OFFSET</code> instead of re-computing the
+layout on every invocation of that hook.  This is particularly useful
+for targets that have an expensive frame layout function.  Implementing
+this callback is optional.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Stack-Arguments.html#Stack-Arguments" accesskey="n" rel="next">Stack Arguments</a>, Previous: <a href="Frame-Registers.html#Frame-Registers" accesskey="p" rel="prev">Frame Registers</a>, Up: <a href="Stack-and-Calling.html#Stack-and-Calling" accesskey="u" rel="up">Stack and Calling</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

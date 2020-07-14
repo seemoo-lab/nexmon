@@ -1,0 +1,191 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Remote Stub</title>
+
+<meta name="description" content="Debugging with GDB: Remote Stub">
+<meta name="keywords" content="Debugging with GDB: Remote Stub">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Remote-Debugging.html#Remote-Debugging" rel="up" title="Remote Debugging">
+<link href="Stub-Contents.html#Stub-Contents" rel="next" title="Stub Contents">
+<link href="Remote-Configuration.html#Remote-Configuration" rel="prev" title="Remote Configuration">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Remote-Stub"></a>
+<div class="header">
+<p>
+Previous: <a href="Remote-Configuration.html#Remote-Configuration" accesskey="p" rel="prev">Remote Configuration</a>, Up: <a href="Remote-Debugging.html#Remote-Debugging" accesskey="u" rel="up">Remote Debugging</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Implementing-a-Remote-Stub"></a>
+<h3 class="section">20.5 Implementing a Remote Stub</h3>
+
+<a name="index-debugging-stub_002c-example"></a>
+<a name="index-remote-stub_002c-example"></a>
+<a name="index-stub-example_002c-remote-debugging"></a>
+<p>The stub files provided with <small>GDB</small> implement the target side of the
+communication protocol, and the <small>GDB</small> side is implemented in the
+<small>GDB</small> source file <samp>remote.c</samp>.  Normally, you can simply allow
+these subroutines to communicate, and ignore the details.  (If you&rsquo;re
+implementing your own stub file, you can still ignore the details: start
+with one of the existing stub files.  <samp>sparc-stub.c</samp> is the best
+organized, and therefore the easiest to read.)
+</p>
+<a name="index-remote-serial-debugging_002c-overview"></a>
+<p>To debug a program running on another machine (the debugging
+<em>target</em> machine), you must first arrange for all the usual
+prerequisites for the program to run by itself.  For example, for a C
+program, you need:
+</p>
+<ol>
+<li> A startup routine to set up the C runtime environment; these usually
+have a name like <samp>crt0</samp>.  The startup routine may be supplied by
+your hardware supplier, or you may have to write your own.
+
+</li><li> A C subroutine library to support your program&rsquo;s
+subroutine calls, notably managing input and output.
+
+</li><li> A way of getting your program to the other machine&mdash;for example, a
+download program.  These are often supplied by the hardware
+manufacturer, but you may have to write your own from hardware
+documentation.
+</li></ol>
+
+<p>The next step is to arrange for your program to use a serial port to
+communicate with the machine where <small>GDB</small> is running (the <em>host</em>
+machine).  In general terms, the scheme looks like this:
+</p>
+<dl compact="compact">
+<dt><em>On the host,</em></dt>
+<dd><p><small>GDB</small> already understands how to use this protocol; when everything
+else is set up, you can simply use the &lsquo;<samp>target remote</samp>&rsquo; command
+(see <a href="Targets.html#Targets">Specifying a Debugging Target</a>).
+</p>
+</dd>
+<dt><em>On the target,</em></dt>
+<dd><p>you must link with your program a few special-purpose subroutines that
+implement the <small>GDB</small> remote serial protocol.  The file containing these
+subroutines is called  a <em>debugging stub</em>.
+</p>
+<p>On certain remote targets, you can use an auxiliary program
+<code>gdbserver</code> instead of linking a stub into your program.
+See <a href="Server.html#Server">Using the <code>gdbserver</code> Program</a>, for details.
+</p></dd>
+</dl>
+
+<p>The debugging stub is specific to the architecture of the remote
+machine; for example, use <samp>sparc-stub.c</samp> to debug programs on
+<small>SPARC</small> boards.
+</p>
+<a name="index-remote-serial-stub-list"></a>
+<p>These working remote stubs are distributed with <small>GDB</small>:
+</p>
+<dl compact="compact">
+<dt><code>i386-stub.c</code></dt>
+<dd><a name="index-i386_002dstub_002ec"></a>
+<a name="index-Intel"></a>
+<a name="index-i386"></a>
+<p>For Intel 386 and compatible architectures.
+</p>
+</dd>
+<dt><code>m68k-stub.c</code></dt>
+<dd><a name="index-m68k_002dstub_002ec"></a>
+<a name="index-Motorola-680x0"></a>
+<a name="index-m680x0"></a>
+<p>For Motorola 680x0 architectures.
+</p>
+</dd>
+<dt><code>sh-stub.c</code></dt>
+<dd><a name="index-sh_002dstub_002ec"></a>
+<a name="index-Renesas"></a>
+<a name="index-SH"></a>
+<p>For Renesas SH architectures.
+</p>
+</dd>
+<dt><code>sparc-stub.c</code></dt>
+<dd><a name="index-sparc_002dstub_002ec"></a>
+<a name="index-Sparc"></a>
+<p>For <small>SPARC</small> architectures.
+</p>
+</dd>
+<dt><code>sparcl-stub.c</code></dt>
+<dd><a name="index-sparcl_002dstub_002ec"></a>
+<a name="index-Fujitsu"></a>
+<a name="index-SparcLite"></a>
+<p>For Fujitsu <small>SPARCLITE</small> architectures.
+</p>
+</dd>
+</dl>
+
+<p>The <samp>README</samp> file in the <small>GDB</small> distribution may list other
+recently added stubs.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Stub-Contents.html#Stub-Contents" accesskey="1">Stub Contents</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">What the stub can do for you
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Bootstrapping.html#Bootstrapping" accesskey="2">Bootstrapping</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">What you must do for the stub
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Debug-Session.html#Debug-Session" accesskey="3">Debug Session</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Putting it all together
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Remote-Configuration.html#Remote-Configuration" accesskey="p" rel="prev">Remote Configuration</a>, Up: <a href="Remote-Debugging.html#Remote-Debugging" accesskey="u" rel="up">Remote Debugging</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

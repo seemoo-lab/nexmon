@@ -1,0 +1,291 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Binary Utilities: c++filt</title>
+
+<meta name="description" content="GNU Binary Utilities: c++filt">
+<meta name="keywords" content="GNU Binary Utilities: c++filt">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Binutils-Index.html#Binutils-Index" rel="index" title="Binutils Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="addr2line.html#addr2line" rel="next" title="addr2line">
+<link href="strip.html#strip" rel="prev" title="strip">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="c_002b_002bfilt"></a>
+<div class="header">
+<p>
+Next: <a href="addr2line.html#addr2line" accesskey="n" rel="next">addr2line</a>, Previous: <a href="strip.html#strip" accesskey="p" rel="prev">strip</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Binutils-Index.html#Binutils-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="c_002b_002bfilt-1"></a>
+<h2 class="chapter">9 c++filt</h2>
+
+<a name="index-c_002b_002bfilt"></a>
+<a name="index-demangling-C_002b_002b-symbols"></a>
+
+
+<div class="smallexample">
+<pre class="smallexample">c++filt [<samp>-_</samp>|<samp>--strip-underscore</samp>]
+        [<samp>-n</samp>|<samp>--no-strip-underscore</samp>]
+        [<samp>-p</samp>|<samp>--no-params</samp>]
+        [<samp>-t</samp>|<samp>--types</samp>]
+        [<samp>-i</samp>|<samp>--no-verbose</samp>]
+        [<samp>-r</samp>|<samp>--no-recurse-limit</samp>]
+        [<samp>-R</samp>|<samp>--recurse-limit</samp>]
+        [<samp>-s</samp> <var>format</var>|<samp>--format=</samp><var>format</var>]
+        [<samp>--help</samp>]  [<samp>--version</samp>]  [<var>symbol</var>&hellip;]
+</pre></div>
+
+
+<a name="index-cxxfilt"></a>
+<p>The C++ and Java languages provide function overloading, which means
+that you can write many functions with the same name, providing that
+each function takes parameters of different types.  In order to be
+able to distinguish these similarly named functions C++ and Java
+encode them into a low-level assembler name which uniquely identifies
+each different version.  This process is known as <em>mangling</em>. The
+<code>c++filt</code>
+<a name="DOCF1" href="#FOOT1"><sup>1</sup></a>
+program does the inverse mapping: it decodes (<em>demangles</em>) low-level
+names into user-level names so that they can be read.
+</p>
+<p>Every alphanumeric word (consisting of letters, digits, underscores,
+dollars, or periods) seen in the input is a potential mangled name.
+If the name decodes into a C++ name, the C++ name replaces the
+low-level name in the output, otherwise the original word is output.
+In this way you can pass an entire assembler source file, containing
+mangled names, through <code>c++filt</code> and see the same source file
+containing demangled names.
+</p>
+<p>You can also use <code>c++filt</code> to decipher individual symbols by
+passing them on the command line:
+</p>
+<div class="example">
+<pre class="example">c++filt <var>symbol</var>
+</pre></div>
+
+<p>If no <var>symbol</var> arguments are given, <code>c++filt</code> reads symbol
+names from the standard input instead.  All the results are printed on
+the standard output.  The difference between reading names from the
+command line versus reading names from the standard input is that
+command-line arguments are expected to be just mangled names and no
+checking is performed to separate them from surrounding text.  Thus
+for example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">c++filt -n _Z1fv
+</pre></div>
+
+<p>will work and demangle the name to &ldquo;f()&rdquo; whereas:
+</p>
+<div class="smallexample">
+<pre class="smallexample">c++filt -n _Z1fv,
+</pre></div>
+
+<p>will not work.  (Note the extra comma at the end of the mangled
+name which makes it invalid).  This command however will work:
+</p>
+<div class="smallexample">
+<pre class="smallexample">echo _Z1fv, | c++filt -n
+</pre></div>
+
+<p>and will display &ldquo;f(),&rdquo;, i.e., the demangled name followed by a
+trailing comma.  This behaviour is because when the names are read
+from the standard input it is expected that they might be part of an
+assembler source file where there might be extra, extraneous
+characters trailing after a mangled name.  For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">    .type   _Z1fv, @function
+</pre></div>
+
+
+
+<dl compact="compact">
+<dt><code>-_</code></dt>
+<dt><code>--strip-underscore</code></dt>
+<dd><p>On some systems, both the C and C++ compilers put an underscore in front
+of every name.  For example, the C name <code>foo</code> gets the low-level
+name <code>_foo</code>.  This option removes the initial underscore.  Whether
+<code>c++filt</code> removes the underscore by default is target dependent.
+</p>
+</dd>
+<dt><code>-n</code></dt>
+<dt><code>--no-strip-underscore</code></dt>
+<dd><p>Do not remove the initial underscore.
+</p>
+</dd>
+<dt><code>-p</code></dt>
+<dt><code>--no-params</code></dt>
+<dd><p>When demangling the name of a function, do not display the types of
+the function&rsquo;s parameters.
+</p>
+</dd>
+<dt><code>-t</code></dt>
+<dt><code>--types</code></dt>
+<dd><p>Attempt to demangle types as well as function names.  This is disabled
+by default since mangled types are normally only used internally in
+the compiler, and they can be confused with non-mangled names.  For example,
+a function called &ldquo;a&rdquo; treated as a mangled type name would be
+demangled to &ldquo;signed char&rdquo;.
+</p>
+</dd>
+<dt><code>-i</code></dt>
+<dt><code>--no-verbose</code></dt>
+<dd><p>Do not include implementation details (if any) in the demangled
+output.
+</p>
+</dd>
+<dt><code>-r</code></dt>
+<dt><code>-R</code></dt>
+<dt><code>--recurse-limit</code></dt>
+<dt><code>--no-recurse-limit</code></dt>
+<dt><code>--recursion-limit</code></dt>
+<dt><code>--no-recursion-limit</code></dt>
+<dd><p>Enables or disables a limit on the amount of recursion performed
+whilst demangling strings.  Since the name mangling formats allow for
+an inifinite level of recursion it is possible to create strings whose
+decoding will exhaust the amount of stack space available on the host
+machine, triggering a memory fault.  The limit tries to prevent this
+from happening by restricting recursion to 2048 levels of nesting.
+</p>
+<p>The default is for this limit to be enabled, but disabling it may be
+necessary in order to demangle truly complicated names.  Note however
+that if the recursion limit is disabled then stack exhaustion is
+possible and any bug reports about such an event will be rejected.
+</p>
+<p>The <samp>-r</samp> option is a synonym for the
+<samp>--no-recurse-limit</samp> option.  The <samp>-R</samp> option is a
+synonym for the <samp>--recurse-limit</samp> option.
+</p>
+</dd>
+<dt><code>-s <var>format</var></code></dt>
+<dt><code>--format=<var>format</var></code></dt>
+<dd><p><code>c++filt</code> can decode various methods of mangling, used by
+different compilers.  The argument to this option selects which
+method it uses:
+</p>
+<dl compact="compact">
+<dt><code>auto</code></dt>
+<dd><p>Automatic selection based on executable (the default method)
+</p></dd>
+<dt><code>gnu</code></dt>
+<dd><p>the one used by the <small>GNU</small> C++ compiler (g++)
+</p></dd>
+<dt><code>lucid</code></dt>
+<dd><p>the one used by the Lucid compiler (lcc)
+</p></dd>
+<dt><code>arm</code></dt>
+<dd><p>the one specified by the C++ Annotated Reference Manual
+</p></dd>
+<dt><code>hp</code></dt>
+<dd><p>the one used by the HP compiler (aCC)
+</p></dd>
+<dt><code>edg</code></dt>
+<dd><p>the one used by the EDG compiler
+</p></dd>
+<dt><code>gnu-v3</code></dt>
+<dd><p>the one used by the <small>GNU</small> C++ compiler (g++) with the V3 ABI.
+</p></dd>
+<dt><code>java</code></dt>
+<dd><p>the one used by the <small>GNU</small> Java compiler (gcj)
+</p></dd>
+<dt><code>gnat</code></dt>
+<dd><p>the one used by the <small>GNU</small> Ada compiler (GNAT).
+</p></dd>
+</dl>
+
+</dd>
+<dt><code>--help</code></dt>
+<dd><p>Print a summary of the options to <code>c++filt</code> and exit.
+</p>
+</dd>
+<dt><code>--version</code></dt>
+<dd><p>Print the version number of <code>c++filt</code> and exit.
+</p></dd>
+</dl>
+
+
+
+<blockquote>
+<p><em>Warning:</em> <code>c++filt</code> is a new utility, and the details of its
+user interface are subject to change in future releases.  In particular,
+a command-line option may be required in the future to decode a name
+passed as an argument on the command line; in other words,
+</p>
+<div class="example">
+<pre class="example">c++filt <var>symbol</var>
+</pre></div>
+
+<p>may in a future release become
+</p>
+<div class="example">
+<pre class="example">c++filt <var>option</var> <var>symbol</var>
+</pre></div>
+</blockquote>
+
+<div class="footnote">
+<hr>
+<h4 class="footnotes-heading">Footnotes</h4>
+
+<h3><a name="FOOT1" href="#DOCF1">(1)</a></h3>
+<p>MS-DOS does not allow <kbd>+</kbd> characters in file names, so on
+MS-DOS this program is named <code>CXXFILT</code>.</p>
+</div>
+<hr>
+<div class="header">
+<p>
+Next: <a href="addr2line.html#addr2line" accesskey="n" rel="next">addr2line</a>, Previous: <a href="strip.html#strip" accesskey="p" rel="prev">strip</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Binutils-Index.html#Binutils-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

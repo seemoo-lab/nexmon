@@ -1,0 +1,127 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Tracepoints</title>
+
+<meta name="description" content="Debugging with GDB: Tracepoints">
+<meta name="keywords" content="Debugging with GDB: Tracepoints">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Set-Tracepoints.html#Set-Tracepoints" rel="next" title="Set Tracepoints">
+<link href="Macros.html#Macros" rel="prev" title="Macros">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Tracepoints"></a>
+<div class="header">
+<p>
+Next: <a href="Overlays.html#Overlays" accesskey="n" rel="next">Overlays</a>, Previous: <a href="Macros.html#Macros" accesskey="p" rel="prev">Macros</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Tracepoints-1"></a>
+<h2 class="chapter">13 Tracepoints</h2>
+
+<a name="index-tracepoints"></a>
+<p>In some applications, it is not feasible for the debugger to interrupt
+the program&rsquo;s execution long enough for the developer to learn
+anything helpful about its behavior.  If the program&rsquo;s correctness
+depends on its real-time behavior, delays introduced by a debugger
+might cause the program to change its behavior drastically, or perhaps
+fail, even when the code itself is correct.  It is useful to be able
+to observe the program&rsquo;s behavior without interrupting it.
+</p>
+<p>Using <small>GDB</small>&rsquo;s <code>trace</code> and <code>collect</code> commands, you can
+specify locations in the program, called <em>tracepoints</em>, and
+arbitrary expressions to evaluate when those tracepoints are reached.
+Later, using the <code>tfind</code> command, you can examine the values
+those expressions had when the program hit the tracepoints.  The
+expressions may also denote objects in memory&mdash;structures or arrays,
+for example&mdash;whose values <small>GDB</small> should record; while visiting
+a particular tracepoint, you may inspect those objects as if they were
+in memory at that moment.  However, because <small>GDB</small> records these
+values without interacting with you, it can do so quickly and
+unobtrusively, hopefully not disturbing the program&rsquo;s behavior.
+</p>
+<p>The tracepoint facility is currently available only for remote
+targets.  See <a href="Targets.html#Targets">Targets</a>.  In addition, your remote target must know
+how to collect trace data.  This functionality is implemented in the
+remote stub; however, none of the stubs distributed with <small>GDB</small>
+support tracepoints as of this writing.  The format of the remote
+packets used to implement tracepoints are described in <a href="Tracepoint-Packets.html#Tracepoint-Packets">Tracepoint Packets</a>.
+</p>
+<p>It is also possible to get trace data from a file, in a manner reminiscent
+of corefiles; you specify the filename, and use <code>tfind</code> to search
+through the file.  See <a href="Trace-Files.html#Trace-Files">Trace Files</a>, for more details.
+</p>
+<p>This chapter describes the tracepoint commands and features.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Set-Tracepoints.html#Set-Tracepoints" accesskey="1">Set Tracepoints</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Analyze-Collected-Data.html#Analyze-Collected-Data" accesskey="2">Analyze Collected Data</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Tracepoint-Variables.html#Tracepoint-Variables" accesskey="3">Tracepoint Variables</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Trace-Files.html#Trace-Files" accesskey="4">Trace Files</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Overlays.html#Overlays" accesskey="n" rel="next">Overlays</a>, Previous: <a href="Macros.html#Macros" accesskey="p" rel="prev">Macros</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

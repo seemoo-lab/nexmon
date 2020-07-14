@@ -1,0 +1,205 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Static Probe Points</title>
+
+<meta name="description" content="Debugging with GDB: Static Probe Points">
+<meta name="keywords" content="Debugging with GDB: Static Probe Points">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Breakpoints.html#Breakpoints" rel="up" title="Breakpoints">
+<link href="Error-in-Breakpoints.html#Error-in-Breakpoints" rel="next" title="Error in Breakpoints">
+<link href="Save-Breakpoints.html#Save-Breakpoints" rel="prev" title="Save Breakpoints">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Static-Probe-Points"></a>
+<div class="header">
+<p>
+Next: <a href="Error-in-Breakpoints.html#Error-in-Breakpoints" accesskey="n" rel="next">Error in Breakpoints</a>, Previous: <a href="Save-Breakpoints.html#Save-Breakpoints" accesskey="p" rel="prev">Save Breakpoints</a>, Up: <a href="Breakpoints.html#Breakpoints" accesskey="u" rel="up">Breakpoints</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Static-Probe-Points-1"></a>
+<h4 class="subsection">5.1.10 Static Probe Points</h4>
+
+<a name="index-static-probe-point_002c-SystemTap"></a>
+<a name="index-static-probe-point_002c-DTrace"></a>
+<p><small>GDB</small> supports <em>SDT</em> probes in the code.  <acronym>SDT</acronym> stands
+for Statically Defined Tracing, and the probes are designed to have a tiny
+runtime code and data footprint, and no dynamic relocations.
+</p>
+<p>Currently, the following types of probes are supported on
+ELF-compatible systems:
+</p>
+<ul>
+<li> <code>SystemTap</code> (<a href="http://sourceware.org/systemtap/">http://sourceware.org/systemtap/</a>)
+<acronym>SDT</acronym> probes<a name="DOCF4" href="#FOOT4"><sup>4</sup></a>.  <code>SystemTap</code> probes are usable
+from assembly, C and C<tt>++</tt> languages<a name="DOCF5" href="#FOOT5"><sup>5</sup></a>.  
+
+</li><li> <code>DTrace</code> (<a href="http://oss.oracle.com/projects/DTrace">http://oss.oracle.com/projects/DTrace</a>)
+<acronym>USDT</acronym> probes.  <code>DTrace</code> probes are usable from C and
+C<tt>++</tt> languages.
+</li></ul>
+
+<a name="index-semaphores-on-static-probe-points"></a>
+<p>Some <code>SystemTap</code> probes have an associated semaphore variable;
+for instance, this happens automatically if you defined your probe
+using a DTrace-style <samp>.d</samp> file.  If your probe has a semaphore,
+<small>GDB</small> will automatically enable it when you specify a
+breakpoint using the &lsquo;<samp>-probe-stap</samp>&rsquo; notation.  But, if you put a
+breakpoint at a probe&rsquo;s location by some other method (e.g.,
+<code>break file:line</code>), then <small>GDB</small> will not automatically set
+the semaphore.  <code>DTrace</code> probes do not support semaphores.
+</p>
+<p>You can examine the available static static probes using <code>info
+probes</code>, with optional arguments:
+</p>
+<dl compact="compact">
+<dd><a name="index-info-probes"></a>
+</dd>
+<dt><code>info probes <span class="roman">[</span><var>type</var><span class="roman">]</span> <span class="roman">[</span><var>provider</var> <span class="roman">[</span><var>name</var> <span class="roman">[</span><var>objfile</var><span class="roman">]</span><span class="roman">]</span><span class="roman">]</span></code></dt>
+<dd><p>If given, <var>type</var> is either <code>stap</code> for listing
+<code>SystemTap</code> probes or <code>dtrace</code> for listing <code>DTrace</code>
+probes.  If omitted all probes are listed regardless of their types.
+</p>
+<p>If given, <var>provider</var> is a regular expression used to match against provider
+names when selecting which probes to list.  If omitted, probes by all
+probes from all providers are listed.
+</p>
+<p>If given, <var>name</var> is a regular expression to match against probe names
+when selecting which probes to list.  If omitted, probe names are not
+considered when deciding whether to display them.
+</p>
+<p>If given, <var>objfile</var> is a regular expression used to select which
+object files (executable or shared libraries) to examine.  If not
+given, all object files are considered.
+</p>
+</dd>
+<dt><code>info probes all</code></dt>
+<dd><p>List the available static probes, from all types.
+</p></dd>
+</dl>
+
+<a name="index-enabling-and-disabling-probes"></a>
+<p>Some probe points can be enabled and/or disabled.  The effect of
+enabling or disabling a probe depends on the type of probe being
+handled.  Some <code>DTrace</code> probes can be enabled or
+disabled, but <code>SystemTap</code> probes cannot be disabled.
+</p>
+<p>You can enable (or disable) one or more probes using the following
+commands, with optional arguments:
+</p>
+<dl compact="compact">
+<dd><a name="index-enable-probes"></a>
+</dd>
+<dt><code>enable probes <span class="roman">[</span><var>provider</var> <span class="roman">[</span><var>name</var> <span class="roman">[</span><var>objfile</var><span class="roman">]</span><span class="roman">]</span><span class="roman">]</span></code></dt>
+<dd><p>If given, <var>provider</var> is a regular expression used to match against
+provider names when selecting which probes to enable.  If omitted,
+all probes from all providers are enabled.
+</p>
+<p>If given, <var>name</var> is a regular expression to match against probe
+names when selecting which probes to enable.  If omitted, probe names
+are not considered when deciding whether to enable them.
+</p>
+<p>If given, <var>objfile</var> is a regular expression used to select which
+object files (executable or shared libraries) to examine.  If not
+given, all object files are considered.
+</p>
+<a name="index-disable-probes"></a>
+</dd>
+<dt><code>disable probes <span class="roman">[</span><var>provider</var> <span class="roman">[</span><var>name</var> <span class="roman">[</span><var>objfile</var><span class="roman">]</span><span class="roman">]</span><span class="roman">]</span></code></dt>
+<dd><p>See the <code>enable probes</code> command above for a description of the
+optional arguments accepted by this command.
+</p></dd>
+</dl>
+
+<a name="index-_0024_005fprobe_005farg_002c-convenience-variable"></a>
+<p>A probe may specify up to twelve arguments.  These are available at the
+point at which the probe is defined&mdash;that is, when the current PC is
+at the probe&rsquo;s location.  The arguments are available using the
+convenience variables (see <a href="Convenience-Vars.html#Convenience-Vars">Convenience Vars</a>)
+<code>$_probe_arg0</code>&hellip;<code>$_probe_arg11</code>.  In <code>SystemTap</code>
+probes each probe argument is an integer of the appropriate size;
+types are not preserved.  In <code>DTrace</code> probes types are preserved
+provided that they are recognized as such by <small>GDB</small>; otherwise
+the value of the probe argument will be a long integer.  The
+convenience variable <code>$_probe_argc</code> holds the number of arguments
+at the current probe point.
+</p>
+<p>These variables are always available, but attempts to access them at
+any location other than a probe point will cause <small>GDB</small> to give
+an error message.
+</p>
+
+<div class="footnote">
+<hr>
+<h4 class="footnotes-heading">Footnotes</h4>
+
+<h3><a name="FOOT4" href="#DOCF4">(4)</a></h3>
+<p>See
+<a href="http://sourceware.org/systemtap/wiki/AddingUserSpaceProbingToApps">http://sourceware.org/systemtap/wiki/AddingUserSpaceProbingToApps</a>
+for more information on how to add <code>SystemTap</code> <acronym>SDT</acronym>
+probes in your applications.</p>
+<h3><a name="FOOT5" href="#DOCF5">(5)</a></h3>
+<p>See
+<a href="http://sourceware.org/systemtap/wiki/UserSpaceProbeImplementation">http://sourceware.org/systemtap/wiki/UserSpaceProbeImplementation</a>
+for a good reference on how the <acronym>SDT</acronym> probes are implemented.</p>
+</div>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Error-in-Breakpoints.html#Error-in-Breakpoints" accesskey="n" rel="next">Error in Breakpoints</a>, Previous: <a href="Save-Breakpoints.html#Save-Breakpoints" accesskey="p" rel="prev">Save Breakpoints</a>, Up: <a href="Breakpoints.html#Breakpoints" accesskey="u" rel="up">Breakpoints</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

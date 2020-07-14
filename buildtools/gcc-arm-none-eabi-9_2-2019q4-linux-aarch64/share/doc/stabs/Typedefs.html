@@ -1,0 +1,104 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1992-2019 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>STABS: Typedefs</title>
+
+<meta name="description" content="STABS: Typedefs">
+<meta name="keywords" content="STABS: Typedefs">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Symbol-Types-Index.html#Symbol-Types-Index" rel="index" title="Symbol Types Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Types.html#Types" rel="up" title="Types">
+<link href="Unions.html#Unions" rel="next" title="Unions">
+<link href="Structures.html#Structures" rel="prev" title="Structures">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Typedefs"></a>
+<div class="header">
+<p>
+Next: <a href="Unions.html#Unions" accesskey="n" rel="next">Unions</a>, Previous: <a href="Structures.html#Structures" accesskey="p" rel="prev">Structures</a>, Up: <a href="Types.html#Types" accesskey="u" rel="up">Types</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Symbol-Types-Index.html#Symbol-Types-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Giving-a-Type-a-Name"></a>
+<h3 class="section">5.9 Giving a Type a Name</h3>
+
+<a name="index-N_005fLSYM_002c-for-types"></a>
+<a name="index-C_005fDECL_002c-for-types"></a>
+<p>To give a type a name, use the &lsquo;<samp>t</samp>&rsquo; symbol descriptor.  The type
+is specified by the type information (see <a href="String-Field.html#String-Field">String Field</a>) for the stab.
+For example,
+</p>
+<div class="example">
+<pre class="example">.stabs &quot;s_typedef:t16&quot;,128,0,0,0     # <span class="roman">128 is N_LSYM</span>
+</pre></div>
+
+<p>specifies that <code>s_typedef</code> refers to type number 16.  Such stabs
+have symbol type <code>N_LSYM</code> (or <code>C_DECL</code> for XCOFF).  (The Sun
+documentation mentions using <code>N_GSYM</code> in some cases).
+</p>
+<p>If you are specifying the tag name for a structure, union, or
+enumeration, use the &lsquo;<samp>T</samp>&rsquo; symbol descriptor instead.  I believe C is
+the only language with this feature.
+</p>
+<p>If the type is an opaque type (I believe this is a Modula-2 feature),
+AIX provides a type descriptor to specify it.  The type descriptor is
+&lsquo;<samp>o</samp>&rsquo; and is followed by a name.  I don&rsquo;t know what the name
+means&mdash;is it always the same as the name of the type, or is this type
+descriptor used with a nameless stab (see <a href="String-Field.html#String-Field">String Field</a>)?  There
+optionally follows a comma followed by type information which defines
+the type of this type.  If omitted, a semicolon is used in place of the
+comma and the type information, and the type is much like a generic
+pointer type&mdash;it has a known size but little else about it is
+specified.
+</p>
+
+
+
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Progspaces In Guile</title>
+
+<meta name="description" content="Debugging with GDB: Progspaces In Guile">
+<meta name="keywords" content="Debugging with GDB: Progspaces In Guile">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Guile-API.html#Guile-API" rel="up" title="Guile API">
+<link href="Objfiles-In-Guile.html#Objfiles-In-Guile" rel="next" title="Objfiles In Guile">
+<link href="Parameters-In-Guile.html#Parameters-In-Guile" rel="prev" title="Parameters In Guile">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Progspaces-In-Guile"></a>
+<div class="header">
+<p>
+Next: <a href="Objfiles-In-Guile.html#Objfiles-In-Guile" accesskey="n" rel="next">Objfiles In Guile</a>, Previous: <a href="Parameters-In-Guile.html#Parameters-In-Guile" accesskey="p" rel="prev">Parameters In Guile</a>, Up: <a href="Guile-API.html#Guile-API" accesskey="u" rel="up">Guile API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Program-Spaces-In-Guile"></a>
+<h4 class="subsubsection">23.3.3.13 Program Spaces In Guile</h4>
+
+<a name="index-progspaces-in-guile"></a>
+<a name="index-_003cgdb_003aprogspace_003e"></a>
+<p>A program space, or <em>progspace</em>, represents a symbolic view
+of an address space.
+It consists of all of the objfiles of the program.
+See <a href="Objfiles-In-Guile.html#Objfiles-In-Guile">Objfiles In Guile</a>.
+See <a href="Inferiors-and-Programs.html#Inferiors-and-Programs">program spaces</a>, for more details
+about program spaces.
+</p>
+<p>Each progspace is represented by an instance of the <code>&lt;gdb:progspace&gt;</code>
+smob.  See <a href="GDB-Scheme-Data-Types.html#GDB-Scheme-Data-Types">GDB Scheme Data Types</a>.
+</p>
+<p>The following progspace-related functions are available in the
+<code>(gdb)</code> module:
+</p>
+<dl>
+<dt><a name="index-progspace_003f"></a>Scheme Procedure: <strong>progspace?</strong> <em>object</em></dt>
+<dd><p>Return <code>#t</code> if <var>object</var> is a <code>&lt;gdb:progspace&gt;</code> object.
+Otherwise return <code>#f</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-progspace_002dvalid_003f"></a>Scheme Procedure: <strong>progspace-valid?</strong> <em>progspace</em></dt>
+<dd><p>Return <code>#t</code> if <var>progspace</var> is valid, <code>#f</code> if not.
+A <code>&lt;gdb:progspace&gt;</code> object can become invalid
+if the program it refers to is not loaded in <small>GDB</small> any longer.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-current_002dprogspace"></a>Scheme Procedure: <strong>current-progspace</strong></dt>
+<dd><p>This function returns the program space of the currently selected inferior.
+There is always a current progspace, this never returns <code>#f</code>.
+See <a href="Inferiors-and-Programs.html#Inferiors-and-Programs">Inferiors and Programs</a>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-progspaces"></a>Scheme Procedure: <strong>progspaces</strong></dt>
+<dd><p>Return a list of all the progspaces currently known to <small>GDB</small>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-progspace_002dfilename"></a>Scheme Procedure: <strong>progspace-filename</strong> <em>progspace</em></dt>
+<dd><p>Return the absolute file name of <var>progspace</var> as a string.
+This is the name of the file passed as the argument to the <code>file</code>
+or <code>symbol-file</code> commands.
+If the program space does not have an associated file name,
+then <code>#f</code> is returned.  This occurs, for example, when <small>GDB</small>
+is started without a program to debug.
+</p>
+<p>A <code>gdb:invalid-object-error</code> exception is thrown if <var>progspace</var>
+is invalid.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-progspace_002dobjfiles"></a>Scheme Procedure: <strong>progspace-objfiles</strong> <em>progspace</em></dt>
+<dd><p>Return the list of objfiles of <var>progspace</var>.
+The order of objfiles in the result is arbitrary.
+Each element is an object of type <code>&lt;gdb:objfile&gt;</code>.
+See <a href="Objfiles-In-Guile.html#Objfiles-In-Guile">Objfiles In Guile</a>.
+</p>
+<p>A <code>gdb:invalid-object-error</code> exception is thrown if <var>progspace</var>
+is invalid.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-progspace_002dpretty_002dprinters"></a>Scheme Procedure: <strong>progspace-pretty-printers</strong> <em>progspace</em></dt>
+<dd><p>Return the list of pretty-printers of <var>progspace</var>.
+Each element is an object of type <code>&lt;gdb:pretty-printer&gt;</code>.
+See <a href="Guile-Pretty-Printing-API.html#Guile-Pretty-Printing-API">Guile Pretty Printing API</a>, for more information.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-set_002dprogspace_002dpretty_002dprinters_0021"></a>Scheme Procedure: <strong>set-progspace-pretty-printers!</strong> <em>progspace printer-list</em></dt>
+<dd><p>Set the list of registered <code>&lt;gdb:pretty-printer&gt;</code> objects for
+<var>progspace</var> to <var>printer-list</var>.
+See <a href="Guile-Pretty-Printing-API.html#Guile-Pretty-Printing-API">Guile Pretty Printing API</a>, for more information.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Objfiles-In-Guile.html#Objfiles-In-Guile" accesskey="n" rel="next">Objfiles In Guile</a>, Previous: <a href="Parameters-In-Guile.html#Parameters-In-Guile" accesskey="p" rel="prev">Parameters In Guile</a>, Up: <a href="Guile-API.html#Guile-API" accesskey="u" rel="up">Guile API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

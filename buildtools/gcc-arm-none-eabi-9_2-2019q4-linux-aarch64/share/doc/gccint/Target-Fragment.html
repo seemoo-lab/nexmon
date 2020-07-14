@@ -1,0 +1,335 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Target Fragment</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Target Fragment">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Target Fragment">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Fragments.html#Fragments" rel="up" title="Fragments">
+<link href="Host-Fragment.html#Host-Fragment" rel="next" title="Host Fragment">
+<link href="Fragments.html#Fragments" rel="prev" title="Fragments">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Target-Fragment"></a>
+<div class="header">
+<p>
+Next: <a href="Host-Fragment.html#Host-Fragment" accesskey="n" rel="next">Host Fragment</a>, Up: <a href="Fragments.html#Fragments" accesskey="u" rel="up">Fragments</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Target-Makefile-Fragments"></a>
+<h3 class="section">20.1 Target Makefile Fragments</h3>
+<a name="index-target-makefile-fragment"></a>
+<a name="index-t_002dtarget"></a>
+
+<p>Target makefile fragments can set these Makefile variables.
+</p>
+<dl compact="compact">
+<dd><a name="index-LIBGCC2_005fCFLAGS"></a>
+</dd>
+<dt><code>LIBGCC2_CFLAGS</code></dt>
+<dd><p>Compiler flags to use when compiling <samp>libgcc2.c</samp>.
+</p>
+<a name="index-LIB2FUNCS_005fEXTRA"></a>
+</dd>
+<dt><code>LIB2FUNCS_EXTRA</code></dt>
+<dd><p>A list of source file names to be compiled or assembled and inserted
+into <samp>libgcc.a</samp>.
+</p>
+<a name="index-CRTSTUFF_005fT_005fCFLAGS"></a>
+</dd>
+<dt><code>CRTSTUFF_T_CFLAGS</code></dt>
+<dd><p>Special flags used when compiling <samp>crtstuff.c</samp>.
+See <a href="Initialization.html#Initialization">Initialization</a>.
+</p>
+<a name="index-CRTSTUFF_005fT_005fCFLAGS_005fS"></a>
+</dd>
+<dt><code>CRTSTUFF_T_CFLAGS_S</code></dt>
+<dd><p>Special flags used when compiling <samp>crtstuff.c</samp> for shared
+linking.  Used if you use <samp>crtbeginS.o</samp> and <samp>crtendS.o</samp>
+in <code>EXTRA-PARTS</code>.
+See <a href="Initialization.html#Initialization">Initialization</a>.
+</p>
+<a name="index-MULTILIB_005fOPTIONS"></a>
+</dd>
+<dt><code>MULTILIB_OPTIONS</code></dt>
+<dd><p>For some targets, invoking GCC in different ways produces objects
+that cannot be linked together.  For example, for some targets GCC
+produces both big and little endian code.  For these targets, you must
+arrange for multiple versions of <samp>libgcc.a</samp> to be compiled, one for
+each set of incompatible options.  When GCC invokes the linker, it
+arranges to link in the right version of <samp>libgcc.a</samp>, based on
+the command line options used.
+</p>
+<p>The <code>MULTILIB_OPTIONS</code> macro lists the set of options for which
+special versions of <samp>libgcc.a</samp> must be built.  Write options that
+are mutually incompatible side by side, separated by a slash.  Write
+options that may be used together separated by a space.  The build
+procedure will build all combinations of compatible options.
+</p>
+<p>For example, if you set <code>MULTILIB_OPTIONS</code> to &lsquo;<samp>m68000/m68020
+msoft-float</samp>&rsquo;, <samp>Makefile</samp> will build special versions of
+<samp>libgcc.a</samp> using the following sets of options:  <samp>-m68000</samp>,
+<samp>-m68020</samp>, <samp>-msoft-float</samp>, &lsquo;<samp>-m68000 -msoft-float</samp>&rsquo;, and
+&lsquo;<samp>-m68020 -msoft-float</samp>&rsquo;.
+</p>
+<a name="index-MULTILIB_005fDIRNAMES"></a>
+</dd>
+<dt><code>MULTILIB_DIRNAMES</code></dt>
+<dd><p>If <code>MULTILIB_OPTIONS</code> is used, this variable specifies the
+directory names that should be used to hold the various libraries.
+Write one element in <code>MULTILIB_DIRNAMES</code> for each element in
+<code>MULTILIB_OPTIONS</code>.  If <code>MULTILIB_DIRNAMES</code> is not used, the
+default value will be <code>MULTILIB_OPTIONS</code>, with all slashes treated
+as spaces.
+</p>
+<p><code>MULTILIB_DIRNAMES</code> describes the multilib directories using GCC
+conventions and is applied to directories that are part of the GCC
+installation.  When multilib-enabled, the compiler will add a
+subdirectory of the form <var>prefix</var>/<var>multilib</var> before each
+directory in the search path for libraries and crt files.
+</p>
+<p>For example, if <code>MULTILIB_OPTIONS</code> is set to &lsquo;<samp>m68000/m68020
+msoft-float</samp>&rsquo;, then the default value of <code>MULTILIB_DIRNAMES</code> is
+&lsquo;<samp>m68000 m68020 msoft-float</samp>&rsquo;.  You may specify a different value if
+you desire a different set of directory names.
+</p>
+<a name="index-MULTILIB_005fMATCHES"></a>
+</dd>
+<dt><code>MULTILIB_MATCHES</code></dt>
+<dd><p>Sometimes the same option may be written in two different ways.  If an
+option is listed in <code>MULTILIB_OPTIONS</code>, GCC needs to know about
+any synonyms.  In that case, set <code>MULTILIB_MATCHES</code> to a list of
+items of the form &lsquo;<samp>option=option</samp>&rsquo; to describe all relevant
+synonyms.  For example, &lsquo;<samp>m68000=mc68000 m68020=mc68020</samp>&rsquo;.
+</p>
+<a name="index-MULTILIB_005fEXCEPTIONS"></a>
+</dd>
+<dt><code>MULTILIB_EXCEPTIONS</code></dt>
+<dd><p>Sometimes when there are multiple sets of <code>MULTILIB_OPTIONS</code> being
+specified, there are combinations that should not be built.  In that
+case, set <code>MULTILIB_EXCEPTIONS</code> to be all of the switch exceptions
+in shell case syntax that should not be built.
+</p>
+<p>For example the ARM processor cannot execute both hardware floating
+point instructions and the reduced size THUMB instructions at the same
+time, so there is no need to build libraries with both of these
+options enabled.  Therefore <code>MULTILIB_EXCEPTIONS</code> is set to:
+</p><div class="smallexample">
+<pre class="smallexample">*mthumb/*mhard-float*
+</pre></div>
+
+<a name="index-MULTILIB_005fREQUIRED"></a>
+</dd>
+<dt><code>MULTILIB_REQUIRED</code></dt>
+<dd><p>Sometimes when there are only a few combinations are required, it would
+be a big effort to come up with a <code>MULTILIB_EXCEPTIONS</code> list to
+cover all undesired ones.  In such a case, just listing all the required
+combinations in <code>MULTILIB_REQUIRED</code> would be more straightforward.
+</p>
+<p>The way to specify the entries in <code>MULTILIB_REQUIRED</code> is same with
+the way used for <code>MULTILIB_EXCEPTIONS</code>, only this time what are
+required will be specified.  Suppose there are multiple sets of
+<code>MULTILIB_OPTIONS</code> and only two combinations are required, one
+for ARMv7-M and one for ARMv7-R with hard floating-point ABI and FPU, the
+<code>MULTILIB_REQUIRED</code> can be set to:
+</p><div class="smallexample">
+<pre class="smallexample"><code>MULTILIB_REQUIRED</code> =  mthumb/march=armv7-m
+<code>MULTILIB_REQUIRED</code> += march=armv7-r/mfloat-abi=hard/mfpu=vfpv3-d16
+</pre></div>
+
+<p>The <code>MULTILIB_REQUIRED</code> can be used together with
+<code>MULTILIB_EXCEPTIONS</code>.  The option combinations generated from
+<code>MULTILIB_OPTIONS</code> will be filtered by <code>MULTILIB_EXCEPTIONS</code>
+and then by <code>MULTILIB_REQUIRED</code>.
+</p>
+<a name="index-MULTILIB_005fREUSE"></a>
+</dd>
+<dt><code>MULTILIB_REUSE</code></dt>
+<dd><p>Sometimes it is desirable to reuse one existing multilib for different
+sets of options.  Such kind of reuse can minimize the number of multilib
+variants.  And for some targets it is better to reuse an existing multilib
+than to fall back to default multilib when there is no corresponding multilib.
+This can be done by adding reuse rules to <code>MULTILIB_REUSE</code>.
+</p>
+<p>A reuse rule is comprised of two parts connected by equality sign.  The left
+part is the option set used to build multilib and the right part is the option
+set that will reuse this multilib.  Both parts should only use options
+specified in <code>MULTILIB_OPTIONS</code> and the equality signs found in options
+name should be replaced with periods.  An explicit period in the rule can be
+escaped by preceding it with a backslash.  The order of options in the left
+part matters and should be same with those specified in
+<code>MULTILIB_REQUIRED</code> or aligned with the order in <code>MULTILIB_OPTIONS</code>.
+There is no such limitation for options in the right part as we don&rsquo;t build
+multilib from them.
+</p>
+<p><code>MULTILIB_REUSE</code> is different from <code>MULTILIB_MATCHES</code> in that it
+sets up relations between two option sets rather than two options.  Here is an
+example to demo how we reuse libraries built in Thumb mode for applications built
+in ARM mode:
+</p><div class="smallexample">
+<pre class="smallexample"><code>MULTILIB_REUSE</code> = mthumb/march.armv7-r=marm/march.armv7-r
+</pre></div>
+
+<p>Before the advent of <code>MULTILIB_REUSE</code>, GCC select multilib by comparing command
+line options with options used to build multilib.  The <code>MULTILIB_REUSE</code> is
+complementary to that way.  Only when the original comparison matches nothing it will
+work to see if it is OK to reuse some existing multilib.
+</p>
+<a name="index-MULTILIB_005fEXTRA_005fOPTS"></a>
+</dd>
+<dt><code>MULTILIB_EXTRA_OPTS</code></dt>
+<dd><p>Sometimes it is desirable that when building multiple versions of
+<samp>libgcc.a</samp> certain options should always be passed on to the
+compiler.  In that case, set <code>MULTILIB_EXTRA_OPTS</code> to be the list
+of options to be used for all builds.  If you set this, you should
+probably set <code>CRTSTUFF_T_CFLAGS</code> to a dash followed by it.
+</p>
+<a name="index-MULTILIB_005fOSDIRNAMES"></a>
+</dd>
+<dt><code>MULTILIB_OSDIRNAMES</code></dt>
+<dd><p>If <code>MULTILIB_OPTIONS</code> is used, this variable specifies 
+a list of subdirectory names, that are used to modify the search
+path depending on the chosen multilib.  Unlike <code>MULTILIB_DIRNAMES</code>,
+<code>MULTILIB_OSDIRNAMES</code> describes the multilib directories using
+operating systems conventions, and is applied to the directories such as
+<code>lib</code> or those in the <code>LIBRARY_PATH</code> environment variable.
+The format is either the same as of
+<code>MULTILIB_DIRNAMES</code>, or a set of mappings.  When it is the same
+as <code>MULTILIB_DIRNAMES</code>, it describes the multilib directories
+using operating system conventions, rather than GCC conventions.  When it is a set
+of mappings of the form <var>gccdir</var>=<var>osdir</var>, the left side gives
+the GCC convention and the right gives the equivalent OS defined
+location.  If the <var>osdir</var> part begins with a &lsquo;<samp>!</samp>&rsquo;,
+GCC will not search in the non-multilib directory and use
+exclusively the multilib directory.  Otherwise, the compiler will
+examine the search path for libraries and crt files twice; the first
+time it will add <var>multilib</var> to each directory in the search path,
+the second it will not.
+</p>
+<p>For configurations that support both multilib and multiarch,
+<code>MULTILIB_OSDIRNAMES</code> also encodes the multiarch name, thus
+subsuming <code>MULTIARCH_DIRNAME</code>.  The multiarch name is appended to
+each directory name, separated by a colon (e.g.
+&lsquo;<samp>../lib32:i386-linux-gnu</samp>&rsquo;).
+</p>
+<p>Each multiarch subdirectory will be searched before the corresponding OS
+multilib directory, for example &lsquo;<samp>/lib/i386-linux-gnu</samp>&rsquo; before
+&lsquo;<samp>/lib/../lib32</samp>&rsquo;.  The multiarch name will also be used to modify the
+system header search path, as explained for <code>MULTIARCH_DIRNAME</code>.
+</p>
+<a name="index-MULTIARCH_005fDIRNAME"></a>
+</dd>
+<dt><code>MULTIARCH_DIRNAME</code></dt>
+<dd><p>This variable specifies the multiarch name for configurations that are
+multiarch-enabled but not multilibbed configurations.
+</p>
+<p>The multiarch name is used to augment the search path for libraries, crt
+files and system header files with additional locations.  The compiler
+will add a multiarch subdirectory of the form
+<var>prefix</var>/<var>multiarch</var> before each directory in the library and
+crt search path.  It will also add two directories
+<code>LOCAL_INCLUDE_DIR</code>/<var>multiarch</var> and
+<code>NATIVE_SYSTEM_HEADER_DIR</code>/<var>multiarch</var>) to the system header
+search path, respectively before <code>LOCAL_INCLUDE_DIR</code> and
+<code>NATIVE_SYSTEM_HEADER_DIR</code>.
+</p>
+<p><code>MULTIARCH_DIRNAME</code> is not used for configurations that support
+both multilib and multiarch.  In that case, multiarch names are encoded
+in <code>MULTILIB_OSDIRNAMES</code> instead.
+</p>
+<p>More documentation about multiarch can be found at
+<a href="https://wiki.debian.org/Multiarch">https://wiki.debian.org/Multiarch</a>.
+</p>
+<a name="index-SPECS"></a>
+</dd>
+<dt><code>SPECS</code></dt>
+<dd><p>Unfortunately, setting <code>MULTILIB_EXTRA_OPTS</code> is not enough, since
+it does not affect the build of target libraries, at least not the
+build of the default multilib.  One possible work-around is to use
+<code>DRIVER_SELF_SPECS</code> to bring options from the <samp>specs</samp> file
+as if they had been passed in the compiler driver command line.
+However, you don&rsquo;t want to be adding these options after the toolchain
+is installed, so you can instead tweak the <samp>specs</samp> file that will
+be used during the toolchain build, while you still install the
+original, built-in <samp>specs</samp>.  The trick is to set <code>SPECS</code> to
+some other filename (say <samp>specs.install</samp>), that will then be
+created out of the built-in specs, and introduce a <samp>Makefile</samp>
+rule to generate the <samp>specs</samp> file that&rsquo;s going to be used at
+build time out of your <samp>specs.install</samp>.
+</p>
+</dd>
+<dt><code>T_CFLAGS</code></dt>
+<dd><p>These are extra flags to pass to the C compiler.  They are used both
+when building GCC, and when compiling things with the just-built GCC.
+This variable is deprecated and should not be used.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Host-Fragment.html#Host-Fragment" accesskey="n" rel="next">Host Fragment</a>, Up: <a href="Fragments.html#Fragments" accesskey="u" rel="up">Fragments</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

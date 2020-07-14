@@ -1,0 +1,186 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Commands For Text</title>
+
+<meta name="description" content="Debugging with GDB: Commands For Text">
+<meta name="keywords" content="Debugging with GDB: Commands For Text">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Bindable-Readline-Commands.html#Bindable-Readline-Commands" rel="up" title="Bindable Readline Commands">
+<link href="Commands-For-Killing.html#Commands-For-Killing" rel="next" title="Commands For Killing">
+<link href="Commands-For-History.html#Commands-For-History" rel="prev" title="Commands For History">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Commands-For-Text"></a>
+<div class="header">
+<p>
+Next: <a href="Commands-For-Killing.html#Commands-For-Killing" accesskey="n" rel="next">Commands For Killing</a>, Previous: <a href="Commands-For-History.html#Commands-For-History" accesskey="p" rel="prev">Commands For History</a>, Up: <a href="Bindable-Readline-Commands.html#Bindable-Readline-Commands" accesskey="u" rel="up">Bindable Readline Commands</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Commands-For-Changing-Text"></a>
+<h4 class="subsection">32.4.3 Commands For Changing Text</h4>
+
+<dl compact="compact">
+<dt><code>delete-char (C-d)</code>
+<a name="index-delete_002dchar-_0028C_002dd_0029"></a>
+</dt>
+<dd><p>Delete the character at point.  If point is at the
+beginning of the line, there are no characters in the line, and
+the last character typed was not bound to <code>delete-char</code>, then
+return <small>EOF</small>.
+</p>
+</dd>
+<dt><code>backward-delete-char (Rubout)</code>
+<a name="index-backward_002ddelete_002dchar-_0028Rubout_0029"></a>
+</dt>
+<dd><p>Delete the character behind the cursor.  A numeric argument means
+to kill the characters instead of deleting them.
+</p>
+</dd>
+<dt><code>forward-backward-delete-char ()</code>
+<a name="index-forward_002dbackward_002ddelete_002dchar-_0028_0029"></a>
+</dt>
+<dd><p>Delete the character under the cursor, unless the cursor is at the
+end of the line, in which case the character behind the cursor is
+deleted.  By default, this is not bound to a key.
+</p>
+</dd>
+<dt><code>quoted-insert (C-q or C-v)</code>
+<a name="index-quoted_002dinsert-_0028C_002dq-or-C_002dv_0029"></a>
+</dt>
+<dd><p>Add the next character typed to the line verbatim.  This is
+how to insert key sequences like <kbd>C-q</kbd>, for example.
+</p>
+</dd>
+<dt><code>tab-insert (M-<span class="key">TAB</span>)</code>
+<a name="index-tab_002dinsert-_0028M_002dTAB_0029"></a>
+</dt>
+<dd><p>Insert a tab character.
+</p>
+</dd>
+<dt><code>self-insert (a, b, A, 1, !, &hellip;)</code>
+<a name="index-self_002dinsert-_0028a_002c-b_002c-A_002c-1_002c-_0021_002c-_2026_0029"></a>
+</dt>
+<dd><p>Insert yourself.
+</p>
+</dd>
+<dt><code>transpose-chars (C-t)</code>
+<a name="index-transpose_002dchars-_0028C_002dt_0029"></a>
+</dt>
+<dd><p>Drag the character before the cursor forward over
+the character at the cursor, moving the
+cursor forward as well.  If the insertion point
+is at the end of the line, then this
+transposes the last two characters of the line.
+Negative arguments have no effect.
+</p>
+</dd>
+<dt><code>transpose-words (M-t)</code>
+<a name="index-transpose_002dwords-_0028M_002dt_0029"></a>
+</dt>
+<dd><p>Drag the word before point past the word after point,
+moving point past that word as well.
+If the insertion point is at the end of the line, this transposes
+the last two words on the line.
+</p>
+</dd>
+<dt><code>upcase-word (M-u)</code>
+<a name="index-upcase_002dword-_0028M_002du_0029"></a>
+</dt>
+<dd><p>Uppercase the current (or following) word.  With a negative argument,
+uppercase the previous word, but do not move the cursor.
+</p>
+</dd>
+<dt><code>downcase-word (M-l)</code>
+<a name="index-downcase_002dword-_0028M_002dl_0029"></a>
+</dt>
+<dd><p>Lowercase the current (or following) word.  With a negative argument,
+lowercase the previous word, but do not move the cursor.
+</p>
+</dd>
+<dt><code>capitalize-word (M-c)</code>
+<a name="index-capitalize_002dword-_0028M_002dc_0029"></a>
+</dt>
+<dd><p>Capitalize the current (or following) word.  With a negative argument,
+capitalize the previous word, but do not move the cursor.
+</p>
+</dd>
+<dt><code>overwrite-mode ()</code>
+<a name="index-overwrite_002dmode-_0028_0029"></a>
+</dt>
+<dd><p>Toggle overwrite mode.  With an explicit positive numeric argument,
+switches to overwrite mode.  With an explicit non-positive numeric
+argument, switches to insert mode.  This command affects only
+<code>emacs</code> mode; <code>vi</code> mode does overwrite differently.
+Each call to <code>readline()</code> starts in insert mode.
+</p>
+<p>In overwrite mode, characters bound to <code>self-insert</code> replace
+the text at point rather than pushing the text to the right.
+Characters bound to <code>backward-delete-char</code> replace the character
+before point with a space.
+</p>
+<p>By default, this command is unbound.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Commands-For-Killing.html#Commands-For-Killing" accesskey="n" rel="next">Commands For Killing</a>, Previous: <a href="Commands-For-History.html#Commands-For-History" accesskey="p" rel="prev">Commands For History</a>, Up: <a href="Bindable-Readline-Commands.html#Bindable-Readline-Commands" accesskey="u" rel="up">Bindable Readline Commands</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

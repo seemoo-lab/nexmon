@@ -1,0 +1,644 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: Code Gen Options</title>
+
+<meta name="description" content="The GNU Fortran Compiler: Code Gen Options">
+<meta name="keywords" content="The GNU Fortran Compiler: Code Gen Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Invoking-GNU-Fortran.html#Invoking-GNU-Fortran" rel="up" title="Invoking GNU Fortran">
+<link href="Interoperability-Options.html#Interoperability-Options" rel="next" title="Interoperability Options">
+<link href="Runtime-Options.html#Runtime-Options" rel="prev" title="Runtime Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Code-Gen-Options"></a>
+<div class="header">
+<p>
+Next: <a href="Interoperability-Options.html#Interoperability-Options" accesskey="n" rel="next">Interoperability Options</a>, Previous: <a href="Runtime-Options.html#Runtime-Options" accesskey="p" rel="prev">Runtime Options</a>, Up: <a href="Invoking-GNU-Fortran.html#Invoking-GNU-Fortran" accesskey="u" rel="up">Invoking GNU Fortran</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Options-for-code-generation-conventions"></a>
+<h3 class="section">2.9 Options for code generation conventions</h3>
+<a name="index-code-generation_002c-conventions"></a>
+<a name="index-options_002c-code-generation"></a>
+<a name="index-options_002c-run_002dtime"></a>
+
+<p>These machine-independent options control the interface conventions
+used in code generation.
+</p>
+<p>Most of them have both positive and negative forms; the negative form
+of <samp>-ffoo</samp> would be <samp>-fno-foo</samp>.  In the table below, only
+one of the forms is listed&mdash;the one which is not the default.  You
+can figure out the other form by either removing <samp>no-</samp> or adding
+it.
+</p>
+<dl compact="compact">
+<dt><code>-fno-automatic</code></dt>
+<dd><a name="index-fno_002dautomatic"></a>
+<a name="index-SAVE-statement"></a>
+<a name="index-statement_002c-SAVE"></a>
+<p>Treat each program unit (except those marked as RECURSIVE) as if the
+<code>SAVE</code> statement were specified for every local variable and array
+referenced in it. Does not affect common blocks. (Some Fortran compilers
+provide this option under the name <samp>-static</samp> or <samp>-save</samp>.)
+The default, which is <samp>-fautomatic</samp>, uses the stack for local
+variables smaller than the value given by <samp>-fmax-stack-var-size</samp>.
+Use the option <samp>-frecursive</samp> to use no static memory. 
+</p>
+<p>Local variables or arrays having an explicit <code>SAVE</code> attribute are
+silently ignored unless the <samp>-pedantic</samp> option is added.
+</p>
+</dd>
+<dt><code>-ff2c</code></dt>
+<dd><a name="index-ff2c"></a>
+<a name="index-calling-convention"></a>
+<a name="index-f2c-calling-convention"></a>
+<a name="index-g77-calling-convention"></a>
+<a name="index-libf2c-calling-convention"></a>
+<p>Generate code designed to be compatible with code generated
+by <code>g77</code> and <code>f2c</code>.
+</p>
+<p>The calling conventions used by <code>g77</code> (originally implemented
+in <code>f2c</code>) require functions that return type
+default <code>REAL</code> to actually return the C type <code>double</code>, and
+functions that return type <code>COMPLEX</code> to return the values via an
+extra argument in the calling sequence that points to where to
+store the return value.  Under the default GNU calling conventions, such
+functions simply return their results as they would in GNU
+C&mdash;default <code>REAL</code> functions return the C type <code>float</code>, and
+<code>COMPLEX</code> functions return the GNU C type <code>complex</code>.
+Additionally, this option implies the <samp>-fsecond-underscore</samp>
+option, unless <samp>-fno-second-underscore</samp> is explicitly requested.
+</p>
+<p>This does not affect the generation of code that interfaces with
+the <code>libgfortran</code> library.
+</p>
+<p><em>Caution:</em> It is not a good idea to mix Fortran code compiled with
+<samp>-ff2c</samp> with code compiled with the default <samp>-fno-f2c</samp>
+calling conventions as, calling <code>COMPLEX</code> or default <code>REAL</code>
+functions between program parts which were compiled with different
+calling conventions will break at execution time.
+</p>
+<p><em>Caution:</em> This will break code which passes intrinsic functions
+of type default <code>REAL</code> or <code>COMPLEX</code> as actual arguments, as
+the library implementations use the <samp>-fno-f2c</samp> calling conventions.
+</p>
+</dd>
+<dt><code>-fno-underscoring</code></dt>
+<dd><a name="index-fno_002dunderscoring"></a>
+<a name="index-underscore"></a>
+<a name="index-symbol-names_002c-underscores"></a>
+<a name="index-transforming-symbol-names"></a>
+<a name="index-symbol-names_002c-transforming"></a>
+<p>Do not transform names of entities specified in the Fortran
+source file by appending underscores to them.
+</p>
+<p>With <samp>-funderscoring</samp> in effect, GNU Fortran appends one
+underscore to external names with no underscores.  This is done to ensure
+compatibility with code produced by many UNIX Fortran compilers.
+</p>
+<p><em>Caution</em>: The default behavior of GNU Fortran is
+incompatible with <code>f2c</code> and <code>g77</code>, please use the
+<samp>-ff2c</samp> option if you want object files compiled with
+GNU Fortran to be compatible with object code created with these
+tools.
+</p>
+<p>Use of <samp>-fno-underscoring</samp> is not recommended unless you are
+experimenting with issues such as integration of GNU Fortran into
+existing system environments (vis-&agrave;-vis existing libraries, tools,
+and so on).
+</p>
+<p>For example, with <samp>-funderscoring</samp>, and assuming that <code>j()</code> and
+<code>max_count()</code> are external functions while <code>my_var</code> and
+<code>lvar</code> are local variables, a statement like
+</p><div class="smallexample">
+<pre class="smallexample">I = J() + MAX_COUNT (MY_VAR, LVAR)
+</pre></div>
+<p>is implemented as something akin to:
+</p><div class="smallexample">
+<pre class="smallexample">i = j_() + max_count__(&amp;my_var__, &amp;lvar);
+</pre></div>
+
+<p>With <samp>-fno-underscoring</samp>, the same statement is implemented as:
+</p>
+<div class="smallexample">
+<pre class="smallexample">i = j() + max_count(&amp;my_var, &amp;lvar);
+</pre></div>
+
+<p>Use of <samp>-fno-underscoring</samp> allows direct specification of
+user-defined names while debugging and when interfacing GNU Fortran
+code with other languages.
+</p>
+<p>Note that just because the names match does <em>not</em> mean that the
+interface implemented by GNU Fortran for an external name matches the
+interface implemented by some other language for that same name.
+That is, getting code produced by GNU Fortran to link to code produced
+by some other compiler using this or any other method can be only a
+small part of the overall solution&mdash;getting the code generated by
+both compilers to agree on issues other than naming can require
+significant effort, and, unlike naming disagreements, linkers normally
+cannot detect disagreements in these other areas.
+</p>
+<p>Also, note that with <samp>-fno-underscoring</samp>, the lack of appended
+underscores introduces the very real possibility that a user-defined
+external name will conflict with a name in a system library, which
+could make finding unresolved-reference bugs quite difficult in some
+cases&mdash;they might occur at program run time, and show up only as
+buggy behavior at run time.
+</p>
+<p>In future versions of GNU Fortran we hope to improve naming and linking
+issues so that debugging always involves using the names as they appear
+in the source, even if the names as seen by the linker are mangled to
+prevent accidental linking between procedures with incompatible
+interfaces.
+</p>
+</dd>
+<dt><code>-fsecond-underscore</code></dt>
+<dd><a name="index-fsecond_002dunderscore"></a>
+<a name="index-underscore-1"></a>
+<a name="index-symbol-names_002c-underscores-1"></a>
+<a name="index-transforming-symbol-names-1"></a>
+<a name="index-symbol-names_002c-transforming-1"></a>
+<a name="index-f2c-calling-convention-1"></a>
+<a name="index-g77-calling-convention-1"></a>
+<a name="index-libf2c-calling-convention-1"></a>
+<p>By default, GNU Fortran appends an underscore to external
+names.  If this option is used GNU Fortran appends two
+underscores to names with underscores and one underscore to external names
+with no underscores.  GNU Fortran also appends two underscores to
+internal names with underscores to avoid naming collisions with external
+names.
+</p>
+<p>This option has no effect if <samp>-fno-underscoring</samp> is
+in effect.  It is implied by the <samp>-ff2c</samp> option.
+</p>
+<p>Otherwise, with this option, an external name such as <code>MAX_COUNT</code>
+is implemented as a reference to the link-time external symbol
+<code>max_count__</code>, instead of <code>max_count_</code>.  This is required
+for compatibility with <code>g77</code> and <code>f2c</code>, and is implied
+by use of the <samp>-ff2c</samp> option.
+</p>
+</dd>
+<dt><code>-fcoarray=<var>&lt;keyword&gt;</var></code></dt>
+<dd><a name="index-fcoarray"></a>
+<a name="index-coarrays"></a>
+
+<dl compact="compact">
+<dt>&lsquo;<samp>none</samp>&rsquo;</dt>
+<dd><p>Disable coarray support; using coarray declarations and image-control
+statements will produce a compile-time error. (Default)
+</p>
+</dd>
+<dt>&lsquo;<samp>single</samp>&rsquo;</dt>
+<dd><p>Single-image mode, i.e. <code>num_images()</code> is always one.
+</p>
+</dd>
+<dt>&lsquo;<samp>lib</samp>&rsquo;</dt>
+<dd><p>Library-based coarray parallelization; a suitable GNU Fortran coarray
+library needs to be linked.
+</p></dd>
+</dl>
+
+
+</dd>
+<dt><code>-fcheck=<var>&lt;keyword&gt;</var></code></dt>
+<dd><a name="index-fcheck"></a>
+<a name="index-array_002c-bounds-checking"></a>
+<a name="index-bounds-checking"></a>
+<a name="index-pointer-checking"></a>
+<a name="index-memory-checking"></a>
+<a name="index-range-checking"></a>
+<a name="index-subscript-checking"></a>
+<a name="index-checking-subscripts"></a>
+<a name="index-run_002dtime-checking"></a>
+<a name="index-checking-array-temporaries"></a>
+
+<p>Enable the generation of run-time checks; the argument shall be
+a comma-delimited list of the following keywords.  Prefixing a check with
+<samp>no-</samp> disables it if it was activated by a previous specification.
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>all</samp>&rsquo;</dt>
+<dd><p>Enable all run-time test of <samp>-fcheck</samp>.
+</p>
+</dd>
+<dt>&lsquo;<samp>array-temps</samp>&rsquo;</dt>
+<dd><p>Warns at run time when for passing an actual argument a temporary array
+had to be generated. The information generated by this warning is
+sometimes useful in optimization, in order to avoid such temporaries.
+</p>
+<p>Note: The warning is only printed once per location.
+</p>
+</dd>
+<dt>&lsquo;<samp>bounds</samp>&rsquo;</dt>
+<dd><p>Enable generation of run-time checks for array subscripts
+and against the declared minimum and maximum values.  It also
+checks array indices for assumed and deferred
+shape arrays against the actual allocated bounds and ensures that all string
+lengths are equal for character array constructors without an explicit
+typespec.
+</p>
+<p>Some checks require that <samp>-fcheck=bounds</samp> is set for
+the compilation of the main program.
+</p>
+<p>Note: In the future this may also include other forms of checking, e.g.,
+checking substring references.
+</p>
+</dd>
+<dt>&lsquo;<samp>do</samp>&rsquo;</dt>
+<dd><p>Enable generation of run-time checks for invalid modification of loop
+iteration variables.
+</p>
+</dd>
+<dt>&lsquo;<samp>mem</samp>&rsquo;</dt>
+<dd><p>Enable generation of run-time checks for memory allocation.
+Note: This option does not affect explicit allocations using the
+<code>ALLOCATE</code> statement, which will be always checked.
+</p>
+</dd>
+<dt>&lsquo;<samp>pointer</samp>&rsquo;</dt>
+<dd><p>Enable generation of run-time checks for pointers and allocatables.
+</p>
+</dd>
+<dt>&lsquo;<samp>recursion</samp>&rsquo;</dt>
+<dd><p>Enable generation of run-time checks for recursively called subroutines and
+functions which are not marked as recursive. See also <samp>-frecursive</samp>.
+Note: This check does not work for OpenMP programs and is disabled if used
+together with <samp>-frecursive</samp> and <samp>-fopenmp</samp>.
+</p></dd>
+</dl>
+
+<p>Example: Assuming you have a file <samp>foo.f90</samp>, the command
+</p><div class="smallexample">
+<pre class="smallexample">  gfortran -fcheck=all,no-array-temps foo.f90
+</pre></div>
+<p>will compile the file with all checks enabled as specified above except
+warnings for generated array temporaries.
+</p>
+
+</dd>
+<dt><code>-fbounds-check</code></dt>
+<dd><a name="index-fbounds_002dcheck"></a>
+<p>Deprecated alias for <samp>-fcheck=bounds</samp>.
+</p>
+</dd>
+<dt><code>-ftail-call-workaround</code></dt>
+<dt><code>-ftail-call-workaround=<var>n</var></code></dt>
+<dd><a name="index-tail_002dcall_002dworkaround"></a>
+<p>Some C interfaces to Fortran codes violate the gfortran ABI by
+omitting the hidden character length arguments as described in
+See <a href="Argument-passing-conventions.html#Argument-passing-conventions">Argument passing conventions</a>.  This can lead to crashes
+because pushing arguments for tail calls can overflow the stack.
+</p>
+<p>To provide a workaround for existing binary packages, this option
+disables tail call optimization for gfortran procedures with character
+arguments.  With <samp>-ftail-call-workaround=2</samp> tail call optimization
+is disabled in all gfortran procedures with character arguments,
+with <samp>-ftail-call-workaround=1</samp> or equivalent
+<samp>-ftail-call-workaround</samp> only in gfortran procedures with character
+arguments that call implicitly prototyped procedures.
+</p>
+<p>Using this option can lead to problems including crashes due to
+insufficient stack space.
+</p>
+<p>It is <em>very strongly</em> recommended to fix the code in question.
+The <samp>-fc-prototypes-external</samp> option can be used to generate
+prototypes which conform to gfortran&rsquo;s ABI, for inclusion in the
+source code.
+</p>
+<p>Support for this option will likely be withdrawn in a future release
+of gfortran.
+</p>
+<p>The negative form, <samp>-fno-tail-call-workaround</samp> or equivalent
+<samp>-ftail-call-workaround=0</samp>, can be used to disable this option.
+</p>
+<p>Default is currently <samp>-ftail-call-workaround</samp>, this will change
+in future releases.
+</p>
+</dd>
+<dt><code>-fcheck-array-temporaries</code></dt>
+<dd><a name="index-fcheck_002darray_002dtemporaries"></a>
+<p>Deprecated alias for <samp>-fcheck=array-temps</samp>.
+</p>
+</dd>
+<dt><code>-fmax-array-constructor=<var>n</var></code></dt>
+<dd><a name="index-fmax_002darray_002dconstructor"></a>
+<p>This option can be used to increase the upper limit permitted in 
+array constructors.  The code below requires this option to expand
+the array at compile time.
+</p>
+<div class="smallexample">
+<pre class="smallexample">program test
+implicit none
+integer j
+integer, parameter :: n = 100000
+integer, parameter :: i(n) = (/ (2*j, j = 1, n) /)
+print '(10(I0,1X))', i
+end program test
+</pre></div>
+
+<p><em>Caution:  This option can lead to long compile times and excessively
+large object files.</em>
+</p>
+<p>The default value for <var>n</var> is 65535.
+</p>
+
+</dd>
+<dt><code>-fmax-stack-var-size=<var>n</var></code></dt>
+<dd><a name="index-fmax_002dstack_002dvar_002dsize"></a>
+<p>This option specifies the size in bytes of the largest array that will be put
+on the stack; if the size is exceeded static memory is used (except in
+procedures marked as RECURSIVE). Use the option <samp>-frecursive</samp> to
+allow for recursive procedures which do not have a RECURSIVE attribute or
+for parallel programs. Use <samp>-fno-automatic</samp> to never use the stack.
+</p>
+<p>This option currently only affects local arrays declared with constant
+bounds, and may not apply to all character variables.
+Future versions of GNU Fortran may improve this behavior.
+</p>
+<p>The default value for <var>n</var> is 32768.
+</p>
+</dd>
+<dt><code>-fstack-arrays</code></dt>
+<dd><a name="index-fstack_002darrays"></a>
+<p>Adding this option will make the Fortran compiler put all arrays of
+unknown size and array temporaries onto stack memory.  If your program uses very
+large local arrays it is possible that you will have to extend your runtime
+limits for stack memory on some operating systems. This flag is enabled
+by default at optimization level <samp>-Ofast</samp> unless
+<samp>-fmax-stack-var-size</samp> is specified.
+</p>
+</dd>
+<dt><code>-fpack-derived</code></dt>
+<dd><a name="index-fpack_002dderived"></a>
+<a name="index-structure-packing"></a>
+<p>This option tells GNU Fortran to pack derived type members as closely as
+possible.  Code compiled with this option is likely to be incompatible
+with code compiled without this option, and may execute slower.
+</p>
+</dd>
+<dt><code>-frepack-arrays</code></dt>
+<dd><a name="index-frepack_002darrays"></a>
+<a name="index-repacking-arrays"></a>
+<p>In some circumstances GNU Fortran may pass assumed shape array
+sections via a descriptor describing a noncontiguous area of memory.
+This option adds code to the function prologue to repack the data into
+a contiguous block at runtime.
+</p>
+<p>This should result in faster accesses to the array.  However it can introduce
+significant overhead to the function call, especially  when the passed data
+is noncontiguous.
+</p>
+</dd>
+<dt><code>-fshort-enums</code></dt>
+<dd><a name="index-fshort_002denums"></a>
+<p>This option is provided for interoperability with C code that was
+compiled with the <samp>-fshort-enums</samp> option.  It will make
+GNU Fortran choose the smallest <code>INTEGER</code> kind a given
+enumerator set will fit in, and give all its enumerators this kind.
+</p>
+</dd>
+<dt><code>-fexternal-blas</code></dt>
+<dd><a name="index-fexternal_002dblas"></a>
+<p>This option will make <code>gfortran</code> generate calls to BLAS functions
+for some matrix operations like <code>MATMUL</code>, instead of using our own
+algorithms, if the size of the matrices involved is larger than a given
+limit (see <samp>-fblas-matmul-limit</samp>).  This may be profitable if an
+optimized vendor BLAS library is available.  The BLAS library will have
+to be specified at link time.
+</p>
+</dd>
+<dt><code>-fblas-matmul-limit=<var>n</var></code></dt>
+<dd><a name="index-fblas_002dmatmul_002dlimit"></a>
+<p>Only significant when <samp>-fexternal-blas</samp> is in effect.
+Matrix multiplication of matrices with size larger than (or equal to) <var>n</var>
+will be performed by calls to BLAS functions, while others will be
+handled by <code>gfortran</code> internal algorithms. If the matrices
+involved are not square, the size comparison is performed using the
+geometric mean of the dimensions of the argument and result matrices.
+</p>
+<p>The default value for <var>n</var> is 30.
+</p>
+</dd>
+<dt><code>-finline-matmul-limit=<var>n</var></code></dt>
+<dd><a name="index-finline_002dmatmul_002dlimit"></a>
+<p>When front-end optimiztion is active, some calls to the <code>MATMUL</code>
+intrinsic function will be inlined.  This may result in code size
+increase if the size of the matrix cannot be determined at compile
+time, as code for both cases is generated.  Setting
+<code>-finline-matmul-limit=0</code> will disable inlining in all cases.
+Setting this option with a value of <var>n</var> will produce inline code
+for matrices with size up to <var>n</var>. If the matrices involved are not
+square, the size comparison is performed using the geometric mean of
+the dimensions of the argument and result matrices.
+</p>
+<p>The default value for <var>n</var> is 30.  The <code>-fblas-matmul-limit</code>
+can be used to change this value.
+</p>
+</dd>
+<dt><code>-frecursive</code></dt>
+<dd><a name="index-frecursive"></a>
+<p>Allow indirect recursion by forcing all local arrays to be allocated
+on the stack. This flag cannot be used together with
+<samp>-fmax-stack-var-size=</samp> or <samp>-fno-automatic</samp>.
+</p>
+</dd>
+<dt><code>-finit-local-zero</code></dt>
+<dt><code>-finit-derived</code></dt>
+<dt><code>-finit-integer=<var>n</var></code></dt>
+<dt><code>-finit-real=<var>&lt;zero|inf|-inf|nan|snan&gt;</var></code></dt>
+<dt><code>-finit-logical=<var>&lt;true|false&gt;</var></code></dt>
+<dt><code>-finit-character=<var>n</var></code></dt>
+<dd><a name="index-finit_002dlocal_002dzero"></a>
+<a name="index-finit_002dderived"></a>
+<a name="index-finit_002dinteger"></a>
+<a name="index-finit_002dreal"></a>
+<a name="index-finit_002dlogical"></a>
+<a name="index-finit_002dcharacter"></a>
+<p>The <samp>-finit-local-zero</samp> option instructs the compiler to
+initialize local <code>INTEGER</code>, <code>REAL</code>, and <code>COMPLEX</code>
+variables to zero, <code>LOGICAL</code> variables to false, and
+<code>CHARACTER</code> variables to a string of null bytes.  Finer-grained
+initialization options are provided by the
+<samp>-finit-integer=<var>n</var></samp>,
+<samp>-finit-real=<var>&lt;zero|inf|-inf|nan|snan&gt;</var></samp> (which also initializes
+the real and imaginary parts of local <code>COMPLEX</code> variables),
+<samp>-finit-logical=<var>&lt;true|false&gt;</var></samp>, and
+<samp>-finit-character=<var>n</var></samp> (where <var>n</var> is an ASCII character
+value) options.
+</p>
+<p>With <samp>-finit-derived</samp>, components of derived type variables will be
+initialized according to these flags.  Components whose type is not covered by
+an explicit <samp>-finit-*</samp> flag will be treated as described above with
+<samp>-finit-local-zero</samp>.
+</p>
+<p>These options do not initialize
+</p><ul>
+<li> objects with the POINTER attribute
+</li><li> allocatable arrays
+</li><li> variables that appear in an <code>EQUIVALENCE</code> statement.
+</li></ul>
+<p>(These limitations may be removed in future releases).
+</p>
+<p>Note that the <samp>-finit-real=nan</samp> option initializes <code>REAL</code>
+and <code>COMPLEX</code> variables with a quiet NaN. For a signalling NaN
+use <samp>-finit-real=snan</samp>; note, however, that compile-time
+optimizations may convert them into quiet NaN and that trapping
+needs to be enabled (e.g. via <samp>-ffpe-trap</samp>).
+</p>
+<p>The <samp>-finit-integer</samp> option will parse the value into an
+integer of type <code>INTEGER(kind=C_LONG)</code> on the host.  Said value
+is then assigned to the integer variables in the Fortran code, which
+might result in wraparound if the value is too large for the kind.
+</p>
+<p>Finally, note that enabling any of the <samp>-finit-*</samp> options will
+silence warnings that would have been emitted by <samp>-Wuninitialized</samp>
+for the affected local variables.
+</p>
+</dd>
+<dt><code>-falign-commons</code></dt>
+<dd><a name="index-falign_002dcommons"></a>
+<a name="index-alignment-of-COMMON-blocks-1"></a>
+<p>By default, <code>gfortran</code> enforces proper alignment of all variables in a
+<code>COMMON</code> block by padding them as needed. On certain platforms this is mandatory,
+on others it increases performance. If a <code>COMMON</code> block is not declared with
+consistent data types everywhere, this padding can cause trouble, and
+<samp>-fno-align-commons</samp> can be used to disable automatic alignment. The
+same form of this option should be used for all files that share a <code>COMMON</code> block.
+To avoid potential alignment issues in <code>COMMON</code> blocks, it is recommended to order
+objects from largest to smallest.
+</p>
+</dd>
+<dt><code>-fno-protect-parens</code></dt>
+<dd><a name="index-fno_002dprotect_002dparens"></a>
+<a name="index-re_002dassociation-of-parenthesized-expressions"></a>
+<p>By default the parentheses in expression are honored for all optimization
+levels such that the compiler does not do any re-association. Using
+<samp>-fno-protect-parens</samp> allows the compiler to reorder <code>REAL</code> and
+<code>COMPLEX</code> expressions to produce faster code. Note that for the re-association
+optimization <samp>-fno-signed-zeros</samp> and <samp>-fno-trapping-math</samp>
+need to be in effect. The parentheses protection is enabled by default, unless
+<samp>-Ofast</samp> is given.
+</p>
+</dd>
+<dt><code>-frealloc-lhs</code></dt>
+<dd><a name="index-frealloc_002dlhs"></a>
+<a name="index-Reallocate-the-LHS-in-assignments"></a>
+<p>An allocatable left-hand side of an intrinsic assignment is automatically
+(re)allocated if it is either unallocated or has a different shape. The
+option is enabled by default except when <samp>-std=f95</samp> is given. See
+also <samp>-Wrealloc-lhs</samp>.
+</p>
+</dd>
+<dt><code>-faggressive-function-elimination</code></dt>
+<dd><a name="index-faggressive_002dfunction_002delimination"></a>
+<a name="index-Elimination-of-functions-with-identical-argument-lists"></a>
+<p>Functions with identical argument lists are eliminated within
+statements, regardless of whether these functions are marked
+<code>PURE</code> or not. For example, in
+</p><div class="smallexample">
+<pre class="smallexample">  a = f(b,c) + f(b,c)
+</pre></div>
+<p>there will only be a single call to <code>f</code>.  This option only works
+if <samp>-ffrontend-optimize</samp> is in effect.
+</p>
+</dd>
+<dt><code>-ffrontend-optimize</code></dt>
+<dd><a name="index-frontend_002doptimize"></a>
+<a name="index-Front_002dend-optimization"></a>
+<p>This option performs front-end optimization, based on manipulating
+parts the Fortran parse tree.  Enabled by default by any <samp>-O</samp> option
+except <samp>-O0</samp> and <samp>-Og</samp>.  Optimizations enabled by this option
+include:
+</p><ul>
+<li> inlining calls to <code>MATMUL</code>,
+</li><li> elimination of identical function calls within expressions,
+</li><li> removing unnecessary calls to <code>TRIM</code> in comparisons and assignments,
+</li><li> replacing <code>TRIM(a)</code> with <code>a(1:LEN_TRIM(a))</code> and
+</li><li> short-circuiting of logical operators (<code>.AND.</code> and <code>.OR.</code>).
+</li></ul>
+<p>It can be deselected by specifying <samp>-fno-frontend-optimize</samp>.
+</p>
+</dd>
+<dt><code>-ffrontend-loop-interchange</code></dt>
+<dd><a name="index-frontend_002dloop_002dinterchange"></a>
+<a name="index-loop-interchange_002c-Fortran"></a>
+<p>Attempt to interchange loops in the Fortran front end where
+profitable.  Enabled by default by any <samp>-O</samp> option.
+At the moment, this option only affects <code>FORALL</code> and
+<code>DO CONCURRENT</code> statements with several forall triplets.
+</p></dd>
+</dl>
+
+<p>See <a href="http://gcc.gnu.org/onlinedocs/gcc/Code-Gen-Options.html#Code-Gen-Options">Options for Code Generation Conventions</a> in <cite>Using the GNU Compiler Collection (GCC)</cite>, for information on more options
+offered by the GBE
+shared by <code>gfortran</code>, <code>gcc</code>, and other GNU compilers.
+</p>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Interoperability-Options.html#Interoperability-Options" accesskey="n" rel="next">Interoperability Options</a>, Previous: <a href="Runtime-Options.html#Runtime-Options" accesskey="p" rel="prev">Runtime Options</a>, Up: <a href="Invoking-GNU-Fortran.html#Invoking-GNU-Fortran" accesskey="u" rel="up">Invoking GNU Fortran</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

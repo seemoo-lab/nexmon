@@ -1,0 +1,139 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Inheritance and GTY</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Inheritance and GTY">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Inheritance and GTY">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Type-Information.html#Type-Information" rel="up" title="Type Information">
+<link href="User-GC.html#User-GC" rel="next" title="User GC">
+<link href="GTY-Options.html#GTY-Options" rel="prev" title="GTY Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Inheritance-and-GTY"></a>
+<div class="header">
+<p>
+Next: <a href="User-GC.html#User-GC" accesskey="n" rel="next">User GC</a>, Previous: <a href="GTY-Options.html#GTY-Options" accesskey="p" rel="prev">GTY Options</a>, Up: <a href="Type-Information.html#Type-Information" accesskey="u" rel="up">Type Information</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Support-for-inheritance"></a>
+<h3 class="section">23.2 Support for inheritance</h3>
+<p>gengtype has some support for simple class hierarchies.  You can use
+this to have gengtype autogenerate marking routines, provided:
+</p>
+<ul>
+<li> There must be a concrete base class, with a discriminator expression
+that can be used to identify which subclass an instance is.
+</li><li> Only single inheritance is used.
+</li><li> None of the classes within the hierarchy are templates.
+</li></ul>
+
+<p>If your class hierarchy does not fit in this pattern, you must use
+<a href="User-GC.html#User-GC">User GC</a> instead.
+</p>
+<p>The base class and its discriminator must be identified using the &ldquo;desc&rdquo;
+option.  Each concrete subclass must use the &ldquo;tag&rdquo; option to identify
+which value of the discriminator it corresponds to.
+</p>
+<p>Every class in the hierarchy must have a <code>GTY(())</code> marker, as
+gengtype will only attempt to parse classes that have such a marker
+<a name="DOCF6" href="#FOOT6"><sup>6</sup></a>.
+</p>
+<div class="smallexample">
+<pre class="smallexample">class GTY((desc(&quot;%h.kind&quot;), tag(&quot;0&quot;))) example_base
+{
+public:
+    int kind;
+    tree a;
+};
+
+class GTY((tag(&quot;1&quot;))) some_subclass : public example_base
+{
+public:
+    tree b;
+};
+
+class GTY((tag(&quot;2&quot;))) some_other_subclass : public example_base
+{
+public:
+    tree c;
+};
+</pre></div>
+
+<p>The generated marking routines for the above will contain a &ldquo;switch&rdquo;
+on &ldquo;kind&rdquo;, visiting all appropriate fields.  For example, if kind is
+2, it will cast to &ldquo;some_other_subclass&rdquo; and visit fields a, b, and c.
+</p>
+<div class="footnote">
+<hr>
+<h4 class="footnotes-heading">Footnotes</h4>
+
+<h3><a name="FOOT6" href="#DOCF6">(6)</a></h3>
+<p>Classes lacking such a marker will not be identified as being
+part of the hierarchy, and so the marking routines will not handle them,
+leading to a assertion failure within the marking routines due to an
+unknown tag value (assuming that assertions are enabled).</p>
+</div>
+
+
+
+</body>
+</html>

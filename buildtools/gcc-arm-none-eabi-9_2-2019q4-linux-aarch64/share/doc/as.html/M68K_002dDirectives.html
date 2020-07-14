@@ -1,0 +1,126 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: M68K-Directives</title>
+
+<meta name="description" content="Using as: M68K-Directives">
+<meta name="keywords" content="Using as: M68K-Directives">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="M68K_002dDependent.html#M68K_002dDependent" rel="up" title="M68K-Dependent">
+<link href="M68K_002dopcodes.html#M68K_002dopcodes" rel="next" title="M68K-opcodes">
+<link href="M68K_002dFloat.html#M68K_002dFloat" rel="prev" title="M68K-Float">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="M68K_002dDirectives"></a>
+<div class="header">
+<p>
+Next: <a href="M68K_002dopcodes.html#M68K_002dopcodes" accesskey="n" rel="next">M68K-opcodes</a>, Previous: <a href="M68K_002dFloat.html#M68K_002dFloat" accesskey="p" rel="prev">M68K-Float</a>, Up: <a href="M68K_002dDependent.html#M68K_002dDependent" accesskey="u" rel="up">M68K-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="g_t680x0-Machine-Directives"></a>
+<h4 class="subsection">9.22.5 680x0 Machine Directives</h4>
+
+<a name="index-M680x0-directives"></a>
+<a name="index-directives_002c-M680x0"></a>
+<p>In order to be compatible with the Sun assembler the 680x0 assembler
+understands the following directives.
+</p>
+<dl compact="compact">
+<dd><a name="index-data1-directive_002c-M680x0"></a>
+</dd>
+<dt><code>.data1</code></dt>
+<dd><p>This directive is identical to a <code>.data 1</code> directive.
+</p>
+<a name="index-data2-directive_002c-M680x0"></a>
+</dd>
+<dt><code>.data2</code></dt>
+<dd><p>This directive is identical to a <code>.data 2</code> directive.
+</p>
+<a name="index-even-directive_002c-M680x0"></a>
+</dd>
+<dt><code>.even</code></dt>
+<dd><p>This directive is a special case of the <code>.align</code> directive; it
+aligns the output to an even byte boundary.
+</p>
+<a name="index-skip-directive_002c-M680x0"></a>
+</dd>
+<dt><code>.skip</code></dt>
+<dd><p>This directive is identical to a <code>.space</code> directive.
+</p>
+<a name="index-arch-directive_002c-M680x0"></a>
+</dd>
+<dt><code>.arch <var>name</var></code></dt>
+<dd><p>Select the target architecture and extension features.  Valid values
+for <var>name</var> are the same as for the <samp>-march</samp> command-line
+option.  This directive cannot be specified after
+any instructions have been assembled.  If it is given multiple times,
+or in conjunction with the <samp>-march</samp> option, all uses must be for
+the same architecture and extension set.
+</p>
+<a name="index-cpu-directive_002c-M680x0"></a>
+</dd>
+<dt><code>.cpu <var>name</var></code></dt>
+<dd><p>Select the target cpu.  Valid values
+for <var>name</var> are the same as for the <samp>-mcpu</samp> command-line
+option.  This directive cannot be specified after
+any instructions have been assembled.  If it is given multiple times,
+or in conjunction with the <samp>-mopt</samp> option, all uses must be for
+the same cpu.
+</p>
+</dd>
+</dl>
+
+
+
+
+</body>
+</html>

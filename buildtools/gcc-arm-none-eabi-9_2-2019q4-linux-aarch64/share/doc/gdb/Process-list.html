@@ -1,0 +1,106 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Process list</title>
+
+<meta name="description" content="Debugging with GDB: Process list">
+<meta name="keywords" content="Debugging with GDB: Process list">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Operating-System-Information.html#Operating-System-Information" rel="up" title="Operating System Information">
+<link href="Trace-File-Format.html#Trace-File-Format" rel="next" title="Trace File Format">
+<link href="Operating-System-Information.html#Operating-System-Information" rel="prev" title="Operating System Information">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Process-list"></a>
+<div class="header">
+<p>
+Up: <a href="Operating-System-Information.html#Operating-System-Information" accesskey="u" rel="up">Operating System Information</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Process-list-1"></a>
+<h3 class="appendixsection">H.1 Process list</h3>
+<a name="index-operating-system-information_002c-process-list"></a>
+
+<p>When requesting the process list, the <var>annex</var> field in the
+&lsquo;<samp>qXfer</samp>&rsquo; request should be &lsquo;<samp>processes</samp>&rsquo;.  The returned data is
+an XML document.  The formal syntax of this document is defined in
+<samp>gdb/features/osdata.dtd</samp>.
+</p>
+<p>An example document is:
+</p>
+<div class="smallexample">
+<pre class="smallexample">&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;!DOCTYPE target SYSTEM &quot;osdata.dtd&quot;&gt;
+&lt;osdata type=&quot;processes&quot;&gt;
+  &lt;item&gt;
+    &lt;column name=&quot;pid&quot;&gt;1&lt;/column&gt;
+    &lt;column name=&quot;user&quot;&gt;root&lt;/column&gt;
+    &lt;column name=&quot;command&quot;&gt;/sbin/init&lt;/column&gt;
+    &lt;column name=&quot;cores&quot;&gt;1,2,3&lt;/column&gt;
+  &lt;/item&gt;
+&lt;/osdata&gt;
+</pre></div>
+
+<p>Each item should include a column whose name is &lsquo;<samp>pid</samp>&rsquo;.  The value
+of that column should identify the process on the target.  The
+&lsquo;<samp>user</samp>&rsquo; and &lsquo;<samp>command</samp>&rsquo; columns are optional, and will be
+displayed by <small>GDB</small>.  The &lsquo;<samp>cores</samp>&rsquo; column, if present,
+should contain a comma-separated list of cores that this process
+is running on.  Target may provide additional columns,
+which <small>GDB</small> currently ignores.
+</p>
+
+
+
+</body>
+</html>

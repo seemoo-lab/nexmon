@@ -1,0 +1,252 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Memory Region Attributes</title>
+
+<meta name="description" content="Debugging with GDB: Memory Region Attributes">
+<meta name="keywords" content="Debugging with GDB: Memory Region Attributes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Data.html#Data" rel="up" title="Data">
+<link href="Dump_002fRestore-Files.html#Dump_002fRestore-Files" rel="next" title="Dump/Restore Files">
+<link href="OS-Information.html#OS-Information" rel="prev" title="OS Information">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Memory-Region-Attributes"></a>
+<div class="header">
+<p>
+Next: <a href="Dump_002fRestore-Files.html#Dump_002fRestore-Files" accesskey="n" rel="next">Dump/Restore Files</a>, Previous: <a href="OS-Information.html#OS-Information" accesskey="p" rel="prev">OS Information</a>, Up: <a href="Data.html#Data" accesskey="u" rel="up">Data</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Memory-Region-Attributes-1"></a>
+<h3 class="section">10.17 Memory Region Attributes</h3>
+<a name="index-memory-region-attributes"></a>
+
+<p><em>Memory region attributes</em> allow you to describe special handling
+required by regions of your target&rsquo;s memory.  <small>GDB</small> uses
+attributes to determine whether to allow certain types of memory
+accesses; whether to use specific width accesses; and whether to cache
+target memory.  By default the description of memory regions is
+fetched from the target (if the current target supports this), but the
+user can override the fetched regions.
+</p>
+<p>Defined memory regions can be individually enabled and disabled.  When a
+memory region is disabled, <small>GDB</small> uses the default attributes when
+accessing memory in that region.  Similarly, if no memory regions have
+been defined, <small>GDB</small> uses the default attributes when accessing
+all memory.
+</p>
+<p>When a memory region is defined, it is given a number to identify it;
+to enable, disable, or remove a memory region, you specify that number.
+</p>
+<dl compact="compact">
+<dd><a name="index-mem"></a>
+</dd>
+<dt><code>mem <var>lower</var> <var>upper</var> <var>attributes</var>&hellip;</code></dt>
+<dd><p>Define a memory region bounded by <var>lower</var> and <var>upper</var> with
+attributes <var>attributes</var>&hellip;, and add it to the list of regions
+monitored by <small>GDB</small>.  Note that <var>upper</var> == 0 is a special
+case: it is treated as the target&rsquo;s maximum memory address.
+(0xffff on 16 bit targets, 0xffffffff on 32 bit targets, etc.)
+</p>
+</dd>
+<dt><code>mem auto</code></dt>
+<dd><p>Discard any user changes to the memory regions and use target-supplied
+regions, if available, or no regions if the target does not support.
+</p>
+<a name="index-delete-mem"></a>
+</dd>
+<dt><code>delete mem <var>nums</var>&hellip;</code></dt>
+<dd><p>Remove memory regions <var>nums</var>&hellip; from the list of regions
+monitored by <small>GDB</small>.
+</p>
+<a name="index-disable-mem"></a>
+</dd>
+<dt><code>disable mem <var>nums</var>&hellip;</code></dt>
+<dd><p>Disable monitoring of memory regions <var>nums</var>&hellip;.
+A disabled memory region is not forgotten.
+It may be enabled again later.
+</p>
+<a name="index-enable-mem"></a>
+</dd>
+<dt><code>enable mem <var>nums</var>&hellip;</code></dt>
+<dd><p>Enable monitoring of memory regions <var>nums</var>&hellip;.
+</p>
+<a name="index-info-mem"></a>
+</dd>
+<dt><code>info mem</code></dt>
+<dd><p>Print a table of all defined memory regions, with the following columns
+for each region:
+</p>
+<dl compact="compact">
+<dt><em>Memory Region Number</em></dt>
+<dt><em>Enabled or Disabled.</em></dt>
+<dd><p>Enabled memory regions are marked with &lsquo;<samp>y</samp>&rsquo;.
+Disabled memory regions are marked with &lsquo;<samp>n</samp>&rsquo;.
+</p>
+</dd>
+<dt><em>Lo Address</em></dt>
+<dd><p>The address defining the inclusive lower bound of the memory region.
+</p>
+</dd>
+<dt><em>Hi Address</em></dt>
+<dd><p>The address defining the exclusive upper bound of the memory region.
+</p>
+</dd>
+<dt><em>Attributes</em></dt>
+<dd><p>The list of attributes set for this memory region.
+</p></dd>
+</dl>
+</dd>
+</dl>
+
+
+<a name="Attributes"></a>
+<h4 class="subsection">10.17.1 Attributes</h4>
+
+<a name="Memory-Access-Mode"></a>
+<h4 class="subsubsection">10.17.1.1 Memory Access Mode</h4>
+<p>The access mode attributes set whether <small>GDB</small> may make read or
+write accesses to a memory region.
+</p>
+<p>While these attributes prevent <small>GDB</small> from performing invalid
+memory accesses, they do nothing to prevent the target system, I/O DMA,
+etc. from accessing memory.
+</p>
+<dl compact="compact">
+<dt><code>ro</code></dt>
+<dd><p>Memory is read only.
+</p></dd>
+<dt><code>wo</code></dt>
+<dd><p>Memory is write only.
+</p></dd>
+<dt><code>rw</code></dt>
+<dd><p>Memory is read/write.  This is the default.
+</p></dd>
+</dl>
+
+<a name="Memory-Access-Size"></a>
+<h4 class="subsubsection">10.17.1.2 Memory Access Size</h4>
+<p>The access size attribute tells <small>GDB</small> to use specific sized
+accesses in the memory region.  Often memory mapped device registers
+require specific sized accesses.  If no access size attribute is
+specified, <small>GDB</small> may use accesses of any size.
+</p>
+<dl compact="compact">
+<dt><code>8</code></dt>
+<dd><p>Use 8 bit memory accesses.
+</p></dd>
+<dt><code>16</code></dt>
+<dd><p>Use 16 bit memory accesses.
+</p></dd>
+<dt><code>32</code></dt>
+<dd><p>Use 32 bit memory accesses.
+</p></dd>
+<dt><code>64</code></dt>
+<dd><p>Use 64 bit memory accesses.
+</p></dd>
+</dl>
+
+
+<a name="Data-Cache"></a>
+<h4 class="subsubsection">10.17.1.3 Data Cache</h4>
+<p>The data cache attributes set whether <small>GDB</small> will cache target
+memory.  While this generally improves performance by reducing debug
+protocol overhead, it can lead to incorrect results because <small>GDB</small>
+does not know about volatile variables or memory mapped device
+registers.
+</p>
+<dl compact="compact">
+<dt><code>cache</code></dt>
+<dd><p>Enable <small>GDB</small> to cache target memory.
+</p></dd>
+<dt><code>nocache</code></dt>
+<dd><p>Disable <small>GDB</small> from caching target memory.  This is the default.
+</p></dd>
+</dl>
+
+<a name="Memory-Access-Checking"></a>
+<h4 class="subsection">10.17.2 Memory Access Checking</h4>
+<p><small>GDB</small> can be instructed to refuse accesses to memory that is
+not explicitly described.  This can be useful if accessing such
+regions has undesired effects for a specific target, or to provide
+better error checking.  The following commands control this behaviour.
+</p>
+<dl compact="compact">
+<dd><a name="index-set-mem-inaccessible_002dby_002ddefault"></a>
+</dd>
+<dt><code>set mem inaccessible-by-default [on|off]</code></dt>
+<dd><p>If <code>on</code> is specified, make  <small>GDB</small> treat memory not
+explicitly described by the memory ranges as non-existent and refuse accesses
+to such memory.  The checks are only performed if there&rsquo;s at least one
+memory range defined.  If <code>off</code> is specified, make <small>GDB</small>
+treat the memory not explicitly described by the memory ranges as RAM.
+The default value is <code>on</code>.
+<a name="index-show-mem-inaccessible_002dby_002ddefault"></a>
+</p></dd>
+<dt><code>show mem inaccessible-by-default</code></dt>
+<dd><p>Show the current handling of accesses to unknown memory.
+</p></dd>
+</dl>
+
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Dump_002fRestore-Files.html#Dump_002fRestore-Files" accesskey="n" rel="next">Dump/Restore Files</a>, Previous: <a href="OS-Information.html#OS-Information" accesskey="p" rel="prev">OS Information</a>, Up: <a href="Data.html#Data" accesskey="u" rel="up">Data</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

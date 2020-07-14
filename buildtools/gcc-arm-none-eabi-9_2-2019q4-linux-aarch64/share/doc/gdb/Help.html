@@ -1,0 +1,284 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Help</title>
+
+<meta name="description" content="Debugging with GDB: Help">
+<meta name="keywords" content="Debugging with GDB: Help">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Commands.html#Commands" rel="up" title="Commands">
+<link href="Running.html#Running" rel="next" title="Running">
+<link href="Completion.html#Completion" rel="prev" title="Completion">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Help"></a>
+<div class="header">
+<p>
+Previous: <a href="Completion.html#Completion" accesskey="p" rel="prev">Completion</a>, Up: <a href="Commands.html#Commands" accesskey="u" rel="up">Commands</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Getting-Help"></a>
+<h3 class="section">3.3 Getting Help</h3>
+<a name="index-online-documentation"></a>
+<a name="index-help"></a>
+
+<p>You can always ask <small>GDB</small> itself for information on its commands,
+using the command <code>help</code>.
+</p>
+<dl compact="compact">
+<dd><a name="index-h-_0028help_0029"></a>
+</dd>
+<dt><code>help</code></dt>
+<dt><code>h</code></dt>
+<dd><p>You can use <code>help</code> (abbreviated <code>h</code>) with no arguments to
+display a short list of named classes of commands:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) help
+List of classes of commands:
+
+aliases -- Aliases of other commands
+breakpoints -- Making program stop at certain points
+data -- Examining data
+files -- Specifying and examining files
+internals -- Maintenance commands
+obscure -- Obscure features
+running -- Running the program
+stack -- Examining the stack
+status -- Status inquiries
+support -- Support facilities
+tracepoints -- Tracing of program execution without
+               stopping the program
+user-defined -- User-defined commands
+
+Type &quot;help&quot; followed by a class name for a list of
+commands in that class.
+Type &quot;help&quot; followed by command name for full
+documentation.
+Command name abbreviations are allowed if unambiguous.
+(gdb)
+</pre></div>
+
+</dd>
+<dt><code>help <var>class</var></code></dt>
+<dd><p>Using one of the general help classes as an argument, you can get a
+list of the individual commands in that class.  For example, here is the
+help display for the class <code>status</code>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) help status
+Status inquiries.
+
+List of commands:
+
+info -- Generic command for showing things
+        about the program being debugged
+show -- Generic command for showing things
+        about the debugger
+
+Type &quot;help&quot; followed by command name for full
+documentation.
+Command name abbreviations are allowed if unambiguous.
+(gdb)
+</pre></div>
+
+</dd>
+<dt><code>help <var>command</var></code></dt>
+<dd><p>With a command name as <code>help</code> argument, <small>GDB</small> displays a
+short paragraph on how to use that command.
+</p>
+<a name="index-apropos"></a>
+</dd>
+<dt><code>apropos <var>args</var></code></dt>
+<dd><p>The <code>apropos</code> command searches through all of the <small>GDB</small>
+commands, and their documentation, for the regular expression specified in
+<var>args</var>.  It prints out all matches found.  For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">apropos alias
+</pre></div>
+
+<p>results in:
+</p>
+<div class="smallexample">
+<pre class="smallexample">alias -- Define a new command that is an alias of an existing command
+aliases -- Aliases of other commands
+d -- Delete some breakpoints or auto-display expressions
+del -- Delete some breakpoints or auto-display expressions
+delete -- Delete some breakpoints or auto-display expressions
+</pre></div>
+
+<a name="index-complete"></a>
+</dd>
+<dt><code>complete <var>args</var></code></dt>
+<dd><p>The <code>complete <var>args</var></code> command lists all the possible completions
+for the beginning of a command.  Use <var>args</var> to specify the beginning of the
+command you want completed.  For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">complete i
+</pre></div>
+
+<p>results in:
+</p>
+<div class="smallexample">
+<pre class="smallexample">if
+ignore
+info
+inspect
+</pre></div>
+
+<p>This is intended for use by <small>GNU</small> Emacs.
+</p></dd>
+</dl>
+
+<p>In addition to <code>help</code>, you can use the <small>GDB</small> commands <code>info</code>
+and <code>show</code> to inquire about the state of your program, or the state
+of <small>GDB</small> itself.  Each command supports many topics of inquiry; this
+manual introduces each of them in the appropriate context.  The listings
+under <code>info</code> and under <code>show</code> in the Command, Variable, and
+Function Index point to all the sub-commands.  See <a href="Command-and-Variable-Index.html#Command-and-Variable-Index">Command and Variable Index</a>.
+</p>
+<dl compact="compact">
+<dd><a name="index-info"></a>
+<a name="index-i-_0028info_0029"></a>
+</dd>
+<dt><code>info</code></dt>
+<dd><p>This command (abbreviated <code>i</code>) is for describing the state of your
+program.  For example, you can show the arguments passed to a function
+with <code>info args</code>, list the registers currently in use with <code>info
+registers</code>, or list the breakpoints you have set with <code>info breakpoints</code>.
+You can get a complete list of the <code>info</code> sub-commands with
+<code>help&nbsp;info</code><!-- /@w -->.
+</p>
+<a name="index-set"></a>
+</dd>
+<dt><code>set</code></dt>
+<dd><p>You can assign the result of an expression to an environment variable with
+<code>set</code>.  For example, you can set the <small>GDB</small> prompt to a $-sign with
+<code>set prompt $</code>.
+</p>
+<a name="index-show"></a>
+</dd>
+<dt><code>show</code></dt>
+<dd><p>In contrast to <code>info</code>, <code>show</code> is for describing the state of
+<small>GDB</small> itself.
+You can change most of the things you can <code>show</code>, by using the
+related command <code>set</code>; for example, you can control what number
+system is used for displays with <code>set radix</code>, or simply inquire
+which is currently in use with <code>show radix</code>.
+</p>
+<a name="index-info-set"></a>
+<p>To display all the settable parameters and their current
+values, you can use <code>show</code> with no arguments; you may also use
+<code>info set</code>.  Both commands produce the same display.
+</p></dd>
+</dl>
+
+<p>Here are several miscellaneous <code>show</code> subcommands, all of which are
+exceptional in lacking corresponding <code>set</code> commands:
+</p>
+<dl compact="compact">
+<dd><a name="index-show-version"></a>
+<a name="index-GDB-version-number"></a>
+</dd>
+<dt><code>show version</code></dt>
+<dd><p>Show what version of <small>GDB</small> is running.  You should include this
+information in <small>GDB</small> bug-reports.  If multiple versions of
+<small>GDB</small> are in use at your site, you may need to determine which
+version of <small>GDB</small> you are running; as <small>GDB</small> evolves, new
+commands are introduced, and old ones may wither away.  Also, many
+system vendors ship variant versions of <small>GDB</small>, and there are
+variant versions of <small>GDB</small> in <small>GNU</small>/Linux distributions as well.
+The version number is the same as the one announced when you start
+<small>GDB</small>.
+</p>
+<a name="index-show-copying"></a>
+<a name="index-info-copying"></a>
+<a name="index-display-GDB-copyright"></a>
+</dd>
+<dt><code>show copying</code></dt>
+<dt><code>info copying</code></dt>
+<dd><p>Display information about permission for copying <small>GDB</small>.
+</p>
+<a name="index-show-warranty"></a>
+<a name="index-info-warranty"></a>
+</dd>
+<dt><code>show warranty</code></dt>
+<dt><code>info warranty</code></dt>
+<dd><p>Display the <small>GNU</small> &ldquo;NO WARRANTY&rdquo; statement, or a warranty,
+if your version of <small>GDB</small> comes with one.
+</p>
+<a name="index-show-configuration"></a>
+</dd>
+<dt><code>show configuration</code></dt>
+<dd><p>Display detailed information about the way <small>GDB</small> was configured
+when it was built.  This displays the optional arguments passed to the
+<samp>configure</samp> script and also configuration parameters detected
+automatically by <code>configure</code>.  When reporting a <small>GDB</small>
+bug (see <a href="GDB-Bugs.html#GDB-Bugs">GDB Bugs</a>), it is important to include this information in
+your report.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Completion.html#Completion" accesskey="p" rel="prev">Completion</a>, Up: <a href="Commands.html#Commands" accesskey="u" rel="up">Commands</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

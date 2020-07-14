@@ -1,0 +1,175 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: PowerPC Features</title>
+
+<meta name="description" content="Debugging with GDB: PowerPC Features">
+<meta name="keywords" content="Debugging with GDB: PowerPC Features">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Standard-Target-Features.html#Standard-Target-Features" rel="up" title="Standard Target Features">
+<link href="RISC_002dV-Features.html#RISC_002dV-Features" rel="next" title="RISC-V Features">
+<link href="OpenRISC-1000-Features.html#OpenRISC-1000-Features" rel="prev" title="OpenRISC 1000 Features">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="PowerPC-Features"></a>
+<div class="header">
+<p>
+Next: <a href="RISC_002dV-Features.html#RISC_002dV-Features" accesskey="n" rel="next">RISC-V Features</a>, Previous: <a href="OpenRISC-1000-Features.html#OpenRISC-1000-Features" accesskey="p" rel="prev">OpenRISC 1000 Features</a>, Up: <a href="Standard-Target-Features.html#Standard-Target-Features" accesskey="u" rel="up">Standard Target Features</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="PowerPC-Features-1"></a>
+<h4 class="subsection">G.5.11 PowerPC Features</h4>
+<a name="index-target-descriptions_002c-PowerPC-features"></a>
+
+<p>The &lsquo;<samp>org.gnu.gdb.power.core</samp>&rsquo; feature is required for PowerPC
+targets.  It should contain registers &lsquo;<samp>r0</samp>&rsquo; through &lsquo;<samp>r31</samp>&rsquo;,
+&lsquo;<samp>pc</samp>&rsquo;, &lsquo;<samp>msr</samp>&rsquo;, &lsquo;<samp>cr</samp>&rsquo;, &lsquo;<samp>lr</samp>&rsquo;, &lsquo;<samp>ctr</samp>&rsquo;, and
+&lsquo;<samp>xer</samp>&rsquo;.  They may be 32-bit or 64-bit depending on the target.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.power.fpu</samp>&rsquo; feature is optional.  It should
+contain registers &lsquo;<samp>f0</samp>&rsquo; through &lsquo;<samp>f31</samp>&rsquo; and &lsquo;<samp>fpscr</samp>&rsquo;.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.power.altivec</samp>&rsquo; feature is optional.  It should
+contain registers &lsquo;<samp>vr0</samp>&rsquo; through &lsquo;<samp>vr31</samp>&rsquo;, &lsquo;<samp>vscr</samp>&rsquo;, and
+&lsquo;<samp>vrsave</samp>&rsquo;.  <small>GDB</small> will define pseudo-registers &lsquo;<samp>v0</samp>&rsquo;
+through &lsquo;<samp>v31</samp>&rsquo; as aliases for the corresponding &lsquo;<samp>vrX</samp>&rsquo;
+registers.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.power.vsx</samp>&rsquo; feature is optional.  It should
+contain registers &lsquo;<samp>vs0h</samp>&rsquo; through &lsquo;<samp>vs31h</samp>&rsquo;.  <small>GDB</small> will
+combine these registers with the floating point registers (&lsquo;<samp>f0</samp>&rsquo;
+through &lsquo;<samp>f31</samp>&rsquo;) and the altivec registers (&lsquo;<samp>vr0</samp>&rsquo; through
+&lsquo;<samp>vr31</samp>&rsquo;) to present the 128-bit wide registers &lsquo;<samp>vs0</samp>&rsquo; through
+&lsquo;<samp>vs63</samp>&rsquo;, the set of vector-scalar registers for POWER7.
+Therefore, this feature requires both &lsquo;<samp>org.gnu.gdb.power.fpu</samp>&rsquo; and
+&lsquo;<samp>org.gnu.gdb.power.altivec</samp>&rsquo;.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.power.spe</samp>&rsquo; feature is optional.  It should
+contain registers &lsquo;<samp>ev0h</samp>&rsquo; through &lsquo;<samp>ev31h</samp>&rsquo;, &lsquo;<samp>acc</samp>&rsquo;, and
+&lsquo;<samp>spefscr</samp>&rsquo;.  SPE targets should provide 32-bit registers in
+&lsquo;<samp>org.gnu.gdb.power.core</samp>&rsquo; and provide the upper halves in
+&lsquo;<samp>ev0h</samp>&rsquo; through &lsquo;<samp>ev31h</samp>&rsquo;.  <small>GDB</small> will combine
+these to present registers &lsquo;<samp>ev0</samp>&rsquo; through &lsquo;<samp>ev31</samp>&rsquo; to the
+user.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.power.ppr</samp>&rsquo; feature is optional.  It should
+contain the 64-bit register &lsquo;<samp>ppr</samp>&rsquo;.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.power.dscr</samp>&rsquo; feature is optional.  It should
+contain the 64-bit register &lsquo;<samp>dscr</samp>&rsquo;.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.power.tar</samp>&rsquo; feature is optional.  It should
+contain the 64-bit register &lsquo;<samp>tar</samp>&rsquo;.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.power.ebb</samp>&rsquo; feature is optional.  It should
+contain registers &lsquo;<samp>bescr</samp>&rsquo;, &lsquo;<samp>ebbhr</samp>&rsquo; and &lsquo;<samp>ebbrr</samp>&rsquo;, all
+64-bit wide.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.power.linux.pmu</samp>&rsquo; feature is optional.  It should
+contain registers &lsquo;<samp>mmcr0</samp>&rsquo;, &lsquo;<samp>mmcr2</samp>&rsquo;, &lsquo;<samp>siar</samp>&rsquo;, &lsquo;<samp>sdar</samp>&rsquo;
+and &lsquo;<samp>sier</samp>&rsquo;, all 64-bit wide.  This is the subset of the isa 2.07
+server PMU registers provided by <small>GNU</small>/Linux.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.power.htm.spr</samp>&rsquo; feature is optional.  It should
+contain registers &lsquo;<samp>tfhar</samp>&rsquo;, &lsquo;<samp>texasr</samp>&rsquo; and &lsquo;<samp>tfiar</samp>&rsquo;, all
+64-bit wide.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.power.htm.core</samp>&rsquo; feature is optional.  It should
+contain the checkpointed general-purpose registers &lsquo;<samp>cr0</samp>&rsquo; through
+&lsquo;<samp>cr31</samp>&rsquo;, as well as the checkpointed registers &lsquo;<samp>clr</samp>&rsquo; and
+&lsquo;<samp>cctr</samp>&rsquo;.  These registers may all be either 32-bit or 64-bit
+depending on the target.  It should also contain the checkpointed
+registers &lsquo;<samp>ccr</samp>&rsquo; and &lsquo;<samp>cxer</samp>&rsquo;, which should both be 32-bit
+wide.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.power.htm.fpu</samp>&rsquo; feature is optional.  It should
+contain the checkpointed 64-bit floating-point registers &lsquo;<samp>cf0</samp>&rsquo;
+through &lsquo;<samp>cf31</samp>&rsquo;, as well as the checkpointed 64-bit register
+&lsquo;<samp>cfpscr</samp>&rsquo;.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.power.htm.altivec</samp>&rsquo; feature is optional.  It
+should contain the checkpointed altivec registers &lsquo;<samp>cvr0</samp>&rsquo; through
+&lsquo;<samp>cvr31</samp>&rsquo;, all 128-bit wide.  It should also contain the
+checkpointed registers &lsquo;<samp>cvscr</samp>&rsquo; and &lsquo;<samp>cvrsave</samp>&rsquo;, both 32-bit
+wide.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.power.htm.vsx</samp>&rsquo; feature is optional.  It should
+contain registers &lsquo;<samp>cvs0h</samp>&rsquo; through &lsquo;<samp>cvs31h</samp>&rsquo;.  <small>GDB</small>
+will combine these registers with the checkpointed floating point
+registers (&lsquo;<samp>cf0</samp>&rsquo; through &lsquo;<samp>cf31</samp>&rsquo;) and the checkpointed
+altivec registers (&lsquo;<samp>cvr0</samp>&rsquo; through &lsquo;<samp>cvr31</samp>&rsquo;) to present the
+128-bit wide checkpointed vector-scalar registers &lsquo;<samp>cvs0</samp>&rsquo; through
+&lsquo;<samp>cvs63</samp>&rsquo;.  Therefore, this feature requires both
+&lsquo;<samp>org.gnu.gdb.power.htm.altivec</samp>&rsquo; and
+&lsquo;<samp>org.gnu.gdb.power.htm.fpu</samp>&rsquo;.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.power.htm.ppr</samp>&rsquo; feature is optional.  It should
+contain the 64-bit checkpointed register &lsquo;<samp>cppr</samp>&rsquo;.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.power.htm.dscr</samp>&rsquo; feature is optional.  It should
+contain the 64-bit checkpointed register &lsquo;<samp>cdscr</samp>&rsquo;.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.power.htm.tar</samp>&rsquo; feature is optional.  It should
+contain the 64-bit checkpointed register &lsquo;<samp>ctar</samp>&rsquo;.
+</p>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="RISC_002dV-Features.html#RISC_002dV-Features" accesskey="n" rel="next">RISC-V Features</a>, Previous: <a href="OpenRISC-1000-Features.html#OpenRISC-1000-Features" accesskey="p" rel="prev">OpenRISC 1000 Features</a>, Up: <a href="Standard-Target-Features.html#Standard-Target-Features" accesskey="u" rel="up">Standard Target Features</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

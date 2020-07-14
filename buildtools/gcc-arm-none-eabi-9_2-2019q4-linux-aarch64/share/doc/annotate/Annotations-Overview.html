@@ -1,0 +1,119 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1994-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GDB&rsquo;s Obsolete Annotations: Annotations Overview</title>
+
+<meta name="description" content="GDB&rsquo;s Obsolete Annotations: Annotations Overview">
+<meta name="keywords" content="GDB&rsquo;s Obsolete Annotations: Annotations Overview">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Limitations.html#Limitations" rel="next" title="Limitations">
+<link href="index.html#Top" rel="prev" title="Top">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Annotations-Overview"></a>
+<div class="header">
+<p>
+Next: <a href="Limitations.html#Limitations" accesskey="n" rel="next">Limitations</a>, Previous: <a href="index.html#Top" accesskey="p" rel="prev">Top</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<hr>
+<a name="What-is-an-Annotation_003f"></a>
+<h2 class="chapter">1 What is an Annotation?</h2>
+<a name="index-annotations"></a>
+
+<p>To produce obsolete level two annotations, start <small>GDB</small> with the
+<code>--annotate=2</code> option.
+</p>
+<p>Annotations start with a newline character, two &lsquo;<samp>control-z</samp>&rsquo;
+characters, and the name of the annotation.  If there is no additional
+information associated with this annotation, the name of the annotation
+is followed immediately by a newline.  If there is additional
+information, the name of the annotation is followed by a space, the
+additional information, and a newline.  The additional information
+cannot contain newline characters.
+</p>
+<p>Any output not beginning with a newline and two &lsquo;<samp>control-z</samp>&rsquo;
+characters denotes literal output from <small>GDB</small>.  Currently there is
+no need for <small>GDB</small> to output a newline followed by two
+&lsquo;<samp>control-z</samp>&rsquo; characters, but if there was such a need, the
+annotations could be extended with an &lsquo;<samp>escape</samp>&rsquo; annotation which
+means those three characters as output.
+</p>
+<p>A simple example of starting up <small>GDB</small> with annotations is:
+</p>
+<div class="smallexample">
+<pre class="smallexample">$ gdb --annotate=2
+GNU GDB 5.0
+Copyright 2000 Free Software Foundation, Inc.
+GDB is free software, covered by the GNU General Public License,
+and you are welcome to change it and/or distribute copies of it
+under certain conditions.
+Type &quot;show copying&quot; to see the conditions.
+There is absolutely no warranty for GDB.  Type &quot;show warranty&quot;
+for details.
+This GDB was configured as &quot;sparc-sun-sunos4.1.3&quot;
+
+^Z^Zpre-prompt
+(gdb) 
+^Z^Zprompt
+quit
+
+^Z^Zpost-prompt
+$ 
+</pre></div>
+
+<p>Here &lsquo;<samp>quit</samp>&rsquo; is input to <small>GDB</small>; the rest is output from
+<small>GDB</small>.  The three lines beginning &lsquo;<samp>^Z^Z</samp>&rsquo; (where &lsquo;<samp>^Z</samp>&rsquo;
+denotes a &lsquo;<samp>control-z</samp>&rsquo; character) are annotations; the rest is
+output from <small>GDB</small>.
+</p>
+
+
+
+</body>
+</html>

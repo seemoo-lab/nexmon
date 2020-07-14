@@ -1,0 +1,141 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Temporaries</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Temporaries">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Temporaries">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C_002b_002b-Misunderstandings.html#C_002b_002b-Misunderstandings" rel="up" title="C++ Misunderstandings">
+<link href="Copy-Assignment.html#Copy-Assignment" rel="next" title="Copy Assignment">
+<link href="Name-lookup.html#Name-lookup" rel="prev" title="Name lookup">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Temporaries"></a>
+<div class="header">
+<p>
+Next: <a href="Copy-Assignment.html#Copy-Assignment" accesskey="n" rel="next">Copy Assignment</a>, Previous: <a href="Name-lookup.html#Name-lookup" accesskey="p" rel="prev">Name lookup</a>, Up: <a href="C_002b_002b-Misunderstandings.html#C_002b_002b-Misunderstandings" accesskey="u" rel="up">C++ Misunderstandings</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Temporaries-May-Vanish-Before-You-Expect"></a>
+<h4 class="subsection">13.7.3 Temporaries May Vanish Before You Expect</h4>
+
+<a name="index-temporaries_002c-lifetime-of"></a>
+<a name="index-portions-of-temporary-objects_002c-pointers-to"></a>
+<p>It is dangerous to use pointers or references to <em>portions</em> of a
+temporary object.  The compiler may very well delete the object before
+you expect it to, leaving a pointer to garbage.  The most common place
+where this problem crops up is in classes like string classes,
+especially ones that define a conversion function to type <code>char *</code>
+or <code>const char *</code>&mdash;which is one reason why the standard
+<code>string</code> class requires you to call the <code>c_str</code> member
+function.  However, any class that returns a pointer to some internal
+structure is potentially subject to this problem.
+</p>
+<p>For example, a program may use a function <code>strfunc</code> that returns
+<code>string</code> objects, and another function <code>charfunc</code> that
+operates on pointers to <code>char</code>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">string strfunc ();
+void charfunc (const char *);
+
+void
+f ()
+{
+  const char *p = strfunc().c_str();
+  &hellip;
+  charfunc (p);
+  &hellip;
+  charfunc (p);
+}
+</pre></div>
+
+<p>In this situation, it may seem reasonable to save a pointer to the C
+string returned by the <code>c_str</code> member function and use that rather
+than call <code>c_str</code> repeatedly.  However, the temporary string
+created by the call to <code>strfunc</code> is destroyed after <code>p</code> is
+initialized, at which point <code>p</code> is left pointing to freed memory.
+</p>
+<p>Code like this may run successfully under some other compilers,
+particularly obsolete cfront-based compilers that delete temporaries
+along with normal local variables.  However, the GNU C++ behavior is
+standard-conforming, so if your program depends on late destruction of
+temporaries it is not portable.
+</p>
+<p>The safe way to write such code is to give the temporary a name, which
+forces it to remain until the end of the scope of the name.  For
+example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">const string&amp; tmp = strfunc ();
+charfunc (tmp.c_str ());
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Copy-Assignment.html#Copy-Assignment" accesskey="n" rel="next">Copy Assignment</a>, Previous: <a href="Name-lookup.html#Name-lookup" accesskey="p" rel="prev">Name lookup</a>, Up: <a href="C_002b_002b-Misunderstandings.html#C_002b_002b-Misunderstandings" accesskey="u" rel="up">C++ Misunderstandings</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

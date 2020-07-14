@@ -1,0 +1,141 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU linker LD
+(GNU Toolchain for the A-profile Architecture 9.2-2019.12 (arm-9.10))
+version 2.33.1.
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>LD: SECTIONS</title>
+
+<meta name="description" content="LD: SECTIONS">
+<meta name="keywords" content="LD: SECTIONS">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="LD-Index.html#LD-Index" rel="index" title="LD Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Scripts.html#Scripts" rel="up" title="Scripts">
+<link href="Output-Section-Description.html#Output-Section-Description" rel="next" title="Output Section Description">
+<link href="Source-Code-Reference.html#Source-Code-Reference" rel="prev" title="Source Code Reference">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="SECTIONS"></a>
+<div class="header">
+<p>
+Next: <a href="MEMORY.html#MEMORY" accesskey="n" rel="next">MEMORY</a>, Previous: <a href="Assignments.html#Assignments" accesskey="p" rel="prev">Assignments</a>, Up: <a href="Scripts.html#Scripts" accesskey="u" rel="up">Scripts</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="SECTIONS-Command"></a>
+<h3 class="section">3.6 SECTIONS Command</h3>
+<a name="index-SECTIONS"></a>
+<p>The <code>SECTIONS</code> command tells the linker how to map input sections
+into output sections, and how to place the output sections in memory.
+</p>
+<p>The format of the <code>SECTIONS</code> command is:
+</p><div class="smallexample">
+<pre class="smallexample">SECTIONS
+{
+  <var>sections-command</var>
+  <var>sections-command</var>
+  &hellip;
+}
+</pre></div>
+
+<p>Each <var>sections-command</var> may of be one of the following:
+</p>
+<ul>
+<li> an <code>ENTRY</code> command (see <a href="Entry-Point.html#Entry-Point">Entry command</a>)
+</li><li> a symbol assignment (see <a href="Assignments.html#Assignments">Assignments</a>)
+</li><li> an output section description
+</li><li> an overlay description
+</li></ul>
+
+<p>The <code>ENTRY</code> command and symbol assignments are permitted inside the
+<code>SECTIONS</code> command for convenience in using the location counter in
+those commands.  This can also make the linker script easier to
+understand because you can use those commands at meaningful points in
+the layout of the output file.
+</p>
+<p>Output section descriptions and overlay descriptions are described
+below.
+</p>
+<p>If you do not use a <code>SECTIONS</code> command in your linker script, the
+linker will place each input section into an identically named output
+section in the order that the sections are first encountered in the
+input files.  If all input sections are present in the first file, for
+example, the order of sections in the output file will match the order
+in the first input file.  The first section will be at address zero.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Output-Section-Description.html#Output-Section-Description" accesskey="1">Output Section Description</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Output section description
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Output-Section-Name.html#Output-Section-Name" accesskey="2">Output Section Name</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Output section name
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Output-Section-Address.html#Output-Section-Address" accesskey="3">Output Section Address</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Output section address
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Input-Section.html#Input-Section" accesskey="4">Input Section</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Input section description
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Output-Section-Data.html#Output-Section-Data" accesskey="5">Output Section Data</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Output section data
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Output-Section-Keywords.html#Output-Section-Keywords" accesskey="6">Output Section Keywords</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Output section keywords
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Output-Section-Discarding.html#Output-Section-Discarding" accesskey="7">Output Section Discarding</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Output section discarding
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Output-Section-Attributes.html#Output-Section-Attributes" accesskey="8">Output Section Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Output section attributes
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Overlay-Description.html#Overlay-Description" accesskey="9">Overlay Description</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Overlay description
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="MEMORY.html#MEMORY" accesskey="n" rel="next">MEMORY</a>, Previous: <a href="Assignments.html#Assignments" accesskey="p" rel="prev">Assignments</a>, Up: <a href="Scripts.html#Scripts" accesskey="u" rel="up">Scripts</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

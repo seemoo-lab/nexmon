@@ -1,0 +1,229 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Object Size Checking</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Object Size Checking">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Object Size Checking">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-Extensions.html#C-Extensions" rel="up" title="C Extensions">
+<link href="Other-Builtins.html#Other-Builtins" rel="next" title="Other Builtins">
+<link href="x86-specific-memory-model-extensions-for-transactional-memory.html#x86-specific-memory-model-extensions-for-transactional-memory" rel="prev" title="x86 specific memory model extensions for transactional memory">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Object-Size-Checking"></a>
+<div class="header">
+<p>
+Next: <a href="Other-Builtins.html#Other-Builtins" accesskey="n" rel="next">Other Builtins</a>, Previous: <a href="x86-specific-memory-model-extensions-for-transactional-memory.html#x86-specific-memory-model-extensions-for-transactional-memory" accesskey="p" rel="prev">x86 specific memory model extensions for transactional memory</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Object-Size-Checking-Built_002din-Functions"></a>
+<h3 class="section">6.58 Object Size Checking Built-in Functions</h3>
+<a name="index-_005f_005fbuiltin_005fobject_005fsize"></a>
+<a name="index-_005f_005fbuiltin_005f_005f_005fmemcpy_005fchk"></a>
+<a name="index-_005f_005fbuiltin_005f_005f_005fmempcpy_005fchk"></a>
+<a name="index-_005f_005fbuiltin_005f_005f_005fmemmove_005fchk"></a>
+<a name="index-_005f_005fbuiltin_005f_005f_005fmemset_005fchk"></a>
+<a name="index-_005f_005fbuiltin_005f_005f_005fstrcpy_005fchk"></a>
+<a name="index-_005f_005fbuiltin_005f_005f_005fstpcpy_005fchk"></a>
+<a name="index-_005f_005fbuiltin_005f_005f_005fstrncpy_005fchk"></a>
+<a name="index-_005f_005fbuiltin_005f_005f_005fstrcat_005fchk"></a>
+<a name="index-_005f_005fbuiltin_005f_005f_005fstrncat_005fchk"></a>
+<a name="index-_005f_005fbuiltin_005f_005f_005fsprintf_005fchk"></a>
+<a name="index-_005f_005fbuiltin_005f_005f_005fsnprintf_005fchk"></a>
+<a name="index-_005f_005fbuiltin_005f_005f_005fvsprintf_005fchk"></a>
+<a name="index-_005f_005fbuiltin_005f_005f_005fvsnprintf_005fchk"></a>
+<a name="index-_005f_005fbuiltin_005f_005f_005fprintf_005fchk"></a>
+<a name="index-_005f_005fbuiltin_005f_005f_005fvprintf_005fchk"></a>
+<a name="index-_005f_005fbuiltin_005f_005f_005ffprintf_005fchk"></a>
+<a name="index-_005f_005fbuiltin_005f_005f_005fvfprintf_005fchk"></a>
+
+<p>GCC implements a limited buffer overflow protection mechanism that can
+prevent some buffer overflow attacks by determining the sizes of objects
+into which data is about to be written and preventing the writes when
+the size isn&rsquo;t sufficient.  The built-in functions described below yield
+the best results when used together and when optimization is enabled.
+For example, to detect object sizes across function boundaries or to
+follow pointer assignments through non-trivial control flow they rely
+on various optimization passes enabled with <samp>-O2</samp>.  However, to
+a limited extent, they can be used without optimization as well.
+</p>
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fobject_005fsize-1"></a>Built-in Function: <em>size_t</em> <strong>__builtin_object_size</strong> <em>(const void * <var>ptr</var>, int <var>type</var>)</em></dt>
+<dd><p>is a built-in construct that returns a constant number of bytes from
+<var>ptr</var> to the end of the object <var>ptr</var> pointer points to
+(if known at compile time).  To determine the sizes of dynamically allocated
+objects the function relies on the allocation functions called to obtain
+the storage to be declared with the <code>alloc_size</code> attribute (see <a href="Common-Function-Attributes.html#Common-Function-Attributes">Common Function Attributes</a>).  <code>__builtin_object_size</code> never evaluates
+its arguments for side effects.  If there are any side effects in them, it
+returns <code>(size_t) -1</code> for <var>type</var> 0 or 1 and <code>(size_t) 0</code>
+for <var>type</var> 2 or 3.  If there are multiple objects <var>ptr</var> can
+point to and all of them are known at compile time, the returned number
+is the maximum of remaining byte counts in those objects if <var>type</var> &amp; 2 is
+0 and minimum if nonzero.  If it is not possible to determine which objects
+<var>ptr</var> points to at compile time, <code>__builtin_object_size</code> should
+return <code>(size_t) -1</code> for <var>type</var> 0 or 1 and <code>(size_t) 0</code>
+for <var>type</var> 2 or 3.
+</p>
+<p><var>type</var> is an integer constant from 0 to 3.  If the least significant
+bit is clear, objects are whole variables, if it is set, a closest
+surrounding subobject is considered the object a pointer points to.
+The second bit determines if maximum or minimum of remaining bytes
+is computed.
+</p>
+<div class="smallexample">
+<pre class="smallexample">struct V { char buf1[10]; int b; char buf2[10]; } var;
+char *p = &amp;var.buf1[1], *q = &amp;var.b;
+
+/* Here the object p points to is var.  */
+assert (__builtin_object_size (p, 0) == sizeof (var) - 1);
+/* The subobject p points to is var.buf1.  */
+assert (__builtin_object_size (p, 1) == sizeof (var.buf1) - 1);
+/* The object q points to is var.  */
+assert (__builtin_object_size (q, 0)
+        == (char *) (&amp;var + 1) - (char *) &amp;var.b);
+/* The subobject q points to is var.b.  */
+assert (__builtin_object_size (q, 1) == sizeof (var.b));
+</pre></div>
+</dd></dl>
+
+<p>There are built-in functions added for many common string operation
+functions, e.g., for <code>memcpy</code> <code>__builtin___memcpy_chk</code>
+built-in is provided.  This built-in has an additional last argument,
+which is the number of bytes remaining in the object the <var>dest</var>
+argument points to or <code>(size_t) -1</code> if the size is not known.
+</p>
+<p>The built-in functions are optimized into the normal string functions
+like <code>memcpy</code> if the last argument is <code>(size_t) -1</code> or if
+it is known at compile time that the destination object will not
+be overflowed.  If the compiler can determine at compile time that the
+object will always be overflowed, it issues a warning.
+</p>
+<p>The intended use can be e.g.
+</p>
+<div class="smallexample">
+<pre class="smallexample">#undef memcpy
+#define bos0(dest) __builtin_object_size (dest, 0)
+#define memcpy(dest, src, n) \
+  __builtin___memcpy_chk (dest, src, n, bos0 (dest))
+
+char *volatile p;
+char buf[10];
+/* It is unknown what object p points to, so this is optimized
+   into plain memcpy - no checking is possible.  */
+memcpy (p, &quot;abcde&quot;, n);
+/* Destination is known and length too.  It is known at compile
+   time there will be no overflow.  */
+memcpy (&amp;buf[5], &quot;abcde&quot;, 5);
+/* Destination is known, but the length is not known at compile time.
+   This will result in __memcpy_chk call that can check for overflow
+   at run time.  */
+memcpy (&amp;buf[5], &quot;abcde&quot;, n);
+/* Destination is known and it is known at compile time there will
+   be overflow.  There will be a warning and __memcpy_chk call that
+   will abort the program at run time.  */
+memcpy (&amp;buf[6], &quot;abcde&quot;, 5);
+</pre></div>
+
+<p>Such built-in functions are provided for <code>memcpy</code>, <code>mempcpy</code>,
+<code>memmove</code>, <code>memset</code>, <code>strcpy</code>, <code>stpcpy</code>, <code>strncpy</code>,
+<code>strcat</code> and <code>strncat</code>.
+</p>
+<p>There are also checking built-in functions for formatted output functions.
+</p><div class="smallexample">
+<pre class="smallexample">int __builtin___sprintf_chk (char *s, int flag, size_t os, const char *fmt, ...);
+int __builtin___snprintf_chk (char *s, size_t maxlen, int flag, size_t os,
+                              const char *fmt, ...);
+int __builtin___vsprintf_chk (char *s, int flag, size_t os, const char *fmt,
+                              va_list ap);
+int __builtin___vsnprintf_chk (char *s, size_t maxlen, int flag, size_t os,
+                               const char *fmt, va_list ap);
+</pre></div>
+
+<p>The added <var>flag</var> argument is passed unchanged to <code>__sprintf_chk</code>
+etc. functions and can contain implementation specific flags on what
+additional security measures the checking function might take, such as
+handling <code>%n</code> differently.
+</p>
+<p>The <var>os</var> argument is the object size <var>s</var> points to, like in the
+other built-in functions.  There is a small difference in the behavior
+though, if <var>os</var> is <code>(size_t) -1</code>, the built-in functions are
+optimized into the non-checking functions only if <var>flag</var> is 0, otherwise
+the checking function is called with <var>os</var> argument set to
+<code>(size_t) -1</code>.
+</p>
+<p>In addition to this, there are checking built-in functions
+<code>__builtin___printf_chk</code>, <code>__builtin___vprintf_chk</code>,
+<code>__builtin___fprintf_chk</code> and <code>__builtin___vfprintf_chk</code>.
+These have just one additional argument, <var>flag</var>, right before
+format string <var>fmt</var>.  If the compiler is able to optimize them to
+<code>fputc</code> etc. functions, it does, otherwise the checking function
+is called and the <var>flag</var> argument passed to it.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Other-Builtins.html#Other-Builtins" accesskey="n" rel="next">Other Builtins</a>, Previous: <a href="x86-specific-memory-model-extensions-for-transactional-memory.html#x86-specific-memory-model-extensions-for-transactional-memory" accesskey="p" rel="prev">x86 specific memory model extensions for transactional memory</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

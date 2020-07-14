@@ -1,0 +1,295 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU linker LD
+(GNU Toolchain for the A-profile Architecture 9.2-2019.12 (arm-9.10))
+version 2.33.1.
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>LD: PowerPC64 ELF64</title>
+
+<meta name="description" content="LD: PowerPC64 ELF64">
+<meta name="keywords" content="LD: PowerPC64 ELF64">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="LD-Index.html#LD-Index" rel="index" title="LD Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Machine-Dependent.html#Machine-Dependent" rel="up" title="Machine Dependent">
+<link href="S_002f390-ELF.html#S_002f390-ELF" rel="next" title="S/390 ELF">
+<link href="PowerPC-ELF32.html#PowerPC-ELF32" rel="prev" title="PowerPC ELF32">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="PowerPC64-ELF64"></a>
+<div class="header">
+<p>
+Next: <a href="S_002f390-ELF.html#S_002f390-ELF" accesskey="n" rel="next">S/390 ELF</a>, Previous: <a href="PowerPC-ELF32.html#PowerPC-ELF32" accesskey="p" rel="prev">PowerPC ELF32</a>, Up: <a href="Machine-Dependent.html#Machine-Dependent" accesskey="u" rel="up">Machine Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="ld-and-PowerPC64-64_002dbit-ELF-Support"></a>
+<h3 class="section">4.12 <code>ld</code> and PowerPC64 64-bit ELF Support</h3>
+
+<a name="index-PowerPC64-ELF64-options"></a>
+<dl compact="compact">
+<dd><a name="index-PowerPC64-stub-grouping"></a>
+<a name="index-_002d_002dstub_002dgroup_002dsize"></a>
+</dd>
+<dt><samp>--stub-group-size</samp></dt>
+<dd><p>Long branch stubs, PLT call stubs  and TOC adjusting stubs are placed
+by <code>ld</code> in stub sections located between groups of input sections.
+&lsquo;<samp>--stub-group-size</samp>&rsquo; specifies the maximum size of a group of input
+sections handled by one stub section.  Since branch offsets are signed,
+a stub section may serve two groups of input sections, one group before
+the stub section, and one group after it.  However, when using
+conditional branches that require stubs, it may be better (for branch
+prediction) that stub sections only serve one group of input sections.
+A negative value for &lsquo;<samp>N</samp>&rsquo; chooses this scheme, ensuring that
+branches to stubs always use a negative offset.  Two special values of
+&lsquo;<samp>N</samp>&rsquo; are recognized, &lsquo;<samp>1</samp>&rsquo; and &lsquo;<samp>-1</samp>&rsquo;.  These both instruct
+<code>ld</code> to automatically size input section groups for the branch types
+detected, with the same behaviour regarding stub placement as other
+positive or negative values of &lsquo;<samp>N</samp>&rsquo; respectively.
+</p>
+<p>Note that &lsquo;<samp>--stub-group-size</samp>&rsquo; does not split input sections.  A
+single input section larger than the group size specified will of course
+create a larger group (of one section).  If input sections are too
+large, it may not be possible for a branch to reach its stub.
+</p>
+<a name="index-PowerPC64-stub-symbols"></a>
+<a name="index-_002d_002demit_002dstub_002dsyms-1"></a>
+</dd>
+<dt><samp>--emit-stub-syms</samp></dt>
+<dd><p>This option causes <code>ld</code> to label linker stubs with a local
+symbol that encodes the stub type and destination.
+</p>
+<a name="index-PowerPC64-dot-symbols"></a>
+<a name="index-_002d_002ddotsyms"></a>
+<a name="index-_002d_002dno_002ddotsyms"></a>
+</dd>
+<dt><samp>--dotsyms</samp></dt>
+<dt><samp>--no-dotsyms</samp></dt>
+<dd><p>These two options control how <code>ld</code> interprets version patterns
+in a version script.  Older PowerPC64 compilers emitted both a
+function descriptor symbol with the same name as the function, and a
+code entry symbol with the name prefixed by a dot (&lsquo;<samp>.</samp>&rsquo;).  To
+properly version a function &lsquo;<samp>foo</samp>&rsquo;, the version script thus needs
+to control both &lsquo;<samp>foo</samp>&rsquo; and &lsquo;<samp>.foo</samp>&rsquo;.  The option
+&lsquo;<samp>--dotsyms</samp>&rsquo;, on by default, automatically adds the required
+dot-prefixed patterns.  Use &lsquo;<samp>--no-dotsyms</samp>&rsquo; to disable this
+feature.
+</p>
+<a name="index-PowerPC64-register-save_002frestore-functions"></a>
+<a name="index-_002d_002dsave_002drestore_002dfuncs"></a>
+<a name="index-_002d_002dno_002dsave_002drestore_002dfuncs"></a>
+</dd>
+<dt><samp>--save-restore-funcs</samp></dt>
+<dt><samp>--no-save-restore-funcs</samp></dt>
+<dd><p>These two options control whether PowerPC64 <code>ld</code> automatically
+provides out-of-line register save and restore functions used by
+&lsquo;<samp>-Os</samp>&rsquo; code.  The default is to provide any such referenced
+function for a normal final link, and to not do so for a relocatable
+link.
+</p>
+<a name="index-PowerPC64-TLS-optimization"></a>
+<a name="index-_002d_002dno_002dtls_002doptimize-1"></a>
+</dd>
+<dt><samp>--no-tls-optimize</samp></dt>
+<dd><p>PowerPC64 <code>ld</code> normally performs some optimization of code
+sequences used to access Thread-Local Storage.  Use this option to
+disable the optimization.
+</p>
+<a name="index-PowerPC64-_005f_005ftls_005fget_005faddr-optimization"></a>
+<a name="index-_002d_002dtls_002dget_002daddr_002doptimize"></a>
+<a name="index-_002d_002dno_002dtls_002dget_002daddr_002doptimize"></a>
+</dd>
+<dt><samp>--tls-get-addr-optimize</samp></dt>
+<dt><samp>--no-tls-get-addr-optimize</samp></dt>
+<dd><p>These options control whether PowerPC64 <code>ld</code> uses a special
+stub to call __tls_get_addr.  PowerPC64 glibc 2.22 and later support
+an optimization that allows the second and subsequent calls to
+<code>__tls_get_addr</code> for a given symbol to be resolved by the special
+stub without calling in to glibc.  By default the linker enables this
+option when glibc advertises the availability of __tls_get_addr_opt.
+Forcing this option on when using an older glibc won&rsquo;t do much besides
+slow down your applications, but may be useful if linking an
+application against an older glibc with the expectation that it will
+normally be used on systems having a newer glibc.
+</p>
+<a name="index-PowerPC64-OPD-optimization"></a>
+<a name="index-_002d_002dno_002dopd_002doptimize"></a>
+</dd>
+<dt><samp>--no-opd-optimize</samp></dt>
+<dd><p>PowerPC64 <code>ld</code> normally removes <code>.opd</code> section entries
+corresponding to deleted link-once functions, or functions removed by
+the action of &lsquo;<samp>--gc-sections</samp>&rsquo; or linker script <code>/DISCARD/</code>.
+Use this option to disable <code>.opd</code> optimization.
+</p>
+<a name="index-PowerPC64-OPD-spacing"></a>
+<a name="index-_002d_002dnon_002doverlapping_002dopd"></a>
+</dd>
+<dt><samp>--non-overlapping-opd</samp></dt>
+<dd><p>Some PowerPC64 compilers have an option to generate compressed
+<code>.opd</code> entries spaced 16 bytes apart, overlapping the third word,
+the static chain pointer (unused in C) with the first word of the next
+entry.  This option expands such entries to the full 24 bytes.
+</p>
+<a name="index-PowerPC64-TOC-optimization"></a>
+<a name="index-_002d_002dno_002dtoc_002doptimize"></a>
+</dd>
+<dt><samp>--no-toc-optimize</samp></dt>
+<dd><p>PowerPC64 <code>ld</code> normally removes unused <code>.toc</code> section
+entries.  Such entries are detected by examining relocations that
+reference the TOC in code sections.  A reloc in a deleted code section
+marks a TOC word as unneeded, while a reloc in a kept code section
+marks a TOC word as needed.  Since the TOC may reference itself, TOC
+relocs are also examined.  TOC words marked as both needed and
+unneeded will of course be kept.  TOC words without any referencing
+reloc are assumed to be part of a multi-word entry, and are kept or
+discarded as per the nearest marked preceding word.  This works
+reliably for compiler generated code, but may be incorrect if assembly
+code is used to insert TOC entries.  Use this option to disable the
+optimization.
+</p>
+<a name="index-PowerPC64-multi_002dTOC"></a>
+<a name="index-_002d_002dno_002dmulti_002dtoc"></a>
+</dd>
+<dt><samp>--no-multi-toc</samp></dt>
+<dd><p>If given any toc option besides <code>-mcmodel=medium</code> or
+<code>-mcmodel=large</code>, PowerPC64 GCC generates code for a TOC model
+where TOC
+entries are accessed with a 16-bit offset from r2.  This limits the
+total TOC size to 64K.  PowerPC64 <code>ld</code> extends this limit by
+grouping code sections such that each group uses less than 64K for its
+TOC entries, then inserts r2 adjusting stubs between inter-group
+calls.  <code>ld</code> does not split apart input sections, so cannot
+help if a single input file has a <code>.toc</code> section that exceeds
+64K, most likely from linking multiple files with <code>ld -r</code>.
+Use this option to turn off this feature.
+</p>
+<a name="index-PowerPC64-TOC-sorting"></a>
+<a name="index-_002d_002dno_002dtoc_002dsort"></a>
+</dd>
+<dt><samp>--no-toc-sort</samp></dt>
+<dd><p>By default, <code>ld</code> sorts TOC sections so that those whose file
+happens to have a section called <code>.init</code> or <code>.fini</code> are
+placed first, followed by TOC sections referenced by code generated
+with PowerPC64 gcc&rsquo;s <code>-mcmodel=small</code>, and lastly TOC sections
+referenced only by code generated with PowerPC64 gcc&rsquo;s
+<code>-mcmodel=medium</code> or <code>-mcmodel=large</code> options.  Doing this
+results in better TOC grouping for multi-TOC.  Use this option to turn
+off this feature.
+</p>
+<a name="index-PowerPC64-PLT-stub-alignment"></a>
+<a name="index-_002d_002dplt_002dalign"></a>
+<a name="index-_002d_002dno_002dplt_002dalign"></a>
+</dd>
+<dt><samp>--plt-align</samp></dt>
+<dt><samp>--no-plt-align</samp></dt>
+<dd><p>Use these options to control whether individual PLT call stubs are
+aligned to a 32-byte boundary, or to the specified power of two
+boundary when using <code>--plt-align=</code>.  A negative value may be
+specified to pad PLT call stubs so that they do not cross the
+specified power of two boundary (or the minimum number of boundaries
+if a PLT stub is so large that it must cross a boundary).  By default
+PLT call stubs are aligned to 32-byte boundaries.
+</p>
+<a name="index-PowerPC64-PLT-call-stub-static-chain"></a>
+<a name="index-_002d_002dplt_002dstatic_002dchain"></a>
+<a name="index-_002d_002dno_002dplt_002dstatic_002dchain"></a>
+</dd>
+<dt><samp>--plt-static-chain</samp></dt>
+<dt><samp>--no-plt-static-chain</samp></dt>
+<dd><p>Use these options to control whether PLT call stubs load the static
+chain pointer (r11).  <code>ld</code> defaults to not loading the static
+chain since there is never any need to do so on a PLT call.
+</p>
+<a name="index-PowerPC64-PLT-call-stub-thread-safety"></a>
+<a name="index-_002d_002dplt_002dthread_002dsafe"></a>
+<a name="index-_002d_002dno_002dplt_002dthread_002dsafe"></a>
+</dd>
+<dt><samp>--plt-thread-safe</samp></dt>
+<dt><samp>--no-plt-thread-safe</samp></dt>
+<dd><p>With power7&rsquo;s weakly ordered memory model, it is possible when using
+lazy binding for ld.so to update a plt entry in one thread and have
+another thread see the individual plt entry words update in the wrong
+order, despite ld.so carefully writing in the correct order and using
+memory write barriers.  To avoid this we need some sort of read
+barrier in the call stub, or use LD_BIND_NOW=1.  By default, <code>ld</code>
+looks for calls to commonly used functions that create threads, and if
+seen, adds the necessary barriers.  Use these options to change the
+default behaviour.
+</p>
+<a name="index-PowerPC64-ELFv2-PLT-localentry-optimization"></a>
+<a name="index-_002d_002dplt_002dlocalentry"></a>
+<a name="index-_002d_002dno_002dplt_002dlocalentry"></a>
+</dd>
+<dt><samp>--plt-localentry</samp></dt>
+<dt><samp>--no-localentry</samp></dt>
+<dd><p>ELFv2 functions with localentry:0 are those with a single entry point,
+ie. global entry == local entry, and that have no requirement on r2
+(the TOC/GOT pointer) or r12, and guarantee r2 is unchanged on return.
+Such an external function can be called via the PLT without saving r2
+or restoring it on return, avoiding a common load-hit-store for small
+functions.   The optimization is attractive, with up to 40% reduction
+in execution time for a small function, but can result in symbol
+interposition failures.  Also, minor changes in a shared library,
+including system libraries, can cause a function that was localentry:0
+to become localentry:8.  This will result in a dynamic loader
+complaint and failure to run.  The option is experimental, use with
+care.  <samp>--no-plt-localentry</samp> is the default.
+</p></dd>
+</dl>
+
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="S_002f390-ELF.html#S_002f390-ELF" accesskey="n" rel="next">S/390 ELF</a>, Previous: <a href="PowerPC-ELF32.html#PowerPC-ELF32" accesskey="p" rel="prev">PowerPC ELF32</a>, Up: <a href="Machine-Dependent.html#Machine-Dependent" accesskey="u" rel="up">Machine Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

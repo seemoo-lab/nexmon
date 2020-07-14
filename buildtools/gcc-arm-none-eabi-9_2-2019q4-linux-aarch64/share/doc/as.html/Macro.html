@@ -1,0 +1,275 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Macro</title>
+
+<meta name="description" content="Using as: Macro">
+<meta name="keywords" content="Using as: Macro">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Pseudo-Ops.html#Pseudo-Ops" rel="up" title="Pseudo Ops">
+<link href="MRI.html#MRI" rel="next" title="MRI">
+<link href="Long.html#Long" rel="prev" title="Long">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Macro"></a>
+<div class="header">
+<p>
+Next: <a href="MRI.html#MRI" accesskey="n" rel="next">MRI</a>, Previous: <a href="Long.html#Long" accesskey="p" rel="prev">Long</a>, Up: <a href="Pseudo-Ops.html#Pseudo-Ops" accesskey="u" rel="up">Pseudo Ops</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="g_t_002emacro"></a>
+<h3 class="section">7.61 <code>.macro</code></h3>
+
+<a name="index-macros"></a>
+<p>The commands <code>.macro</code> and <code>.endm</code> allow you to define macros that
+generate assembly output.  For example, this definition specifies a macro
+<code>sum</code> that puts a sequence of numbers into memory:
+</p>
+<div class="example">
+<pre class="example">        .macro  sum from=0, to=5
+        .long   \from
+        .if     \to-\from
+        sum     &quot;(\from+1)&quot;,\to
+        .endif
+        .endm
+</pre></div>
+
+<p>With that definition, &lsquo;<samp>SUM 0,5</samp>&rsquo; is equivalent to this assembly input:
+</p>
+<div class="example">
+<pre class="example">        .long   0
+        .long   1
+        .long   2
+        .long   3
+        .long   4
+        .long   5
+</pre></div>
+
+<dl compact="compact">
+<dt><code>.macro <var>macname</var></code>
+<a name="index-_002emacro-macname"></a>
+</dt>
+<dt><code>.macro <var>macname</var> <var>macargs</var> &hellip;</code>
+<a name="index-_002emacro-macname-macargs-_2026"></a>
+</dt>
+<dd><a name="index-macro-directive"></a>
+<p>Begin the definition of a macro called <var>macname</var>.  If your macro
+definition requires arguments, specify their names after the macro name,
+separated by commas or spaces.  You can qualify the macro argument to
+indicate whether all invocations must specify a non-blank value (through
+&lsquo;<samp>:<code>req</code></samp>&rsquo;), or whether it takes all of the remaining arguments
+(through &lsquo;<samp>:<code>vararg</code></samp>&rsquo;).  You can supply a default value for any
+macro argument by following the name with &lsquo;<samp>=<var>deflt</var></samp>&rsquo;.  You
+cannot define two macros with the same <var>macname</var> unless it has been
+subject to the <code>.purgem</code> directive (see <a href="Purgem.html#Purgem">Purgem</a>) between the two
+definitions.  For example, these are all valid <code>.macro</code> statements:
+</p>
+<dl compact="compact">
+<dt><code>.macro comm</code></dt>
+<dd><p>Begin the definition of a macro called <code>comm</code>, which takes no
+arguments.
+</p>
+</dd>
+<dt><code>.macro plus1 p, p1</code></dt>
+<dt><code>.macro plus1 p p1</code></dt>
+<dd><p>Either statement begins the definition of a macro called <code>plus1</code>,
+which takes two arguments; within the macro definition, write
+&lsquo;<samp>\p</samp>&rsquo; or &lsquo;<samp>\p1</samp>&rsquo; to evaluate the arguments.
+</p>
+</dd>
+<dt><code>.macro reserve_str p1=0 p2</code></dt>
+<dd><p>Begin the definition of a macro called <code>reserve_str</code>, with two
+arguments.  The first argument has a default value, but not the second.
+After the definition is complete, you can call the macro either as
+&lsquo;<samp>reserve_str <var>a</var>,<var>b</var></samp>&rsquo; (with &lsquo;<samp>\p1</samp>&rsquo; evaluating to
+<var>a</var> and &lsquo;<samp>\p2</samp>&rsquo; evaluating to <var>b</var>), or as &lsquo;<samp>reserve_str
+,<var>b</var></samp>&rsquo; (with &lsquo;<samp>\p1</samp>&rsquo; evaluating as the default, in this case
+&lsquo;<samp>0</samp>&rsquo;, and &lsquo;<samp>\p2</samp>&rsquo; evaluating to <var>b</var>).
+</p>
+</dd>
+<dt><code>.macro m p1:req, p2=0, p3:vararg</code></dt>
+<dd><p>Begin the definition of a macro called <code>m</code>, with at least three
+arguments.  The first argument must always have a value specified, but
+not the second, which instead has a default value. The third formal
+will get assigned all remaining arguments specified at invocation time.
+</p>
+<p>When you call a macro, you can specify the argument values either by
+position, or by keyword.  For example, &lsquo;<samp>sum 9,17</samp>&rsquo; is equivalent to
+&lsquo;<samp>sum to=17, from=9</samp>&rsquo;.
+</p>
+</dd>
+</dl>
+
+<p>Note that since each of the <var>macargs</var> can be an identifier exactly
+as any other one permitted by the target architecture, there may be
+occasional problems if the target hand-crafts special meanings to certain
+characters when they occur in a special position.  For example, if the colon
+(<code>:</code>) is generally permitted to be part of a symbol name, but the
+architecture specific code special-cases it when occurring as the final
+character of a symbol (to denote a label), then the macro parameter
+replacement code will have no way of knowing that and consider the whole
+construct (including the colon) an identifier, and check only this
+identifier for being the subject to parameter substitution.  So for example
+this macro definition:
+</p>
+<div class="example">
+<pre class="example">	.macro label l
+\l:
+	.endm
+</pre></div>
+
+<p>might not work as expected.  Invoking &lsquo;<samp>label foo</samp>&rsquo; might not create a label
+called &lsquo;<samp>foo</samp>&rsquo; but instead just insert the text &lsquo;<samp>\l:</samp>&rsquo; into the
+assembler source, probably generating an error about an unrecognised
+identifier.
+</p>
+<p>Similarly problems might occur with the period character (&lsquo;<samp>.</samp>&rsquo;)
+which is often allowed inside opcode names (and hence identifier names).  So
+for example constructing a macro to build an opcode from a base name and a
+length specifier like this:
+</p>
+<div class="example">
+<pre class="example">	.macro opcode base length
+        \base.\length
+	.endm
+</pre></div>
+
+<p>and invoking it as &lsquo;<samp>opcode store l</samp>&rsquo; will not create a &lsquo;<samp>store.l</samp>&rsquo;
+instruction but instead generate some kind of error as the assembler tries to
+interpret the text &lsquo;<samp>\base.\length</samp>&rsquo;.
+</p>
+<p>There are several possible ways around this problem:
+</p>
+<dl compact="compact">
+<dt><code>Insert white space</code></dt>
+<dd><p>If it is possible to use white space characters then this is the simplest
+solution.  eg:
+</p>
+<div class="example">
+<pre class="example">	.macro label l
+\l :
+	.endm
+</pre></div>
+
+</dd>
+<dt><code>Use &lsquo;<samp>\()</samp>&rsquo;</code></dt>
+<dd><p>The string &lsquo;<samp>\()</samp>&rsquo; can be used to separate the end of a macro argument from
+the following text.  eg:
+</p>
+<div class="example">
+<pre class="example">	.macro opcode base length
+        \base\().\length
+	.endm
+</pre></div>
+
+</dd>
+<dt><code>Use the alternate macro syntax mode</code></dt>
+<dd><p>In the alternative macro syntax mode the ampersand character (&lsquo;<samp>&amp;</samp>&rsquo;) can be
+used as a separator.  eg:
+</p>
+<div class="example">
+<pre class="example">	.altmacro
+	.macro label l
+l&amp;:
+	.endm
+</pre></div>
+</dd>
+</dl>
+
+<p>Note: this problem of correctly identifying string parameters to pseudo ops
+also applies to the identifiers used in <code>.irp</code> (see <a href="Irp.html#Irp">Irp</a>)
+and <code>.irpc</code> (see <a href="Irpc.html#Irpc">Irpc</a>) as well.
+</p>
+</dd>
+<dt><code>.endm</code>
+<a name="index-_002eendm"></a>
+</dt>
+<dd><a name="index-endm-directive"></a>
+<p>Mark the end of a macro definition.
+</p>
+</dd>
+<dt><code>.exitm</code>
+<a name="index-_002eexitm"></a>
+</dt>
+<dd><a name="index-exitm-directive"></a>
+<p>Exit early from the current macro definition.
+</p>
+<a name="index-number-of-macros-executed"></a>
+<a name="index-macros_002c-count-executed"></a>
+</dd>
+<dt><code>\@</code>
+<a name="index-_005c_0040"></a>
+</dt>
+<dd><p><code>as</code> maintains a counter of how many macros it has
+executed in this pseudo-variable; you can copy that number to your
+output with &lsquo;<samp>\@</samp>&rsquo;, but <em>only within a macro definition</em>.
+</p>
+</dd>
+<dt><code>LOCAL <var>name</var> [ , &hellip; ]</code>
+<a name="index-LOCAL-name-_005b-_002c-_2026-_005d-1"></a>
+</dt>
+<dd><p><em>Warning: <code>LOCAL</code> is only available if you select &ldquo;alternate
+macro syntax&rdquo; with &lsquo;<samp>--alternate</samp>&rsquo; or <code>.altmacro</code>.</em>
+See <a href="Altmacro.html#Altmacro"><code>.altmacro</code></a>.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="MRI.html#MRI" accesskey="n" rel="next">MRI</a>, Previous: <a href="Long.html#Long" accesskey="p" rel="prev">Long</a>, Up: <a href="Pseudo-Ops.html#Pseudo-Ops" accesskey="u" rel="up">Pseudo Ops</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

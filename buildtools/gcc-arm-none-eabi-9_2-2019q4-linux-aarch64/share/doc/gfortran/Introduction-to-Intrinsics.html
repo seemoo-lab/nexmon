@@ -1,0 +1,128 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: Introduction to Intrinsics</title>
+
+<meta name="description" content="The GNU Fortran Compiler: Introduction to Intrinsics">
+<meta name="keywords" content="The GNU Fortran Compiler: Introduction to Intrinsics">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Intrinsic-Procedures.html#Intrinsic-Procedures" rel="up" title="Intrinsic Procedures">
+<link href="ABORT.html#ABORT" rel="next" title="ABORT">
+<link href="Intrinsic-Procedures.html#Intrinsic-Procedures" rel="prev" title="Intrinsic Procedures">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Introduction-to-Intrinsics"></a>
+<div class="header">
+<p>
+Next: <a href="ABORT.html#ABORT" accesskey="n" rel="next">ABORT</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Introduction-to-intrinsic-procedures"></a>
+<h3 class="section">9.1 Introduction to intrinsic procedures</h3>
+
+<p>The intrinsic procedures provided by GNU Fortran include all of the
+intrinsic procedures required by the Fortran 95 standard, a set of
+intrinsic procedures for backwards compatibility with G77, and a
+selection of intrinsic procedures from the Fortran 2003 and Fortran 2008
+standards.  Any conflict between a description here and a description in
+either the Fortran 95 standard, the Fortran 2003 standard or the Fortran
+2008 standard is unintentional, and the standard(s) should be considered
+authoritative.
+</p>
+<p>The enumeration of the <code>KIND</code> type parameter is processor defined in
+the Fortran 95 standard.  GNU Fortran defines the default integer type and
+default real type by <code>INTEGER(KIND=4)</code> and <code>REAL(KIND=4)</code>,
+respectively.  The standard mandates that both data types shall have
+another kind, which have more precision.  On typical target architectures
+supported by <code>gfortran</code>, this kind type parameter is <code>KIND=8</code>.
+Hence, <code>REAL(KIND=8)</code> and <code>DOUBLE PRECISION</code> are equivalent.
+In the description of generic intrinsic procedures, the kind type parameter
+will be specified by <code>KIND=*</code>, and in the description of specific
+names for an intrinsic procedure the kind type parameter will be explicitly
+given (e.g., <code>REAL(KIND=4)</code> or <code>REAL(KIND=8)</code>).  Finally, for
+brevity the optional <code>KIND=</code> syntax will be omitted.
+</p>
+<p>Many of the intrinsic procedures take one or more optional arguments.
+This document follows the convention used in the Fortran 95 standard,
+and denotes such arguments by square brackets.
+</p>
+<p>GNU Fortran offers the <samp>-std=f95</samp> and <samp>-std=gnu</samp> options,
+which can be used to restrict the set of intrinsic procedures to a 
+given standard.  By default, <code>gfortran</code> sets the <samp>-std=gnu</samp>
+option, and so all intrinsic procedures described here are accepted.  There
+is one caveat.  For a select group of intrinsic procedures, <code>g77</code>
+implemented both a function and a subroutine.  Both classes 
+have been implemented in <code>gfortran</code> for backwards compatibility
+with <code>g77</code>.  It is noted here that these functions and subroutines
+cannot be intermixed in a given subprogram.  In the descriptions that follow,
+the applicable standard for each intrinsic procedure is noted.
+</p>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="ABORT.html#ABORT" accesskey="n" rel="next">ABORT</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

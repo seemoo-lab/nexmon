@@ -1,0 +1,276 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Forks</title>
+
+<meta name="description" content="Debugging with GDB: Forks">
+<meta name="keywords" content="Debugging with GDB: Forks">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Running.html#Running" rel="up" title="Running">
+<link href="Checkpoint_002fRestart.html#Checkpoint_002fRestart" rel="next" title="Checkpoint/Restart">
+<link href="Threads.html#Threads" rel="prev" title="Threads">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Forks"></a>
+<div class="header">
+<p>
+Next: <a href="Checkpoint_002fRestart.html#Checkpoint_002fRestart" accesskey="n" rel="next">Checkpoint/Restart</a>, Previous: <a href="Threads.html#Threads" accesskey="p" rel="prev">Threads</a>, Up: <a href="Running.html#Running" accesskey="u" rel="up">Running</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Debugging-Forks"></a>
+<h3 class="section">4.11 Debugging Forks</h3>
+
+<a name="index-fork_002c-debugging-programs-which-call"></a>
+<a name="index-multiple-processes"></a>
+<a name="index-processes_002c-multiple"></a>
+<p>On most systems, <small>GDB</small> has no special support for debugging
+programs which create additional processes using the <code>fork</code>
+function.  When a program forks, <small>GDB</small> will continue to debug the
+parent process and the child process will run unimpeded.  If you have
+set a breakpoint in any code which the child then executes, the child
+will get a <code>SIGTRAP</code> signal which (unless it catches the signal)
+will cause it to terminate.
+</p>
+<p>However, if you want to debug the child process there is a workaround
+which isn&rsquo;t too painful.  Put a call to <code>sleep</code> in the code which
+the child process executes after the fork.  It may be useful to sleep
+only if a certain environment variable is set, or a certain file exists,
+so that the delay need not occur when you don&rsquo;t want to run <small>GDB</small>
+on the child.  While the child is sleeping, use the <code>ps</code> program to
+get its process ID.  Then tell <small>GDB</small> (a new invocation of
+<small>GDB</small> if you are also debugging the parent process) to attach to
+the child process (see <a href="Attach.html#Attach">Attach</a>).  From that point on you can debug
+the child process just like any other process which you attached to.
+</p>
+<p>On some systems, <small>GDB</small> provides support for debugging programs
+that create additional processes using the <code>fork</code> or <code>vfork</code>
+functions.  On <small>GNU</small>/Linux platforms, this feature is supported
+with kernel version 2.5.46 and later.
+</p>
+<p>The fork debugging commands are supported in native mode and when
+connected to <code>gdbserver</code> in either <code>target remote</code> mode or
+<code>target extended-remote</code> mode.
+</p>
+<p>By default, when a program forks, <small>GDB</small> will continue to debug
+the parent process and the child process will run unimpeded.
+</p>
+<p>If you want to follow the child process instead of the parent process,
+use the command <code>set&nbsp;<span class="nolinebreak">follow-fork-mode</span></code><!-- /@w -->.
+</p>
+<dl compact="compact">
+<dd><a name="index-set-follow_002dfork_002dmode"></a>
+</dd>
+<dt><code>set follow-fork-mode <var>mode</var></code></dt>
+<dd><p>Set the debugger response to a program call of <code>fork</code> or
+<code>vfork</code>.  A call to <code>fork</code> or <code>vfork</code> creates a new
+process.  The <var>mode</var> argument can be:
+</p>
+<dl compact="compact">
+<dt><code>parent</code></dt>
+<dd><p>The original process is debugged after a fork.  The child process runs
+unimpeded.  This is the default.
+</p>
+</dd>
+<dt><code>child</code></dt>
+<dd><p>The new process is debugged after a fork.  The parent process runs
+unimpeded.
+</p>
+</dd>
+</dl>
+
+<a name="index-show-follow_002dfork_002dmode"></a>
+</dd>
+<dt><code>show follow-fork-mode</code></dt>
+<dd><p>Display the current debugger response to a <code>fork</code> or <code>vfork</code> call.
+</p></dd>
+</dl>
+
+<a name="index-debugging-multiple-processes"></a>
+<p>On Linux, if you want to debug both the parent and child processes, use the
+command <code>set&nbsp;<span class="nolinebreak">detach-on-fork</span></code><!-- /@w -->.
+</p>
+<dl compact="compact">
+<dd><a name="index-set-detach_002don_002dfork"></a>
+</dd>
+<dt><code>set detach-on-fork <var>mode</var></code></dt>
+<dd><p>Tells gdb whether to detach one of the processes after a fork, or
+retain debugger control over them both.
+</p>
+<dl compact="compact">
+<dt><code>on</code></dt>
+<dd><p>The child process (or parent process, depending on the value of
+<code>follow-fork-mode</code>) will be detached and allowed to run 
+independently.  This is the default.
+</p>
+</dd>
+<dt><code>off</code></dt>
+<dd><p>Both processes will be held under the control of <small>GDB</small>.
+One process (child or parent, depending on the value of 
+<code>follow-fork-mode</code>) is debugged as usual, while the other
+is held suspended.  
+</p>
+</dd>
+</dl>
+
+<a name="index-show-detach_002don_002dfork"></a>
+</dd>
+<dt><code>show detach-on-fork</code></dt>
+<dd><p>Show whether detach-on-fork mode is on/off.
+</p></dd>
+</dl>
+
+<p>If you choose to set &lsquo;<samp>detach-on-fork</samp>&rsquo; mode off, then <small>GDB</small>
+will retain control of all forked processes (including nested forks).
+You can list the forked processes under the control of <small>GDB</small> by
+using the <code>info&nbsp;inferiors</code><!-- /@w --> command, and switch from one fork
+to another by using the <code>inferior</code> command (see <a href="Inferiors-and-Programs.html#Inferiors-and-Programs">Debugging Multiple Inferiors and Programs</a>).
+</p>
+<p>To quit debugging one of the forked processes, you can either detach
+from it by using the <code>detach&nbsp;inferiors</code><!-- /@w --> command (allowing it
+to run independently), or kill it using the <code>kill&nbsp;inferiors</code><!-- /@w -->
+command.  See <a href="Inferiors-and-Programs.html#Inferiors-and-Programs">Debugging Multiple Inferiors
+and Programs</a>.
+</p>
+<p>If you ask to debug a child process and a <code>vfork</code> is followed by an
+<code>exec</code>, <small>GDB</small> executes the new target up to the first
+breakpoint in the new target.  If you have a breakpoint set on
+<code>main</code> in your original program, the breakpoint will also be set on
+the child process&rsquo;s <code>main</code>.
+</p>
+<p>On some systems, when a child process is spawned by <code>vfork</code>, you
+cannot debug the child or parent until an <code>exec</code> call completes.
+</p>
+<p>If you issue a <code>run</code> command to <small>GDB</small> after an <code>exec</code>
+call executes, the new target restarts.  To restart the parent
+process, use the <code>file</code> command with the parent executable name
+as its argument.  By default, after an <code>exec</code> call executes,
+<small>GDB</small> discards the symbols of the previous executable image.
+You can change this behaviour with the <code>set&nbsp;<span class="nolinebreak">follow-exec-mode</span></code><!-- /@w -->
+command.
+</p>
+<dl compact="compact">
+<dd><a name="index-set-follow_002dexec_002dmode"></a>
+</dd>
+<dt><code>set follow-exec-mode <var>mode</var></code></dt>
+<dd>
+<p>Set debugger response to a program call of <code>exec</code>.  An
+<code>exec</code> call replaces the program image of a process.
+</p>
+<p><code>follow-exec-mode</code> can be:
+</p>
+<dl compact="compact">
+<dt><code>new</code></dt>
+<dd><p><small>GDB</small> creates a new inferior and rebinds the process to this
+new inferior.  The program the process was running before the
+<code>exec</code> call can be restarted afterwards by restarting the
+original inferior.
+</p>
+<p>For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) info inferiors
+(gdb) info inferior
+  Id   Description   Executable
+* 1    &lt;null&gt;        prog1
+(gdb) run
+process 12020 is executing new program: prog2
+Program exited normally.
+(gdb) info inferiors
+  Id   Description   Executable
+  1    &lt;null&gt;        prog1
+* 2    &lt;null&gt;        prog2
+</pre></div>
+
+</dd>
+<dt><code>same</code></dt>
+<dd><p><small>GDB</small> keeps the process bound to the same inferior.  The new
+executable image replaces the previous executable loaded in the
+inferior.  Restarting the inferior after the <code>exec</code> call, with
+e.g., the <code>run</code> command, restarts the executable the process was
+running after the <code>exec</code> call.  This is the default mode.
+</p>
+<p>For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) info inferiors
+  Id   Description   Executable
+* 1    &lt;null&gt;        prog1
+(gdb) run
+process 12020 is executing new program: prog2
+Program exited normally.
+(gdb) info inferiors
+  Id   Description   Executable
+* 1    &lt;null&gt;        prog2
+</pre></div>
+
+</dd>
+</dl>
+</dd>
+</dl>
+
+<p><code>follow-exec-mode</code> is supported in native mode and
+<code>target extended-remote</code> mode.
+</p>
+<p>You can use the <code>catch</code> command to make <small>GDB</small> stop whenever
+a <code>fork</code>, <code>vfork</code>, or <code>exec</code> call is made.  See <a href="Set-Catchpoints.html#Set-Catchpoints">Setting Catchpoints</a>.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Checkpoint_002fRestart.html#Checkpoint_002fRestart" accesskey="n" rel="next">Checkpoint/Restart</a>, Previous: <a href="Threads.html#Threads" accesskey="p" rel="prev">Threads</a>, Up: <a href="Running.html#Running" accesskey="u" rel="up">Running</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

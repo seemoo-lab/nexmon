@@ -1,0 +1,212 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU linker LD
+(GNU Toolchain for the A-profile Architecture 9.2-2019.12 (arm-9.10))
+version 2.33.1.
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>LD: MEMORY</title>
+
+<meta name="description" content="LD: MEMORY">
+<meta name="keywords" content="LD: MEMORY">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="LD-Index.html#LD-Index" rel="index" title="LD Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Scripts.html#Scripts" rel="up" title="Scripts">
+<link href="PHDRS.html#PHDRS" rel="next" title="PHDRS">
+<link href="Overlay-Description.html#Overlay-Description" rel="prev" title="Overlay Description">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="MEMORY"></a>
+<div class="header">
+<p>
+Next: <a href="PHDRS.html#PHDRS" accesskey="n" rel="next">PHDRS</a>, Previous: <a href="SECTIONS.html#SECTIONS" accesskey="p" rel="prev">SECTIONS</a>, Up: <a href="Scripts.html#Scripts" accesskey="u" rel="up">Scripts</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="MEMORY-Command"></a>
+<h3 class="section">3.7 MEMORY Command</h3>
+<a name="index-MEMORY"></a>
+<a name="index-memory-regions"></a>
+<a name="index-regions-of-memory"></a>
+<a name="index-allocating-memory"></a>
+<a name="index-discontinuous-memory"></a>
+<p>The linker&rsquo;s default configuration permits allocation of all available
+memory.  You can override this by using the <code>MEMORY</code> command.
+</p>
+<p>The <code>MEMORY</code> command describes the location and size of blocks of
+memory in the target.  You can use it to describe which memory regions
+may be used by the linker, and which memory regions it must avoid.  You
+can then assign sections to particular memory regions.  The linker will
+set section addresses based on the memory regions, and will warn about
+regions that become too full.  The linker will not shuffle sections
+around to fit into the available regions.
+</p>
+<p>A linker script may contain many uses of the <code>MEMORY</code> command,
+however, all memory blocks defined are treated as if they were
+specified inside a single <code>MEMORY</code> command.  The syntax for
+<code>MEMORY</code> is:
+</p><div class="smallexample">
+<pre class="smallexample">MEMORY
+  {
+    <var>name</var> [(<var>attr</var>)] : ORIGIN = <var>origin</var>, LENGTH = <var>len</var>
+    &hellip;
+  }
+</pre></div>
+
+<p>The <var>name</var> is a name used in the linker script to refer to the
+region.  The region name has no meaning outside of the linker script.
+Region names are stored in a separate name space, and will not conflict
+with symbol names, file names, or section names.  Each memory region
+must have a distinct name within the <code>MEMORY</code> command.  However you can
+add later alias names to existing memory regions with the <a href="REGION_005fALIAS.html#REGION_005fALIAS">REGION_ALIAS</a>
+command.
+</p>
+<a name="index-memory-region-attributes"></a>
+<p>The <var>attr</var> string is an optional list of attributes that specify
+whether to use a particular memory region for an input section which is
+not explicitly mapped in the linker script.  As described in
+<a href="SECTIONS.html#SECTIONS">SECTIONS</a>, if you do not specify an output section for some input
+section, the linker will create an output section with the same name as
+the input section.  If you define region attributes, the linker will use
+them to select the memory region for the output section that it creates.
+</p>
+<p>The <var>attr</var> string must consist only of the following characters:
+</p><dl compact="compact">
+<dt>&lsquo;<samp>R</samp>&rsquo;</dt>
+<dd><p>Read-only section
+</p></dd>
+<dt>&lsquo;<samp>W</samp>&rsquo;</dt>
+<dd><p>Read/write section
+</p></dd>
+<dt>&lsquo;<samp>X</samp>&rsquo;</dt>
+<dd><p>Executable section
+</p></dd>
+<dt>&lsquo;<samp>A</samp>&rsquo;</dt>
+<dd><p>Allocatable section
+</p></dd>
+<dt>&lsquo;<samp>I</samp>&rsquo;</dt>
+<dd><p>Initialized section
+</p></dd>
+<dt>&lsquo;<samp>L</samp>&rsquo;</dt>
+<dd><p>Same as &lsquo;<samp>I</samp>&rsquo;
+</p></dd>
+<dt>&lsquo;<samp>!</samp>&rsquo;</dt>
+<dd><p>Invert the sense of any of the attributes that follow
+</p></dd>
+</dl>
+
+<p>If an unmapped section matches any of the listed attributes other than
+&lsquo;<samp>!</samp>&rsquo;, it will be placed in the memory region.  The &lsquo;<samp>!</samp>&rsquo;
+attribute reverses the test for the characters that follow, so that an
+unmapped section will be placed in the memory region only if it does
+not match any of the attributes listed afterwards.  Thus an attribute
+string of &lsquo;<samp>RW!X</samp>&rsquo; will match any unmapped section that has either
+or both of the &lsquo;<samp>R</samp>&rsquo; and &lsquo;<samp>W</samp>&rsquo; attributes, but only as long as
+the section does not also have the &lsquo;<samp>X</samp>&rsquo; attribute.
+</p>
+<a name="index-ORIGIN-_003d"></a>
+<a name="index-o-_003d"></a>
+<a name="index-org-_003d"></a>
+<p>The <var>origin</var> is an numerical expression for the start address of
+the memory region.  The expression must evaluate to a constant and it
+cannot involve any symbols.  The keyword <code>ORIGIN</code> may be
+abbreviated to <code>org</code> or <code>o</code> (but not, for example,
+<code>ORG</code>).
+</p>
+<a name="index-LENGTH-_003d"></a>
+<a name="index-len-_003d"></a>
+<a name="index-l-_003d"></a>
+<p>The <var>len</var> is an expression for the size in bytes of the memory
+region.  As with the <var>origin</var> expression, the expression must
+be numerical only and must evaluate to a constant.  The keyword
+<code>LENGTH</code> may be abbreviated to <code>len</code> or <code>l</code>.
+</p>
+<p>In the following example, we specify that there are two memory regions
+available for allocation: one starting at &lsquo;<samp>0</samp>&rsquo; for 256 kilobytes,
+and the other starting at &lsquo;<samp>0x40000000</samp>&rsquo; for four megabytes.  The
+linker will place into the &lsquo;<samp>rom</samp>&rsquo; memory region every section which
+is not explicitly mapped into a memory region, and is either read-only
+or executable.  The linker will place other sections which are not
+explicitly mapped into a memory region into the &lsquo;<samp>ram</samp>&rsquo; memory
+region.
+</p>
+<div class="smallexample">
+<pre class="smallexample">MEMORY
+  {
+    rom (rx)  : ORIGIN = 0, LENGTH = 256K
+    ram (!rx) : org = 0x40000000, l = 4M
+  }
+</pre></div>
+
+<p>Once you define a memory region, you can direct the linker to place
+specific output sections into that memory region by using the
+&lsquo;<samp>&gt;<var>region</var></samp>&rsquo; output section attribute.  For example, if you have
+a memory region named &lsquo;<samp>mem</samp>&rsquo;, you would use &lsquo;<samp>&gt;mem</samp>&rsquo; in the
+output section definition.  See <a href="Output-Section-Region.html#Output-Section-Region">Output Section Region</a>.  If no address
+was specified for the output section, the linker will set the address to
+the next available address within the memory region.  If the combined
+output sections directed to a memory region are too large for the
+region, the linker will issue an error message.
+</p>
+<p>It is possible to access the origin and length of a memory in an
+expression via the <code>ORIGIN(<var>memory</var>)</code> and
+<code>LENGTH(<var>memory</var>)</code> functions:
+</p>
+<div class="smallexample">
+<pre class="smallexample">  _fstack = ORIGIN(ram) + LENGTH(ram) - 4;
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="PHDRS.html#PHDRS" accesskey="n" rel="next">PHDRS</a>, Previous: <a href="SECTIONS.html#SECTIONS" accesskey="p" rel="prev">SECTIONS</a>, Up: <a href="Scripts.html#Scripts" accesskey="u" rel="up">Scripts</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

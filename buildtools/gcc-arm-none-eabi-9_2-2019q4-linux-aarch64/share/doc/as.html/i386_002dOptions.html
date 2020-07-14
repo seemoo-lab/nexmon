@@ -1,0 +1,547 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: i386-Options</title>
+
+<meta name="description" content="Using as: i386-Options">
+<meta name="keywords" content="Using as: i386-Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="i386_002dDependent.html#i386_002dDependent" rel="up" title="i386-Dependent">
+<link href="i386_002dDirectives.html#i386_002dDirectives" rel="next" title="i386-Directives">
+<link href="i386_002dDependent.html#i386_002dDependent" rel="prev" title="i386-Dependent">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="i386_002dOptions"></a>
+<div class="header">
+<p>
+Next: <a href="i386_002dDirectives.html#i386_002dDirectives" accesskey="n" rel="next">i386-Directives</a>, Up: <a href="i386_002dDependent.html#i386_002dDependent" accesskey="u" rel="up">i386-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Options-11"></a>
+<h4 class="subsection">9.16.1 Options</h4>
+
+<a name="index-options-for-i386"></a>
+<a name="index-options-for-x86_002d64"></a>
+<a name="index-i386-options"></a>
+<a name="index-x86_002d64-options"></a>
+
+<p>The i386 version of <code>as</code> has a few machine
+dependent options:
+</p>
+<dl compact="compact">
+<dd><a name="index-_002d_002d32-option_002c-i386"></a>
+<a name="index-_002d_002d32-option_002c-x86_002d64"></a>
+<a name="index-_002d_002dx32-option_002c-i386"></a>
+<a name="index-_002d_002dx32-option_002c-x86_002d64"></a>
+<a name="index-_002d_002d64-option_002c-i386"></a>
+<a name="index-_002d_002d64-option_002c-x86_002d64"></a>
+</dd>
+<dt><code>--32 | --x32 | --64</code></dt>
+<dd><p>Select the word size, either 32 bits or 64 bits.  &lsquo;<samp>--32</samp>&rsquo;
+implies Intel i386 architecture, while &lsquo;<samp>--x32</samp>&rsquo; and &lsquo;<samp>--64</samp>&rsquo;
+imply AMD x86-64 architecture with 32-bit or 64-bit word-size
+respectively.
+</p>
+<p>These options are only available with the ELF object file format, and
+require that the necessary BFD support has been included (on a 32-bit
+platform you have to add &ndash;enable-64-bit-bfd to configure enable 64-bit
+usage and use x86-64 as target platform).
+</p>
+</dd>
+<dt><code>-n</code></dt>
+<dd><p>By default, x86 GAS replaces multiple nop instructions used for
+alignment within code sections with multi-byte nop instructions such
+as leal 0(%esi,1),%esi.  This switch disables the optimization if a single
+byte nop (0x90) is explicitly specified as the fill byte for alignment.
+</p>
+<a name="index-_002d_002ddivide-option_002c-i386"></a>
+</dd>
+<dt><code>--divide</code></dt>
+<dd><p>On SVR4-derived platforms, the character &lsquo;<samp>/</samp>&rsquo; is treated as a comment
+character, which means that it cannot be used in expressions.  The
+&lsquo;<samp>--divide</samp>&rsquo; option turns &lsquo;<samp>/</samp>&rsquo; into a normal character.  This does
+not disable &lsquo;<samp>/</samp>&rsquo; at the beginning of a line starting a comment, or
+affect using &lsquo;<samp>#</samp>&rsquo; for starting a comment.
+</p>
+<a name="index-_002dmarch_003d-option_002c-i386"></a>
+<a name="index-_002dmarch_003d-option_002c-x86_002d64"></a>
+</dd>
+<dt><code>-march=<var>CPU</var>[+<var>EXTENSION</var>&hellip;]</code></dt>
+<dd><p>This option specifies the target processor.  The assembler will
+issue an error message if an attempt is made to assemble an instruction
+which will not execute on the target processor.  The following
+processor names are recognized:
+<code>i8086</code>,
+<code>i186</code>,
+<code>i286</code>,
+<code>i386</code>,
+<code>i486</code>,
+<code>i586</code>,
+<code>i686</code>,
+<code>pentium</code>,
+<code>pentiumpro</code>,
+<code>pentiumii</code>,
+<code>pentiumiii</code>,
+<code>pentium4</code>,
+<code>prescott</code>,
+<code>nocona</code>,
+<code>core</code>,
+<code>core2</code>,
+<code>corei7</code>,
+<code>l1om</code>,
+<code>k1om</code>,
+<code>iamcu</code>,
+<code>k6</code>,
+<code>k6_2</code>,
+<code>athlon</code>,
+<code>opteron</code>,
+<code>k8</code>,
+<code>amdfam10</code>,
+<code>bdver1</code>,
+<code>bdver2</code>,
+<code>bdver3</code>,
+<code>bdver4</code>,
+<code>znver1</code>,
+<code>znver2</code>,
+<code>btver1</code>,
+<code>btver2</code>,
+<code>generic32</code> and
+<code>generic64</code>.
+</p>
+<p>In addition to the basic instruction set, the assembler can be told to
+accept various extension mnemonics.  For example,
+<code>-march=i686+sse4+vmx</code> extends <var>i686</var> with <var>sse4</var> and
+<var>vmx</var>.  The following extensions are currently supported:
+<code>8087</code>,
+<code>287</code>,
+<code>387</code>,
+<code>687</code>,
+<code>no87</code>,
+<code>no287</code>,
+<code>no387</code>,
+<code>no687</code>,
+<code>cmov</code>,
+<code>nocmov</code>,
+<code>fxsr</code>,
+<code>nofxsr</code>,
+<code>mmx</code>,
+<code>nommx</code>,
+<code>sse</code>,
+<code>sse2</code>,
+<code>sse3</code>,
+<code>ssse3</code>,
+<code>sse4.1</code>,
+<code>sse4.2</code>,
+<code>sse4</code>,
+<code>nosse</code>,
+<code>nosse2</code>,
+<code>nosse3</code>,
+<code>nossse3</code>,
+<code>nosse4.1</code>,
+<code>nosse4.2</code>,
+<code>nosse4</code>,
+<code>avx</code>,
+<code>avx2</code>,
+<code>noavx</code>,
+<code>noavx2</code>,
+<code>adx</code>,
+<code>rdseed</code>,
+<code>prfchw</code>,
+<code>smap</code>,
+<code>mpx</code>,
+<code>sha</code>,
+<code>rdpid</code>,
+<code>ptwrite</code>,
+<code>cet</code>,
+<code>gfni</code>,
+<code>vaes</code>,
+<code>vpclmulqdq</code>,
+<code>prefetchwt1</code>,
+<code>clflushopt</code>,
+<code>se1</code>,
+<code>clwb</code>,
+<code>movdiri</code>,
+<code>movdir64b</code>,
+<code>enqcmd</code>,
+<code>avx512f</code>,
+<code>avx512cd</code>,
+<code>avx512er</code>,
+<code>avx512pf</code>,
+<code>avx512vl</code>,
+<code>avx512bw</code>,
+<code>avx512dq</code>,
+<code>avx512ifma</code>,
+<code>avx512vbmi</code>,
+<code>avx512_4fmaps</code>,
+<code>avx512_4vnniw</code>,
+<code>avx512_vpopcntdq</code>,
+<code>avx512_vbmi2</code>,
+<code>avx512_vnni</code>,
+<code>avx512_bitalg</code>,
+<code>avx512_bf16</code>,
+<code>noavx512f</code>,
+<code>noavx512cd</code>,
+<code>noavx512er</code>,
+<code>noavx512pf</code>,
+<code>noavx512vl</code>,
+<code>noavx512bw</code>,
+<code>noavx512dq</code>,
+<code>noavx512ifma</code>,
+<code>noavx512vbmi</code>,
+<code>noavx512_4fmaps</code>,
+<code>noavx512_4vnniw</code>,
+<code>noavx512_vpopcntdq</code>,
+<code>noavx512_vbmi2</code>,
+<code>noavx512_vnni</code>,
+<code>noavx512_bitalg</code>,
+<code>noavx512_vp2intersect</code>,
+<code>noavx512_bf16</code>,
+<code>noenqcmd</code>,
+<code>vmx</code>,
+<code>vmfunc</code>,
+<code>smx</code>,
+<code>xsave</code>,
+<code>xsaveopt</code>,
+<code>xsavec</code>,
+<code>xsaves</code>,
+<code>aes</code>,
+<code>pclmul</code>,
+<code>fsgsbase</code>,
+<code>rdrnd</code>,
+<code>f16c</code>,
+<code>bmi2</code>,
+<code>fma</code>,
+<code>movbe</code>,
+<code>ept</code>,
+<code>lzcnt</code>,
+<code>hle</code>,
+<code>rtm</code>,
+<code>invpcid</code>,
+<code>clflush</code>,
+<code>mwaitx</code>,
+<code>clzero</code>,
+<code>wbnoinvd</code>,
+<code>pconfig</code>,
+<code>waitpkg</code>,
+<code>cldemote</code>,
+<code>lwp</code>,
+<code>fma4</code>,
+<code>xop</code>,
+<code>cx16</code>,
+<code>syscall</code>,
+<code>rdtscp</code>,
+<code>3dnow</code>,
+<code>3dnowa</code>,
+<code>sse4a</code>,
+<code>sse5</code>,
+<code>svme</code>,
+<code>abm</code> and
+<code>padlock</code>.
+Note that rather than extending a basic instruction set, the extension
+mnemonics starting with <code>no</code> revoke the respective functionality.
+</p>
+<p>When the <code>.arch</code> directive is used with <samp>-march</samp>, the
+<code>.arch</code> directive will take precedent.
+</p>
+<a name="index-_002dmtune_003d-option_002c-i386"></a>
+<a name="index-_002dmtune_003d-option_002c-x86_002d64"></a>
+</dd>
+<dt><code>-mtune=<var>CPU</var></code></dt>
+<dd><p>This option specifies a processor to optimize for. When used in
+conjunction with the <samp>-march</samp> option, only instructions
+of the processor specified by the <samp>-march</samp> option will be
+generated.
+</p>
+<p>Valid <var>CPU</var> values are identical to the processor list of
+<samp>-march=<var>CPU</var></samp>.
+</p>
+<a name="index-_002dmsse2avx-option_002c-i386"></a>
+<a name="index-_002dmsse2avx-option_002c-x86_002d64"></a>
+</dd>
+<dt><code>-msse2avx</code></dt>
+<dd><p>This option specifies that the assembler should encode SSE instructions
+with VEX prefix.
+</p>
+<a name="index-_002dmsse_002dcheck_003d-option_002c-i386"></a>
+<a name="index-_002dmsse_002dcheck_003d-option_002c-x86_002d64"></a>
+</dd>
+<dt><code>-msse-check=<var>none</var></code></dt>
+<dt><code>-msse-check=<var>warning</var></code></dt>
+<dt><code>-msse-check=<var>error</var></code></dt>
+<dd><p>These options control if the assembler should check SSE instructions.
+<samp>-msse-check=<var>none</var></samp> will make the assembler not to check SSE
+instructions,  which is the default.  <samp>-msse-check=<var>warning</var></samp>
+will make the assembler issue a warning for any SSE instruction.
+<samp>-msse-check=<var>error</var></samp> will make the assembler issue an error
+for any SSE instruction.
+</p>
+<a name="index-_002dmavxscalar_003d-option_002c-i386"></a>
+<a name="index-_002dmavxscalar_003d-option_002c-x86_002d64"></a>
+</dd>
+<dt><code>-mavxscalar=<var>128</var></code></dt>
+<dt><code>-mavxscalar=<var>256</var></code></dt>
+<dd><p>These options control how the assembler should encode scalar AVX
+instructions.  <samp>-mavxscalar=<var>128</var></samp> will encode scalar
+AVX instructions with 128bit vector length, which is the default.
+<samp>-mavxscalar=<var>256</var></samp> will encode scalar AVX instructions
+with 256bit vector length.
+</p>
+<p>WARNING: Don&rsquo;t use this for production code - due to CPU errata the
+resulting code may not work on certain models.
+</p>
+<a name="index-_002dmvexwig_003d-option_002c-i386"></a>
+<a name="index-_002dmvexwig_003d-option_002c-x86_002d64"></a>
+</dd>
+<dt><code>-mvexwig=<var>0</var></code></dt>
+<dt><code>-mvexwig=<var>1</var></code></dt>
+<dd><p>These options control how the assembler should encode VEX.W-ignored (WIG)
+VEX instructions.  <samp>-mvexwig=<var>0</var></samp> will encode WIG VEX
+instructions with vex.w = 0, which is the default.
+<samp>-mvexwig=<var>1</var></samp> will encode WIG EVEX instructions with
+vex.w = 1.
+</p>
+<p>WARNING: Don&rsquo;t use this for production code - due to CPU errata the
+resulting code may not work on certain models.
+</p>
+<a name="index-_002dmevexlig_003d-option_002c-i386"></a>
+<a name="index-_002dmevexlig_003d-option_002c-x86_002d64"></a>
+</dd>
+<dt><code>-mevexlig=<var>128</var></code></dt>
+<dt><code>-mevexlig=<var>256</var></code></dt>
+<dt><code>-mevexlig=<var>512</var></code></dt>
+<dd><p>These options control how the assembler should encode length-ignored
+(LIG) EVEX instructions.  <samp>-mevexlig=<var>128</var></samp> will encode LIG
+EVEX instructions with 128bit vector length, which is the default.
+<samp>-mevexlig=<var>256</var></samp> and <samp>-mevexlig=<var>512</var></samp> will
+encode LIG EVEX instructions with 256bit and 512bit vector length,
+respectively.
+</p>
+<a name="index-_002dmevexwig_003d-option_002c-i386"></a>
+<a name="index-_002dmevexwig_003d-option_002c-x86_002d64"></a>
+</dd>
+<dt><code>-mevexwig=<var>0</var></code></dt>
+<dt><code>-mevexwig=<var>1</var></code></dt>
+<dd><p>These options control how the assembler should encode w-ignored (WIG)
+EVEX instructions.  <samp>-mevexwig=<var>0</var></samp> will encode WIG
+EVEX instructions with evex.w = 0, which is the default.
+<samp>-mevexwig=<var>1</var></samp> will encode WIG EVEX instructions with
+evex.w = 1.
+</p>
+<a name="index-_002dmmnemonic_003d-option_002c-i386"></a>
+<a name="index-_002dmmnemonic_003d-option_002c-x86_002d64"></a>
+</dd>
+<dt><code>-mmnemonic=<var>att</var></code></dt>
+<dt><code>-mmnemonic=<var>intel</var></code></dt>
+<dd><p>This option specifies instruction mnemonic for matching instructions.
+The <code>.att_mnemonic</code> and <code>.intel_mnemonic</code> directives will
+take precedent.
+</p>
+<a name="index-_002dmsyntax_003d-option_002c-i386"></a>
+<a name="index-_002dmsyntax_003d-option_002c-x86_002d64"></a>
+</dd>
+<dt><code>-msyntax=<var>att</var></code></dt>
+<dt><code>-msyntax=<var>intel</var></code></dt>
+<dd><p>This option specifies instruction syntax when processing instructions.
+The <code>.att_syntax</code> and <code>.intel_syntax</code> directives will
+take precedent.
+</p>
+<a name="index-_002dmnaked_002dreg-option_002c-i386"></a>
+<a name="index-_002dmnaked_002dreg-option_002c-x86_002d64"></a>
+</dd>
+<dt><code>-mnaked-reg</code></dt>
+<dd><p>This option specifies that registers don&rsquo;t require a &lsquo;<samp>%</samp>&rsquo; prefix.
+The <code>.att_syntax</code> and <code>.intel_syntax</code> directives will take precedent.
+</p>
+<a name="index-_002dmadd_002dbnd_002dprefix-option_002c-i386"></a>
+<a name="index-_002dmadd_002dbnd_002dprefix-option_002c-x86_002d64"></a>
+</dd>
+<dt><code>-madd-bnd-prefix</code></dt>
+<dd><p>This option forces the assembler to add BND prefix to all branches, even
+if such prefix was not explicitly specified in the source code.
+</p>
+<a name="index-_002dmshared-option_002c-i386"></a>
+<a name="index-_002dmshared-option_002c-x86_002d64"></a>
+</dd>
+<dt><code>-mno-shared</code></dt>
+<dd><p>On ELF target, the assembler normally optimizes out non-PLT relocations
+against defined non-weak global branch targets with default visibility.
+The &lsquo;<samp>-mshared</samp>&rsquo; option tells the assembler to generate code which
+may go into a shared library where all non-weak global branch targets
+with default visibility can be preempted.  The resulting code is
+slightly bigger.  This option only affects the handling of branch
+instructions.
+</p>
+<a name="index-_002dmbig_002dobj-option_002c-x86_002d64"></a>
+</dd>
+<dt><code>-mbig-obj</code></dt>
+<dd><p>On x86-64 PE/COFF target this option forces the use of big object file
+format, which allows more than 32768 sections.
+</p>
+<a name="index-_002dmomit_002dlock_002dprefix_003d-option_002c-i386"></a>
+<a name="index-_002dmomit_002dlock_002dprefix_003d-option_002c-x86_002d64"></a>
+</dd>
+<dt><code>-momit-lock-prefix=<var>no</var></code></dt>
+<dt><code>-momit-lock-prefix=<var>yes</var></code></dt>
+<dd><p>These options control how the assembler should encode lock prefix.
+This option is intended as a workaround for processors, that fail on
+lock prefix. This option can only be safely used with single-core,
+single-thread computers
+<samp>-momit-lock-prefix=<var>yes</var></samp> will omit all lock prefixes.
+<samp>-momit-lock-prefix=<var>no</var></samp> will encode lock prefix as usual,
+which is the default.
+</p>
+<a name="index-_002dmfence_002das_002dlock_002dadd_003d-option_002c-i386"></a>
+<a name="index-_002dmfence_002das_002dlock_002dadd_003d-option_002c-x86_002d64"></a>
+</dd>
+<dt><code>-mfence-as-lock-add=<var>no</var></code></dt>
+<dt><code>-mfence-as-lock-add=<var>yes</var></code></dt>
+<dd><p>These options control how the assembler should encode lfence, mfence and
+sfence.
+<samp>-mfence-as-lock-add=<var>yes</var></samp> will encode lfence, mfence and
+sfence as &lsquo;<samp>lock addl $0x0, (%rsp)</samp>&rsquo; in 64-bit mode and
+&lsquo;<samp>lock addl $0x0, (%esp)</samp>&rsquo; in 32-bit mode.
+<samp>-mfence-as-lock-add=<var>no</var></samp> will encode lfence, mfence and
+sfence as usual, which is the default.
+</p>
+<a name="index-_002dmrelax_002drelocations_003d-option_002c-i386"></a>
+<a name="index-_002dmrelax_002drelocations_003d-option_002c-x86_002d64"></a>
+</dd>
+<dt><code>-mrelax-relocations=<var>no</var></code></dt>
+<dt><code>-mrelax-relocations=<var>yes</var></code></dt>
+<dd><p>These options control whether the assembler should generate relax
+relocations, R_386_GOT32X, in 32-bit mode, or R_X86_64_GOTPCRELX and
+R_X86_64_REX_GOTPCRELX, in 64-bit mode.
+<samp>-mrelax-relocations=<var>yes</var></samp> will generate relax relocations.
+<samp>-mrelax-relocations=<var>no</var></samp> will not generate relax
+relocations.  The default can be controlled by a configure option
+<samp>--enable-x86-relax-relocations</samp>.
+</p>
+<a name="index-_002dmx86_002dused_002dnote_003d-option_002c-i386"></a>
+<a name="index-_002dmx86_002dused_002dnote_003d-option_002c-x86_002d64"></a>
+</dd>
+<dt><code>-mx86-used-note=<var>no</var></code></dt>
+<dt><code>-mx86-used-note=<var>yes</var></code></dt>
+<dd><p>These options control whether the assembler should generate
+GNU_PROPERTY_X86_ISA_1_USED and GNU_PROPERTY_X86_FEATURE_2_USED
+GNU property notes.  The default can be controlled by the
+<samp>--enable-x86-used-note</samp> configure option.
+</p>
+<a name="index-_002dmevexrcig_003d-option_002c-i386"></a>
+<a name="index-_002dmevexrcig_003d-option_002c-x86_002d64"></a>
+</dd>
+<dt><code>-mevexrcig=<var>rne</var></code></dt>
+<dt><code>-mevexrcig=<var>rd</var></code></dt>
+<dt><code>-mevexrcig=<var>ru</var></code></dt>
+<dt><code>-mevexrcig=<var>rz</var></code></dt>
+<dd><p>These options control how the assembler should encode SAE-only
+EVEX instructions.  <samp>-mevexrcig=<var>rne</var></samp> will encode RC bits
+of EVEX instruction with 00, which is the default.
+<samp>-mevexrcig=<var>rd</var></samp>, <samp>-mevexrcig=<var>ru</var></samp>
+and <samp>-mevexrcig=<var>rz</var></samp> will encode SAE-only EVEX instructions
+with 01, 10 and 11 RC bits, respectively.
+</p>
+<a name="index-_002dmamd64-option_002c-x86_002d64"></a>
+<a name="index-_002dmintel64-option_002c-x86_002d64"></a>
+</dd>
+<dt><code>-mamd64</code></dt>
+<dt><code>-mintel64</code></dt>
+<dd><p>This option specifies that the assembler should accept only AMD64 or
+Intel64 ISA in 64-bit mode.  The default is to accept both.
+</p>
+<a name="index-_002dO0-option_002c-i386"></a>
+<a name="index-_002dO0-option_002c-x86_002d64"></a>
+<a name="index-_002dO-option_002c-i386"></a>
+<a name="index-_002dO-option_002c-x86_002d64"></a>
+<a name="index-_002dO1-option_002c-i386"></a>
+<a name="index-_002dO1-option_002c-x86_002d64"></a>
+<a name="index-_002dO2-option_002c-i386"></a>
+<a name="index-_002dO2-option_002c-x86_002d64"></a>
+<a name="index-_002dOs-option_002c-i386"></a>
+<a name="index-_002dOs-option_002c-x86_002d64"></a>
+</dd>
+<dt><code>-O0 | -O | -O1 | -O2 | -Os</code></dt>
+<dd><p>Optimize instruction encoding with smaller instruction size.  &lsquo;<samp>-O</samp>&rsquo;
+and &lsquo;<samp>-O1</samp>&rsquo; encode 64-bit register load instructions with 64-bit
+immediate as 32-bit register load instructions with 31-bit or 32-bits
+immediates, encode 64-bit register clearing instructions with 32-bit
+register clearing instructions, encode 256-bit/512-bit VEX/EVEX vector
+register clearing instructions with 128-bit VEX vector register
+clearing instructions, encode 128-bit/256-bit EVEX vector
+register load/store instructions with VEX vector register load/store
+instructions, and encode 128-bit/256-bit EVEX packed integer logical
+instructions with 128-bit/256-bit VEX packed integer logical.
+</p>
+<p>&lsquo;<samp>-O2</samp>&rsquo; includes &lsquo;<samp>-O1</samp>&rsquo; optimization plus encodes
+256-bit/512-bit EVEX vector register clearing instructions with 128-bit
+EVEX vector register clearing instructions.  In 64-bit mode VEX encoded
+instructions with commutative source operands will also have their
+source operands swapped if this allows using the 2-byte VEX prefix form
+instead of the 3-byte one.  Certain forms of AND as well as OR with the
+same (register) operand specified twice will also be changed to TEST.
+</p>
+<p>&lsquo;<samp>-Os</samp>&rsquo; includes &lsquo;<samp>-O2</samp>&rsquo; optimization plus encodes 16-bit, 32-bit
+and 64-bit register tests with immediate as 8-bit register test with
+immediate.  &lsquo;<samp>-O0</samp>&rsquo; turns off this optimization.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="i386_002dDirectives.html#i386_002dDirectives" accesskey="n" rel="next">i386-Directives</a>, Up: <a href="i386_002dDependent.html#i386_002dDependent" accesskey="u" rel="up">i386-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

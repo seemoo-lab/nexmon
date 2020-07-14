@@ -1,0 +1,220 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: GIMPLE_CALL</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: GIMPLE_CALL">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: GIMPLE_CALL">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Tuple-specific-accessors.html#Tuple-specific-accessors" rel="up" title="Tuple specific accessors">
+<link href="GIMPLE_005fCATCH.html#GIMPLE_005fCATCH" rel="next" title="GIMPLE_CATCH">
+<link href="GIMPLE_005fBIND.html#GIMPLE_005fBIND" rel="prev" title="GIMPLE_BIND">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="GIMPLE_005fCALL"></a>
+<div class="header">
+<p>
+Next: <a href="GIMPLE_005fCATCH.html#GIMPLE_005fCATCH" accesskey="n" rel="next"><code>GIMPLE_CATCH</code></a>, Previous: <a href="GIMPLE_005fBIND.html#GIMPLE_005fBIND" accesskey="p" rel="prev"><code>GIMPLE_BIND</code></a>, Up: <a href="Tuple-specific-accessors.html#Tuple-specific-accessors" accesskey="u" rel="up">Tuple specific accessors</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="GIMPLE_005fCALL-1"></a>
+<h4 class="subsection">12.8.4 <code>GIMPLE_CALL</code></h4>
+<a name="index-GIMPLE_005fCALL"></a>
+
+<dl>
+<dt><a name="index-_002agimple_005fbuild_005fcall"></a>GIMPLE function: <em>gcall</em> <strong>*gimple_build_call</strong> <em>(tree fn, unsigned nargs, ...)</em></dt>
+<dd><p>Build a <code>GIMPLE_CALL</code> statement to function <code>FN</code>.  The argument <code>FN</code>
+must be either a <code>FUNCTION_DECL</code> or a gimple call address as
+determined by <code>is_gimple_call_addr</code>.  <code>NARGS</code> are the number of
+arguments.  The rest of the arguments follow the argument <code>NARGS</code>,
+and must be trees that are valid as rvalues in gimple (i.e., each
+operand is validated with <code>is_gimple_operand</code>).
+</p></dd></dl>
+
+
+<dl>
+<dt><a name="index-_002agimple_005fbuild_005fcall_005ffrom_005ftree"></a>GIMPLE function: <em>gcall</em> <strong>*gimple_build_call_from_tree</strong> <em>(tree call_expr, tree fnptrtype)</em></dt>
+<dd><p>Build a <code>GIMPLE_CALL</code> from a <code>CALL_EXPR</code> node.  The arguments
+and the function are taken from the expression directly.  The type of the
+<code>GIMPLE_CALL</code> is set from the second parameter passed by a caller.
+This routine assumes that <code>call_expr</code> is already in GIMPLE form.
+That is, its operands are GIMPLE values and the function call needs no further
+simplification.  All the call flags in <code>call_expr</code> are copied over
+to the new <code>GIMPLE_CALL</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_002agimple_005fbuild_005fcall_005fvec"></a>GIMPLE function: <em>gcall</em> <strong>*gimple_build_call_vec</strong> <em>(tree fn, <code>vec&lt;tree&gt;</code> args)</em></dt>
+<dd><p>Identical to <code>gimple_build_call</code> but the arguments are stored in a
+<code>vec&lt;tree&gt;</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcall_005flhs"></a>GIMPLE function: <em>tree</em> <strong>gimple_call_lhs</strong> <em>(gimple g)</em></dt>
+<dd><p>Return the <code>LHS</code> of call statement <code>G</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcall_005flhs_005fptr"></a>GIMPLE function: <em>tree *</em> <strong>gimple_call_lhs_ptr</strong> <em>(gimple g)</em></dt>
+<dd><p>Return a pointer to the <code>LHS</code> of call statement <code>G</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcall_005fset_005flhs"></a>GIMPLE function: <em>void</em> <strong>gimple_call_set_lhs</strong> <em>(gimple g, tree lhs)</em></dt>
+<dd><p>Set <code>LHS</code> to be the <code>LHS</code> operand of call statement <code>G</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcall_005ffn"></a>GIMPLE function: <em>tree</em> <strong>gimple_call_fn</strong> <em>(gimple g)</em></dt>
+<dd><p>Return the tree node representing the function called by call
+statement <code>G</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcall_005fset_005ffn"></a>GIMPLE function: <em>void</em> <strong>gimple_call_set_fn</strong> <em>(gcall *g, tree fn)</em></dt>
+<dd><p>Set <code>FN</code> to be the function called by call statement <code>G</code>.  This has
+to be a gimple value specifying the address of the called
+function.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcall_005ffndecl"></a>GIMPLE function: <em>tree</em> <strong>gimple_call_fndecl</strong> <em>(gimple g)</em></dt>
+<dd><p>If a given <code>GIMPLE_CALL</code>&rsquo;s callee is a <code>FUNCTION_DECL</code>, return it.
+Otherwise return <code>NULL</code>.  This function is analogous to
+<code>get_callee_fndecl</code> in <code>GENERIC</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcall_005fset_005ffndecl"></a>GIMPLE function: <em>tree</em> <strong>gimple_call_set_fndecl</strong> <em>(gimple g, tree fndecl)</em></dt>
+<dd><p>Set the called function to <code>FNDECL</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcall_005freturn_005ftype"></a>GIMPLE function: <em>tree</em> <strong>gimple_call_return_type</strong> <em>(const gcall *g)</em></dt>
+<dd><p>Return the type returned by call statement <code>G</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcall_005fchain"></a>GIMPLE function: <em>tree</em> <strong>gimple_call_chain</strong> <em>(gimple g)</em></dt>
+<dd><p>Return the static chain for call statement <code>G</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcall_005fset_005fchain"></a>GIMPLE function: <em>void</em> <strong>gimple_call_set_chain</strong> <em>(gcall *g, tree chain)</em></dt>
+<dd><p>Set <code>CHAIN</code> to be the static chain for call statement <code>G</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcall_005fnum_005fargs"></a>GIMPLE function: <em>unsigned</em> <strong>gimple_call_num_args</strong> <em>(gimple g)</em></dt>
+<dd><p>Return the number of arguments used by call statement <code>G</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcall_005farg"></a>GIMPLE function: <em>tree</em> <strong>gimple_call_arg</strong> <em>(gimple g, unsigned index)</em></dt>
+<dd><p>Return the argument at position <code>INDEX</code> for call statement <code>G</code>.  The
+first argument is 0.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcall_005farg_005fptr"></a>GIMPLE function: <em>tree *</em> <strong>gimple_call_arg_ptr</strong> <em>(gimple g, unsigned index)</em></dt>
+<dd><p>Return a pointer to the argument at position <code>INDEX</code> for call
+statement <code>G</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcall_005fset_005farg"></a>GIMPLE function: <em>void</em> <strong>gimple_call_set_arg</strong> <em>(gimple g, unsigned index, tree arg)</em></dt>
+<dd><p>Set <code>ARG</code> to be the argument at position <code>INDEX</code> for call statement
+<code>G</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcall_005fset_005ftail"></a>GIMPLE function: <em>void</em> <strong>gimple_call_set_tail</strong> <em>(gcall *s)</em></dt>
+<dd><p>Mark call statement <code>S</code> as being a tail call (i.e., a call just
+before the exit of a function). These calls are candidate for
+tail call optimization.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcall_005ftail_005fp"></a>GIMPLE function: <em>bool</em> <strong>gimple_call_tail_p</strong> <em>(gcall *s)</em></dt>
+<dd><p>Return true if <code>GIMPLE_CALL</code> <code>S</code> is marked as a tail call.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcall_005fnoreturn_005fp"></a>GIMPLE function: <em>bool</em> <strong>gimple_call_noreturn_p</strong> <em>(gimple s)</em></dt>
+<dd><p>Return true if <code>S</code> is a noreturn call.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcall_005fcopy_005fskip_005fargs"></a>GIMPLE function: <em>gimple</em> <strong>gimple_call_copy_skip_args</strong> <em>(gcall *stmt, bitmap args_to_skip)</em></dt>
+<dd><p>Build a <code>GIMPLE_CALL</code> identical to <code>STMT</code> but skipping the arguments
+in the positions marked by the set <code>ARGS_TO_SKIP</code>.
+</p></dd></dl>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="GIMPLE_005fCATCH.html#GIMPLE_005fCATCH" accesskey="n" rel="next"><code>GIMPLE_CATCH</code></a>, Previous: <a href="GIMPLE_005fBIND.html#GIMPLE_005fBIND" accesskey="p" rel="prev"><code>GIMPLE_BIND</code></a>, Up: <a href="Tuple-specific-accessors.html#Tuple-specific-accessors" accesskey="u" rel="up">Tuple specific accessors</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: GDB/MI Symbol Query</title>
+
+<meta name="description" content="Debugging with GDB: GDB/MI Symbol Query">
+<meta name="keywords" content="Debugging with GDB: GDB/MI Symbol Query">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="GDB_002fMI.html#GDB_002fMI" rel="up" title="GDB/MI">
+<link href="GDB_002fMI-File-Commands.html#GDB_002fMI-File-Commands" rel="next" title="GDB/MI File Commands">
+<link href="GDB_002fMI-Tracepoint-Commands.html#GDB_002fMI-Tracepoint-Commands" rel="prev" title="GDB/MI Tracepoint Commands">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="GDB_002fMI-Symbol-Query"></a>
+<div class="header">
+<p>
+Next: <a href="GDB_002fMI-File-Commands.html#GDB_002fMI-File-Commands" accesskey="n" rel="next">GDB/MI File Commands</a>, Previous: <a href="GDB_002fMI-Tracepoint-Commands.html#GDB_002fMI-Tracepoint-Commands" accesskey="p" rel="prev">GDB/MI Tracepoint Commands</a>, Up: <a href="GDB_002fMI.html#GDB_002fMI" accesskey="u" rel="up">GDB/MI</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="GDB_002fMI-Symbol-Query-Commands"></a>
+<h3 class="section">27.18 <small>GDB/MI</small> Symbol Query Commands</h3>
+
+
+
+
+<a name="The-_002dsymbol_002dlist_002dlines-Command"></a>
+<h4 class="subheading">The <code>-symbol-list-lines</code> Command</h4>
+<a name="index-_002dsymbol_002dlist_002dlines"></a>
+
+<a name="Synopsis-77"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -symbol-list-lines <var>filename</var>
+</pre></div>
+
+<p>Print the list of lines that contain code and their associated program
+addresses for the given source filename.  The entries are sorted in
+ascending PC order.
+</p>
+<a name="GDB-Command-59"></a>
+<h4 class="subsubheading"><small>GDB</small> Command</h4>
+
+<p>There is no corresponding <small>GDB</small> command.
+</p>
+<a name="Example-59"></a>
+<h4 class="subsubheading">Example</h4>
+<div class="smallexample">
+<pre class="smallexample">(gdb)
+-symbol-list-lines basics.c
+^done,lines=[{pc=&quot;0x08048554&quot;,line=&quot;7&quot;},{pc=&quot;0x0804855a&quot;,line=&quot;8&quot;}]
+(gdb)
+</pre></div>
+
+
+
+
+
+
+
+</body>
+</html>

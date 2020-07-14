@@ -1,0 +1,227 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Defining Predicates</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Defining Predicates">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Defining Predicates">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Predicates.html#Predicates" rel="up" title="Predicates">
+<link href="Constraints.html#Constraints" rel="next" title="Constraints">
+<link href="Machine_002dIndependent-Predicates.html#Machine_002dIndependent-Predicates" rel="prev" title="Machine-Independent Predicates">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Defining-Predicates"></a>
+<div class="header">
+<p>
+Previous: <a href="Machine_002dIndependent-Predicates.html#Machine_002dIndependent-Predicates" accesskey="p" rel="prev">Machine-Independent Predicates</a>, Up: <a href="Predicates.html#Predicates" accesskey="u" rel="up">Predicates</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Defining-Machine_002dSpecific-Predicates"></a>
+<h4 class="subsection">17.7.2 Defining Machine-Specific Predicates</h4>
+<a name="index-defining-predicates"></a>
+<a name="index-define_005fpredicate"></a>
+<a name="index-define_005fspecial_005fpredicate"></a>
+
+<p>Many machines have requirements for their operands that cannot be
+expressed precisely using the generic predicates.  You can define
+additional predicates using <code>define_predicate</code> and
+<code>define_special_predicate</code> expressions.  These expressions have
+three operands:
+</p>
+<ul>
+<li> The name of the predicate, as it will be referred to in
+<code>match_operand</code> or <code>match_operator</code> expressions.
+
+</li><li> An RTL expression which evaluates to true if the predicate allows the
+operand <var>op</var>, false if it does not.  This expression can only use
+the following RTL codes:
+
+<dl compact="compact">
+<dt><code>MATCH_OPERAND</code></dt>
+<dd><p>When written inside a predicate expression, a <code>MATCH_OPERAND</code>
+expression evaluates to true if the predicate it names would allow
+<var>op</var>.  The operand number and constraint are ignored.  Due to
+limitations in <code>genrecog</code>, you can only refer to generic
+predicates and predicates that have already been defined.
+</p>
+</dd>
+<dt><code>MATCH_CODE</code></dt>
+<dd><p>This expression evaluates to true if <var>op</var> or a specified
+subexpression of <var>op</var> has one of a given list of RTX codes.
+</p>
+<p>The first operand of this expression is a string constant containing a
+comma-separated list of RTX code names (in lower case).  These are the
+codes for which the <code>MATCH_CODE</code> will be true.
+</p>
+<p>The second operand is a string constant which indicates what
+subexpression of <var>op</var> to examine.  If it is absent or the empty
+string, <var>op</var> itself is examined.  Otherwise, the string constant
+must be a sequence of digits and/or lowercase letters.  Each character
+indicates a subexpression to extract from the current expression; for
+the first character this is <var>op</var>, for the second and subsequent
+characters it is the result of the previous character.  A digit
+<var>n</var> extracts &lsquo;<samp>XEXP&nbsp;(<var>e</var>,&nbsp;<var>n</var>)<!-- /@w --></samp>&rsquo;; a letter <var>l</var>
+extracts &lsquo;<samp>XVECEXP&nbsp;(<var>e</var>,&nbsp;0,&nbsp;<var>n</var>)<!-- /@w --></samp>&rsquo; where <var>n</var> is the
+alphabetic ordinal of <var>l</var> (0 for &lsquo;a&rsquo;, 1 for &rsquo;b&rsquo;, and so on).  The
+<code>MATCH_CODE</code> then examines the RTX code of the subexpression
+extracted by the complete string.  It is not possible to extract
+components of an <code>rtvec</code> that is not at position 0 within its RTX
+object.
+</p>
+</dd>
+<dt><code>MATCH_TEST</code></dt>
+<dd><p>This expression has one operand, a string constant containing a C
+expression.  The predicate&rsquo;s arguments, <var>op</var> and <var>mode</var>, are
+available with those names in the C expression.  The <code>MATCH_TEST</code>
+evaluates to true if the C expression evaluates to a nonzero value.
+<code>MATCH_TEST</code> expressions must not have side effects.
+</p>
+</dd>
+<dt><code>AND</code></dt>
+<dt><code>IOR</code></dt>
+<dt><code>NOT</code></dt>
+<dt><code>IF_THEN_ELSE</code></dt>
+<dd><p>The basic &lsquo;<samp>MATCH_</samp>&rsquo; expressions can be combined using these
+logical operators, which have the semantics of the C operators
+&lsquo;<samp>&amp;&amp;</samp>&rsquo;, &lsquo;<samp>||</samp>&rsquo;, &lsquo;<samp>!</samp>&rsquo;, and &lsquo;<samp>?&nbsp;:<!-- /@w --></samp>&rsquo; respectively.  As
+in Common Lisp, you may give an <code>AND</code> or <code>IOR</code> expression an
+arbitrary number of arguments; this has exactly the same effect as
+writing a chain of two-argument <code>AND</code> or <code>IOR</code> expressions.
+</p></dd>
+</dl>
+
+</li><li> An optional block of C code, which should execute
+&lsquo;<samp>return&nbsp;true<!-- /@w --></samp>&rsquo; if the predicate is found to match and
+&lsquo;<samp>return&nbsp;false<!-- /@w --></samp>&rsquo; if it does not.  It must not have any side
+effects.  The predicate arguments, <var>op</var> and <var>mode</var>, are
+available with those names.
+
+<p>If a code block is present in a predicate definition, then the RTL
+expression must evaluate to true <em>and</em> the code block must
+execute &lsquo;<samp>return&nbsp;true<!-- /@w --></samp>&rsquo; for the predicate to allow the operand.
+The RTL expression is evaluated first; do not re-check anything in the
+code block that was checked in the RTL expression.
+</p></li></ul>
+
+<p>The program <code>genrecog</code> scans <code>define_predicate</code> and
+<code>define_special_predicate</code> expressions to determine which RTX
+codes are possibly allowed.  You should always make this explicit in
+the RTL predicate expression, using <code>MATCH_OPERAND</code> and
+<code>MATCH_CODE</code>.
+</p>
+<p>Here is an example of a simple predicate definition, from the IA64
+machine description:
+</p>
+<div class="smallexample">
+<pre class="smallexample">;; <span class="roman">True if <var>op</var> is a <code>SYMBOL_REF</code> which refers to the sdata section.</span>
+(define_predicate &quot;small_addr_symbolic_operand&quot;
+  (and (match_code &quot;symbol_ref&quot;)
+       (match_test &quot;SYMBOL_REF_SMALL_ADDR_P (op)&quot;)))
+</pre></div>
+
+<p>And here is another, showing the use of the C block.
+</p>
+<div class="smallexample">
+<pre class="smallexample">;; <span class="roman">True if <var>op</var> is a register operand that is (or could be) a GR reg.</span>
+(define_predicate &quot;gr_register_operand&quot;
+  (match_operand 0 &quot;register_operand&quot;)
+{
+  unsigned int regno;
+  if (GET_CODE (op) == SUBREG)
+    op = SUBREG_REG (op);
+
+  regno = REGNO (op);
+  return (regno &gt;= FIRST_PSEUDO_REGISTER || GENERAL_REGNO_P (regno));
+})
+</pre></div>
+
+<p>Predicates written with <code>define_predicate</code> automatically include
+a test that <var>mode</var> is <code>VOIDmode</code>, or <var>op</var> has the same
+mode as <var>mode</var>, or <var>op</var> is a <code>CONST_INT</code> or
+<code>CONST_DOUBLE</code>.  They do <em>not</em> check specifically for
+integer <code>CONST_DOUBLE</code>, nor do they test that the value of either
+kind of constant fits in the requested mode.  This is because
+target-specific predicates that take constants usually have to do more
+stringent value checks anyway.  If you need the exact same treatment
+of <code>CONST_INT</code> or <code>CONST_DOUBLE</code> that the generic predicates
+provide, use a <code>MATCH_OPERAND</code> subexpression to call
+<code>const_int_operand</code>, <code>const_double_operand</code>, or
+<code>immediate_operand</code>.
+</p>
+<p>Predicates written with <code>define_special_predicate</code> do not get any
+automatic mode checks, and are treated as having special mode handling
+by <code>genrecog</code>.
+</p>
+<p>The program <code>genpreds</code> is responsible for generating code to
+test predicates.  It also writes a header file containing function
+declarations for all machine-specific predicates.  It is not necessary
+to declare these predicates in <samp><var>cpu</var>-protos.h</samp>.
+</p>
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Machine_002dIndependent-Predicates.html#Machine_002dIndependent-Predicates" accesskey="p" rel="prev">Machine-Independent Predicates</a>, Up: <a href="Predicates.html#Predicates" accesskey="u" rel="up">Predicates</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

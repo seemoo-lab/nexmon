@@ -1,0 +1,104 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Custom Debug Info</title>
+
+<meta name="description" content="Debugging with GDB: Custom Debug Info">
+<meta name="keywords" content="Debugging with GDB: Custom Debug Info">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="JIT-Interface.html#JIT-Interface" rel="up" title="JIT Interface">
+<link href="Using-JIT-Debug-Info-Readers.html#Using-JIT-Debug-Info-Readers" rel="next" title="Using JIT Debug Info Readers">
+<link href="Unregistering-Code.html#Unregistering-Code" rel="prev" title="Unregistering Code">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Custom-Debug-Info"></a>
+<div class="header">
+<p>
+Previous: <a href="Unregistering-Code.html#Unregistering-Code" accesskey="p" rel="prev">Unregistering Code</a>, Up: <a href="JIT-Interface.html#JIT-Interface" accesskey="u" rel="up">JIT Interface</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Custom-Debug-Info-1"></a>
+<h3 class="section">29.4 Custom Debug Info</h3>
+<a name="index-custom-JIT-debug-info"></a>
+<a name="index-JIT-debug-info-reader"></a>
+
+<p>Generating debug information in platform-native file formats (like ELF
+or COFF) may be an overkill for JIT compilers; especially if all the
+debug info is used for is displaying a meaningful backtrace.  The
+issue can be resolved by having the JIT writers decide on a debug info
+format and also provide a reader that parses the debug info generated
+by the JIT compiler.  This section gives a brief overview on writing
+such a parser.  More specific details can be found in the source file
+<samp>gdb/jit-reader.in</samp>, which is also installed as a header at
+<samp><var>includedir</var>/gdb/jit-reader.h</samp> for easy inclusion.
+</p>
+<p>The reader is implemented as a shared object (so this functionality is
+not available on platforms which don&rsquo;t allow loading shared objects at
+runtime).  Two <small>GDB</small> commands, <code>jit-reader-load</code> and
+<code>jit-reader-unload</code> are provided, to be used to load and unload
+the readers from a preconfigured directory.  Once loaded, the shared
+object is used the parse the debug information emitted by the JIT
+compiler.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Using-JIT-Debug-Info-Readers.html#Using-JIT-Debug-Info-Readers" accesskey="1">Using JIT Debug Info Readers</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How to use supplied readers correctly
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Writing-JIT-Debug-Info-Readers.html#Writing-JIT-Debug-Info-Readers" accesskey="2">Writing JIT Debug Info Readers</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Creating a debug-info reader
+</td></tr>
+</table>
+
+
+
+
+</body>
+</html>

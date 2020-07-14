@@ -1,0 +1,140 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: GET_COMMAND</title>
+
+<meta name="description" content="The GNU Fortran Compiler: GET_COMMAND">
+<meta name="keywords" content="The GNU Fortran Compiler: GET_COMMAND">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Intrinsic-Procedures.html#Intrinsic-Procedures" rel="up" title="Intrinsic Procedures">
+<link href="GET_005fCOMMAND_005fARGUMENT.html#GET_005fCOMMAND_005fARGUMENT" rel="next" title="GET_COMMAND_ARGUMENT">
+<link href="GETARG.html#GETARG" rel="prev" title="GETARG">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="GET_005fCOMMAND"></a>
+<div class="header">
+<p>
+Next: <a href="GET_005fCOMMAND_005fARGUMENT.html#GET_005fCOMMAND_005fARGUMENT" accesskey="n" rel="next">GET_COMMAND_ARGUMENT</a>, Previous: <a href="GETARG.html#GETARG" accesskey="p" rel="prev">GETARG</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="GET_005fCOMMAND-_002d_002d_002d-Get-the-entire-command-line"></a>
+<h3 class="section">9.122 <code>GET_COMMAND</code> &mdash; Get the entire command line</h3>
+<a name="index-GET_005fCOMMAND"></a>
+<a name="index-command_002dline-arguments-2"></a>
+<a name="index-arguments_002c-to-program-2"></a>
+
+<dl compact="compact">
+<dt><em>Description</em>:</dt>
+<dd><p>Retrieve the entire command line that was used to invoke the program.
+</p>
+</dd>
+<dt><em>Standard</em>:</dt>
+<dd><p>Fortran 2003 and later
+</p>
+</dd>
+<dt><em>Class</em>:</dt>
+<dd><p>Subroutine
+</p>
+</dd>
+<dt><em>Syntax</em>:</dt>
+<dd><p><code>CALL GET_COMMAND([COMMAND, LENGTH, STATUS])</code>
+</p>
+</dd>
+<dt><em>Arguments</em>:</dt>
+<dd><table>
+<tr><td width="15%"><var>COMMAND</var></td><td width="70%">(Optional) shall be of type <code>CHARACTER</code> and
+of default kind.</td></tr>
+<tr><td width="15%"><var>LENGTH</var></td><td width="70%">(Optional) Shall be of type <code>INTEGER</code> and of
+default kind.</td></tr>
+<tr><td width="15%"><var>STATUS</var></td><td width="70%">(Optional) Shall be of type <code>INTEGER</code> and of
+default kind.</td></tr>
+</table>
+
+</dd>
+<dt><em>Return value</em>:</dt>
+<dd><p>If <var>COMMAND</var> is present, stores the entire command line that was used
+to invoke the program in <var>COMMAND</var>. If <var>LENGTH</var> is present, it is
+assigned the length of the command line. If <var>STATUS</var> is present, it
+is assigned 0 upon success of the command, -1 if <var>COMMAND</var> is too
+short to store the command line, or a positive value in case of an error.
+</p>
+</dd>
+<dt><em>Example</em>:</dt>
+<dd><div class="smallexample">
+<pre class="smallexample">PROGRAM test_get_command
+  CHARACTER(len=255) :: cmd
+  CALL get_command(cmd)
+  WRITE (*,*) TRIM(cmd)
+END PROGRAM
+</pre></div>
+
+</dd>
+<dt><em>See also</em>:</dt>
+<dd><p><a href="GET_005fCOMMAND_005fARGUMENT.html#GET_005fCOMMAND_005fARGUMENT">GET_COMMAND_ARGUMENT</a>, <a href="COMMAND_005fARGUMENT_005fCOUNT.html#COMMAND_005fARGUMENT_005fCOUNT">COMMAND_ARGUMENT_COUNT</a>
+</p></dd>
+</dl>
+
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Returning</title>
+
+<meta name="description" content="Debugging with GDB: Returning">
+<meta name="keywords" content="Debugging with GDB: Returning">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Altering.html#Altering" rel="up" title="Altering">
+<link href="Calling.html#Calling" rel="next" title="Calling">
+<link href="Signaling.html#Signaling" rel="prev" title="Signaling">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Returning"></a>
+<div class="header">
+<p>
+Next: <a href="Calling.html#Calling" accesskey="n" rel="next">Calling</a>, Previous: <a href="Signaling.html#Signaling" accesskey="p" rel="prev">Signaling</a>, Up: <a href="Altering.html#Altering" accesskey="u" rel="up">Altering</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Returning-from-a-Function"></a>
+<h3 class="section">17.4 Returning from a Function</h3>
+
+<dl compact="compact">
+<dd><a name="index-returning-from-a-function"></a>
+<a name="index-return"></a>
+</dd>
+<dt><code>return</code></dt>
+<dt><code>return <var>expression</var></code></dt>
+<dd><p>You can cancel execution of a function call with the <code>return</code>
+command.  If you give an
+<var>expression</var> argument, its value is used as the function&rsquo;s return
+value.
+</p></dd>
+</dl>
+
+<p>When you use <code>return</code>, <small>GDB</small> discards the selected stack frame
+(and all frames within it).  You can think of this as making the
+discarded frame return prematurely.  If you wish to specify a value to
+be returned, give that value as the argument to <code>return</code>.
+</p>
+<p>This pops the selected stack frame (see <a href="Selection.html#Selection">Selecting a
+Frame</a>), and any other frames inside of it, leaving its caller as the
+innermost remaining frame.  That frame becomes selected.  The
+specified value is stored in the registers used for returning values
+of functions.
+</p>
+<p>The <code>return</code> command does not resume execution; it leaves the
+program stopped in the state that would exist if the function had just
+returned.  In contrast, the <code>finish</code> command (see <a href="Continuing-and-Stepping.html#Continuing-and-Stepping">Continuing and Stepping</a>) resumes execution until the
+selected stack frame returns naturally.
+</p>
+<p><small>GDB</small> needs to know how the <var>expression</var> argument should be set for
+the inferior.  The concrete registers assignment depends on the OS ABI and the
+type being returned by the selected stack frame.  For example it is common for
+OS ABI to return floating point values in FPU registers while integer values in
+CPU registers.  Still some ABIs return even floating point values in CPU
+registers.  Larger integer widths (such as <code>long long int</code>) also have
+specific placement rules.  <small>GDB</small> already knows the OS ABI from its
+current target so it needs to find out also the type being returned to make the
+assignment into the right register(s).
+</p>
+<p>Normally, the selected stack frame has debug info.  <small>GDB</small> will always
+use the debug info instead of the implicit type of <var>expression</var> when the
+debug info is available.  For example, if you type <kbd>return -1</kbd>, and the
+function in the current stack frame is declared to return a <code>long long
+int</code>, <small>GDB</small> transparently converts the implicit <code>int</code> value of -1
+into a <code>long long int</code>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">Breakpoint 1, func () at gdb.base/return-nodebug.c:29
+29        return 31;
+(gdb) return -1
+Make func return now? (y or n) y
+#0  0x004004f6 in main () at gdb.base/return-nodebug.c:43
+43        printf (&quot;result=%lld\n&quot;, func ());
+(gdb)
+</pre></div>
+
+<p>However, if the selected stack frame does not have a debug info, e.g., if the
+function was compiled without debug info, <small>GDB</small> has to find out the type
+to return from user.  Specifying a different type by mistake may set the value
+in different inferior registers than the caller code expects.  For example,
+typing <kbd>return -1</kbd> with its implicit type <code>int</code> would set only a part
+of a <code>long long int</code> result for a debug info less function (on 32-bit
+architectures).  Therefore the user is required to specify the return type by
+an appropriate cast explicitly:
+</p>
+<div class="smallexample">
+<pre class="smallexample">Breakpoint 2, 0x0040050b in func ()
+(gdb) return -1
+Return value type not available for selected stack frame.
+Please use an explicit cast of the value to return.
+(gdb) return (long long int) -1
+Make selected stack frame return now? (y or n) y
+#0  0x00400526 in main ()
+(gdb)
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Calling.html#Calling" accesskey="n" rel="next">Calling</a>, Previous: <a href="Signaling.html#Signaling" accesskey="p" rel="prev">Signaling</a>, Up: <a href="Altering.html#Altering" accesskey="u" rel="up">Altering</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

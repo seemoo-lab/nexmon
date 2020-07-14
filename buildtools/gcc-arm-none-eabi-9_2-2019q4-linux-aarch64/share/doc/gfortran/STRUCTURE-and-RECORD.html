@@ -1,0 +1,239 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: STRUCTURE and RECORD</title>
+
+<meta name="description" content="The GNU Fortran Compiler: STRUCTURE and RECORD">
+<meta name="keywords" content="The GNU Fortran Compiler: STRUCTURE and RECORD">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Extensions-implemented-in-GNU-Fortran.html#Extensions-implemented-in-GNU-Fortran" rel="up" title="Extensions implemented in GNU Fortran">
+<link href="UNION-and-MAP.html#UNION-and-MAP" rel="next" title="UNION and MAP">
+<link href="Read_002fWrite-after-EOF-marker.html#Read_002fWrite-after-EOF-marker" rel="prev" title="Read/Write after EOF marker">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="STRUCTURE-and-RECORD"></a>
+<div class="header">
+<p>
+Next: <a href="UNION-and-MAP.html#UNION-and-MAP" accesskey="n" rel="next">UNION and MAP</a>, Previous: <a href="Read_002fWrite-after-EOF-marker.html#Read_002fWrite-after-EOF-marker" accesskey="p" rel="prev">Read/Write after EOF marker</a>, Up: <a href="Extensions-implemented-in-GNU-Fortran.html#Extensions-implemented-in-GNU-Fortran" accesskey="u" rel="up">Extensions implemented in GNU Fortran</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="STRUCTURE-and-RECORD-1"></a>
+<h4 class="subsection">6.1.20 <code>STRUCTURE</code> and <code>RECORD</code></h4>
+<a name="index-STRUCTURE"></a>
+<a name="index-RECORD"></a>
+
+<p>Record structures are a pre-Fortran-90 vendor extension to create
+user-defined aggregate data types.  Support for record structures in GNU
+Fortran can be enabled with the <samp>-fdec-structure</samp> compile flag.
+If you have a choice, you should instead use Fortran 90&rsquo;s &ldquo;derived types&rdquo;,
+which have a different syntax.
+</p>
+<p>In many cases, record structures can easily be converted to derived types.
+To convert, replace <code>STRUCTURE /</code><var>structure-name</var><code>/</code>
+by <code>TYPE</code> <var>type-name</var>.  Additionally, replace
+<code>RECORD /</code><var>structure-name</var><code>/</code> by
+<code>TYPE(</code><var>type-name</var><code>)</code>. Finally, in the component access,
+replace the period (<code>.</code>) by the percent sign (<code>%</code>).
+</p>
+<p>Here is an example of code using the non portable record structure syntax:
+</p>
+<div class="example">
+<pre class="example">! Declaring a structure named ``item'' and containing three fields:
+! an integer ID, an description string and a floating-point price.
+STRUCTURE /item/
+  INTEGER id
+  CHARACTER(LEN=200) description
+  REAL price
+END STRUCTURE
+
+! Define two variables, an single record of type ``item''
+! named ``pear'', and an array of items named ``store_catalog''
+RECORD /item/ pear, store_catalog(100)
+
+! We can directly access the fields of both variables
+pear.id = 92316
+pear.description = &quot;juicy D'Anjou pear&quot;
+pear.price = 0.15
+store_catalog(7).id = 7831
+store_catalog(7).description = &quot;milk bottle&quot;
+store_catalog(7).price = 1.2
+
+! We can also manipulate the whole structure
+store_catalog(12) = pear
+print *, store_catalog(12)
+</pre></div>
+
+<p>This code can easily be rewritten in the Fortran 90 syntax as following:
+</p>
+<div class="example">
+<pre class="example">! ``STRUCTURE /name/ ... END STRUCTURE'' becomes
+! ``TYPE name ... END TYPE''
+TYPE item
+  INTEGER id
+  CHARACTER(LEN=200) description
+  REAL price
+END TYPE
+
+! ``RECORD /name/ variable'' becomes ``TYPE(name) variable''
+TYPE(item) pear, store_catalog(100)
+
+! Instead of using a dot (.) to access fields of a record, the
+! standard syntax uses a percent sign (%)
+pear%id = 92316
+pear%description = &quot;juicy D'Anjou pear&quot;
+pear%price = 0.15
+store_catalog(7)%id = 7831
+store_catalog(7)%description = &quot;milk bottle&quot;
+store_catalog(7)%price = 1.2
+
+! Assignments of a whole variable do not change
+store_catalog(12) = pear
+print *, store_catalog(12)
+</pre></div>
+
+<p>GNU Fortran implements STRUCTURES like derived types with the following
+rules and exceptions:
+</p>
+<ul>
+<li> Structures act like derived types with the <code>SEQUENCE</code> attribute.
+Otherwise they may contain no specifiers.
+
+</li><li> Structures may contain a special field with the name <code>%FILL</code>.
+This will create an anonymous component which cannot be accessed but occupies
+space just as if a component of the same type was declared in its place, useful
+for alignment purposes.  As an example, the following structure will consist
+of at least sixteen bytes:
+
+<div class="smallexample">
+<pre class="smallexample">structure /padded/
+  character(4) start
+  character(8) %FILL
+  character(4) end
+end structure
+</pre></div>
+
+</li><li> Structures may share names with other symbols. For example, the following
+is invalid for derived types, but valid for structures:
+
+<div class="smallexample">
+<pre class="smallexample">structure /header/
+  ! ...
+end structure
+record /header/ header
+</pre></div>
+
+</li><li> Structure types may be declared nested within another parent structure.
+The syntax is:
+<div class="smallexample">
+<pre class="smallexample">structure /type-name/
+    ...
+    structure [/&lt;type-name&gt;/] &lt;field-list&gt;
+...
+</pre></div>
+
+<p>The type name may be ommitted, in which case the structure type itself is
+anonymous, and other structures of the same type cannot be instantiated. The
+following shows some examples:
+</p>
+<div class="example">
+<pre class="example">structure /appointment/
+  ! nested structure definition: app_time is an array of two 'time'
+  structure /time/ app_time (2)
+    integer(1) hour, minute
+  end structure
+  character(10) memo
+end structure
+
+! The 'time' structure is still usable
+record /time/ now
+now = time(5, 30)
+
+...
+
+structure /appointment/
+  ! anonymous nested structure definition
+  structure start, end
+    integer(1) hour, minute
+  end structure
+  character(10) memo
+end structure
+</pre></div>
+
+</li><li> Structures may contain <code>UNION</code> blocks. For more detail see the
+section on <a href="UNION-and-MAP.html#UNION-and-MAP">UNION and MAP</a>.
+
+</li><li> Structures support old-style initialization of components, like
+those described in <a href="Old_002dstyle-variable-initialization.html#Old_002dstyle-variable-initialization">Old-style variable initialization</a>. For array
+initializers, an initializer may contain a repeat specification of the form
+<code>&lt;literal-integer&gt; * &lt;constant-initializer&gt;</code>. The value of the integer
+indicates the number of times to repeat the constant initializer when expanding
+the initializer list.
+</li></ul>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="UNION-and-MAP.html#UNION-and-MAP" accesskey="n" rel="next">UNION and MAP</a>, Previous: <a href="Read_002fWrite-after-EOF-marker.html#Read_002fWrite-after-EOF-marker" accesskey="p" rel="prev">Read/Write after EOF marker</a>, Up: <a href="Extensions-implemented-in-GNU-Fortran.html#Extensions-implemented-in-GNU-Fortran" accesskey="u" rel="up">Extensions implemented in GNU Fortran</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

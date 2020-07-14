@@ -1,0 +1,214 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): C++98 Thread-Local Edits</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): C++98 Thread-Local Edits">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): C++98 Thread-Local Edits">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Thread_002dLocal.html#Thread_002dLocal" rel="up" title="Thread-Local">
+<link href="Binary-constants.html#Binary-constants" rel="next" title="Binary constants">
+<link href="C99-Thread_002dLocal-Edits.html#C99-Thread_002dLocal-Edits" rel="prev" title="C99 Thread-Local Edits">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="C_002b_002b98-Thread_002dLocal-Edits"></a>
+<div class="header">
+<p>
+Previous: <a href="C99-Thread_002dLocal-Edits.html#C99-Thread_002dLocal-Edits" accesskey="p" rel="prev">C99 Thread-Local Edits</a>, Up: <a href="Thread_002dLocal.html#Thread_002dLocal" accesskey="u" rel="up">Thread-Local</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="ISO_002fIEC-14882_003a1998-Edits-for-Thread_002dLocal-Storage"></a>
+<h4 class="subsection">6.64.2 ISO/IEC 14882:1998 Edits for Thread-Local Storage</h4>
+
+<p>The following are a set of changes to ISO/IEC 14882:1998 (aka C++98)
+that document the exact semantics of the language extension.
+</p>
+<ul>
+<li> <b>[intro.execution]</b>
+
+<p>New text after paragraph 4
+</p>
+<blockquote>
+<p>A <em>thread</em> is a flow of control within the abstract machine.
+It is implementation defined whether or not there may be more than
+one thread.
+</p></blockquote>
+
+<p>New text after paragraph 7
+</p>
+<blockquote>
+<p>It is unspecified whether additional action must be taken to
+ensure when and whether side effects are visible to other threads.
+</p></blockquote>
+
+</li><li> <b>[lex.key]</b>
+
+<p>Add <code>__thread</code>.
+</p>
+</li><li> <b>[basic.start.main]</b>
+
+<p>Add after paragraph 5
+</p>
+<blockquote>
+<p>The thread that begins execution at the <code>main</code> function is called
+the <em>main thread</em>.  It is implementation defined how functions
+beginning threads other than the main thread are designated or typed.
+A function so designated, as well as the <code>main</code> function, is called
+a <em>thread startup function</em>.  It is implementation defined what
+happens if a thread startup function returns.  It is implementation
+defined what happens to other threads when any thread calls <code>exit</code>.
+</p></blockquote>
+
+</li><li> <b>[basic.start.init]</b>
+
+<p>Add after paragraph 4
+</p>
+<blockquote>
+<p>The storage for an object of thread storage duration shall be
+statically initialized before the first statement of the thread startup
+function.  An object of thread storage duration shall not require
+dynamic initialization.
+</p></blockquote>
+
+</li><li> <b>[basic.start.term]</b>
+
+<p>Add after paragraph 3
+</p>
+<blockquote>
+<p>The type of an object with thread storage duration shall not have a
+non-trivial destructor, nor shall it be an array type whose elements
+(directly or indirectly) have non-trivial destructors.
+</p></blockquote>
+
+</li><li> <b>[basic.stc]</b>
+
+<p>Add &ldquo;thread storage duration&rdquo; to the list in paragraph 1.
+</p>
+<p>Change paragraph 2
+</p>
+<blockquote>
+<p>Thread, static, and automatic storage durations are associated with
+objects introduced by declarations [&hellip;].
+</p></blockquote>
+
+<p>Add <code>__thread</code> to the list of specifiers in paragraph 3.
+</p>
+</li><li> <b>[basic.stc.thread]</b>
+
+<p>New section before <b>[basic.stc.static]</b>
+</p>
+<blockquote>
+<p>The keyword <code>__thread</code> applied to a non-local object gives the
+object thread storage duration.
+</p>
+<p>A local variable or class data member declared both <code>static</code>
+and <code>__thread</code> gives the variable or member thread storage
+duration.
+</p></blockquote>
+
+</li><li> <b>[basic.stc.static]</b>
+
+<p>Change paragraph 1
+</p>
+<blockquote>
+<p>All objects that have neither thread storage duration, dynamic
+storage duration nor are local [&hellip;].
+</p></blockquote>
+
+</li><li> <b>[dcl.stc]</b>
+
+<p>Add <code>__thread</code> to the list in paragraph 1.
+</p>
+<p>Change paragraph 1
+</p>
+<blockquote>
+<p>With the exception of <code>__thread</code>, at most one
+<var>storage-class-specifier</var> shall appear in a given
+<var>decl-specifier-seq</var>.  The <code>__thread</code> specifier may
+be used alone, or immediately following the <code>extern</code> or
+<code>static</code> specifiers.  [&hellip;]
+</p></blockquote>
+
+<p>Add after paragraph 5
+</p>
+<blockquote>
+<p>The <code>__thread</code> specifier can be applied only to the names of objects
+and to anonymous unions.
+</p></blockquote>
+
+</li><li> <b>[class.mem]</b>
+
+<p>Add after paragraph 6
+</p>
+<blockquote>
+<p>Non-<code>static</code> members shall not be <code>__thread</code>.
+</p></blockquote>
+</li></ul>
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="C99-Thread_002dLocal-Edits.html#C99-Thread_002dLocal-Edits" accesskey="p" rel="prev">C99 Thread-Local Edits</a>, Up: <a href="Thread_002dLocal.html#Thread_002dLocal" accesskey="u" rel="up">Thread-Local</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

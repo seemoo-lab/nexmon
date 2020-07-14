@@ -1,0 +1,399 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Symbols In Python</title>
+
+<meta name="description" content="Debugging with GDB: Symbols In Python">
+<meta name="keywords" content="Debugging with GDB: Symbols In Python">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Python-API.html#Python-API" rel="up" title="Python API">
+<link href="Symbol-Tables-In-Python.html#Symbol-Tables-In-Python" rel="next" title="Symbol Tables In Python">
+<link href="Blocks-In-Python.html#Blocks-In-Python" rel="prev" title="Blocks In Python">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Symbols-In-Python"></a>
+<div class="header">
+<p>
+Next: <a href="Symbol-Tables-In-Python.html#Symbol-Tables-In-Python" accesskey="n" rel="next">Symbol Tables In Python</a>, Previous: <a href="Blocks-In-Python.html#Blocks-In-Python" accesskey="p" rel="prev">Blocks In Python</a>, Up: <a href="Python-API.html#Python-API" accesskey="u" rel="up">Python API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Python-representation-of-Symbols"></a>
+<h4 class="subsubsection">23.2.2.27 Python representation of Symbols</h4>
+
+<a name="index-symbols-in-python"></a>
+<a name="index-gdb_002eSymbol"></a>
+
+<p><small>GDB</small> represents every variable, function and type as an
+entry in a symbol table.  See <a href="Symbols.html#Symbols">Examining the Symbol Table</a>.
+Similarly, Python represents these symbols in <small>GDB</small> with the
+<code>gdb.Symbol</code> object.
+</p>
+<p>The following symbol-related functions are available in the <code>gdb</code>
+module:
+</p>
+<a name="index-gdb_002elookup_005fsymbol"></a>
+<dl>
+<dt><a name="index-gdb_002elookup_005fsymbol-1"></a>Function: <strong>gdb.lookup_symbol</strong> <em>(name <span class="roman">[</span>, block <span class="roman">[</span>, domain<span class="roman">]]</span>)</em></dt>
+<dd><p>This function searches for a symbol by name.  The search scope can be
+restricted to the parameters defined in the optional domain and block
+arguments.
+</p>
+<p><var>name</var> is the name of the symbol.  It must be a string.  The
+optional <var>block</var> argument restricts the search to symbols visible
+in that <var>block</var>.  The <var>block</var> argument must be a
+<code>gdb.Block</code> object.  If omitted, the block for the current frame
+is used.  The optional <var>domain</var> argument restricts
+the search to the domain type.  The <var>domain</var> argument must be a
+domain constant defined in the <code>gdb</code> module and described later
+in this chapter.
+</p>
+<p>The result is a tuple of two elements.
+The first element is a <code>gdb.Symbol</code> object or <code>None</code> if the symbol
+is not found.
+If the symbol is found, the second element is <code>True</code> if the symbol
+is a field of a method&rsquo;s object (e.g., <code>this</code> in C<tt>++</tt>),
+otherwise it is <code>False</code>.
+If the symbol is not found, the second element is <code>False</code>.
+</p></dd></dl>
+
+<a name="index-gdb_002elookup_005fglobal_005fsymbol"></a>
+<dl>
+<dt><a name="index-gdb_002elookup_005fglobal_005fsymbol-1"></a>Function: <strong>gdb.lookup_global_symbol</strong> <em>(name <span class="roman">[</span>, domain<span class="roman">]</span>)</em></dt>
+<dd><p>This function searches for a global symbol by name.
+The search scope can be restricted to by the domain argument.
+</p>
+<p><var>name</var> is the name of the symbol.  It must be a string.
+The optional <var>domain</var> argument restricts the search to the domain type.
+The <var>domain</var> argument must be a domain constant defined in the <code>gdb</code>
+module and described later in this chapter.
+</p>
+<p>The result is a <code>gdb.Symbol</code> object or <code>None</code> if the symbol
+is not found.
+</p></dd></dl>
+
+<p>A <code>gdb.Symbol</code> object has the following attributes:
+</p>
+<dl>
+<dt><a name="index-Symbol_002etype"></a>Variable: <strong>Symbol.type</strong></dt>
+<dd><p>The type of the symbol or <code>None</code> if no type is recorded.
+This attribute is represented as a <code>gdb.Type</code> object.
+See <a href="Types-In-Python.html#Types-In-Python">Types In Python</a>.  This attribute is not writable.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Symbol_002esymtab"></a>Variable: <strong>Symbol.symtab</strong></dt>
+<dd><p>The symbol table in which the symbol appears.  This attribute is
+represented as a <code>gdb.Symtab</code> object.  See <a href="Symbol-Tables-In-Python.html#Symbol-Tables-In-Python">Symbol Tables In Python</a>.  This attribute is not writable.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Symbol_002eline"></a>Variable: <strong>Symbol.line</strong></dt>
+<dd><p>The line number in the source code at which the symbol was defined.
+This is an integer.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Symbol_002ename"></a>Variable: <strong>Symbol.name</strong></dt>
+<dd><p>The name of the symbol as a string.  This attribute is not writable.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Symbol_002elinkage_005fname"></a>Variable: <strong>Symbol.linkage_name</strong></dt>
+<dd><p>The name of the symbol, as used by the linker (i.e., may be mangled).
+This attribute is not writable.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Symbol_002eprint_005fname"></a>Variable: <strong>Symbol.print_name</strong></dt>
+<dd><p>The name of the symbol in a form suitable for output.  This is either
+<code>name</code> or <code>linkage_name</code>, depending on whether the user
+asked <small>GDB</small> to display demangled or mangled names.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Symbol_002eaddr_005fclass"></a>Variable: <strong>Symbol.addr_class</strong></dt>
+<dd><p>The address class of the symbol.  This classifies how to find the value
+of a symbol.  Each address class is a constant defined in the
+<code>gdb</code> module and described later in this chapter.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Symbol_002eneeds_005fframe"></a>Variable: <strong>Symbol.needs_frame</strong></dt>
+<dd><p>This is <code>True</code> if evaluating this symbol&rsquo;s value requires a frame
+(see <a href="Frames-In-Python.html#Frames-In-Python">Frames In Python</a>) and <code>False</code> otherwise.  Typically,
+local variables will require a frame, but other symbols will not.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Symbol_002eis_005fargument"></a>Variable: <strong>Symbol.is_argument</strong></dt>
+<dd><p><code>True</code> if the symbol is an argument of a function.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Symbol_002eis_005fconstant"></a>Variable: <strong>Symbol.is_constant</strong></dt>
+<dd><p><code>True</code> if the symbol is a constant.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Symbol_002eis_005ffunction"></a>Variable: <strong>Symbol.is_function</strong></dt>
+<dd><p><code>True</code> if the symbol is a function or a method.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Symbol_002eis_005fvariable"></a>Variable: <strong>Symbol.is_variable</strong></dt>
+<dd><p><code>True</code> if the symbol is a variable.
+</p></dd></dl>
+
+<p>A <code>gdb.Symbol</code> object has the following methods:
+</p>
+<dl>
+<dt><a name="index-Symbol_002eis_005fvalid"></a>Function: <strong>Symbol.is_valid</strong> <em>()</em></dt>
+<dd><p>Returns <code>True</code> if the <code>gdb.Symbol</code> object is valid,
+<code>False</code> if not.  A <code>gdb.Symbol</code> object can become invalid if
+the symbol it refers to does not exist in <small>GDB</small> any longer.
+All other <code>gdb.Symbol</code> methods will throw an exception if it is
+invalid at the time the method is called.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Symbol_002evalue"></a>Function: <strong>Symbol.value</strong> <em>(<span class="roman">[</span>frame<span class="roman">]</span>)</em></dt>
+<dd><p>Compute the value of the symbol, as a <code>gdb.Value</code>.  For
+functions, this computes the address of the function, cast to the
+appropriate type.  If the symbol requires a frame in order to compute
+its value, then <var>frame</var> must be given.  If <var>frame</var> is not
+given, or if <var>frame</var> is invalid, then this method will throw an
+exception.
+</p></dd></dl>
+
+<p>The available domain categories in <code>gdb.Symbol</code> are represented
+as constants in the <code>gdb</code> module:
+</p>
+<dl compact="compact">
+<dd><a name="index-SYMBOL_005fUNDEF_005fDOMAIN"></a>
+</dd>
+<dt><code>gdb.SYMBOL_UNDEF_DOMAIN</code>
+<a name="index-gdb_002eSYMBOL_005fUNDEF_005fDOMAIN"></a>
+</dt>
+<dd><p>This is used when a domain has not been discovered or none of the
+following domains apply.  This usually indicates an error either
+in the symbol information or in <small>GDB</small>&rsquo;s handling of symbols.
+</p>
+<a name="index-SYMBOL_005fVAR_005fDOMAIN"></a>
+</dd>
+<dt><code>gdb.SYMBOL_VAR_DOMAIN</code>
+<a name="index-gdb_002eSYMBOL_005fVAR_005fDOMAIN"></a>
+</dt>
+<dd><p>This domain contains variables, function names, typedef names and enum
+type values.
+</p>
+<a name="index-SYMBOL_005fSTRUCT_005fDOMAIN"></a>
+</dd>
+<dt><code>gdb.SYMBOL_STRUCT_DOMAIN</code>
+<a name="index-gdb_002eSYMBOL_005fSTRUCT_005fDOMAIN"></a>
+</dt>
+<dd><p>This domain holds struct, union and enum type names.
+</p>
+<a name="index-SYMBOL_005fLABEL_005fDOMAIN"></a>
+</dd>
+<dt><code>gdb.SYMBOL_LABEL_DOMAIN</code>
+<a name="index-gdb_002eSYMBOL_005fLABEL_005fDOMAIN"></a>
+</dt>
+<dd><p>This domain contains names of labels (for gotos).
+</p>
+<a name="index-SYMBOL_005fMODULE_005fDOMAIN"></a>
+</dd>
+<dt><code>gdb.SYMBOL_MODULE_DOMAIN</code>
+<a name="index-gdb_002eSYMBOL_005fMODULE_005fDOMAIN"></a>
+</dt>
+<dd><p>This domain contains names of Fortran module types.
+</p>
+<a name="index-SYMBOL_005fCOMMON_005fBLOCK_005fDOMAIN"></a>
+</dd>
+<dt><code>gdb.SYMBOL_COMMON_BLOCK_DOMAIN</code>
+<a name="index-gdb_002eSYMBOL_005fCOMMON_005fBLOCK_005fDOMAIN"></a>
+</dt>
+<dd><p>This domain contains names of Fortran common blocks.
+</p></dd>
+</dl>
+
+<p>The available address class categories in <code>gdb.Symbol</code> are represented
+as constants in the <code>gdb</code> module:
+</p>
+<dl compact="compact">
+<dd><a name="index-SYMBOL_005fLOC_005fUNDEF"></a>
+</dd>
+<dt><code>gdb.SYMBOL_LOC_UNDEF</code>
+<a name="index-gdb_002eSYMBOL_005fLOC_005fUNDEF"></a>
+</dt>
+<dd><p>If this is returned by address class, it indicates an error either in
+the symbol information or in <small>GDB</small>&rsquo;s handling of symbols.
+</p>
+<a name="index-SYMBOL_005fLOC_005fCONST"></a>
+</dd>
+<dt><code>gdb.SYMBOL_LOC_CONST</code>
+<a name="index-gdb_002eSYMBOL_005fLOC_005fCONST"></a>
+</dt>
+<dd><p>Value is constant int.
+</p>
+<a name="index-SYMBOL_005fLOC_005fSTATIC"></a>
+</dd>
+<dt><code>gdb.SYMBOL_LOC_STATIC</code>
+<a name="index-gdb_002eSYMBOL_005fLOC_005fSTATIC"></a>
+</dt>
+<dd><p>Value is at a fixed address.
+</p>
+<a name="index-SYMBOL_005fLOC_005fREGISTER"></a>
+</dd>
+<dt><code>gdb.SYMBOL_LOC_REGISTER</code>
+<a name="index-gdb_002eSYMBOL_005fLOC_005fREGISTER"></a>
+</dt>
+<dd><p>Value is in a register.
+</p>
+<a name="index-SYMBOL_005fLOC_005fARG"></a>
+</dd>
+<dt><code>gdb.SYMBOL_LOC_ARG</code>
+<a name="index-gdb_002eSYMBOL_005fLOC_005fARG"></a>
+</dt>
+<dd><p>Value is an argument.  This value is at the offset stored within the
+symbol inside the frame&rsquo;s argument list.
+</p>
+<a name="index-SYMBOL_005fLOC_005fREF_005fARG"></a>
+</dd>
+<dt><code>gdb.SYMBOL_LOC_REF_ARG</code>
+<a name="index-gdb_002eSYMBOL_005fLOC_005fREF_005fARG"></a>
+</dt>
+<dd><p>Value address is stored in the frame&rsquo;s argument list.  Just like
+<code>LOC_ARG</code> except that the value&rsquo;s address is stored at the
+offset, not the value itself.
+</p>
+<a name="index-SYMBOL_005fLOC_005fREGPARM_005fADDR"></a>
+</dd>
+<dt><code>gdb.SYMBOL_LOC_REGPARM_ADDR</code>
+<a name="index-gdb_002eSYMBOL_005fLOC_005fREGPARM_005fADDR"></a>
+</dt>
+<dd><p>Value is a specified register.  Just like <code>LOC_REGISTER</code> except
+the register holds the address of the argument instead of the argument
+itself.
+</p>
+<a name="index-SYMBOL_005fLOC_005fLOCAL"></a>
+</dd>
+<dt><code>gdb.SYMBOL_LOC_LOCAL</code>
+<a name="index-gdb_002eSYMBOL_005fLOC_005fLOCAL"></a>
+</dt>
+<dd><p>Value is a local variable.
+</p>
+<a name="index-SYMBOL_005fLOC_005fTYPEDEF"></a>
+</dd>
+<dt><code>gdb.SYMBOL_LOC_TYPEDEF</code>
+<a name="index-gdb_002eSYMBOL_005fLOC_005fTYPEDEF"></a>
+</dt>
+<dd><p>Value not used.  Symbols in the domain <code>SYMBOL_STRUCT_DOMAIN</code> all
+have this class.
+</p>
+<a name="index-SYMBOL_005fLOC_005fBLOCK"></a>
+</dd>
+<dt><code>gdb.SYMBOL_LOC_BLOCK</code>
+<a name="index-gdb_002eSYMBOL_005fLOC_005fBLOCK"></a>
+</dt>
+<dd><p>Value is a block.
+</p>
+<a name="index-SYMBOL_005fLOC_005fCONST_005fBYTES"></a>
+</dd>
+<dt><code>gdb.SYMBOL_LOC_CONST_BYTES</code>
+<a name="index-gdb_002eSYMBOL_005fLOC_005fCONST_005fBYTES"></a>
+</dt>
+<dd><p>Value is a byte-sequence.
+</p>
+<a name="index-SYMBOL_005fLOC_005fUNRESOLVED"></a>
+</dd>
+<dt><code>gdb.SYMBOL_LOC_UNRESOLVED</code>
+<a name="index-gdb_002eSYMBOL_005fLOC_005fUNRESOLVED"></a>
+</dt>
+<dd><p>Value is at a fixed address, but the address of the variable has to be
+determined from the minimal symbol table whenever the variable is
+referenced.
+</p>
+<a name="index-SYMBOL_005fLOC_005fOPTIMIZED_005fOUT"></a>
+</dd>
+<dt><code>gdb.SYMBOL_LOC_OPTIMIZED_OUT</code>
+<a name="index-gdb_002eSYMBOL_005fLOC_005fOPTIMIZED_005fOUT"></a>
+</dt>
+<dd><p>The value does not actually exist in the program.
+</p>
+<a name="index-SYMBOL_005fLOC_005fCOMPUTED"></a>
+</dd>
+<dt><code>gdb.SYMBOL_LOC_COMPUTED</code>
+<a name="index-gdb_002eSYMBOL_005fLOC_005fCOMPUTED"></a>
+</dt>
+<dd><p>The value&rsquo;s address is a computed location.
+</p>
+<a name="index-SYMBOL_005fLOC_005fCOMPUTED-1"></a>
+</dd>
+<dt><code>gdb.SYMBOL_LOC_COMPUTED</code>
+<a name="index-gdb_002eSYMBOL_005fLOC_005fCOMPUTED-1"></a>
+</dt>
+<dd><p>The value&rsquo;s address is a symbol.  This is only used for Fortran common
+blocks.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Symbol-Tables-In-Python.html#Symbol-Tables-In-Python" accesskey="n" rel="next">Symbol Tables In Python</a>, Previous: <a href="Blocks-In-Python.html#Blocks-In-Python" accesskey="p" rel="prev">Blocks In Python</a>, Up: <a href="Python-API.html#Python-API" accesskey="u" rel="up">Python API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

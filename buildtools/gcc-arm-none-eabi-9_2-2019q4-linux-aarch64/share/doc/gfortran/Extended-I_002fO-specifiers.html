@@ -1,0 +1,179 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: Extended I/O specifiers</title>
+
+<meta name="description" content="The GNU Fortran Compiler: Extended I/O specifiers">
+<meta name="keywords" content="The GNU Fortran Compiler: Extended I/O specifiers">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Extensions-implemented-in-GNU-Fortran.html#Extensions-implemented-in-GNU-Fortran" rel="up" title="Extensions implemented in GNU Fortran">
+<link href="Legacy-PARAMETER-statements.html#Legacy-PARAMETER-statements" rel="next" title="Legacy PARAMETER statements">
+<link href="Bitwise-logical-operators.html#Bitwise-logical-operators" rel="prev" title="Bitwise logical operators">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Extended-I_002fO-specifiers"></a>
+<div class="header">
+<p>
+Next: <a href="Legacy-PARAMETER-statements.html#Legacy-PARAMETER-statements" accesskey="n" rel="next">Legacy PARAMETER statements</a>, Previous: <a href="Bitwise-logical-operators.html#Bitwise-logical-operators" accesskey="p" rel="prev">Bitwise logical operators</a>, Up: <a href="Extensions-implemented-in-GNU-Fortran.html#Extensions-implemented-in-GNU-Fortran" accesskey="u" rel="up">Extensions implemented in GNU Fortran</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Extended-I_002fO-specifiers-1"></a>
+<h4 class="subsection">6.1.30 Extended I/O specifiers</h4>
+<a name="index-CARRIAGECONTROL"></a>
+<a name="index-READONLY"></a>
+<a name="index-SHARE"></a>
+<a name="index-SHARED"></a>
+<a name="index-NOSHARED"></a>
+<a name="index-I_002fO-specifiers"></a>
+
+<p>GNU Fortran supports the additional legacy I/O specifiers
+<code>CARRIAGECONTROL</code>, <code>READONLY</code>, and <code>SHARE</code> with the
+compile flag <samp>-fdec</samp>, for compatibility.
+</p>
+<dl compact="compact">
+<dt><code>CARRIAGECONTROL</code></dt>
+<dd><p>The <code>CARRIAGECONTROL</code> specifier allows a user to control line
+termination settings between output records for an I/O unit. The specifier has
+no meaning for readonly files. When <code>CARRAIGECONTROL</code> is specified upon
+opening a unit for formatted writing, the exact <code>CARRIAGECONTROL</code> setting
+determines what characters to write between output records. The syntax is:
+</p>
+<div class="smallexample">
+<pre class="smallexample">OPEN(..., CARRIAGECONTROL=cc)
+</pre></div>
+
+<p>Where <em>cc</em> is a character expression that evaluates to one of the
+following values:
+</p>
+<table>
+<tr><td width="20%"><code>'LIST'</code></td><td width="80%">One line feed between records (default)</td></tr>
+<tr><td width="20%"><code>'FORTRAN'</code></td><td width="80%">Legacy interpretation of the first character (see below)</td></tr>
+<tr><td width="20%"><code>'NONE'</code></td><td width="80%">No separator between records</td></tr>
+</table>
+
+<p>With <code>CARRIAGECONTROL='FORTRAN'</code>, when a record is written, the first
+character of the input record is not written, and instead determines the output
+record separator as follows:
+</p>
+<table>
+<thead><tr><th width="30%">Leading character</th><th width="30%">Meaning</th><th width="40%">Output separating character(s)</th></tr></thead>
+<tr><td width="30%"><code>'+'</code></td><td width="30%">Overprinting</td><td width="40%">Carriage return only</td></tr>
+<tr><td width="30%"><code>'-'</code></td><td width="30%">New line</td><td width="40%">Line feed and carriage return</td></tr>
+<tr><td width="30%"><code>'0'</code></td><td width="30%">Skip line</td><td width="40%">Two line feeds and carriage return</td></tr>
+<tr><td width="30%"><code>'1'</code></td><td width="30%">New page</td><td width="40%">Form feed and carriage return</td></tr>
+<tr><td width="30%"><code>'$'</code></td><td width="30%">Prompting</td><td width="40%">Line feed (no carriage return)</td></tr>
+<tr><td width="30%"><code>CHAR(0)</code></td><td width="30%">Overprinting (no advance)</td><td width="40%">None</td></tr>
+</table>
+
+</dd>
+<dt><code>READONLY</code></dt>
+<dd><p>The <code>READONLY</code> specifier may be given upon opening a unit, and is
+equivalent to specifying <code>ACTION='READ'</code>, except that the file may not be
+deleted on close (i.e. <code>CLOSE</code> with <code>STATUS=&quot;DELETE&quot;</code>). The syntax
+is:
+</p>
+<div class="smallexample">
+<pre class="smallexample"><code>OPEN(..., READONLY)</code>
+</pre></div>
+
+</dd>
+<dt><code>SHARE</code></dt>
+<dd><p>The <code>SHARE</code> specifier allows system-level locking on a unit upon opening
+it for controlled access from multiple processes/threads. The <code>SHARE</code>
+specifier has several forms:
+</p>
+<div class="smallexample">
+<pre class="smallexample">OPEN(..., SHARE=sh)
+OPEN(..., SHARED)
+OPEN(..., NOSHARED)
+</pre></div>
+
+<p>Where <em>sh</em> in the first form is a character expression that evaluates to
+a value as seen in the table below. The latter two forms are aliases
+for particular values of <em>sh</em>:
+</p>
+<table>
+<thead><tr><th width="30%">Explicit form</th><th width="30%">Short form</th><th width="40%">Meaning</th></tr></thead>
+<tr><td width="30%"><code>SHARE='DENYRW'</code></td><td width="30%"><code>NOSHARED</code></td><td width="40%">Exclusive (write) lock</td></tr>
+<tr><td width="30%"><code>SHARE='DENYNONE'</code></td><td width="30%"><code>SHARED</code></td><td width="40%">Shared (read) lock</td></tr>
+</table>
+
+<p>In general only one process may hold an exclusive (write) lock for a given file
+at a time, whereas many processes may hold shared (read) locks for the same
+file.
+</p>
+<p>The behavior of locking may vary with your operating system. On POSIX systems,
+locking is implemented with <code>fcntl</code>. Consult your corresponding operating
+system&rsquo;s manual pages for further details. Locking via <code>SHARE=</code> is not
+supported on other systems.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Legacy-PARAMETER-statements.html#Legacy-PARAMETER-statements" accesskey="n" rel="next">Legacy PARAMETER statements</a>, Previous: <a href="Bitwise-logical-operators.html#Bitwise-logical-operators" accesskey="p" rel="prev">Bitwise logical operators</a>, Up: <a href="Extensions-implemented-in-GNU-Fortran.html#Extensions-implemented-in-GNU-Fortran" accesskey="u" rel="up">Extensions implemented in GNU Fortran</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

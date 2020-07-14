@@ -1,0 +1,423 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Set Catchpoints</title>
+
+<meta name="description" content="Debugging with GDB: Set Catchpoints">
+<meta name="keywords" content="Debugging with GDB: Set Catchpoints">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Breakpoints.html#Breakpoints" rel="up" title="Breakpoints">
+<link href="Delete-Breaks.html#Delete-Breaks" rel="next" title="Delete Breaks">
+<link href="Set-Watchpoints.html#Set-Watchpoints" rel="prev" title="Set Watchpoints">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Set-Catchpoints"></a>
+<div class="header">
+<p>
+Next: <a href="Delete-Breaks.html#Delete-Breaks" accesskey="n" rel="next">Delete Breaks</a>, Previous: <a href="Set-Watchpoints.html#Set-Watchpoints" accesskey="p" rel="prev">Set Watchpoints</a>, Up: <a href="Breakpoints.html#Breakpoints" accesskey="u" rel="up">Breakpoints</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Setting-Catchpoints"></a>
+<h4 class="subsection">5.1.3 Setting Catchpoints</h4>
+<a name="index-catchpoints_002c-setting"></a>
+<a name="index-exception-handlers"></a>
+<a name="index-event-handling"></a>
+
+<p>You can use <em>catchpoints</em> to cause the debugger to stop for certain
+kinds of program events, such as C<tt>++</tt> exceptions or the loading of a
+shared library.  Use the <code>catch</code> command to set a catchpoint.
+</p>
+<dl compact="compact">
+<dd><a name="index-catch"></a>
+</dd>
+<dt><code>catch <var>event</var></code></dt>
+<dd><p>Stop when <var>event</var> occurs.  The <var>event</var> can be any of the following:
+</p>
+<dl compact="compact">
+<dt><code>throw <span class="roman">[</span><var>regexp</var><span class="roman">]</span></code></dt>
+<dt><code>rethrow <span class="roman">[</span><var>regexp</var><span class="roman">]</span></code></dt>
+<dt><code>catch <span class="roman">[</span><var>regexp</var><span class="roman">]</span></code></dt>
+<dd><a name="index-catch-throw"></a>
+<a name="index-catch-rethrow"></a>
+<a name="index-catch-catch"></a>
+<a name="index-stop-on-C_002b_002b-exceptions"></a>
+<p>The throwing, re-throwing, or catching of a C<tt>++</tt> exception.
+</p>
+<p>If <var>regexp</var> is given, then only exceptions whose type matches the
+regular expression will be caught.
+</p>
+<a name="index-_0024_005fexception_002c-convenience-variable"></a>
+<p>The convenience variable <code>$_exception</code> is available at an
+exception-related catchpoint, on some systems.  This holds the
+exception being thrown.
+</p>
+<p>There are currently some limitations to C<tt>++</tt> exception handling in
+<small>GDB</small>:
+</p>
+<ul>
+<li> The support for these commands is system-dependent.  Currently, only
+systems using the &lsquo;<samp>gnu-v3</samp>&rsquo; C<tt>++</tt> ABI (see <a href="ABI.html#ABI">ABI</a>) are
+supported.
+
+</li><li> The regular expression feature and the <code>$_exception</code> convenience
+variable rely on the presence of some SDT probes in <code>libstdc++</code>.
+If these probes are not present, then these features cannot be used.
+These probes were first available in the GCC 4.8 release, but whether
+or not they are available in your GCC also depends on how it was
+built.
+
+</li><li> The <code>$_exception</code> convenience variable is only valid at the
+instruction at which an exception-related catchpoint is set.
+
+</li><li> When an exception-related catchpoint is hit, <small>GDB</small> stops at a
+location in the system library which implements runtime exception
+support for C<tt>++</tt>, usually <code>libstdc++</code>.  You can use <code>up</code>
+(see <a href="Selection.html#Selection">Selection</a>) to get to your code.
+
+</li><li> If you call a function interactively, <small>GDB</small> normally returns
+control to you when the function has finished executing.  If the call
+raises an exception, however, the call may bypass the mechanism that
+returns control to you and cause your program either to abort or to
+simply continue running until it hits a breakpoint, catches a signal
+that <small>GDB</small> is listening for, or exits.  This is the case even if
+you set a catchpoint for the exception; catchpoints on exceptions are
+disabled within interactive calls.  See <a href="Calling.html#Calling">Calling</a>, for information on
+controlling this with <code>set unwind-on-terminating-exception</code>.
+
+</li><li> You cannot raise an exception interactively.
+
+</li><li> You cannot install an exception handler interactively.
+</li></ul>
+
+</dd>
+<dt><code>exception</code></dt>
+<dd><a name="index-catch-exception"></a>
+<a name="index-Ada-exception-catching"></a>
+<a name="index-catch-Ada-exceptions"></a>
+<p>An Ada exception being raised.  If an exception name is specified
+at the end of the command (eg <code>catch exception Program_Error</code>),
+the debugger will stop only when this specific exception is raised.
+Otherwise, the debugger stops execution when any Ada exception is raised.
+</p>
+<p>When inserting an exception catchpoint on a user-defined exception whose
+name is identical to one of the exceptions defined by the language, the
+fully qualified name must be used as the exception name.  Otherwise,
+<small>GDB</small> will assume that it should stop on the pre-defined exception
+rather than the user-defined one.  For instance, assuming an exception
+called <code>Constraint_Error</code> is defined in package <code>Pck</code>, then
+the command to use to catch such exceptions is <kbd>catch exception
+Pck.Constraint_Error</kbd>.
+</p>
+</dd>
+<dt><code>handlers</code></dt>
+<dd><a name="index-catch-handlers"></a>
+<a name="index-Ada-exception-handlers-catching"></a>
+<a name="index-catch-Ada-exceptions-when-handled"></a>
+<p>An Ada exception being handled.  If an exception name is
+specified at the end of the command
+ (eg <kbd>catch handlers Program_Error</kbd>), the debugger will stop
+only when this specific exception is handled.
+Otherwise, the debugger stops execution when any Ada exception is handled.
+</p>
+<p>When inserting a handlers catchpoint on a user-defined
+exception whose name is identical to one of the exceptions
+defined by the language, the fully qualified name must be used
+as the exception name.  Otherwise, <small>GDB</small> will assume that it
+should stop on the pre-defined exception rather than the
+user-defined one.  For instance, assuming an exception called
+ <code>Constraint_Error</code> is defined in package <code>Pck</code>, then the
+command to use to catch such exceptions handling is
+<kbd>catch handlers Pck.Constraint_Error</kbd>.
+</p>
+</dd>
+<dt><code>exception unhandled</code></dt>
+<dd><a name="index-catch-exception-unhandled"></a>
+<p>An exception that was raised but is not handled by the program.
+</p>
+</dd>
+<dt><code>assert</code></dt>
+<dd><a name="index-catch-assert"></a>
+<p>A failed Ada assertion.
+</p>
+</dd>
+<dt><code>exec</code></dt>
+<dd><a name="index-catch-exec"></a>
+<a name="index-break-on-fork_002fexec"></a>
+<p>A call to <code>exec</code>.
+</p>
+<a name="catch-syscall"></a></dd>
+<dt><code>syscall</code></dt>
+<dt><code>syscall <span class="roman">[</span><var>name</var> <span class="roman">|</span> <var>number</var> <span class="roman">|</span> <span class="roman">group:</span><var>groupname</var> <span class="roman">|</span> <span class="roman">g:</span><var>groupname</var><span class="roman">]</span> &hellip;</code></dt>
+<dd><a name="index-catch-syscall"></a>
+<a name="index-break-on-a-system-call_002e"></a>
+<p>A call to or return from a system call, a.k.a. <em>syscall</em>.  A
+syscall is a mechanism for application programs to request a service
+from the operating system (OS) or one of the OS system services.
+<small>GDB</small> can catch some or all of the syscalls issued by the
+debuggee, and show the related information for each syscall.  If no
+argument is specified, calls to and returns from all system calls
+will be caught.
+</p>
+<p><var>name</var> can be any system call name that is valid for the
+underlying OS.  Just what syscalls are valid depends on the OS.  On
+GNU and Unix systems, you can find the full list of valid syscall
+names on <samp>/usr/include/asm/unistd.h</samp>.
+</p>
+
+<p>Normally, <small>GDB</small> knows in advance which syscalls are valid for
+each OS, so you can use the <small>GDB</small> command-line completion
+facilities (see <a href="Completion.html#Completion">command completion</a>) to list the
+available choices.
+</p>
+<p>You may also specify the system call numerically.  A syscall&rsquo;s
+number is the value passed to the OS&rsquo;s syscall dispatcher to
+identify the requested service.  When you specify the syscall by its
+name, <small>GDB</small> uses its database of syscalls to convert the name
+into the corresponding numeric code, but using the number directly
+may be useful if <small>GDB</small>&rsquo;s database does not have the complete
+list of syscalls on your system (e.g., because <small>GDB</small> lags
+behind the OS upgrades).
+</p>
+<p>You may specify a group of related syscalls to be caught at once using
+the <code>group:</code> syntax (<code>g:</code> is a shorter equivalent).  For
+instance, on some platforms <small>GDB</small> allows you to catch all
+network related syscalls, by passing the argument <code>group:network</code>
+to <code>catch syscall</code>.  Note that not all syscall groups are
+available in every system.  You can use the command completion
+facilities (see <a href="Completion.html#Completion">command completion</a>) to list the
+syscall groups available on your environment.
+</p>
+<p>The example below illustrates how this command works if you don&rsquo;t provide
+arguments to it:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) catch syscall
+Catchpoint 1 (syscall)
+(gdb) r
+Starting program: /tmp/catch-syscall
+
+Catchpoint 1 (call to syscall 'close'), \
+	   0xffffe424 in __kernel_vsyscall ()
+(gdb) c
+Continuing.
+
+Catchpoint 1 (returned from syscall 'close'), \
+	0xffffe424 in __kernel_vsyscall ()
+(gdb)
+</pre></div>
+
+<p>Here is an example of catching a system call by name:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) catch syscall chroot
+Catchpoint 1 (syscall 'chroot' [61])
+(gdb) r
+Starting program: /tmp/catch-syscall
+
+Catchpoint 1 (call to syscall 'chroot'), \
+		   0xffffe424 in __kernel_vsyscall ()
+(gdb) c
+Continuing.
+
+Catchpoint 1 (returned from syscall 'chroot'), \
+	0xffffe424 in __kernel_vsyscall ()
+(gdb)
+</pre></div>
+
+<p>An example of specifying a system call numerically.  In the case
+below, the syscall number has a corresponding entry in the XML
+file, so <small>GDB</small> finds its name and prints it:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) catch syscall 252
+Catchpoint 1 (syscall(s) 'exit_group')
+(gdb) r
+Starting program: /tmp/catch-syscall
+
+Catchpoint 1 (call to syscall 'exit_group'), \
+		   0xffffe424 in __kernel_vsyscall ()
+(gdb) c
+Continuing.
+
+Program exited normally.
+(gdb)
+</pre></div>
+
+<p>Here is an example of catching a syscall group:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) catch syscall group:process
+Catchpoint 1 (syscalls 'exit' [1] 'fork' [2] 'waitpid' [7]
+'execve' [11] 'wait4' [114] 'clone' [120] 'vfork' [190]
+'exit_group' [252] 'waitid' [284] 'unshare' [310])
+(gdb) r
+Starting program: /tmp/catch-syscall
+
+Catchpoint 1 (call to syscall fork), 0x00007ffff7df4e27 in open64 ()
+   from /lib64/ld-linux-x86-64.so.2
+
+(gdb) c
+Continuing.
+</pre></div>
+
+<p>However, there can be situations when there is no corresponding name
+in XML file for that syscall number.  In this case, <small>GDB</small> prints
+a warning message saying that it was not able to find the syscall name,
+but the catchpoint will be set anyway.  See the example below:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) catch syscall 764
+warning: The number '764' does not represent a known syscall.
+Catchpoint 2 (syscall 764)
+(gdb)
+</pre></div>
+
+<p>If you configure <small>GDB</small> using the &lsquo;<samp>--without-expat</samp>&rsquo; option,
+it will not be able to display syscall names.  Also, if your
+architecture does not have an XML file describing its system calls,
+you will not be able to see the syscall names.  It is important to
+notice that these two features are used for accessing the syscall
+name database.  In either case, you will see a warning like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) catch syscall
+warning: Could not open &quot;syscalls/i386-linux.xml&quot;
+warning: Could not load the syscall XML file 'syscalls/i386-linux.xml'.
+GDB will not be able to display syscall names.
+Catchpoint 1 (syscall)
+(gdb)
+</pre></div>
+
+<p>Of course, the file name will change depending on your architecture and system.
+</p>
+<p>Still using the example above, you can also try to catch a syscall by its
+number.  In this case, you would see something like:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) catch syscall 252
+Catchpoint 1 (syscall(s) 252)
+</pre></div>
+
+<p>Again, in this case <small>GDB</small> would not be able to display syscall&rsquo;s names.
+</p>
+</dd>
+<dt><code>fork</code></dt>
+<dd><a name="index-catch-fork"></a>
+<p>A call to <code>fork</code>.
+</p>
+</dd>
+<dt><code>vfork</code></dt>
+<dd><a name="index-catch-vfork"></a>
+<p>A call to <code>vfork</code>.
+</p>
+</dd>
+<dt><code>load <span class="roman">[</span>regexp<span class="roman">]</span></code></dt>
+<dt><code>unload <span class="roman">[</span>regexp<span class="roman">]</span></code></dt>
+<dd><a name="index-catch-load"></a>
+<a name="index-catch-unload"></a>
+<p>The loading or unloading of a shared library.  If <var>regexp</var> is
+given, then the catchpoint will stop only if the regular expression
+matches one of the affected libraries.
+</p>
+</dd>
+<dt><code>signal <span class="roman">[</span><var>signal</var>&hellip; <span class="roman">|</span> &lsquo;<samp>all</samp>&rsquo;<span class="roman">]</span></code></dt>
+<dd><a name="index-catch-signal"></a>
+<p>The delivery of a signal.
+</p>
+<p>With no arguments, this catchpoint will catch any signal that is not
+used internally by <small>GDB</small>, specifically, all signals except
+&lsquo;<samp>SIGTRAP</samp>&rsquo; and &lsquo;<samp>SIGINT</samp>&rsquo;.
+</p>
+<p>With the argument &lsquo;<samp>all</samp>&rsquo;, all signals, including those used by
+<small>GDB</small>, will be caught.  This argument cannot be used with other
+signal names.
+</p>
+<p>Otherwise, the arguments are a list of signal names as given to
+<code>handle</code> (see <a href="Signals.html#Signals">Signals</a>).  Only signals specified in this list
+will be caught.
+</p>
+<p>One reason that <code>catch signal</code> can be more useful than
+<code>handle</code> is that you can attach commands and conditions to the
+catchpoint.
+</p>
+<p>When a signal is caught by a catchpoint, the signal&rsquo;s <code>stop</code> and
+<code>print</code> settings, as specified by <code>handle</code>, are ignored.
+However, whether the signal is still delivered to the inferior depends
+on the <code>pass</code> setting; this can be changed in the catchpoint&rsquo;s
+commands.
+</p>
+</dd>
+</dl>
+
+</dd>
+<dt><code>tcatch <var>event</var></code></dt>
+<dd><a name="index-tcatch"></a>
+<p>Set a catchpoint that is enabled only for one stop.  The catchpoint is
+automatically deleted after the first time the event is caught.
+</p>
+</dd>
+</dl>
+
+<p>Use the <code>info break</code> command to list the current catchpoints.
+</p>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Delete-Breaks.html#Delete-Breaks" accesskey="n" rel="next">Delete Breaks</a>, Previous: <a href="Set-Watchpoints.html#Set-Watchpoints" accesskey="p" rel="prev">Set Watchpoints</a>, Up: <a href="Breakpoints.html#Breakpoints" accesskey="u" rel="up">Breakpoints</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

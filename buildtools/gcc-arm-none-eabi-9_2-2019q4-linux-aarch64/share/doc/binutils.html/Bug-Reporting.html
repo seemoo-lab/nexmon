@@ -1,0 +1,224 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Binary Utilities: Bug Reporting</title>
+
+<meta name="description" content="GNU Binary Utilities: Bug Reporting">
+<meta name="keywords" content="GNU Binary Utilities: Bug Reporting">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Binutils-Index.html#Binutils-Index" rel="index" title="Binutils Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Reporting-Bugs.html#Reporting-Bugs" rel="up" title="Reporting Bugs">
+<link href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License" rel="next" title="GNU Free Documentation License">
+<link href="Bug-Criteria.html#Bug-Criteria" rel="prev" title="Bug Criteria">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Bug-Reporting"></a>
+<div class="header">
+<p>
+Previous: <a href="Bug-Criteria.html#Bug-Criteria" accesskey="p" rel="prev">Bug Criteria</a>, Up: <a href="Reporting-Bugs.html#Reporting-Bugs" accesskey="u" rel="up">Reporting Bugs</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Binutils-Index.html#Binutils-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="How-to-Report-Bugs"></a>
+<h3 class="section">18.2 How to Report Bugs</h3>
+<a name="index-bug-reports"></a>
+<a name="index-bugs_002c-reporting"></a>
+
+<p>A number of companies and individuals offer support for <small>GNU</small>
+products.  If you obtained the binary utilities from a support
+organization, we recommend you contact that organization first.
+</p>
+<p>You can find contact information for many support companies and
+individuals in the file <samp>etc/SERVICE</samp> in the <small>GNU</small> Emacs
+distribution.
+</p>
+<p>In any event, we also recommend that you send bug reports for the binary
+utilities to <a href="https://bugs.linaro.org/">https://bugs.linaro.org/</a>.
+</p>
+<p>The fundamental principle of reporting bugs usefully is this:
+<strong>report all the facts</strong>.  If you are not sure whether to state a
+fact or leave it out, state it!
+</p>
+<p>Often people omit facts because they think they know what causes the
+problem and assume that some details do not matter.  Thus, you might
+assume that the name of a file you use in an example does not matter.
+Well, probably it does not, but one cannot be sure.  Perhaps the bug is
+a stray memory reference which happens to fetch from the location where
+that pathname is stored in memory; perhaps, if the pathname were
+different, the contents of that location would fool the utility into
+doing the right thing despite the bug.  Play it safe and give a
+specific, complete example.  That is the easiest thing for you to do,
+and the most helpful.
+</p>
+<p>Keep in mind that the purpose of a bug report is to enable us to fix the bug if
+it is new to us.  Therefore, always write your bug reports on the assumption
+that the bug has not been reported previously.
+</p>
+<p>Sometimes people give a few sketchy facts and ask, &ldquo;Does this ring a
+bell?&rdquo;  This cannot help us fix a bug, so it is basically useless.  We
+respond by asking for enough details to enable us to investigate.
+You might as well expedite matters by sending them to begin with.
+</p>
+<p>To enable us to fix the bug, you should include all these things:
+</p>
+<ul>
+<li> The version of the utility.  Each utility announces it if you start it
+with the <samp>--version</samp> argument.
+
+<p>Without this, we will not know whether there is any point in looking for
+the bug in the current version of the binary utilities.
+</p>
+</li><li> Any patches you may have applied to the source, including any patches
+made to the <code>BFD</code> library.
+
+</li><li> The type of machine you are using, and the operating system name and
+version number.
+
+</li><li> What compiler (and its version) was used to compile the utilities&mdash;e.g.
+&ldquo;<code>gcc-2.7</code>&rdquo;.
+
+</li><li> The command arguments you gave the utility to observe the bug.  To
+guarantee you will not omit something important, list them all.  A copy
+of the Makefile (or the output from make) is sufficient.
+
+<p>If we were to try to guess the arguments, we would probably guess wrong
+and then we might not encounter the bug.
+</p>
+</li><li> A complete input file, or set of input files, that will reproduce the
+bug.  If the utility is reading an object file or files, then it is
+generally most helpful to send the actual object files.
+
+<p>If the source files were produced exclusively using <small>GNU</small> programs
+(e.g., <code>gcc</code>, <code>gas</code>, and/or the <small>GNU</small> <code>ld</code>), then it
+may be OK to send the source files rather than the object files.  In
+this case, be sure to say exactly what version of <code>gcc</code>, or
+whatever, was used to produce the object files.  Also say how
+<code>gcc</code>, or whatever, was configured.
+</p>
+</li><li> A description of what behavior you observe that you believe is
+incorrect.  For example, &ldquo;It gets a fatal signal.&rdquo;
+
+<p>Of course, if the bug is that the utility gets a fatal signal, then we
+will certainly notice it.  But if the bug is incorrect output, we might
+not notice unless it is glaringly wrong.  You might as well not give us
+a chance to make a mistake.
+</p>
+<p>Even if the problem you experience is a fatal signal, you should still
+say so explicitly.  Suppose something strange is going on, such as your
+copy of the utility is out of sync, or you have encountered a bug in
+the C library on your system.  (This has happened!)  Your copy might
+crash and ours would not.  If you told us to expect a crash, then when
+ours fails to crash, we would know that the bug was not happening for
+us.  If you had not told us to expect a crash, then we would not be able
+to draw any conclusion from our observations.
+</p>
+</li><li> If you wish to suggest changes to the source, send us context diffs, as
+generated by <code>diff</code> with the <samp>-u</samp>, <samp>-c</samp>, or <samp>-p</samp>
+option.  Always send diffs from the old file to the new file.  If you
+wish to discuss something in the <code>ld</code> source, refer to it by
+context, not by line number.
+
+<p>The line numbers in our development sources will not match those in your
+sources.  Your line numbers would convey no useful information to us.
+</p></li></ul>
+
+<p>Here are some things that are not necessary:
+</p>
+<ul>
+<li> A description of the envelope of the bug.
+
+<p>Often people who encounter a bug spend a lot of time investigating
+which changes to the input file will make the bug go away and which
+changes will not affect it.
+</p>
+<p>This is often time consuming and not very useful, because the way we
+will find the bug is by running a single example under the debugger
+with breakpoints, not by pure deduction from a series of examples.
+We recommend that you save your time for something else.
+</p>
+<p>Of course, if you can find a simpler example to report <em>instead</em>
+of the original one, that is a convenience for us.  Errors in the
+output will be easier to spot, running under the debugger will take
+less time, and so on.
+</p>
+<p>However, simplification is not vital; if you do not want to do this,
+report the bug anyway and send us the entire test case you used.
+</p>
+</li><li> A patch for the bug.
+
+<p>A patch for the bug does help us if it is a good one.  But do not omit
+the necessary information, such as the test case, on the assumption that
+a patch is all we need.  We might see problems with your patch and decide
+to fix the problem another way, or we might not understand it at all.
+</p>
+<p>Sometimes with programs as complicated as the binary utilities it is
+very hard to construct an example that will make the program follow a
+certain path through the code.  If you do not send us the example, we
+will not be able to construct one, so we will not be able to verify that
+the bug is fixed.
+</p>
+<p>And if we cannot understand what bug you are trying to fix, or why your
+patch should be an improvement, we will not install it.  A test case will
+help us to understand.
+</p>
+</li><li> A guess about what the bug is or what it depends on.
+
+<p>Such guesses are usually wrong.  Even we cannot guess right about such
+things without first using the debugger to find the facts.
+</p></li></ul>
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Bug-Criteria.html#Bug-Criteria" accesskey="p" rel="prev">Bug Criteria</a>, Up: <a href="Reporting-Bugs.html#Reporting-Bugs" accesskey="u" rel="up">Reporting Bugs</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Binutils-Index.html#Binutils-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

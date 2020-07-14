@@ -1,0 +1,166 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: i386-Memory</title>
+
+<meta name="description" content="Using as: i386-Memory">
+<meta name="keywords" content="Using as: i386-Memory">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="i386_002dDependent.html#i386_002dDependent" rel="up" title="i386-Dependent">
+<link href="i386_002dJumps.html#i386_002dJumps" rel="next" title="i386-Jumps">
+<link href="i386_002dPrefixes.html#i386_002dPrefixes" rel="prev" title="i386-Prefixes">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="i386_002dMemory"></a>
+<div class="header">
+<p>
+Next: <a href="i386_002dJumps.html#i386_002dJumps" accesskey="n" rel="next">i386-Jumps</a>, Previous: <a href="i386_002dPrefixes.html#i386_002dPrefixes" accesskey="p" rel="prev">i386-Prefixes</a>, Up: <a href="i386_002dDependent.html#i386_002dDependent" accesskey="u" rel="up">i386-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Memory-References"></a>
+<h4 class="subsection">9.16.7 Memory References</h4>
+
+<a name="index-i386-memory-references"></a>
+<a name="index-memory-references_002c-i386"></a>
+<a name="index-x86_002d64-memory-references"></a>
+<a name="index-memory-references_002c-x86_002d64"></a>
+<p>An Intel syntax indirect memory reference of the form
+</p>
+<div class="smallexample">
+<pre class="smallexample"><var>section</var>:[<var>base</var> + <var>index</var>*<var>scale</var> + <var>disp</var>]
+</pre></div>
+
+<p>is translated into the AT&amp;T syntax
+</p>
+<div class="smallexample">
+<pre class="smallexample"><var>section</var>:<var>disp</var>(<var>base</var>, <var>index</var>, <var>scale</var>)
+</pre></div>
+
+<p>where <var>base</var> and <var>index</var> are the optional 32-bit base and
+index registers, <var>disp</var> is the optional displacement, and
+<var>scale</var>, taking the values 1, 2, 4, and 8, multiplies <var>index</var>
+to calculate the address of the operand.  If no <var>scale</var> is
+specified, <var>scale</var> is taken to be 1.  <var>section</var> specifies the
+optional section register for the memory operand, and may override the
+default section register (see a 80386 manual for section register
+defaults). Note that section overrides in AT&amp;T syntax <em>must</em>
+be preceded by a &lsquo;<samp>%</samp>&rsquo;.  If you specify a section override which
+coincides with the default section register, <code>as</code> does <em>not</em>
+output any section register override prefixes to assemble the given
+instruction.  Thus, section overrides can be specified to emphasize which
+section register is used for a given memory operand.
+</p>
+<p>Here are some examples of Intel and AT&amp;T style memory references:
+</p>
+<dl compact="compact">
+<dt>AT&amp;T: &lsquo;<samp>-4(%ebp)</samp>&rsquo;, Intel:  &lsquo;<samp>[ebp - 4]</samp>&rsquo;</dt>
+<dd><p><var>base</var> is &lsquo;<samp>%ebp</samp>&rsquo;; <var>disp</var> is &lsquo;<samp>-4</samp>&rsquo;. <var>section</var> is
+missing, and the default section is used (&lsquo;<samp>%ss</samp>&rsquo; for addressing with
+&lsquo;<samp>%ebp</samp>&rsquo; as the base register).  <var>index</var>, <var>scale</var> are both missing.
+</p>
+</dd>
+<dt>AT&amp;T: &lsquo;<samp>foo(,%eax,4)</samp>&rsquo;, Intel: &lsquo;<samp>[foo + eax*4]</samp>&rsquo;</dt>
+<dd><p><var>index</var> is &lsquo;<samp>%eax</samp>&rsquo; (scaled by a <var>scale</var> 4); <var>disp</var> is
+&lsquo;<samp>foo</samp>&rsquo;.  All other fields are missing.  The section register here
+defaults to &lsquo;<samp>%ds</samp>&rsquo;.
+</p>
+</dd>
+<dt>AT&amp;T: &lsquo;<samp>foo(,1)</samp>&rsquo;; Intel &lsquo;<samp>[foo]</samp>&rsquo;</dt>
+<dd><p>This uses the value pointed to by &lsquo;<samp>foo</samp>&rsquo; as a memory operand.
+Note that <var>base</var> and <var>index</var> are both missing, but there is only
+<em>one</em> &lsquo;<samp>,</samp>&rsquo;.  This is a syntactic exception.
+</p>
+</dd>
+<dt>AT&amp;T: &lsquo;<samp>%gs:foo</samp>&rsquo;; Intel &lsquo;<samp>gs:foo</samp>&rsquo;</dt>
+<dd><p>This selects the contents of the variable &lsquo;<samp>foo</samp>&rsquo; with section
+register <var>section</var> being &lsquo;<samp>%gs</samp>&rsquo;.
+</p></dd>
+</dl>
+
+<p>Absolute (as opposed to PC relative) call and jump operands must be
+prefixed with &lsquo;<samp>*</samp>&rsquo;.  If no &lsquo;<samp>*</samp>&rsquo; is specified, <code>as</code>
+always chooses PC relative addressing for jump/call labels.
+</p>
+<p>Any instruction that has a memory operand, but no register operand,
+<em>must</em> specify its size (byte, word, long, or quadruple) with an
+instruction mnemonic suffix (&lsquo;<samp>b</samp>&rsquo;, &lsquo;<samp>w</samp>&rsquo;, &lsquo;<samp>l</samp>&rsquo; or &lsquo;<samp>q</samp>&rsquo;,
+respectively).
+</p>
+<p>The x86-64 architecture adds an RIP (instruction pointer relative)
+addressing.  This addressing mode is specified by using &lsquo;<samp>rip</samp>&rsquo; as a
+base register.  Only constant offsets are valid. For example:
+</p>
+<dl compact="compact">
+<dt>AT&amp;T: &lsquo;<samp>1234(%rip)</samp>&rsquo;, Intel: &lsquo;<samp>[rip + 1234]</samp>&rsquo;</dt>
+<dd><p>Points to the address 1234 bytes past the end of the current
+instruction.
+</p>
+</dd>
+<dt>AT&amp;T: &lsquo;<samp>symbol(%rip)</samp>&rsquo;, Intel: &lsquo;<samp>[rip + symbol]</samp>&rsquo;</dt>
+<dd><p>Points to the <code>symbol</code> in RIP relative way, this is shorter than
+the default absolute addressing.
+</p></dd>
+</dl>
+
+<p>Other addressing modes remain unchanged in x86-64 architecture, except
+registers used are 64-bit instead of 32-bit.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="i386_002dJumps.html#i386_002dJumps" accesskey="n" rel="next">i386-Jumps</a>, Previous: <a href="i386_002dPrefixes.html#i386_002dPrefixes" accesskey="p" rel="prev">i386-Prefixes</a>, Up: <a href="i386_002dDependent.html#i386_002dDependent" accesskey="u" rel="up">i386-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): x86 Windows Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): x86 Windows Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): x86 Windows Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Submodel-Options.html#Submodel-Options" rel="up" title="Submodel Options">
+<link href="Xstormy16-Options.html#Xstormy16-Options" rel="next" title="Xstormy16 Options">
+<link href="x86-Options.html#x86-Options" rel="prev" title="x86 Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="x86-Windows-Options"></a>
+<div class="header">
+<p>
+Next: <a href="Xstormy16-Options.html#Xstormy16-Options" accesskey="n" rel="next">Xstormy16 Options</a>, Previous: <a href="x86-Options.html#x86-Options" accesskey="p" rel="prev">x86 Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="x86-Windows-Options-1"></a>
+<h4 class="subsection">3.18.59 x86 Windows Options</h4>
+<a name="index-x86-Windows-Options"></a>
+<a name="index-Windows-Options-for-x86"></a>
+
+<p>These additional options are available for Microsoft Windows targets:
+</p>
+<dl compact="compact">
+<dt><code>-mconsole</code></dt>
+<dd><a name="index-mconsole"></a>
+<p>This option
+specifies that a console application is to be generated, by
+instructing the linker to set the PE header subsystem type
+required for console applications.
+This option is available for Cygwin and MinGW targets and is
+enabled by default on those targets.
+</p>
+</dd>
+<dt><code>-mdll</code></dt>
+<dd><a name="index-mdll"></a>
+<p>This option is available for Cygwin and MinGW targets.  It
+specifies that a DLL&mdash;a dynamic link library&mdash;is to be
+generated, enabling the selection of the required runtime
+startup object and entry point.
+</p>
+</dd>
+<dt><code>-mnop-fun-dllimport</code></dt>
+<dd><a name="index-mnop_002dfun_002ddllimport"></a>
+<p>This option is available for Cygwin and MinGW targets.  It
+specifies that the <code>dllimport</code> attribute should be ignored.
+</p>
+</dd>
+<dt><code>-mthread</code></dt>
+<dd><a name="index-mthread"></a>
+<p>This option is available for MinGW targets. It specifies
+that MinGW-specific thread support is to be used.
+</p>
+</dd>
+<dt><code>-municode</code></dt>
+<dd><a name="index-municode"></a>
+<p>This option is available for MinGW-w64 targets.  It causes
+the <code>UNICODE</code> preprocessor macro to be predefined, and
+chooses Unicode-capable runtime startup code.
+</p>
+</dd>
+<dt><code>-mwin32</code></dt>
+<dd><a name="index-mwin32"></a>
+<p>This option is available for Cygwin and MinGW targets.  It
+specifies that the typical Microsoft Windows predefined macros are to
+be set in the pre-processor, but does not influence the choice
+of runtime library/startup code.
+</p>
+</dd>
+<dt><code>-mwindows</code></dt>
+<dd><a name="index-mwindows"></a>
+<p>This option is available for Cygwin and MinGW targets.  It
+specifies that a GUI application is to be generated by
+instructing the linker to set the PE header subsystem type
+appropriately.
+</p>
+</dd>
+<dt><code>-fno-set-stack-executable</code></dt>
+<dd><a name="index-fno_002dset_002dstack_002dexecutable"></a>
+<a name="index-fset_002dstack_002dexecutable"></a>
+<p>This option is available for MinGW targets. It specifies that
+the executable flag for the stack used by nested functions isn&rsquo;t
+set. This is necessary for binaries running in kernel mode of
+Microsoft Windows, as there the User32 API, which is used to set executable
+privileges, isn&rsquo;t available.
+</p>
+</dd>
+<dt><code>-fwritable-relocated-rdata</code></dt>
+<dd><a name="index-fno_002dwritable_002drelocated_002drdata"></a>
+<a name="index-fwritable_002drelocated_002drdata"></a>
+<p>This option is available for MinGW and Cygwin targets.  It specifies
+that relocated-data in read-only section is put into the <code>.data</code>
+section.  This is a necessary for older runtimes not supporting
+modification of <code>.rdata</code> sections for pseudo-relocation.
+</p>
+</dd>
+<dt><code>-mpe-aligned-commons</code></dt>
+<dd><a name="index-mpe_002daligned_002dcommons"></a>
+<p>This option is available for Cygwin and MinGW targets.  It
+specifies that the GNU extension to the PE file format that
+permits the correct alignment of COMMON variables should be
+used when generating code.  It is enabled by default if
+GCC detects that the target assembler found during configuration
+supports the feature.
+</p></dd>
+</dl>
+
+<p>See also under <a href="x86-Options.html#x86-Options">x86 Options</a> for standard options.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Xstormy16-Options.html#Xstormy16-Options" accesskey="n" rel="next">Xstormy16 Options</a>, Previous: <a href="x86-Options.html#x86-Options" accesskey="p" rel="prev">x86 Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

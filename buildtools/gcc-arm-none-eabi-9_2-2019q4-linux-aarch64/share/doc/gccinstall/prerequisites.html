@@ -1,0 +1,400 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, the Front-Cover texts being (a) (see below), and
+with the Back-Cover Texts being (b) (see below).  A copy of the
+license is included in the section entitled "GNU
+Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Installing GCC</title>
+
+<meta name="description" content="Installing GCC">
+<meta name="keywords" content="Installing GCC">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<h1 class="settitle" align="center">Installing GCC</h1>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<a name="index-Prerequisites"></a>
+
+<p>GCC requires that various tools and packages be available for use in the
+build procedure.  Modifying GCC sources requires additional tools
+described below.
+</p>
+<a name="Tools_002fpackages-necessary-for-building-GCC"></a>
+<h3 class="heading">Tools/packages necessary for building GCC</h3>
+<dl compact="compact">
+<dt>ISO C++98 compiler</dt>
+<dd><p>Necessary to bootstrap GCC, although versions of GCC prior
+to 4.8 also allow bootstrapping with a ISO C89 compiler and versions
+of GCC prior to 3.4 also allow bootstrapping with a traditional
+(K&amp;R) C compiler.
+</p>
+<p>To build all languages in a cross-compiler or other configuration where
+3-stage bootstrap is not performed, you need to start with an existing
+GCC binary (version 3.4 or later) because source code for language
+frontends other than C might use GCC extensions.
+</p>
+<p>Note that to bootstrap GCC with versions of GCC earlier than 3.4, you
+may need to use <samp>--disable-stage1-checking</samp>, though
+bootstrapping the compiler with such earlier compilers is strongly
+discouraged.
+</p>
+</dd>
+<dt>C standard library and headers</dt>
+<dd>
+<p>In order to build GCC, the C standard library and headers must be present
+for all target variants for which target libraries will be built (and not
+only the variant of the host C++ compiler).
+</p>
+<p>This affects the popular &lsquo;<samp>x86_64-pc-linux-gnu</samp>&rsquo; platform (among
+other multilib targets), for which 64-bit (&lsquo;<samp>x86_64</samp>&rsquo;) and 32-bit
+(&lsquo;<samp>i386</samp>&rsquo;) libc headers are usually packaged separately. If you do a
+build of a native compiler on &lsquo;<samp>x86_64-pc-linux-gnu</samp>&rsquo;, make sure you
+either have the 32-bit libc developer package properly installed (the exact
+name of the package depends on your distro) or you must build GCC as a
+64-bit only compiler by configuring with the option
+<samp>--disable-multilib</samp>.  Otherwise, you may encounter an error such as
+&lsquo;<samp>fatal error: gnu/stubs-32.h: No such file</samp>&rsquo;
+</p>
+</dd>
+<dt>GNAT</dt>
+<dd>
+<p>In order to build the Ada compiler (GNAT) you must already have GNAT
+installed because portions of the Ada frontend are written in Ada (with
+GNAT extensions.)  Refer to the Ada installation instructions for more
+specific information.
+</p>
+</dd>
+<dt>A &ldquo;working&rdquo; POSIX compatible shell, or GNU bash</dt>
+<dd>
+<p>Necessary when running <code>configure</code> because some
+<code>/bin/sh</code> shells have bugs and may crash when configuring the
+target libraries.  In other cases, <code>/bin/sh</code> or <code>ksh</code>
+have disastrous corner-case performance problems.  This
+can cause target <code>configure</code> runs to literally take days to
+complete in some cases.
+</p>
+<p>So on some platforms <code>/bin/ksh</code> is sufficient, on others it
+isn&rsquo;t.  See the host/target specific instructions for your platform, or
+use <code>bash</code> to be sure.  Then set <code>CONFIG_SHELL</code> in your
+environment to your &ldquo;good&rdquo; shell prior to running
+<code>configure</code>/<code>make</code>.
+</p>
+<p><code>zsh</code> is not a fully compliant POSIX shell and will not
+work when configuring GCC.
+</p>
+</dd>
+<dt>A POSIX or SVR4 awk</dt>
+<dd>
+<p>Necessary for creating some of the generated source files for GCC.
+If in doubt, use a recent GNU awk version, as some of the older ones
+are broken.  GNU awk version 3.1.5 is known to work.
+</p>
+</dd>
+<dt>GNU binutils</dt>
+<dd>
+<p>Necessary in some circumstances, optional in others.  See the
+host/target specific instructions for your platform for the exact
+requirements.
+</p>
+</dd>
+<dt>gzip version 1.2.4 (or later) or</dt>
+<dt>bzip2 version 1.0.2 (or later)</dt>
+<dd>
+<p>Necessary to uncompress GCC <code>tar</code> files when source code is
+obtained via FTP mirror sites.
+</p>
+</dd>
+<dt>GNU make version 3.80 (or later)</dt>
+<dd>
+<p>You must have GNU make installed to build GCC.
+</p>
+</dd>
+<dt>GNU tar version 1.14 (or later)</dt>
+<dd>
+<p>Necessary (only on some platforms) to untar the source code.  Many
+systems&rsquo; <code>tar</code> programs will also work, only try GNU
+<code>tar</code> if you have problems.
+</p>
+</dd>
+<dt>Perl version between 5.6.1 and 5.6.24</dt>
+<dd>
+<p>Necessary when targeting Darwin, building &lsquo;<samp>libstdc++</samp>&rsquo;,
+and not using <samp>--disable-symvers</samp>.
+Necessary when targeting Solaris 2 with Sun <code>ld</code> and not using
+<samp>--disable-symvers</samp>.  The bundled <code>perl</code> in Solaris&nbsp;8
+and up works.
+</p>
+<p>Necessary when regenerating <samp>Makefile</samp> dependencies in libiberty.
+Necessary when regenerating <samp>libiberty/functions.texi</samp>.
+Necessary when generating manpages from Texinfo manuals.
+Used by various scripts to generate some files included in SVN (mainly
+Unicode-related and rarely changing) from source tables.
+</p>
+<p>Used by <code>automake</code>.
+</p>
+</dd>
+</dl>
+
+<p>Several support libraries are necessary to build GCC, some are required,
+others optional.  While any sufficiently new version of required tools
+usually work, library requirements are generally stricter.  Newer
+versions may work in some cases, but it&rsquo;s safer to use the exact
+versions documented.  We appreciate bug reports about problems with
+newer versions, though.  If your OS vendor provides packages for the
+support libraries then using those packages may be the simplest way to
+install the libraries.
+</p>
+<dl compact="compact">
+<dt>GNU Multiple Precision Library (GMP) version 4.3.2 (or later)</dt>
+<dd>
+<p>Necessary to build GCC.  If a GMP source distribution is found in a
+subdirectory of your GCC sources named <samp>gmp</samp>, it will be built
+together with GCC.  Alternatively, if GMP is already installed but it
+is not in your library search path, you will have to configure with the
+<samp>--with-gmp</samp> configure option.  See also <samp>--with-gmp-lib</samp>
+and <samp>--with-gmp-include</samp>.
+The in-tree build is only supported with the GMP version that
+download_prerequisites installs.
+</p>
+</dd>
+<dt>MPFR Library version 2.4.2 (or later)</dt>
+<dd>
+<p>Necessary to build GCC.  It can be downloaded from
+<a href="https://www.mpfr.org">https://www.mpfr.org</a>.  If an MPFR source distribution is found
+in a subdirectory of your GCC sources named <samp>mpfr</samp>, it will be
+built together with GCC.  Alternatively, if MPFR is already installed
+but it is not in your default library search path, the
+<samp>--with-mpfr</samp> configure option should be used.  See also
+<samp>--with-mpfr-lib</samp> and <samp>--with-mpfr-include</samp>.
+The in-tree build is only supported with the MPFR version that
+download_prerequisites installs.
+</p>
+</dd>
+<dt>MPC Library version 0.8.1 (or later)</dt>
+<dd>
+<p>Necessary to build GCC.  It can be downloaded from
+<a href="http://www.multiprecision.org/mpc/">http://www.multiprecision.org/mpc/</a>.  If an MPC source distribution
+is found in a subdirectory of your GCC sources named <samp>mpc</samp>, it
+will be built together with GCC.  Alternatively, if MPC is already
+installed but it is not in your default library search path, the
+<samp>--with-mpc</samp> configure option should be used.  See also
+<samp>--with-mpc-lib</samp> and <samp>--with-mpc-include</samp>.
+The in-tree build is only supported with the MPC version that
+download_prerequisites installs.
+</p>
+</dd>
+<dt>isl Library version 0.15 or later.</dt>
+<dd>
+<p>Necessary to build GCC with the Graphite loop optimizations.
+It can be downloaded from <a href="ftp://gcc.gnu.org/pub/gcc/infrastructure/">ftp://gcc.gnu.org/pub/gcc/infrastructure/</a>.
+If an isl source distribution is found
+in a subdirectory of your GCC sources named <samp>isl</samp>, it will be
+built together with GCC.  Alternatively, the <samp>--with-isl</samp> configure
+option should be used if isl is not installed in your default library
+search path.
+</p>
+</dd>
+</dl>
+
+<a name="Tools_002fpackages-necessary-for-modifying-GCC"></a>
+<h3 class="heading">Tools/packages necessary for modifying GCC</h3>
+<dl compact="compact">
+<dt>autoconf version 2.69</dt>
+<dt>GNU m4 version 1.4.6 (or later)</dt>
+<dd>
+<p>Necessary when modifying <samp>configure.ac</samp>, <samp>aclocal.m4</samp>, etc.
+to regenerate <samp>configure</samp> and <samp>config.in</samp> files.
+</p>
+</dd>
+<dt>automake version 1.15.1</dt>
+<dd>
+<p>Necessary when modifying a <samp>Makefile.am</samp> file to regenerate its
+associated <samp>Makefile.in</samp>.
+</p>
+<p>Much of GCC does not use automake, so directly edit the <samp>Makefile.in</samp>
+file.  Specifically this applies to the <samp>gcc</samp>, <samp>intl</samp>,
+<samp>libcpp</samp>, <samp>libiberty</samp>, <samp>libobjc</samp> directories as well
+as any of their subdirectories.
+</p>
+<p>For directories that use automake, GCC requires the latest release in
+the 1.15 series, which is currently 1.15.1.  When regenerating a directory
+to a newer version, please update all the directories using an older 1.15
+to the latest released version.
+</p>
+</dd>
+<dt>gettext version 0.14.5 (or later)</dt>
+<dd>
+<p>Needed to regenerate <samp>gcc.pot</samp>.
+</p>
+</dd>
+<dt>gperf version 2.7.2 (or later)</dt>
+<dd>
+<p>Necessary when modifying <code>gperf</code> input files, e.g.
+<samp>gcc/cp/cfns.gperf</samp> to regenerate its associated header file, e.g.
+<samp>gcc/cp/cfns.h</samp>.
+</p>
+</dd>
+<dt>DejaGnu 1.4.4</dt>
+<dt>Expect</dt>
+<dt>Tcl</dt>
+<dd>
+<p>Necessary to run the GCC testsuite; see the section on testing for
+details.  Tcl 8.6 has a known regression in RE pattern handling that
+make parts of the testsuite fail.  See
+<a href="http://core.tcl.tk/tcl/tktview/267b7e2334ee2e9de34c4b00d6e72e2f1997085f">http://core.tcl.tk/tcl/tktview/267b7e2334ee2e9de34c4b00d6e72e2f1997085f</a>
+for more information.  This bug has been fixed in 8.6.1.
+</p>
+</dd>
+<dt>autogen version 5.5.4 (or later) and</dt>
+<dt>guile version 1.4.1 (or later)</dt>
+<dd>
+<p>Necessary to regenerate <samp>fixinc/fixincl.x</samp> from
+<samp>fixinc/inclhack.def</samp> and <samp>fixinc/*.tpl</samp>.
+</p>
+<p>Necessary to run &lsquo;<samp>make check</samp>&rsquo; for <samp>fixinc</samp>.
+</p>
+<p>Necessary to regenerate the top level <samp>Makefile.in</samp> file from
+<samp>Makefile.tpl</samp> and <samp>Makefile.def</samp>.
+</p>
+</dd>
+<dt>Flex version 2.5.4 (or later)</dt>
+<dd>
+<p>Necessary when modifying <samp>*.l</samp> files.
+</p>
+<p>Necessary to build GCC during development because the generated output
+files are not included in the SVN repository.  They are included in
+releases.
+</p>
+</dd>
+<dt>Texinfo version 4.7 (or later)</dt>
+<dd>
+<p>Necessary for running <code>makeinfo</code> when modifying <samp>*.texi</samp>
+files to test your changes.
+</p>
+<p>Necessary for running <code>make dvi</code> or <code>make pdf</code> to
+create printable documentation in DVI or PDF format.  Texinfo version
+4.8 or later is required for <code>make pdf</code>.
+</p>
+<p>Necessary to build GCC documentation during development because the
+generated output files are not included in the SVN repository.  They are
+included in releases.
+</p>
+</dd>
+<dt>TeX (any working version)</dt>
+<dd>
+<p>Necessary for running <code>texi2dvi</code> and <code>texi2pdf</code>, which
+are used when running <code>make dvi</code> or <code>make pdf</code> to create
+DVI or PDF files, respectively.
+</p>
+</dd>
+<dt>Sphinx version 1.0 (or later)</dt>
+<dd>
+<p>Necessary to regenerate <samp>jit/docs/_build/texinfo</samp> from the <samp>.rst</samp>
+files in the directories below <samp>jit/docs</samp>.
+</p>
+</dd>
+<dt>SVN (any version)</dt>
+<dt>SSH (any version)</dt>
+<dd>
+<p>Necessary to access the SVN repository.  Public releases and weekly
+snapshots of the development sources are also available via FTP.
+</p>
+</dd>
+<dt>GNU diffutils version 2.7 (or later)</dt>
+<dd>
+<p>Useful when submitting patches for the GCC source code.
+</p>
+</dd>
+<dt>patch version 2.5.4 (or later)</dt>
+<dd>
+<p>Necessary when applying patches, created with <code>diff</code>, to one&rsquo;s
+own sources.
+</p>
+</dd>
+</dl>
+
+<hr />
+<p><p><a href="./index.html">Return to the GCC Installation page</a>
+</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

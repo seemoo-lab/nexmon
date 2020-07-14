@@ -1,0 +1,123 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Byte Order</title>
+
+<meta name="description" content="Debugging with GDB: Byte Order">
+<meta name="keywords" content="Debugging with GDB: Byte Order">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Targets.html#Targets" rel="up" title="Targets">
+<link href="Remote-Debugging.html#Remote-Debugging" rel="next" title="Remote Debugging">
+<link href="Target-Commands.html#Target-Commands" rel="prev" title="Target Commands">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Byte-Order"></a>
+<div class="header">
+<p>
+Previous: <a href="Target-Commands.html#Target-Commands" accesskey="p" rel="prev">Target Commands</a>, Up: <a href="Targets.html#Targets" accesskey="u" rel="up">Targets</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Choosing-Target-Byte-Order"></a>
+<h3 class="section">19.3 Choosing Target Byte Order</h3>
+
+<a name="index-choosing-target-byte-order"></a>
+<a name="index-target-byte-order"></a>
+
+<p>Some types of processors, such as the <acronym>MIPS</acronym>, PowerPC, and Renesas SH,
+offer the ability to run either big-endian or little-endian byte
+orders.  Usually the executable or symbol will include a bit to
+designate the endian-ness, and you will not need to worry about
+which to use.  However, you may still find it useful to adjust
+<small>GDB</small>&rsquo;s idea of processor endian-ness manually.
+</p>
+<dl compact="compact">
+<dd><a name="index-set-endian"></a>
+</dd>
+<dt><code>set endian big</code></dt>
+<dd><p>Instruct <small>GDB</small> to assume the target is big-endian.
+</p>
+</dd>
+<dt><code>set endian little</code></dt>
+<dd><p>Instruct <small>GDB</small> to assume the target is little-endian.
+</p>
+</dd>
+<dt><code>set endian auto</code></dt>
+<dd><p>Instruct <small>GDB</small> to use the byte order associated with the
+executable.
+</p>
+</dd>
+<dt><code>show endian</code></dt>
+<dd><p>Display <small>GDB</small>&rsquo;s current idea of the target byte order.
+</p>
+</dd>
+</dl>
+
+<p>If the <code>set endian auto</code> mode is in effect and no executable has
+been selected, then the endianness used is the last one chosen either
+by one of the <code>set endian big</code> and <code>set endian little</code>
+commands or by inferring from the last executable used.  If no
+endianness has been previously chosen, then the default for this mode
+is inferred from the target <small>GDB</small> has been built for, and is
+<code>little</code> if the name of the target CPU has an <code>el</code> suffix
+and <code>big</code> otherwise.
+</p>
+<p>Note that these commands merely adjust interpretation of symbolic
+data on the host, and that they have absolutely no effect on the
+target system.
+</p>
+
+
+
+
+</body>
+</html>

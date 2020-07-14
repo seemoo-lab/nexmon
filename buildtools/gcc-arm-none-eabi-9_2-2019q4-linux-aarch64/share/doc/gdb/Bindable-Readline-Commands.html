@@ -1,0 +1,105 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Bindable Readline Commands</title>
+
+<meta name="description" content="Debugging with GDB: Bindable Readline Commands">
+<meta name="keywords" content="Debugging with GDB: Bindable Readline Commands">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Command-Line-Editing.html#Command-Line-Editing" rel="up" title="Command Line Editing">
+<link href="Commands-For-Moving.html#Commands-For-Moving" rel="next" title="Commands For Moving">
+<link href="Sample-Init-File.html#Sample-Init-File" rel="prev" title="Sample Init File">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Bindable-Readline-Commands"></a>
+<div class="header">
+<p>
+Next: <a href="Readline-vi-Mode.html#Readline-vi-Mode" accesskey="n" rel="next">Readline vi Mode</a>, Previous: <a href="Readline-Init-File.html#Readline-Init-File" accesskey="p" rel="prev">Readline Init File</a>, Up: <a href="Command-Line-Editing.html#Command-Line-Editing" accesskey="u" rel="up">Command Line Editing</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Bindable-Readline-Commands-1"></a>
+<h3 class="section">32.4 Bindable Readline Commands</h3>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Commands-For-Moving.html#Commands-For-Moving" accesskey="1">Commands For Moving</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Moving about the line.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Commands-For-History.html#Commands-For-History" accesskey="2">Commands For History</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Getting at previous lines.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Commands-For-Text.html#Commands-For-Text" accesskey="3">Commands For Text</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Commands for changing text.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Commands-For-Killing.html#Commands-For-Killing" accesskey="4">Commands For Killing</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Commands for killing and yanking.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Numeric-Arguments.html#Numeric-Arguments" accesskey="5">Numeric Arguments</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Specifying numeric arguments, repeat counts.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Commands-For-Completion.html#Commands-For-Completion" accesskey="6">Commands For Completion</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Getting Readline to do the typing for you.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Keyboard-Macros.html#Keyboard-Macros" accesskey="7">Keyboard Macros</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Saving and re-executing typed characters
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Miscellaneous-Commands.html#Miscellaneous-Commands" accesskey="8">Miscellaneous Commands</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Other miscellaneous commands.
+</td></tr>
+</table>
+
+<p>This section describes Readline commands that may be bound to key
+sequences.
+Command names without an accompanying key sequence are unbound by default.
+</p>
+<p>In the following descriptions, <em>point</em> refers to the current cursor
+position, and <em>mark</em> refers to a cursor position saved by the
+<code>set-mark</code> command.
+The text between the point and mark is referred to as the <em>region</em>.
+</p>
+
+
+
+</body>
+</html>

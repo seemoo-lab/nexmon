@@ -1,0 +1,150 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Substitutions</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Substitutions">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Substitutions">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Mode-Iterators.html#Mode-Iterators" rel="up" title="Mode Iterators">
+<link href="Examples.html#Examples" rel="next" title="Examples">
+<link href="Defining-Mode-Iterators.html#Defining-Mode-Iterators" rel="prev" title="Defining Mode Iterators">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Substitutions"></a>
+<div class="header">
+<p>
+Next: <a href="Examples.html#Examples" accesskey="n" rel="next">Examples</a>, Previous: <a href="Defining-Mode-Iterators.html#Defining-Mode-Iterators" accesskey="p" rel="prev">Defining Mode Iterators</a>, Up: <a href="Mode-Iterators.html#Mode-Iterators" accesskey="u" rel="up">Mode Iterators</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Substitution-in-Mode-Iterators"></a>
+<h4 class="subsubsection">17.23.1.2 Substitution in Mode Iterators</h4>
+<a name="index-define_005fmode_005fattr"></a>
+
+<p>If an <samp>.md</samp> file construct uses mode iterators, each version of the
+construct will often need slightly different strings or modes.  For
+example:
+</p>
+<ul>
+<li> When a <code>define_expand</code> defines several <code>add<var>m</var>3</code> patterns
+(see <a href="Standard-Names.html#Standard-Names">Standard Names</a>), each expander will need to use the
+appropriate mode name for <var>m</var>.
+
+</li><li> When a <code>define_insn</code> defines several instruction patterns,
+each instruction will often use a different assembler mnemonic.
+
+</li><li> When a <code>define_insn</code> requires operands with different modes,
+using an iterator for one of the operand modes usually requires a specific
+mode for the other operand(s).
+</li></ul>
+
+<p>GCC supports such variations through a system of &ldquo;mode attributes&rdquo;.
+There are two standard attributes: <code>mode</code>, which is the name of
+the mode in lower case, and <code>MODE</code>, which is the same thing in
+upper case.  You can define other attributes using:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_mode_attr <var>name</var> [(<var>mode1</var> &quot;<var>value1</var>&quot;) &hellip; (<var>moden</var> &quot;<var>valuen</var>&quot;)])
+</pre></div>
+
+<p>where <var>name</var> is the name of the attribute and <var>valuei</var>
+is the value associated with <var>modei</var>.
+</p>
+<p>When GCC replaces some <var>:iterator</var> with <var>:mode</var>, it will scan
+each string and mode in the pattern for sequences of the form
+<code>&lt;<var>iterator</var>:<var>attr</var>&gt;</code>, where <var>attr</var> is the name of a
+mode attribute.  If the attribute is defined for <var>mode</var>, the whole
+<code>&lt;&hellip;&gt;</code> sequence will be replaced by the appropriate attribute
+value.
+</p>
+<p>For example, suppose an <samp>.md</samp> file has:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_mode_iterator P [(SI &quot;Pmode == SImode&quot;) (DI &quot;Pmode == DImode&quot;)])
+(define_mode_attr load [(SI &quot;lw&quot;) (DI &quot;ld&quot;)])
+</pre></div>
+
+<p>If one of the patterns that uses <code>:P</code> contains the string
+<code>&quot;&lt;P:load&gt;\t%0,%1&quot;</code>, the <code>SI</code> version of that pattern
+will use <code>&quot;lw\t%0,%1&quot;</code> and the <code>DI</code> version will use
+<code>&quot;ld\t%0,%1&quot;</code>.
+</p>
+<p>Here is an example of using an attribute for a mode:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_mode_iterator LONG [SI DI])
+(define_mode_attr SHORT [(SI &quot;HI&quot;) (DI &quot;SI&quot;)])
+(define_insn &hellip;
+  (sign_extend:LONG (match_operand:&lt;LONG:SHORT&gt; &hellip;)) &hellip;)
+</pre></div>
+
+<p>The <code><var>iterator</var>:</code> prefix may be omitted, in which case the
+substitution will be attempted for every iterator expansion.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Examples.html#Examples" accesskey="n" rel="next">Examples</a>, Previous: <a href="Defining-Mode-Iterators.html#Defining-Mode-Iterators" accesskey="p" rel="prev">Defining Mode Iterators</a>, Up: <a href="Mode-Iterators.html#Mode-Iterators" accesskey="u" rel="up">Mode Iterators</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

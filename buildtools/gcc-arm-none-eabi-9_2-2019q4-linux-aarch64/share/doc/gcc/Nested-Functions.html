@@ -1,0 +1,213 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Nested Functions</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Nested Functions">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Nested Functions">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-Extensions.html#C-Extensions" rel="up" title="C Extensions">
+<link href="Nonlocal-Gotos.html#Nonlocal-Gotos" rel="next" title="Nonlocal Gotos">
+<link href="Labels-as-Values.html#Labels-as-Values" rel="prev" title="Labels as Values">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Nested-Functions"></a>
+<div class="header">
+<p>
+Next: <a href="Nonlocal-Gotos.html#Nonlocal-Gotos" accesskey="n" rel="next">Nonlocal Gotos</a>, Previous: <a href="Labels-as-Values.html#Labels-as-Values" accesskey="p" rel="prev">Labels as Values</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Nested-Functions-1"></a>
+<h3 class="section">6.4 Nested Functions</h3>
+<a name="index-nested-functions"></a>
+<a name="index-downward-funargs"></a>
+<a name="index-thunks"></a>
+
+<p>A <em>nested function</em> is a function defined inside another function.
+Nested functions are supported as an extension in GNU C, but are not
+supported by GNU C++.
+</p>
+<p>The nested function&rsquo;s name is local to the block where it is defined.
+For example, here we define a nested function named <code>square</code>, and
+call it twice:
+</p>
+<div class="smallexample">
+<pre class="smallexample">foo (double a, double b)
+{
+  double square (double z) { return z * z; }
+
+  return square (a) + square (b);
+}
+</pre></div>
+
+<p>The nested function can access all the variables of the containing
+function that are visible at the point of its definition.  This is
+called <em>lexical scoping</em>.  For example, here we show a nested
+function which uses an inherited variable named <code>offset</code>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">bar (int *array, int offset, int size)
+{
+  int access (int *array, int index)
+    { return array[index + offset]; }
+  int i;
+  /* <span class="roman">&hellip;</span> */
+  for (i = 0; i &lt; size; i++)
+    /* <span class="roman">&hellip;</span> */ access (array, i) /* <span class="roman">&hellip;</span> */
+}
+</pre></div>
+
+<p>Nested function definitions are permitted within functions in the places
+where variable definitions are allowed; that is, in any block, mixed
+with the other declarations and statements in the block.
+</p>
+<p>It is possible to call the nested function from outside the scope of its
+name by storing its address or passing the address to another function:
+</p>
+<div class="smallexample">
+<pre class="smallexample">hack (int *array, int size)
+{
+  void store (int index, int value)
+    { array[index] = value; }
+
+  intermediate (store, size);
+}
+</pre></div>
+
+<p>Here, the function <code>intermediate</code> receives the address of
+<code>store</code> as an argument.  If <code>intermediate</code> calls <code>store</code>,
+the arguments given to <code>store</code> are used to store into <code>array</code>.
+But this technique works only so long as the containing function
+(<code>hack</code>, in this example) does not exit.
+</p>
+<p>If you try to call the nested function through its address after the
+containing function exits, all hell breaks loose.  If you try
+to call it after a containing scope level exits, and if it refers
+to some of the variables that are no longer in scope, you may be lucky,
+but it&rsquo;s not wise to take the risk.  If, however, the nested function
+does not refer to anything that has gone out of scope, you should be
+safe.
+</p>
+<p>GCC implements taking the address of a nested function using a technique
+called <em>trampolines</em>.  This technique was described in
+<cite>Lexical Closures for C++</cite> (Thomas M. Breuel, USENIX
+C++ Conference Proceedings, October 17-21, 1988).
+</p>
+<p>A nested function can jump to a label inherited from a containing
+function, provided the label is explicitly declared in the containing
+function (see <a href="Local-Labels.html#Local-Labels">Local Labels</a>).  Such a jump returns instantly to the
+containing function, exiting the nested function that did the
+<code>goto</code> and any intermediate functions as well.  Here is an example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">bar (int *array, int offset, int size)
+{
+  __label__ failure;
+  int access (int *array, int index)
+    {
+      if (index &gt; size)
+        goto failure;
+      return array[index + offset];
+    }
+  int i;
+  /* <span class="roman">&hellip;</span> */
+  for (i = 0; i &lt; size; i++)
+    /* <span class="roman">&hellip;</span> */ access (array, i) /* <span class="roman">&hellip;</span> */
+  /* <span class="roman">&hellip;</span> */
+  return 0;
+
+ /* <span class="roman">Control comes here from <code>access</code>
+    if it detects an error.</span>  */
+ failure:
+  return -1;
+}
+</pre></div>
+
+<p>A nested function always has no linkage.  Declaring one with
+<code>extern</code> or <code>static</code> is erroneous.  If you need to declare the nested function
+before its definition, use <code>auto</code> (which is otherwise meaningless
+for function declarations).
+</p>
+<div class="smallexample">
+<pre class="smallexample">bar (int *array, int offset, int size)
+{
+  __label__ failure;
+  auto int access (int *, int);
+  /* <span class="roman">&hellip;</span> */
+  int access (int *array, int index)
+    {
+      if (index &gt; size)
+        goto failure;
+      return array[index + offset];
+    }
+  /* <span class="roman">&hellip;</span> */
+}
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Nonlocal-Gotos.html#Nonlocal-Gotos" accesskey="n" rel="next">Nonlocal Gotos</a>, Previous: <a href="Labels-as-Values.html#Labels-as-Values" accesskey="p" rel="prev">Labels as Values</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

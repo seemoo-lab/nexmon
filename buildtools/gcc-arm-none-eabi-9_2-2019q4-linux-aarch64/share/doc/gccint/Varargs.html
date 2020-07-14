@@ -1,0 +1,292 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Varargs</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Varargs">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Varargs">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Target-Macros.html#Target-Macros" rel="up" title="Target Macros">
+<link href="Trampolines.html#Trampolines" rel="next" title="Trampolines">
+<link href="Miscellaneous-Register-Hooks.html#Miscellaneous-Register-Hooks" rel="prev" title="Miscellaneous Register Hooks">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Varargs"></a>
+<div class="header">
+<p>
+Next: <a href="Trampolines.html#Trampolines" accesskey="n" rel="next">Trampolines</a>, Previous: <a href="Stack-and-Calling.html#Stack-and-Calling" accesskey="p" rel="prev">Stack and Calling</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Implementing-the-Varargs-Macros"></a>
+<h3 class="section">18.10 Implementing the Varargs Macros</h3>
+<a name="index-varargs-implementation"></a>
+
+<p>GCC comes with an implementation of <code>&lt;varargs.h&gt;</code> and
+<code>&lt;stdarg.h&gt;</code> that work without change on machines that pass arguments
+on the stack.  Other machines require their own implementations of
+varargs, and the two machine independent header files must have
+conditionals to include it.
+</p>
+<p>ISO <code>&lt;stdarg.h&gt;</code> differs from traditional <code>&lt;varargs.h&gt;</code> mainly in
+the calling convention for <code>va_start</code>.  The traditional
+implementation takes just one argument, which is the variable in which
+to store the argument pointer.  The ISO implementation of
+<code>va_start</code> takes an additional second argument.  The user is
+supposed to write the last named argument of the function here.
+</p>
+<p>However, <code>va_start</code> should not use this argument.  The way to find
+the end of the named arguments is with the built-in functions described
+below.
+</p>
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fsaveregs"></a>Macro: <strong>__builtin_saveregs</strong> <em>()</em></dt>
+<dd><p>Use this built-in function to save the argument registers in memory so
+that the varargs mechanism can access them.  Both ISO and traditional
+versions of <code>va_start</code> must use <code>__builtin_saveregs</code>, unless
+you use <code>TARGET_SETUP_INCOMING_VARARGS</code> (see below) instead.
+</p>
+<p>On some machines, <code>__builtin_saveregs</code> is open-coded under the
+control of the target hook <code>TARGET_EXPAND_BUILTIN_SAVEREGS</code>.  On
+other machines, it calls a routine written in assembler language,
+found in <samp>libgcc2.c</samp>.
+</p>
+<p>Code generated for the call to <code>__builtin_saveregs</code> appears at the
+beginning of the function, as opposed to where the call to
+<code>__builtin_saveregs</code> is written, regardless of what the code is.
+This is because the registers must be saved before the function starts
+to use them for its own purposes.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fnext_005farg"></a>Macro: <strong>__builtin_next_arg</strong> <em>(<var>lastarg</var>)</em></dt>
+<dd><p>This builtin returns the address of the first anonymous stack
+argument, as type <code>void *</code>.  If <code>ARGS_GROW_DOWNWARD</code>, it
+returns the address of the location above the first anonymous stack
+argument.  Use it in <code>va_start</code> to initialize the pointer for
+fetching arguments from the stack.  Also use it in <code>va_start</code> to
+verify that the second parameter <var>lastarg</var> is the last named argument
+of the current function.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fclassify_005ftype"></a>Macro: <strong>__builtin_classify_type</strong> <em>(<var>object</var>)</em></dt>
+<dd><p>Since each machine has its own conventions for which data types are
+passed in which kind of register, your implementation of <code>va_arg</code>
+has to embody these conventions.  The easiest way to categorize the
+specified data type is to use <code>__builtin_classify_type</code> together
+with <code>sizeof</code> and <code>__alignof__</code>.
+</p>
+<p><code>__builtin_classify_type</code> ignores the value of <var>object</var>,
+considering only its data type.  It returns an integer describing what
+kind of type that is&mdash;integer, floating, pointer, structure, and so on.
+</p>
+<p>The file <samp>typeclass.h</samp> defines an enumeration that you can use to
+interpret the values of <code>__builtin_classify_type</code>.
+</p></dd></dl>
+
+<p>These machine description macros help implement varargs:
+</p>
+<dl>
+<dt><a name="index-TARGET_005fEXPAND_005fBUILTIN_005fSAVEREGS"></a>Target Hook: <em>rtx</em> <strong>TARGET_EXPAND_BUILTIN_SAVEREGS</strong> <em>(void)</em></dt>
+<dd><p>If defined, this hook produces the machine-specific code for a call to
+<code>__builtin_saveregs</code>.  This code will be moved to the very
+beginning of the function, before any parameter access are made.  The
+return value of this function should be an RTX that contains the value
+to use as the return of <code>__builtin_saveregs</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fSETUP_005fINCOMING_005fVARARGS"></a>Target Hook: <em>void</em> <strong>TARGET_SETUP_INCOMING_VARARGS</strong> <em>(cumulative_args_t <var>args_so_far</var>, machine_mode <var>mode</var>, tree <var>type</var>, int *<var>pretend_args_size</var>, int <var>second_time</var>)</em></dt>
+<dd><p>This target hook offers an alternative to using
+<code>__builtin_saveregs</code> and defining the hook
+<code>TARGET_EXPAND_BUILTIN_SAVEREGS</code>.  Use it to store the anonymous
+register arguments into the stack so that all the arguments appear to
+have been passed consecutively on the stack.  Once this is done, you can
+use the standard implementation of varargs that works for machines that
+pass all their arguments on the stack.
+</p>
+<p>The argument <var>args_so_far</var> points to the <code>CUMULATIVE_ARGS</code> data
+structure, containing the values that are obtained after processing the
+named arguments.  The arguments <var>mode</var> and <var>type</var> describe the
+last named argument&mdash;its machine mode and its data type as a tree node.
+</p>
+<p>The target hook should do two things: first, push onto the stack all the
+argument registers <em>not</em> used for the named arguments, and second,
+store the size of the data thus pushed into the <code>int</code>-valued
+variable pointed to by <var>pretend_args_size</var>.  The value that you
+store here will serve as additional offset for setting up the stack
+frame.
+</p>
+<p>Because you must generate code to push the anonymous arguments at
+compile time without knowing their data types,
+<code>TARGET_SETUP_INCOMING_VARARGS</code> is only useful on machines that
+have just a single category of argument register and use it uniformly
+for all data types.
+</p>
+<p>If the argument <var>second_time</var> is nonzero, it means that the
+arguments of the function are being analyzed for the second time.  This
+happens for an inline function, which is not actually compiled until the
+end of the source file.  The hook <code>TARGET_SETUP_INCOMING_VARARGS</code> should
+not generate any instructions in this case.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fSTRICT_005fARGUMENT_005fNAMING"></a>Target Hook: <em>bool</em> <strong>TARGET_STRICT_ARGUMENT_NAMING</strong> <em>(cumulative_args_t <var>ca</var>)</em></dt>
+<dd><p>Define this hook to return <code>true</code> if the location where a function
+argument is passed depends on whether or not it is a named argument.
+</p>
+<p>This hook controls how the <var>named</var> argument to <code>TARGET_FUNCTION_ARG</code>
+is set for varargs and stdarg functions.  If this hook returns
+<code>true</code>, the <var>named</var> argument is always true for named
+arguments, and false for unnamed arguments.  If it returns <code>false</code>,
+but <code>TARGET_PRETEND_OUTGOING_VARARGS_NAMED</code> returns <code>true</code>,
+then all arguments are treated as named.  Otherwise, all named arguments
+except the last are treated as named.
+</p>
+<p>You need not define this hook if it always returns <code>false</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fCALL_005fARGS"></a>Target Hook: <em>void</em> <strong>TARGET_CALL_ARGS</strong> <em>(rtx, <var>tree</var>)</em></dt>
+<dd><p>While generating RTL for a function call, this target hook is invoked once
+for each argument passed to the function, either a register returned by
+<code>TARGET_FUNCTION_ARG</code> or a memory location.  It is called just
+before the point where argument registers are stored.  The type of the
+function to be called is also passed as the second argument; it is
+<code>NULL_TREE</code> for libcalls.  The <code>TARGET_END_CALL_ARGS</code> hook is
+invoked just after the code to copy the return reg has been emitted.
+This functionality can be used to perform special setup of call argument
+registers if a target needs it.
+For functions without arguments, the hook is called once with <code>pc_rtx</code>
+passed instead of an argument register.
+Most ports do not need to implement anything for this hook.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fEND_005fCALL_005fARGS"></a>Target Hook: <em>void</em> <strong>TARGET_END_CALL_ARGS</strong> <em>(void)</em></dt>
+<dd><p>This target hook is invoked while generating RTL for a function call,
+just after the point where the return reg is copied into a pseudo.  It
+signals that all the call argument and return registers for the just
+emitted call are now no longer in use.
+Most ports do not need to implement anything for this hook.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fPRETEND_005fOUTGOING_005fVARARGS_005fNAMED"></a>Target Hook: <em>bool</em> <strong>TARGET_PRETEND_OUTGOING_VARARGS_NAMED</strong> <em>(cumulative_args_t <var>ca</var>)</em></dt>
+<dd><p>If you need to conditionally change ABIs so that one works with
+<code>TARGET_SETUP_INCOMING_VARARGS</code>, but the other works like neither
+<code>TARGET_SETUP_INCOMING_VARARGS</code> nor <code>TARGET_STRICT_ARGUMENT_NAMING</code> was
+defined, then define this hook to return <code>true</code> if
+<code>TARGET_SETUP_INCOMING_VARARGS</code> is used, <code>false</code> otherwise.
+Otherwise, you should not define this hook.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fLOAD_005fBOUNDS_005fFOR_005fARG"></a>Target Hook: <em>rtx</em> <strong>TARGET_LOAD_BOUNDS_FOR_ARG</strong> <em>(rtx <var>slot</var>, rtx <var>arg</var>, rtx <var>slot_no</var>)</em></dt>
+<dd><p>This hook is used by expand pass to emit insn to load bounds of
+<var>arg</var> passed in <var>slot</var>.  Expand pass uses this hook in case
+bounds of <var>arg</var> are not passed in register.  If <var>slot</var> is a
+memory, then bounds are loaded as for regular pointer loaded from
+memory.  If <var>slot</var> is not a memory then <var>slot_no</var> is an integer
+constant holding number of the target dependent special slot which
+should be used to obtain bounds.  Hook returns RTX holding loaded bounds.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fSTORE_005fBOUNDS_005fFOR_005fARG"></a>Target Hook: <em>void</em> <strong>TARGET_STORE_BOUNDS_FOR_ARG</strong> <em>(rtx <var>arg</var>, rtx <var>slot</var>, rtx <var>bounds</var>, rtx <var>slot_no</var>)</em></dt>
+<dd><p>This hook is used by expand pass to emit insns to store <var>bounds</var> of
+<var>arg</var> passed in <var>slot</var>.  Expand pass uses this hook in case
+<var>bounds</var> of <var>arg</var> are not passed in register.  If <var>slot</var> is a
+memory, then <var>bounds</var> are stored as for regular pointer stored in
+memory.  If <var>slot</var> is not a memory then <var>slot_no</var> is an integer
+constant holding number of the target dependent special slot which
+should be used to store <var>bounds</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fLOAD_005fRETURNED_005fBOUNDS"></a>Target Hook: <em>rtx</em> <strong>TARGET_LOAD_RETURNED_BOUNDS</strong> <em>(rtx <var>slot</var>)</em></dt>
+<dd><p>This hook is used by expand pass to emit insn to load bounds
+returned by function call in <var>slot</var>.  Hook returns RTX holding
+loaded bounds.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fSTORE_005fRETURNED_005fBOUNDS"></a>Target Hook: <em>void</em> <strong>TARGET_STORE_RETURNED_BOUNDS</strong> <em>(rtx <var>slot</var>, rtx <var>bounds</var>)</em></dt>
+<dd><p>This hook is used by expand pass to emit insn to store <var>bounds</var>
+returned by function call into <var>slot</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fSETUP_005fINCOMING_005fVARARG_005fBOUNDS"></a>Target Hook: <em>void</em> <strong>TARGET_SETUP_INCOMING_VARARG_BOUNDS</strong> <em>(cumulative_args_t <var>args_so_far</var>, machine_mode <var>mode</var>, tree <var>type</var>, int *<var>pretend_args_size</var>, int <var>second_time</var>)</em></dt>
+<dd><p>Use it to store bounds for anonymous register arguments stored
+into the stack.  Arguments meaning is similar to
+<code>TARGET_SETUP_INCOMING_VARARGS</code>.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Trampolines.html#Trampolines" accesskey="n" rel="next">Trampolines</a>, Previous: <a href="Stack-and-Calling.html#Stack-and-Calling" accesskey="p" rel="prev">Stack and Calling</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

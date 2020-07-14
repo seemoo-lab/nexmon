@@ -1,0 +1,115 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Config Names</title>
+
+<meta name="description" content="Debugging with GDB: Config Names">
+<meta name="keywords" content="Debugging with GDB: Config Names">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Installing-GDB.html#Installing-GDB" rel="up" title="Installing GDB">
+<link href="Configure-Options.html#Configure-Options" rel="next" title="Configure Options">
+<link href="Separate-Objdir.html#Separate-Objdir" rel="prev" title="Separate Objdir">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Config-Names"></a>
+<div class="header">
+<p>
+Next: <a href="Configure-Options.html#Configure-Options" accesskey="n" rel="next">Configure Options</a>, Previous: <a href="Separate-Objdir.html#Separate-Objdir" accesskey="p" rel="prev">Separate Objdir</a>, Up: <a href="Installing-GDB.html#Installing-GDB" accesskey="u" rel="up">Installing GDB</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Specifying-Names-for-Hosts-and-Targets"></a>
+<h3 class="section">C.4 Specifying Names for Hosts and Targets</h3>
+
+<p>The specifications used for hosts and targets in the <samp>configure</samp>
+script are based on a three-part naming scheme, but some short predefined
+aliases are also supported.  The full naming scheme encodes three pieces
+of information in the following pattern:
+</p>
+<div class="smallexample">
+<pre class="smallexample"><var>architecture</var>-<var>vendor</var>-<var>os</var>
+</pre></div>
+
+<p>For example, you can use the alias <code>sun4</code> as a <var>host</var> argument,
+or as the value for <var>target</var> in a <code>--target=<var>target</var></code>
+option.  The equivalent full name is &lsquo;<samp>sparc-sun-sunos4</samp>&rsquo;.
+</p>
+<p>The <samp>configure</samp> script accompanying <small>GDB</small> does not provide
+any query facility to list all supported host and target names or
+aliases.  <samp>configure</samp> calls the Bourne shell script
+<code>config.sub</code> to map abbreviations to full names; you can read the
+script, if you wish, or you can use it to test your guesses on
+abbreviations&mdash;for example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">% sh config.sub i386-linux
+i386-pc-linux-gnu
+% sh config.sub alpha-linux
+alpha-unknown-linux-gnu
+% sh config.sub hp9k700
+hppa1.1-hp-hpux
+% sh config.sub sun4
+sparc-sun-sunos4.1.1
+% sh config.sub sun3
+m68k-sun-sunos4.1.1
+% sh config.sub i986v
+Invalid configuration `i986v': machine `i986v' not recognized
+</pre></div>
+
+<p><code>config.sub</code> is also distributed in the <small>GDB</small> source
+directory (<samp>gdb-8.3.0.20190709-git</samp>, for version 8.3.0.20190709-git).
+</p>
+
+
+
+</body>
+</html>

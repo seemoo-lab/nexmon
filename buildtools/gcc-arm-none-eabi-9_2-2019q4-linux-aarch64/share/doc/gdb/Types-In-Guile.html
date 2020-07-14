@@ -1,0 +1,495 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Types In Guile</title>
+
+<meta name="description" content="Debugging with GDB: Types In Guile">
+<meta name="keywords" content="Debugging with GDB: Types In Guile">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Guile-API.html#Guile-API" rel="up" title="Guile API">
+<link href="Guile-Pretty-Printing-API.html#Guile-Pretty-Printing-API" rel="next" title="Guile Pretty Printing API">
+<link href="Arithmetic-In-Guile.html#Arithmetic-In-Guile" rel="prev" title="Arithmetic In Guile">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Types-In-Guile"></a>
+<div class="header">
+<p>
+Next: <a href="Guile-Pretty-Printing-API.html#Guile-Pretty-Printing-API" accesskey="n" rel="next">Guile Pretty Printing API</a>, Previous: <a href="Arithmetic-In-Guile.html#Arithmetic-In-Guile" accesskey="p" rel="prev">Arithmetic In Guile</a>, Up: <a href="Guile-API.html#Guile-API" accesskey="u" rel="up">Guile API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Types-In-Guile-1"></a>
+<h4 class="subsubsection">23.3.3.7 Types In Guile</h4>
+<a name="index-types-in-guile"></a>
+<a name="index-guile_002c-working-with-types"></a>
+
+<a name="index-_003cgdb_003atype_003e"></a>
+<p><small>GDB</small> represents types from the inferior in objects of type
+<code>&lt;gdb:type&gt;</code>.
+</p>
+<p>The following type-related procedures are provided by the
+<code>(gdb)</code> module.
+</p>
+<dl>
+<dt><a name="index-type_003f"></a>Scheme Procedure: <strong>type?</strong> <em>object</em></dt>
+<dd><p>Return <code>#t</code> if <var>object</var> is an object of type <code>&lt;gdb:type&gt;</code>.
+Otherwise return <code>#f</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-lookup_002dtype"></a>Scheme Procedure: <strong>lookup-type</strong> <em>name <span class="roman">[</span>#:block block<span class="roman">]</span></em></dt>
+<dd><p>This function looks up a type by its <var>name</var>, which must be a string.
+</p>
+<p>If <var>block</var> is given, it is an object of type <code>&lt;gdb:block&gt;</code>,
+and <var>name</var> is looked up in that scope.
+Otherwise, it is searched for globally.
+</p>
+<p>Ordinarily, this function will return an instance of <code>&lt;gdb:type&gt;</code>.
+If the named type cannot be found, it will throw an exception.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-type_002dcode"></a>Scheme Procedure: <strong>type-code</strong> <em>type</em></dt>
+<dd><p>Return the type code of <var>type</var>.  The type code will be one of the
+<code>TYPE_CODE_</code> constants defined below.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-type_002dtag"></a>Scheme Procedure: <strong>type-tag</strong> <em>type</em></dt>
+<dd><p>Return the tag name of <var>type</var>.  The tag name is the name after
+<code>struct</code>, <code>union</code>, or <code>enum</code> in C and C<tt>++</tt>; not all
+languages have this concept.  If this type has no tag name, then
+<code>#f</code> is returned.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-type_002dname"></a>Scheme Procedure: <strong>type-name</strong> <em>type</em></dt>
+<dd><p>Return the name of <var>type</var>.
+If this type has no name, then <code>#f</code> is returned.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-type_002dprint_002dname"></a>Scheme Procedure: <strong>type-print-name</strong> <em>type</em></dt>
+<dd><p>Return the print name of <var>type</var>.
+This returns something even for anonymous types.
+For example, for an anonymous C struct <code>&quot;struct {...}&quot;</code> is returned.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-type_002dsizeof"></a>Scheme Procedure: <strong>type-sizeof</strong> <em>type</em></dt>
+<dd><p>Return the size of this type, in target <code>char</code> units.  Usually, a
+target&rsquo;s <code>char</code> type will be an 8-bit byte.  However, on some
+unusual platforms, this type may have a different size.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-type_002dstrip_002dtypedefs"></a>Scheme Procedure: <strong>type-strip-typedefs</strong> <em>type</em></dt>
+<dd><p>Return a new <code>&lt;gdb:type&gt;</code> that represents the real type of <var>type</var>,
+after removing all layers of typedefs.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-type_002darray"></a>Scheme Procedure: <strong>type-array</strong> <em>type n1 <span class="roman">[</span>n2<span class="roman">]</span></em></dt>
+<dd><p>Return a new <code>&lt;gdb:type&gt;</code> object which represents an array of this
+type.  If one argument is given, it is the inclusive upper bound of
+the array; in this case the lower bound is zero.  If two arguments are
+given, the first argument is the lower bound of the array, and the
+second argument is the upper bound of the array.  An array&rsquo;s length
+must not be negative, but the bounds can be.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-type_002dvector"></a>Scheme Procedure: <strong>type-vector</strong> <em>type n1 <span class="roman">[</span>n2<span class="roman">]</span></em></dt>
+<dd><p>Return a new <code>&lt;gdb:type&gt;</code> object which represents a vector of this
+type.  If one argument is given, it is the inclusive upper bound of
+the vector; in this case the lower bound is zero.  If two arguments are
+given, the first argument is the lower bound of the vector, and the
+second argument is the upper bound of the vector.  A vector&rsquo;s length
+must not be negative, but the bounds can be.
+</p>
+<p>The difference between an <code>array</code> and a <code>vector</code> is that
+arrays behave like in C: when used in expressions they decay to a pointer
+to the first element whereas vectors are treated as first class values.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-type_002dpointer"></a>Scheme Procedure: <strong>type-pointer</strong> <em>type</em></dt>
+<dd><p>Return a new <code>&lt;gdb:type&gt;</code> object which represents a pointer to
+<var>type</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-type_002drange"></a>Scheme Procedure: <strong>type-range</strong> <em>type</em></dt>
+<dd><p>Return a list of two elements: the low bound and high bound of <var>type</var>.
+If <var>type</var> does not have a range, an exception is thrown.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-type_002dreference"></a>Scheme Procedure: <strong>type-reference</strong> <em>type</em></dt>
+<dd><p>Return a new <code>&lt;gdb:type&gt;</code> object which represents a reference to
+<var>type</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-type_002dtarget"></a>Scheme Procedure: <strong>type-target</strong> <em>type</em></dt>
+<dd><p>Return a new <code>&lt;gdb:type&gt;</code> object which represents the target type
+of <var>type</var>.
+</p>
+<p>For a pointer type, the target type is the type of the pointed-to
+object.  For an array type (meaning C-like arrays), the target type is
+the type of the elements of the array.  For a function or method type,
+the target type is the type of the return value.  For a complex type,
+the target type is the type of the elements.  For a typedef, the
+target type is the aliased type.
+</p>
+<p>If the type does not have a target, this method will throw an
+exception.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-type_002dconst"></a>Scheme Procedure: <strong>type-const</strong> <em>type</em></dt>
+<dd><p>Return a new <code>&lt;gdb:type&gt;</code> object which represents a
+<code>const</code>-qualified variant of <var>type</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-type_002dvolatile"></a>Scheme Procedure: <strong>type-volatile</strong> <em>type</em></dt>
+<dd><p>Return a new <code>&lt;gdb:type&gt;</code> object which represents a
+<code>volatile</code>-qualified variant of <var>type</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-type_002dunqualified"></a>Scheme Procedure: <strong>type-unqualified</strong> <em>type</em></dt>
+<dd><p>Return a new <code>&lt;gdb:type&gt;</code> object which represents an unqualified
+variant of <var>type</var>.  That is, the result is neither <code>const</code> nor
+<code>volatile</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-type_002dnum_002dfields"></a>Scheme Procedure: <strong>type-num-fields</strong></dt>
+<dd><p>Return the number of fields of <code>&lt;gdb:type&gt;</code> <var>type</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-type_002dfields"></a>Scheme Procedure: <strong>type-fields</strong> <em>type</em></dt>
+<dd><p>Return the fields of <var>type</var> as a list.
+For structure and union types, <code>fields</code> has the usual meaning.
+Range types have two fields, the minimum and maximum values.  Enum types
+have one field per enum constant.  Function and method types have one
+field per parameter.  The base types of C<tt>++</tt> classes are also
+represented as fields.  If the type has no fields, or does not fit
+into one of these categories, an empty list will be returned.
+See <a href="#Fields-of-a-type-in-Guile">Fields of a type in Guile</a>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-make_002dfield_002diterator"></a>Scheme Procedure: <strong>make-field-iterator</strong> <em>type</em></dt>
+<dd><p>Return the fields of <var>type</var> as a &lt;gdb:iterator&gt; object.
+See <a href="Iterators-In-Guile.html#Iterators-In-Guile">Iterators In Guile</a>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-type_002dfield"></a>Scheme Procedure: <strong>type-field</strong> <em>type field-name</em></dt>
+<dd><p>Return field named <var>field-name</var> in <var>type</var>.
+The result is an object of type <code>&lt;gdb:field&gt;</code>.
+See <a href="#Fields-of-a-type-in-Guile">Fields of a type in Guile</a>.
+If the type does not have fields, or <var>field-name</var> is not a field
+of <var>type</var>, an exception is thrown.
+</p>
+<p>For example, if <code>some-type</code> is a <code>&lt;gdb:type&gt;</code> instance holding
+a structure type, you can access its <code>foo</code> field with:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define bar (type-field some-type &quot;foo&quot;))
+</pre></div>
+
+<p><code>bar</code> will be a <code>&lt;gdb:field&gt;</code> object.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-type_002dhas_002dfield_003f"></a>Scheme Procedure: <strong>type-has-field?</strong> <em>type name</em></dt>
+<dd><p>Return <code>#t</code> if <code>&lt;gdb:type&gt;</code> <var>type</var> has field named <var>name</var>.
+Otherwise return <code>#f</code>.
+</p></dd></dl>
+
+<p>Each type has a code, which indicates what category this type falls
+into.  The available type categories are represented by constants
+defined in the <code>(gdb)</code> module:
+</p>
+<dl compact="compact">
+<dt><code>TYPE_CODE_PTR</code>
+<a name="index-TYPE_005fCODE_005fPTR-1"></a>
+</dt>
+<dd><p>The type is a pointer.
+</p>
+</dd>
+<dt><code>TYPE_CODE_ARRAY</code>
+<a name="index-TYPE_005fCODE_005fARRAY-1"></a>
+</dt>
+<dd><p>The type is an array.
+</p>
+</dd>
+<dt><code>TYPE_CODE_STRUCT</code>
+<a name="index-TYPE_005fCODE_005fSTRUCT-1"></a>
+</dt>
+<dd><p>The type is a structure.
+</p>
+</dd>
+<dt><code>TYPE_CODE_UNION</code>
+<a name="index-TYPE_005fCODE_005fUNION-1"></a>
+</dt>
+<dd><p>The type is a union.
+</p>
+</dd>
+<dt><code>TYPE_CODE_ENUM</code>
+<a name="index-TYPE_005fCODE_005fENUM-1"></a>
+</dt>
+<dd><p>The type is an enum.
+</p>
+</dd>
+<dt><code>TYPE_CODE_FLAGS</code>
+<a name="index-TYPE_005fCODE_005fFLAGS-1"></a>
+</dt>
+<dd><p>A bit flags type, used for things such as status registers.
+</p>
+</dd>
+<dt><code>TYPE_CODE_FUNC</code>
+<a name="index-TYPE_005fCODE_005fFUNC-1"></a>
+</dt>
+<dd><p>The type is a function.
+</p>
+</dd>
+<dt><code>TYPE_CODE_INT</code>
+<a name="index-TYPE_005fCODE_005fINT-1"></a>
+</dt>
+<dd><p>The type is an integer type.
+</p>
+</dd>
+<dt><code>TYPE_CODE_FLT</code>
+<a name="index-TYPE_005fCODE_005fFLT-1"></a>
+</dt>
+<dd><p>A floating point type.
+</p>
+</dd>
+<dt><code>TYPE_CODE_VOID</code>
+<a name="index-TYPE_005fCODE_005fVOID-1"></a>
+</dt>
+<dd><p>The special type <code>void</code>.
+</p>
+</dd>
+<dt><code>TYPE_CODE_SET</code>
+<a name="index-TYPE_005fCODE_005fSET-1"></a>
+</dt>
+<dd><p>A Pascal set type.
+</p>
+</dd>
+<dt><code>TYPE_CODE_RANGE</code>
+<a name="index-TYPE_005fCODE_005fRANGE-1"></a>
+</dt>
+<dd><p>A range type, that is, an integer type with bounds.
+</p>
+</dd>
+<dt><code>TYPE_CODE_STRING</code>
+<a name="index-TYPE_005fCODE_005fSTRING-1"></a>
+</dt>
+<dd><p>A string type.  Note that this is only used for certain languages with
+language-defined string types; C strings are not represented this way.
+</p>
+</dd>
+<dt><code>TYPE_CODE_BITSTRING</code>
+<a name="index-TYPE_005fCODE_005fBITSTRING-1"></a>
+</dt>
+<dd><p>A string of bits.  It is deprecated.
+</p>
+</dd>
+<dt><code>TYPE_CODE_ERROR</code>
+<a name="index-TYPE_005fCODE_005fERROR-1"></a>
+</dt>
+<dd><p>An unknown or erroneous type.
+</p>
+</dd>
+<dt><code>TYPE_CODE_METHOD</code>
+<a name="index-TYPE_005fCODE_005fMETHOD-1"></a>
+</dt>
+<dd><p>A method type, as found in C<tt>++</tt>.
+</p>
+</dd>
+<dt><code>TYPE_CODE_METHODPTR</code>
+<a name="index-TYPE_005fCODE_005fMETHODPTR-1"></a>
+</dt>
+<dd><p>A pointer-to-member-function.
+</p>
+</dd>
+<dt><code>TYPE_CODE_MEMBERPTR</code>
+<a name="index-TYPE_005fCODE_005fMEMBERPTR-1"></a>
+</dt>
+<dd><p>A pointer-to-member.
+</p>
+</dd>
+<dt><code>TYPE_CODE_REF</code>
+<a name="index-TYPE_005fCODE_005fREF-1"></a>
+</dt>
+<dd><p>A reference type.
+</p>
+</dd>
+<dt><code>TYPE_CODE_CHAR</code>
+<a name="index-TYPE_005fCODE_005fCHAR-1"></a>
+</dt>
+<dd><p>A character type.
+</p>
+</dd>
+<dt><code>TYPE_CODE_BOOL</code>
+<a name="index-TYPE_005fCODE_005fBOOL-1"></a>
+</dt>
+<dd><p>A boolean type.
+</p>
+</dd>
+<dt><code>TYPE_CODE_COMPLEX</code>
+<a name="index-TYPE_005fCODE_005fCOMPLEX-1"></a>
+</dt>
+<dd><p>A complex float type.
+</p>
+</dd>
+<dt><code>TYPE_CODE_TYPEDEF</code>
+<a name="index-TYPE_005fCODE_005fTYPEDEF-1"></a>
+</dt>
+<dd><p>A typedef to some other type.
+</p>
+</dd>
+<dt><code>TYPE_CODE_NAMESPACE</code>
+<a name="index-TYPE_005fCODE_005fNAMESPACE-1"></a>
+</dt>
+<dd><p>A C<tt>++</tt> namespace.
+</p>
+</dd>
+<dt><code>TYPE_CODE_DECFLOAT</code>
+<a name="index-TYPE_005fCODE_005fDECFLOAT-1"></a>
+</dt>
+<dd><p>A decimal floating point type.
+</p>
+</dd>
+<dt><code>TYPE_CODE_INTERNAL_FUNCTION</code>
+<a name="index-TYPE_005fCODE_005fINTERNAL_005fFUNCTION-1"></a>
+</dt>
+<dd><p>A function internal to <small>GDB</small>.  This is the type used to represent
+convenience functions (see <a href="Convenience-Funs.html#Convenience-Funs">Convenience Funs</a>).
+</p></dd>
+</dl>
+
+<p>Further support for types is provided in the <code>(gdb types)</code>
+Guile module (see <a href="Guile-Types-Module.html#Guile-Types-Module">Guile Types Module</a>).
+</p>
+<a name="Fields-of-a-type-in-Guile"></a><p>Each field is represented as an object of type <code>&lt;gdb:field&gt;</code>.
+</p>
+<p>The following field-related procedures are provided by the
+<code>(gdb)</code> module:
+</p>
+<dl>
+<dt><a name="index-field_003f"></a>Scheme Procedure: <strong>field?</strong> <em>object</em></dt>
+<dd><p>Return <code>#t</code> if <var>object</var> is an object of type <code>&lt;gdb:field&gt;</code>.
+Otherwise return <code>#f</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-field_002dname"></a>Scheme Procedure: <strong>field-name</strong> <em>field</em></dt>
+<dd><p>Return the name of the field, or <code>#f</code> for anonymous fields.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-field_002dtype"></a>Scheme Procedure: <strong>field-type</strong> <em>field</em></dt>
+<dd><p>Return the type of the field.  This is usually an instance of
+<code>&lt;gdb:type&gt;</code>, but it can be <code>#f</code> in some situations.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-field_002denumval"></a>Scheme Procedure: <strong>field-enumval</strong> <em>field</em></dt>
+<dd><p>Return the enum value represented by <code>&lt;gdb:field&gt;</code> <var>field</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-field_002dbitpos"></a>Scheme Procedure: <strong>field-bitpos</strong> <em>field</em></dt>
+<dd><p>Return the bit position of <code>&lt;gdb:field&gt;</code> <var>field</var>.
+This attribute is not available for <code>static</code> fields (as in
+C<tt>++</tt>).
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-field_002dbitsize"></a>Scheme Procedure: <strong>field-bitsize</strong> <em>field</em></dt>
+<dd><p>If the field is packed, or is a bitfield, return the size of
+<code>&lt;gdb:field&gt;</code> <var>field</var> in bits.  Otherwise, zero is returned;
+in which case the field&rsquo;s size is given by its type.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-field_002dartificial_003f"></a>Scheme Procedure: <strong>field-artificial?</strong> <em>field</em></dt>
+<dd><p>Return <code>#t</code> if the field is artificial, usually meaning that
+it was provided by the compiler and not the user.
+Otherwise return <code>#f</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-field_002dbase_002dclass_003f"></a>Scheme Procedure: <strong>field-base-class?</strong> <em>field</em></dt>
+<dd><p>Return <code>#t</code> if the field represents a base class of a C<tt>++</tt>
+structure.
+Otherwise return <code>#f</code>.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Guile-Pretty-Printing-API.html#Guile-Pretty-Printing-API" accesskey="n" rel="next">Guile Pretty Printing API</a>, Previous: <a href="Arithmetic-In-Guile.html#Arithmetic-In-Guile" accesskey="p" rel="prev">Arithmetic In Guile</a>, Up: <a href="Guile-API.html#Guile-API" accesskey="u" rel="up">Guile API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

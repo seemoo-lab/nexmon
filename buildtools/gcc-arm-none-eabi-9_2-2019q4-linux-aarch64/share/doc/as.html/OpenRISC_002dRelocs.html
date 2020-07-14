@@ -1,0 +1,229 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: OpenRISC-Relocs</title>
+
+<meta name="description" content="Using as: OpenRISC-Relocs">
+<meta name="keywords" content="Using as: OpenRISC-Relocs">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="OpenRISC_002dSyntax.html#OpenRISC_002dSyntax" rel="up" title="OpenRISC-Syntax">
+<link href="OpenRISC_002dFloat.html#OpenRISC_002dFloat" rel="next" title="OpenRISC-Float">
+<link href="OpenRISC_002dRegs.html#OpenRISC_002dRegs" rel="prev" title="OpenRISC-Regs">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="OpenRISC_002dRelocs"></a>
+<div class="header">
+<p>
+Previous: <a href="OpenRISC_002dRegs.html#OpenRISC_002dRegs" accesskey="p" rel="prev">OpenRISC-Regs</a>, Up: <a href="OpenRISC_002dSyntax.html#OpenRISC_002dSyntax" accesskey="u" rel="up">OpenRISC-Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Relocations-3"></a>
+<h4 class="subsubsection">9.33.1.3 Relocations</h4>
+<a name="index-OpenRISC-relocations"></a>
+<a name="index-relocations_002c-OpenRISC"></a>
+
+<p>ELF relocations are available as defined in the OpenRISC architecture
+specification.
+</p>
+<p><code>R_OR1K_HI_16_IN_INSN</code> is obtained using &lsquo;<samp>hi</samp>&rsquo; and
+<code>R_OR1K_LO_16_IN_INSN</code> and <code>R_OR1K_SLO16</code> are obtained using
+&lsquo;<samp>lo</samp>&rsquo;.  For signed offsets <code>R_OR1K_AHI16</code> is obtained from
+&lsquo;<samp>ha</samp>&rsquo;.  For example:
+</p>
+<div class="example">
+<pre class="example">l.movhi r5, hi(symbol)
+l.ori   r5, r5, lo(symbol)
+
+l.movhi r5, ha(symbol)
+l.addi  r5, r5, lo(symbol)
+</pre></div>
+
+<p>These &ldquo;high&rdquo; mnemonics extract bits 31:16 of their operand,
+and the &ldquo;low&rdquo; mnemonics extract bits 15:0 of their operand.
+</p>
+<p>The PC relative relocation <code>R_OR1K_GOTPC_HI16</code> can be obtained by
+enclosing an operand inside of &lsquo;<samp>gotpchi</samp>&rsquo;.  Likewise, the
+<code>R_OR1K_GOTPC_LO16</code> relocation can be obtained using &lsquo;<samp>gotpclo</samp>&rsquo;.
+These are mostly used when assembling PIC code.  For example, the
+standard PIC sequence on OpenRISC to get the base of the global offset
+table, PC relative, into a register, can be performed as:
+</p>
+<div class="example">
+<pre class="example">l.jal   0x8
+ l.movhi r17, gotpchi(_GLOBAL_OFFSET_TABLE_-4)
+l.ori   r17, r17, gotpclo(_GLOBAL_OFFSET_TABLE_+0)
+l.add   r17, r17, r9
+</pre></div>
+
+<p>Several relocations exist to allow the link editor to perform GOT data
+references.  The <code>R_OR1K_GOT16</code> relocation can obtained by enclosing an
+operand inside of &lsquo;<samp>got</samp>&rsquo;.  For example, assuming the GOT base is in
+register <code>r17</code>.
+</p>
+<div class="example">
+<pre class="example">l.lwz   r19, got(a)(r17)
+l.lwz   r21, 0(r19)
+</pre></div>
+
+<p>Also, several relocations exist for local GOT references.  The
+<code>R_OR1K_GOTOFF_AHI16</code> relocation can obtained by enclosing an operand
+inside of &lsquo;<samp>gotoffha</samp>&rsquo;.  Likewise, <code>R_OR1K_GOTOFF_LO16</code> and
+<code>R_OR1K_GOTOFF_SLO16</code> can be obtained by enclosing an operand inside of
+&lsquo;<samp>gotofflo</samp>&rsquo;.  For example, assuming the GOT base is in register
+<code>rl7</code>:
+</p>
+<div class="example">
+<pre class="example">l.movhi r19, gotoffha(symbol)
+l.add   r19, r19, r17
+l.lwz   r19, gotofflo(symbol)(r19)
+</pre></div>
+
+<p>The above PC relative relocations use a <code>l.jal</code> (jump) instruction
+and reading of the link register to load the PC.  OpenRISC also supports
+page offset PC relative locations without a jump instruction using the
+<code>l.adrp</code> instruction.  By default the <code>l.adrp</code> instruction will
+create an <code>R_OR1K_PCREL_PG21</code> relocation.
+Likewise, <code>BFD_RELOC_OR1K_LO13</code> and <code>BFD_RELOC_OR1K_SLO13</code> can
+be obtained by enclosing an operand inside of &lsquo;<samp>po</samp>&rsquo;.  For example:
+</p>
+<div class="example">
+<pre class="example">l.adrp  r3, symbol
+l.ori   r4, r3, po(symbol)
+l.lbz   r5, po(symbol)(r3)
+l.sb    po(symbol)(r3), r6
+</pre></div>
+
+<p>Likewise the page offset relocations can be used with GOT references.  The
+relocation <code>R_OR1K_GOT_PG21</code> can be obtained by enclosing an
+<code>l.adrp</code> immediate operand inside of &lsquo;<samp>got</samp>&rsquo;.  Likewise,
+<code>R_OR1K_GOT_LO13</code> can be obtained by enclosing an operand inside of
+&lsquo;<samp>gotpo</samp>&rsquo;.  For example to load the value of a GOT symbol into register
+&lsquo;<samp>r5</samp>&rsquo; we can do:
+</p>
+<div class="example">
+<pre class="example">l.adrp  r17, got(_GLOBAL_OFFSET_TABLE_)
+l.lwz   r5, gotpo(symbol)(r17)
+</pre></div>
+
+<p>There are many relocations that can be requested for access to
+thread local storage variables.  All of the OpenRISC TLS mnemonics
+are supported:
+</p>
+<ul>
+<li> <code>R_OR1K_TLS_GD_HI16</code> is requested using &lsquo;<samp>tlsgdhi</samp>&rsquo;.
+</li><li> <code>R_OR1K_TLS_GD_LO16</code> is requested using &lsquo;<samp>tlsgdlo</samp>&rsquo;.
+</li><li> <code>R_OR1K_TLS_GD_PG21</code> is requested using &lsquo;<samp>tldgd</samp>&rsquo;.
+</li><li> <code>R_OR1K_TLS_GD_LO13</code> is requested using &lsquo;<samp>tlsgdpo</samp>&rsquo;.
+
+</li><li> <code>R_OR1K_TLS_LDM_HI16</code> is requested using &lsquo;<samp>tlsldmhi</samp>&rsquo;.
+</li><li> <code>R_OR1K_TLS_LDM_LO16</code> is requested using &lsquo;<samp>tlsldmlo</samp>&rsquo;.
+</li><li> <code>R_OR1K_TLS_LDM_PG21</code> is requested using &lsquo;<samp>tldldm</samp>&rsquo;.
+</li><li> <code>R_OR1K_TLS_LDM_LO13</code> is requested using &lsquo;<samp>tlsldmpo</samp>&rsquo;.
+
+</li><li> <code>R_OR1K_TLS_LDO_HI16</code> is requested using &lsquo;<samp>dtpoffhi</samp>&rsquo;.
+</li><li> <code>R_OR1K_TLS_LDO_LO16</code> is requested using &lsquo;<samp>dtpofflo</samp>&rsquo;.
+
+</li><li> <code>R_OR1K_TLS_IE_HI16</code> is requested using &lsquo;<samp>gottpoffhi</samp>&rsquo;.
+</li><li> <code>R_OR1K_TLS_IE_AHI16</code> is requested using &lsquo;<samp>gottpoffha</samp>&rsquo;.
+</li><li> <code>R_OR1K_TLS_IE_LO16</code> is requested using &lsquo;<samp>gottpofflo</samp>&rsquo;.
+</li><li> <code>R_OR1K_TLS_IE_PG21</code> is requested using &lsquo;<samp>gottp</samp>&rsquo;.
+</li><li> <code>R_OR1K_TLS_IE_LO13</code> is requested using &lsquo;<samp>gottppo</samp>&rsquo;.
+
+</li><li> <code>R_OR1K_TLS_LE_HI16</code> is requested using &lsquo;<samp>tpoffhi</samp>&rsquo;.
+</li><li> <code>R_OR1K_TLS_LE_AHI16</code> is requested using &lsquo;<samp>tpoffha</samp>&rsquo;.
+</li><li> <code>R_OR1K_TLS_LE_LO16</code> is requested using &lsquo;<samp>tpofflo</samp>&rsquo;.
+</li><li> <code>R_OR1K_TLS_LE_SLO16</code> also is requested using &lsquo;<samp>tpofflo</samp>&rsquo;
+depending on the instruction format.
+</li></ul>
+
+<p>Here are some example TLS model sequences.
+</p>
+<p>First, General Dynamic:
+</p>
+<div class="example">
+<pre class="example">l.movhi r17, tlsgdhi(symbol)
+l.ori   r17, r17, tlsgdlo(symbol)
+l.add   r17, r17, r16
+l.or    r3, r17, r17
+l.jal   plt(__tls_get_addr)
+ l.nop
+</pre></div>
+
+<p>Initial Exec:
+</p>
+<div class="example">
+<pre class="example">l.movhi r17, gottpoffhi(symbol)
+l.add   r17, r17, r16
+l.lwz   r17, gottpofflo(symbol)(r17)
+l.add   r17, r17, r10
+l.lbs   r17, 0(r17)
+</pre></div>
+
+<p>And finally, Local Exec:
+</p>
+<div class="example">
+<pre class="example">l.movhi r17, tpoffha(symbol)
+l.add   r17, r17, r10
+l.addi  r17, r17, tpofflo(symbol)
+l.lbs   r17, 0(r17)
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="OpenRISC_002dRegs.html#OpenRISC_002dRegs" accesskey="p" rel="prev">OpenRISC-Regs</a>, Up: <a href="OpenRISC_002dSyntax.html#OpenRISC_002dSyntax" accesskey="u" rel="up">OpenRISC-Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

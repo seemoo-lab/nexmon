@@ -1,0 +1,142 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: MINVAL</title>
+
+<meta name="description" content="The GNU Fortran Compiler: MINVAL">
+<meta name="keywords" content="The GNU Fortran Compiler: MINVAL">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Intrinsic-Procedures.html#Intrinsic-Procedures" rel="up" title="Intrinsic Procedures">
+<link href="MOD.html#MOD" rel="next" title="MOD">
+<link href="MINLOC.html#MINLOC" rel="prev" title="MINLOC">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="MINVAL"></a>
+<div class="header">
+<p>
+Next: <a href="MOD.html#MOD" accesskey="n" rel="next">MOD</a>, Previous: <a href="MINLOC.html#MINLOC" accesskey="p" rel="prev">MINLOC</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="MINVAL-_002d_002d_002d-Minimum-value-of-an-array"></a>
+<h3 class="section">9.200 <code>MINVAL</code> &mdash; Minimum value of an array</h3>
+<a name="index-MINVAL"></a>
+<a name="index-array_002c-minimum-value"></a>
+<a name="index-minimum-value-1"></a>
+
+<dl compact="compact">
+<dt><em>Description</em>:</dt>
+<dd><p>Determines the minimum value of the elements in an array value, or, if
+the <var>DIM</var> argument is supplied, determines the minimum value along
+each row of the array in the <var>DIM</var> direction.  If <var>MASK</var> is
+present, only the elements for which <var>MASK</var> is <code>.TRUE.</code> are
+considered.  If the array has zero size, or all of the elements of
+<var>MASK</var> are <code>.FALSE.</code>, then the result is <code>HUGE(ARRAY)</code> if
+<var>ARRAY</var> is numeric, or a string of <code>CHAR(255)</code> characters if
+<var>ARRAY</var> is of character type.
+</p>
+</dd>
+<dt><em>Standard</em>:</dt>
+<dd><p>Fortran 95 and later
+</p>
+</dd>
+<dt><em>Class</em>:</dt>
+<dd><p>Transformational function
+</p>
+</dd>
+<dt><em>Syntax</em>:</dt>
+<dd><table>
+<tr><td width="80%"><code>RESULT = MINVAL(ARRAY, DIM [, MASK])</code></td></tr>
+<tr><td width="80%"><code>RESULT = MINVAL(ARRAY [, MASK])</code></td></tr>
+</table>
+
+</dd>
+<dt><em>Arguments</em>:</dt>
+<dd><table>
+<tr><td width="15%"><var>ARRAY</var></td><td width="70%">Shall be an array of type <code>INTEGER</code> or
+<code>REAL</code>.</td></tr>
+<tr><td width="15%"><var>DIM</var></td><td width="70%">(Optional) Shall be a scalar of type
+<code>INTEGER</code>, with a value between one and the rank of <var>ARRAY</var>,
+inclusive.  It may not be an optional dummy argument.</td></tr>
+<tr><td width="15%"><var>MASK</var></td><td width="70%">Shall be an array of type <code>LOGICAL</code>,
+and conformable with <var>ARRAY</var>.</td></tr>
+</table>
+
+</dd>
+<dt><em>Return value</em>:</dt>
+<dd><p>If <var>DIM</var> is absent, or if <var>ARRAY</var> has a rank of one, the result
+is a scalar.  If <var>DIM</var> is present, the result is an array with a
+rank one less than the rank of <var>ARRAY</var>, and a size corresponding to
+the size of <var>ARRAY</var> with the <var>DIM</var> dimension removed.  In all
+cases, the result is of the same type and kind as <var>ARRAY</var>.
+</p>
+</dd>
+<dt><em>See also</em>:</dt>
+<dd><p><a href="MIN.html#MIN">MIN</a>, <a href="MINLOC.html#MINLOC">MINLOC</a>
+</p>
+</dd>
+</dl>
+
+
+
+
+
+
+</body>
+</html>

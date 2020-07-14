@@ -1,0 +1,208 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Auto-loading safe path</title>
+
+<meta name="description" content="Debugging with GDB: Auto-loading safe path">
+<meta name="keywords" content="Debugging with GDB: Auto-loading safe path">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Auto_002dloading.html#Auto_002dloading" rel="up" title="Auto-loading">
+<link href="Auto_002dloading-verbose-mode.html#Auto_002dloading-verbose-mode" rel="next" title="Auto-loading verbose mode">
+<link href="libthread_005fdb_002eso_002e1-file.html#libthread_005fdb_002eso_002e1-file" rel="prev" title="libthread_db.so.1 file">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Auto_002dloading-safe-path"></a>
+<div class="header">
+<p>
+Next: <a href="Auto_002dloading-verbose-mode.html#Auto_002dloading-verbose-mode" accesskey="n" rel="next">Auto-loading verbose mode</a>, Previous: <a href="libthread_005fdb_002eso_002e1-file.html#libthread_005fdb_002eso_002e1-file" accesskey="p" rel="prev">libthread_db.so.1 file</a>, Up: <a href="Auto_002dloading.html#Auto_002dloading" accesskey="u" rel="up">Auto-loading</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Security-restriction-for-auto_002dloading"></a>
+<h4 class="subsection">22.8.3 Security restriction for auto-loading</h4>
+<a name="index-auto_002dloading-safe_002dpath"></a>
+
+<p>As the files of inferior can come from untrusted source (such as submitted by
+an application user) <small>GDB</small> does not always load any files automatically.
+<small>GDB</small> provides the &lsquo;<samp>set auto-load safe-path</samp>&rsquo; setting to list
+directories trusted for loading files not explicitly requested by user.
+Each directory can also be a shell wildcard pattern.
+</p>
+<p>If the path is not set properly you will see a warning and the file will not
+get loaded:
+</p>
+<div class="smallexample">
+<pre class="smallexample">$ ./gdb -q ./gdb
+Reading symbols from /home/user/gdb/gdb...done.
+warning: File &quot;/home/user/gdb/gdb-gdb.gdb&quot; auto-loading has been
+         declined by your `auto-load safe-path' set
+         to &quot;$debugdir:$datadir/auto-load&quot;.
+warning: File &quot;/home/user/gdb/gdb-gdb.py&quot; auto-loading has been
+         declined by your `auto-load safe-path' set
+         to &quot;$debugdir:$datadir/auto-load&quot;.
+</pre></div>
+
+<p>To instruct <small>GDB</small> to go ahead and use the init files anyway,
+invoke <small>GDB</small> like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">$ gdb -q -iex &quot;set auto-load safe-path /home/user/gdb&quot; ./gdb
+</pre></div>
+
+<p>The list of trusted directories is controlled by the following commands:
+</p>
+<dl compact="compact">
+<dd><a name="set-auto_002dload-safe_002dpath"></a><a name="index-set-auto_002dload-safe_002dpath"></a>
+</dd>
+<dt><code>set auto-load safe-path <span class="roman">[</span><var>directories</var><span class="roman">]</span></code></dt>
+<dd><p>Set the list of directories (and their subdirectories) trusted for automatic
+loading and execution of scripts.  You can also enter a specific trusted file.
+Each directory can also be a shell wildcard pattern; wildcards do not match
+directory separator - see <code>FNM_PATHNAME</code> for system function <code>fnmatch</code>
+(see <a href="http://www.gnu.org/software/libc/manual/html_node/Wildcard-Matching.html#Wildcard-Matching">fnmatch</a> in <cite>GNU C Library Reference Manual</cite>).
+If you omit <var>directories</var>, &lsquo;<samp>auto-load safe-path</samp>&rsquo; will be reset to
+its default value as specified during <small>GDB</small> compilation.
+</p>
+<p>The list of directories uses path separator (&lsquo;<samp>:</samp>&rsquo; on GNU and Unix
+systems, &lsquo;<samp>;</samp>&rsquo; on MS-Windows and MS-DOS) to separate directories, similarly
+to the <code>PATH</code> environment variable.
+</p>
+<a name="show-auto_002dload-safe_002dpath"></a><a name="index-show-auto_002dload-safe_002dpath"></a>
+</dd>
+<dt><code>show auto-load safe-path</code></dt>
+<dd><p>Show the list of directories trusted for automatic loading and execution of
+scripts.
+</p>
+<a name="add_002dauto_002dload_002dsafe_002dpath"></a><a name="index-add_002dauto_002dload_002dsafe_002dpath"></a>
+</dd>
+<dt><code>add-auto-load-safe-path</code></dt>
+<dd><p>Add an entry (or list of entries) to the list of directories trusted for
+automatic loading and execution of scripts.  Multiple entries may be delimited
+by the host platform path separator in use.
+</p></dd>
+</dl>
+
+<p>This variable defaults to what <code>--with-auto-load-dir</code> has been configured
+to (see <a href="objfile_002dgdbdotext-file.html#with_002dauto_002dload_002ddir">with-auto-load-dir</a>).  <samp>$debugdir</samp> and <samp>$datadir</samp>
+substitution applies the same as for <a href="objfile_002dgdbdotext-file.html#set-auto_002dload-scripts_002ddirectory">set auto-load scripts-directory</a>.
+The default <code>set auto-load safe-path</code> value can be also overriden by
+<small>GDB</small> configuration option <samp>--with-auto-load-safe-path</samp>.
+</p>
+<p>Setting this variable to <samp>/</samp> disables this security protection,
+corresponding <small>GDB</small> configuration option is
+<samp>--without-auto-load-safe-path</samp>.
+This variable is supposed to be set to the system directories writable by the
+system superuser only.  Users can add their source directories in init files in
+their home directories (see <a href="Startup.html#Home-Directory-Init-File">Home Directory Init File</a>).  See also deprecated
+init file in the current directory
+(see <a href="Startup.html#Init-File-in-the-Current-Directory-during-Startup">Init File in the Current Directory during Startup</a>).
+</p>
+<p>To force <small>GDB</small> to load the files it declined to load in the previous
+example, you could use one of the following ways:
+</p>
+<dl compact="compact">
+<dt><samp>~/.gdbinit</samp>: &lsquo;<samp>add-auto-load-safe-path ~/src/gdb</samp>&rsquo;</dt>
+<dd><p>Specify this trusted directory (or a file) as additional component of the list.
+You have to specify also any existing directories displayed by
+by &lsquo;<samp>show auto-load safe-path</samp>&rsquo; (such as &lsquo;<samp>/usr:/bin</samp>&rsquo; in this example).
+</p>
+</dd>
+<dt><kbd>gdb -iex &quot;set auto-load safe-path /usr:/bin:~/src/gdb&quot; &hellip;</kbd></dt>
+<dd><p>Specify this directory as in the previous case but just for a single
+<small>GDB</small> session.
+</p>
+</dd>
+<dt><kbd>gdb -iex &quot;set auto-load safe-path /&quot; &hellip;</kbd></dt>
+<dd><p>Disable auto-loading safety for a single <small>GDB</small> session.
+This assumes all the files you debug during this <small>GDB</small> session will come
+from trusted sources.
+</p>
+</dd>
+<dt><kbd>./configure --without-auto-load-safe-path</kbd></dt>
+<dd><p>During compilation of <small>GDB</small> you may disable any auto-loading safety.
+This assumes all the files you will ever debug with this <small>GDB</small> come from
+trusted sources.
+</p></dd>
+</dl>
+
+<p>On the other hand you can also explicitly forbid automatic files loading which
+also suppresses any such warning messages:
+</p>
+<dl compact="compact">
+<dt><kbd>gdb -iex &quot;set auto-load no&quot; &hellip;</kbd></dt>
+<dd><p>You can use <small>GDB</small> command-line option for a single <small>GDB</small> session.
+</p>
+</dd>
+<dt><samp>~/.gdbinit</samp>: &lsquo;<samp>set auto-load no</samp>&rsquo;</dt>
+<dd><p>Disable auto-loading globally for the user
+(see <a href="Startup.html#Home-Directory-Init-File">Home Directory Init File</a>).  While it is improbable, you could also
+use system init file instead (see <a href="System_002dwide-configuration.html#System_002dwide-configuration">System-wide configuration</a>).
+</p></dd>
+</dl>
+
+<p>This setting applies to the file names as entered by user.  If no entry matches
+<small>GDB</small> tries as a last resort to also resolve all the file names into
+their canonical form (typically resolving symbolic links) and compare the
+entries again.  <small>GDB</small> already canonicalizes most of the filenames on its
+own before starting the comparison so a canonical form of directories is
+recommended to be entered.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Auto_002dloading-verbose-mode.html#Auto_002dloading-verbose-mode" accesskey="n" rel="next">Auto-loading verbose mode</a>, Previous: <a href="libthread_005fdb_002eso_002e1-file.html#libthread_005fdb_002eso_002e1-file" accesskey="p" rel="prev">libthread_db.so.1 file</a>, Up: <a href="Auto_002dloading.html#Auto_002dloading" accesskey="u" rel="up">Auto-loading</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

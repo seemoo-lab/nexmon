@@ -1,0 +1,152 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: LM32-Regs</title>
+
+<meta name="description" content="Using as: LM32-Regs">
+<meta name="keywords" content="Using as: LM32-Regs">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="LM32-Syntax.html#LM32-Syntax" rel="up" title="LM32 Syntax">
+<link href="LM32_002dModifiers.html#LM32_002dModifiers" rel="next" title="LM32-Modifiers">
+<link href="LM32-Syntax.html#LM32-Syntax" rel="prev" title="LM32 Syntax">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="LM32_002dRegs"></a>
+<div class="header">
+<p>
+Next: <a href="LM32_002dModifiers.html#LM32_002dModifiers" accesskey="n" rel="next">LM32-Modifiers</a>, Up: <a href="LM32-Syntax.html#LM32-Syntax" accesskey="u" rel="up">LM32 Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Register-Names-10"></a>
+<h4 class="subsubsection">9.19.2.1 Register Names</h4>
+
+<a name="index-LM32-register-names"></a>
+<a name="index-register-names_002c-LM32"></a>
+
+<p>LM32 has 32 x 32-bit general purpose registers &lsquo;<samp>r0</samp>&rsquo;,
+&lsquo;<samp>r1</samp>&rsquo;, ... &lsquo;<samp>r31</samp>&rsquo;.
+</p>
+<p>The following aliases are defined: &lsquo;<samp>gp</samp>&rsquo; - &lsquo;<samp>r26</samp>&rsquo;,
+&lsquo;<samp>fp</samp>&rsquo; - &lsquo;<samp>r27</samp>&rsquo;, &lsquo;<samp>sp</samp>&rsquo; - &lsquo;<samp>r28</samp>&rsquo;,
+&lsquo;<samp>ra</samp>&rsquo; - &lsquo;<samp>r29</samp>&rsquo;, &lsquo;<samp>ea</samp>&rsquo; - &lsquo;<samp>r30</samp>&rsquo;,
+&lsquo;<samp>ba</samp>&rsquo; - &lsquo;<samp>r31</samp>&rsquo;.
+</p>
+<p>LM32 has the following Control and Status Registers (CSRs).
+</p>
+<dl compact="compact">
+<dt><code>IE</code></dt>
+<dd><p>Interrupt enable.
+</p></dd>
+<dt><code>IM</code></dt>
+<dd><p>Interrupt mask.
+</p></dd>
+<dt><code>IP</code></dt>
+<dd><p>Interrupt pending.
+</p></dd>
+<dt><code>ICC</code></dt>
+<dd><p>Instruction cache control.
+</p></dd>
+<dt><code>DCC</code></dt>
+<dd><p>Data cache control.
+</p></dd>
+<dt><code>CC</code></dt>
+<dd><p>Cycle counter.
+</p></dd>
+<dt><code>CFG</code></dt>
+<dd><p>Configuration.
+</p></dd>
+<dt><code>EBA</code></dt>
+<dd><p>Exception base address.
+</p></dd>
+<dt><code>DC</code></dt>
+<dd><p>Debug control.
+</p></dd>
+<dt><code>DEBA</code></dt>
+<dd><p>Debug exception base address.
+</p></dd>
+<dt><code>JTX</code></dt>
+<dd><p>JTAG transmit.
+</p></dd>
+<dt><code>JRX</code></dt>
+<dd><p>JTAG receive.
+</p></dd>
+<dt><code>BP0</code></dt>
+<dd><p>Breakpoint 0.
+</p></dd>
+<dt><code>BP1</code></dt>
+<dd><p>Breakpoint 1.
+</p></dd>
+<dt><code>BP2</code></dt>
+<dd><p>Breakpoint 2.
+</p></dd>
+<dt><code>BP3</code></dt>
+<dd><p>Breakpoint 3.
+</p></dd>
+<dt><code>WP0</code></dt>
+<dd><p>Watchpoint 0.
+</p></dd>
+<dt><code>WP1</code></dt>
+<dd><p>Watchpoint 1.
+</p></dd>
+<dt><code>WP2</code></dt>
+<dd><p>Watchpoint 2.
+</p></dd>
+<dt><code>WP3</code></dt>
+<dd><p>Watchpoint 3.
+</p></dd>
+</dl>
+
+
+
+
+</body>
+</html>

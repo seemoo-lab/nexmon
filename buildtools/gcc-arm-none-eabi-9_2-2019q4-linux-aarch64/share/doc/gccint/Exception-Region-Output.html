@@ -1,0 +1,251 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Exception Region Output</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Exception Region Output">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Exception Region Output">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Assembler-Format.html#Assembler-Format" rel="up" title="Assembler Format">
+<link href="Alignment-Output.html#Alignment-Output" rel="next" title="Alignment Output">
+<link href="Dispatch-Tables.html#Dispatch-Tables" rel="prev" title="Dispatch Tables">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Exception-Region-Output"></a>
+<div class="header">
+<p>
+Next: <a href="Alignment-Output.html#Alignment-Output" accesskey="n" rel="next">Alignment Output</a>, Previous: <a href="Dispatch-Tables.html#Dispatch-Tables" accesskey="p" rel="prev">Dispatch Tables</a>, Up: <a href="Assembler-Format.html#Assembler-Format" accesskey="u" rel="up">Assembler Format</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Assembler-Commands-for-Exception-Regions"></a>
+<h4 class="subsection">18.20.9 Assembler Commands for Exception Regions</h4>
+
+
+<p>This describes commands marking the start and the end of an exception
+region.
+</p>
+<dl>
+<dt><a name="index-EH_005fFRAME_005fSECTION_005fNAME"></a>Macro: <strong>EH_FRAME_SECTION_NAME</strong></dt>
+<dd><p>If defined, a C string constant for the name of the section containing
+exception handling frame unwind information.  If not defined, GCC will
+provide a default definition if the target supports named sections.
+<samp>crtstuff.c</samp> uses this macro to switch to the appropriate section.
+</p>
+<p>You should define this symbol if your target supports DWARF 2 frame
+unwind information and the default definition does not work.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-EH_005fFRAME_005fTHROUGH_005fCOLLECT2"></a>Macro: <strong>EH_FRAME_THROUGH_COLLECT2</strong></dt>
+<dd><p>If defined, DWARF 2 frame unwind information will identified by
+specially named labels.  The collect2 process will locate these
+labels and generate code to register the frames.
+</p>
+<p>This might be necessary, for instance, if the system linker will not
+place the eh_frames in-between the sentinals from <samp>crtstuff.c</samp>,
+or if the system linker does garbage collection and sections cannot
+be marked as not to be collected.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-EH_005fTABLES_005fCAN_005fBE_005fREAD_005fONLY"></a>Macro: <strong>EH_TABLES_CAN_BE_READ_ONLY</strong></dt>
+<dd><p>Define this macro to 1 if your target is such that no frame unwind
+information encoding used with non-PIC code will ever require a
+runtime relocation, but the linker may not support merging read-only
+and read-write sections into a single read-write section.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-MASK_005fRETURN_005fADDR"></a>Macro: <strong>MASK_RETURN_ADDR</strong></dt>
+<dd><p>An rtx used to mask the return address found via <code>RETURN_ADDR_RTX</code>, so
+that it does not contain any extraneous set bits in it.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-DWARF2_005fUNWIND_005fINFO"></a>Macro: <strong>DWARF2_UNWIND_INFO</strong></dt>
+<dd><p>Define this macro to 0 if your target supports DWARF 2 frame unwind
+information, but it does not yet work with exception handling.
+Otherwise, if your target supports this information (if it defines
+<code>INCOMING_RETURN_ADDR_RTX</code> and <code>OBJECT_FORMAT_ELF</code>),
+GCC will provide a default definition of 1.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fEXCEPT_005fUNWIND_005fINFO"></a>Common Target Hook: <em>enum unwind_info_type</em> <strong>TARGET_EXCEPT_UNWIND_INFO</strong> <em>(struct gcc_options *<var>opts</var>)</em></dt>
+<dd><p>This hook defines the mechanism that will be used for exception handling
+by the target.  If the target has ABI specified unwind tables, the hook
+should return <code>UI_TARGET</code>.  If the target is to use the
+<code>setjmp</code>/<code>longjmp</code>-based exception handling scheme, the hook
+should return <code>UI_SJLJ</code>.  If the target supports DWARF 2 frame unwind
+information, the hook should return <code>UI_DWARF2</code>.
+</p>
+<p>A target may, if exceptions are disabled, choose to return <code>UI_NONE</code>.
+This may end up simplifying other parts of target-specific code.  The
+default implementation of this hook never returns <code>UI_NONE</code>.
+</p>
+<p>Note that the value returned by this hook should be constant.  It should
+not depend on anything except the command-line switches described by
+<var>opts</var>.  In particular, the
+setting <code>UI_SJLJ</code> must be fixed at compiler start-up as C pre-processor
+macros and builtin functions related to exception handling are set up
+depending on this setting.
+</p>
+<p>The default implementation of the hook first honors the
+<samp>--enable-sjlj-exceptions</samp> configure option, then
+<code>DWARF2_UNWIND_INFO</code>, and finally defaults to <code>UI_SJLJ</code>.  If
+<code>DWARF2_UNWIND_INFO</code> depends on command-line options, the target
+must define this hook so that <var>opts</var> is used correctly.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fUNWIND_005fTABLES_005fDEFAULT"></a>Common Target Hook: <em>bool</em> <strong>TARGET_UNWIND_TABLES_DEFAULT</strong></dt>
+<dd><p>This variable should be set to <code>true</code> if the target ABI requires unwinding
+tables even when exceptions are not used.  It must not be modified by
+command-line option processing.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-DONT_005fUSE_005fBUILTIN_005fSETJMP"></a>Macro: <strong>DONT_USE_BUILTIN_SETJMP</strong></dt>
+<dd><p>Define this macro to 1 if the <code>setjmp</code>/<code>longjmp</code>-based scheme
+should use the <code>setjmp</code>/<code>longjmp</code> functions from the C library
+instead of the <code>__builtin_setjmp</code>/<code>__builtin_longjmp</code> machinery.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-JMP_005fBUF_005fSIZE"></a>Macro: <strong>JMP_BUF_SIZE</strong></dt>
+<dd><p>This macro has no effect unless <code>DONT_USE_BUILTIN_SETJMP</code> is also
+defined.  Define this macro if the default size of <code>jmp_buf</code> buffer
+for the <code>setjmp</code>/<code>longjmp</code>-based exception handling mechanism
+is not large enough, or if it is much too large.
+The default size is <code>FIRST_PSEUDO_REGISTER * sizeof(void *)</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-DWARF_005fCIE_005fDATA_005fALIGNMENT"></a>Macro: <strong>DWARF_CIE_DATA_ALIGNMENT</strong></dt>
+<dd><p>This macro need only be defined if the target might save registers in the
+function prologue at an offset to the stack pointer that is not aligned to
+<code>UNITS_PER_WORD</code>.  The definition should be the negative minimum
+alignment if <code>STACK_GROWS_DOWNWARD</code> is true, and the positive
+minimum alignment otherwise.  See <a href="DWARF.html#DWARF">DWARF</a>.  Only applicable if
+the target supports DWARF 2 frame unwind information.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fTERMINATE_005fDW2_005fEH_005fFRAME_005fINFO"></a>Target Hook: <em>bool</em> <strong>TARGET_TERMINATE_DW2_EH_FRAME_INFO</strong></dt>
+<dd><p>Contains the value true if the target should add a zero word onto the
+end of a Dwarf-2 frame info section when used for exception handling.
+Default value is false if <code>EH_FRAME_SECTION_NAME</code> is defined, and
+true otherwise.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fDWARF_005fREGISTER_005fSPAN"></a>Target Hook: <em>rtx</em> <strong>TARGET_DWARF_REGISTER_SPAN</strong> <em>(rtx <var>reg</var>)</em></dt>
+<dd><p>Given a register, this hook should return a parallel of registers to
+represent where to find the register pieces.  Define this hook if the
+register and its mode are represented in Dwarf in non-contiguous
+locations, or if the register should be represented in more than one
+register in Dwarf.  Otherwise, this hook should return <code>NULL_RTX</code>.
+If not defined, the default is to return <code>NULL_RTX</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fDWARF_005fFRAME_005fREG_005fMODE"></a>Target Hook: <em>machine_mode</em> <strong>TARGET_DWARF_FRAME_REG_MODE</strong> <em>(int <var>regno</var>)</em></dt>
+<dd><p>Given a register, this hook should return the mode which the
+corresponding Dwarf frame register should have.  This is normally
+used to return a smaller mode than the raw mode to prevent call
+clobbered parts of a register altering the frame register size
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fINIT_005fDWARF_005fREG_005fSIZES_005fEXTRA"></a>Target Hook: <em>void</em> <strong>TARGET_INIT_DWARF_REG_SIZES_EXTRA</strong> <em>(tree <var>address</var>)</em></dt>
+<dd><p>If some registers are represented in Dwarf-2 unwind information in
+multiple pieces, define this hook to fill in information about the
+sizes of those pieces in the table used by the unwinder at runtime.
+It will be called by <code>expand_builtin_init_dwarf_reg_sizes</code> after
+filling in a single size corresponding to each hard register;
+<var>address</var> is the address of the table.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fASM_005fTTYPE"></a>Target Hook: <em>bool</em> <strong>TARGET_ASM_TTYPE</strong> <em>(rtx <var>sym</var>)</em></dt>
+<dd><p>This hook is used to output a reference from a frame unwinding table to
+the type_info object identified by <var>sym</var>.  It should return <code>true</code>
+if the reference was output.  Returning <code>false</code> will cause the
+reference to be output using the normal Dwarf2 routines.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fARM_005fEABI_005fUNWINDER"></a>Target Hook: <em>bool</em> <strong>TARGET_ARM_EABI_UNWINDER</strong></dt>
+<dd><p>This flag should be set to <code>true</code> on targets that use an ARM EABI
+based unwinding library, and <code>false</code> on other targets.  This effects
+the format of unwinding tables, and how the unwinder in entered after
+running a cleanup.  The default is <code>false</code>.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Alignment-Output.html#Alignment-Output" accesskey="n" rel="next">Alignment Output</a>, Previous: <a href="Dispatch-Tables.html#Dispatch-Tables" accesskey="p" rel="prev">Dispatch Tables</a>, Up: <a href="Assembler-Format.html#Assembler-Format" accesskey="u" rel="up">Assembler Format</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

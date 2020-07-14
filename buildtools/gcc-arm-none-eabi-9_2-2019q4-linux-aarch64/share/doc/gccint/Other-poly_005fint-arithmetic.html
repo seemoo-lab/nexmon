@@ -1,0 +1,124 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Other poly_int arithmetic</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Other poly_int arithmetic">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Other poly_int arithmetic">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Arithmetic-on-poly_005fints.html#Arithmetic-on-poly_005fints" rel="up" title="Arithmetic on poly_ints">
+<link href="Alignment-of-poly_005fints.html#Alignment-of-poly_005fints" rel="next" title="Alignment of poly_ints">
+<link href="Division-of-poly_005fints.html#Division-of-poly_005fints" rel="prev" title="Division of poly_ints">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Other-poly_005fint-arithmetic"></a>
+<div class="header">
+<p>
+Previous: <a href="Division-of-poly_005fints.html#Division-of-poly_005fints" accesskey="p" rel="prev">Division of <code>poly_int</code>s</a>, Up: <a href="Arithmetic-on-poly_005fints.html#Arithmetic-on-poly_005fints" accesskey="u" rel="up">Arithmetic on <code>poly_int</code>s</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Other-poly_005fint-arithmetic-1"></a>
+<h4 class="subsection">10.4.4 Other <code>poly_int</code> arithmetic</h4>
+
+<p>There are tentative routines for other operations besides division:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>can_ior_p (<var>a</var>, <var>b</var>, &amp;<var>result</var>)</samp>&rsquo;</dt>
+<dd><p>Return true if we can calculate &lsquo;<samp><var>a</var> | <var>b</var></samp>&rsquo; at compile time,
+storing the result in <var>result</var> if so.
+</p></dd>
+</dl>
+
+<p>Also, ANDs with a value &lsquo;<samp>(1 &lt;&lt; <var>y</var>) - 1</samp>&rsquo; or its inverse can be
+treated as alignment operations.  See <a href="Alignment-of-poly_005fints.html#Alignment-of-poly_005fints">Alignment of <code>poly_int</code>s</a>.
+</p>
+<p>In addition, the following miscellaneous routines are available:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>coeff_gcd (<var>a</var>)</samp>&rsquo;</dt>
+<dd><p>Return the greatest common divisor of all nonzero coefficients in
+<var>a</var>, or zero if <var>a</var> is known to be zero.
+</p>
+</dd>
+<dt>&lsquo;<samp>common_multiple (<var>a</var>, <var>b</var>)</samp>&rsquo;</dt>
+<dd><p>Return a value that is a multiple of both <var>a</var> and <var>b</var>, where
+one value is a <code>poly_int</code> and the other is a scalar.  The result
+will be the least common multiple for some indeterminate values but
+not necessarily for all.
+</p>
+</dd>
+<dt>&lsquo;<samp>force_common_multiple (<var>a</var>, <var>b</var>)</samp>&rsquo;</dt>
+<dd><p>Return a value that is a multiple of both <code>poly_int</code> <var>a</var> and
+<code>poly_int</code> <var>b</var>, asserting that such a value exists.  The
+result will be the least common multiple for some indeterminate values
+but not necessarily for all.
+</p>
+<p>When using this routine, please add a comment explaining why the
+assertion is known to hold.
+</p></dd>
+</dl>
+
+<p>Please add any other operations that you find to be useful.
+</p>
+
+
+
+</body>
+</html>

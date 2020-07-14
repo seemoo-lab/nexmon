@@ -1,0 +1,130 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: PCH Target</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: PCH Target">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: PCH Target">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Target-Macros.html#Target-Macros" rel="up" title="Target Macros">
+<link href="C_002b_002b-ABI.html#C_002b_002b-ABI" rel="next" title="C++ ABI">
+<link href="MIPS-Coprocessors.html#MIPS-Coprocessors" rel="prev" title="MIPS Coprocessors">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="PCH-Target"></a>
+<div class="header">
+<p>
+Next: <a href="C_002b_002b-ABI.html#C_002b_002b-ABI" accesskey="n" rel="next">C++ ABI</a>, Previous: <a href="MIPS-Coprocessors.html#MIPS-Coprocessors" accesskey="p" rel="prev">MIPS Coprocessors</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Parameters-for-Precompiled-Header-Validity-Checking"></a>
+<h3 class="section">18.27 Parameters for Precompiled Header Validity Checking</h3>
+<a name="index-parameters_002c-precompiled-headers"></a>
+
+<dl>
+<dt><a name="index-TARGET_005fGET_005fPCH_005fVALIDITY"></a>Target Hook: <em>void *</em> <strong>TARGET_GET_PCH_VALIDITY</strong> <em>(size_t *<var>sz</var>)</em></dt>
+<dd><p>This hook returns a pointer to the data needed by
+<code>TARGET_PCH_VALID_P</code> and sets
+&lsquo;<samp>*<var>sz</var></samp>&rsquo; to the size of the data in bytes.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fPCH_005fVALID_005fP"></a>Target Hook: <em>const char *</em> <strong>TARGET_PCH_VALID_P</strong> <em>(const void *<var>data</var>, size_t <var>sz</var>)</em></dt>
+<dd><p>This hook checks whether the options used to create a PCH file are
+compatible with the current settings.  It returns <code>NULL</code>
+if so and a suitable error message if not.  Error messages will
+be presented to the user and must be localized using &lsquo;<samp>_(<var>msg</var>)</samp>&rsquo;.
+</p>
+<p><var>data</var> is the data that was returned by <code>TARGET_GET_PCH_VALIDITY</code>
+when the PCH file was created and <var>sz</var> is the size of that data in bytes.
+It&rsquo;s safe to assume that the data was created by the same version of the
+compiler, so no format checking is needed.
+</p>
+<p>The default definition of <code>default_pch_valid_p</code> should be
+suitable for most targets.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fCHECK_005fPCH_005fTARGET_005fFLAGS"></a>Target Hook: <em>const char *</em> <strong>TARGET_CHECK_PCH_TARGET_FLAGS</strong> <em>(int <var>pch_flags</var>)</em></dt>
+<dd><p>If this hook is nonnull, the default implementation of
+<code>TARGET_PCH_VALID_P</code> will use it to check for compatible values
+of <code>target_flags</code>.  <var>pch_flags</var> specifies the value that
+<code>target_flags</code> had when the PCH file was created.  The return
+value is the same as for <code>TARGET_PCH_VALID_P</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fPREPARE_005fPCH_005fSAVE"></a>Target Hook: <em>void</em> <strong>TARGET_PREPARE_PCH_SAVE</strong> <em>(void)</em></dt>
+<dd><p>Called before writing out a PCH file.  If the target has some
+garbage-collected data that needs to be in a particular state on PCH loads,
+it can use this hook to enforce that state.  Very few targets need
+to do anything here.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="C_002b_002b-ABI.html#C_002b_002b-ABI" accesskey="n" rel="next">C++ ABI</a>, Previous: <a href="MIPS-Coprocessors.html#MIPS-Coprocessors" accesskey="p" rel="prev">MIPS Coprocessors</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

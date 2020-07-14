@@ -1,0 +1,255 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): AArch64 Function Attributes</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): AArch64 Function Attributes">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): AArch64 Function Attributes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Function-Attributes.html#Function-Attributes" rel="up" title="Function Attributes">
+<link href="AMD-GCN-Function-Attributes.html#AMD-GCN-Function-Attributes" rel="next" title="AMD GCN Function Attributes">
+<link href="Common-Function-Attributes.html#Common-Function-Attributes" rel="prev" title="Common Function Attributes">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="AArch64-Function-Attributes"></a>
+<div class="header">
+<p>
+Next: <a href="AMD-GCN-Function-Attributes.html#AMD-GCN-Function-Attributes" accesskey="n" rel="next">AMD GCN Function Attributes</a>, Previous: <a href="Common-Function-Attributes.html#Common-Function-Attributes" accesskey="p" rel="prev">Common Function Attributes</a>, Up: <a href="Function-Attributes.html#Function-Attributes" accesskey="u" rel="up">Function Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="AArch64-Function-Attributes-1"></a>
+<h4 class="subsection">6.33.2 AArch64 Function Attributes</h4>
+
+<p>The following target-specific function attributes are available for the
+AArch64 target.  For the most part, these options mirror the behavior of
+similar command-line options (see <a href="AArch64-Options.html#AArch64-Options">AArch64 Options</a>), but on a
+per-function basis.
+</p>
+<dl compact="compact">
+<dt><code>general-regs-only</code></dt>
+<dd><a name="index-general_002dregs_002donly-function-attribute_002c-AArch64"></a>
+<p>Indicates that no floating-point or Advanced SIMD registers should be
+used when generating code for this function.  If the function explicitly
+uses floating-point code, then the compiler gives an error.  This is
+the same behavior as that of the command-line option
+<samp>-mgeneral-regs-only</samp>.
+</p>
+</dd>
+<dt><code>fix-cortex-a53-835769</code></dt>
+<dd><a name="index-fix_002dcortex_002da53_002d835769-function-attribute_002c-AArch64"></a>
+<p>Indicates that the workaround for the Cortex-A53 erratum 835769 should be
+applied to this function.  To explicitly disable the workaround for this
+function specify the negated form: <code>no-fix-cortex-a53-835769</code>.
+This corresponds to the behavior of the command line options
+<samp>-mfix-cortex-a53-835769</samp> and <samp>-mno-fix-cortex-a53-835769</samp>.
+</p>
+</dd>
+<dt><code>cmodel=</code></dt>
+<dd><a name="index-cmodel_003d-function-attribute_002c-AArch64"></a>
+<p>Indicates that code should be generated for a particular code model for
+this function.  The behavior and permissible arguments are the same as
+for the command line option <samp>-mcmodel=</samp>.
+</p>
+</dd>
+<dt><code>strict-align</code></dt>
+<dt><code>no-strict-align</code></dt>
+<dd><a name="index-strict_002dalign-function-attribute_002c-AArch64"></a>
+<p><code>strict-align</code> indicates that the compiler should not assume that unaligned
+memory references are handled by the system.  To allow the compiler to assume
+that aligned memory references are handled by the system, the inverse attribute
+<code>no-strict-align</code> can be specified.  The behavior is same as for the
+command-line option <samp>-mstrict-align</samp> and <samp>-mno-strict-align</samp>.
+</p>
+</dd>
+<dt><code>omit-leaf-frame-pointer</code></dt>
+<dd><a name="index-omit_002dleaf_002dframe_002dpointer-function-attribute_002c-AArch64"></a>
+<p>Indicates that the frame pointer should be omitted for a leaf function call.
+To keep the frame pointer, the inverse attribute
+<code>no-omit-leaf-frame-pointer</code> can be specified.  These attributes have
+the same behavior as the command-line options <samp>-momit-leaf-frame-pointer</samp>
+and <samp>-mno-omit-leaf-frame-pointer</samp>.
+</p>
+</dd>
+<dt><code>tls-dialect=</code></dt>
+<dd><a name="index-tls_002ddialect_003d-function-attribute_002c-AArch64"></a>
+<p>Specifies the TLS dialect to use for this function.  The behavior and
+permissible arguments are the same as for the command-line option
+<samp>-mtls-dialect=</samp>.
+</p>
+</dd>
+<dt><code>arch=</code></dt>
+<dd><a name="index-arch_003d-function-attribute_002c-AArch64"></a>
+<p>Specifies the architecture version and architectural extensions to use
+for this function.  The behavior and permissible arguments are the same as
+for the <samp>-march=</samp> command-line option.
+</p>
+</dd>
+<dt><code>tune=</code></dt>
+<dd><a name="index-tune_003d-function-attribute_002c-AArch64"></a>
+<p>Specifies the core for which to tune the performance of this function.
+The behavior and permissible arguments are the same as for the <samp>-mtune=</samp>
+command-line option.
+</p>
+</dd>
+<dt><code>cpu=</code></dt>
+<dd><a name="index-cpu_003d-function-attribute_002c-AArch64"></a>
+<p>Specifies the core for which to tune the performance of this function and also
+whose architectural features to use.  The behavior and valid arguments are the
+same as for the <samp>-mcpu=</samp> command-line option.
+</p>
+</dd>
+<dt><code>sign-return-address</code></dt>
+<dd><a name="index-sign_002dreturn_002daddress-function-attribute_002c-AArch64"></a>
+<p>Select the function scope on which return address signing will be applied.  The
+behavior and permissible arguments are the same as for the command-line option
+<samp>-msign-return-address=</samp>.  The default value is <code>none</code>.  This
+attribute is deprecated.  The <code>branch-protection</code> attribute should
+be used instead.
+</p>
+</dd>
+<dt><code>branch-protection</code></dt>
+<dd><a name="index-branch_002dprotection-function-attribute_002c-AArch64"></a>
+<p>Select the function scope on which branch protection will be applied.  The
+behavior and permissible arguments are the same as for the command-line option
+<samp>-mbranch-protection=</samp>.  The default value is <code>none</code>.
+</p>
+</dd>
+</dl>
+
+<p>The above target attributes can be specified as follows:
+</p>
+<div class="smallexample">
+<pre class="smallexample">__attribute__((target(&quot;<var>attr-string</var>&quot;)))
+int
+f (int a)
+{
+  return a + 5;
+}
+</pre></div>
+
+<p>where <code><var>attr-string</var></code> is one of the attribute strings specified above.
+</p>
+<p>Additionally, the architectural extension string may be specified on its
+own.  This can be used to turn on and off particular architectural extensions
+without having to specify a particular architecture version or core.  Example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">__attribute__((target(&quot;+crc+nocrypto&quot;)))
+int
+foo (int a)
+{
+  return a + 5;
+}
+</pre></div>
+
+<p>In this example <code>target(&quot;+crc+nocrypto&quot;)</code> enables the <code>crc</code>
+extension and disables the <code>crypto</code> extension for the function <code>foo</code>
+without modifying an existing <samp>-march=</samp> or <samp>-mcpu</samp> option.
+</p>
+<p>Multiple target function attributes can be specified by separating them with
+a comma.  For example:
+</p><div class="smallexample">
+<pre class="smallexample">__attribute__((target(&quot;arch=armv8-a+crc+crypto,tune=cortex-a53&quot;)))
+int
+foo (int a)
+{
+  return a + 5;
+}
+</pre></div>
+
+<p>is valid and compiles function <code>foo</code> for ARMv8-A with <code>crc</code>
+and <code>crypto</code> extensions and tunes it for <code>cortex-a53</code>.
+</p>
+<a name="Inlining-rules"></a>
+<h4 class="subsubsection">6.33.2.1 Inlining rules</h4>
+<p>Specifying target attributes on individual functions or performing link-time
+optimization across translation units compiled with different target options
+can affect function inlining rules:
+</p>
+<p>In particular, a caller function can inline a callee function only if the
+architectural features available to the callee are a subset of the features
+available to the caller.
+For example: A function <code>foo</code> compiled with <samp>-march=armv8-a+crc</samp>,
+or tagged with the equivalent <code>arch=armv8-a+crc</code> attribute,
+can inline a function <code>bar</code> compiled with <samp>-march=armv8-a+nocrc</samp>
+because the all the architectural features that function <code>bar</code> requires
+are available to function <code>foo</code>.  Conversely, function <code>bar</code> cannot
+inline function <code>foo</code>.
+</p>
+<p>Additionally inlining a function compiled with <samp>-mstrict-align</samp> into a
+function compiled without <code>-mstrict-align</code> is not allowed.
+However, inlining a function compiled without <samp>-mstrict-align</samp> into a
+function compiled with <samp>-mstrict-align</samp> is allowed.
+</p>
+<p>Note that CPU tuning options and attributes such as the <samp>-mcpu=</samp>,
+<samp>-mtune=</samp> do not inhibit inlining unless the CPU specified by the
+<samp>-mcpu=</samp> option or the <code>cpu=</code> attribute conflicts with the
+architectural feature rules specified above.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="AMD-GCN-Function-Attributes.html#AMD-GCN-Function-Attributes" accesskey="n" rel="next">AMD GCN Function Attributes</a>, Previous: <a href="Common-Function-Attributes.html#Common-Function-Attributes" accesskey="p" rel="prev">Common Function Attributes</a>, Up: <a href="Function-Attributes.html#Function-Attributes" accesskey="u" rel="up">Function Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

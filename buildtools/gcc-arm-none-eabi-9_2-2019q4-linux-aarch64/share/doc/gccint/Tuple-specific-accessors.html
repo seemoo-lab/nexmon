@@ -1,0 +1,147 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Tuple specific accessors</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Tuple specific accessors">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Tuple specific accessors">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="GIMPLE.html#GIMPLE" rel="up" title="GIMPLE">
+<link href="GIMPLE_005fASM.html#GIMPLE_005fASM" rel="next" title="GIMPLE_ASM">
+<link href="Manipulating-GIMPLE-statements.html#Manipulating-GIMPLE-statements" rel="prev" title="Manipulating GIMPLE statements">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Tuple-specific-accessors"></a>
+<div class="header">
+<p>
+Next: <a href="GIMPLE-sequences.html#GIMPLE-sequences" accesskey="n" rel="next">GIMPLE sequences</a>, Previous: <a href="Manipulating-GIMPLE-statements.html#Manipulating-GIMPLE-statements" accesskey="p" rel="prev">Manipulating GIMPLE statements</a>, Up: <a href="GIMPLE.html#GIMPLE" accesskey="u" rel="up">GIMPLE</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Tuple-specific-accessors-1"></a>
+<h3 class="section">12.8 Tuple specific accessors</h3>
+<a name="index-Tuple-specific-accessors"></a>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fASM.html#GIMPLE_005fASM" accesskey="1"><code>GIMPLE_ASM</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fASSIGN.html#GIMPLE_005fASSIGN" accesskey="2"><code>GIMPLE_ASSIGN</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fBIND.html#GIMPLE_005fBIND" accesskey="3"><code>GIMPLE_BIND</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fCALL.html#GIMPLE_005fCALL" accesskey="4"><code>GIMPLE_CALL</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fCATCH.html#GIMPLE_005fCATCH" accesskey="5"><code>GIMPLE_CATCH</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fCOND.html#GIMPLE_005fCOND" accesskey="6"><code>GIMPLE_COND</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fDEBUG.html#GIMPLE_005fDEBUG" accesskey="7"><code>GIMPLE_DEBUG</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fEH_005fFILTER.html#GIMPLE_005fEH_005fFILTER" accesskey="8"><code>GIMPLE_EH_FILTER</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fLABEL.html#GIMPLE_005fLABEL" accesskey="9"><code>GIMPLE_LABEL</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fGOTO.html#GIMPLE_005fGOTO"><code>GIMPLE_GOTO</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fNOP.html#GIMPLE_005fNOP"><code>GIMPLE_NOP</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fOMP_005fATOMIC_005fLOAD.html#GIMPLE_005fOMP_005fATOMIC_005fLOAD"><code>GIMPLE_OMP_ATOMIC_LOAD</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fOMP_005fATOMIC_005fSTORE.html#GIMPLE_005fOMP_005fATOMIC_005fSTORE"><code>GIMPLE_OMP_ATOMIC_STORE</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fOMP_005fCONTINUE.html#GIMPLE_005fOMP_005fCONTINUE"><code>GIMPLE_OMP_CONTINUE</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fOMP_005fCRITICAL.html#GIMPLE_005fOMP_005fCRITICAL"><code>GIMPLE_OMP_CRITICAL</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fOMP_005fFOR.html#GIMPLE_005fOMP_005fFOR"><code>GIMPLE_OMP_FOR</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fOMP_005fMASTER.html#GIMPLE_005fOMP_005fMASTER"><code>GIMPLE_OMP_MASTER</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fOMP_005fORDERED.html#GIMPLE_005fOMP_005fORDERED"><code>GIMPLE_OMP_ORDERED</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fOMP_005fPARALLEL.html#GIMPLE_005fOMP_005fPARALLEL"><code>GIMPLE_OMP_PARALLEL</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fOMP_005fRETURN.html#GIMPLE_005fOMP_005fRETURN"><code>GIMPLE_OMP_RETURN</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fOMP_005fSECTION.html#GIMPLE_005fOMP_005fSECTION"><code>GIMPLE_OMP_SECTION</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fOMP_005fSECTIONS.html#GIMPLE_005fOMP_005fSECTIONS"><code>GIMPLE_OMP_SECTIONS</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fOMP_005fSINGLE.html#GIMPLE_005fOMP_005fSINGLE"><code>GIMPLE_OMP_SINGLE</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fPHI.html#GIMPLE_005fPHI"><code>GIMPLE_PHI</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fRESX.html#GIMPLE_005fRESX"><code>GIMPLE_RESX</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fRETURN.html#GIMPLE_005fRETURN"><code>GIMPLE_RETURN</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fSWITCH.html#GIMPLE_005fSWITCH"><code>GIMPLE_SWITCH</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fTRY.html#GIMPLE_005fTRY"><code>GIMPLE_TRY</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE_005fWITH_005fCLEANUP_005fEXPR.html#GIMPLE_005fWITH_005fCLEANUP_005fEXPR"><code>GIMPLE_WITH_CLEANUP_EXPR</code></a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+
+
+
+
+</body>
+</html>

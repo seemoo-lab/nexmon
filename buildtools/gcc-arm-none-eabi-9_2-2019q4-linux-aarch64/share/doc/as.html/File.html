@@ -1,0 +1,118 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: File</title>
+
+<meta name="description" content="Using as: File">
+<meta name="keywords" content="Using as: File">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Pseudo-Ops.html#Pseudo-Ops" rel="up" title="Pseudo Ops">
+<link href="Fill.html#Fill" rel="next" title="Fill">
+<link href="Fail.html#Fail" rel="prev" title="Fail">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="File"></a>
+<div class="header">
+<p>
+Next: <a href="Fill.html#Fill" accesskey="n" rel="next">Fill</a>, Previous: <a href="Fail.html#Fail" accesskey="p" rel="prev">Fail</a>, Up: <a href="Pseudo-Ops.html#Pseudo-Ops" accesskey="u" rel="up">Pseudo Ops</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="g_t_002efile"></a>
+<h3 class="section">7.35 <code>.file</code></h3>
+<a name="index-file-directive"></a>
+
+<p>There are two different versions of the <code>.file</code> directive.  Targets
+that support DWARF2 line number information use the DWARF2 version of
+<code>.file</code>.  Other targets use the default version.
+</p>
+<a name="Default-Version"></a>
+<h4 class="subheading">Default Version</h4>
+
+<a name="index-logical-file-name"></a>
+<a name="index-file-name_002c-logical"></a>
+<p>This version of the <code>.file</code> directive tells <code>as</code> that we
+are about to start a new logical file.  The syntax is:
+</p>
+<div class="smallexample">
+<pre class="smallexample">.file <var>string</var>
+</pre></div>
+
+<p><var>string</var> is the new file name.  In general, the filename is
+recognized whether or not it is surrounded by quotes &lsquo;<samp>&quot;</samp>&rsquo;; but if you wish
+to specify an empty file name, you must give the quotes&ndash;<code>&quot;&quot;</code>.  This
+statement may go away in future: it is only recognized to be compatible with
+old <code>as</code> programs.
+</p>
+<a name="DWARF2-Version"></a>
+<h4 class="subheading">DWARF2 Version</h4>
+
+<p>When emitting DWARF2 line number information, <code>.file</code> assigns filenames
+to the <code>.debug_line</code> file name table.  The syntax is:
+</p>
+<div class="smallexample">
+<pre class="smallexample">.file <var>fileno</var> <var>filename</var>
+</pre></div>
+
+<p>The <var>fileno</var> operand should be a unique positive integer to use as the
+index of the entry in the table.  The <var>filename</var> operand is a C string
+literal.
+</p>
+<p>The detail of filename indices is exposed to the user because the filename
+table is shared with the <code>.debug_info</code> section of the DWARF2 debugging
+information, and thus the user must know the exact indices that table
+entries will have.
+</p>
+
+
+
+</body>
+</html>

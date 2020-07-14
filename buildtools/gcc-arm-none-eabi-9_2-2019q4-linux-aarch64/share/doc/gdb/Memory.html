@@ -1,0 +1,266 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Memory</title>
+
+<meta name="description" content="Debugging with GDB: Memory">
+<meta name="keywords" content="Debugging with GDB: Memory">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Data.html#Data" rel="up" title="Data">
+<link href="Auto-Display.html#Auto-Display" rel="next" title="Auto Display">
+<link href="Output-Formats.html#Output-Formats" rel="prev" title="Output Formats">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Memory"></a>
+<div class="header">
+<p>
+Next: <a href="Auto-Display.html#Auto-Display" accesskey="n" rel="next">Auto Display</a>, Previous: <a href="Output-Formats.html#Output-Formats" accesskey="p" rel="prev">Output Formats</a>, Up: <a href="Data.html#Data" accesskey="u" rel="up">Data</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Examining-Memory"></a>
+<h3 class="section">10.6 Examining Memory</h3>
+
+<p>You can use the command <code>x</code> (for &ldquo;examine&rdquo;) to examine memory in
+any of several formats, independently of your program&rsquo;s data types.
+</p>
+<a name="index-examining-memory"></a>
+<dl compact="compact">
+<dd><a name="index-x-_0028examine-memory_0029"></a>
+</dd>
+<dt><code>x/<var>nfu</var> <var>addr</var></code></dt>
+<dt><code>x <var>addr</var></code></dt>
+<dt><code>x</code></dt>
+<dd><p>Use the <code>x</code> command to examine memory.
+</p></dd>
+</dl>
+
+<p><var>n</var>, <var>f</var>, and <var>u</var> are all optional parameters that specify how
+much memory to display and how to format it; <var>addr</var> is an
+expression giving the address where you want to start displaying memory.
+If you use defaults for <var>nfu</var>, you need not type the slash &lsquo;<samp>/</samp>&rsquo;.
+Several commands set convenient defaults for <var>addr</var>.
+</p>
+<dl compact="compact">
+<dt><span class="roman"><var>n</var>, the repeat count</span></dt>
+<dd><p>The repeat count is a decimal integer; the default is 1.  It specifies
+how much memory (counting by units <var>u</var>) to display.  If a negative
+number is specified, memory is examined backward from <var>addr</var>.
+</p>
+</dd>
+<dt><span class="roman"><var>f</var>, the display format</span></dt>
+<dd><p>The display format is one of the formats used by <code>print</code>
+(&lsquo;<samp>x</samp>&rsquo;, &lsquo;<samp>d</samp>&rsquo;, &lsquo;<samp>u</samp>&rsquo;, &lsquo;<samp>o</samp>&rsquo;, &lsquo;<samp>t</samp>&rsquo;, &lsquo;<samp>a</samp>&rsquo;, &lsquo;<samp>c</samp>&rsquo;,
+&lsquo;<samp>f</samp>&rsquo;, &lsquo;<samp>s</samp>&rsquo;), and in addition &lsquo;<samp>i</samp>&rsquo; (for machine instructions).
+The default is &lsquo;<samp>x</samp>&rsquo; (hexadecimal) initially.  The default changes
+each time you use either <code>x</code> or <code>print</code>.
+</p>
+</dd>
+<dt><span class="roman"><var>u</var>, the unit size</span></dt>
+<dd><p>The unit size is any of
+</p>
+<dl compact="compact">
+<dt><code>b</code></dt>
+<dd><p>Bytes.
+</p></dd>
+<dt><code>h</code></dt>
+<dd><p>Halfwords (two bytes).
+</p></dd>
+<dt><code>w</code></dt>
+<dd><p>Words (four bytes).  This is the initial default.
+</p></dd>
+<dt><code>g</code></dt>
+<dd><p>Giant words (eight bytes).
+</p></dd>
+</dl>
+
+<p>Each time you specify a unit size with <code>x</code>, that size becomes the
+default unit the next time you use <code>x</code>.  For the &lsquo;<samp>i</samp>&rsquo; format,
+the unit size is ignored and is normally not written.  For the &lsquo;<samp>s</samp>&rsquo; format,
+the unit size defaults to &lsquo;<samp>b</samp>&rsquo;, unless it is explicitly given.
+Use <kbd>x /hs</kbd> to display 16-bit char strings and <kbd>x /ws</kbd> to display
+32-bit strings.  The next use of <kbd>x /s</kbd> will again display 8-bit strings.
+Note that the results depend on the programming language of the
+current compilation unit.  If the language is C, the &lsquo;<samp>s</samp>&rsquo;
+modifier will use the UTF-16 encoding while &lsquo;<samp>w</samp>&rsquo; will use
+UTF-32.  The encoding is set by the programming language and cannot
+be altered.
+</p>
+</dd>
+<dt><span class="roman"><var>addr</var>, starting display address</span></dt>
+<dd><p><var>addr</var> is the address where you want <small>GDB</small> to begin displaying
+memory.  The expression need not have a pointer value (though it may);
+it is always interpreted as an integer address of a byte of memory.
+See <a href="Expressions.html#Expressions">Expressions</a>, for more information on expressions.  The default for
+<var>addr</var> is usually just after the last address examined&mdash;but several
+other commands also set the default address: <code>info breakpoints</code> (to
+the address of the last breakpoint listed), <code>info line</code> (to the
+starting address of a line), and <code>print</code> (if you use it to display
+a value from memory).
+</p></dd>
+</dl>
+
+<p>For example, &lsquo;<samp>x/3uh 0x54320</samp>&rsquo; is a request to display three halfwords
+(<code>h</code>) of memory, formatted as unsigned decimal integers (&lsquo;<samp>u</samp>&rsquo;),
+starting at address <code>0x54320</code>.  &lsquo;<samp>x/4xw $sp</samp>&rsquo; prints the four
+words (&lsquo;<samp>w</samp>&rsquo;) of memory above the stack pointer (here, &lsquo;<samp>$sp</samp>&rsquo;;
+see <a href="Registers.html#Registers">Registers</a>) in hexadecimal (&lsquo;<samp>x</samp>&rsquo;).
+</p>
+<p>You can also specify a negative repeat count to examine memory backward
+from the given address.  For example, &lsquo;<samp>x/-3uh 0x54320</samp>&rsquo; prints three
+halfwords (<code>h</code>) at <code>0x54314</code>, <code>0x54328</code>, and <code>0x5431c</code>.
+</p>
+<p>Since the letters indicating unit sizes are all distinct from the
+letters specifying output formats, you do not have to remember whether
+unit size or format comes first; either order works.  The output
+specifications &lsquo;<samp>4xw</samp>&rsquo; and &lsquo;<samp>4wx</samp>&rsquo; mean exactly the same thing.
+(However, the count <var>n</var> must come first; &lsquo;<samp>wx4</samp>&rsquo; does not work.)
+</p>
+<p>Even though the unit size <var>u</var> is ignored for the formats &lsquo;<samp>s</samp>&rsquo;
+and &lsquo;<samp>i</samp>&rsquo;, you might still want to use a count <var>n</var>; for example,
+&lsquo;<samp>3i</samp>&rsquo; specifies that you want to see three machine instructions,
+including any operands.  For convenience, especially when used with
+the <code>display</code> command, the &lsquo;<samp>i</samp>&rsquo; format also prints branch delay
+slot instructions, if any, beyond the count specified, which immediately
+follow the last instruction that is within the count.  The command
+<code>disassemble</code> gives an alternative way of inspecting machine
+instructions; see <a href="Machine-Code.html#Machine-Code">Source and Machine Code</a>.
+</p>
+<p>If a negative repeat count is specified for the formats &lsquo;<samp>s</samp>&rsquo; or &lsquo;<samp>i</samp>&rsquo;,
+the command displays null-terminated strings or instructions before the given
+address as many as the absolute value of the given number.  For the &lsquo;<samp>i</samp>&rsquo;
+format, we use line number information in the debug info to accurately locate
+instruction boundaries while disassembling backward.  If line info is not
+available, the command stops examining memory with an error message.
+</p>
+<p>All the defaults for the arguments to <code>x</code> are designed to make it
+easy to continue scanning memory with minimal specifications each time
+you use <code>x</code>.  For example, after you have inspected three machine
+instructions with &lsquo;<samp>x/3i <var>addr</var></samp>&rsquo;, you can inspect the next seven
+with just &lsquo;<samp>x/7</samp>&rsquo;.  If you use <tt class="key">RET</tt> to repeat the <code>x</code> command,
+the repeat count <var>n</var> is used again; the other arguments default as
+for successive uses of <code>x</code>.
+</p>
+<p>When examining machine instructions, the instruction at current program
+counter is shown with a <code>=&gt;</code> marker. For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) x/5i $pc-6
+   0x804837f &lt;main+11&gt;: mov    %esp,%ebp
+   0x8048381 &lt;main+13&gt;: push   %ecx
+   0x8048382 &lt;main+14&gt;: sub    $0x4,%esp
+=&gt; 0x8048385 &lt;main+17&gt;: movl   $0x8048460,(%esp)
+   0x804838c &lt;main+24&gt;: call   0x80482d4 &lt;puts@plt&gt;
+</pre></div>
+
+<a name="index-_0024_005f_002c-_0024_005f_005f_002c-and-value-history"></a>
+<p>The addresses and contents printed by the <code>x</code> command are not saved
+in the value history because there is often too much of them and they
+would get in the way.  Instead, <small>GDB</small> makes these values available for
+subsequent use in expressions as values of the convenience variables
+<code>$_</code> and <code>$__</code>.  After an <code>x</code> command, the last address
+examined is available for use in expressions in the convenience variable
+<code>$_</code>.  The contents of that address, as examined, are available in
+the convenience variable <code>$__</code>.
+</p>
+<p>If the <code>x</code> command has a repeat count, the address and contents saved
+are from the last memory unit printed; this is not the same as the last
+address printed if several units were printed on the last line of output.
+</p>
+<a name="addressable-memory-unit"></a><a name="index-addressable-memory-unit"></a>
+<p>Most targets have an addressable memory unit size of 8 bits.  This means
+that to each memory address are associated 8 bits of data.  Some
+targets, however, have other addressable memory unit sizes.
+Within <small>GDB</small> and this document, the term
+<em>addressable memory unit</em> (or <em>memory unit</em> for short) is used
+when explicitly referring to a chunk of data of that size.  The word
+<em>byte</em> is used to refer to a chunk of data of 8 bits, regardless of
+the addressable memory unit size of the target.  For most systems,
+addressable memory unit is a synonym of byte.
+</p>
+<a name="index-remote-memory-comparison"></a>
+<a name="index-target-memory-comparison"></a>
+<a name="index-verify-remote-memory-image"></a>
+<a name="index-verify-target-memory-image"></a>
+<p>When you are debugging a program running on a remote target machine
+(see <a href="Remote-Debugging.html#Remote-Debugging">Remote Debugging</a>), you may wish to verify the program&rsquo;s image
+in the remote machine&rsquo;s memory against the executable file you
+downloaded to the target.  Or, on any target, you may want to check
+whether the program has corrupted its own read-only sections.  The
+<code>compare-sections</code> command is provided for such situations.
+</p>
+<dl compact="compact">
+<dd><a name="index-compare_002dsections"></a>
+</dd>
+<dt><code>compare-sections <span class="roman">[</span><var>section-name</var><span class="roman">|</span><code>-r</code><span class="roman">]</span></code></dt>
+<dd><p>Compare the data of a loadable section <var>section-name</var> in the
+executable file of the program being debugged with the same section in
+the target machine&rsquo;s memory, and report any mismatches.  With no
+arguments, compares all loadable sections.  With an argument of
+<code>-r</code>, compares all loadable read-only sections.
+</p>
+<p>Note: for remote targets, this command can be accelerated if the
+target supports computing the CRC checksum of a block of memory
+(see <a href="General-Query-Packets.html#qCRC-packet">qCRC packet</a>).
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Auto-Display.html#Auto-Display" accesskey="n" rel="next">Auto Display</a>, Previous: <a href="Output-Formats.html#Output-Formats" accesskey="p" rel="prev">Output Formats</a>, Up: <a href="Data.html#Data" accesskey="u" rel="up">Data</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

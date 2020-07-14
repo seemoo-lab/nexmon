@@ -1,0 +1,146 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Comparing ordered poly_ints</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Comparing ordered poly_ints">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Comparing ordered poly_ints">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Comparisons-involving-poly_005fint.html#Comparisons-involving-poly_005fint" rel="up" title="Comparisons involving poly_int">
+<link href="Checking-for-a-poly_005fint-marker-value.html#Checking-for-a-poly_005fint-marker-value" rel="next" title="Checking for a poly_int marker value">
+<link href="Comparing-potentially_002dunordered-poly_005fints.html#Comparing-potentially_002dunordered-poly_005fints" rel="prev" title="Comparing potentially-unordered poly_ints">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Comparing-ordered-poly_005fints"></a>
+<div class="header">
+<p>
+Next: <a href="Checking-for-a-poly_005fint-marker-value.html#Checking-for-a-poly_005fint-marker-value" accesskey="n" rel="next">Checking for a <code>poly_int</code> marker value</a>, Previous: <a href="Comparing-potentially_002dunordered-poly_005fints.html#Comparing-potentially_002dunordered-poly_005fints" accesskey="p" rel="prev">Comparing potentially-unordered <code>poly_int</code>s</a>, Up: <a href="Comparisons-involving-poly_005fint.html#Comparisons-involving-poly_005fint" accesskey="u" rel="up">Comparisons involving <code>poly_int</code></a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Comparing-ordered-poly_005fints-1"></a>
+<h4 class="subsection">10.3.4 Comparing ordered <code>poly_int</code>s</h4>
+
+<p>In cases where there is a definite link between two <code>poly_int</code>s,
+such as the outer and inner sizes of subregs, we usually require the sizes
+to be ordered by the <code>known_le</code> partial order.  <code>poly_int</code> provides
+the following utility functions for ordered values:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>ordered_p (<var>a</var>, <var>b</var>)</samp>&rsquo;</dt>
+<dd><p>Return true if <var>a</var> and <var>b</var> are ordered by the <code>known_le</code>
+partial order.
+</p>
+</dd>
+<dt>&lsquo;<samp>ordered_min (<var>a</var>, <var>b</var>)</samp>&rsquo;</dt>
+<dd><p>Assert that <var>a</var> and <var>b</var> are ordered by <code>known_le</code> and return the
+minimum of the two.  When using this function, please add a comment explaining
+why the values are known to be ordered.
+</p>
+</dd>
+<dt>&lsquo;<samp>ordered_max (<var>a</var>, <var>b</var>)</samp>&rsquo;</dt>
+<dd><p>Assert that <var>a</var> and <var>b</var> are ordered by <code>known_le</code> and return the
+maximum of the two.  When using this function, please add a comment explaining
+why the values are known to be ordered.
+</p></dd>
+</dl>
+
+<p>For example, if a subreg has an outer mode of size <var>outer</var> and an
+inner mode of size <var>inner</var>:
+</p>
+<ul>
+<li> the subreg is complete if known_eq (<var>inner</var>, <var>outer</var>)
+
+</li><li> otherwise, the subreg is paradoxical if known_le (<var>inner</var>, <var>outer</var>)
+
+</li><li> otherwise, the subreg is partial if known_le (<var>outer</var>, <var>inner</var>)
+
+</li><li> otherwise, the subreg is ill-formed
+</li></ul>
+
+<p>Thus the subreg is only valid if
+&lsquo;<samp>ordered_p (<var>outer</var>, <var>inner</var>)</samp>&rsquo; is true.  If this condition
+is already known to be true then:
+</p>
+<ul>
+<li> the subreg is complete if known_eq (<var>inner</var>, <var>outer</var>)
+
+</li><li> the subreg is paradoxical if maybe_lt (<var>inner</var>, <var>outer</var>)
+
+</li><li> the subreg is partial if maybe_lt (<var>outer</var>, <var>inner</var>)
+</li></ul>
+
+<p>with the three conditions being mutually exclusive.
+</p>
+<p>Code that checks whether a subreg is valid would therefore generally
+check whether <code>ordered_p</code> holds (in addition to whatever other
+checks are required for subreg validity).  Code that is dealing
+with existing subregs can assert that <code>ordered_p</code> holds
+and use either of the classifications above.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Checking-for-a-poly_005fint-marker-value.html#Checking-for-a-poly_005fint-marker-value" accesskey="n" rel="next">Checking for a <code>poly_int</code> marker value</a>, Previous: <a href="Comparing-potentially_002dunordered-poly_005fints.html#Comparing-potentially_002dunordered-poly_005fints" accesskey="p" rel="prev">Comparing potentially-unordered <code>poly_int</code>s</a>, Up: <a href="Comparisons-involving-poly_005fint.html#Comparisons-involving-poly_005fint" accesskey="u" rel="up">Comparisons involving <code>poly_int</code></a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

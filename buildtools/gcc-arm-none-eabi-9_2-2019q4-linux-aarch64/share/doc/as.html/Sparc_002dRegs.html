@@ -1,0 +1,254 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Sparc-Regs</title>
+
+<meta name="description" content="Using as: Sparc-Regs">
+<meta name="keywords" content="Using as: Sparc-Regs">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Sparc_002dSyntax.html#Sparc_002dSyntax" rel="up" title="Sparc-Syntax">
+<link href="Sparc_002dConstants.html#Sparc_002dConstants" rel="next" title="Sparc-Constants">
+<link href="Sparc_002dChars.html#Sparc_002dChars" rel="prev" title="Sparc-Chars">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Sparc_002dRegs"></a>
+<div class="header">
+<p>
+Next: <a href="Sparc_002dConstants.html#Sparc_002dConstants" accesskey="n" rel="next">Sparc-Constants</a>, Previous: <a href="Sparc_002dChars.html#Sparc_002dChars" accesskey="p" rel="prev">Sparc-Chars</a>, Up: <a href="Sparc_002dSyntax.html#Sparc_002dSyntax" accesskey="u" rel="up">Sparc-Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Register-Names-16"></a>
+<h4 class="subsubsection">9.44.3.2 Register Names</h4>
+<a name="index-Sparc-registers"></a>
+<a name="index-register-names_002c-Sparc"></a>
+
+<p>The Sparc integer register file is broken down into global,
+outgoing, local, and incoming.
+</p>
+<ul>
+<li> The 8 global registers are referred to as &lsquo;<samp>%g<var>n</var></samp>&rsquo;.
+
+</li><li> The 8 outgoing registers are referred to as &lsquo;<samp>%o<var>n</var></samp>&rsquo;.
+
+</li><li> The 8 local registers are referred to as &lsquo;<samp>%l<var>n</var></samp>&rsquo;.
+
+</li><li> The 8 incoming registers are referred to as &lsquo;<samp>%i<var>n</var></samp>&rsquo;.
+
+</li><li> The frame pointer register &lsquo;<samp>%i6</samp>&rsquo; can be referenced using
+the alias &lsquo;<samp>%fp</samp>&rsquo;.
+
+</li><li> The stack pointer register &lsquo;<samp>%o6</samp>&rsquo; can be referenced using
+the alias &lsquo;<samp>%sp</samp>&rsquo;.
+</li></ul>
+
+<p>Floating point registers are simply referred to as &lsquo;<samp>%f<var>n</var></samp>&rsquo;.
+When assembling for pre-V9, only 32 floating point registers
+are available.  For V9 and later there are 64, but there are
+restrictions when referencing the upper 32 registers.  They
+can only be accessed as double or quad, and thus only even
+or quad numbered accesses are allowed.  For example, &lsquo;<samp>%f34</samp>&rsquo;
+is a legal floating point register, but &lsquo;<samp>%f35</samp>&rsquo; is not.
+</p>
+<p>Floating point registers accessed as double can also be referred using
+the &lsquo;<samp>%d<var>n</var></samp>&rsquo; notation, where <var>n</var> is even.  Similarly,
+floating point registers accessed as quad can be referred using the
+&lsquo;<samp>%q<var>n</var></samp>&rsquo; notation, where <var>n</var> is a multiple of 4.  For
+example, &lsquo;<samp>%f4</samp>&rsquo; can be denoted as both &lsquo;<samp>%d4</samp>&rsquo; and &lsquo;<samp>%q4</samp>&rsquo;.
+On the other hand, &lsquo;<samp>%f2</samp>&rsquo; can be denoted as &lsquo;<samp>%d2</samp>&rsquo; but not as
+&lsquo;<samp>%q2</samp>&rsquo;.
+</p>
+<p>Certain V9 instructions allow access to ancillary state registers.
+Most simply they can be referred to as &lsquo;<samp>%asr<var>n</var></samp>&rsquo; where
+<var>n</var> can be from 16 to 31.  However, there are some aliases
+defined to reference ASR registers defined for various UltraSPARC
+processors:
+</p>
+<ul>
+<li> The tick compare register is referred to as &lsquo;<samp>%tick_cmpr</samp>&rsquo;.
+
+</li><li> The system tick register is referred to as &lsquo;<samp>%stick</samp>&rsquo;.  An alias,
+&lsquo;<samp>%sys_tick</samp>&rsquo;, exists but is deprecated and should not be used
+by new software.
+
+</li><li> The system tick compare register is referred to as &lsquo;<samp>%stick_cmpr</samp>&rsquo;.
+An alias, &lsquo;<samp>%sys_tick_cmpr</samp>&rsquo;, exists but is deprecated and should
+not be used by new software.
+
+</li><li> The software interrupt register is referred to as &lsquo;<samp>%softint</samp>&rsquo;.
+
+</li><li> The set software interrupt register is referred to as &lsquo;<samp>%set_softint</samp>&rsquo;.
+The mnemonic &lsquo;<samp>%softint_set</samp>&rsquo; is provided as an alias.
+
+</li><li> The clear software interrupt register is referred to as
+&lsquo;<samp>%clear_softint</samp>&rsquo;.  The mnemonic &lsquo;<samp>%softint_clear</samp>&rsquo; is provided
+as an alias.
+
+</li><li> The performance instrumentation counters register is referred to as
+&lsquo;<samp>%pic</samp>&rsquo;.
+
+</li><li> The performance control register is referred to as &lsquo;<samp>%pcr</samp>&rsquo;.
+
+</li><li> The graphics status register is referred to as &lsquo;<samp>%gsr</samp>&rsquo;.
+
+</li><li> The V9 dispatch control register is referred to as &lsquo;<samp>%dcr</samp>&rsquo;.
+</li></ul>
+
+<p>Various V9 branch and conditional move instructions allow
+specification of which set of integer condition codes to
+test.  These are referred to as &lsquo;<samp>%xcc</samp>&rsquo; and &lsquo;<samp>%icc</samp>&rsquo;.
+</p>
+<p>Additionally, GAS supports the so-called &ldquo;natural&rdquo; condition codes;
+these are referred to as &lsquo;<samp>%ncc</samp>&rsquo; and reference to &lsquo;<samp>%icc</samp>&rsquo; if
+the word size is 32, &lsquo;<samp>%xcc</samp>&rsquo; if the word size is 64.
+</p>
+<p>In V9, there are 4 sets of floating point condition codes
+which are referred to as &lsquo;<samp>%fcc<var>n</var></samp>&rsquo;.
+</p>
+<p>Several special privileged and non-privileged registers
+exist:
+</p>
+<ul>
+<li> The V9 address space identifier register is referred to as &lsquo;<samp>%asi</samp>&rsquo;.
+
+</li><li> The V9 restorable windows register is referred to as &lsquo;<samp>%canrestore</samp>&rsquo;.
+
+</li><li> The V9 savable windows register is referred to as &lsquo;<samp>%cansave</samp>&rsquo;.
+
+</li><li> The V9 clean windows register is referred to as &lsquo;<samp>%cleanwin</samp>&rsquo;.
+
+</li><li> The V9 current window pointer register is referred to as &lsquo;<samp>%cwp</samp>&rsquo;.
+
+</li><li> The floating-point queue register is referred to as &lsquo;<samp>%fq</samp>&rsquo;.
+
+</li><li> The V8 co-processor queue register is referred to as &lsquo;<samp>%cq</samp>&rsquo;.
+
+</li><li> The floating point status register is referred to as &lsquo;<samp>%fsr</samp>&rsquo;.
+
+</li><li> The other windows register is referred to as &lsquo;<samp>%otherwin</samp>&rsquo;.
+
+</li><li> The V9 program counter register is referred to as &lsquo;<samp>%pc</samp>&rsquo;.
+
+</li><li> The V9 next program counter register is referred to as &lsquo;<samp>%npc</samp>&rsquo;.
+
+</li><li> The V9 processor interrupt level register is referred to as &lsquo;<samp>%pil</samp>&rsquo;.
+
+</li><li> The V9 processor state register is referred to as &lsquo;<samp>%pstate</samp>&rsquo;.
+
+</li><li> The trap base address register is referred to as &lsquo;<samp>%tba</samp>&rsquo;.
+
+</li><li> The V9 tick register is referred to as &lsquo;<samp>%tick</samp>&rsquo;.
+
+</li><li> The V9 trap level is referred to as &lsquo;<samp>%tl</samp>&rsquo;.
+
+</li><li> The V9 trap program counter is referred to as &lsquo;<samp>%tpc</samp>&rsquo;.
+
+</li><li> The V9 trap next program counter is referred to as &lsquo;<samp>%tnpc</samp>&rsquo;.
+
+</li><li> The V9 trap state is referred to as &lsquo;<samp>%tstate</samp>&rsquo;.
+
+</li><li> The V9 trap type is referred to as &lsquo;<samp>%tt</samp>&rsquo;.
+
+</li><li> The V9 condition codes is referred to as &lsquo;<samp>%ccr</samp>&rsquo;.
+
+</li><li> The V9 floating-point registers state is referred to as &lsquo;<samp>%fprs</samp>&rsquo;.
+
+</li><li> The V9 version register is referred to as &lsquo;<samp>%ver</samp>&rsquo;.
+
+</li><li> The V9 window state register is referred to as &lsquo;<samp>%wstate</samp>&rsquo;.
+
+</li><li> The Y register is referred to as &lsquo;<samp>%y</samp>&rsquo;.
+
+</li><li> The V8 window invalid mask register is referred to as &lsquo;<samp>%wim</samp>&rsquo;.
+
+</li><li> The V8 processor state register is referred to as &lsquo;<samp>%psr</samp>&rsquo;.
+
+</li><li> The V9 global register level register is referred to as &lsquo;<samp>%gl</samp>&rsquo;.
+</li></ul>
+
+<p>Several special register names exist for hypervisor mode code:
+</p>
+<ul>
+<li> The hyperprivileged processor state register is referred to as
+&lsquo;<samp>%hpstate</samp>&rsquo;.
+
+</li><li> The hyperprivileged trap state register is referred to as &lsquo;<samp>%htstate</samp>&rsquo;.
+
+</li><li> The hyperprivileged interrupt pending register is referred to as
+&lsquo;<samp>%hintp</samp>&rsquo;.
+
+</li><li> The hyperprivileged trap base address register is referred to as
+&lsquo;<samp>%htba</samp>&rsquo;.
+
+</li><li> The hyperprivileged implementation version register is referred
+to as &lsquo;<samp>%hver</samp>&rsquo;.
+
+</li><li> The hyperprivileged system tick offset register is referred to as
+&lsquo;<samp>%hstick_offset</samp>&rsquo;.  Note that there is no &lsquo;<samp>%hstick</samp>&rsquo; register,
+the normal &lsquo;<samp>%stick</samp>&rsquo; is used.
+
+</li><li> The hyperprivileged system tick enable register is referred to as
+&lsquo;<samp>%hstick_enable</samp>&rsquo;.
+
+</li><li> The hyperprivileged system tick compare register is referred
+to as &lsquo;<samp>%hstick_cmpr</samp>&rsquo;.
+</li></ul>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Sparc_002dConstants.html#Sparc_002dConstants" accesskey="n" rel="next">Sparc-Constants</a>, Previous: <a href="Sparc_002dChars.html#Sparc_002dChars" accesskey="p" rel="prev">Sparc-Chars</a>, Up: <a href="Sparc_002dSyntax.html#Sparc_002dSyntax" accesskey="u" rel="up">Sparc-Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

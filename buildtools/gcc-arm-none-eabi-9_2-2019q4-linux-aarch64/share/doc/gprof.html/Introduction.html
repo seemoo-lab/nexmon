@@ -1,0 +1,134 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the gprof profiler of the GNU system.
+
+Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU gprof: Introduction</title>
+
+<meta name="description" content="GNU gprof: Introduction">
+<meta name="keywords" content="GNU gprof: Introduction">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Compiling.html#Compiling" rel="next" title="Compiling">
+<link href="index.html#Top" rel="prev" title="Top">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Introduction"></a>
+<div class="header">
+<p>
+Next: <a href="Compiling.html#Compiling" accesskey="n" rel="next">Compiling</a>, Previous: <a href="index.html#Top" accesskey="p" rel="prev">Top</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<hr>
+<a name="Introduction-to-Profiling"></a>
+<h2 class="chapter">1 Introduction to Profiling</h2>
+
+
+<p>Profiling allows you to learn where your program spent its time and which
+functions called which other functions while it was executing.  This
+information can show you which pieces of your program are slower than you
+expected, and might be candidates for rewriting to make your program
+execute faster.  It can also tell you which functions are being called more
+or less often than you expected.  This may help you spot bugs that had
+otherwise been unnoticed.
+</p>
+<p>Since the profiler uses information collected during the actual execution
+of your program, it can be used on programs that are too large or too
+complex to analyze by reading the source.  However, how your program is run
+will affect the information that shows up in the profile data.  If you
+don&rsquo;t use some feature of your program while it is being profiled, no
+profile information will be generated for that feature.
+</p>
+<p>Profiling has several steps:
+</p>
+<ul>
+<li> You must compile and link your program with profiling enabled.
+See <a href="Compiling.html#Compiling">Compiling a Program for Profiling</a>.
+
+</li><li> You must execute your program to generate a profile data file.
+See <a href="Executing.html#Executing">Executing the Program</a>.
+
+</li><li> You must run <code>gprof</code> to analyze the profile data.
+See <a href="Invoking.html#Invoking"><code>gprof</code> Command Summary</a>.
+</li></ul>
+
+<p>The next three chapters explain these steps in greater detail.
+</p>
+
+<p>Several forms of output are available from the analysis.
+</p>
+<p>The <em>flat profile</em> shows how much time your program spent in each function,
+and how many times that function was called.  If you simply want to know
+which functions burn most of the cycles, it is stated concisely here.
+See <a href="Flat-Profile.html#Flat-Profile">The Flat Profile</a>.
+</p>
+<p>The <em>call graph</em> shows, for each function, which functions called it, which
+other functions it called, and how many times.  There is also an estimate
+of how much time was spent in the subroutines of each function.  This can
+suggest places where you might try to eliminate function calls that use a
+lot of time.  See <a href="Call-Graph.html#Call-Graph">The Call Graph</a>.
+</p>
+<p>The <em>annotated source</em> listing is a copy of the program&rsquo;s
+source code, labeled with the number of times each line of the
+program was executed.  See <a href="Annotated-Source.html#Annotated-Source">The Annotated Source
+Listing</a>.
+</p>
+<p>To better understand how profiling works, you may wish to read
+a description of its implementation.
+See <a href="Implementation.html#Implementation">Implementation of Profiling</a>.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Compiling.html#Compiling" accesskey="n" rel="next">Compiling</a>, Previous: <a href="index.html#Top" accesskey="p" rel="prev">Top</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+
+
+
+</body>
+</html>

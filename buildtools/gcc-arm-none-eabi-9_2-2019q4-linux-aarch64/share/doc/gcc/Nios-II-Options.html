@@ -1,0 +1,500 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Nios II Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Nios II Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Nios II Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Submodel-Options.html#Submodel-Options" rel="up" title="Submodel Options">
+<link href="Nvidia-PTX-Options.html#Nvidia-PTX-Options" rel="next" title="Nvidia PTX Options">
+<link href="NDS32-Options.html#NDS32-Options" rel="prev" title="NDS32 Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Nios-II-Options"></a>
+<div class="header">
+<p>
+Next: <a href="Nvidia-PTX-Options.html#Nvidia-PTX-Options" accesskey="n" rel="next">Nvidia PTX Options</a>, Previous: <a href="NDS32-Options.html#NDS32-Options" accesskey="p" rel="prev">NDS32 Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Nios-II-Options-1"></a>
+<h4 class="subsection">3.18.34 Nios II Options</h4>
+<a name="index-Nios-II-options"></a>
+<a name="index-Altera-Nios-II-options"></a>
+
+<p>These are the options defined for the Altera Nios II processor.
+</p>
+<dl compact="compact">
+<dt><code>-G <var>num</var></code></dt>
+<dd><a name="index-G-3"></a>
+<a name="index-smaller-data-references-1"></a>
+<p>Put global and static objects less than or equal to <var>num</var> bytes
+into the small data or BSS sections instead of the normal data or BSS
+sections.  The default value of <var>num</var> is 8.
+</p>
+</dd>
+<dt><code>-mgpopt=<var>option</var></code></dt>
+<dt><code>-mgpopt</code></dt>
+<dt><code>-mno-gpopt</code></dt>
+<dd><a name="index-mgpopt-1"></a>
+<a name="index-mno_002dgpopt-1"></a>
+<p>Generate (do not generate) GP-relative accesses.  The following 
+<var>option</var> names are recognized:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>none</samp>&rsquo;</dt>
+<dd><p>Do not generate GP-relative accesses.
+</p>
+</dd>
+<dt>&lsquo;<samp>local</samp>&rsquo;</dt>
+<dd><p>Generate GP-relative accesses for small data objects that are not 
+external, weak, or uninitialized common symbols.  
+Also use GP-relative addressing for objects that
+have been explicitly placed in a small data section via a <code>section</code>
+attribute.
+</p>
+</dd>
+<dt>&lsquo;<samp>global</samp>&rsquo;</dt>
+<dd><p>As for &lsquo;<samp>local</samp>&rsquo;, but also generate GP-relative accesses for
+small data objects that are external, weak, or common.  If you use this option,
+you must ensure that all parts of your program (including libraries) are
+compiled with the same <samp>-G</samp> setting.
+</p>
+</dd>
+<dt>&lsquo;<samp>data</samp>&rsquo;</dt>
+<dd><p>Generate GP-relative accesses for all data objects in the program.  If you
+use this option, the entire data and BSS segments
+of your program must fit in 64K of memory and you must use an appropriate
+linker script to allocate them within the addressable range of the
+global pointer.
+</p>
+</dd>
+<dt>&lsquo;<samp>all</samp>&rsquo;</dt>
+<dd><p>Generate GP-relative addresses for function pointers as well as data
+pointers.  If you use this option, the entire text, data, and BSS segments
+of your program must fit in 64K of memory and you must use an appropriate
+linker script to allocate them within the addressable range of the
+global pointer.
+</p>
+</dd>
+</dl>
+
+<p><samp>-mgpopt</samp> is equivalent to <samp>-mgpopt=local</samp>, and
+<samp>-mno-gpopt</samp> is equivalent to <samp>-mgpopt=none</samp>.
+</p>
+<p>The default is <samp>-mgpopt</samp> except when <samp>-fpic</samp> or
+<samp>-fPIC</samp> is specified to generate position-independent code.
+Note that the Nios II ABI does not permit GP-relative accesses from
+shared libraries.
+</p>
+<p>You may need to specify <samp>-mno-gpopt</samp> explicitly when building
+programs that include large amounts of small data, including large
+GOT data sections.  In this case, the 16-bit offset for GP-relative
+addressing may not be large enough to allow access to the entire 
+small data section.
+</p>
+</dd>
+<dt><code>-mgprel-sec=<var>regexp</var></code></dt>
+<dd><a name="index-mgprel_002dsec"></a>
+<p>This option specifies additional section names that can be accessed via
+GP-relative addressing.  It is most useful in conjunction with 
+<code>section</code> attributes on variable declarations 
+(see <a href="Common-Variable-Attributes.html#Common-Variable-Attributes">Common Variable Attributes</a>) and a custom linker script.  
+The <var>regexp</var> is a POSIX Extended Regular Expression.
+</p>
+<p>This option does not affect the behavior of the <samp>-G</samp> option, and 
+the specified sections are in addition to the standard <code>.sdata</code>
+and <code>.sbss</code> small-data sections that are recognized by <samp>-mgpopt</samp>.
+</p>
+</dd>
+<dt><code>-mr0rel-sec=<var>regexp</var></code></dt>
+<dd><a name="index-mr0rel_002dsec"></a>
+<p>This option specifies names of sections that can be accessed via a 
+16-bit offset from <code>r0</code>; that is, in the low 32K or high 32K 
+of the 32-bit address space.  It is most useful in conjunction with 
+<code>section</code> attributes on variable declarations 
+(see <a href="Common-Variable-Attributes.html#Common-Variable-Attributes">Common Variable Attributes</a>) and a custom linker script.  
+The <var>regexp</var> is a POSIX Extended Regular Expression.
+</p>
+<p>In contrast to the use of GP-relative addressing for small data, 
+zero-based addressing is never generated by default and there are no 
+conventional section names used in standard linker scripts for sections
+in the low or high areas of memory.
+</p>
+</dd>
+<dt><code>-mel</code></dt>
+<dt><code>-meb</code></dt>
+<dd><a name="index-mel-2"></a>
+<a name="index-meb-2"></a>
+<p>Generate little-endian (default) or big-endian (experimental) code,
+respectively.
+</p>
+</dd>
+<dt><code>-march=<var>arch</var></code></dt>
+<dd><a name="index-march-10"></a>
+<p>This specifies the name of the target Nios II architecture.  GCC uses this
+name to determine what kind of instructions it can emit when generating
+assembly code.  Permissible names are: &lsquo;<samp>r1</samp>&rsquo;, &lsquo;<samp>r2</samp>&rsquo;.
+</p>
+<p>The preprocessor macro <code>__nios2_arch__</code> is available to programs,
+with value 1 or 2, indicating the targeted ISA level.
+</p>
+</dd>
+<dt><code>-mbypass-cache</code></dt>
+<dt><code>-mno-bypass-cache</code></dt>
+<dd><a name="index-mno_002dbypass_002dcache"></a>
+<a name="index-mbypass_002dcache"></a>
+<p>Force all load and store instructions to always bypass cache by 
+using I/O variants of the instructions. The default is not to
+bypass the cache.
+</p>
+</dd>
+<dt><code>-mno-cache-volatile</code></dt>
+<dt><code>-mcache-volatile</code></dt>
+<dd><a name="index-mcache_002dvolatile"></a>
+<a name="index-mno_002dcache_002dvolatile"></a>
+<p>Volatile memory access bypass the cache using the I/O variants of 
+the load and store instructions. The default is not to bypass the cache.
+</p>
+</dd>
+<dt><code>-mno-fast-sw-div</code></dt>
+<dt><code>-mfast-sw-div</code></dt>
+<dd><a name="index-mno_002dfast_002dsw_002ddiv"></a>
+<a name="index-mfast_002dsw_002ddiv"></a>
+<p>Do not use table-based fast divide for small numbers. The default 
+is to use the fast divide at <samp>-O3</samp> and above.
+</p>
+</dd>
+<dt><code>-mno-hw-mul</code></dt>
+<dt><code>-mhw-mul</code></dt>
+<dt><code>-mno-hw-mulx</code></dt>
+<dt><code>-mhw-mulx</code></dt>
+<dt><code>-mno-hw-div</code></dt>
+<dt><code>-mhw-div</code></dt>
+<dd><a name="index-mno_002dhw_002dmul"></a>
+<a name="index-mhw_002dmul"></a>
+<a name="index-mno_002dhw_002dmulx"></a>
+<a name="index-mhw_002dmulx"></a>
+<a name="index-mno_002dhw_002ddiv"></a>
+<a name="index-mhw_002ddiv"></a>
+<p>Enable or disable emitting <code>mul</code>, <code>mulx</code> and <code>div</code> family of 
+instructions by the compiler. The default is to emit <code>mul</code>
+and not emit <code>div</code> and <code>mulx</code>.
+</p>
+</dd>
+<dt><code>-mbmx</code></dt>
+<dt><code>-mno-bmx</code></dt>
+<dt><code>-mcdx</code></dt>
+<dt><code>-mno-cdx</code></dt>
+<dd><p>Enable or disable generation of Nios II R2 BMX (bit manipulation) and
+CDX (code density) instructions.  Enabling these instructions also
+requires <samp>-march=r2</samp>.  Since these instructions are optional
+extensions to the R2 architecture, the default is not to emit them.
+</p>
+</dd>
+<dt><code>-mcustom-<var>insn</var>=<var>N</var></code></dt>
+<dt><code>-mno-custom-<var>insn</var></code></dt>
+<dd><a name="index-mcustom_002dinsn"></a>
+<a name="index-mno_002dcustom_002dinsn"></a>
+<p>Each <samp>-mcustom-<var>insn</var>=<var>N</var></samp> option enables use of a
+custom instruction with encoding <var>N</var> when generating code that uses 
+<var>insn</var>.  For example, <samp>-mcustom-fadds=253</samp> generates custom
+instruction 253 for single-precision floating-point add operations instead
+of the default behavior of using a library call.
+</p>
+<p>The following values of <var>insn</var> are supported.  Except as otherwise
+noted, floating-point operations are expected to be implemented with
+normal IEEE 754 semantics and correspond directly to the C operators or the
+equivalent GCC built-in functions (see <a href="Other-Builtins.html#Other-Builtins">Other Builtins</a>).
+</p>
+<p>Single-precision floating point:
+</p><dl compact="compact">
+<dt>&lsquo;<samp>fadds</samp>&rsquo;, &lsquo;<samp>fsubs</samp>&rsquo;, &lsquo;<samp>fdivs</samp>&rsquo;, &lsquo;<samp>fmuls</samp>&rsquo;</dt>
+<dd><p>Binary arithmetic operations.
+</p>
+</dd>
+<dt>&lsquo;<samp>fnegs</samp>&rsquo;</dt>
+<dd><p>Unary negation.
+</p>
+</dd>
+<dt>&lsquo;<samp>fabss</samp>&rsquo;</dt>
+<dd><p>Unary absolute value.
+</p>
+</dd>
+<dt>&lsquo;<samp>fcmpeqs</samp>&rsquo;, &lsquo;<samp>fcmpges</samp>&rsquo;, &lsquo;<samp>fcmpgts</samp>&rsquo;, &lsquo;<samp>fcmples</samp>&rsquo;, &lsquo;<samp>fcmplts</samp>&rsquo;, &lsquo;<samp>fcmpnes</samp>&rsquo;</dt>
+<dd><p>Comparison operations.
+</p>
+</dd>
+<dt>&lsquo;<samp>fmins</samp>&rsquo;, &lsquo;<samp>fmaxs</samp>&rsquo;</dt>
+<dd><p>Floating-point minimum and maximum.  These instructions are only
+generated if <samp>-ffinite-math-only</samp> is specified.
+</p>
+</dd>
+<dt>&lsquo;<samp>fsqrts</samp>&rsquo;</dt>
+<dd><p>Unary square root operation.
+</p>
+</dd>
+<dt>&lsquo;<samp>fcoss</samp>&rsquo;, &lsquo;<samp>fsins</samp>&rsquo;, &lsquo;<samp>ftans</samp>&rsquo;, &lsquo;<samp>fatans</samp>&rsquo;, &lsquo;<samp>fexps</samp>&rsquo;, &lsquo;<samp>flogs</samp>&rsquo;</dt>
+<dd><p>Floating-point trigonometric and exponential functions.  These instructions
+are only generated if <samp>-funsafe-math-optimizations</samp> is also specified.
+</p>
+</dd>
+</dl>
+
+<p>Double-precision floating point:
+</p><dl compact="compact">
+<dt>&lsquo;<samp>faddd</samp>&rsquo;, &lsquo;<samp>fsubd</samp>&rsquo;, &lsquo;<samp>fdivd</samp>&rsquo;, &lsquo;<samp>fmuld</samp>&rsquo;</dt>
+<dd><p>Binary arithmetic operations.
+</p>
+</dd>
+<dt>&lsquo;<samp>fnegd</samp>&rsquo;</dt>
+<dd><p>Unary negation.
+</p>
+</dd>
+<dt>&lsquo;<samp>fabsd</samp>&rsquo;</dt>
+<dd><p>Unary absolute value.
+</p>
+</dd>
+<dt>&lsquo;<samp>fcmpeqd</samp>&rsquo;, &lsquo;<samp>fcmpged</samp>&rsquo;, &lsquo;<samp>fcmpgtd</samp>&rsquo;, &lsquo;<samp>fcmpled</samp>&rsquo;, &lsquo;<samp>fcmpltd</samp>&rsquo;, &lsquo;<samp>fcmpned</samp>&rsquo;</dt>
+<dd><p>Comparison operations.
+</p>
+</dd>
+<dt>&lsquo;<samp>fmind</samp>&rsquo;, &lsquo;<samp>fmaxd</samp>&rsquo;</dt>
+<dd><p>Double-precision minimum and maximum.  These instructions are only
+generated if <samp>-ffinite-math-only</samp> is specified.
+</p>
+</dd>
+<dt>&lsquo;<samp>fsqrtd</samp>&rsquo;</dt>
+<dd><p>Unary square root operation.
+</p>
+</dd>
+<dt>&lsquo;<samp>fcosd</samp>&rsquo;, &lsquo;<samp>fsind</samp>&rsquo;, &lsquo;<samp>ftand</samp>&rsquo;, &lsquo;<samp>fatand</samp>&rsquo;, &lsquo;<samp>fexpd</samp>&rsquo;, &lsquo;<samp>flogd</samp>&rsquo;</dt>
+<dd><p>Double-precision trigonometric and exponential functions.  These instructions
+are only generated if <samp>-funsafe-math-optimizations</samp> is also specified.
+</p>
+</dd>
+</dl>
+
+<p>Conversions:
+</p><dl compact="compact">
+<dt>&lsquo;<samp>fextsd</samp>&rsquo;</dt>
+<dd><p>Conversion from single precision to double precision.
+</p>
+</dd>
+<dt>&lsquo;<samp>ftruncds</samp>&rsquo;</dt>
+<dd><p>Conversion from double precision to single precision.
+</p>
+</dd>
+<dt>&lsquo;<samp>fixsi</samp>&rsquo;, &lsquo;<samp>fixsu</samp>&rsquo;, &lsquo;<samp>fixdi</samp>&rsquo;, &lsquo;<samp>fixdu</samp>&rsquo;</dt>
+<dd><p>Conversion from floating point to signed or unsigned integer types, with
+truncation towards zero.
+</p>
+</dd>
+<dt>&lsquo;<samp>round</samp>&rsquo;</dt>
+<dd><p>Conversion from single-precision floating point to signed integer,
+rounding to the nearest integer and ties away from zero.
+This corresponds to the <code>__builtin_lroundf</code> function when
+<samp>-fno-math-errno</samp> is used.
+</p>
+</dd>
+<dt>&lsquo;<samp>floatis</samp>&rsquo;, &lsquo;<samp>floatus</samp>&rsquo;, &lsquo;<samp>floatid</samp>&rsquo;, &lsquo;<samp>floatud</samp>&rsquo;</dt>
+<dd><p>Conversion from signed or unsigned integer types to floating-point types.
+</p>
+</dd>
+</dl>
+
+<p>In addition, all of the following transfer instructions for internal
+registers X and Y must be provided to use any of the double-precision
+floating-point instructions.  Custom instructions taking two
+double-precision source operands expect the first operand in the
+64-bit register X.  The other operand (or only operand of a unary
+operation) is given to the custom arithmetic instruction with the
+least significant half in source register <var>src1</var> and the most
+significant half in <var>src2</var>.  A custom instruction that returns a
+double-precision result returns the most significant 32 bits in the
+destination register and the other half in 32-bit register Y.  
+GCC automatically generates the necessary code sequences to write
+register X and/or read register Y when double-precision floating-point
+instructions are used.
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>fwrx</samp>&rsquo;</dt>
+<dd><p>Write <var>src1</var> into the least significant half of X and <var>src2</var> into
+the most significant half of X.
+</p>
+</dd>
+<dt>&lsquo;<samp>fwry</samp>&rsquo;</dt>
+<dd><p>Write <var>src1</var> into Y.
+</p>
+</dd>
+<dt>&lsquo;<samp>frdxhi</samp>&rsquo;, &lsquo;<samp>frdxlo</samp>&rsquo;</dt>
+<dd><p>Read the most or least (respectively) significant half of X and store it in
+<var>dest</var>.
+</p>
+</dd>
+<dt>&lsquo;<samp>frdy</samp>&rsquo;</dt>
+<dd><p>Read the value of Y and store it into <var>dest</var>.
+</p></dd>
+</dl>
+
+<p>Note that you can gain more local control over generation of Nios II custom
+instructions by using the <code>target(&quot;custom-<var>insn</var>=<var>N</var>&quot;)</code>
+and <code>target(&quot;no-custom-<var>insn</var>&quot;)</code> function attributes
+(see <a href="Function-Attributes.html#Function-Attributes">Function Attributes</a>)
+or pragmas (see <a href="Function-Specific-Option-Pragmas.html#Function-Specific-Option-Pragmas">Function Specific Option Pragmas</a>).
+</p>
+</dd>
+<dt><code>-mcustom-fpu-cfg=<var>name</var></code></dt>
+<dd><a name="index-mcustom_002dfpu_002dcfg"></a>
+
+<p>This option enables a predefined, named set of custom instruction encodings
+(see <samp>-mcustom-<var>insn</var></samp> above).  
+Currently, the following sets are defined:
+</p>
+<p><samp>-mcustom-fpu-cfg=60-1</samp> is equivalent to:
+</p><div class="smallexample">
+<pre class="smallexample">-mcustom-fmuls=252 
+-mcustom-fadds=253 
+-mcustom-fsubs=254 
+-fsingle-precision-constant
+</pre></div>
+
+<p><samp>-mcustom-fpu-cfg=60-2</samp> is equivalent to:
+</p><div class="smallexample">
+<pre class="smallexample">-mcustom-fmuls=252 
+-mcustom-fadds=253 
+-mcustom-fsubs=254 
+-mcustom-fdivs=255 
+-fsingle-precision-constant
+</pre></div>
+
+<p><samp>-mcustom-fpu-cfg=72-3</samp> is equivalent to:
+</p><div class="smallexample">
+<pre class="smallexample">-mcustom-floatus=243 
+-mcustom-fixsi=244 
+-mcustom-floatis=245 
+-mcustom-fcmpgts=246 
+-mcustom-fcmples=249 
+-mcustom-fcmpeqs=250 
+-mcustom-fcmpnes=251 
+-mcustom-fmuls=252 
+-mcustom-fadds=253 
+-mcustom-fsubs=254 
+-mcustom-fdivs=255 
+-fsingle-precision-constant
+</pre></div>
+
+<p>Custom instruction assignments given by individual
+<samp>-mcustom-<var>insn</var>=</samp> options override those given by
+<samp>-mcustom-fpu-cfg=</samp>, regardless of the
+order of the options on the command line.
+</p>
+<p>Note that you can gain more local control over selection of a FPU
+configuration by using the <code>target(&quot;custom-fpu-cfg=<var>name</var>&quot;)</code>
+function attribute (see <a href="Function-Attributes.html#Function-Attributes">Function Attributes</a>)
+or pragma (see <a href="Function-Specific-Option-Pragmas.html#Function-Specific-Option-Pragmas">Function Specific Option Pragmas</a>).
+</p>
+</dd>
+</dl>
+
+<p>These additional &lsquo;<samp>-m</samp>&rsquo; options are available for the Altera Nios II
+ELF (bare-metal) target:
+</p>
+<dl compact="compact">
+<dt><code>-mhal</code></dt>
+<dd><a name="index-mhal"></a>
+<p>Link with HAL BSP.  This suppresses linking with the GCC-provided C runtime
+startup and termination code, and is typically used in conjunction with
+<samp>-msys-crt0=</samp> to specify the location of the alternate startup code
+provided by the HAL BSP.
+</p>
+</dd>
+<dt><code>-msmallc</code></dt>
+<dd><a name="index-msmallc"></a>
+<p>Link with a limited version of the C library, <samp>-lsmallc</samp>, rather than
+Newlib.
+</p>
+</dd>
+<dt><code>-msys-crt0=<var>startfile</var></code></dt>
+<dd><a name="index-msys_002dcrt0"></a>
+<p><var>startfile</var> is the file name of the startfile (crt0) to use 
+when linking.  This option is only useful in conjunction with <samp>-mhal</samp>.
+</p>
+</dd>
+<dt><code>-msys-lib=<var>systemlib</var></code></dt>
+<dd><a name="index-msys_002dlib"></a>
+<p><var>systemlib</var> is the library name of the library that provides
+low-level system calls required by the C library,
+e.g. <code>read</code> and <code>write</code>.
+This option is typically used to link with a library provided by a HAL BSP.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Nvidia-PTX-Options.html#Nvidia-PTX-Options" accesskey="n" rel="next">Nvidia PTX Options</a>, Previous: <a href="NDS32-Options.html#NDS32-Options" accesskey="p" rel="prev">NDS32 Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

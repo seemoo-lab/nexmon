@@ -1,0 +1,328 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: M68K-Opts</title>
+
+<meta name="description" content="Using as: M68K-Opts">
+<meta name="keywords" content="Using as: M68K-Opts">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="M68K_002dDependent.html#M68K_002dDependent" rel="up" title="M68K-Dependent">
+<link href="M68K_002dSyntax.html#M68K_002dSyntax" rel="next" title="M68K-Syntax">
+<link href="M68K_002dDependent.html#M68K_002dDependent" rel="prev" title="M68K-Dependent">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="M68K_002dOpts"></a>
+<div class="header">
+<p>
+Next: <a href="M68K_002dSyntax.html#M68K_002dSyntax" accesskey="n" rel="next">M68K-Syntax</a>, Up: <a href="M68K_002dDependent.html#M68K_002dDependent" accesskey="u" rel="up">M68K-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="M680x0-Options"></a>
+<h4 class="subsection">9.22.1 M680x0 Options</h4>
+
+<a name="index-options_002c-M680x0"></a>
+<a name="index-M680x0-options"></a>
+<p>The Motorola 680x0 version of <code>as</code> has a few machine
+dependent options:
+</p>
+<dl compact="compact">
+<dd>
+<a name="index-_002dmarch_003d-command_002dline-option_002c-M680x0"></a>
+</dd>
+<dt>&lsquo;<samp>-march=<var>architecture</var></samp>&rsquo;</dt>
+<dd><p>This option specifies a target architecture.  The following
+architectures are recognized:
+<code>68000</code>,
+<code>68010</code>,
+<code>68020</code>,
+<code>68030</code>,
+<code>68040</code>,
+<code>68060</code>,
+<code>cpu32</code>,
+<code>isaa</code>,
+<code>isaaplus</code>,
+<code>isab</code>,
+<code>isac</code> and
+<code>cfv4e</code>.
+</p>
+
+<a name="index-_002dmcpu_003d-command_002dline-option_002c-M680x0"></a>
+</dd>
+<dt>&lsquo;<samp>-mcpu=<var>cpu</var></samp>&rsquo;</dt>
+<dd><p>This option specifies a target cpu.  When used in conjunction with the
+<samp>-march</samp> option, the cpu must be within the specified
+architecture.  Also, the generic features of the architecture are used
+for instruction generation, rather than those of the specific chip.
+</p>
+<a name="index-_002dm_005bno_002d_005d68851-command_002dline-option_002c-M680x0"></a>
+<a name="index-_002dm_005bno_002d_005d68881-command_002dline-option_002c-M680x0"></a>
+<a name="index-_002dm_005bno_002d_005ddiv-command_002dline-option_002c-M680x0"></a>
+<a name="index-_002dm_005bno_002d_005dusp-command_002dline-option_002c-M680x0"></a>
+<a name="index-_002dm_005bno_002d_005dfloat-command_002dline-option_002c-M680x0"></a>
+<a name="index-_002dm_005bno_002d_005dmac-command_002dline-option_002c-M680x0"></a>
+<a name="index-_002dm_005bno_002d_005demac-command_002dline-option_002c-M680x0"></a>
+</dd>
+<dt>&lsquo;<samp>-m[no-]68851</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m[no-]68881</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m[no-]div</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m[no-]usp</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m[no-]float</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m[no-]mac</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m[no-]emac</samp>&rsquo;</dt>
+<dd>
+<p>Enable or disable various architecture specific features.  If a chip
+or architecture by default supports an option (for instance
+<samp>-march=isaaplus</samp> includes the <samp>-mdiv</samp> option),
+explicitly disabling the option will override the default.
+</p>
+<a name="index-_002dl-option_002c-M680x0"></a>
+</dd>
+<dt>&lsquo;<samp>-l</samp>&rsquo;</dt>
+<dd><p>You can use the &lsquo;<samp>-l</samp>&rsquo; option to shorten the size of references to undefined
+symbols.  If you do not use the &lsquo;<samp>-l</samp>&rsquo; option, references to undefined
+symbols are wide enough for a full <code>long</code> (32 bits).  (Since
+<code>as</code> cannot know where these symbols end up, <code>as</code> can
+only allocate space for the linker to fill in later.  Since <code>as</code>
+does not know how far away these symbols are, it allocates as much space as it
+can.)  If you use this option, the references are only one word wide (16 bits).
+This may be useful if you want the object file to be as small as possible, and
+you know that the relevant symbols are always less than 17 bits away.
+</p>
+<a name="index-_002d_002dregister_002dprefix_002doptional-option_002c-M680x0"></a>
+</dd>
+<dt>&lsquo;<samp>--register-prefix-optional</samp>&rsquo;</dt>
+<dd><p>For some configurations, especially those where the compiler normally
+does not prepend an underscore to the names of user variables, the
+assembler requires a &lsquo;<samp>%</samp>&rsquo; before any use of a register name.  This
+is intended to let the assembler distinguish between C variables and
+functions named &lsquo;<samp>a0</samp>&rsquo; through &lsquo;<samp>a7</samp>&rsquo;, and so on.  The &lsquo;<samp>%</samp>&rsquo; is
+always accepted, but is not required for certain configurations, notably
+&lsquo;<samp>sun3</samp>&rsquo;.  The &lsquo;<samp>--register-prefix-optional</samp>&rsquo; option may be used
+to permit omitting the &lsquo;<samp>%</samp>&rsquo; even for configurations for which it is
+normally required.  If this is done, it will generally be impossible to
+refer to C variables and functions with the same names as register
+names.
+</p>
+<a name="index-_002d_002dbitwise_002dor-option_002c-M680x0"></a>
+</dd>
+<dt>&lsquo;<samp>--bitwise-or</samp>&rsquo;</dt>
+<dd><p>Normally the character &lsquo;<samp>|</samp>&rsquo; is treated as a comment character, which
+means that it can not be used in expressions.  The &lsquo;<samp>--bitwise-or</samp>&rsquo;
+option turns &lsquo;<samp>|</samp>&rsquo; into a normal character.  In this mode, you must
+either use C style comments, or start comments with a &lsquo;<samp>#</samp>&rsquo; character
+at the beginning of a line.
+</p>
+<a name="index-_002d_002dbase_002dsize_002ddefault_002d16"></a>
+<a name="index-_002d_002dbase_002dsize_002ddefault_002d32"></a>
+</dd>
+<dt>&lsquo;<samp>--base-size-default-16  --base-size-default-32</samp>&rsquo;</dt>
+<dd><p>If you use an addressing mode with a base register without specifying
+the size, <code>as</code> will normally use the full 32 bit value.
+For example, the addressing mode &lsquo;<samp>%a0@(%d0)</samp>&rsquo; is equivalent to
+&lsquo;<samp>%a0@(%d0:l)</samp>&rsquo;.  You may use the &lsquo;<samp>--base-size-default-16</samp>&rsquo;
+option to tell <code>as</code> to default to using the 16 bit value.
+In this case, &lsquo;<samp>%a0@(%d0)</samp>&rsquo; is equivalent to &lsquo;<samp>%a0@(%d0:w)</samp>&rsquo;.
+You may use the &lsquo;<samp>--base-size-default-32</samp>&rsquo; option to restore the
+default behaviour.
+</p>
+<a name="index-_002d_002ddisp_002dsize_002ddefault_002d16"></a>
+<a name="index-_002d_002ddisp_002dsize_002ddefault_002d32"></a>
+</dd>
+<dt>&lsquo;<samp>--disp-size-default-16  --disp-size-default-32</samp>&rsquo;</dt>
+<dd><p>If you use an addressing mode with a displacement, and the value of the
+displacement is not known, <code>as</code> will normally assume that
+the value is 32 bits.  For example, if the symbol &lsquo;<samp>disp</samp>&rsquo; has not
+been defined, <code>as</code> will assemble the addressing mode
+&lsquo;<samp>%a0@(disp,%d0)</samp>&rsquo; as though &lsquo;<samp>disp</samp>&rsquo; is a 32 bit value.  You may
+use the &lsquo;<samp>--disp-size-default-16</samp>&rsquo; option to tell <code>as</code>
+to instead assume that the displacement is 16 bits.  In this case,
+<code>as</code> will assemble &lsquo;<samp>%a0@(disp,%d0)</samp>&rsquo; as though
+&lsquo;<samp>disp</samp>&rsquo; is a 16 bit value.  You may use the
+&lsquo;<samp>--disp-size-default-32</samp>&rsquo; option to restore the default behaviour.
+</p>
+<a name="index-_002d_002dpcrel"></a>
+</dd>
+<dt>&lsquo;<samp>--pcrel</samp>&rsquo;</dt>
+<dd><p>Always keep branches PC-relative.  In the M680x0 architecture all branches
+are defined as PC-relative.  However, on some processors they are limited
+to word displacements maximum.  When <code>as</code> needs a long branch
+that is not available, it normally emits an absolute jump instead.  This
+option disables this substitution.  When this option is given and no long
+branches are available, only word branches will be emitted.  An error
+message will be generated if a word branch cannot reach its target.  This
+option has no effect on 68020 and other processors that have long branches.
+see <a href="M68K_002dBranch.html#M68K_002dBranch">Branch Improvement</a>.
+</p>
+<a name="index-_002dm68000-and-related-options"></a>
+<a name="index-architecture-options_002c-M680x0"></a>
+<a name="index-M680x0-architecture-options"></a>
+</dd>
+<dt>&lsquo;<samp>-m68000</samp>&rsquo;</dt>
+<dd><p><code>as</code> can assemble code for several different members of the
+Motorola 680x0 family.  The default depends upon how <code>as</code>
+was configured when it was built; normally, the default is to assemble
+code for the 68020 microprocessor.  The following options may be used to
+change the default.  These options control which instructions and
+addressing modes are permitted.  The members of the 680x0 family are
+very similar.  For detailed information about the differences, see the
+Motorola manuals.
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>-m68000</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68ec000</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68hc000</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68hc001</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68008</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68302</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68306</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68307</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68322</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68356</samp>&rsquo;</dt>
+<dd><p>Assemble for the 68000. &lsquo;<samp>-m68008</samp>&rsquo;, &lsquo;<samp>-m68302</samp>&rsquo;, and so on are synonyms
+for &lsquo;<samp>-m68000</samp>&rsquo;, since the chips are the same from the point of view
+of the assembler.
+</p>
+</dd>
+<dt>&lsquo;<samp>-m68010</samp>&rsquo;</dt>
+<dd><p>Assemble for the 68010.
+</p>
+</dd>
+<dt>&lsquo;<samp>-m68020</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68ec020</samp>&rsquo;</dt>
+<dd><p>Assemble for the 68020.  This is normally the default.
+</p>
+</dd>
+<dt>&lsquo;<samp>-m68030</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68ec030</samp>&rsquo;</dt>
+<dd><p>Assemble for the 68030.
+</p>
+</dd>
+<dt>&lsquo;<samp>-m68040</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68ec040</samp>&rsquo;</dt>
+<dd><p>Assemble for the 68040.
+</p>
+</dd>
+<dt>&lsquo;<samp>-m68060</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68ec060</samp>&rsquo;</dt>
+<dd><p>Assemble for the 68060.
+</p>
+</dd>
+<dt>&lsquo;<samp>-mcpu32</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68330</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68331</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68332</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68333</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68334</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68336</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68340</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68341</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68349</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68360</samp>&rsquo;</dt>
+<dd><p>Assemble for the CPU32 family of chips.
+</p>
+</dd>
+<dt>&lsquo;<samp>-m5200</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m5202</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m5204</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m5206</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m5206e</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m521x</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m5249</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m528x</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m5307</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m5407</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m547x</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m548x</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-mcfv4</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-mcfv4e</samp>&rsquo;</dt>
+<dd><p>Assemble for the ColdFire family of chips.
+</p>
+</dd>
+<dt>&lsquo;<samp>-m68881</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>-m68882</samp>&rsquo;</dt>
+<dd><p>Assemble 68881 floating point instructions.  This is the default for the
+68020, 68030, and the CPU32.  The 68040 and 68060 always support
+floating point instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>-mno-68881</samp>&rsquo;</dt>
+<dd><p>Do not assemble 68881 floating point instructions.  This is the default
+for 68000 and the 68010.  The 68040 and 68060 always support floating
+point instructions, even if this option is used.
+</p>
+</dd>
+<dt>&lsquo;<samp>-m68851</samp>&rsquo;</dt>
+<dd><p>Assemble 68851 MMU instructions.  This is the default for the 68020,
+68030, and 68060.  The 68040 accepts a somewhat different set of MMU
+instructions; &lsquo;<samp>-m68851</samp>&rsquo; and &lsquo;<samp>-m68040</samp>&rsquo; should not be used
+together.
+</p>
+</dd>
+<dt>&lsquo;<samp>-mno-68851</samp>&rsquo;</dt>
+<dd><p>Do not assemble 68851 MMU instructions.  This is the default for the
+68000, 68010, and the CPU32.  The 68040 accepts a somewhat different set
+of MMU instructions.
+</p></dd>
+</dl>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="M68K_002dSyntax.html#M68K_002dSyntax" accesskey="n" rel="next">M68K-Syntax</a>, Up: <a href="M68K_002dDependent.html#M68K_002dDependent" accesskey="u" rel="up">M68K-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

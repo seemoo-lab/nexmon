@@ -1,0 +1,226 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Typeof</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Typeof">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Typeof">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-Extensions.html#C-Extensions" rel="up" title="C Extensions">
+<link href="Conditionals.html#Conditionals" rel="next" title="Conditionals">
+<link href="Constructing-Calls.html#Constructing-Calls" rel="prev" title="Constructing Calls">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Typeof"></a>
+<div class="header">
+<p>
+Next: <a href="Conditionals.html#Conditionals" accesskey="n" rel="next">Conditionals</a>, Previous: <a href="Constructing-Calls.html#Constructing-Calls" accesskey="p" rel="prev">Constructing Calls</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Referring-to-a-Type-with-typeof"></a>
+<h3 class="section">6.7 Referring to a Type with <code>typeof</code></h3>
+<a name="index-typeof"></a>
+<a name="index-sizeof"></a>
+<a name="index-macros_002c-types-of-arguments"></a>
+
+<p>Another way to refer to the type of an expression is with <code>typeof</code>.
+The syntax of using of this keyword looks like <code>sizeof</code>, but the
+construct acts semantically like a type name defined with <code>typedef</code>.
+</p>
+<p>There are two ways of writing the argument to <code>typeof</code>: with an
+expression or with a type.  Here is an example with an expression:
+</p>
+<div class="smallexample">
+<pre class="smallexample">typeof (x[0](1))
+</pre></div>
+
+<p>This assumes that <code>x</code> is an array of pointers to functions;
+the type described is that of the values of the functions.
+</p>
+<p>Here is an example with a typename as the argument:
+</p>
+<div class="smallexample">
+<pre class="smallexample">typeof (int *)
+</pre></div>
+
+<p>Here the type described is that of pointers to <code>int</code>.
+</p>
+<p>If you are writing a header file that must work when included in ISO C
+programs, write <code>__typeof__</code> instead of <code>typeof</code>.
+See <a href="Alternate-Keywords.html#Alternate-Keywords">Alternate Keywords</a>.
+</p>
+<p>A <code>typeof</code> construct can be used anywhere a typedef name can be
+used.  For example, you can use it in a declaration, in a cast, or inside
+of <code>sizeof</code> or <code>typeof</code>.
+</p>
+<p>The operand of <code>typeof</code> is evaluated for its side effects if and
+only if it is an expression of variably modified type or the name of
+such a type.
+</p>
+<p><code>typeof</code> is often useful in conjunction with
+statement expressions (see <a href="Statement-Exprs.html#Statement-Exprs">Statement Exprs</a>).
+Here is how the two together can
+be used to define a safe &ldquo;maximum&rdquo; macro which operates on any
+arithmetic type and evaluates each of its arguments exactly once:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#define max(a,b) \
+  ({ typeof (a) _a = (a); \
+      typeof (b) _b = (b); \
+    _a &gt; _b ? _a : _b; })
+</pre></div>
+
+<a name="index-underscores-in-variables-in-macros"></a>
+<a name="index-_005f-in-variables-in-macros"></a>
+<a name="index-local-variables-in-macros"></a>
+<a name="index-variables_002c-local_002c-in-macros"></a>
+<a name="index-macros_002c-local-variables-in"></a>
+
+<p>The reason for using names that start with underscores for the local
+variables is to avoid conflicts with variable names that occur within the
+expressions that are substituted for <code>a</code> and <code>b</code>.  Eventually we
+hope to design a new form of declaration syntax that allows you to declare
+variables whose scopes start only after their initializers; this will be a
+more reliable way to prevent such conflicts.
+</p>
+<p>Some more examples of the use of <code>typeof</code>:
+</p>
+<ul>
+<li> This declares <code>y</code> with the type of what <code>x</code> points to.
+
+<div class="smallexample">
+<pre class="smallexample">typeof (*x) y;
+</pre></div>
+
+</li><li> This declares <code>y</code> as an array of such values.
+
+<div class="smallexample">
+<pre class="smallexample">typeof (*x) y[4];
+</pre></div>
+
+</li><li> This declares <code>y</code> as an array of pointers to characters:
+
+<div class="smallexample">
+<pre class="smallexample">typeof (typeof (char *)[4]) y;
+</pre></div>
+
+<p>It is equivalent to the following traditional C declaration:
+</p>
+<div class="smallexample">
+<pre class="smallexample">char *y[4];
+</pre></div>
+
+<p>To see the meaning of the declaration using <code>typeof</code>, and why it
+might be a useful way to write, rewrite it with these macros:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#define pointer(T)  typeof(T *)
+#define array(T, N) typeof(T [N])
+</pre></div>
+
+<p>Now the declaration can be rewritten this way:
+</p>
+<div class="smallexample">
+<pre class="smallexample">array (pointer (char), 4) y;
+</pre></div>
+
+<p>Thus, <code>array (pointer (char), 4)</code> is the type of arrays of 4
+pointers to <code>char</code>.
+</p></li></ul>
+
+<p>In GNU C, but not GNU C++, you may also declare the type of a variable
+as <code>__auto_type</code>.  In that case, the declaration must declare
+only one variable, whose declarator must just be an identifier, the
+declaration must be initialized, and the type of the variable is
+determined by the initializer; the name of the variable is not in
+scope until after the initializer.  (In C++, you should use C++11
+<code>auto</code> for this purpose.)  Using <code>__auto_type</code>, the
+&ldquo;maximum&rdquo; macro above could be written as:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#define max(a,b) \
+  ({ __auto_type _a = (a); \
+      __auto_type _b = (b); \
+    _a &gt; _b ? _a : _b; })
+</pre></div>
+
+<p>Using <code>__auto_type</code> instead of <code>typeof</code> has two advantages:
+</p>
+<ul>
+<li> Each argument to the macro appears only once in the expansion of
+the macro.  This prevents the size of the macro expansion growing
+exponentially when calls to such macros are nested inside arguments of
+such macros.
+
+</li><li> If the argument to the macro has variably modified type, it is
+evaluated only once when using <code>__auto_type</code>, but twice if
+<code>typeof</code> is used.
+</li></ul>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Conditionals.html#Conditionals" accesskey="n" rel="next">Conditionals</a>, Previous: <a href="Constructing-Calls.html#Constructing-Calls" accesskey="p" rel="prev">Constructing Calls</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

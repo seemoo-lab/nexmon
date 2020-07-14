@@ -1,0 +1,334 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Instruction Output</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Instruction Output">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Instruction Output">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Assembler-Format.html#Assembler-Format" rel="up" title="Assembler Format">
+<link href="Dispatch-Tables.html#Dispatch-Tables" rel="next" title="Dispatch Tables">
+<link href="Macros-for-Initialization.html#Macros-for-Initialization" rel="prev" title="Macros for Initialization">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Instruction-Output"></a>
+<div class="header">
+<p>
+Next: <a href="Dispatch-Tables.html#Dispatch-Tables" accesskey="n" rel="next">Dispatch Tables</a>, Previous: <a href="Macros-for-Initialization.html#Macros-for-Initialization" accesskey="p" rel="prev">Macros for Initialization</a>, Up: <a href="Assembler-Format.html#Assembler-Format" accesskey="u" rel="up">Assembler Format</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Output-of-Assembler-Instructions"></a>
+<h4 class="subsection">18.20.7 Output of Assembler Instructions</h4>
+
+<p>This describes assembler instruction output.
+</p>
+<dl>
+<dt><a name="index-REGISTER_005fNAMES"></a>Macro: <strong>REGISTER_NAMES</strong></dt>
+<dd><p>A C initializer containing the assembler&rsquo;s names for the machine
+registers, each one as a C string constant.  This is what translates
+register numbers in the compiler into assembler language.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-ADDITIONAL_005fREGISTER_005fNAMES"></a>Macro: <strong>ADDITIONAL_REGISTER_NAMES</strong></dt>
+<dd><p>If defined, a C initializer for an array of structures containing a name
+and a register number.  This macro defines additional names for hard
+registers, thus allowing the <code>asm</code> option in declarations to refer
+to registers using alternate names.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-OVERLAPPING_005fREGISTER_005fNAMES"></a>Macro: <strong>OVERLAPPING_REGISTER_NAMES</strong></dt>
+<dd><p>If defined, a C initializer for an array of structures containing a
+name, a register number and a count of the number of consecutive
+machine registers the name overlaps.  This macro defines additional
+names for hard registers, thus allowing the <code>asm</code> option in
+declarations to refer to registers using alternate names.  Unlike
+<code>ADDITIONAL_REGISTER_NAMES</code>, this macro should be used when the
+register name implies multiple underlying registers.
+</p>
+<p>This macro should be used when it is important that a clobber in an
+<code>asm</code> statement clobbers all the underlying values implied by the
+register name.  For example, on ARM, clobbering the double-precision
+VFP register &ldquo;d0&rdquo; implies clobbering both single-precision registers
+&ldquo;s0&rdquo; and &ldquo;s1&rdquo;.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-ASM_005fOUTPUT_005fOPCODE"></a>Macro: <strong>ASM_OUTPUT_OPCODE</strong> <em>(<var>stream</var>, <var>ptr</var>)</em></dt>
+<dd><p>Define this macro if you are using an unusual assembler that
+requires different names for the machine instructions.
+</p>
+<p>The definition is a C statement or statements which output an
+assembler instruction opcode to the stdio stream <var>stream</var>.  The
+macro-operand <var>ptr</var> is a variable of type <code>char *</code> which
+points to the opcode name in its &ldquo;internal&rdquo; form&mdash;the form that is
+written in the machine description.  The definition should output the
+opcode name to <var>stream</var>, performing any translation you desire, and
+increment the variable <var>ptr</var> to point at the end of the opcode
+so that it will not be output twice.
+</p>
+<p>In fact, your macro definition may process less than the entire opcode
+name, or more than the opcode name; but if you want to process text
+that includes &lsquo;<samp>%</samp>&rsquo;-sequences to substitute operands, you must take
+care of the substitution yourself.  Just be sure to increment
+<var>ptr</var> over whatever text should not be output normally.
+</p>
+<a name="index-recog_005fdata_002eoperand"></a>
+<p>If you need to look at the operand values, they can be found as the
+elements of <code>recog_data.operand</code>.
+</p>
+<p>If the macro definition does nothing, the instruction is output
+in the usual way.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-FINAL_005fPRESCAN_005fINSN"></a>Macro: <strong>FINAL_PRESCAN_INSN</strong> <em>(<var>insn</var>, <var>opvec</var>, <var>noperands</var>)</em></dt>
+<dd><p>If defined, a C statement to be executed just prior to the output of
+assembler code for <var>insn</var>, to modify the extracted operands so
+they will be output differently.
+</p>
+<p>Here the argument <var>opvec</var> is the vector containing the operands
+extracted from <var>insn</var>, and <var>noperands</var> is the number of
+elements of the vector which contain meaningful data for this insn.
+The contents of this vector are what will be used to convert the insn
+template into assembler code, so you can change the assembler output
+by changing the contents of the vector.
+</p>
+<p>This macro is useful when various assembler syntaxes share a single
+file of instruction patterns; by defining this macro differently, you
+can cause a large class of instructions to be output differently (such
+as with rearranged operands).  Naturally, variations in assembler
+syntax affecting individual insn patterns ought to be handled by
+writing conditional output routines in those patterns.
+</p>
+<p>If this macro is not defined, it is equivalent to a null statement.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fASM_005fFINAL_005fPOSTSCAN_005fINSN"></a>Target Hook: <em>void</em> <strong>TARGET_ASM_FINAL_POSTSCAN_INSN</strong> <em>(FILE *<var>file</var>, rtx_insn *<var>insn</var>, rtx *<var>opvec</var>, int <var>noperands</var>)</em></dt>
+<dd><p>If defined, this target hook is a function which is executed just after the
+output of assembler code for <var>insn</var>, to change the mode of the assembler
+if necessary.
+</p>
+<p>Here the argument <var>opvec</var> is the vector containing the operands
+extracted from <var>insn</var>, and <var>noperands</var> is the number of
+elements of the vector which contain meaningful data for this insn.
+The contents of this vector are what was used to convert the insn
+template into assembler code, so you can change the assembler mode
+by checking the contents of the vector.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-PRINT_005fOPERAND"></a>Macro: <strong>PRINT_OPERAND</strong> <em>(<var>stream</var>, <var>x</var>, <var>code</var>)</em></dt>
+<dd><p>A C compound statement to output to stdio stream <var>stream</var> the
+assembler syntax for an instruction operand <var>x</var>.  <var>x</var> is an
+RTL expression.
+</p>
+<p><var>code</var> is a value that can be used to specify one of several ways
+of printing the operand.  It is used when identical operands must be
+printed differently depending on the context.  <var>code</var> comes from
+the &lsquo;<samp>%</samp>&rsquo; specification that was used to request printing of the
+operand.  If the specification was just &lsquo;<samp>%<var>digit</var></samp>&rsquo; then
+<var>code</var> is 0; if the specification was &lsquo;<samp>%<var>ltr</var>
+<var>digit</var></samp>&rsquo; then <var>code</var> is the ASCII code for <var>ltr</var>.
+</p>
+<a name="index-reg_005fnames-1"></a>
+<p>If <var>x</var> is a register, this macro should print the register&rsquo;s name.
+The names can be found in an array <code>reg_names</code> whose type is
+<code>char *[]</code>.  <code>reg_names</code> is initialized from
+<code>REGISTER_NAMES</code>.
+</p>
+<p>When the machine description has a specification &lsquo;<samp>%<var>punct</var></samp>&rsquo;
+(a &lsquo;<samp>%</samp>&rsquo; followed by a punctuation character), this macro is called
+with a null pointer for <var>x</var> and the punctuation character for
+<var>code</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-PRINT_005fOPERAND_005fPUNCT_005fVALID_005fP"></a>Macro: <strong>PRINT_OPERAND_PUNCT_VALID_P</strong> <em>(<var>code</var>)</em></dt>
+<dd><p>A C expression which evaluates to true if <var>code</var> is a valid
+punctuation character for use in the <code>PRINT_OPERAND</code> macro.  If
+<code>PRINT_OPERAND_PUNCT_VALID_P</code> is not defined, it means that no
+punctuation characters (except for the standard one, &lsquo;<samp>%</samp>&rsquo;) are used
+in this way.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-PRINT_005fOPERAND_005fADDRESS"></a>Macro: <strong>PRINT_OPERAND_ADDRESS</strong> <em>(<var>stream</var>, <var>x</var>)</em></dt>
+<dd><p>A C compound statement to output to stdio stream <var>stream</var> the
+assembler syntax for an instruction operand that is a memory reference
+whose address is <var>x</var>.  <var>x</var> is an RTL expression.
+</p>
+<a name="index-TARGET_005fENCODE_005fSECTION_005fINFO-usage"></a>
+<p>On some machines, the syntax for a symbolic address depends on the
+section that the address refers to.  On these machines, define the hook
+<code>TARGET_ENCODE_SECTION_INFO</code> to store the information into the
+<code>symbol_ref</code>, and then check for it here.  See <a href="Assembler-Format.html#Assembler-Format">Assembler Format</a>.
+</p></dd></dl>
+
+<a name="index-dbr_005fsequence_005flength"></a>
+<dl>
+<dt><a name="index-DBR_005fOUTPUT_005fSEQEND"></a>Macro: <strong>DBR_OUTPUT_SEQEND</strong> <em>(<var>file</var>)</em></dt>
+<dd><p>A C statement, to be executed after all slot-filler instructions have
+been output.  If necessary, call <code>dbr_sequence_length</code> to
+determine the number of slots filled in a sequence (zero if not
+currently outputting a sequence), to decide how many no-ops to output,
+or whatever.
+</p>
+<p>Don&rsquo;t define this macro if it has nothing to do, but it is helpful in
+reading assembly output if the extent of the delay sequence is made
+explicit (e.g. with white space).
+</p></dd></dl>
+
+<a name="index-final_005fsequence"></a>
+<p>Note that output routines for instructions with delay slots must be
+prepared to deal with not being output as part of a sequence
+(i.e. when the scheduling pass is not run, or when no slot fillers could be
+found.)  The variable <code>final_sequence</code> is null when not
+processing a sequence, otherwise it contains the <code>sequence</code> rtx
+being output.
+</p>
+<a name="index-asm_005ffprintf"></a>
+<dl>
+<dt><a name="index-REGISTER_005fPREFIX"></a>Macro: <strong>REGISTER_PREFIX</strong></dt>
+<dt><a name="index-LOCAL_005fLABEL_005fPREFIX"></a>Macro: <strong>LOCAL_LABEL_PREFIX</strong></dt>
+<dt><a name="index-USER_005fLABEL_005fPREFIX"></a>Macro: <strong>USER_LABEL_PREFIX</strong></dt>
+<dt><a name="index-IMMEDIATE_005fPREFIX"></a>Macro: <strong>IMMEDIATE_PREFIX</strong></dt>
+<dd><p>If defined, C string expressions to be used for the &lsquo;<samp>%R</samp>&rsquo;, &lsquo;<samp>%L</samp>&rsquo;,
+&lsquo;<samp>%U</samp>&rsquo;, and &lsquo;<samp>%I</samp>&rsquo; options of <code>asm_fprintf</code> (see
+<samp>final.c</samp>).  These are useful when a single <samp>md</samp> file must
+support multiple assembler formats.  In that case, the various <samp>tm.h</samp>
+files can define these macros differently.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-ASM_005fFPRINTF_005fEXTENSIONS"></a>Macro: <strong>ASM_FPRINTF_EXTENSIONS</strong> <em>(<var>file</var>, <var>argptr</var>, <var>format</var>)</em></dt>
+<dd><p>If defined this macro should expand to a series of <code>case</code>
+statements which will be parsed inside the <code>switch</code> statement of
+the <code>asm_fprintf</code> function.  This allows targets to define extra
+printf formats which may useful when generating their assembler
+statements.  Note that uppercase letters are reserved for future
+generic extensions to asm_fprintf, and so are not available to target
+specific code.  The output file is given by the parameter <var>file</var>.
+The varargs input pointer is <var>argptr</var> and the rest of the format
+string, starting the character after the one that is being switched
+upon, is pointed to by <var>format</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-ASSEMBLER_005fDIALECT"></a>Macro: <strong>ASSEMBLER_DIALECT</strong></dt>
+<dd><p>If your target supports multiple dialects of assembler language (such as
+different opcodes), define this macro as a C expression that gives the
+numeric index of the assembler language dialect to use, with zero as the
+first variant.
+</p>
+<p>If this macro is defined, you may use constructs of the form
+</p><div class="smallexample">
+<pre class="smallexample">&lsquo;<samp>{option0|option1|option2&hellip;}</samp>&rsquo;
+</pre></div>
+<p>in the output templates of patterns (see <a href="Output-Template.html#Output-Template">Output Template</a>) or in the
+first argument of <code>asm_fprintf</code>.  This construct outputs
+&lsquo;<samp>option0</samp>&rsquo;, &lsquo;<samp>option1</samp>&rsquo;, &lsquo;<samp>option2</samp>&rsquo;, etc., if the value of
+<code>ASSEMBLER_DIALECT</code> is zero, one, two, etc.  Any special characters
+within these strings retain their usual meaning.  If there are fewer
+alternatives within the braces than the value of
+<code>ASSEMBLER_DIALECT</code>, the construct outputs nothing. If it&rsquo;s needed
+to print curly braces or &lsquo;<samp>|</samp>&rsquo; character in assembler output directly,
+&lsquo;<samp>%{</samp>&rsquo;, &lsquo;<samp>%}</samp>&rsquo; and &lsquo;<samp>%|</samp>&rsquo; can be used.
+</p>
+<p>If you do not define this macro, the characters &lsquo;<samp>{</samp>&rsquo;, &lsquo;<samp>|</samp>&rsquo; and
+&lsquo;<samp>}</samp>&rsquo; do not have any special meaning when used in templates or
+operands to <code>asm_fprintf</code>.
+</p>
+<p>Define the macros <code>REGISTER_PREFIX</code>, <code>LOCAL_LABEL_PREFIX</code>,
+<code>USER_LABEL_PREFIX</code> and <code>IMMEDIATE_PREFIX</code> if you can express
+the variations in assembler language syntax with that mechanism.  Define
+<code>ASSEMBLER_DIALECT</code> and use the &lsquo;<samp>{option0|option1}</samp>&rsquo; syntax
+if the syntax variant are larger and involve such things as different
+opcodes or operand order.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-ASM_005fOUTPUT_005fREG_005fPUSH"></a>Macro: <strong>ASM_OUTPUT_REG_PUSH</strong> <em>(<var>stream</var>, <var>regno</var>)</em></dt>
+<dd><p>A C expression to output to <var>stream</var> some assembler code
+which will push hard register number <var>regno</var> onto the stack.
+The code need not be optimal, since this macro is used only when
+profiling.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-ASM_005fOUTPUT_005fREG_005fPOP"></a>Macro: <strong>ASM_OUTPUT_REG_POP</strong> <em>(<var>stream</var>, <var>regno</var>)</em></dt>
+<dd><p>A C expression to output to <var>stream</var> some assembler code
+which will pop hard register number <var>regno</var> off of the stack.
+The code need not be optimal, since this macro is used only when
+profiling.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Dispatch-Tables.html#Dispatch-Tables" accesskey="n" rel="next">Dispatch Tables</a>, Previous: <a href="Macros-for-Initialization.html#Macros-for-Initialization" accesskey="p" rel="prev">Macros for Initialization</a>, Up: <a href="Assembler-Format.html#Assembler-Format" accesskey="u" rel="up">Assembler Format</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

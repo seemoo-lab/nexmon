@@ -1,0 +1,126 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Tracepoint Variables</title>
+
+<meta name="description" content="Debugging with GDB: Tracepoint Variables">
+<meta name="keywords" content="Debugging with GDB: Tracepoint Variables">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Tracepoints.html#Tracepoints" rel="up" title="Tracepoints">
+<link href="Trace-Files.html#Trace-Files" rel="next" title="Trace Files">
+<link href="save-tracepoints.html#save-tracepoints" rel="prev" title="save tracepoints">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Tracepoint-Variables"></a>
+<div class="header">
+<p>
+Next: <a href="Trace-Files.html#Trace-Files" accesskey="n" rel="next">Trace Files</a>, Previous: <a href="Analyze-Collected-Data.html#Analyze-Collected-Data" accesskey="p" rel="prev">Analyze Collected Data</a>, Up: <a href="Tracepoints.html#Tracepoints" accesskey="u" rel="up">Tracepoints</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Convenience-Variables-for-Tracepoints"></a>
+<h3 class="section">13.3 Convenience Variables for Tracepoints</h3>
+<a name="index-tracepoint-variables"></a>
+<a name="index-convenience-variables-for-tracepoints"></a>
+
+<dl compact="compact">
+<dd><a name="index-_0024trace_005fframe"></a>
+</dd>
+<dt><code>(int) $trace_frame</code></dt>
+<dd><p>The current trace snapshot (a.k.a. <em>frame</em>) number, or -1 if no
+snapshot is selected.
+</p>
+<a name="index-_0024tracepoint"></a>
+</dd>
+<dt><code>(int) $tracepoint</code></dt>
+<dd><p>The tracepoint for the current trace snapshot.
+</p>
+<a name="index-_0024trace_005fline"></a>
+</dd>
+<dt><code>(int) $trace_line</code></dt>
+<dd><p>The line number for the current trace snapshot.
+</p>
+<a name="index-_0024trace_005ffile"></a>
+</dd>
+<dt><code>(char []) $trace_file</code></dt>
+<dd><p>The source file for the current trace snapshot.
+</p>
+<a name="index-_0024trace_005ffunc"></a>
+</dd>
+<dt><code>(char []) $trace_func</code></dt>
+<dd><p>The name of the function containing <code>$tracepoint</code>.
+</p></dd>
+</dl>
+
+<p>Note: <code>$trace_file</code> is not suitable for use in <code>printf</code>,
+use <code>output</code> instead.
+</p>
+<p>Here&rsquo;s a simple example of using these convenience variables for
+stepping through all the trace snapshots and printing some of their
+data.  Note that these are not the same as trace state variables,
+which are managed by the target.
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) <b>tfind start</b>
+
+(gdb) <b>while $trace_frame != -1</b>
+&gt; output $trace_file
+&gt; printf &quot;, line %d (tracepoint #%d)\n&quot;, $trace_line, $tracepoint
+&gt; tfind
+&gt; end
+</pre></div>
+
+
+
+
+</body>
+</html>

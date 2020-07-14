@@ -1,0 +1,195 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): AMD GCN Function Attributes</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): AMD GCN Function Attributes">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): AMD GCN Function Attributes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Function-Attributes.html#Function-Attributes" rel="up" title="Function Attributes">
+<link href="ARC-Function-Attributes.html#ARC-Function-Attributes" rel="next" title="ARC Function Attributes">
+<link href="AArch64-Function-Attributes.html#AArch64-Function-Attributes" rel="prev" title="AArch64 Function Attributes">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="AMD-GCN-Function-Attributes"></a>
+<div class="header">
+<p>
+Next: <a href="ARC-Function-Attributes.html#ARC-Function-Attributes" accesskey="n" rel="next">ARC Function Attributes</a>, Previous: <a href="AArch64-Function-Attributes.html#AArch64-Function-Attributes" accesskey="p" rel="prev">AArch64 Function Attributes</a>, Up: <a href="Function-Attributes.html#Function-Attributes" accesskey="u" rel="up">Function Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="AMD-GCN-Function-Attributes-1"></a>
+<h4 class="subsection">6.33.3 AMD GCN Function Attributes</h4>
+
+<p>These function attributes are supported by the AMD GCN back end:
+</p>
+<dl compact="compact">
+<dt><code>amdgpu_hsa_kernel</code></dt>
+<dd><a name="index-amdgpu_005fhsa_005fkernel-function-attribute_002c-AMD-GCN"></a>
+<p>This attribute indicates that the corresponding function should be compiled as
+a kernel function, that is an entry point that can be invoked from the host
+via the HSA runtime library.  By default functions are only callable only from
+other GCN functions.
+</p>
+<p>This attribute is implicitly applied to any function named <code>main</code>, using
+default parameters.
+</p>
+<p>Kernel functions may return an integer value, which will be written to a
+conventional place within the HSA &quot;kernargs&quot; region.
+</p>
+<p>The attribute parameters configure what values are passed into the kernel
+function by the GPU drivers, via the initial register state.  Some values are
+used by the compiler, and therefore forced on.  Enabling other options may
+break assumptions in the compiler and/or run-time libraries.
+</p>
+<dl compact="compact">
+<dt><code>private_segment_buffer</code></dt>
+<dd><p>Set <code>enable_sgpr_private_segment_buffer</code> flag.  Always on (required to
+locate the stack).
+</p>
+</dd>
+<dt><code>dispatch_ptr</code></dt>
+<dd><p>Set <code>enable_sgpr_dispatch_ptr</code> flag.  Always on (required to locate the
+launch dimensions).
+</p>
+</dd>
+<dt><code>queue_ptr</code></dt>
+<dd><p>Set <code>enable_sgpr_queue_ptr</code> flag.  Always on (required to convert address
+spaces).
+</p>
+</dd>
+<dt><code>kernarg_segment_ptr</code></dt>
+<dd><p>Set <code>enable_sgpr_kernarg_segment_ptr</code> flag.  Always on (required to
+locate the kernel arguments, &quot;kernargs&quot;).
+</p>
+</dd>
+<dt><code>dispatch_id</code></dt>
+<dd><p>Set <code>enable_sgpr_dispatch_id</code> flag.
+</p>
+</dd>
+<dt><code>flat_scratch_init</code></dt>
+<dd><p>Set <code>enable_sgpr_flat_scratch_init</code> flag.
+</p>
+</dd>
+<dt><code>private_segment_size</code></dt>
+<dd><p>Set <code>enable_sgpr_private_segment_size</code> flag.
+</p>
+</dd>
+<dt><code>grid_workgroup_count_X</code></dt>
+<dd><p>Set <code>enable_sgpr_grid_workgroup_count_x</code> flag.  Always on (required to
+use OpenACC/OpenMP).
+</p>
+</dd>
+<dt><code>grid_workgroup_count_Y</code></dt>
+<dd><p>Set <code>enable_sgpr_grid_workgroup_count_y</code> flag.
+</p>
+</dd>
+<dt><code>grid_workgroup_count_Z</code></dt>
+<dd><p>Set <code>enable_sgpr_grid_workgroup_count_z</code> flag.
+</p>
+</dd>
+<dt><code>workgroup_id_X</code></dt>
+<dd><p>Set <code>enable_sgpr_workgroup_id_x</code> flag.
+</p>
+</dd>
+<dt><code>workgroup_id_Y</code></dt>
+<dd><p>Set <code>enable_sgpr_workgroup_id_y</code> flag.
+</p>
+</dd>
+<dt><code>workgroup_id_Z</code></dt>
+<dd><p>Set <code>enable_sgpr_workgroup_id_z</code> flag.
+</p>
+</dd>
+<dt><code>workgroup_info</code></dt>
+<dd><p>Set <code>enable_sgpr_workgroup_info</code> flag.
+</p>
+</dd>
+<dt><code>private_segment_wave_offset</code></dt>
+<dd><p>Set <code>enable_sgpr_private_segment_wave_byte_offset</code> flag.  Always on
+(required to locate the stack).
+</p>
+</dd>
+<dt><code>work_item_id_X</code></dt>
+<dd><p>Set <code>enable_vgpr_workitem_id</code> parameter.  Always on (can&rsquo;t be disabled).
+</p>
+</dd>
+<dt><code>work_item_id_Y</code></dt>
+<dd><p>Set <code>enable_vgpr_workitem_id</code> parameter.  Always on (required to enable
+vectorization.)
+</p>
+</dd>
+<dt><code>work_item_id_Z</code></dt>
+<dd><p>Set <code>enable_vgpr_workitem_id</code> parameter.  Always on (required to use
+OpenACC/OpenMP).
+</p>
+</dd>
+</dl>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="ARC-Function-Attributes.html#ARC-Function-Attributes" accesskey="n" rel="next">ARC Function Attributes</a>, Previous: <a href="AArch64-Function-Attributes.html#AArch64-Function-Attributes" accesskey="p" rel="prev">AArch64 Function Attributes</a>, Up: <a href="Function-Attributes.html#Function-Attributes" accesskey="u" rel="up">Function Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

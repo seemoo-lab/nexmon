@@ -1,0 +1,339 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Sequence iterators</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Sequence iterators">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Sequence iterators">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="GIMPLE.html#GIMPLE" rel="up" title="GIMPLE">
+<link href="Adding-a-new-GIMPLE-statement-code.html#Adding-a-new-GIMPLE-statement-code" rel="next" title="Adding a new GIMPLE statement code">
+<link href="GIMPLE-sequences.html#GIMPLE-sequences" rel="prev" title="GIMPLE sequences">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Sequence-iterators"></a>
+<div class="header">
+<p>
+Next: <a href="Adding-a-new-GIMPLE-statement-code.html#Adding-a-new-GIMPLE-statement-code" accesskey="n" rel="next">Adding a new GIMPLE statement code</a>, Previous: <a href="GIMPLE-sequences.html#GIMPLE-sequences" accesskey="p" rel="prev">GIMPLE sequences</a>, Up: <a href="GIMPLE.html#GIMPLE" accesskey="u" rel="up">GIMPLE</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Sequence-iterators-1"></a>
+<h3 class="section">12.10 Sequence iterators</h3>
+<a name="index-Sequence-iterators"></a>
+
+<p>Sequence iterators are convenience constructs for iterating
+through statements in a sequence.  Given a sequence <code>SEQ</code>, here is
+a typical use of gimple sequence iterators:
+</p>
+<div class="smallexample">
+<pre class="smallexample">gimple_stmt_iterator gsi;
+
+for (gsi = gsi_start (seq); !gsi_end_p (gsi); gsi_next (&amp;gsi))
+  {
+    gimple g = gsi_stmt (gsi);
+    /* Do something with gimple statement <code>G</code>.  */
+  }
+</pre></div>
+
+<p>Backward iterations are possible:
+</p>
+<div class="smallexample">
+<pre class="smallexample">        for (gsi = gsi_last (seq); !gsi_end_p (gsi); gsi_prev (&amp;gsi))
+</pre></div>
+
+<p>Forward and backward iterations on basic blocks are possible with
+<code>gsi_start_bb</code> and <code>gsi_last_bb</code>.
+</p>
+<p>In the documentation below we sometimes refer to enum
+<code>gsi_iterator_update</code>.  The valid options for this enumeration are:
+</p>
+<ul>
+<li> <code>GSI_NEW_STMT</code>
+Only valid when a single statement is added.  Move the iterator to it.
+
+</li><li> <code>GSI_SAME_STMT</code>
+Leave the iterator at the same statement.
+
+</li><li> <code>GSI_CONTINUE_LINKING</code>
+Move iterator to whatever position is suitable for linking other
+statements in the same direction.
+</li></ul>
+
+<p>Below is a list of the functions used to manipulate and use
+statement iterators.
+</p>
+<dl>
+<dt><a name="index-gsi_005fstart"></a>GIMPLE function: <em>gimple_stmt_iterator</em> <strong>gsi_start</strong> <em>(gimple_seq seq)</em></dt>
+<dd><p>Return a new iterator pointing to the sequence <code>SEQ</code>&rsquo;s first
+statement.  If <code>SEQ</code> is empty, the iterator&rsquo;s basic block is <code>NULL</code>.
+Use <code>gsi_start_bb</code> instead when the iterator needs to always have
+the correct basic block set.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005fstart_005fbb"></a>GIMPLE function: <em>gimple_stmt_iterator</em> <strong>gsi_start_bb</strong> <em>(basic_block bb)</em></dt>
+<dd><p>Return a new iterator pointing to the first statement in basic
+block <code>BB</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005flast"></a>GIMPLE function: <em>gimple_stmt_iterator</em> <strong>gsi_last</strong> <em>(gimple_seq seq)</em></dt>
+<dd><p>Return a new iterator initially pointing to the last statement of
+sequence <code>SEQ</code>.  If <code>SEQ</code> is empty, the iterator&rsquo;s basic block is
+<code>NULL</code>.  Use <code>gsi_last_bb</code> instead when the iterator needs to always
+have the correct basic block set.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005flast_005fbb"></a>GIMPLE function: <em>gimple_stmt_iterator</em> <strong>gsi_last_bb</strong> <em>(basic_block bb)</em></dt>
+<dd><p>Return a new iterator pointing to the last statement in basic
+block <code>BB</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005fend_005fp"></a>GIMPLE function: <em>bool</em> <strong>gsi_end_p</strong> <em>(gimple_stmt_iterator i)</em></dt>
+<dd><p>Return <code>TRUE</code> if at the end of <code>I</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005fone_005fbefore_005fend_005fp"></a>GIMPLE function: <em>bool</em> <strong>gsi_one_before_end_p</strong> <em>(gimple_stmt_iterator i)</em></dt>
+<dd><p>Return <code>TRUE</code> if we&rsquo;re one statement before the end of <code>I</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005fnext"></a>GIMPLE function: <em>void</em> <strong>gsi_next</strong> <em>(gimple_stmt_iterator *i)</em></dt>
+<dd><p>Advance the iterator to the next gimple statement.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005fprev"></a>GIMPLE function: <em>void</em> <strong>gsi_prev</strong> <em>(gimple_stmt_iterator *i)</em></dt>
+<dd><p>Advance the iterator to the previous gimple statement.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005fstmt"></a>GIMPLE function: <em>gimple</em> <strong>gsi_stmt</strong> <em>(gimple_stmt_iterator i)</em></dt>
+<dd><p>Return the current stmt.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005fafter_005flabels"></a>GIMPLE function: <em>gimple_stmt_iterator</em> <strong>gsi_after_labels</strong> <em>(basic_block bb)</em></dt>
+<dd><p>Return a block statement iterator that points to the first
+non-label statement in block <code>BB</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005fstmt_005fptr"></a>GIMPLE function: <em>gimple *</em> <strong>gsi_stmt_ptr</strong> <em>(gimple_stmt_iterator *i)</em></dt>
+<dd><p>Return a pointer to the current stmt.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005fbb"></a>GIMPLE function: <em>basic_block</em> <strong>gsi_bb</strong> <em>(gimple_stmt_iterator i)</em></dt>
+<dd><p>Return the basic block associated with this iterator.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005fseq"></a>GIMPLE function: <em>gimple_seq</em> <strong>gsi_seq</strong> <em>(gimple_stmt_iterator i)</em></dt>
+<dd><p>Return the sequence associated with this iterator.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005fremove"></a>GIMPLE function: <em>void</em> <strong>gsi_remove</strong> <em>(gimple_stmt_iterator *i, bool remove_eh_info)</em></dt>
+<dd><p>Remove the current stmt from the sequence.  The iterator is
+updated to point to the next statement.  When <code>REMOVE_EH_INFO</code> is
+true we remove the statement pointed to by iterator <code>I</code> from the <code>EH</code>
+tables.  Otherwise we do not modify the <code>EH</code> tables.  Generally,
+<code>REMOVE_EH_INFO</code> should be true when the statement is going to be
+removed from the <code>IL</code> and not reinserted elsewhere.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005flink_005fseq_005fbefore"></a>GIMPLE function: <em>void</em> <strong>gsi_link_seq_before</strong> <em>(gimple_stmt_iterator *i, gimple_seq seq, enum gsi_iterator_update mode)</em></dt>
+<dd><p>Links the sequence of statements <code>SEQ</code> before the statement pointed
+by iterator <code>I</code>.  <code>MODE</code> indicates what to do with the iterator
+after insertion (see <code>enum gsi_iterator_update</code> above).
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005flink_005fbefore"></a>GIMPLE function: <em>void</em> <strong>gsi_link_before</strong> <em>(gimple_stmt_iterator *i, gimple g, enum gsi_iterator_update mode)</em></dt>
+<dd><p>Links statement <code>G</code> before the statement pointed-to by iterator <code>I</code>.
+Updates iterator <code>I</code> according to <code>MODE</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005flink_005fseq_005fafter"></a>GIMPLE function: <em>void</em> <strong>gsi_link_seq_after</strong> <em>(gimple_stmt_iterator *i, gimple_seq seq, enum gsi_iterator_update mode)</em></dt>
+<dd><p>Links sequence <code>SEQ</code> after the statement pointed-to by iterator <code>I</code>.
+<code>MODE</code> is as in <code>gsi_insert_after</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005flink_005fafter"></a>GIMPLE function: <em>void</em> <strong>gsi_link_after</strong> <em>(gimple_stmt_iterator *i, gimple g, enum gsi_iterator_update mode)</em></dt>
+<dd><p>Links statement <code>G</code> after the statement pointed-to by iterator <code>I</code>.
+<code>MODE</code> is as in <code>gsi_insert_after</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005fsplit_005fseq_005fafter"></a>GIMPLE function: <em>gimple_seq</em> <strong>gsi_split_seq_after</strong> <em>(gimple_stmt_iterator i)</em></dt>
+<dd><p>Move all statements in the sequence after <code>I</code> to a new sequence.
+Return this new sequence.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005fsplit_005fseq_005fbefore"></a>GIMPLE function: <em>gimple_seq</em> <strong>gsi_split_seq_before</strong> <em>(gimple_stmt_iterator *i)</em></dt>
+<dd><p>Move all statements in the sequence before <code>I</code> to a new sequence.
+Return this new sequence.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005freplace"></a>GIMPLE function: <em>void</em> <strong>gsi_replace</strong> <em>(gimple_stmt_iterator *i, gimple stmt, bool update_eh_info)</em></dt>
+<dd><p>Replace the statement pointed-to by <code>I</code> to <code>STMT</code>.  If <code>UPDATE_EH_INFO</code>
+is true, the exception handling information of the original
+statement is moved to the new statement.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005finsert_005fbefore"></a>GIMPLE function: <em>void</em> <strong>gsi_insert_before</strong> <em>(gimple_stmt_iterator *i, gimple stmt, enum gsi_iterator_update mode)</em></dt>
+<dd><p>Insert statement <code>STMT</code> before the statement pointed-to by iterator
+<code>I</code>, update <code>STMT</code>&rsquo;s basic block and scan it for new operands.  <code>MODE</code>
+specifies how to update iterator <code>I</code> after insertion (see enum
+<code>gsi_iterator_update</code>).
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005finsert_005fseq_005fbefore"></a>GIMPLE function: <em>void</em> <strong>gsi_insert_seq_before</strong> <em>(gimple_stmt_iterator *i, gimple_seq seq, enum gsi_iterator_update mode)</em></dt>
+<dd><p>Like <code>gsi_insert_before</code>, but for all the statements in <code>SEQ</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005finsert_005fafter"></a>GIMPLE function: <em>void</em> <strong>gsi_insert_after</strong> <em>(gimple_stmt_iterator *i, gimple stmt, enum gsi_iterator_update mode)</em></dt>
+<dd><p>Insert statement <code>STMT</code> after the statement pointed-to by iterator
+<code>I</code>, update <code>STMT</code>&rsquo;s basic block and scan it for new operands.  <code>MODE</code>
+specifies how to update iterator <code>I</code> after insertion (see enum
+<code>gsi_iterator_update</code>).
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005finsert_005fseq_005fafter"></a>GIMPLE function: <em>void</em> <strong>gsi_insert_seq_after</strong> <em>(gimple_stmt_iterator *i, gimple_seq seq, enum gsi_iterator_update mode)</em></dt>
+<dd><p>Like <code>gsi_insert_after</code>, but for all the statements in <code>SEQ</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005ffor_005fstmt"></a>GIMPLE function: <em>gimple_stmt_iterator</em> <strong>gsi_for_stmt</strong> <em>(gimple stmt)</em></dt>
+<dd><p>Finds iterator for <code>STMT</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005fmove_005fafter"></a>GIMPLE function: <em>void</em> <strong>gsi_move_after</strong> <em>(gimple_stmt_iterator *from, gimple_stmt_iterator *to)</em></dt>
+<dd><p>Move the statement at <code>FROM</code> so it comes right after the statement
+at <code>TO</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005fmove_005fbefore"></a>GIMPLE function: <em>void</em> <strong>gsi_move_before</strong> <em>(gimple_stmt_iterator *from, gimple_stmt_iterator *to)</em></dt>
+<dd><p>Move the statement at <code>FROM</code> so it comes right before the statement
+at <code>TO</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005fmove_005fto_005fbb_005fend"></a>GIMPLE function: <em>void</em> <strong>gsi_move_to_bb_end</strong> <em>(gimple_stmt_iterator *from, basic_block bb)</em></dt>
+<dd><p>Move the statement at <code>FROM</code> to the end of basic block <code>BB</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005finsert_005fon_005fedge"></a>GIMPLE function: <em>void</em> <strong>gsi_insert_on_edge</strong> <em>(edge e, gimple stmt)</em></dt>
+<dd><p>Add <code>STMT</code> to the pending list of edge <code>E</code>.  No actual insertion is
+made until a call to <code>gsi_commit_edge_inserts</code>() is made.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005finsert_005fseq_005fon_005fedge"></a>GIMPLE function: <em>void</em> <strong>gsi_insert_seq_on_edge</strong> <em>(edge e, gimple_seq seq)</em></dt>
+<dd><p>Add the sequence of statements in <code>SEQ</code> to the pending list of edge
+<code>E</code>.  No actual insertion is made until a call to
+<code>gsi_commit_edge_inserts</code>() is made.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005finsert_005fon_005fedge_005fimmediate"></a>GIMPLE function: <em>basic_block</em> <strong>gsi_insert_on_edge_immediate</strong> <em>(edge e, gimple stmt)</em></dt>
+<dd><p>Similar to <code>gsi_insert_on_edge</code>+<code>gsi_commit_edge_inserts</code>.  If a new
+block has to be created, it is returned.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005fcommit_005fone_005fedge_005finsert"></a>GIMPLE function: <em>void</em> <strong>gsi_commit_one_edge_insert</strong> <em>(edge e, basic_block *new_bb)</em></dt>
+<dd><p>Commit insertions pending at edge <code>E</code>.  If a new block is created,
+set <code>NEW_BB</code> to this block, otherwise set it to <code>NULL</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gsi_005fcommit_005fedge_005finserts"></a>GIMPLE function: <em>void</em> <strong>gsi_commit_edge_inserts</strong> <em>(void)</em></dt>
+<dd><p>This routine will commit all pending edge insertions, creating
+any new basic blocks which are necessary.
+</p></dd></dl>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Adding-a-new-GIMPLE-statement-code.html#Adding-a-new-GIMPLE-statement-code" accesskey="n" rel="next">Adding a new GIMPLE statement code</a>, Previous: <a href="GIMPLE-sequences.html#GIMPLE-sequences" accesskey="p" rel="prev">GIMPLE sequences</a>, Up: <a href="GIMPLE.html#GIMPLE" accesskey="u" rel="up">GIMPLE</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

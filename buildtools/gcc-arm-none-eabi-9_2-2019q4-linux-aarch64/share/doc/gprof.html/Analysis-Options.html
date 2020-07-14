@@ -1,0 +1,181 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the gprof profiler of the GNU system.
+
+Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU gprof: Analysis Options</title>
+
+<meta name="description" content="GNU gprof: Analysis Options">
+<meta name="keywords" content="GNU gprof: Analysis Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Invoking.html#Invoking" rel="up" title="Invoking">
+<link href="Miscellaneous-Options.html#Miscellaneous-Options" rel="next" title="Miscellaneous Options">
+<link href="Output-Options.html#Output-Options" rel="prev" title="Output Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Analysis-Options"></a>
+<div class="header">
+<p>
+Next: <a href="Miscellaneous-Options.html#Miscellaneous-Options" accesskey="n" rel="next">Miscellaneous Options</a>, Previous: <a href="Output-Options.html#Output-Options" accesskey="p" rel="prev">Output Options</a>, Up: <a href="Invoking.html#Invoking" accesskey="u" rel="up">Invoking</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<hr>
+<a name="Analysis-Options-1"></a>
+<h3 class="section">4.2 Analysis Options</h3>
+
+<dl compact="compact">
+<dt><code>-a</code></dt>
+<dt><code>--no-static</code></dt>
+<dd><p>The &lsquo;<samp>-a</samp>&rsquo; option causes <code>gprof</code> to suppress the printing of
+statically declared (private) functions.  (These are functions whose
+names are not listed as global, and which are not visible outside the
+file/function/block where they were defined.)  Time spent in these
+functions, calls to/from them, etc., will all be attributed to the
+function that was loaded directly before it in the executable file.
+This option affects both the flat profile and the call graph.
+</p>
+</dd>
+<dt><code>-c</code></dt>
+<dt><code>--static-call-graph</code></dt>
+<dd><p>The &lsquo;<samp>-c</samp>&rsquo; option causes the call graph of the program to be
+augmented by a heuristic which examines the text space of the object
+file and identifies function calls in the binary machine code.
+Since normal call graph records are only generated when functions are
+entered, this option identifies children that could have been called,
+but never were.  Calls to functions that were not compiled with
+profiling enabled are also identified, but only if symbol table
+entries are present for them.
+Calls to dynamic library routines are typically <em>not</em> found
+by this option.
+Parents or children identified via this heuristic
+are indicated in the call graph with call counts of &lsquo;<samp>0</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>-D</code></dt>
+<dt><code>--ignore-non-functions</code></dt>
+<dd><p>The &lsquo;<samp>-D</samp>&rsquo; option causes <code>gprof</code> to ignore symbols which
+are not known to be functions.  This option will give more accurate
+profile data on systems where it is supported (Solaris and HPUX for
+example).
+</p>
+</dd>
+<dt><code>-k <var>from</var>/<var>to</var></code></dt>
+<dd><p>The &lsquo;<samp>-k</samp>&rsquo; option allows you to delete from the call graph any arcs from
+symbols matching symspec <var>from</var> to those matching symspec <var>to</var>.
+</p>
+</dd>
+<dt><code>-l</code></dt>
+<dt><code>--line</code></dt>
+<dd><p>The &lsquo;<samp>-l</samp>&rsquo; option enables line-by-line profiling, which causes
+histogram hits to be charged to individual source code lines,
+instead of functions.  This feature only works with programs compiled
+by older versions of the <code>gcc</code> compiler.  Newer versions of
+<code>gcc</code> are designed to work with the <code>gcov</code> tool instead.
+</p>
+<p>If the program was compiled with basic-block counting enabled,
+this option will also identify how many times each line of
+code was executed.
+While line-by-line profiling can help isolate where in a large function
+a program is spending its time, it also significantly increases
+the running time of <code>gprof</code>, and magnifies statistical
+inaccuracies.
+See <a href="Sampling-Error.html#Sampling-Error">Statistical Sampling Error</a>.
+</p>
+</dd>
+<dt><code>--inline-file-names</code></dt>
+<dd><p>This option causes <code>gprof</code> to print the source file after each
+symbol in both the flat profile and the call graph. The full path to the
+file is printed if used with the &lsquo;<samp>-L</samp>&rsquo; option.
+</p>
+</dd>
+<dt><code>-m <var>num</var></code></dt>
+<dt><code>--min-count=<var>num</var></code></dt>
+<dd><p>This option affects execution count output only.
+Symbols that are executed less than <var>num</var> times are suppressed.
+</p>
+</dd>
+<dt><code>-n<var>symspec</var></code></dt>
+<dt><code>--time=<var>symspec</var></code></dt>
+<dd><p>The &lsquo;<samp>-n</samp>&rsquo; option causes <code>gprof</code>, in its call graph analysis,
+to only propagate times for symbols matching <var>symspec</var>.
+</p>
+</dd>
+<dt><code>-N<var>symspec</var></code></dt>
+<dt><code>--no-time=<var>symspec</var></code></dt>
+<dd><p>The &lsquo;<samp>-n</samp>&rsquo; option causes <code>gprof</code>, in its call graph analysis,
+not to propagate times for symbols matching <var>symspec</var>.
+</p>
+</dd>
+<dt><code>-S<var>filename</var></code></dt>
+<dt><code>--external-symbol-table=<var>filename</var></code></dt>
+<dd><p>The &lsquo;<samp>-S</samp>&rsquo; option causes <code>gprof</code> to read an external symbol table
+file, such as <samp>/proc/kallsyms</samp>, rather than read the symbol table
+from the given object file (the default is <code>a.out</code>). This is useful
+for profiling kernel modules.
+</p>
+</dd>
+<dt><code>-z</code></dt>
+<dt><code>--display-unused-functions</code></dt>
+<dd><p>If you give the &lsquo;<samp>-z</samp>&rsquo; option, <code>gprof</code> will mention all
+functions in the flat profile, even those that were never called, and
+that had no time spent in them.  This is useful in conjunction with the
+&lsquo;<samp>-c</samp>&rsquo; option for discovering which routines were never called.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Miscellaneous-Options.html#Miscellaneous-Options" accesskey="n" rel="next">Miscellaneous Options</a>, Previous: <a href="Output-Options.html#Output-Options" accesskey="p" rel="prev">Output Options</a>, Up: <a href="Invoking.html#Invoking" accesskey="u" rel="up">Invoking</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+
+
+
+</body>
+</html>

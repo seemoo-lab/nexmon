@@ -1,0 +1,709 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: ARM Options</title>
+
+<meta name="description" content="Using as: ARM Options">
+<meta name="keywords" content="Using as: ARM Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="ARM_002dDependent.html#ARM_002dDependent" rel="up" title="ARM-Dependent">
+<link href="ARM-Syntax.html#ARM-Syntax" rel="next" title="ARM Syntax">
+<link href="ARM_002dDependent.html#ARM_002dDependent" rel="prev" title="ARM-Dependent">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="ARM-Options"></a>
+<div class="header">
+<p>
+Next: <a href="ARM-Syntax.html#ARM-Syntax" accesskey="n" rel="next">ARM Syntax</a>, Up: <a href="ARM_002dDependent.html#ARM_002dDependent" accesskey="u" rel="up">ARM-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Options-3"></a>
+<h4 class="subsection">9.4.1 Options</h4>
+<a name="index-ARM-options-_0028none_0029"></a>
+<a name="index-options-for-ARM-_0028none_0029"></a>
+
+<dl compact="compact">
+<dd>
+<a name="index-_002dmcpu_003d-command_002dline-option_002c-ARM"></a>
+</dd>
+<dt><code>-mcpu=<var>processor</var>[+<var>extension</var>&hellip;]</code></dt>
+<dd><p>This option specifies the target processor.  The assembler will issue an
+error message if an attempt is made to assemble an instruction which
+will not execute on the target processor.  The following processor names are
+recognized:
+<code>arm1</code>,
+<code>arm2</code>,
+<code>arm250</code>,
+<code>arm3</code>,
+<code>arm6</code>,
+<code>arm60</code>,
+<code>arm600</code>,
+<code>arm610</code>,
+<code>arm620</code>,
+<code>arm7</code>,
+<code>arm7m</code>,
+<code>arm7d</code>,
+<code>arm7dm</code>,
+<code>arm7di</code>,
+<code>arm7dmi</code>,
+<code>arm70</code>,
+<code>arm700</code>,
+<code>arm700i</code>,
+<code>arm710</code>,
+<code>arm710t</code>,
+<code>arm720</code>,
+<code>arm720t</code>,
+<code>arm740t</code>,
+<code>arm710c</code>,
+<code>arm7100</code>,
+<code>arm7500</code>,
+<code>arm7500fe</code>,
+<code>arm7t</code>,
+<code>arm7tdmi</code>,
+<code>arm7tdmi-s</code>,
+<code>arm8</code>,
+<code>arm810</code>,
+<code>strongarm</code>,
+<code>strongarm1</code>,
+<code>strongarm110</code>,
+<code>strongarm1100</code>,
+<code>strongarm1110</code>,
+<code>arm9</code>,
+<code>arm920</code>,
+<code>arm920t</code>,
+<code>arm922t</code>,
+<code>arm940t</code>,
+<code>arm9tdmi</code>,
+<code>fa526</code> (Faraday FA526 processor),
+<code>fa626</code> (Faraday FA626 processor),
+<code>arm9e</code>,
+<code>arm926e</code>,
+<code>arm926ej-s</code>,
+<code>arm946e-r0</code>,
+<code>arm946e</code>,
+<code>arm946e-s</code>,
+<code>arm966e-r0</code>,
+<code>arm966e</code>,
+<code>arm966e-s</code>,
+<code>arm968e-s</code>,
+<code>arm10t</code>,
+<code>arm10tdmi</code>,
+<code>arm10e</code>,
+<code>arm1020</code>,
+<code>arm1020t</code>,
+<code>arm1020e</code>,
+<code>arm1022e</code>,
+<code>arm1026ej-s</code>,
+<code>fa606te</code> (Faraday FA606TE processor),
+<code>fa616te</code> (Faraday FA616TE processor),
+<code>fa626te</code> (Faraday FA626TE processor),
+<code>fmp626</code> (Faraday FMP626 processor),
+<code>fa726te</code> (Faraday FA726TE processor),
+<code>arm1136j-s</code>,
+<code>arm1136jf-s</code>,
+<code>arm1156t2-s</code>,
+<code>arm1156t2f-s</code>,
+<code>arm1176jz-s</code>,
+<code>arm1176jzf-s</code>,
+<code>mpcore</code>,
+<code>mpcorenovfp</code>,
+<code>cortex-a5</code>,
+<code>cortex-a7</code>,
+<code>cortex-a8</code>,
+<code>cortex-a9</code>,
+<code>cortex-a15</code>,
+<code>cortex-a17</code>,
+<code>cortex-a32</code>,
+<code>cortex-a35</code>,
+<code>cortex-a53</code>,
+<code>cortex-a55</code>,
+<code>cortex-a57</code>,
+<code>cortex-a72</code>,
+<code>cortex-a73</code>,
+<code>cortex-a75</code>,
+<code>cortex-a76</code>,
+<code>cortex-a76ae</code>,
+<code>cortex-a77</code>,
+<code>ares</code>,
+<code>cortex-r4</code>,
+<code>cortex-r4f</code>,
+<code>cortex-r5</code>,
+<code>cortex-r7</code>,
+<code>cortex-r8</code>,
+<code>cortex-r52</code>,
+<code>cortex-m35p</code>,
+<code>cortex-m33</code>,
+<code>cortex-m23</code>,
+<code>cortex-m7</code>,
+<code>cortex-m4</code>,
+<code>cortex-m3</code>,
+<code>cortex-m1</code>,
+<code>cortex-m0</code>,
+<code>cortex-m0plus</code>,
+<code>exynos-m1</code>,
+<code>marvell-pj4</code>,
+<code>marvell-whitney</code>,
+<code>neoverse-n1</code>,
+<code>xgene1</code>,
+<code>xgene2</code>,
+<code>ep9312</code> (ARM920 with Cirrus Maverick coprocessor),
+<code>i80200</code> (Intel XScale processor)
+<code>iwmmxt</code> (Intel XScale processor with Wireless MMX technology coprocessor)
+and
+<code>xscale</code>.
+The special name <code>all</code> may be used to allow the
+assembler to accept instructions valid for any ARM processor.
+</p>
+<p>In addition to the basic instruction set, the assembler can be told to
+accept various extension mnemonics that extend the processor using the
+co-processor instruction space.  For example, <code>-mcpu=arm920+maverick</code>
+is equivalent to specifying <code>-mcpu=ep9312</code>.
+</p>
+<p>Multiple extensions may be specified, separated by a <code>+</code>.  The
+extensions should be specified in ascending alphabetical order.
+</p>
+<p>Some extensions may be restricted to particular architectures; this is
+documented in the list of extensions below.
+</p>
+<p>Extension mnemonics may also be removed from those the assembler accepts.
+This is done be prepending <code>no</code> to the option that adds the extension.
+Extensions that are removed should be listed after all extensions which have
+been added, again in ascending alphabetical order.  For example,
+<code>-mcpu=ep9312+nomaverick</code> is equivalent to specifying <code>-mcpu=arm920</code>.
+</p>
+
+<p>The following extensions are currently supported:
+<code>crc</code>
+<code>crypto</code> (Cryptography Extensions for v8-A architecture, implies <code>fp+simd</code>),
+<code>dotprod</code> (Dot Product Extensions for v8.2-A architecture, implies <code>fp+simd</code>),
+<code>fp</code> (Floating Point Extensions for v8-A architecture),
+<code>fp16</code> (FP16 Extensions for v8.2-A architecture, implies <code>fp</code>),
+<code>fp16fml</code> (FP16 Floating Point Multiplication Variant Extensions for v8.2-A architecture, implies <code>fp16</code>),
+<code>idiv</code> (Integer Divide Extensions for v7-A and v7-R architectures),
+<code>iwmmxt</code>,
+<code>iwmmxt2</code>,
+<code>xscale</code>,
+<code>maverick</code>,
+<code>mp</code> (Multiprocessing Extensions for v7-A and v7-R
+architectures),
+<code>os</code> (Operating System for v6M architecture),
+<code>predres</code> (Execution and Data Prediction Restriction Instruction for
+v8-A architectures, added by default from v8.5-A),
+<code>sb</code> (Speculation Barrier Instruction for v8-A architectures, added by
+default from v8.5-A),
+<code>sec</code> (Security Extensions for v6K and v7-A architectures),
+<code>simd</code> (Advanced SIMD Extensions for v8-A architecture, implies <code>fp</code>),
+<code>virt</code> (Virtualization Extensions for v7-A architecture, implies
+<code>idiv</code>),
+<code>pan</code> (Privileged Access Never Extensions for v8-A architecture),
+<code>ras</code> (Reliability, Availability and Serviceability extensions
+for v8-A architecture),
+<code>rdma</code> (ARMv8.1 Advanced SIMD extensions for v8-A architecture, implies
+<code>simd</code>)
+and
+<code>xscale</code>.
+</p>
+<a name="index-_002dmarch_003d-command_002dline-option_002c-ARM"></a>
+</dd>
+<dt><code>-march=<var>architecture</var>[+<var>extension</var>&hellip;]</code></dt>
+<dd><p>This option specifies the target architecture.  The assembler will issue
+an error message if an attempt is made to assemble an instruction which
+will not execute on the target architecture.  The following architecture
+names are recognized:
+<code>armv1</code>,
+<code>armv2</code>,
+<code>armv2a</code>,
+<code>armv2s</code>,
+<code>armv3</code>,
+<code>armv3m</code>,
+<code>armv4</code>,
+<code>armv4xm</code>,
+<code>armv4t</code>,
+<code>armv4txm</code>,
+<code>armv5</code>,
+<code>armv5t</code>,
+<code>armv5txm</code>,
+<code>armv5te</code>,
+<code>armv5texp</code>,
+<code>armv6</code>,
+<code>armv6j</code>,
+<code>armv6k</code>,
+<code>armv6z</code>,
+<code>armv6kz</code>,
+<code>armv6-m</code>,
+<code>armv6s-m</code>,
+<code>armv7</code>,
+<code>armv7-a</code>,
+<code>armv7ve</code>,
+<code>armv7-r</code>,
+<code>armv7-m</code>,
+<code>armv7e-m</code>,
+<code>armv8-a</code>,
+<code>armv8.1-a</code>,
+<code>armv8.2-a</code>,
+<code>armv8.3-a</code>,
+<code>armv8-r</code>,
+<code>armv8.4-a</code>,
+<code>armv8.5-a</code>,
+<code>armv8-m.base</code>,
+<code>armv8-m.main</code>,
+<code>armv8.1-m.main</code>,
+<code>iwmmxt</code>,
+<code>iwmmxt2</code>
+and
+<code>xscale</code>.
+If both <code>-mcpu</code> and
+<code>-march</code> are specified, the assembler will use
+the setting for <code>-mcpu</code>.
+</p>
+<p>The architecture option can be extended with a set extension options.  These
+extensions are context sensitive, i.e. the same extension may mean different
+things when used with different architectures.  When used together with a
+<code>-mfpu</code> option, the union of both feature enablement is taken.
+See their availability and meaning below:
+</p>
+<p>For <code>armv5te</code>, <code>armv5texp</code>, <code>armv5tej</code>, <code>armv6</code>, <code>armv6j</code>, <code>armv6k</code>, <code>armv6z</code>, <code>armv6kz</code>, <code>armv6zk</code>, <code>armv6t2</code>, <code>armv6kt2</code> and <code>armv6zt2</code>:
+</p>
+<p><code>+fp</code>: Enables VFPv2 instructions.
+<code>+nofp</code>: Disables all FPU instrunctions.
+</p>
+<p>For <code>armv7</code>:
+</p>
+<p><code>+fp</code>: Enables VFPv3 instructions with 16 double-word registers.
+<code>+nofp</code>: Disables all FPU instructions.
+</p>
+<p>For <code>armv7-a</code>:
+</p>
+<p><code>+fp</code>: Enables VFPv3 instructions with 16 double-word registers.
+<code>+vfpv3-d16</code>: Alias for <code>+fp</code>.
+<code>+vfpv3</code>: Enables VFPv3 instructions with 32 double-word registers.
+<code>+vfpv3-d16-fp16</code>: Enables VFPv3 with half precision floating-point
+conversion instructions and 16 double-word registers.
+<code>+vfpv3-fp16</code>: Enables VFPv3 with half precision floating-point conversion
+instructions and 32 double-word registers.
+<code>+vfpv4-d16</code>: Enables VFPv4 instructions with 16 double-word registers.
+<code>+vfpv4</code>: Enables VFPv4 instructions with 32 double-word registers.
+<code>+simd</code>: Enables VFPv3 and NEONv1 instructions with 32 double-word
+registers.
+<code>+neon</code>: Alias for <code>+simd</code>.
+<code>+neon-vfpv3</code>: Alias for <code>+simd</code>.
+<code>+neon-fp16</code>: Enables VFPv3, half precision floating-point conversion and
+NEONv1 instructions with 32 double-word registers.
+<code>+neon-vfpv4</code>: Enables VFPv4 and NEONv1 with Fused-MAC instructions and 32
+double-word registers.
+<code>+mp</code>: Enables Multiprocessing Extensions.
+<code>+sec</code>: Enables Security Extensions.
+<code>+nofp</code>: Disables all FPU and NEON instructions.
+<code>+nosimd</code>: Disables all NEON instructions.
+</p>
+<p>For <code>armv7ve</code>:
+</p>
+<p><code>+fp</code>: Enables VFPv4 instructions with 16 double-word registers.
+<code>+vfpv4-d16</code>: Alias for <code>+fp</code>.
+<code>+vfpv3-d16</code>: Enables VFPv3 instructions with 16 double-word registers.
+<code>+vfpv3</code>: Enables VFPv3 instructions with 32 double-word registers.
+<code>+vfpv3-d16-fp16</code>: Enables VFPv3 with half precision floating-point
+conversion instructions and 16 double-word registers.
+<code>+vfpv3-fp16</code>: Enables VFPv3 with half precision floating-point conversion
+instructions and 32 double-word registers.
+<code>+vfpv4</code>: Enables VFPv4 instructions with 32 double-word registers.
+<code>+simd</code>: Enables VFPv4 and NEONv1 with Fused-MAC instructions and 32
+double-word registers.
+<code>+neon-vfpv4</code>: Alias for <code>+simd</code>.
+<code>+neon</code>: Enables VFPv3 and NEONv1 instructions with 32 double-word
+registers.
+<code>+neon-vfpv3</code>: Alias for <code>+neon</code>.
+<code>+neon-fp16</code>: Enables VFPv3, half precision floating-point conversion and
+NEONv1 instructions with 32 double-word registers.
+double-word registers.
+<code>+nofp</code>: Disables all FPU and NEON instructions.
+<code>+nosimd</code>: Disables all NEON instructions.
+</p>
+<p>For <code>armv7-r</code>:
+</p>
+<p><code>+fp.sp</code>: Enables single-precision only VFPv3 instructions with 16
+double-word registers.
+<code>+vfpv3xd</code>: Alias for <code>+fp.sp</code>.
+<code>+fp</code>: Enables VFPv3 instructions with 16 double-word registers.
+<code>+vfpv3-d16</code>: Alias for <code>+fp</code>.
+<code>+vfpv3xd-fp16</code>: Enables single-precision only VFPv3 and half
+floating-point conversion instructions with 16 double-word registers.
+<code>+vfpv3-d16-fp16</code>: Enables VFPv3 and half precision floating-point
+conversion instructions with 16 double-word registers.
+<code>+idiv</code>: Enables integer division instructions in ARM mode.
+<code>+nofp</code>: Disables all FPU instructions.
+</p>
+<p>For <code>armv7e-m</code>:
+</p>
+<p><code>+fp</code>: Enables single-precision only VFPv4 instructions with 16
+double-word registers.
+<code>+vfpvf4-sp-d16</code>: Alias for <code>+fp</code>.
+<code>+fpv5</code>: Enables single-precision only VFPv5 instructions with 16
+double-word registers.
+<code>+fp.dp</code>: Enables VFPv5 instructions with 16 double-word registers.
+<code>+fpv5-d16&quot;</code>: Alias for <code>+fp.dp</code>.
+<code>+nofp</code>: Disables all FPU instructions.
+</p>
+<p>For <code>armv8-m.main</code>:
+</p>
+<p><code>+dsp</code>: Enables DSP Extension.
+<code>+fp</code>: Enables single-precision only VFPv5 instructions with 16
+double-word registers.
+<code>+fp.dp</code>: Enables VFPv5 instructions with 16 double-word registers.
+<code>+nofp</code>: Disables all FPU instructions.
+<code>+nodsp</code>: Disables DSP Extension.
+</p>
+<p>For <code>armv8.1-m.main</code>:
+</p>
+<p><code>+dsp</code>: Enables DSP Extension.
+<code>+fp</code>: Enables single and half precision scalar Floating Point Extensions
+for Armv8.1-M Mainline with 16 double-word registers.
+<code>+fp.dp</code>: Enables double precision scalar Floating Point Extensions for
+Armv8.1-M Mainline, implies <code>+fp</code>.
+<code>+mve</code>: Enables integer only M-profile Vector Extension for
+Armv8.1-M Mainline, implies <code>+dsp</code>.
+<code>+mve.fp</code>: Enables Floating Point M-profile Vector Extension for
+Armv8.1-M Mainline, implies <code>+mve</code> and <code>+fp</code>.
+<code>+nofp</code>: Disables all FPU instructions.
+<code>+nodsp</code>: Disables DSP Extension.
+<code>+nomve</code>: Disables all M-profile Vector Extensions.
+</p>
+<p>For <code>armv8-a</code>:
+</p>
+<p><code>+crc</code>: Enables CRC32 Extension.
+<code>+simd</code>: Enables VFP and NEON for Armv8-A.
+<code>+crypto</code>: Enables Cryptography Extensions for Armv8-A, implies
+<code>+simd</code>.
+<code>+sb</code>: Enables Speculation Barrier Instruction for Armv8-A.
+<code>+predres</code>: Enables Execution and Data Prediction Restriction Instruction
+for Armv8-A.
+<code>+nofp</code>: Disables all FPU, NEON and Cryptography Extensions.
+<code>+nocrypto</code>: Disables Cryptography Extensions.
+</p>
+<p>For <code>armv8.1-a</code>:
+</p>
+<p><code>+simd</code>: Enables VFP and NEON for Armv8.1-A.
+<code>+crypto</code>: Enables Cryptography Extensions for Armv8-A, implies
+<code>+simd</code>.
+<code>+sb</code>: Enables Speculation Barrier Instruction for Armv8-A.
+<code>+predres</code>: Enables Execution and Data Prediction Restriction Instruction
+for Armv8-A.
+<code>+nofp</code>: Disables all FPU, NEON and Cryptography Extensions.
+<code>+nocrypto</code>: Disables Cryptography Extensions.
+</p>
+<p>For <code>armv8.2-a</code> and <code>armv8.3-a</code>:
+</p>
+<p><code>+simd</code>: Enables VFP and NEON for Armv8.1-A.
+<code>+fp16</code>: Enables FP16 Extension for Armv8.2-A, implies <code>+simd</code>.
+<code>+fp16fml</code>: Enables FP16 Floating Point Multiplication Variant Extensions
+for Armv8.2-A, implies <code>+fp16</code>.
+<code>+crypto</code>: Enables Cryptography Extensions for Armv8-A, implies
+<code>+simd</code>.
+<code>+dotprod</code>: Enables Dot Product Extensions for Armv8.2-A, implies
+<code>+simd</code>.
+<code>+sb</code>: Enables Speculation Barrier Instruction for Armv8-A.
+<code>+predres</code>: Enables Execution and Data Prediction Restriction Instruction
+for Armv8-A.
+<code>+nofp</code>: Disables all FPU, NEON, Cryptography and Dot Product Extensions.
+<code>+nocrypto</code>: Disables Cryptography Extensions.
+</p>
+<p>For <code>armv8.4-a</code>:
+</p>
+<p><code>+simd</code>: Enables VFP and NEON for Armv8.1-A and Dot Product Extensions for
+Armv8.2-A.
+<code>+fp16</code>: Enables FP16 Floating Point and Floating Point Multiplication
+Variant Extensions for Armv8.2-A, implies <code>+simd</code>.
+<code>+crypto</code>: Enables Cryptography Extensions for Armv8-A, implies
+<code>+simd</code>.
+<code>+sb</code>: Enables Speculation Barrier Instruction for Armv8-A.
+<code>+predres</code>: Enables Execution and Data Prediction Restriction Instruction
+for Armv8-A.
+<code>+nofp</code>: Disables all FPU, NEON, Cryptography and Dot Product Extensions.
+<code>+nocryptp</code>: Disables Cryptography Extensions.
+</p>
+<p>For <code>armv8.5-a</code>:
+</p>
+<p><code>+simd</code>: Enables VFP and NEON for Armv8.1-A and Dot Product Extensions for
+Armv8.2-A.
+<code>+fp16</code>: Enables FP16 Floating Point and Floating Point Multiplication
+Variant Extensions for Armv8.2-A, implies <code>+simd</code>.
+<code>+crypto</code>: Enables Cryptography Extensions for Armv8-A, implies
+<code>+simd</code>.
+<code>+nofp</code>: Disables all FPU, NEON, Cryptography and Dot Product Extensions.
+<code>+nocryptp</code>: Disables Cryptography Extensions.
+</p>
+
+<a name="index-_002dmfpu_003d-command_002dline-option_002c-ARM"></a>
+</dd>
+<dt><code>-mfpu=<var>floating-point-format</var></code></dt>
+<dd>
+<p>This option specifies the floating point format to assemble for.  The
+assembler will issue an error message if an attempt is made to assemble
+an instruction which will not execute on the target floating point unit.
+The following format options are recognized:
+<code>softfpa</code>,
+<code>fpe</code>,
+<code>fpe2</code>,
+<code>fpe3</code>,
+<code>fpa</code>,
+<code>fpa10</code>,
+<code>fpa11</code>,
+<code>arm7500fe</code>,
+<code>softvfp</code>,
+<code>softvfp+vfp</code>,
+<code>vfp</code>,
+<code>vfp10</code>,
+<code>vfp10-r0</code>,
+<code>vfp9</code>,
+<code>vfpxd</code>,
+<code>vfpv2</code>,
+<code>vfpv3</code>,
+<code>vfpv3-fp16</code>,
+<code>vfpv3-d16</code>,
+<code>vfpv3-d16-fp16</code>,
+<code>vfpv3xd</code>,
+<code>vfpv3xd-d16</code>,
+<code>vfpv4</code>,
+<code>vfpv4-d16</code>,
+<code>fpv4-sp-d16</code>,
+<code>fpv5-sp-d16</code>,
+<code>fpv5-d16</code>,
+<code>fp-armv8</code>,
+<code>arm1020t</code>,
+<code>arm1020e</code>,
+<code>arm1136jf-s</code>,
+<code>maverick</code>,
+<code>neon</code>,
+<code>neon-vfpv3</code>,
+<code>neon-fp16</code>,
+<code>neon-vfpv4</code>,
+<code>neon-fp-armv8</code>,
+<code>crypto-neon-fp-armv8</code>,
+<code>neon-fp-armv8.1</code>
+and
+<code>crypto-neon-fp-armv8.1</code>.
+</p>
+<p>In addition to determining which instructions are assembled, this option
+also affects the way in which the <code>.double</code> assembler directive behaves
+when assembling little-endian code.
+</p>
+<p>The default is dependent on the processor selected.  For Architecture 5 or
+later, the default is to assemble for VFP instructions; for earlier
+architectures the default is to assemble for FPA instructions.
+</p>
+<a name="index-_002dmfp16_002dformat_003d-command_002dline-option"></a>
+</dd>
+<dt><code>-mfp16-format=<var>format</var></code></dt>
+<dd><p>This option specifies the half-precision floating point format to use
+when assembling floating point numbers emitted by the <code>.float16</code>
+directive.
+The following format options are recognized:
+<code>ieee</code>,
+<code>alternative</code>.
+If <code>ieee</code> is specified then the IEEE 754-2008 half-precision floating
+point format is used, if <code>alternative</code> is specified then the Arm
+alternative half-precision format is used. If this option is set on the
+command line then the format is fixed and cannot be changed with
+the <code>float16_format</code> directive. If this value is not set then
+the IEEE 754-2008 format is used until the format is explicitly set with
+the <code>float16_format</code> directive.
+</p>
+<a name="index-_002dmthumb-command_002dline-option_002c-ARM"></a>
+</dd>
+<dt><code>-mthumb</code></dt>
+<dd><p>This option specifies that the assembler should start assembling Thumb
+instructions; that is, it should behave as though the file starts with a
+<code>.code 16</code> directive.
+</p>
+<a name="index-_002dmthumb_002dinterwork-command_002dline-option_002c-ARM"></a>
+</dd>
+<dt><code>-mthumb-interwork</code></dt>
+<dd><p>This option specifies that the output generated by the assembler should
+be marked as supporting interworking.  It also affects the behaviour
+of the <code>ADR</code> and <code>ADRL</code> pseudo opcodes.
+</p>
+<a name="index-_002dmimplicit_002dit-command_002dline-option_002c-ARM"></a>
+</dd>
+<dt><code>-mimplicit-it=never</code></dt>
+<dt><code>-mimplicit-it=always</code></dt>
+<dt><code>-mimplicit-it=arm</code></dt>
+<dt><code>-mimplicit-it=thumb</code></dt>
+<dd><p>The <code>-mimplicit-it</code> option controls the behavior of the assembler when
+conditional instructions are not enclosed in IT blocks.
+There are four possible behaviors.
+If <code>never</code> is specified, such constructs cause a warning in ARM
+code and an error in Thumb-2 code.
+If <code>always</code> is specified, such constructs are accepted in both
+ARM and Thumb-2 code, where the IT instruction is added implicitly.
+If <code>arm</code> is specified, such constructs are accepted in ARM code
+and cause an error in Thumb-2 code.
+If <code>thumb</code> is specified, such constructs cause a warning in ARM
+code and are accepted in Thumb-2 code.  If you omit this option, the
+behavior is equivalent to <code>-mimplicit-it=arm</code>.
+</p>
+<a name="index-_002dmapcs_002d26-command_002dline-option_002c-ARM"></a>
+<a name="index-_002dmapcs_002d32-command_002dline-option_002c-ARM"></a>
+</dd>
+<dt><code>-mapcs-26</code></dt>
+<dt><code>-mapcs-32</code></dt>
+<dd><p>These options specify that the output generated by the assembler should
+be marked as supporting the indicated version of the Arm Procedure.
+Calling Standard.
+</p>
+<a name="index-_002dmatpcs-command_002dline-option_002c-ARM"></a>
+</dd>
+<dt><code>-matpcs</code></dt>
+<dd><p>This option specifies that the output generated by the assembler should
+be marked as supporting the Arm/Thumb Procedure Calling Standard.  If
+enabled this option will cause the assembler to create an empty
+debugging section in the object file called .arm.atpcs.  Debuggers can
+use this to determine the ABI being used by.
+</p>
+<a name="index-_002dmapcs_002dfloat-command_002dline-option_002c-ARM"></a>
+</dd>
+<dt><code>-mapcs-float</code></dt>
+<dd><p>This indicates the floating point variant of the APCS should be
+used.  In this variant floating point arguments are passed in FP
+registers rather than integer registers.
+</p>
+<a name="index-_002dmapcs_002dreentrant-command_002dline-option_002c-ARM"></a>
+</dd>
+<dt><code>-mapcs-reentrant</code></dt>
+<dd><p>This indicates that the reentrant variant of the APCS should be used.
+This variant supports position independent code.
+</p>
+<a name="index-_002dmfloat_002dabi_003d-command_002dline-option_002c-ARM"></a>
+</dd>
+<dt><code>-mfloat-abi=<var>abi</var></code></dt>
+<dd><p>This option specifies that the output generated by the assembler should be
+marked as using specified floating point ABI.
+The following values are recognized:
+<code>soft</code>,
+<code>softfp</code>
+and
+<code>hard</code>.
+</p>
+<a name="index-_002deabi_003d-command_002dline-option_002c-ARM"></a>
+</dd>
+<dt><code>-meabi=<var>ver</var></code></dt>
+<dd><p>This option specifies which EABI version the produced object files should
+conform to.
+The following values are recognized:
+<code>gnu</code>,
+<code>4</code>
+and
+<code>5</code>.
+</p>
+<a name="index-_002dEB-command_002dline-option_002c-ARM"></a>
+</dd>
+<dt><code>-EB</code></dt>
+<dd><p>This option specifies that the output generated by the assembler should
+be marked as being encoded for a big-endian processor.
+</p>
+<p>Note: If a program is being built for a system with big-endian data
+and little-endian instructions then it should be assembled with the
+<samp>-EB</samp> option, (all of it, code and data) and then linked with
+the <samp>--be8</samp> option.  This will reverse the endianness of the
+instructions back to little-endian, but leave the data as big-endian.
+</p>
+<a name="index-_002dEL-command_002dline-option_002c-ARM"></a>
+</dd>
+<dt><code>-EL</code></dt>
+<dd><p>This option specifies that the output generated by the assembler should
+be marked as being encoded for a little-endian processor.
+</p>
+<a name="index-_002dk-command_002dline-option_002c-ARM"></a>
+<a name="index-PIC-code-generation-for-ARM"></a>
+</dd>
+<dt><code>-k</code></dt>
+<dd><p>This option specifies that the output of the assembler should be marked
+as position-independent code (PIC).
+</p>
+<a name="index-_002d_002dfix_002dv4bx-command_002dline-option_002c-ARM"></a>
+</dd>
+<dt><code>--fix-v4bx</code></dt>
+<dd><p>Allow <code>BX</code> instructions in ARMv4 code.  This is intended for use with
+the linker option of the same name.
+</p>
+<a name="index-_002dmwarn_002ddeprecated-command_002dline-option_002c-ARM"></a>
+</dd>
+<dt><code>-mwarn-deprecated</code></dt>
+<dt><code>-mno-warn-deprecated</code></dt>
+<dd><p>Enable or disable warnings about using deprecated options or
+features.  The default is to warn.
+</p>
+<a name="index-_002dmccs-command_002dline-option_002c-ARM"></a>
+</dd>
+<dt><code>-mccs</code></dt>
+<dd><p>Turns on CodeComposer Studio assembly syntax compatibility mode.
+</p>
+<a name="index-_002dmwarn_002dsyms-command_002dline-option_002c-ARM"></a>
+</dd>
+<dt><code>-mwarn-syms</code></dt>
+<dt><code>-mno-warn-syms</code></dt>
+<dd><p>Enable or disable warnings about symbols that match the names of ARM
+instructions.  The default is to warn.
+</p>
+</dd>
+</dl>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="ARM-Syntax.html#ARM-Syntax" accesskey="n" rel="next">ARM Syntax</a>, Up: <a href="ARM_002dDependent.html#ARM_002dDependent" accesskey="u" rel="up">ARM-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

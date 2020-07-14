@@ -1,0 +1,1286 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): MIPS Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): MIPS Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): MIPS Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Submodel-Options.html#Submodel-Options" rel="up" title="Submodel Options">
+<link href="MMIX-Options.html#MMIX-Options" rel="next" title="MMIX Options">
+<link href="MicroBlaze-Options.html#MicroBlaze-Options" rel="prev" title="MicroBlaze Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="MIPS-Options"></a>
+<div class="header">
+<p>
+Next: <a href="MMIX-Options.html#MMIX-Options" accesskey="n" rel="next">MMIX Options</a>, Previous: <a href="MicroBlaze-Options.html#MicroBlaze-Options" accesskey="p" rel="prev">MicroBlaze Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="MIPS-Options-1"></a>
+<h4 class="subsection">3.18.28 MIPS Options</h4>
+<a name="index-MIPS-options"></a>
+
+<dl compact="compact">
+<dt><code>-EB</code></dt>
+<dd><a name="index-EB-2"></a>
+<p>Generate big-endian code.
+</p>
+</dd>
+<dt><code>-EL</code></dt>
+<dd><a name="index-EL-2"></a>
+<p>Generate little-endian code.  This is the default for &lsquo;<samp>mips*el-*-*</samp>&rsquo;
+configurations.
+</p>
+</dd>
+<dt><code>-march=<var>arch</var></code></dt>
+<dd><a name="index-march-8"></a>
+<p>Generate code that runs on <var>arch</var>, which can be the name of a
+generic MIPS ISA, or the name of a particular processor.
+The ISA names are:
+&lsquo;<samp>mips1</samp>&rsquo;, &lsquo;<samp>mips2</samp>&rsquo;, &lsquo;<samp>mips3</samp>&rsquo;, &lsquo;<samp>mips4</samp>&rsquo;,
+&lsquo;<samp>mips32</samp>&rsquo;, &lsquo;<samp>mips32r2</samp>&rsquo;, &lsquo;<samp>mips32r3</samp>&rsquo;, &lsquo;<samp>mips32r5</samp>&rsquo;,
+&lsquo;<samp>mips32r6</samp>&rsquo;, &lsquo;<samp>mips64</samp>&rsquo;, &lsquo;<samp>mips64r2</samp>&rsquo;, &lsquo;<samp>mips64r3</samp>&rsquo;,
+&lsquo;<samp>mips64r5</samp>&rsquo; and &lsquo;<samp>mips64r6</samp>&rsquo;.
+The processor names are:
+&lsquo;<samp>4kc</samp>&rsquo;, &lsquo;<samp>4km</samp>&rsquo;, &lsquo;<samp>4kp</samp>&rsquo;, &lsquo;<samp>4ksc</samp>&rsquo;,
+&lsquo;<samp>4kec</samp>&rsquo;, &lsquo;<samp>4kem</samp>&rsquo;, &lsquo;<samp>4kep</samp>&rsquo;, &lsquo;<samp>4ksd</samp>&rsquo;,
+&lsquo;<samp>5kc</samp>&rsquo;, &lsquo;<samp>5kf</samp>&rsquo;,
+&lsquo;<samp>20kc</samp>&rsquo;,
+&lsquo;<samp>24kc</samp>&rsquo;, &lsquo;<samp>24kf2_1</samp>&rsquo;, &lsquo;<samp>24kf1_1</samp>&rsquo;,
+&lsquo;<samp>24kec</samp>&rsquo;, &lsquo;<samp>24kef2_1</samp>&rsquo;, &lsquo;<samp>24kef1_1</samp>&rsquo;,
+&lsquo;<samp>34kc</samp>&rsquo;, &lsquo;<samp>34kf2_1</samp>&rsquo;, &lsquo;<samp>34kf1_1</samp>&rsquo;, &lsquo;<samp>34kn</samp>&rsquo;,
+&lsquo;<samp>74kc</samp>&rsquo;, &lsquo;<samp>74kf2_1</samp>&rsquo;, &lsquo;<samp>74kf1_1</samp>&rsquo;, &lsquo;<samp>74kf3_2</samp>&rsquo;,
+&lsquo;<samp>1004kc</samp>&rsquo;, &lsquo;<samp>1004kf2_1</samp>&rsquo;, &lsquo;<samp>1004kf1_1</samp>&rsquo;,
+&lsquo;<samp>i6400</samp>&rsquo;, &lsquo;<samp>i6500</samp>&rsquo;,
+&lsquo;<samp>interaptiv</samp>&rsquo;,
+&lsquo;<samp>loongson2e</samp>&rsquo;, &lsquo;<samp>loongson2f</samp>&rsquo;, &lsquo;<samp>loongson3a</samp>&rsquo;, &lsquo;<samp>gs464</samp>&rsquo;,
+&lsquo;<samp>gs464e</samp>&rsquo;, &lsquo;<samp>gs264e</samp>&rsquo;,
+&lsquo;<samp>m4k</samp>&rsquo;,
+&lsquo;<samp>m14k</samp>&rsquo;, &lsquo;<samp>m14kc</samp>&rsquo;, &lsquo;<samp>m14ke</samp>&rsquo;, &lsquo;<samp>m14kec</samp>&rsquo;,
+&lsquo;<samp>m5100</samp>&rsquo;, &lsquo;<samp>m5101</samp>&rsquo;,
+&lsquo;<samp>octeon</samp>&rsquo;, &lsquo;<samp>octeon+</samp>&rsquo;, &lsquo;<samp>octeon2</samp>&rsquo;, &lsquo;<samp>octeon3</samp>&rsquo;,
+&lsquo;<samp>orion</samp>&rsquo;,
+&lsquo;<samp>p5600</samp>&rsquo;, &lsquo;<samp>p6600</samp>&rsquo;,
+&lsquo;<samp>r2000</samp>&rsquo;, &lsquo;<samp>r3000</samp>&rsquo;, &lsquo;<samp>r3900</samp>&rsquo;, &lsquo;<samp>r4000</samp>&rsquo;, &lsquo;<samp>r4400</samp>&rsquo;,
+&lsquo;<samp>r4600</samp>&rsquo;, &lsquo;<samp>r4650</samp>&rsquo;, &lsquo;<samp>r4700</samp>&rsquo;, &lsquo;<samp>r5900</samp>&rsquo;,
+&lsquo;<samp>r6000</samp>&rsquo;, &lsquo;<samp>r8000</samp>&rsquo;,
+&lsquo;<samp>rm7000</samp>&rsquo;, &lsquo;<samp>rm9000</samp>&rsquo;,
+&lsquo;<samp>r10000</samp>&rsquo;, &lsquo;<samp>r12000</samp>&rsquo;, &lsquo;<samp>r14000</samp>&rsquo;, &lsquo;<samp>r16000</samp>&rsquo;,
+&lsquo;<samp>sb1</samp>&rsquo;,
+&lsquo;<samp>sr71000</samp>&rsquo;,
+&lsquo;<samp>vr4100</samp>&rsquo;, &lsquo;<samp>vr4111</samp>&rsquo;, &lsquo;<samp>vr4120</samp>&rsquo;, &lsquo;<samp>vr4130</samp>&rsquo;, &lsquo;<samp>vr4300</samp>&rsquo;,
+&lsquo;<samp>vr5000</samp>&rsquo;, &lsquo;<samp>vr5400</samp>&rsquo;, &lsquo;<samp>vr5500</samp>&rsquo;,
+&lsquo;<samp>xlr</samp>&rsquo; and &lsquo;<samp>xlp</samp>&rsquo;.
+The special value &lsquo;<samp>from-abi</samp>&rsquo; selects the
+most compatible architecture for the selected ABI (that is,
+&lsquo;<samp>mips1</samp>&rsquo; for 32-bit ABIs and &lsquo;<samp>mips3</samp>&rsquo; for 64-bit ABIs).
+</p>
+<p>The native Linux/GNU toolchain also supports the value &lsquo;<samp>native</samp>&rsquo;,
+which selects the best architecture option for the host processor.
+<samp>-march=native</samp> has no effect if GCC does not recognize
+the processor.
+</p>
+<p>In processor names, a final &lsquo;<samp>000</samp>&rsquo; can be abbreviated as &lsquo;<samp>k</samp>&rsquo;
+(for example, <samp>-march=r2k</samp>).  Prefixes are optional, and
+&lsquo;<samp>vr</samp>&rsquo; may be written &lsquo;<samp>r</samp>&rsquo;.
+</p>
+<p>Names of the form &lsquo;<samp><var>n</var>f2_1</samp>&rsquo; refer to processors with
+FPUs clocked at half the rate of the core, names of the form
+&lsquo;<samp><var>n</var>f1_1</samp>&rsquo; refer to processors with FPUs clocked at the same
+rate as the core, and names of the form &lsquo;<samp><var>n</var>f3_2</samp>&rsquo; refer to
+processors with FPUs clocked a ratio of 3:2 with respect to the core.
+For compatibility reasons, &lsquo;<samp><var>n</var>f</samp>&rsquo; is accepted as a synonym
+for &lsquo;<samp><var>n</var>f2_1</samp>&rsquo; while &lsquo;<samp><var>n</var>x</samp>&rsquo; and &lsquo;<samp><var>b</var>fx</samp>&rsquo; are
+accepted as synonyms for &lsquo;<samp><var>n</var>f1_1</samp>&rsquo;.
+</p>
+<p>GCC defines two macros based on the value of this option.  The first
+is <code>_MIPS_ARCH</code>, which gives the name of target architecture, as
+a string.  The second has the form <code>_MIPS_ARCH_<var>foo</var></code>,
+where <var>foo</var> is the capitalized value of <code>_MIPS_ARCH</code>.
+For example, <samp>-march=r2000</samp> sets <code>_MIPS_ARCH</code>
+to <code>&quot;r2000&quot;</code> and defines the macro <code>_MIPS_ARCH_R2000</code>.
+</p>
+<p>Note that the <code>_MIPS_ARCH</code> macro uses the processor names given
+above.  In other words, it has the full prefix and does not
+abbreviate &lsquo;<samp>000</samp>&rsquo; as &lsquo;<samp>k</samp>&rsquo;.  In the case of &lsquo;<samp>from-abi</samp>&rsquo;,
+the macro names the resolved architecture (either <code>&quot;mips1&quot;</code> or
+<code>&quot;mips3&quot;</code>).  It names the default architecture when no
+<samp>-march</samp> option is given.
+</p>
+</dd>
+<dt><code>-mtune=<var>arch</var></code></dt>
+<dd><a name="index-mtune-9"></a>
+<p>Optimize for <var>arch</var>.  Among other things, this option controls
+the way instructions are scheduled, and the perceived cost of arithmetic
+operations.  The list of <var>arch</var> values is the same as for
+<samp>-march</samp>.
+</p>
+<p>When this option is not used, GCC optimizes for the processor
+specified by <samp>-march</samp>.  By using <samp>-march</samp> and
+<samp>-mtune</samp> together, it is possible to generate code that
+runs on a family of processors, but optimize the code for one
+particular member of that family.
+</p>
+<p><samp>-mtune</samp> defines the macros <code>_MIPS_TUNE</code> and
+<code>_MIPS_TUNE_<var>foo</var></code>, which work in the same way as the
+<samp>-march</samp> ones described above.
+</p>
+</dd>
+<dt><code>-mips1</code></dt>
+<dd><a name="index-mips1"></a>
+<p>Equivalent to <samp>-march=mips1</samp>.
+</p>
+</dd>
+<dt><code>-mips2</code></dt>
+<dd><a name="index-mips2"></a>
+<p>Equivalent to <samp>-march=mips2</samp>.
+</p>
+</dd>
+<dt><code>-mips3</code></dt>
+<dd><a name="index-mips3"></a>
+<p>Equivalent to <samp>-march=mips3</samp>.
+</p>
+</dd>
+<dt><code>-mips4</code></dt>
+<dd><a name="index-mips4"></a>
+<p>Equivalent to <samp>-march=mips4</samp>.
+</p>
+</dd>
+<dt><code>-mips32</code></dt>
+<dd><a name="index-mips32"></a>
+<p>Equivalent to <samp>-march=mips32</samp>.
+</p>
+</dd>
+<dt><code>-mips32r3</code></dt>
+<dd><a name="index-mips32r3"></a>
+<p>Equivalent to <samp>-march=mips32r3</samp>.
+</p>
+</dd>
+<dt><code>-mips32r5</code></dt>
+<dd><a name="index-mips32r5"></a>
+<p>Equivalent to <samp>-march=mips32r5</samp>.
+</p>
+</dd>
+<dt><code>-mips32r6</code></dt>
+<dd><a name="index-mips32r6"></a>
+<p>Equivalent to <samp>-march=mips32r6</samp>.
+</p>
+</dd>
+<dt><code>-mips64</code></dt>
+<dd><a name="index-mips64"></a>
+<p>Equivalent to <samp>-march=mips64</samp>.
+</p>
+</dd>
+<dt><code>-mips64r2</code></dt>
+<dd><a name="index-mips64r2"></a>
+<p>Equivalent to <samp>-march=mips64r2</samp>.
+</p>
+</dd>
+<dt><code>-mips64r3</code></dt>
+<dd><a name="index-mips64r3"></a>
+<p>Equivalent to <samp>-march=mips64r3</samp>.
+</p>
+</dd>
+<dt><code>-mips64r5</code></dt>
+<dd><a name="index-mips64r5"></a>
+<p>Equivalent to <samp>-march=mips64r5</samp>.
+</p>
+</dd>
+<dt><code>-mips64r6</code></dt>
+<dd><a name="index-mips64r6"></a>
+<p>Equivalent to <samp>-march=mips64r6</samp>.
+</p>
+</dd>
+<dt><code>-mips16</code></dt>
+<dt><code>-mno-mips16</code></dt>
+<dd><a name="index-mips16"></a>
+<a name="index-mno_002dmips16"></a>
+<p>Generate (do not generate) MIPS16 code.  If GCC is targeting a
+MIPS32 or MIPS64 architecture, it makes use of the MIPS16e ASE.
+</p>
+<p>MIPS16 code generation can also be controlled on a per-function basis
+by means of <code>mips16</code> and <code>nomips16</code> attributes.
+See <a href="Function-Attributes.html#Function-Attributes">Function Attributes</a>, for more information.
+</p>
+</dd>
+<dt><code>-mflip-mips16</code></dt>
+<dd><a name="index-mflip_002dmips16"></a>
+<p>Generate MIPS16 code on alternating functions.  This option is provided
+for regression testing of mixed MIPS16/non-MIPS16 code generation, and is
+not intended for ordinary use in compiling user code.
+</p>
+</dd>
+<dt><code>-minterlink-compressed</code></dt>
+<dt><code>-mno-interlink-compressed</code></dt>
+<dd><a name="index-minterlink_002dcompressed"></a>
+<a name="index-mno_002dinterlink_002dcompressed"></a>
+<p>Require (do not require) that code using the standard (uncompressed) MIPS ISA
+be link-compatible with MIPS16 and microMIPS code, and vice versa.
+</p>
+<p>For example, code using the standard ISA encoding cannot jump directly
+to MIPS16 or microMIPS code; it must either use a call or an indirect jump.
+<samp>-minterlink-compressed</samp> therefore disables direct jumps unless GCC
+knows that the target of the jump is not compressed.
+</p>
+</dd>
+<dt><code>-minterlink-mips16</code></dt>
+<dt><code>-mno-interlink-mips16</code></dt>
+<dd><a name="index-minterlink_002dmips16"></a>
+<a name="index-mno_002dinterlink_002dmips16"></a>
+<p>Aliases of <samp>-minterlink-compressed</samp> and
+<samp>-mno-interlink-compressed</samp>.  These options predate the microMIPS ASE
+and are retained for backwards compatibility.
+</p>
+</dd>
+<dt><code>-mabi=32</code></dt>
+<dt><code>-mabi=o64</code></dt>
+<dt><code>-mabi=n32</code></dt>
+<dt><code>-mabi=64</code></dt>
+<dt><code>-mabi=eabi</code></dt>
+<dd><a name="index-mabi_003d32"></a>
+<a name="index-mabi_003do64"></a>
+<a name="index-mabi_003dn32"></a>
+<a name="index-mabi_003d64"></a>
+<a name="index-mabi_003deabi"></a>
+<p>Generate code for the given ABI.
+</p>
+<p>Note that the EABI has a 32-bit and a 64-bit variant.  GCC normally
+generates 64-bit code when you select a 64-bit architecture, but you
+can use <samp>-mgp32</samp> to get 32-bit code instead.
+</p>
+<p>For information about the O64 ABI, see
+<a href="http://gcc.gnu.org/projects/mipso64-abi.html">http://gcc.gnu.org/projects/mipso64-abi.html</a>.
+</p>
+<p>GCC supports a variant of the o32 ABI in which floating-point registers
+are 64 rather than 32 bits wide.  You can select this combination with
+<samp>-mabi=32</samp> <samp>-mfp64</samp>.  This ABI relies on the <code>mthc1</code>
+and <code>mfhc1</code> instructions and is therefore only supported for
+MIPS32R2, MIPS32R3 and MIPS32R5 processors.
+</p>
+<p>The register assignments for arguments and return values remain the
+same, but each scalar value is passed in a single 64-bit register
+rather than a pair of 32-bit registers.  For example, scalar
+floating-point values are returned in &lsquo;<samp>$f0</samp>&rsquo; only, not a
+&lsquo;<samp>$f0</samp>&rsquo;/&lsquo;<samp>$f1</samp>&rsquo; pair.  The set of call-saved registers also
+remains the same in that the even-numbered double-precision registers
+are saved.
+</p>
+<p>Two additional variants of the o32 ABI are supported to enable
+a transition from 32-bit to 64-bit registers.  These are FPXX
+(<samp>-mfpxx</samp>) and FP64A (<samp>-mfp64</samp> <samp>-mno-odd-spreg</samp>).
+The FPXX extension mandates that all code must execute correctly
+when run using 32-bit or 64-bit registers.  The code can be interlinked
+with either FP32 or FP64, but not both.
+The FP64A extension is similar to the FP64 extension but forbids the
+use of odd-numbered single-precision registers.  This can be used
+in conjunction with the <code>FRE</code> mode of FPUs in MIPS32R5
+processors and allows both FP32 and FP64A code to interlink and
+run in the same process without changing FPU modes.
+</p>
+</dd>
+<dt><code>-mabicalls</code></dt>
+<dt><code>-mno-abicalls</code></dt>
+<dd><a name="index-mabicalls"></a>
+<a name="index-mno_002dabicalls"></a>
+<p>Generate (do not generate) code that is suitable for SVR4-style
+dynamic objects.  <samp>-mabicalls</samp> is the default for SVR4-based
+systems.
+</p>
+</dd>
+<dt><code>-mshared</code></dt>
+<dt><code>-mno-shared</code></dt>
+<dd><p>Generate (do not generate) code that is fully position-independent,
+and that can therefore be linked into shared libraries.  This option
+only affects <samp>-mabicalls</samp>.
+</p>
+<p>All <samp>-mabicalls</samp> code has traditionally been position-independent,
+regardless of options like <samp>-fPIC</samp> and <samp>-fpic</samp>.  However,
+as an extension, the GNU toolchain allows executables to use absolute
+accesses for locally-binding symbols.  It can also use shorter GP
+initialization sequences and generate direct calls to locally-defined
+functions.  This mode is selected by <samp>-mno-shared</samp>.
+</p>
+<p><samp>-mno-shared</samp> depends on binutils 2.16 or higher and generates
+objects that can only be linked by the GNU linker.  However, the option
+does not affect the ABI of the final executable; it only affects the ABI
+of relocatable objects.  Using <samp>-mno-shared</samp> generally makes
+executables both smaller and quicker.
+</p>
+<p><samp>-mshared</samp> is the default.
+</p>
+</dd>
+<dt><code>-mplt</code></dt>
+<dt><code>-mno-plt</code></dt>
+<dd><a name="index-mplt"></a>
+<a name="index-mno_002dplt"></a>
+<p>Assume (do not assume) that the static and dynamic linkers
+support PLTs and copy relocations.  This option only affects
+<samp>-mno-shared -mabicalls</samp>.  For the n64 ABI, this option
+has no effect without <samp>-msym32</samp>.
+</p>
+<p>You can make <samp>-mplt</samp> the default by configuring
+GCC with <samp>--with-mips-plt</samp>.  The default is
+<samp>-mno-plt</samp> otherwise.
+</p>
+</dd>
+<dt><code>-mxgot</code></dt>
+<dt><code>-mno-xgot</code></dt>
+<dd><a name="index-mxgot-1"></a>
+<a name="index-mno_002dxgot-1"></a>
+<p>Lift (do not lift) the usual restrictions on the size of the global
+offset table.
+</p>
+<p>GCC normally uses a single instruction to load values from the GOT.
+While this is relatively efficient, it only works if the GOT
+is smaller than about 64k.  Anything larger causes the linker
+to report an error such as:
+</p>
+<a name="index-relocation-truncated-to-fit-_0028MIPS_0029"></a>
+<div class="smallexample">
+<pre class="smallexample">relocation truncated to fit: R_MIPS_GOT16 foobar
+</pre></div>
+
+<p>If this happens, you should recompile your code with <samp>-mxgot</samp>.
+This works with very large GOTs, although the code is also
+less efficient, since it takes three instructions to fetch the
+value of a global symbol.
+</p>
+<p>Note that some linkers can create multiple GOTs.  If you have such a
+linker, you should only need to use <samp>-mxgot</samp> when a single object
+file accesses more than 64k&rsquo;s worth of GOT entries.  Very few do.
+</p>
+<p>These options have no effect unless GCC is generating position
+independent code.
+</p>
+</dd>
+<dt><code>-mgp32</code></dt>
+<dd><a name="index-mgp32"></a>
+<p>Assume that general-purpose registers are 32 bits wide.
+</p>
+</dd>
+<dt><code>-mgp64</code></dt>
+<dd><a name="index-mgp64"></a>
+<p>Assume that general-purpose registers are 64 bits wide.
+</p>
+</dd>
+<dt><code>-mfp32</code></dt>
+<dd><a name="index-mfp32"></a>
+<p>Assume that floating-point registers are 32 bits wide.
+</p>
+</dd>
+<dt><code>-mfp64</code></dt>
+<dd><a name="index-mfp64"></a>
+<p>Assume that floating-point registers are 64 bits wide.
+</p>
+</dd>
+<dt><code>-mfpxx</code></dt>
+<dd><a name="index-mfpxx"></a>
+<p>Do not assume the width of floating-point registers.
+</p>
+</dd>
+<dt><code>-mhard-float</code></dt>
+<dd><a name="index-mhard_002dfloat-4"></a>
+<p>Use floating-point coprocessor instructions.
+</p>
+</dd>
+<dt><code>-msoft-float</code></dt>
+<dd><a name="index-msoft_002dfloat-7"></a>
+<p>Do not use floating-point coprocessor instructions.  Implement
+floating-point calculations using library calls instead.
+</p>
+</dd>
+<dt><code>-mno-float</code></dt>
+<dd><a name="index-mno_002dfloat"></a>
+<p>Equivalent to <samp>-msoft-float</samp>, but additionally asserts that the
+program being compiled does not perform any floating-point operations.
+This option is presently supported only by some bare-metal MIPS
+configurations, where it may select a special set of libraries
+that lack all floating-point support (including, for example, the
+floating-point <code>printf</code> formats).  
+If code compiled with <samp>-mno-float</samp> accidentally contains
+floating-point operations, it is likely to suffer a link-time
+or run-time failure.
+</p>
+</dd>
+<dt><code>-msingle-float</code></dt>
+<dd><a name="index-msingle_002dfloat"></a>
+<p>Assume that the floating-point coprocessor only supports single-precision
+operations.
+</p>
+</dd>
+<dt><code>-mdouble-float</code></dt>
+<dd><a name="index-mdouble_002dfloat-1"></a>
+<p>Assume that the floating-point coprocessor supports double-precision
+operations.  This is the default.
+</p>
+</dd>
+<dt><code>-modd-spreg</code></dt>
+<dt><code>-mno-odd-spreg</code></dt>
+<dd><a name="index-modd_002dspreg"></a>
+<a name="index-mno_002dodd_002dspreg"></a>
+<p>Enable the use of odd-numbered single-precision floating-point registers
+for the o32 ABI.  This is the default for processors that are known to
+support these registers.  When using the o32 FPXX ABI, <samp>-mno-odd-spreg</samp>
+is set by default.
+</p>
+</dd>
+<dt><code>-mabs=2008</code></dt>
+<dt><code>-mabs=legacy</code></dt>
+<dd><a name="index-mabs_003d2008"></a>
+<a name="index-mabs_003dlegacy"></a>
+<p>These options control the treatment of the special not-a-number (NaN)
+IEEE 754 floating-point data with the <code>abs.<i>fmt</i></code> and
+<code>neg.<i>fmt</i></code> machine instructions.
+</p>
+<p>By default or when <samp>-mabs=legacy</samp> is used the legacy
+treatment is selected.  In this case these instructions are considered
+arithmetic and avoided where correct operation is required and the
+input operand might be a NaN.  A longer sequence of instructions that
+manipulate the sign bit of floating-point datum manually is used
+instead unless the <samp>-ffinite-math-only</samp> option has also been
+specified.
+</p>
+<p>The <samp>-mabs=2008</samp> option selects the IEEE 754-2008 treatment.  In
+this case these instructions are considered non-arithmetic and therefore
+operating correctly in all cases, including in particular where the
+input operand is a NaN.  These instructions are therefore always used
+for the respective operations.
+</p>
+</dd>
+<dt><code>-mnan=2008</code></dt>
+<dt><code>-mnan=legacy</code></dt>
+<dd><a name="index-mnan_003d2008"></a>
+<a name="index-mnan_003dlegacy"></a>
+<p>These options control the encoding of the special not-a-number (NaN)
+IEEE 754 floating-point data.
+</p>
+<p>The <samp>-mnan=legacy</samp> option selects the legacy encoding.  In this
+case quiet NaNs (qNaNs) are denoted by the first bit of their trailing
+significand field being 0, whereas signaling NaNs (sNaNs) are denoted
+by the first bit of their trailing significand field being 1.
+</p>
+<p>The <samp>-mnan=2008</samp> option selects the IEEE 754-2008 encoding.  In
+this case qNaNs are denoted by the first bit of their trailing
+significand field being 1, whereas sNaNs are denoted by the first bit of
+their trailing significand field being 0.
+</p>
+<p>The default is <samp>-mnan=legacy</samp> unless GCC has been configured with
+<samp>--with-nan=2008</samp>.
+</p>
+</dd>
+<dt><code>-mllsc</code></dt>
+<dt><code>-mno-llsc</code></dt>
+<dd><a name="index-mllsc"></a>
+<a name="index-mno_002dllsc"></a>
+<p>Use (do not use) &lsquo;<samp>ll</samp>&rsquo;, &lsquo;<samp>sc</samp>&rsquo;, and &lsquo;<samp>sync</samp>&rsquo; instructions to
+implement atomic memory built-in functions.  When neither option is
+specified, GCC uses the instructions if the target architecture
+supports them.
+</p>
+<p><samp>-mllsc</samp> is useful if the runtime environment can emulate the
+instructions and <samp>-mno-llsc</samp> can be useful when compiling for
+nonstandard ISAs.  You can make either option the default by
+configuring GCC with <samp>--with-llsc</samp> and <samp>--without-llsc</samp>
+respectively.  <samp>--with-llsc</samp> is the default for some
+configurations; see the installation documentation for details.
+</p>
+</dd>
+<dt><code>-mdsp</code></dt>
+<dt><code>-mno-dsp</code></dt>
+<dd><a name="index-mdsp-1"></a>
+<a name="index-mno_002ddsp"></a>
+<p>Use (do not use) revision 1 of the MIPS DSP ASE.
+See <a href="MIPS-DSP-Built_002din-Functions.html#MIPS-DSP-Built_002din-Functions">MIPS DSP Built-in Functions</a>.  This option defines the
+preprocessor macro <code>__mips_dsp</code>.  It also defines
+<code>__mips_dsp_rev</code> to 1.
+</p>
+</dd>
+<dt><code>-mdspr2</code></dt>
+<dt><code>-mno-dspr2</code></dt>
+<dd><a name="index-mdspr2"></a>
+<a name="index-mno_002ddspr2"></a>
+<p>Use (do not use) revision 2 of the MIPS DSP ASE.
+See <a href="MIPS-DSP-Built_002din-Functions.html#MIPS-DSP-Built_002din-Functions">MIPS DSP Built-in Functions</a>.  This option defines the
+preprocessor macros <code>__mips_dsp</code> and <code>__mips_dspr2</code>.
+It also defines <code>__mips_dsp_rev</code> to 2.
+</p>
+</dd>
+<dt><code>-msmartmips</code></dt>
+<dt><code>-mno-smartmips</code></dt>
+<dd><a name="index-msmartmips"></a>
+<a name="index-mno_002dsmartmips"></a>
+<p>Use (do not use) the MIPS SmartMIPS ASE.
+</p>
+</dd>
+<dt><code>-mpaired-single</code></dt>
+<dt><code>-mno-paired-single</code></dt>
+<dd><a name="index-mpaired_002dsingle"></a>
+<a name="index-mno_002dpaired_002dsingle"></a>
+<p>Use (do not use) paired-single floating-point instructions.
+See <a href="MIPS-Paired_002dSingle-Support.html#MIPS-Paired_002dSingle-Support">MIPS Paired-Single Support</a>.  This option requires
+hardware floating-point support to be enabled.
+</p>
+</dd>
+<dt><code>-mdmx</code></dt>
+<dt><code>-mno-mdmx</code></dt>
+<dd><a name="index-mdmx"></a>
+<a name="index-mno_002dmdmx"></a>
+<p>Use (do not use) MIPS Digital Media Extension instructions.
+This option can only be used when generating 64-bit code and requires
+hardware floating-point support to be enabled.
+</p>
+</dd>
+<dt><code>-mips3d</code></dt>
+<dt><code>-mno-mips3d</code></dt>
+<dd><a name="index-mips3d"></a>
+<a name="index-mno_002dmips3d"></a>
+<p>Use (do not use) the MIPS-3D ASE.  See <a href="MIPS_002d3D-Built_002din-Functions.html#MIPS_002d3D-Built_002din-Functions">MIPS-3D Built-in Functions</a>.
+The option <samp>-mips3d</samp> implies <samp>-mpaired-single</samp>.
+</p>
+</dd>
+<dt><code>-mmicromips</code></dt>
+<dt><code>-mno-micromips</code></dt>
+<dd><a name="index-mmicromips"></a>
+<a name="index-mno_002dmmicromips"></a>
+<p>Generate (do not generate) microMIPS code.
+</p>
+<p>MicroMIPS code generation can also be controlled on a per-function basis
+by means of <code>micromips</code> and <code>nomicromips</code> attributes.
+See <a href="Function-Attributes.html#Function-Attributes">Function Attributes</a>, for more information.
+</p>
+</dd>
+<dt><code>-mmt</code></dt>
+<dt><code>-mno-mt</code></dt>
+<dd><a name="index-mmt"></a>
+<a name="index-mno_002dmt"></a>
+<p>Use (do not use) MT Multithreading instructions.
+</p>
+</dd>
+<dt><code>-mmcu</code></dt>
+<dt><code>-mno-mcu</code></dt>
+<dd><a name="index-mmcu-1"></a>
+<a name="index-mno_002dmcu"></a>
+<p>Use (do not use) the MIPS MCU ASE instructions.
+</p>
+</dd>
+<dt><code>-meva</code></dt>
+<dt><code>-mno-eva</code></dt>
+<dd><a name="index-meva"></a>
+<a name="index-mno_002deva"></a>
+<p>Use (do not use) the MIPS Enhanced Virtual Addressing instructions.
+</p>
+</dd>
+<dt><code>-mvirt</code></dt>
+<dt><code>-mno-virt</code></dt>
+<dd><a name="index-mvirt"></a>
+<a name="index-mno_002dvirt"></a>
+<p>Use (do not use) the MIPS Virtualization (VZ) instructions.
+</p>
+</dd>
+<dt><code>-mxpa</code></dt>
+<dt><code>-mno-xpa</code></dt>
+<dd><a name="index-mxpa"></a>
+<a name="index-mno_002dxpa"></a>
+<p>Use (do not use) the MIPS eXtended Physical Address (XPA) instructions.
+</p>
+</dd>
+<dt><code>-mcrc</code></dt>
+<dt><code>-mno-crc</code></dt>
+<dd><a name="index-mcrc"></a>
+<a name="index-mno_002dcrc"></a>
+<p>Use (do not use) the MIPS Cyclic Redundancy Check (CRC) instructions.
+</p>
+</dd>
+<dt><code>-mginv</code></dt>
+<dt><code>-mno-ginv</code></dt>
+<dd><a name="index-mginv"></a>
+<a name="index-mno_002dginv"></a>
+<p>Use (do not use) the MIPS Global INValidate (GINV) instructions.
+</p>
+</dd>
+<dt><code>-mloongson-mmi</code></dt>
+<dt><code>-mno-loongson-mmi</code></dt>
+<dd><a name="index-mloongson_002dmmi"></a>
+<a name="index-mno_002dloongson_002dmmi"></a>
+<p>Use (do not use) the MIPS Loongson MultiMedia extensions Instructions (MMI).
+</p>
+</dd>
+<dt><code>-mloongson-ext</code></dt>
+<dt><code>-mno-loongson-ext</code></dt>
+<dd><a name="index-mloongson_002dext"></a>
+<a name="index-mno_002dloongson_002dext"></a>
+<p>Use (do not use) the MIPS Loongson EXTensions (EXT) instructions.
+</p>
+</dd>
+<dt><code>-mloongson-ext2</code></dt>
+<dt><code>-mno-loongson-ext2</code></dt>
+<dd><a name="index-mloongson_002dext2"></a>
+<a name="index-mno_002dloongson_002dext2"></a>
+<p>Use (do not use) the MIPS Loongson EXTensions r2 (EXT2) instructions.
+</p>
+</dd>
+<dt><code>-mlong64</code></dt>
+<dd><a name="index-mlong64"></a>
+<p>Force <code>long</code> types to be 64 bits wide.  See <samp>-mlong32</samp> for
+an explanation of the default and the way that the pointer size is
+determined.
+</p>
+</dd>
+<dt><code>-mlong32</code></dt>
+<dd><a name="index-mlong32"></a>
+<p>Force <code>long</code>, <code>int</code>, and pointer types to be 32 bits wide.
+</p>
+<p>The default size of <code>int</code>s, <code>long</code>s and pointers depends on
+the ABI.  All the supported ABIs use 32-bit <code>int</code>s.  The n64 ABI
+uses 64-bit <code>long</code>s, as does the 64-bit EABI; the others use
+32-bit <code>long</code>s.  Pointers are the same size as <code>long</code>s,
+or the same size as integer registers, whichever is smaller.
+</p>
+</dd>
+<dt><code>-msym32</code></dt>
+<dt><code>-mno-sym32</code></dt>
+<dd><a name="index-msym32"></a>
+<a name="index-mno_002dsym32"></a>
+<p>Assume (do not assume) that all symbols have 32-bit values, regardless
+of the selected ABI.  This option is useful in combination with
+<samp>-mabi=64</samp> and <samp>-mno-abicalls</samp> because it allows GCC
+to generate shorter and faster references to symbolic addresses.
+</p>
+</dd>
+<dt><code>-G <var>num</var></code></dt>
+<dd><a name="index-G-2"></a>
+<p>Put definitions of externally-visible data in a small data section
+if that data is no bigger than <var>num</var> bytes.  GCC can then generate
+more efficient accesses to the data; see <samp>-mgpopt</samp> for details.
+</p>
+<p>The default <samp>-G</samp> option depends on the configuration.
+</p>
+</dd>
+<dt><code>-mlocal-sdata</code></dt>
+<dt><code>-mno-local-sdata</code></dt>
+<dd><a name="index-mlocal_002dsdata"></a>
+<a name="index-mno_002dlocal_002dsdata"></a>
+<p>Extend (do not extend) the <samp>-G</samp> behavior to local data too,
+such as to static variables in C.  <samp>-mlocal-sdata</samp> is the
+default for all configurations.
+</p>
+<p>If the linker complains that an application is using too much small data,
+you might want to try rebuilding the less performance-critical parts with
+<samp>-mno-local-sdata</samp>.  You might also want to build large
+libraries with <samp>-mno-local-sdata</samp>, so that the libraries leave
+more room for the main program.
+</p>
+</dd>
+<dt><code>-mextern-sdata</code></dt>
+<dt><code>-mno-extern-sdata</code></dt>
+<dd><a name="index-mextern_002dsdata"></a>
+<a name="index-mno_002dextern_002dsdata"></a>
+<p>Assume (do not assume) that externally-defined data is in
+a small data section if the size of that data is within the <samp>-G</samp> limit.
+<samp>-mextern-sdata</samp> is the default for all configurations.
+</p>
+<p>If you compile a module <var>Mod</var> with <samp>-mextern-sdata</samp> <samp>-G
+<var>num</var></samp> <samp>-mgpopt</samp>, and <var>Mod</var> references a variable <var>Var</var>
+that is no bigger than <var>num</var> bytes, you must make sure that <var>Var</var>
+is placed in a small data section.  If <var>Var</var> is defined by another
+module, you must either compile that module with a high-enough
+<samp>-G</samp> setting or attach a <code>section</code> attribute to <var>Var</var>&rsquo;s
+definition.  If <var>Var</var> is common, you must link the application
+with a high-enough <samp>-G</samp> setting.
+</p>
+<p>The easiest way of satisfying these restrictions is to compile
+and link every module with the same <samp>-G</samp> option.  However,
+you may wish to build a library that supports several different
+small data limits.  You can do this by compiling the library with
+the highest supported <samp>-G</samp> setting and additionally using
+<samp>-mno-extern-sdata</samp> to stop the library from making assumptions
+about externally-defined data.
+</p>
+</dd>
+<dt><code>-mgpopt</code></dt>
+<dt><code>-mno-gpopt</code></dt>
+<dd><a name="index-mgpopt"></a>
+<a name="index-mno_002dgpopt"></a>
+<p>Use (do not use) GP-relative accesses for symbols that are known to be
+in a small data section; see <samp>-G</samp>, <samp>-mlocal-sdata</samp> and
+<samp>-mextern-sdata</samp>.  <samp>-mgpopt</samp> is the default for all
+configurations.
+</p>
+<p><samp>-mno-gpopt</samp> is useful for cases where the <code>$gp</code> register
+might not hold the value of <code>_gp</code>.  For example, if the code is
+part of a library that might be used in a boot monitor, programs that
+call boot monitor routines pass an unknown value in <code>$gp</code>.
+(In such situations, the boot monitor itself is usually compiled
+with <samp>-G0</samp>.)
+</p>
+<p><samp>-mno-gpopt</samp> implies <samp>-mno-local-sdata</samp> and
+<samp>-mno-extern-sdata</samp>.
+</p>
+</dd>
+<dt><code>-membedded-data</code></dt>
+<dt><code>-mno-embedded-data</code></dt>
+<dd><a name="index-membedded_002ddata"></a>
+<a name="index-mno_002dembedded_002ddata"></a>
+<p>Allocate variables to the read-only data section first if possible, then
+next in the small data section if possible, otherwise in data.  This gives
+slightly slower code than the default, but reduces the amount of RAM required
+when executing, and thus may be preferred for some embedded systems.
+</p>
+</dd>
+<dt><code>-muninit-const-in-rodata</code></dt>
+<dt><code>-mno-uninit-const-in-rodata</code></dt>
+<dd><a name="index-muninit_002dconst_002din_002drodata"></a>
+<a name="index-mno_002duninit_002dconst_002din_002drodata"></a>
+<p>Put uninitialized <code>const</code> variables in the read-only data section.
+This option is only meaningful in conjunction with <samp>-membedded-data</samp>.
+</p>
+</dd>
+<dt><code>-mcode-readable=<var>setting</var></code></dt>
+<dd><a name="index-mcode_002dreadable"></a>
+<p>Specify whether GCC may generate code that reads from executable sections.
+There are three possible settings:
+</p>
+<dl compact="compact">
+<dt><code>-mcode-readable=yes</code></dt>
+<dd><p>Instructions may freely access executable sections.  This is the
+default setting.
+</p>
+</dd>
+<dt><code>-mcode-readable=pcrel</code></dt>
+<dd><p>MIPS16 PC-relative load instructions can access executable sections,
+but other instructions must not do so.  This option is useful on 4KSc
+and 4KSd processors when the code TLBs have the Read Inhibit bit set.
+It is also useful on processors that can be configured to have a dual
+instruction/data SRAM interface and that, like the M4K, automatically
+redirect PC-relative loads to the instruction RAM.
+</p>
+</dd>
+<dt><code>-mcode-readable=no</code></dt>
+<dd><p>Instructions must not access executable sections.  This option can be
+useful on targets that are configured to have a dual instruction/data
+SRAM interface but that (unlike the M4K) do not automatically redirect
+PC-relative loads to the instruction RAM.
+</p></dd>
+</dl>
+
+</dd>
+<dt><code>-msplit-addresses</code></dt>
+<dt><code>-mno-split-addresses</code></dt>
+<dd><a name="index-msplit_002daddresses"></a>
+<a name="index-mno_002dsplit_002daddresses"></a>
+<p>Enable (disable) use of the <code>%hi()</code> and <code>%lo()</code> assembler
+relocation operators.  This option has been superseded by
+<samp>-mexplicit-relocs</samp> but is retained for backwards compatibility.
+</p>
+</dd>
+<dt><code>-mexplicit-relocs</code></dt>
+<dt><code>-mno-explicit-relocs</code></dt>
+<dd><a name="index-mexplicit_002drelocs-1"></a>
+<a name="index-mno_002dexplicit_002drelocs-1"></a>
+<p>Use (do not use) assembler relocation operators when dealing with symbolic
+addresses.  The alternative, selected by <samp>-mno-explicit-relocs</samp>,
+is to use assembler macros instead.
+</p>
+<p><samp>-mexplicit-relocs</samp> is the default if GCC was configured
+to use an assembler that supports relocation operators.
+</p>
+</dd>
+<dt><code>-mcheck-zero-division</code></dt>
+<dt><code>-mno-check-zero-division</code></dt>
+<dd><a name="index-mcheck_002dzero_002ddivision"></a>
+<a name="index-mno_002dcheck_002dzero_002ddivision"></a>
+<p>Trap (do not trap) on integer division by zero.
+</p>
+<p>The default is <samp>-mcheck-zero-division</samp>.
+</p>
+</dd>
+<dt><code>-mdivide-traps</code></dt>
+<dt><code>-mdivide-breaks</code></dt>
+<dd><a name="index-mdivide_002dtraps"></a>
+<a name="index-mdivide_002dbreaks"></a>
+<p>MIPS systems check for division by zero by generating either a
+conditional trap or a break instruction.  Using traps results in
+smaller code, but is only supported on MIPS II and later.  Also, some
+versions of the Linux kernel have a bug that prevents trap from
+generating the proper signal (<code>SIGFPE</code>).  Use <samp>-mdivide-traps</samp> to
+allow conditional traps on architectures that support them and
+<samp>-mdivide-breaks</samp> to force the use of breaks.
+</p>
+<p>The default is usually <samp>-mdivide-traps</samp>, but this can be
+overridden at configure time using <samp>--with-divide=breaks</samp>.
+Divide-by-zero checks can be completely disabled using
+<samp>-mno-check-zero-division</samp>.
+</p>
+</dd>
+<dt><code>-mload-store-pairs</code></dt>
+<dt><code>-mno-load-store-pairs</code></dt>
+<dd><a name="index-mload_002dstore_002dpairs"></a>
+<a name="index-mno_002dload_002dstore_002dpairs"></a>
+<p>Enable (disable) an optimization that pairs consecutive load or store
+instructions to enable load/store bonding.  This option is enabled by
+default but only takes effect when the selected architecture is known
+to support bonding.
+</p>
+</dd>
+<dt><code>-mmemcpy</code></dt>
+<dt><code>-mno-memcpy</code></dt>
+<dd><a name="index-mmemcpy-1"></a>
+<a name="index-mno_002dmemcpy"></a>
+<p>Force (do not force) the use of <code>memcpy</code> for non-trivial block
+moves.  The default is <samp>-mno-memcpy</samp>, which allows GCC to inline
+most constant-sized copies.
+</p>
+</dd>
+<dt><code>-mlong-calls</code></dt>
+<dt><code>-mno-long-calls</code></dt>
+<dd><a name="index-mlong_002dcalls-6"></a>
+<a name="index-mno_002dlong_002dcalls-3"></a>
+<p>Disable (do not disable) use of the <code>jal</code> instruction.  Calling
+functions using <code>jal</code> is more efficient but requires the caller
+and callee to be in the same 256 megabyte segment.
+</p>
+<p>This option has no effect on abicalls code.  The default is
+<samp>-mno-long-calls</samp>.
+</p>
+</dd>
+<dt><code>-mmad</code></dt>
+<dt><code>-mno-mad</code></dt>
+<dd><a name="index-mmad"></a>
+<a name="index-mno_002dmad"></a>
+<p>Enable (disable) use of the <code>mad</code>, <code>madu</code> and <code>mul</code>
+instructions, as provided by the R4650 ISA.
+</p>
+</dd>
+<dt><code>-mimadd</code></dt>
+<dt><code>-mno-imadd</code></dt>
+<dd><a name="index-mimadd"></a>
+<a name="index-mno_002dimadd"></a>
+<p>Enable (disable) use of the <code>madd</code> and <code>msub</code> integer
+instructions.  The default is <samp>-mimadd</samp> on architectures
+that support <code>madd</code> and <code>msub</code> except for the 74k 
+architecture where it was found to generate slower code.
+</p>
+</dd>
+<dt><code>-mfused-madd</code></dt>
+<dt><code>-mno-fused-madd</code></dt>
+<dd><a name="index-mfused_002dmadd-1"></a>
+<a name="index-mno_002dfused_002dmadd-1"></a>
+<p>Enable (disable) use of the floating-point multiply-accumulate
+instructions, when they are available.  The default is
+<samp>-mfused-madd</samp>.
+</p>
+<p>On the R8000 CPU when multiply-accumulate instructions are used,
+the intermediate product is calculated to infinite precision
+and is not subject to the FCSR Flush to Zero bit.  This may be
+undesirable in some circumstances.  On other processors the result
+is numerically identical to the equivalent computation using
+separate multiply, add, subtract and negate instructions.
+</p>
+</dd>
+<dt><code>-nocpp</code></dt>
+<dd><a name="index-nocpp"></a>
+<p>Tell the MIPS assembler to not run its preprocessor over user
+assembler files (with a &lsquo;<samp>.s</samp>&rsquo; suffix) when assembling them.
+</p>
+</dd>
+<dt><code>-mfix-24k</code></dt>
+<dt><code>-mno-fix-24k</code></dt>
+<dd><a name="index-mfix_002d24k"></a>
+<a name="index-mno_002dfix_002d24k"></a>
+<p>Work around the 24K E48 (lost data on stores during refill) errata.
+The workarounds are implemented by the assembler rather than by GCC.
+</p>
+</dd>
+<dt><code>-mfix-r4000</code></dt>
+<dt><code>-mno-fix-r4000</code></dt>
+<dd><a name="index-mfix_002dr4000"></a>
+<a name="index-mno_002dfix_002dr4000"></a>
+<p>Work around certain R4000 CPU errata:
+</p><ul class="no-bullet">
+<li>- A double-word or a variable shift may give an incorrect result if executed
+immediately after starting an integer division.
+</li><li>- A double-word or a variable shift may give an incorrect result if executed
+while an integer multiplication is in progress.
+</li><li>- An integer division may give an incorrect result if started in a delay slot
+of a taken branch or a jump.
+</li></ul>
+
+</dd>
+<dt><code>-mfix-r4400</code></dt>
+<dt><code>-mno-fix-r4400</code></dt>
+<dd><a name="index-mfix_002dr4400"></a>
+<a name="index-mno_002dfix_002dr4400"></a>
+<p>Work around certain R4400 CPU errata:
+</p><ul class="no-bullet">
+<li>- A double-word or a variable shift may give an incorrect result if executed
+immediately after starting an integer division.
+</li></ul>
+
+</dd>
+<dt><code>-mfix-r10000</code></dt>
+<dt><code>-mno-fix-r10000</code></dt>
+<dd><a name="index-mfix_002dr10000"></a>
+<a name="index-mno_002dfix_002dr10000"></a>
+<p>Work around certain R10000 errata:
+</p><ul class="no-bullet">
+<li>- <code>ll</code>/<code>sc</code> sequences may not behave atomically on revisions
+prior to 3.0.  They may deadlock on revisions 2.6 and earlier.
+</li></ul>
+
+<p>This option can only be used if the target architecture supports
+branch-likely instructions.  <samp>-mfix-r10000</samp> is the default when
+<samp>-march=r10000</samp> is used; <samp>-mno-fix-r10000</samp> is the default
+otherwise.
+</p>
+</dd>
+<dt><code>-mfix-r5900</code></dt>
+<dt><code>-mno-fix-r5900</code></dt>
+<dd><a name="index-mfix_002dr5900"></a>
+<p>Do not attempt to schedule the preceding instruction into the delay slot
+of a branch instruction placed at the end of a short loop of six
+instructions or fewer and always schedule a <code>nop</code> instruction there
+instead.  The short loop bug under certain conditions causes loops to
+execute only once or twice, due to a hardware bug in the R5900 chip.  The
+workaround is implemented by the assembler rather than by GCC.
+</p>
+</dd>
+<dt><code>-mfix-rm7000</code></dt>
+<dt><code>-mno-fix-rm7000</code></dt>
+<dd><a name="index-mfix_002drm7000"></a>
+<p>Work around the RM7000 <code>dmult</code>/<code>dmultu</code> errata.  The
+workarounds are implemented by the assembler rather than by GCC.
+</p>
+</dd>
+<dt><code>-mfix-vr4120</code></dt>
+<dt><code>-mno-fix-vr4120</code></dt>
+<dd><a name="index-mfix_002dvr4120"></a>
+<p>Work around certain VR4120 errata:
+</p><ul class="no-bullet">
+<li>- <code>dmultu</code> does not always produce the correct result.
+</li><li>- <code>div</code> and <code>ddiv</code> do not always produce the correct result if one
+of the operands is negative.
+</li></ul>
+<p>The workarounds for the division errata rely on special functions in
+<samp>libgcc.a</samp>.  At present, these functions are only provided by
+the <code>mips64vr*-elf</code> configurations.
+</p>
+<p>Other VR4120 errata require a NOP to be inserted between certain pairs of
+instructions.  These errata are handled by the assembler, not by GCC itself.
+</p>
+</dd>
+<dt><code>-mfix-vr4130</code></dt>
+<dd><a name="index-mfix_002dvr4130"></a>
+<p>Work around the VR4130 <code>mflo</code>/<code>mfhi</code> errata.  The
+workarounds are implemented by the assembler rather than by GCC,
+although GCC avoids using <code>mflo</code> and <code>mfhi</code> if the
+VR4130 <code>macc</code>, <code>macchi</code>, <code>dmacc</code> and <code>dmacchi</code>
+instructions are available instead.
+</p>
+</dd>
+<dt><code>-mfix-sb1</code></dt>
+<dt><code>-mno-fix-sb1</code></dt>
+<dd><a name="index-mfix_002dsb1"></a>
+<p>Work around certain SB-1 CPU core errata.
+(This flag currently works around the SB-1 revision 2
+&ldquo;F1&rdquo; and &ldquo;F2&rdquo; floating-point errata.)
+</p>
+</dd>
+<dt><code>-mr10k-cache-barrier=<var>setting</var></code></dt>
+<dd><a name="index-mr10k_002dcache_002dbarrier"></a>
+<p>Specify whether GCC should insert cache barriers to avoid the
+side effects of speculation on R10K processors.
+</p>
+<p>In common with many processors, the R10K tries to predict the outcome
+of a conditional branch and speculatively executes instructions from
+the &ldquo;taken&rdquo; branch.  It later aborts these instructions if the
+predicted outcome is wrong.  However, on the R10K, even aborted
+instructions can have side effects.
+</p>
+<p>This problem only affects kernel stores and, depending on the system,
+kernel loads.  As an example, a speculatively-executed store may load
+the target memory into cache and mark the cache line as dirty, even if
+the store itself is later aborted.  If a DMA operation writes to the
+same area of memory before the &ldquo;dirty&rdquo; line is flushed, the cached
+data overwrites the DMA-ed data.  See the R10K processor manual
+for a full description, including other potential problems.
+</p>
+<p>One workaround is to insert cache barrier instructions before every memory
+access that might be speculatively executed and that might have side
+effects even if aborted.  <samp>-mr10k-cache-barrier=<var>setting</var></samp>
+controls GCC&rsquo;s implementation of this workaround.  It assumes that
+aborted accesses to any byte in the following regions does not have
+side effects:
+</p>
+<ol>
+<li> the memory occupied by the current function&rsquo;s stack frame;
+
+</li><li> the memory occupied by an incoming stack argument;
+
+</li><li> the memory occupied by an object with a link-time-constant address.
+</li></ol>
+
+<p>It is the kernel&rsquo;s responsibility to ensure that speculative
+accesses to these regions are indeed safe.
+</p>
+<p>If the input program contains a function declaration such as:
+</p>
+<div class="smallexample">
+<pre class="smallexample">void foo (void);
+</pre></div>
+
+<p>then the implementation of <code>foo</code> must allow <code>j foo</code> and
+<code>jal foo</code> to be executed speculatively.  GCC honors this
+restriction for functions it compiles itself.  It expects non-GCC
+functions (such as hand-written assembly code) to do the same.
+</p>
+<p>The option has three forms:
+</p>
+<dl compact="compact">
+<dt><code>-mr10k-cache-barrier=load-store</code></dt>
+<dd><p>Insert a cache barrier before a load or store that might be
+speculatively executed and that might have side effects even
+if aborted.
+</p>
+</dd>
+<dt><code>-mr10k-cache-barrier=store</code></dt>
+<dd><p>Insert a cache barrier before a store that might be speculatively
+executed and that might have side effects even if aborted.
+</p>
+</dd>
+<dt><code>-mr10k-cache-barrier=none</code></dt>
+<dd><p>Disable the insertion of cache barriers.  This is the default setting.
+</p></dd>
+</dl>
+
+</dd>
+<dt><code>-mflush-func=<var>func</var></code></dt>
+<dt><code>-mno-flush-func</code></dt>
+<dd><a name="index-mflush_002dfunc"></a>
+<p>Specifies the function to call to flush the I and D caches, or to not
+call any such function.  If called, the function must take the same
+arguments as the common <code>_flush_func</code>, that is, the address of the
+memory range for which the cache is being flushed, the size of the
+memory range, and the number 3 (to flush both caches).  The default
+depends on the target GCC was configured for, but commonly is either
+<code>_flush_func</code> or <code>__cpu_flush</code>.
+</p>
+</dd>
+<dt><code>mbranch-cost=<var>num</var></code></dt>
+<dd><a name="index-mbranch_002dcost-2"></a>
+<p>Set the cost of branches to roughly <var>num</var> &ldquo;simple&rdquo; instructions.
+This cost is only a heuristic and is not guaranteed to produce
+consistent results across releases.  A zero cost redundantly selects
+the default, which is based on the <samp>-mtune</samp> setting.
+</p>
+</dd>
+<dt><code>-mbranch-likely</code></dt>
+<dt><code>-mno-branch-likely</code></dt>
+<dd><a name="index-mbranch_002dlikely"></a>
+<a name="index-mno_002dbranch_002dlikely"></a>
+<p>Enable or disable use of Branch Likely instructions, regardless of the
+default for the selected architecture.  By default, Branch Likely
+instructions may be generated if they are supported by the selected
+architecture.  An exception is for the MIPS32 and MIPS64 architectures
+and processors that implement those architectures; for those, Branch
+Likely instructions are not be generated by default because the MIPS32
+and MIPS64 architectures specifically deprecate their use.
+</p>
+</dd>
+<dt><code>-mcompact-branches=never</code></dt>
+<dt><code>-mcompact-branches=optimal</code></dt>
+<dt><code>-mcompact-branches=always</code></dt>
+<dd><a name="index-mcompact_002dbranches_003dnever"></a>
+<a name="index-mcompact_002dbranches_003doptimal"></a>
+<a name="index-mcompact_002dbranches_003dalways"></a>
+<p>These options control which form of branches will be generated.  The
+default is <samp>-mcompact-branches=optimal</samp>.
+</p>
+<p>The <samp>-mcompact-branches=never</samp> option ensures that compact branch
+instructions will never be generated.
+</p>
+<p>The <samp>-mcompact-branches=always</samp> option ensures that a compact
+branch instruction will be generated if available.  If a compact branch
+instruction is not available, a delay slot form of the branch will be
+used instead.
+</p>
+<p>This option is supported from MIPS Release 6 onwards.
+</p>
+<p>The <samp>-mcompact-branches=optimal</samp> option will cause a delay slot
+branch to be used if one is available in the current ISA and the delay
+slot is successfully filled.  If the delay slot is not filled, a compact
+branch will be chosen if one is available.
+</p>
+</dd>
+<dt><code>-mfp-exceptions</code></dt>
+<dt><code>-mno-fp-exceptions</code></dt>
+<dd><a name="index-mfp_002dexceptions"></a>
+<p>Specifies whether FP exceptions are enabled.  This affects how
+FP instructions are scheduled for some processors.
+The default is that FP exceptions are
+enabled.
+</p>
+<p>For instance, on the SB-1, if FP exceptions are disabled, and we are emitting
+64-bit code, then we can use both FP pipes.  Otherwise, we can only use one
+FP pipe.
+</p>
+</dd>
+<dt><code>-mvr4130-align</code></dt>
+<dt><code>-mno-vr4130-align</code></dt>
+<dd><a name="index-mvr4130_002dalign"></a>
+<p>The VR4130 pipeline is two-way superscalar, but can only issue two
+instructions together if the first one is 8-byte aligned.  When this
+option is enabled, GCC aligns pairs of instructions that it
+thinks should execute in parallel.
+</p>
+<p>This option only has an effect when optimizing for the VR4130.
+It normally makes code faster, but at the expense of making it bigger.
+It is enabled by default at optimization level <samp>-O3</samp>.
+</p>
+</dd>
+<dt><code>-msynci</code></dt>
+<dt><code>-mno-synci</code></dt>
+<dd><a name="index-msynci"></a>
+<p>Enable (disable) generation of <code>synci</code> instructions on
+architectures that support it.  The <code>synci</code> instructions (if
+enabled) are generated when <code>__builtin___clear_cache</code> is
+compiled.
+</p>
+<p>This option defaults to <samp>-mno-synci</samp>, but the default can be
+overridden by configuring GCC with <samp>--with-synci</samp>.
+</p>
+<p>When compiling code for single processor systems, it is generally safe
+to use <code>synci</code>.  However, on many multi-core (SMP) systems, it
+does not invalidate the instruction caches on all cores and may lead
+to undefined behavior.
+</p>
+</dd>
+<dt><code>-mrelax-pic-calls</code></dt>
+<dt><code>-mno-relax-pic-calls</code></dt>
+<dd><a name="index-mrelax_002dpic_002dcalls"></a>
+<p>Try to turn PIC calls that are normally dispatched via register
+<code>$25</code> into direct calls.  This is only possible if the linker can
+resolve the destination at link time and if the destination is within
+range for a direct call.
+</p>
+<p><samp>-mrelax-pic-calls</samp> is the default if GCC was configured to use
+an assembler and a linker that support the <code>.reloc</code> assembly
+directive and <samp>-mexplicit-relocs</samp> is in effect.  With
+<samp>-mno-explicit-relocs</samp>, this optimization can be performed by the
+assembler and the linker alone without help from the compiler.
+</p>
+</dd>
+<dt><code>-mmcount-ra-address</code></dt>
+<dt><code>-mno-mcount-ra-address</code></dt>
+<dd><a name="index-mmcount_002dra_002daddress"></a>
+<a name="index-mno_002dmcount_002dra_002daddress"></a>
+<p>Emit (do not emit) code that allows <code>_mcount</code> to modify the
+calling function&rsquo;s return address.  When enabled, this option extends
+the usual <code>_mcount</code> interface with a new <var>ra-address</var>
+parameter, which has type <code>intptr_t *</code> and is passed in register
+<code>$12</code>.  <code>_mcount</code> can then modify the return address by
+doing both of the following:
+</p><ul>
+<li> Returning the new address in register <code>$31</code>.
+</li><li> Storing the new address in <code>*<var>ra-address</var></code>,
+if <var>ra-address</var> is nonnull.
+</li></ul>
+
+<p>The default is <samp>-mno-mcount-ra-address</samp>.
+</p>
+</dd>
+<dt><code>-mframe-header-opt</code></dt>
+<dt><code>-mno-frame-header-opt</code></dt>
+<dd><a name="index-mframe_002dheader_002dopt"></a>
+<p>Enable (disable) frame header optimization in the o32 ABI.  When using the
+o32 ABI, calling functions will allocate 16 bytes on the stack for the called
+function to write out register arguments.  When enabled, this optimization
+will suppress the allocation of the frame header if it can be determined that
+it is unused.
+</p>
+<p>This optimization is off by default at all optimization levels.
+</p>
+</dd>
+<dt><code>-mlxc1-sxc1</code></dt>
+<dt><code>-mno-lxc1-sxc1</code></dt>
+<dd><a name="index-mlxc1_002dsxc1"></a>
+<p>When applicable, enable (disable) the generation of <code>lwxc1</code>,
+<code>swxc1</code>, <code>ldxc1</code>, <code>sdxc1</code> instructions.  Enabled by default.
+</p>
+</dd>
+<dt><code>-mmadd4</code></dt>
+<dt><code>-mno-madd4</code></dt>
+<dd><a name="index-mmadd4"></a>
+<p>When applicable, enable (disable) the generation of 4-operand <code>madd.s</code>,
+<code>madd.d</code> and related instructions.  Enabled by default.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="MMIX-Options.html#MMIX-Options" accesskey="n" rel="next">MMIX Options</a>, Previous: <a href="MicroBlaze-Options.html#MicroBlaze-Options" accesskey="p" rel="prev">MicroBlaze Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

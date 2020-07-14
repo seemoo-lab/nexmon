@@ -1,0 +1,136 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Agent Expressions</title>
+
+<meta name="description" content="Debugging with GDB: Agent Expressions">
+<meta name="keywords" content="Debugging with GDB: Agent Expressions">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="General-Bytecode-Design.html#General-Bytecode-Design" rel="next" title="General Bytecode Design">
+<link href="Branch-Trace-Configuration-Format.html#Branch-Trace-Configuration-Format" rel="prev" title="Branch Trace Configuration Format">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Agent-Expressions"></a>
+<div class="header">
+<p>
+Next: <a href="Target-Descriptions.html#Target-Descriptions" accesskey="n" rel="next">Target Descriptions</a>, Previous: <a href="Remote-Protocol.html#Remote-Protocol" accesskey="p" rel="prev">Remote Protocol</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="The-GDB-Agent-Expression-Mechanism"></a>
+<h2 class="appendix">Appendix F The GDB Agent Expression Mechanism</h2>
+
+<p>In some applications, it is not feasible for the debugger to interrupt
+the program&rsquo;s execution long enough for the developer to learn anything
+helpful about its behavior.  If the program&rsquo;s correctness depends on its
+real-time behavior, delays introduced by a debugger might cause the
+program to fail, even when the code itself is correct.  It is useful to
+be able to observe the program&rsquo;s behavior without interrupting it.
+</p>
+<p>Using GDB&rsquo;s <code>trace</code> and <code>collect</code> commands, the user can
+specify locations in the program, and arbitrary expressions to evaluate
+when those locations are reached.  Later, using the <code>tfind</code>
+command, she can examine the values those expressions had when the
+program hit the trace points.  The expressions may also denote objects
+in memory &mdash; structures or arrays, for example &mdash; whose values GDB
+should record; while visiting a particular tracepoint, the user may
+inspect those objects as if they were in memory at that moment.
+However, because GDB records these values without interacting with the
+user, it can do so quickly and unobtrusively, hopefully not disturbing
+the program&rsquo;s behavior.
+</p>
+<p>When GDB is debugging a remote target, the GDB <em>agent</em> code running
+on the target computes the values of the expressions itself.  To avoid
+having a full symbolic expression evaluator on the agent, GDB translates
+expressions in the source language into a simpler bytecode language, and
+then sends the bytecode to the agent; the agent then executes the
+bytecode, and records the values for GDB to retrieve later.
+</p>
+<p>The bytecode language is simple; there are forty-odd opcodes, the bulk
+of which are the usual vocabulary of C operands (addition, subtraction,
+shifts, and so on) and various sizes of literals and memory reference
+operations.  The bytecode interpreter operates strictly on machine-level
+values &mdash; various sizes of integers and floating point numbers &mdash; and
+requires no information about types or symbols; thus, the interpreter&rsquo;s
+internal data structures are simple, and each bytecode requires only a
+few native machine instructions to implement it.  The interpreter is
+small, and strict limits on the memory and time required to evaluate an
+expression are easy to determine, making it suitable for use by the
+debugging agent in real-time applications.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="General-Bytecode-Design.html#General-Bytecode-Design" accesskey="1">General Bytecode Design</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Overview of the interpreter.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Bytecode-Descriptions.html#Bytecode-Descriptions" accesskey="2">Bytecode Descriptions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">What each one does.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Using-Agent-Expressions.html#Using-Agent-Expressions" accesskey="3">Using Agent Expressions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How agent expressions fit into the big picture.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Varying-Target-Capabilities.html#Varying-Target-Capabilities" accesskey="4">Varying Target Capabilities</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How to discover what the target can do.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Rationale.html#Rationale" accesskey="5">Rationale</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Why we did it this way.
+</td></tr>
+</table>
+
+
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Target-Descriptions.html#Target-Descriptions" accesskey="n" rel="next">Target Descriptions</a>, Previous: <a href="Remote-Protocol.html#Remote-Protocol" accesskey="p" rel="prev">Remote Protocol</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

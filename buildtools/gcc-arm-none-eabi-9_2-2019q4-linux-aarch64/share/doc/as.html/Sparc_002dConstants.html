@@ -1,0 +1,200 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Sparc-Constants</title>
+
+<meta name="description" content="Using as: Sparc-Constants">
+<meta name="keywords" content="Using as: Sparc-Constants">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Sparc_002dSyntax.html#Sparc_002dSyntax" rel="up" title="Sparc-Syntax">
+<link href="Sparc_002dRelocs.html#Sparc_002dRelocs" rel="next" title="Sparc-Relocs">
+<link href="Sparc_002dRegs.html#Sparc_002dRegs" rel="prev" title="Sparc-Regs">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Sparc_002dConstants"></a>
+<div class="header">
+<p>
+Next: <a href="Sparc_002dRelocs.html#Sparc_002dRelocs" accesskey="n" rel="next">Sparc-Relocs</a>, Previous: <a href="Sparc_002dRegs.html#Sparc_002dRegs" accesskey="p" rel="prev">Sparc-Regs</a>, Up: <a href="Sparc_002dSyntax.html#Sparc_002dSyntax" accesskey="u" rel="up">Sparc-Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Constants-2"></a>
+<h4 class="subsubsection">9.44.3.3 Constants</h4>
+<a name="index-Sparc-constants"></a>
+<a name="index-constants_002c-Sparc"></a>
+
+<p>Several Sparc instructions take an immediate operand field for
+which mnemonic names exist.  Two such examples are &lsquo;<samp>membar</samp>&rsquo;
+and &lsquo;<samp>prefetch</samp>&rsquo;.  Another example are the set of V9
+memory access instruction that allow specification of an
+address space identifier.
+</p>
+<p>The &lsquo;<samp>membar</samp>&rsquo; instruction specifies a memory barrier that is
+the defined by the operand which is a bitmask.  The supported
+mask mnemonics are:
+</p>
+<ul>
+<li> &lsquo;<samp>#Sync</samp>&rsquo; requests that all operations (including nonmemory
+reference operations) appearing prior to the <code>membar</code> must have
+been performed and the effects of any exceptions become visible before
+any instructions after the <code>membar</code> may be initiated.  This
+corresponds to <code>membar</code> cmask field bit 2.
+
+</li><li> &lsquo;<samp>#MemIssue</samp>&rsquo; requests that all memory reference operations
+appearing prior to the <code>membar</code> must have been performed before
+any memory operation after the <code>membar</code> may be initiated.  This
+corresponds to <code>membar</code> cmask field bit 1.
+
+</li><li> &lsquo;<samp>#Lookaside</samp>&rsquo; requests that a store appearing prior to the
+<code>membar</code> must complete before any load following the
+<code>membar</code> referencing the same address can be initiated.  This
+corresponds to <code>membar</code> cmask field bit 0.
+
+</li><li> &lsquo;<samp>#StoreStore</samp>&rsquo; defines that the effects of all stores appearing
+prior to the <code>membar</code> instruction must be visible to all
+processors before the effect of any stores following the
+<code>membar</code>.  Equivalent to the deprecated <code>stbar</code> instruction.
+This corresponds to <code>membar</code> mmask field bit 3.
+
+</li><li> &lsquo;<samp>#LoadStore</samp>&rsquo; defines all loads appearing prior to the
+<code>membar</code> instruction must have been performed before the effect
+of any stores following the <code>membar</code> is visible to any other
+processor.  This corresponds to <code>membar</code> mmask field bit 2.
+
+</li><li> &lsquo;<samp>#StoreLoad</samp>&rsquo; defines that the effects of all stores appearing
+prior to the <code>membar</code> instruction must be visible to all
+processors before loads following the <code>membar</code> may be performed.
+This corresponds to <code>membar</code> mmask field bit 1.
+
+</li><li> &lsquo;<samp>#LoadLoad</samp>&rsquo; defines that all loads appearing prior to the
+<code>membar</code> instruction must have been performed before any loads
+following the <code>membar</code> may be performed.  This corresponds to
+<code>membar</code> mmask field bit 0.
+
+</li></ul>
+
+<p>These values can be ored together, for example:
+</p>
+<div class="example">
+<pre class="example">membar #Sync
+membar #StoreLoad | #LoadLoad
+membar #StoreLoad | #StoreStore
+</pre></div>
+
+<p>The <code>prefetch</code> and <code>prefetcha</code> instructions take a prefetch
+function code.  The following prefetch function code constant
+mnemonics are available:
+</p>
+<ul>
+<li> &lsquo;<samp>#n_reads</samp>&rsquo; requests a prefetch for several reads, and corresponds
+to a prefetch function code of 0.
+
+<p>&lsquo;<samp>#one_read</samp>&rsquo; requests a prefetch for one read, and corresponds
+to a prefetch function code of 1.
+</p>
+<p>&lsquo;<samp>#n_writes</samp>&rsquo; requests a prefetch for several writes (and possibly
+reads), and corresponds to a prefetch function code of 2.
+</p>
+<p>&lsquo;<samp>#one_write</samp>&rsquo; requests a prefetch for one write, and corresponds
+to a prefetch function code of 3.
+</p>
+<p>&lsquo;<samp>#page</samp>&rsquo; requests a prefetch page, and corresponds to a prefetch
+function code of 4.
+</p>
+<p>&lsquo;<samp>#invalidate</samp>&rsquo; requests a prefetch invalidate, and corresponds to
+a prefetch function code of 16.
+</p>
+<p>&lsquo;<samp>#unified</samp>&rsquo; requests a prefetch to the nearest unified cache, and
+corresponds to a prefetch function code of 17.
+</p>
+<p>&lsquo;<samp>#n_reads_strong</samp>&rsquo; requests a strong prefetch for several reads,
+and corresponds to a prefetch function code of 20.
+</p>
+<p>&lsquo;<samp>#one_read_strong</samp>&rsquo; requests a strong prefetch for one read,
+and corresponds to a prefetch function code of 21.
+</p>
+<p>&lsquo;<samp>#n_writes_strong</samp>&rsquo; requests a strong prefetch for several writes,
+and corresponds to a prefetch function code of 22.
+</p>
+<p>&lsquo;<samp>#one_write_strong</samp>&rsquo; requests a strong prefetch for one write,
+and corresponds to a prefetch function code of 23.
+</p>
+<p>Onle one prefetch code may be specified.  Here are some examples:
+</p>
+<div class="example">
+<pre class="example">prefetch  [%l0 + %l2], #one_read
+prefetch  [%g2 + 8], #n_writes
+prefetcha [%g1] 0x8, #unified
+prefetcha [%o0 + 0x10] %asi, #n_reads
+</pre></div>
+
+<p>The actual behavior of a given prefetch function code is processor
+specific.  If a processor does not implement a given prefetch
+function code, it will treat the prefetch instruction as a nop.
+</p>
+<p>For instructions that accept an immediate address space identifier,
+<code>as</code> provides many mnemonics corresponding to
+V9 defined as well as UltraSPARC and Niagara extended values.
+For example, &lsquo;<samp>#ASI_P</samp>&rsquo; and &lsquo;<samp>#ASI_BLK_INIT_QUAD_LDD_AIUS</samp>&rsquo;.
+See the V9 and processor specific manuals for details.
+</p>
+</li></ul>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Sparc_002dRelocs.html#Sparc_002dRelocs" accesskey="n" rel="next">Sparc-Relocs</a>, Previous: <a href="Sparc_002dRegs.html#Sparc_002dRegs" accesskey="p" rel="prev">Sparc-Regs</a>, Up: <a href="Sparc_002dSyntax.html#Sparc_002dSyntax" accesskey="u" rel="up">Sparc-Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Garbage Collection</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Garbage Collection">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Garbage Collection">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Objective_002dC.html#Objective_002dC" rel="up" title="Objective-C">
+<link href="Constant-string-objects.html#Constant-string-objects" rel="next" title="Constant string objects">
+<link href="Method-signatures.html#Method-signatures" rel="prev" title="Method signatures">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Garbage-Collection"></a>
+<div class="header">
+<p>
+Next: <a href="Constant-string-objects.html#Constant-string-objects" accesskey="n" rel="next">Constant string objects</a>, Previous: <a href="Type-encoding.html#Type-encoding" accesskey="p" rel="prev">Type encoding</a>, Up: <a href="Objective_002dC.html#Objective_002dC" accesskey="u" rel="up">Objective-C</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Garbage-Collection-1"></a>
+<h3 class="section">8.4 Garbage Collection</h3>
+
+<p>This section is specific for the GNU Objective-C runtime.  If you are
+using a different runtime, you can skip it.
+</p>
+<p>Support for garbage collection with the GNU runtime has been added by
+using a powerful conservative garbage collector, known as the
+Boehm-Demers-Weiser conservative garbage collector.
+</p>
+<p>To enable the support for it you have to configure the compiler using
+an additional argument, <samp><span class="nolinebreak">--enable-objc-gc</span></samp><!-- /@w -->.  This will
+build the boehm-gc library, and build an additional runtime library
+which has several enhancements to support the garbage collector.  The
+new library has a new name, <samp>libobjc_gc.a</samp> to not conflict with
+the non-garbage-collected library.
+</p>
+<p>When the garbage collector is used, the objects are allocated using the
+so-called typed memory allocation mechanism available in the
+Boehm-Demers-Weiser collector.  This mode requires precise information on
+where pointers are located inside objects.  This information is computed
+once per class, immediately after the class has been initialized.
+</p>
+<p>There is a new runtime function <code>class_ivar_set_gcinvisible()</code>
+which can be used to declare a so-called <em>weak pointer</em>
+reference.  Such a pointer is basically hidden for the garbage collector;
+this can be useful in certain situations, especially when you want to
+keep track of the allocated objects, yet allow them to be
+collected.  This kind of pointers can only be members of objects, you
+cannot declare a global pointer as a weak reference.  Every type which is
+a pointer type can be declared a weak pointer, including <code>id</code>,
+<code>Class</code> and <code>SEL</code>.
+</p>
+<p>Here is an example of how to use this feature.  Suppose you want to
+implement a class whose instances hold a weak pointer reference; the
+following class does this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">
+@interface WeakPointer : Object
+{
+    const void* weakPointer;
+}
+
+- initWithPointer:(const void*)p;
+- (const void*)weakPointer;
+@end
+
+
+@implementation WeakPointer
+
++ (void)initialize
+{
+  if (self == objc_lookUpClass (&quot;WeakPointer&quot;))
+    class_ivar_set_gcinvisible (self, &quot;weakPointer&quot;, YES);
+}
+
+- initWithPointer:(const void*)p
+{
+  weakPointer = p;
+  return self;
+}
+
+- (const void*)weakPointer
+{
+  return weakPointer;
+}
+
+@end
+
+</pre></div>
+
+<p>Weak pointers are supported through a new type character specifier
+represented by the &lsquo;<samp>!</samp>&rsquo; character.  The
+<code>class_ivar_set_gcinvisible()</code> function adds or removes this
+specifier to the string type description of the instance variable named
+as argument.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Constant-string-objects.html#Constant-string-objects" accesskey="n" rel="next">Constant string objects</a>, Previous: <a href="Type-encoding.html#Type-encoding" accesskey="p" rel="prev">Type encoding</a>, Up: <a href="Objective_002dC.html#Objective_002dC" accesskey="u" rel="up">Objective-C</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

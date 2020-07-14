@@ -1,0 +1,261 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Constant expressions</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Constant expressions">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Constant expressions">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Expression-trees.html#Expression-trees" rel="up" title="Expression trees">
+<link href="Storage-References.html#Storage-References" rel="next" title="Storage References">
+<link href="Expression-trees.html#Expression-trees" rel="prev" title="Expression trees">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Constant-expressions"></a>
+<div class="header">
+<p>
+Next: <a href="Storage-References.html#Storage-References" accesskey="n" rel="next">Storage References</a>, Up: <a href="Expression-trees.html#Expression-trees" accesskey="u" rel="up">Expression trees</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Constant-expressions-1"></a>
+<h4 class="subsection">11.6.1 Constant expressions</h4>
+<a name="index-INTEGER_005fCST"></a>
+<a name="index-tree_005fint_005fcst_005flt"></a>
+<a name="index-tree_005fint_005fcst_005fequal"></a>
+<a name="index-tree_005ffits_005fuhwi_005fp"></a>
+<a name="index-tree_005ffits_005fshwi_005fp"></a>
+<a name="index-tree_005fto_005fuhwi"></a>
+<a name="index-tree_005fto_005fshwi"></a>
+<a name="index-TREE_005fINT_005fCST_005fNUNITS"></a>
+<a name="index-TREE_005fINT_005fCST_005fELT"></a>
+<a name="index-TREE_005fINT_005fCST_005fLOW"></a>
+<a name="index-REAL_005fCST"></a>
+<a name="index-FIXED_005fCST"></a>
+<a name="index-COMPLEX_005fCST"></a>
+<a name="index-VECTOR_005fCST"></a>
+<a name="index-STRING_005fCST"></a>
+<a name="index-POLY_005fINT_005fCST"></a>
+<a name="index-TREE_005fSTRING_005fLENGTH"></a>
+<a name="index-TREE_005fSTRING_005fPOINTER"></a>
+
+<p>The table below begins with constants, moves on to unary expressions,
+then proceeds to binary expressions, and concludes with various other
+kinds of expressions:
+</p>
+<dl compact="compact">
+<dt><code>INTEGER_CST</code></dt>
+<dd><p>These nodes represent integer constants.  Note that the type of these
+constants is obtained with <code>TREE_TYPE</code>; they are not always of type
+<code>int</code>.  In particular, <code>char</code> constants are represented with
+<code>INTEGER_CST</code> nodes.  The value of the integer constant <code>e</code> is
+represented in an array of HOST_WIDE_INT.   There are enough elements
+in the array to represent the value without taking extra elements for
+redundant 0s or -1.  The number of elements used to represent <code>e</code>
+is available via <code>TREE_INT_CST_NUNITS</code>. Element <code>i</code> can be
+extracted by using <code>TREE_INT_CST_ELT (e, i)</code>.
+<code>TREE_INT_CST_LOW</code> is a shorthand for <code>TREE_INT_CST_ELT (e, 0)</code>.
+</p>
+<p>The functions <code>tree_fits_shwi_p</code> and <code>tree_fits_uhwi_p</code>
+can be used to tell if the value is small enough to fit in a
+signed HOST_WIDE_INT or an unsigned HOST_WIDE_INT respectively.
+The value can then be extracted using <code>tree_to_shwi</code> and
+<code>tree_to_uhwi</code>.
+</p>
+</dd>
+<dt><code>REAL_CST</code></dt>
+<dd>
+<p>FIXME: Talk about how to obtain representations of this constant, do
+comparisons, and so forth.
+</p>
+</dd>
+<dt><code>FIXED_CST</code></dt>
+<dd>
+<p>These nodes represent fixed-point constants.  The type of these constants
+is obtained with <code>TREE_TYPE</code>.  <code>TREE_FIXED_CST_PTR</code> points to
+a <code>struct fixed_value</code>;  <code>TREE_FIXED_CST</code> returns the structure
+itself.  <code>struct fixed_value</code> contains <code>data</code> with the size of two
+<code>HOST_BITS_PER_WIDE_INT</code> and <code>mode</code> as the associated fixed-point
+machine mode for <code>data</code>.
+</p>
+</dd>
+<dt><code>COMPLEX_CST</code></dt>
+<dd><p>These nodes are used to represent complex number constants, that is a
+<code>__complex__</code> whose parts are constant nodes.  The
+<code>TREE_REALPART</code> and <code>TREE_IMAGPART</code> return the real and the
+imaginary parts respectively.
+</p>
+</dd>
+<dt><code>VECTOR_CST</code></dt>
+<dd><p>These nodes are used to represent vector constants.  Each vector
+constant <var>v</var> is treated as a specific instance of an arbitrary-length
+sequence that itself contains &lsquo;<samp>VECTOR_CST_NPATTERNS (<var>v</var>)</samp>&rsquo;
+interleaved patterns.  Each pattern has the form:
+</p>
+<div class="smallexample">
+<pre class="smallexample">{ <var>base0</var>, <var>base1</var>, <var>base1</var> + <var>step</var>, <var>base1</var> + <var>step</var> * 2, &hellip; }
+</pre></div>
+
+<p>The first three elements in each pattern are enough to determine the
+values of the other elements.  However, if all <var>step</var>s are zero,
+only the first two elements are needed.  If in addition each <var>base1</var>
+is equal to the corresponding <var>base0</var>, only the first element in
+each pattern is needed.  The number of encoded elements per pattern
+is given by &lsquo;<samp>VECTOR_CST_NELTS_PER_PATTERN (<var>v</var>)</samp>&rsquo;.
+</p>
+<p>For example, the constant:
+</p>
+<div class="smallexample">
+<pre class="smallexample">{ 0, 1, 2, 6, 3, 8, 4, 10, 5, 12, 6, 14, 7, 16, 8, 18 }
+</pre></div>
+
+<p>is interpreted as an interleaving of the sequences:
+</p>
+<div class="smallexample">
+<pre class="smallexample">{ 0, 2, 3, 4, 5, 6, 7, 8 }
+{ 1, 6, 8, 10, 12, 14, 16, 18 }
+</pre></div>
+
+<p>where the sequences are represented by the following patterns:
+</p>
+<div class="smallexample">
+<pre class="smallexample"><var>base0</var> == 0, <var>base1</var> == 2, <var>step</var> == 1
+<var>base0</var> == 1, <var>base1</var> == 6, <var>step</var> == 2
+</pre></div>
+
+<p>In this case:
+</p>
+<div class="smallexample">
+<pre class="smallexample">VECTOR_CST_NPATTERNS (<var>v</var>) == 2
+VECTOR_CST_NELTS_PER_PATTERN (<var>v</var>) == 3
+</pre></div>
+
+<p>The vector is therefore encoded using the first 6 elements
+(&lsquo;<samp>{ 0, 1, 2, 6, 3, 8 }</samp>&rsquo;), with the remaining 10 elements
+being implicit extensions of them.
+</p>
+<p>Sometimes this scheme can create two possible encodings of the same
+vector.  For example { 0, 1 } could be seen as two patterns with
+one element each or one pattern with two elements (<var>base0</var> and
+<var>base1</var>).  The canonical encoding is always the one with the
+fewest patterns or (if both encodings have the same number of
+petterns) the one with the fewest encoded elements.
+</p>
+<p>&lsquo;<samp>vector_cst_encoding_nelts (<var>v</var>)</samp>&rsquo; gives the total number of
+encoded elements in <var>v</var>, which is 6 in the example above.
+<code>VECTOR_CST_ENCODED_ELTS (<var>v</var>)</code> gives a pointer to the elements
+encoded in <var>v</var> and <code>VECTOR_CST_ENCODED_ELT (<var>v</var>, <var>i</var>)</code>
+accesses the value of encoded element <var>i</var>.
+</p>
+<p>&lsquo;<samp>VECTOR_CST_DUPLICATE_P (<var>v</var>)</samp>&rsquo; is true if <var>v</var> simply contains
+repeated instances of &lsquo;<samp>VECTOR_CST_NPATTERNS (<var>v</var>)</samp>&rsquo; values.  This is
+a shorthand for testing &lsquo;<samp>VECTOR_CST_NELTS_PER_PATTERN (<var>v</var>) == 1</samp>&rsquo;.
+</p>
+<p>&lsquo;<samp>VECTOR_CST_STEPPED_P (<var>v</var>)</samp>&rsquo; is true if at least one
+pattern in <var>v</var> has a nonzero step.  This is a shorthand for
+testing &lsquo;<samp>VECTOR_CST_NELTS_PER_PATTERN (<var>v</var>) == 3</samp>&rsquo;.
+</p>
+<p>The utility function <code>vector_cst_elt</code> gives the value of an
+arbitrary index as a <code>tree</code>.  <code>vector_cst_int_elt</code> gives
+the same value as a <code>wide_int</code>.
+</p>
+</dd>
+<dt><code>STRING_CST</code></dt>
+<dd><p>These nodes represent string-constants.  The <code>TREE_STRING_LENGTH</code>
+returns the length of the string, as an <code>int</code>.  The
+<code>TREE_STRING_POINTER</code> is a <code>char*</code> containing the string
+itself.  The string may not be <code>NUL</code>-terminated, and it may contain
+embedded <code>NUL</code> characters.  Therefore, the
+<code>TREE_STRING_LENGTH</code> includes the trailing <code>NUL</code> if it is
+present.
+</p>
+<p>For wide string constants, the <code>TREE_STRING_LENGTH</code> is the number
+of bytes in the string, and the <code>TREE_STRING_POINTER</code>
+points to an array of the bytes of the string, as represented on the
+target system (that is, as integers in the target endianness).  Wide and
+non-wide string constants are distinguished only by the <code>TREE_TYPE</code>
+of the <code>STRING_CST</code>.
+</p>
+<p>FIXME: The formats of string constants are not well-defined when the
+target system bytes are not the same width as host system bytes.
+</p>
+</dd>
+<dt><code>POLY_INT_CST</code></dt>
+<dd><p>These nodes represent invariants that depend on some target-specific
+runtime parameters.  They consist of <code>NUM_POLY_INT_COEFFS</code>
+coefficients, with the first coefficient being the constant term and
+the others being multipliers that are applied to the runtime parameters.
+</p>
+<p><code>POLY_INT_CST_ELT (<var>x</var>, <var>i</var>)</code> references coefficient number
+<var>i</var> of <code>POLY_INT_CST</code> node <var>x</var>.  Each coefficient is an
+<code>INTEGER_CST</code>.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Storage-References.html#Storage-References" accesskey="n" rel="next">Storage References</a>, Up: <a href="Expression-trees.html#Expression-trees" accesskey="u" rel="up">Expression trees</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

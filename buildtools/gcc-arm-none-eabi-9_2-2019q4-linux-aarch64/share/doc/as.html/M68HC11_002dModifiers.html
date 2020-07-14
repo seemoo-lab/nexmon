@@ -1,0 +1,146 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: M68HC11-Modifiers</title>
+
+<meta name="description" content="Using as: M68HC11-Modifiers">
+<meta name="keywords" content="Using as: M68HC11-Modifiers">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="M68HC11_002dDependent.html#M68HC11_002dDependent" rel="up" title="M68HC11-Dependent">
+<link href="M68HC11_002dDirectives.html#M68HC11_002dDirectives" rel="next" title="M68HC11-Directives">
+<link href="M68HC11_002dSyntax.html#M68HC11_002dSyntax" rel="prev" title="M68HC11-Syntax">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="M68HC11_002dModifiers"></a>
+<div class="header">
+<p>
+Next: <a href="M68HC11_002dDirectives.html#M68HC11_002dDirectives" accesskey="n" rel="next">M68HC11-Directives</a>, Previous: <a href="M68HC11_002dSyntax.html#M68HC11_002dSyntax" accesskey="p" rel="prev">M68HC11-Syntax</a>, Up: <a href="M68HC11_002dDependent.html#M68HC11_002dDependent" accesskey="u" rel="up">M68HC11-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Symbolic-Operand-Modifiers-1"></a>
+<h4 class="subsection">9.23.3 Symbolic Operand Modifiers</h4>
+
+<a name="index-M68HC11-modifiers"></a>
+<a name="index-syntax_002c-M68HC11-1"></a>
+
+<p>The assembler supports several modifiers when using symbol addresses
+in 68HC11 and 68HC12 instruction operands.  The general syntax is
+the following:
+</p>
+<div class="smallexample">
+<pre class="smallexample">%modifier(symbol)
+</pre></div>
+
+<dl compact="compact">
+<dd><a name="index-symbol-modifiers-3"></a>
+</dd>
+<dt><code>%addr</code></dt>
+<dd><p>This modifier indicates to the assembler and linker to use
+the 16-bit physical address corresponding to the symbol.  This is intended
+to be used on memory window systems to map a symbol in the memory bank window.
+If the symbol is in a memory expansion part, the physical address
+corresponds to the symbol address within the memory bank window.
+If the symbol is not in a memory expansion part, this is the symbol address
+(using or not using the %addr modifier has no effect in that case).
+</p>
+</dd>
+<dt><code>%page</code></dt>
+<dd><p>This modifier indicates to use the memory page number corresponding
+to the symbol.  If the symbol is in a memory expansion part, its page
+number is computed by the linker as a number used to map the page containing
+the symbol in the memory bank window.  If the symbol is not in a memory
+expansion part, the page number is 0.
+</p>
+</dd>
+<dt><code>%hi</code></dt>
+<dd><p>This modifier indicates to use the 8-bit high part of the physical
+address of the symbol.
+</p>
+</dd>
+<dt><code>%lo</code></dt>
+<dd><p>This modifier indicates to use the 8-bit low part of the physical
+address of the symbol.
+</p>
+</dd>
+</dl>
+
+<p>For example a 68HC12 call to a function &lsquo;<samp>foo_example</samp>&rsquo; stored in memory
+expansion part could be written as follows:
+</p>
+<div class="smallexample">
+<pre class="smallexample">call %addr(foo_example),%page(foo_example)
+</pre></div>
+
+<p>and this is equivalent to
+</p>
+<div class="smallexample">
+<pre class="smallexample">call foo_example
+</pre></div>
+
+<p>And for 68HC11 it could be written as follows:
+</p>
+<div class="smallexample">
+<pre class="smallexample">ldab #%page(foo_example)
+stab _page_switch
+jsr  %addr(foo_example)
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="M68HC11_002dDirectives.html#M68HC11_002dDirectives" accesskey="n" rel="next">M68HC11-Directives</a>, Previous: <a href="M68HC11_002dSyntax.html#M68HC11_002dSyntax" accesskey="p" rel="prev">M68HC11-Syntax</a>, Up: <a href="M68HC11_002dDependent.html#M68HC11_002dDependent" accesskey="u" rel="up">M68HC11-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

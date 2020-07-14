@@ -1,0 +1,198 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Global Register Variables</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Global Register Variables">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Global Register Variables">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Explicit-Register-Variables.html#Explicit-Register-Variables" rel="up" title="Explicit Register Variables">
+<link href="Local-Register-Variables.html#Local-Register-Variables" rel="next" title="Local Register Variables">
+<link href="Explicit-Register-Variables.html#Explicit-Register-Variables" rel="prev" title="Explicit Register Variables">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Global-Register-Variables"></a>
+<div class="header">
+<p>
+Next: <a href="Local-Register-Variables.html#Local-Register-Variables" accesskey="n" rel="next">Local Register Variables</a>, Up: <a href="Explicit-Register-Variables.html#Explicit-Register-Variables" accesskey="u" rel="up">Explicit Register Variables</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Defining-Global-Register-Variables"></a>
+<h4 class="subsubsection">6.47.5.1 Defining Global Register Variables</h4>
+<a name="Global-Reg-Vars"></a><a name="index-global-register-variables"></a>
+<a name="index-registers_002c-global-variables-in"></a>
+<a name="index-registers_002c-global-allocation"></a>
+
+<p>You can define a global register variable and associate it with a specified 
+register like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">register int *foo asm (&quot;r12&quot;);
+</pre></div>
+
+<p>Here <code>r12</code> is the name of the register that should be used. Note that 
+this is the same syntax used for defining local register variables, but for 
+a global variable the declaration appears outside a function. The 
+<code>register</code> keyword is required, and cannot be combined with 
+<code>static</code>. The register name must be a valid register name for the
+target platform.
+</p>
+<p>Do not use type qualifiers such as <code>const</code> and <code>volatile</code>, as
+the outcome may be contrary to expectations.  In  particular, using the
+<code>volatile</code> qualifier does not fully prevent the compiler from
+optimizing accesses to the register.
+</p>
+<p>Registers are a scarce resource on most systems and allowing the 
+compiler to manage their usage usually results in the best code. However, 
+under special circumstances it can make sense to reserve some globally.
+For example this may be useful in programs such as programming language 
+interpreters that have a couple of global variables that are accessed 
+very often.
+</p>
+<p>After defining a global register variable, for the current compilation
+unit:
+</p>
+<ul>
+<li> If the register is a call-saved register, call ABI is affected:
+the register will not be restored in function epilogue sequences after
+the variable has been assigned.  Therefore, functions cannot safely
+return to callers that assume standard ABI.
+</li><li> Conversely, if the register is a call-clobbered register, making
+calls to functions that use standard ABI may lose contents of the variable.
+Such calls may be created by the compiler even if none are evident in
+the original program, for example when libgcc functions are used to
+make up for unavailable instructions.
+</li><li> Accesses to the variable may be optimized as usual and the register
+remains available for allocation and use in any computations, provided that
+observable values of the variable are not affected.
+</li><li> If the variable is referenced in inline assembly, the type of access
+must be provided to the compiler via constraints (see <a href="Constraints.html#Constraints">Constraints</a>).
+Accesses from basic asms are not supported.
+</li></ul>
+
+<p>Note that these points <em>only</em> apply to code that is compiled with the
+definition. The behavior of code that is merely linked in (for example 
+code from libraries) is not affected.
+</p>
+<p>If you want to recompile source files that do not actually use your global 
+register variable so they do not use the specified register for any other 
+purpose, you need not actually add the global register declaration to 
+their source code. It suffices to specify the compiler option 
+<samp>-ffixed-<var>reg</var></samp> (see <a href="Code-Gen-Options.html#Code-Gen-Options">Code Gen Options</a>) to reserve the 
+register.
+</p>
+<a name="Declaring-the-variable"></a>
+<h4 class="subsubheading">Declaring the variable</h4>
+
+<p>Global register variables cannot have initial values, because an
+executable file has no means to supply initial contents for a register.
+</p>
+<p>When selecting a register, choose one that is normally saved and 
+restored by function calls on your machine. This ensures that code
+which is unaware of this reservation (such as library routines) will 
+restore it before returning.
+</p>
+<p>On machines with register windows, be sure to choose a global
+register that is not affected magically by the function call mechanism.
+</p>
+<a name="Using-the-variable"></a>
+<h4 class="subsubheading">Using the variable</h4>
+
+<a name="index-qsort_002c-and-global-register-variables"></a>
+<p>When calling routines that are not aware of the reservation, be 
+cautious if those routines call back into code which uses them. As an 
+example, if you call the system library version of <code>qsort</code>, it may 
+clobber your registers during execution, but (if you have selected 
+appropriate registers) it will restore them before returning. However 
+it will <em>not</em> restore them before calling <code>qsort</code>&rsquo;s comparison 
+function. As a result, global values will not reliably be available to 
+the comparison function unless the <code>qsort</code> function itself is rebuilt.
+</p>
+<p>Similarly, it is not safe to access the global register variables from signal
+handlers or from more than one thread of control. Unless you recompile 
+them specially for the task at hand, the system library routines may 
+temporarily use the register for other things.  Furthermore, since the register
+is not reserved exclusively for the variable, accessing it from handlers of
+asynchronous signals may observe unrelated temporary values residing in the
+register.
+</p>
+<a name="index-register-variable-after-longjmp"></a>
+<a name="index-global-register-after-longjmp"></a>
+<a name="index-value-after-longjmp"></a>
+<a name="index-longjmp"></a>
+<a name="index-setjmp"></a>
+<p>On most machines, <code>longjmp</code> restores to each global register
+variable the value it had at the time of the <code>setjmp</code>. On some
+machines, however, <code>longjmp</code> does not change the value of global
+register variables. To be portable, the function that called <code>setjmp</code>
+should make other arrangements to save the values of the global register
+variables, and to restore them in a <code>longjmp</code>. This way, the same
+thing happens regardless of what <code>longjmp</code> does.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Local-Register-Variables.html#Local-Register-Variables" accesskey="n" rel="next">Local Register Variables</a>, Up: <a href="Explicit-Register-Variables.html#Explicit-Register-Variables" accesskey="u" rel="up">Explicit Register Variables</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

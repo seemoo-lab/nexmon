@@ -1,0 +1,118 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Dump output verbosity</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Dump output verbosity">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Dump output verbosity">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Optimization-info.html#Optimization-info" rel="up" title="Optimization info">
+<link href="Dump-types.html#Dump-types" rel="next" title="Dump types">
+<link href="Dump-files-and-streams.html#Dump-files-and-streams" rel="prev" title="Dump files and streams">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Dump-output-verbosity"></a>
+<div class="header">
+<p>
+Next: <a href="Dump-types.html#Dump-types" accesskey="n" rel="next">Dump types</a>, Previous: <a href="Dump-files-and-streams.html#Dump-files-and-streams" accesskey="p" rel="prev">Dump files and streams</a>, Up: <a href="Optimization-info.html#Optimization-info" accesskey="u" rel="up">Optimization info</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Dump-output-verbosity-1"></a>
+<h4 class="subsection">9.6.4 Dump output verbosity</h4>
+<a name="index-dump-verbosity"></a>
+
+<p>The dump verbosity has the following options
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>optimized</samp>&rsquo;</dt>
+<dd><p>Print information when an optimization is successfully applied. It is
+up to a pass to decide which information is relevant. For example, the
+vectorizer passes print the source location of loops which got
+successfully vectorized.
+</p>
+</dd>
+<dt>&lsquo;<samp>missed</samp>&rsquo;</dt>
+<dd><p>Print information about missed optimizations. Individual passes
+control which information to include in the output. For example,
+</p>
+<div class="smallexample">
+<pre class="smallexample">gcc -O2 -ftree-vectorize -fopt-info-vec-missed
+</pre></div>
+
+<p>will print information about missed optimization opportunities from
+vectorization passes on stderr.
+</p>
+</dd>
+<dt>&lsquo;<samp>note</samp>&rsquo;</dt>
+<dd><p>Print verbose information about optimizations, such as certain
+transformations, more detailed messages about decisions etc.
+</p>
+</dd>
+<dt>&lsquo;<samp>all</samp>&rsquo;</dt>
+<dd><p>Print detailed optimization information. This includes
+<var>optimized</var>, <var>missed</var>, and <var>note</var>.
+</p></dd>
+</dl>
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Symbol Names</title>
+
+<meta name="description" content="Using as: Symbol Names">
+<meta name="keywords" content="Using as: Symbol Names">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Symbols.html#Symbols" rel="up" title="Symbols">
+<link href="Dot.html#Dot" rel="next" title="Dot">
+<link href="Setting-Symbols.html#Setting-Symbols" rel="prev" title="Setting Symbols">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Symbol-Names"></a>
+<div class="header">
+<p>
+Next: <a href="Dot.html#Dot" accesskey="n" rel="next">Dot</a>, Previous: <a href="Setting-Symbols.html#Setting-Symbols" accesskey="p" rel="prev">Setting Symbols</a>, Up: <a href="Symbols.html#Symbols" accesskey="u" rel="up">Symbols</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Symbol-Names-1"></a>
+<h3 class="section">5.3 Symbol Names</h3>
+
+<a name="index-symbol-names"></a>
+<a name="index-names_002c-symbol"></a>
+<p>Symbol names begin with a letter or with one of &lsquo;<samp>._</samp>&rsquo;.  On most
+machines, you can also use <code>$</code> in symbol names; exceptions are
+noted in <a href="Machine-Dependencies.html#Machine-Dependencies">Machine Dependencies</a>.  That character may be followed by any
+string of digits, letters, dollar signs (unless otherwise noted for a
+particular target machine), and underscores.
+</p>
+<p>Case of letters is significant: <code>foo</code> is a different symbol name
+than <code>Foo</code>.
+</p>
+<p>Symbol names do not start with a digit.  An exception to this rule is made for
+Local Labels.  See below.
+</p>
+<p>Multibyte characters are supported.  To generate a symbol name containing
+multibyte characters enclose it within double quotes and use escape codes. cf
+See <a href="Strings.html#Strings">Strings</a>.  Generating a multibyte symbol name from a label is not
+currently supported.
+</p>
+<p>Each symbol has exactly one name.  Each name in an assembly language program
+refers to exactly one symbol.  You may use that symbol name any number of times
+in a program.
+</p>
+<a name="Local-Symbol-Names"></a>
+<h4 class="subheading">Local Symbol Names</h4>
+
+<a name="index-local-symbol-names"></a>
+<a name="index-symbol-names_002c-local"></a>
+<p>A local symbol is any symbol beginning with certain local label prefixes.
+By default, the local label prefix is &lsquo;<samp>.L</samp>&rsquo; for ELF systems or
+&lsquo;<samp>L</samp>&rsquo; for traditional a.out systems, but each target may have its own
+set of local label prefixes.
+On the HPPA local symbols begin with &lsquo;<samp>L$</samp>&rsquo;.
+</p>
+<p>Local symbols are defined and used within the assembler, but they are
+normally not saved in object files.  Thus, they are not visible when debugging.
+You may use the &lsquo;<samp>-L</samp>&rsquo; option (see <a href="L.html#L">Include Local Symbols</a>)
+to retain the local symbols in the object files.
+</p>
+<a name="Local-Labels-1"></a>
+<h4 class="subheading">Local Labels</h4>
+
+<a name="index-local-labels"></a>
+<a name="index-temporary-symbol-names"></a>
+<a name="index-symbol-names_002c-temporary"></a>
+<p>Local labels are different from local symbols.  Local labels help compilers and
+programmers use names temporarily.  They create symbols which are guaranteed to
+be unique over the entire scope of the input source code and which can be
+referred to by a simple notation.  To define a local label, write a label of
+the form &lsquo;<samp><b>N</b>:</samp>&rsquo; (where <b>N</b> represents any non-negative integer).
+To refer to the most recent previous definition of that label write
+&lsquo;<samp><b>N</b>b</samp>&rsquo;, using the same number as when you defined the label.  To refer
+to the next definition of a local label, write &lsquo;<samp><b>N</b>f</samp>&rsquo;.  The &lsquo;<samp>b</samp>&rsquo;
+stands for &ldquo;backwards&rdquo; and the &lsquo;<samp>f</samp>&rsquo; stands for &ldquo;forwards&rdquo;.
+</p>
+<p>There is no restriction on how you can use these labels, and you can reuse them
+too.  So that it is possible to repeatedly define the same local label (using
+the same number &lsquo;<samp><b>N</b></samp>&rsquo;), although you can only refer to the most recently
+defined local label of that number (for a backwards reference) or the next
+definition of a specific local label for a forward reference.  It is also worth
+noting that the first 10 local labels (&lsquo;<samp><b>0:</b></samp>&rsquo;&hellip;&lsquo;<samp><b>9:</b></samp>&rsquo;) are
+implemented in a slightly more efficient manner than the others.
+</p>
+<p>Here is an example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">1:        branch 1f
+2:        branch 1b
+1:        branch 2f
+2:        branch 1b
+</pre></div>
+
+<p>Which is the equivalent of:
+</p>
+<div class="smallexample">
+<pre class="smallexample">label_1:  branch label_3
+label_2:  branch label_1
+label_3:  branch label_4
+label_4:  branch label_3
+</pre></div>
+
+<p>Local label names are only a notational device.  They are immediately
+transformed into more conventional symbol names before the assembler uses them.
+The symbol names are stored in the symbol table, appear in error messages, and
+are optionally emitted to the object file.  The names are constructed using
+these parts:
+</p>
+<dl compact="compact">
+<dt><code><em>local label prefix</em></code></dt>
+<dd><p>All local symbols begin with the system-specific local label prefix.
+Normally both <code>as</code> and <code>ld</code> forget symbols
+that start with the local label prefix.  These labels are
+used for symbols you are never intended to see.  If you use the
+&lsquo;<samp>-L</samp>&rsquo; option then <code>as</code> retains these symbols in the
+object file. If you also instruct <code>ld</code> to retain these symbols,
+you may use them in debugging.
+</p>
+</dd>
+<dt><code><var>number</var></code></dt>
+<dd><p>This is the number that was used in the local label definition.  So if the
+label is written &lsquo;<samp>55:</samp>&rsquo; then the number is &lsquo;<samp>55</samp>&rsquo;.
+</p>
+</dd>
+<dt><code><kbd>C-B</kbd></code></dt>
+<dd><p>This unusual character is included so you do not accidentally invent a symbol
+of the same name.  The character has ASCII value of &lsquo;<samp>\002</samp>&rsquo; (control-B).
+</p>
+</dd>
+<dt><code><em>ordinal number</em></code></dt>
+<dd><p>This is a serial number to keep the labels distinct.  The first definition of
+&lsquo;<samp>0:</samp>&rsquo; gets the number &lsquo;<samp>1</samp>&rsquo;.  The 15th definition of &lsquo;<samp>0:</samp>&rsquo; gets the
+number &lsquo;<samp>15</samp>&rsquo;, and so on.  Likewise the first definition of &lsquo;<samp>1:</samp>&rsquo; gets
+the number &lsquo;<samp>1</samp>&rsquo; and its 15th definition gets &lsquo;<samp>15</samp>&rsquo; as well.
+</p></dd>
+</dl>
+
+<p>So for example, the first <code>1:</code> may be named <code>.L1<kbd>C-B</kbd>1</code>, and
+the 44th <code>3:</code> may be named <code>.L3<kbd>C-B</kbd>44</code>.
+</p>
+<a name="Dollar-Local-Labels"></a>
+<h4 class="subheading">Dollar Local Labels</h4>
+<a name="index-dollar-local-symbols"></a>
+
+<p>On some targets <code>as</code> also supports an even more local form of
+local labels called dollar labels.  These labels go out of scope (i.e., they
+become undefined) as soon as a non-local label is defined.  Thus they remain
+valid for only a small region of the input source code.  Normal local labels,
+by contrast, remain in scope for the entire file, or until they are redefined
+by another occurrence of the same local label.
+</p>
+<p>Dollar labels are defined in exactly the same way as ordinary local labels,
+except that they have a dollar sign suffix to their numeric value, e.g.,
+&lsquo;<samp><b>55$:</b></samp>&rsquo;.
+</p>
+<p>They can also be distinguished from ordinary local labels by their transformed
+names which use ASCII character &lsquo;<samp>\001</samp>&rsquo; (control-A) as the magic character
+to distinguish them from ordinary labels.  For example, the fifth definition of
+&lsquo;<samp>6$</samp>&rsquo; may be named &lsquo;<samp>.L6<kbd>C-A</kbd>5</samp>&rsquo;.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Dot.html#Dot" accesskey="n" rel="next">Dot</a>, Previous: <a href="Setting-Symbols.html#Setting-Symbols" accesskey="p" rel="prev">Setting Symbols</a>, Up: <a href="Symbols.html#Symbols" accesskey="u" rel="up">Symbols</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

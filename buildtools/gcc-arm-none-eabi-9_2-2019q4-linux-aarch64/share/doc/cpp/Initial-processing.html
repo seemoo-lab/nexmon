@@ -1,0 +1,243 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1987-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation.  A copy of
+the license is included in the
+section entitled "GNU Free Documentation License".
+
+This manual contains no Invariant Sections.  The Front-Cover Texts are
+(a) (see below), and the Back-Cover Texts are (b) (see below).
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The C Preprocessor: Initial processing</title>
+
+<meta name="description" content="The C Preprocessor: Initial processing">
+<meta name="keywords" content="The C Preprocessor: Initial processing">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index-of-Directives.html#Index-of-Directives" rel="index" title="Index of Directives">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Overview.html#Overview" rel="up" title="Overview">
+<link href="Tokenization.html#Tokenization" rel="next" title="Tokenization">
+<link href="Character-sets.html#Character-sets" rel="prev" title="Character sets">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Initial-processing"></a>
+<div class="header">
+<p>
+Next: <a href="Tokenization.html#Tokenization" accesskey="n" rel="next">Tokenization</a>, Previous: <a href="Character-sets.html#Character-sets" accesskey="p" rel="prev">Character sets</a>, Up: <a href="Overview.html#Overview" accesskey="u" rel="up">Overview</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index-of-Directives.html#Index-of-Directives" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Initial-processing-1"></a>
+<h3 class="section">1.2 Initial processing</h3>
+
+<p>The preprocessor performs a series of textual transformations on its
+input.  These happen before all other processing.  Conceptually, they
+happen in a rigid order, and the entire file is run through each
+transformation before the next one begins.  CPP actually does them
+all at once, for performance reasons.  These transformations correspond
+roughly to the first three &ldquo;phases of translation&rdquo; described in the C
+standard.
+</p>
+<ol>
+<li> <a name="index-line-endings"></a>
+The input file is read into memory and broken into lines.
+
+<p>Different systems use different conventions to indicate the end of a
+line.  GCC accepts the ASCII control sequences <kbd>LF</kbd>, <kbd>CR&nbsp;LF<!-- /@w --></kbd> and <kbd>CR</kbd> as end-of-line markers.  These are the canonical
+sequences used by Unix, DOS and VMS, and the classic Mac OS (before
+OSX) respectively.  You may therefore safely copy source code written
+on any of those systems to a different one and use it without
+conversion.  (GCC may lose track of the current line number if a file
+doesn&rsquo;t consistently use one convention, as sometimes happens when it
+is edited on computers with different conventions that share a network
+file system.)
+</p>
+<p>If the last line of any input file lacks an end-of-line marker, the end
+of the file is considered to implicitly supply one.  The C standard says
+that this condition provokes undefined behavior, so GCC will emit a
+warning message.
+</p>
+</li><li> <a name="index-trigraphs"></a>
+<a name="trigraphs"></a>If trigraphs are enabled, they are replaced by their
+corresponding single characters.  By default GCC ignores trigraphs,
+but if you request a strictly conforming mode with the <samp>-std</samp>
+option, or you specify the <samp>-trigraphs</samp> option, then it
+converts them.
+
+<p>These are nine three-character sequences, all starting with &lsquo;<samp>??</samp>&rsquo;,
+that are defined by ISO C to stand for single characters.  They permit
+obsolete systems that lack some of C&rsquo;s punctuation to use C.  For
+example, &lsquo;<samp>??/</samp>&rsquo; stands for &lsquo;<samp>\</samp>&rsquo;, so <tt>'??/n'</tt> is a character
+constant for a newline.
+</p>
+<p>Trigraphs are not popular and many compilers implement them
+incorrectly.  Portable code should not rely on trigraphs being either
+converted or ignored.  With <samp>-Wtrigraphs</samp> GCC will warn you
+when a trigraph may change the meaning of your program if it were
+converted.  See <a href="Invocation.html#Wtrigraphs">Wtrigraphs</a>.
+</p>
+<p>In a string constant, you can prevent a sequence of question marks
+from being confused with a trigraph by inserting a backslash between
+the question marks, or by separating the string literal at the
+trigraph and making use of string literal concatenation.  <tt>&quot;(??\?)&quot;</tt>
+is the string &lsquo;<samp>(???)</samp>&rsquo;, not &lsquo;<samp>(?]</samp>&rsquo;.  Traditional C compilers
+do not recognize these idioms.
+</p>
+<p>The nine trigraphs and their replacements are
+</p>
+<div class="smallexample">
+<pre class="smallexample">Trigraph:       ??(  ??)  ??&lt;  ??&gt;  ??=  ??/  ??'  ??!  ??-
+Replacement:      [    ]    {    }    #    \    ^    |    ~
+</pre></div>
+
+</li><li> <a name="index-continued-lines"></a>
+<a name="index-backslash_002dnewline"></a>
+Continued lines are merged into one long line.
+
+<p>A continued line is a line which ends with a backslash, &lsquo;<samp>\</samp>&rsquo;.  The
+backslash is removed and the following line is joined with the current
+one.  No space is inserted, so you may split a line anywhere, even in
+the middle of a word.  (It is generally more readable to split lines
+only at white space.)
+</p>
+<p>The trailing backslash on a continued line is commonly referred to as a
+<em>backslash-newline</em>.
+</p>
+<p>If there is white space between a backslash and the end of a line, that
+is still a continued line.  However, as this is usually the result of an
+editing mistake, and many compilers will not accept it as a continued
+line, GCC will warn you about it.
+</p>
+</li><li> <a name="index-comments"></a>
+<a name="index-line-comments"></a>
+<a name="index-block-comments"></a>
+All comments are replaced with single spaces.
+
+<p>There are two kinds of comments.  <em>Block comments</em> begin with
+&lsquo;<samp>/*</samp>&rsquo; and continue until the next &lsquo;<samp>*/</samp>&rsquo;.  Block comments do not
+nest:
+</p>
+<div class="smallexample">
+<pre class="smallexample">/* <span class="roman">this is</span> /* <span class="roman">one comment</span> */ <span class="roman">text outside comment</span>
+</pre></div>
+
+<p><em>Line comments</em> begin with &lsquo;<samp>//</samp>&rsquo; and continue to the end of the
+current line.  Line comments do not nest either, but it does not matter,
+because they would end in the same place anyway.
+</p>
+<div class="smallexample">
+<pre class="smallexample">// <span class="roman">this is</span> // <span class="roman">one comment</span>
+<span class="roman">text outside comment</span>
+</pre></div>
+</li></ol>
+
+<p>It is safe to put line comments inside block comments, or vice versa.
+</p>
+<div class="smallexample">
+<pre class="smallexample">/* <span class="roman">block comment</span>
+   // <span class="roman">contains line comment</span>
+   <span class="roman">yet more comment</span>
+ */ <span class="roman">outside comment</span>
+
+// <span class="roman">line comment</span> /* <span class="roman">contains block comment</span> */
+</pre></div>
+
+<p>But beware of commenting out one end of a block comment with a line
+comment.
+</p>
+<div class="smallexample">
+<pre class="smallexample"> // <span class="roman">l.c.</span>  /* <span class="roman">block comment begins</span>
+    <span class="roman">oops! this isn&rsquo;t a comment anymore</span> */
+</pre></div>
+
+<p>Comments are not recognized within string literals.
+<tt>&quot;/*&nbsp;blah&nbsp;*/&quot;<!-- /@w --></tt> is the string constant &lsquo;<samp>/*&nbsp;blah&nbsp;*/<!-- /@w --></samp>&rsquo;, not
+an empty string.
+</p>
+<p>Line comments are not in the 1989 edition of the C standard, but they
+are recognized by GCC as an extension.  In C++ and in the 1999 edition
+of the C standard, they are an official part of the language.
+</p>
+<p>Since these transformations happen before all other processing, you can
+split a line mechanically with backslash-newline anywhere.  You can
+comment out the end of a line.  You can continue a line comment onto the
+next line with backslash-newline.  You can even split &lsquo;<samp>/*</samp>&rsquo;,
+&lsquo;<samp>*/</samp>&rsquo;, and &lsquo;<samp>//</samp>&rsquo; onto multiple lines with backslash-newline.
+For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">/\
+*
+*/ # /*
+*/ defi\
+ne FO\
+O 10\
+20
+</pre></div>
+
+<p>is equivalent to <code>#define&nbsp;FOO&nbsp;1020<!-- /@w --></code>.  All these tricks are
+extremely confusing and should not be used in code intended to be
+readable.
+</p>
+<p>There is no way to prevent a backslash at the end of a line from being
+interpreted as a backslash-newline.  This cannot affect any correct
+program, however.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Tokenization.html#Tokenization" accesskey="n" rel="next">Tokenization</a>, Previous: <a href="Character-sets.html#Character-sets" accesskey="p" rel="prev">Character sets</a>, Up: <a href="Overview.html#Overview" accesskey="u" rel="up">Overview</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index-of-Directives.html#Index-of-Directives" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

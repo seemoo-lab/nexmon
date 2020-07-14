@@ -1,0 +1,163 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Literal Directive</title>
+
+<meta name="description" content="Using as: Literal Directive">
+<meta name="keywords" content="Using as: Literal Directive">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Xtensa-Directives.html#Xtensa-Directives" rel="up" title="Xtensa Directives">
+<link href="Literal-Position-Directive.html#Literal-Position-Directive" rel="next" title="Literal Position Directive">
+<link href="Transform-Directive.html#Transform-Directive" rel="prev" title="Transform Directive">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Literal-Directive"></a>
+<div class="header">
+<p>
+Next: <a href="Literal-Position-Directive.html#Literal-Position-Directive" accesskey="n" rel="next">Literal Position Directive</a>, Previous: <a href="Transform-Directive.html#Transform-Directive" accesskey="p" rel="prev">Transform Directive</a>, Up: <a href="Xtensa-Directives.html#Xtensa-Directives" accesskey="u" rel="up">Xtensa Directives</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="literal"></a>
+<h4 class="subsubsection">9.55.5.4 literal</h4>
+<a name="index-literal-directive"></a>
+
+<p>The <code>.literal</code> directive is used to define literal pool data, i.e.,
+read-only 32-bit data accessed via <code>L32R</code> instructions.
+</p>
+<div class="smallexample">
+<pre class="smallexample">    .literal <var>label</var>, <var>value</var>[, <var>value</var>&hellip;]
+</pre></div>
+
+<p>This directive is similar to the standard <code>.word</code> directive, except
+that the actual location of the literal data is determined by the
+assembler and linker, not by the position of the <code>.literal</code>
+directive.  Using this directive gives the assembler freedom to locate
+the literal data in the most appropriate place and possibly to combine
+identical literals.  For example, the code:
+</p>
+<div class="smallexample">
+<pre class="smallexample">    entry sp, 40
+    .literal .L1, sym
+    l32r    a4, .L1
+</pre></div>
+
+<p>can be used to load a pointer to the symbol <code>sym</code> into register
+<code>a4</code>.  The value of <code>sym</code> will not be placed between the
+<code>ENTRY</code> and <code>L32R</code> instructions; instead, the assembler puts
+the data in a literal pool.
+</p>
+<p>Literal pools are placed by default in separate literal sections;
+however, when using the &lsquo;<samp>--text-section-literals</samp>&rsquo;
+option (see <a href="Xtensa-Options.html#Xtensa-Options">Command-line Options</a>), the literal
+pools for PC-relative mode <code>L32R</code> instructions
+are placed in the current section.<a name="DOCF3" href="#FOOT3"><sup>3</sup></a>
+These text section literal
+pools are created automatically before <code>ENTRY</code> instructions and
+manually after &lsquo;<samp>.literal_position</samp>&rsquo; directives (see <a href="Literal-Position-Directive.html#Literal-Position-Directive">literal_position</a>).  If there are no preceding
+<code>ENTRY</code> instructions, explicit <code>.literal_position</code> directives
+must be used to place the text section literal pools; otherwise,
+<code>as</code> will report an error.
+</p>
+<p>When literals are placed in separate sections, the literal section names
+are derived from the names of the sections where the literals are
+defined.  The base literal section names are <code>.literal</code> for
+PC-relative mode <code>L32R</code> instructions and <code>.lit4</code> for absolute
+mode <code>L32R</code> instructions (see <a href="Absolute-Literals-Directive.html#Absolute-Literals-Directive">absolute-literals</a>).  These base names are used for literals defined in
+the default <code>.text</code> section.  For literals defined in other
+sections or within the scope of a <code>literal_prefix</code> directive
+(see <a href="Literal-Prefix-Directive.html#Literal-Prefix-Directive">literal_prefix</a>), the following rules
+determine the literal section name:
+</p>
+<ol>
+<li> If the current section is a member of a section group, the literal
+section name includes the group name as a suffix to the base
+<code>.literal</code> or <code>.lit4</code> name, with a period to separate the base
+name and group name.  The literal section is also made a member of the
+group.
+
+</li><li> If the current section name (or <code>literal_prefix</code> value) begins with
+&ldquo;<code>.gnu.linkonce.<var>kind</var>.</code>&rdquo;, the literal section name is formed
+by replacing &ldquo;<code>.<var>kind</var></code>&rdquo; with the base <code>.literal</code> or
+<code>.lit4</code> name.  For example, for literals defined in a section named
+<code>.gnu.linkonce.t.func</code>, the literal section will be
+<code>.gnu.linkonce.literal.func</code> or <code>.gnu.linkonce.lit4.func</code>.
+
+</li><li> If the current section name (or <code>literal_prefix</code> value) ends with
+<code>.text</code>, the literal section name is formed by replacing that
+suffix with the base <code>.literal</code> or <code>.lit4</code> name.  For example,
+for literals defined in a section named <code>.iram0.text</code>, the literal
+section will be <code>.iram0.literal</code> or <code>.iram0.lit4</code>.
+
+</li><li> If none of the preceding conditions apply, the literal section name is
+formed by adding the base <code>.literal</code> or <code>.lit4</code> name as a
+suffix to the current section name (or <code>literal_prefix</code> value).
+</li></ol>
+
+<div class="footnote">
+<hr>
+<h4 class="footnotes-heading">Footnotes</h4>
+
+<h3><a name="FOOT3" href="#DOCF3">(3)</a></h3>
+<p>Literals for the
+<code>.init</code> and <code>.fini</code> sections are always placed in separate
+sections, even when &lsquo;<samp>--text-section-literals</samp>&rsquo; is enabled.</p>
+</div>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Literal-Position-Directive.html#Literal-Position-Directive" accesskey="n" rel="next">Literal Position Directive</a>, Previous: <a href="Transform-Directive.html#Transform-Directive" accesskey="p" rel="prev">Transform Directive</a>, Up: <a href="Xtensa-Directives.html#Xtensa-Directives" accesskey="u" rel="up">Xtensa Directives</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

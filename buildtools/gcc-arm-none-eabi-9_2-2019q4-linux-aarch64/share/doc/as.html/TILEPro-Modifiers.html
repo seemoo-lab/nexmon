@@ -1,0 +1,256 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: TILEPro Modifiers</title>
+
+<meta name="description" content="Using as: TILEPro Modifiers">
+<meta name="keywords" content="Using as: TILEPro Modifiers">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="TILEPro-Syntax.html#TILEPro-Syntax" rel="up" title="TILEPro Syntax">
+<link href="TILEPro-Directives.html#TILEPro-Directives" rel="next" title="TILEPro Directives">
+<link href="TILEPro-Registers.html#TILEPro-Registers" rel="prev" title="TILEPro Registers">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="TILEPro-Modifiers"></a>
+<div class="header">
+<p>
+Previous: <a href="TILEPro-Registers.html#TILEPro-Registers" accesskey="p" rel="prev">TILEPro Registers</a>, Up: <a href="TILEPro-Syntax.html#TILEPro-Syntax" accesskey="u" rel="up">TILEPro Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Symbolic-Operand-Modifiers-5"></a>
+<h4 class="subsubsection">9.48.2.3 Symbolic Operand Modifiers</h4>
+<a name="index-TILEPro-modifiers"></a>
+<a name="index-symbol-modifiers_002c-TILEPro"></a>
+
+<p>The assembler supports several modifiers when using symbol addresses
+in TILEPro instruction operands.  The general syntax is the following:
+</p>
+<div class="smallexample">
+<pre class="smallexample">modifier(symbol)
+</pre></div>
+
+<p>The following modifiers are supported:
+</p>
+<dl compact="compact">
+<dt><code>lo16</code></dt>
+<dd>
+<p>This modifier is used to load the low 16 bits of the symbol&rsquo;s address,
+sign-extended to a 32-bit value (sign-extension allows it to be
+range-checked against signed 16 bit immediate operands without
+complaint).
+</p>
+</dd>
+<dt><code>hi16</code></dt>
+<dd>
+<p>This modifier is used to load the high 16 bits of the symbol&rsquo;s
+address, also sign-extended to a 32-bit value.
+</p>
+</dd>
+<dt><code>ha16</code></dt>
+<dd>
+<p><code>ha16(N)</code> is identical to <code>hi16(N)</code>, except if
+<code>lo16(N)</code> is negative it adds one to the <code>hi16(N)</code>
+value. This way <code>lo16</code> and <code>ha16</code> can be added to create any
+32-bit value using <code>auli</code>.  For example, here is how you move an
+arbitrary 32-bit address into r3:
+</p>
+<div class="smallexample">
+<pre class="smallexample">moveli r3, lo16(sym)
+auli r3, r3, ha16(sym)
+</pre></div>
+
+</dd>
+<dt><code>got</code></dt>
+<dd>
+<p>This modifier is used to load the offset of the GOT entry
+corresponding to the symbol.
+</p>
+</dd>
+<dt><code>got_lo16</code></dt>
+<dd>
+<p>This modifier is used to load the sign-extended low 16 bits of the
+offset of the GOT entry corresponding to the symbol.
+</p>
+</dd>
+<dt><code>got_hi16</code></dt>
+<dd>
+<p>This modifier is used to load the sign-extended high 16 bits of the
+offset of the GOT entry corresponding to the symbol.
+</p>
+</dd>
+<dt><code>got_ha16</code></dt>
+<dd>
+<p>This modifier is like <code>got_hi16</code>, but it adds one if
+<code>got_lo16</code> of the input value is negative.
+</p>
+</dd>
+<dt><code>plt</code></dt>
+<dd>
+<p>This modifier is used for function symbols.  It causes a
+<em>procedure linkage table</em>, an array of code stubs, to be created
+at the time the shared object is created or linked against, together
+with a global offset table entry.  The value is a pc-relative offset
+to the corresponding stub code in the procedure linkage table.  This
+arrangement causes the run-time symbol resolver to be called to look
+up and set the value of the symbol the first time the function is
+called (at latest; depending environment variables).  It is only safe
+to leave the symbol unresolved this way if all references are function
+calls.
+</p>
+</dd>
+<dt><code>tls_gd</code></dt>
+<dd>
+<p>This modifier is used to load the offset of the GOT entry of the
+symbol&rsquo;s TLS descriptor, to be used for general-dynamic TLS accesses.
+</p>
+</dd>
+<dt><code>tls_gd_lo16</code></dt>
+<dd>
+<p>This modifier is used to load the sign-extended low 16 bits of the
+offset of the GOT entry of the symbol&rsquo;s TLS descriptor, to be used for
+general dynamic TLS accesses.
+</p>
+</dd>
+<dt><code>tls_gd_hi16</code></dt>
+<dd>
+<p>This modifier is used to load the sign-extended high 16 bits of the
+offset of the GOT entry of the symbol&rsquo;s TLS descriptor, to be used for
+general dynamic TLS accesses.
+</p>
+</dd>
+<dt><code>tls_gd_ha16</code></dt>
+<dd>
+<p>This modifier is like <code>tls_gd_hi16</code>, but it adds one to the value
+if <code>tls_gd_lo16</code> of the input value is negative.
+</p>
+</dd>
+<dt><code>tls_ie</code></dt>
+<dd>
+<p>This modifier is used to load the offset of the GOT entry containing
+the offset of the symbol&rsquo;s address from the TCB, to be used for
+initial-exec TLS accesses.
+</p>
+</dd>
+<dt><code>tls_ie_lo16</code></dt>
+<dd>
+<p>This modifier is used to load the low 16 bits of the offset of the GOT
+entry containing the offset of the symbol&rsquo;s address from the TCB, to
+be used for initial-exec TLS accesses.
+</p>
+</dd>
+<dt><code>tls_ie_hi16</code></dt>
+<dd>
+<p>This modifier is used to load the high 16 bits of the offset of the
+GOT entry containing the offset of the symbol&rsquo;s address from the TCB,
+to be used for initial-exec TLS accesses.
+</p>
+</dd>
+<dt><code>tls_ie_ha16</code></dt>
+<dd>
+<p>This modifier is like <code>tls_ie_hi16</code>, but it adds one to the value
+if <code>tls_ie_lo16</code> of the input value is negative.
+</p>
+</dd>
+<dt><code>tls_le</code></dt>
+<dd>
+<p>This modifier is used to load the offset of the symbol&rsquo;s address from
+the TCB, to be used for local-exec TLS accesses.
+</p>
+</dd>
+<dt><code>tls_le_lo16</code></dt>
+<dd>
+<p>This modifier is used to load the low 16 bits of the offset of the
+symbol&rsquo;s address from the TCB, to be used for local-exec TLS accesses.
+</p>
+</dd>
+<dt><code>tls_le_hi16</code></dt>
+<dd>
+<p>This modifier is used to load the high 16 bits of the offset of the
+symbol&rsquo;s address from the TCB, to be used for local-exec TLS accesses.
+</p>
+</dd>
+<dt><code>tls_le_ha16</code></dt>
+<dd>
+<p>This modifier is like <code>tls_le_hi16</code>, but it adds one to the value
+if <code>tls_le_lo16</code> of the input value is negative.
+</p>
+</dd>
+<dt><code>tls_gd_call</code></dt>
+<dd>
+<p>This modifier is used to tag an instruction as the &ldquo;call&rdquo; part of a
+calling sequence for a TLS GD reference of its operand.
+</p>
+</dd>
+<dt><code>tls_gd_add</code></dt>
+<dd>
+<p>This modifier is used to tag an instruction as the &ldquo;add&rdquo; part of a
+calling sequence for a TLS GD reference of its operand.
+</p>
+</dd>
+<dt><code>tls_ie_load</code></dt>
+<dd>
+<p>This modifier is used to tag an instruction as the &ldquo;load&rdquo; part of a
+calling sequence for a TLS IE reference of its operand.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="TILEPro-Registers.html#TILEPro-Registers" accesskey="p" rel="prev">TILEPro Registers</a>, Up: <a href="TILEPro-Syntax.html#TILEPro-Syntax" accesskey="u" rel="up">TILEPro Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

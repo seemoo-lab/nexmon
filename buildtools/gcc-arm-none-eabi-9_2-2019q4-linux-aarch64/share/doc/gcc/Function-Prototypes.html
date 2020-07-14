@@ -1,0 +1,139 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Function Prototypes</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Function Prototypes">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Function Prototypes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-Extensions.html#C-Extensions" rel="up" title="C Extensions">
+<link href="C_002b_002b-Comments.html#C_002b_002b-Comments" rel="next" title="C++ Comments">
+<link href="Attribute-Syntax.html#Attribute-Syntax" rel="prev" title="Attribute Syntax">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Function-Prototypes"></a>
+<div class="header">
+<p>
+Next: <a href="C_002b_002b-Comments.html#C_002b_002b-Comments" accesskey="n" rel="next">C++ Comments</a>, Previous: <a href="Attribute-Syntax.html#Attribute-Syntax" accesskey="p" rel="prev">Attribute Syntax</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Prototypes-and-Old_002dStyle-Function-Definitions"></a>
+<h3 class="section">6.40 Prototypes and Old-Style Function Definitions</h3>
+<a name="index-function-prototype-declarations"></a>
+<a name="index-old_002dstyle-function-definitions"></a>
+<a name="index-promotion-of-formal-parameters"></a>
+
+<p>GNU C extends ISO C to allow a function prototype to override a later
+old-style non-prototype definition.  Consider the following example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">/* <span class="roman">Use prototypes unless the compiler is old-fashioned.</span>  */
+#ifdef __STDC__
+#define P(x) x
+#else
+#define P(x) ()
+#endif
+
+/* <span class="roman">Prototype function declaration.</span>  */
+int isroot P((uid_t));
+
+/* <span class="roman">Old-style function definition.</span>  */
+int
+isroot (x)   /* <span class="roman">??? lossage here ???</span> */
+     uid_t x;
+{
+  return x == 0;
+}
+</pre></div>
+
+<p>Suppose the type <code>uid_t</code> happens to be <code>short</code>.  ISO C does
+not allow this example, because subword arguments in old-style
+non-prototype definitions are promoted.  Therefore in this example the
+function definition&rsquo;s argument is really an <code>int</code>, which does not
+match the prototype argument type of <code>short</code>.
+</p>
+<p>This restriction of ISO C makes it hard to write code that is portable
+to traditional C compilers, because the programmer does not know
+whether the <code>uid_t</code> type is <code>short</code>, <code>int</code>, or
+<code>long</code>.  Therefore, in cases like these GNU C allows a prototype
+to override a later old-style definition.  More precisely, in GNU C, a
+function prototype argument type overrides the argument type specified
+by a later old-style definition if the former type is the same as the
+latter type before promotion.  Thus in GNU C the above example is
+equivalent to the following:
+</p>
+<div class="smallexample">
+<pre class="smallexample">int isroot (uid_t);
+
+int
+isroot (uid_t x)
+{
+  return x == 0;
+}
+</pre></div>
+
+<p>GNU C++ does not support old-style function definitions, so this
+extension is irrelevant.
+</p>
+
+
+
+</body>
+</html>

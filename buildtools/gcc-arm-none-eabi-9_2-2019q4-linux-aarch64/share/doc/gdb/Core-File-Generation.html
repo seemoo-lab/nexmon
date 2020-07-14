@@ -1,0 +1,156 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Core File Generation</title>
+
+<meta name="description" content="Debugging with GDB: Core File Generation">
+<meta name="keywords" content="Debugging with GDB: Core File Generation">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Data.html#Data" rel="up" title="Data">
+<link href="Character-Sets.html#Character-Sets" rel="next" title="Character Sets">
+<link href="Dump_002fRestore-Files.html#Dump_002fRestore-Files" rel="prev" title="Dump/Restore Files">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Core-File-Generation"></a>
+<div class="header">
+<p>
+Next: <a href="Character-Sets.html#Character-Sets" accesskey="n" rel="next">Character Sets</a>, Previous: <a href="Dump_002fRestore-Files.html#Dump_002fRestore-Files" accesskey="p" rel="prev">Dump/Restore Files</a>, Up: <a href="Data.html#Data" accesskey="u" rel="up">Data</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="How-to-Produce-a-Core-File-from-Your-Program"></a>
+<h3 class="section">10.19 How to Produce a Core File from Your Program</h3>
+<a name="index-dump-core-from-inferior"></a>
+
+<p>A <em>core file</em> or <em>core dump</em> is a file that records the memory
+image of a running process and its process status (register values
+etc.).  Its primary use is post-mortem debugging of a program that
+crashed while it ran outside a debugger.  A program that crashes
+automatically produces a core file, unless this feature is disabled by
+the user.  See <a href="Files.html#Files">Files</a>, for information on invoking <small>GDB</small> in
+the post-mortem debugging mode.
+</p>
+<p>Occasionally, you may wish to produce a core file of the program you
+are debugging in order to preserve a snapshot of its state.
+<small>GDB</small> has a special command for that.
+</p>
+<dl compact="compact">
+<dd><a name="index-gcore"></a>
+<a name="index-generate_002dcore_002dfile"></a>
+</dd>
+<dt><code>generate-core-file [<var>file</var>]</code></dt>
+<dt><code>gcore [<var>file</var>]</code></dt>
+<dd><p>Produce a core dump of the inferior process.  The optional argument
+<var>file</var> specifies the file name where to put the core dump.  If not
+specified, the file name defaults to <samp>core.<var>pid</var></samp>, where
+<var>pid</var> is the inferior process ID.
+</p>
+<p>Note that this command is implemented only for some systems (as of
+this writing, <small>GNU</small>/Linux, FreeBSD, Solaris, and S390).
+</p>
+<p>On <small>GNU</small>/Linux, this command can take into account the value of the
+file <samp>/proc/<var>pid</var>/coredump_filter</samp> when generating the core
+dump (see <a href="#set-use_002dcoredump_002dfilter">set use-coredump-filter</a>), and by default honors the
+<code>VM_DONTDUMP</code> flag for mappings where it is present in the file
+<samp>/proc/<var>pid</var>/smaps</samp> (see <a href="#set-dump_002dexcluded_002dmappings">set dump-excluded-mappings</a>).
+</p>
+<a name="index-set-use_002dcoredump_002dfilter"></a>
+<a name="set-use_002dcoredump_002dfilter"></a></dd>
+<dt><code>set use-coredump-filter on</code></dt>
+<dt><code>set use-coredump-filter off</code></dt>
+<dd><p>Enable or disable the use of the file
+<samp>/proc/<var>pid</var>/coredump_filter</samp> when generating core dump
+files.  This file is used by the Linux kernel to decide what types of
+memory mappings will be dumped or ignored when generating a core dump
+file.  <var>pid</var> is the process ID of a currently running process.
+</p>
+<p>To make use of this feature, you have to write in the
+<samp>/proc/<var>pid</var>/coredump_filter</samp> file a value, in hexadecimal,
+which is a bit mask representing the memory mapping types.  If a bit
+is set in the bit mask, then the memory mappings of the corresponding
+types will be dumped; otherwise, they will be ignored.  This
+configuration is inherited by child processes.  For more information
+about the bits that can be set in the
+<samp>/proc/<var>pid</var>/coredump_filter</samp> file, please refer to the
+manpage of <code>core(5)</code>.
+</p>
+<p>By default, this option is <code>on</code>.  If this option is turned
+<code>off</code>, <small>GDB</small> does not read the <samp>coredump_filter</samp> file
+and instead uses the same default value as the Linux kernel in order
+to decide which pages will be dumped in the core dump file.  This
+value is currently <code>0x33</code>, which means that bits <code>0</code>
+(anonymous private mappings), <code>1</code> (anonymous shared mappings),
+<code>4</code> (ELF headers) and <code>5</code> (private huge pages) are active.
+This will cause these memory mappings to be dumped automatically.
+</p>
+<a name="index-set-dump_002dexcluded_002dmappings"></a>
+<a name="set-dump_002dexcluded_002dmappings"></a></dd>
+<dt><code>set dump-excluded-mappings on</code></dt>
+<dt><code>set dump-excluded-mappings off</code></dt>
+<dd><p>If <code>on</code> is specified, <small>GDB</small> will dump memory mappings
+marked with the <code>VM_DONTDUMP</code> flag.  This flag is represented in
+the file <samp>/proc/<var>pid</var>/smaps</samp> with the acronym <code>dd</code>.
+</p>
+<p>The default value is <code>off</code>.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Character-Sets.html#Character-Sets" accesskey="n" rel="next">Character Sets</a>, Previous: <a href="Dump_002fRestore-Files.html#Dump_002fRestore-Files" accesskey="p" rel="prev">Dump/Restore Files</a>, Up: <a href="Data.html#Data" accesskey="u" rel="up">Data</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

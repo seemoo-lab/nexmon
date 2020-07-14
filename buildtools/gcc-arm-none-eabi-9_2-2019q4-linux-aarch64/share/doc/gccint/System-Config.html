@@ -1,0 +1,101 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: System Config</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: System Config">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: System Config">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Configuration.html#Configuration" rel="up" title="Configuration">
+<link href="Configuration-Files.html#Configuration-Files" rel="next" title="Configuration Files">
+<link href="Config-Fragments.html#Config-Fragments" rel="prev" title="Config Fragments">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="System-Config"></a>
+<div class="header">
+<p>
+Next: <a href="Configuration-Files.html#Configuration-Files" accesskey="n" rel="next">Configuration Files</a>, Previous: <a href="Config-Fragments.html#Config-Fragments" accesskey="p" rel="prev">Config Fragments</a>, Up: <a href="Configuration.html#Configuration" accesskey="u" rel="up">Configuration</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="The-config_002ebuild_003b-config_002ehost_003b-and-config_002egcc-Files"></a>
+<h4 class="subsubsection">6.3.2.2 The <samp>config.build</samp>; <samp>config.host</samp>; and <samp>config.gcc</samp> Files</h4>
+
+<p>The <samp>config.build</samp> file contains specific rules for particular systems
+which GCC is built on.  This should be used as rarely as possible, as the
+behavior of the build system can always be detected by autoconf.
+</p>
+<p>The <samp>config.host</samp> file contains specific rules for particular systems
+which GCC will run on.  This is rarely needed.
+</p>
+<p>The <samp>config.gcc</samp> file contains specific rules for particular systems
+which GCC will generate code for.  This is usually needed.
+</p>
+<p>Each file has a list of the shell variables it sets, with descriptions, at the
+top of the file.
+</p>
+<p>FIXME: document the contents of these files, and what variables should
+be set to control build, host and target configuration.
+</p>
+
+
+
+
+</body>
+</html>
