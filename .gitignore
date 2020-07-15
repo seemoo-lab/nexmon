@@ -1,2 +1,5 @@
+templateram*.bin
+vasip.bin
+*ucode*.bin
 *~
 wip/*
