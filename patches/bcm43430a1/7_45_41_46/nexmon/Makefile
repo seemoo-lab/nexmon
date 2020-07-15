@@ -24,7 +24,7 @@ CFLAGS= \
 	-DUCODESIZE=$(UCODESIZE) \
 	-DGIT_VERSION=\"$(GIT_VERSION)\" \
 	-DBUILD_NUMBER=\"$$(cat BUILD_NUMBER)\" \
-	-Wall -Werror -O2 -nostdlib -nostartfiles -ffreestanding -mthumb -march=$(NEXMON_ARCH) \
+	-Wall -Werror -Wno-address-of-packed-member -O2 -nostdlib -nostartfiles -ffreestanding -mthumb -march=$(NEXMON_ARCH) \
 	-ffunction-sections -fdata-sections \
 	-I$(NEXMON_ROOT)/patches/include \
 	-Iinclude \
@@ -58,6 +58,7 @@ endif
 obj/%.o: src/%.c
 	@printf "\033[0;31m  COMPILING\033[0m %s => %s (details: log/compiler.log)\n" $< $@
 	$(Q)cat gen/nexmon.pre 2>>log/error.log | gawk '{ if ($$3 != "$@") print; }' > tmp && mv tmp gen/nexmon.pre
+	$(Q)echo $(CC)gcc $(CFLAGS) -c $< -o $@ >>log/compiler.log
 	$(Q)$(CC)gcc $(CFLAGS) -c $< -o $@ >>log/compiler.log
 
 obj/%.o: $(NEXMON_ROOT)/patches/common/%.c
@@ -172,14 +173,14 @@ ifndef NEXMON_SETUP_ENV
 endif
 
 backup-firmware:
-ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
+ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l aarch64))
 	cp /lib/firmware/brcm/brcmfmac43430-sdio.bin brcmfmac43430-sdio.bin.orig
 else
 	$(warning Warning: Cannot backup the original firmware on this arch.)
 endif
 
 install-firmware: brcmfmac43430-sdio.bin brcmfmac.ko
-ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
+ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l aarch64))
 	@printf "\033[0;31m  COPYING\033[0m brcmfmac43430-sdio.bin => /lib/firmware/brcm/brcmfmac43430-sdio.bin\n"
 	$(Q)cp brcmfmac43430-sdio.bin /lib/firmware/brcm/brcmfmac43430-sdio.bin
 ifeq ($(shell lsmod | grep "^brcmfmac" | wc -l), 1)
