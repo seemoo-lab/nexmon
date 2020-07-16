@@ -40,10 +40,14 @@ init: FORCE
 	$(Q)mkdir -p obj gen log
 
 brcmfmac.ko: check-nexmon-setup-env
-ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
+ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l aarch64))
 ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
 	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.14\033[0m brcmfmac_4.14.y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_4.14.y-nexmon -j2 >log/driver.log
+else ifeq ($(findstring 5.4,$(shell uname -r)),5.4)
+	@printf "\033[0;31m  BUILDING DRIVER for kernel 5.4\033[0m brcmfmac_kernel54/brcmfmac.ko (details: log/driver.log)\n" $@
+	@printf "make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel54 -j2"
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel54 -j2 >log/driver.log
 else ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
 	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.9\033[0m brcmfmac_kernel49/brcmfmac.ko (details: log/driver.log)\n" $@
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel49 -j2 >log/driver.log
@@ -191,6 +195,8 @@ endif
 	@printf "\033[0;31m  RELOADING\033[0m brcmfmac\n"
 ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
 	$(Q)insmod brcmfmac_4.14.y-nexmon/brcmfmac.ko
+else ifeq ($(findstring 5.4,$(shell uname -r)),5.4)
+	$(Q)insmod brcmfmac_kernel54/brcmfmac.ko
 else ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
 	$(Q)insmod brcmfmac_kernel49/brcmfmac.ko
 else ifeq ($(findstring 4.4,$(shell uname -r)),4.4)
@@ -222,6 +228,9 @@ ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
 ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
 	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_4.14.y-nexmon clean
+else ifeq ($(findstring 5.4,$(shell uname -r)),5.4)
+	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel54 clean
 else ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
 	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel49 clean
