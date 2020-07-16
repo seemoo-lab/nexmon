@@ -22,7 +22,7 @@ __section(.gnu.linkonce.this_module) = {
 MODULE_INFO(retpoline, "Y");
 #endif
 
-MODULE_INFO(depends, "");
+MODULE_INFO(depends, "brcmutil,cfg80211");
 
 MODULE_ALIAS("sdio:c*v02D0dA887*");
 MODULE_ALIAS("sdio:c*v02D0d4324*");

@@ -46,7 +46,8 @@ ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_4.14.y-nexmon -j2 >log/driver.log
 else ifeq ($(findstring 5.4,$(shell uname -r)),5.4)
 	@printf "\033[0;31m  BUILDING DRIVER for kernel 5.4\033[0m brcmfmac_kernel54/brcmfmac.ko (details: log/driver.log)\n" $@
-	@printf "make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel54 -j2"
+	$(Q)cp $$PWD/brcmfmac_kernel54/include/* /lib/modules/$(shell uname -r)/build/include
+	@printf "make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel54 -j2\n"
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel54 -j2 >log/driver.log
 else ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
 	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.9\033[0m brcmfmac_kernel49/brcmfmac.ko (details: log/driver.log)\n" $@
@@ -187,11 +188,13 @@ install-firmware: brcmfmac43430-sdio.bin brcmfmac.ko
 ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l aarch64))
 	@printf "\033[0;31m  COPYING\033[0m brcmfmac43430-sdio.bin => /lib/firmware/brcm/brcmfmac43430-sdio.bin\n"
 	$(Q)cp brcmfmac43430-sdio.bin /lib/firmware/brcm/brcmfmac43430-sdio.bin
+#	@printf "cp brcmfmac_kernel54/brcmfmac.ko /lib/$(shell uname -r)/drivers/net/wireless/broadcom/brcm80211/brcmfmac/\n"
+#	$(Q)cp brcmfmac_kernel54/brcmfmac.ko /lib/$(shell uname -r)/drivers/net/wireless/broadcom/brcm80211/brcmfmac/
 ifeq ($(shell lsmod | grep "^brcmfmac" | wc -l), 1)
 	@printf "\033[0;31m  UNLOADING\033[0m brcmfmac\n"
 	$(Q)rmmod brcmfmac
 endif
-	$(Q)modprobe brcmutil
+	$(Q)modprobe brcmfmac
 	@printf "\033[0;31m  RELOADING\033[0m brcmfmac\n"
 ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
 	$(Q)insmod brcmfmac_4.14.y-nexmon/brcmfmac.ko
