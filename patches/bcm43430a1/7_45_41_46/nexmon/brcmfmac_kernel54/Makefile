@@ -7,7 +7,10 @@
 
 ccflags-y += \
 	-I $(srctree)/$(src) \
-	-I $(srctree)/$(src)/../include
+	-I $(srctree)/$(src)/../include \
+	-Idrivers/net/wireless/broadcom/brcm80211/brcmfmac	\
+	-I$(NEXMON_ROOT)/patches/bcm43430a1/7_45_41_26/nexmon/brcmfmac_kernel54/include
+
 
 obj-$(CONFIG_BRCMFMAC) += brcmfmac.o
 brcmfmac-objs += \

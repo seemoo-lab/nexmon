@@ -619,6 +619,24 @@ static bool brcmf_is_ibssmode(struct brcmf_cfg80211_vif *vif)
 	return vif->wdev.iftype == NL80211_IFTYPE_ADHOC;
 }
 
+/* NEXMON */
+static s32
+brcmf_cfg80211_nexmon_set_channel(struct wiphy *wiphy,struct cfg80211_chan_def *chandef) {
+    struct brcmf_cfg80211_info *cfg = wiphy_to_cfg(wiphy);
+    struct brcmf_if *ifp = netdev_priv(cfg_to_ndev(cfg));
+    s32 err = 0;
+    u16 chanspec;
+
+    //brcmf_err("DEBUG NexMon: brcmf_cfg80211_nexmon_set_channel() called!\n");
+    chanspec = chandef_to_chanspec(&cfg->d11inf, chandef);
+    err = brcmf_fil_iovar_int_set(ifp, "chanspec", chanspec);
+    if (err < 0) {
+        brcmf_err("Set Channel failed: chspec=%d, %d\n",
+              chanspec, err);
+    }
+    return 0;
+}
+
 static struct wireless_dev *brcmf_cfg80211_add_iface(struct wiphy *wiphy,
 						     const char *name,
 						     unsigned char name_assign_type,
@@ -895,6 +913,9 @@ brcmf_cfg80211_change_iface(struct wiphy *wiphy, struct net_device *ndev,
 	}
 	switch (type) {
 	case NL80211_IFTYPE_MONITOR:
+		/* NEXMON */
+		infra = 1;
+		break;
 	case NL80211_IFTYPE_WDS:
 		bphy_err(drvr, "type (%d) : currently we do not support this type\n",
 			 type);
@@ -5277,6 +5298,7 @@ static struct cfg80211_ops brcmf_cfg80211_ops = {
 	.crit_proto_start = brcmf_cfg80211_crit_proto_start,
 	.crit_proto_stop = brcmf_cfg80211_crit_proto_stop,
 	.tdls_oper = brcmf_cfg80211_tdls_oper,
+	.set_monitor_channel = brcmf_cfg80211_nexmon_set_channel,
 	.update_connect_params = brcmf_cfg80211_update_conn_params,
 	.set_pmk = brcmf_cfg80211_set_pmk,
 	.del_pmk = brcmf_cfg80211_del_pmk,
