@@ -50,6 +50,9 @@ else ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
 else ifeq ($(findstring 4.19,$(shell uname -r)),4.19)
 	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.19\033[0m brcmfmac_4.19.y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_4.19.y-nexmon -j2 >log/driver.log
+else ifeq ($(findstring 5.4,$(shell uname -r)),5.4)
+	@printf "\033[0;31m  BUILDING DRIVER for kernel 5.4\033[0m brcmfmac_5.4.y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_5.4.y-nexmon -j2 >log/driver.log
 else
 	$(warning Warning: Kernel version not supported)
 endif
@@ -197,6 +200,8 @@ else ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
 	$(Q)insmod brcmfmac_4.14.y-nexmon/brcmfmac.ko
 else ifeq ($(findstring 4.19,$(shell uname -r)),4.19)
 	$(Q)insmod brcmfmac_4.19.y-nexmon/brcmfmac.ko
+else ifeq ($(findstring 5.4,$(shell uname -r)),5.4)
+	$(Q)insmod brcmfmac_5.4.y-nexmon/brcmfmac.ko
 endif
 else
 	$(warning Warning: Cannot install firmware on this arch., bcm43430-sdio.bin needs to be copied manually into /lib/firmware/brcm/ on your RPI3)
@@ -230,6 +235,9 @@ else ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
 else ifeq ($(findstring 4.19,$(shell uname -r)),4.19)
 	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_4.19.y-nexmon clean
+else ifeq ($(findstring 5.4,$(shell uname -r)),5.4)
+	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_5.4.y-nexmon clean
 endif
 endif
 	$(Q)rm -f BUILD_NUMBER
