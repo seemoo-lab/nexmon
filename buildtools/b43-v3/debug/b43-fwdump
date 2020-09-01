@@ -1,0 +1,190 @@
+#!/usr/bin/env python
+"""
+#  b43 firmware state dumper
+#
+#  Copyright (C) 2008 Michael Buesch <m@bues.ch>
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License version 3
+#  as published by the Free Software Foundation.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+import getopt
+from libb43 import *
+from sys import stdout
+from tempfile import *
+import re
+
+
+def usage():
+	print "b43 firmware state dumper"
+	print ""
+	print "Copyright (C) 2008 Michael Buesch <m@bues.ch>"
+	print "Licensed under the GNU/GPL version 3"
+	print ""
+	print "Usage: b43-fwdump [OPTIONS]"
+	print ""
+	print "-h|--help            Print this help text"
+	print "-p|--phy WIPHY       The WIPHY to use. For example phy0."
+	print "                     Can be omitted, if there is only one device in the system."
+	print "-b|--binary BIN      The firmware binary. This is required for"
+	print "                     an instruction dump."
+	print "-d|--dasmopt OPT     Additional options to the disassembler."
+	print "-s|--shm             Also dump SHM."
+	print "-S|--shmbin          Do a binary SHM dump, only."
+	return
+
+def parseArgs():
+	global phy
+	global binary
+	global dasmopt
+	global dumpShm
+	global dumpShmBin
+
+	phy = None # Autodetect
+	binary = None # No instruction dump
+	dasmopt = ""
+	dumpShm = False
+	dumpShmBin = False
+
+	try:
+		(opts, args) = getopt.getopt(sys.argv[1:],
+			"hp:b:d:sS",
+			[ "help", "phy=", "binary=", "dasmopt=", "shm", "shmbin" ])
+	except getopt.GetoptError:
+		usage()
+		sys.exit(1)
+
+	for (o, v) in opts:
+		if o in ("-h", "--help"):
+			usage()
+			sys.exit(0)
+		if o in ("-p", "--phy"):
+			phy = v
+		if o in ("-b", "--binary"):
+			binary = v
+		if o in ("-d", "--dasmopt"):
+			dasmopt = v
+		if o in ("-s", "--shm"):
+			dumpShm = True
+		if o in ("-S", "--shmbin"):
+			dumpShmBin = True
+	return
+
+
+def dump_regs(prefix, regs):
+	if len(regs) >= 10:
+		template = "%s%02u: %04X  "
+	else:
+		template = "%s%01u: %04X  "
+	for i in range(0, len(regs)):
+		if i != 0 and i % 4 == 0:
+			stdout.write("\n")
+		stdout.write(template % (prefix, i, regs[i]))
+	stdout.write("\n")
+	return
+
+def dasmLineIsPC(line, pc):
+	m = re.match(r'.*/\*\s+([0-9a-fA-F]+)\s+\*/.*', line, re.DOTALL)
+	if not m:
+		return False
+	linePC = int(m.group(1), 16)
+	return pc == linePC
+
+def makeShortDump(dasm, pc):
+	dasm = dasm.splitlines()
+	i = 0
+	for line in dasm:
+		if dasmLineIsPC(line, pc):
+			break
+		i += 1
+	else:
+		return "<Could not find PC in the binary>"
+	ret = ""
+	pos = max(i - 8, 0)
+	end = min(i + 8, len(dasm) - 1)
+	while pos != end:
+		ret += dasm[pos]
+		if dasmLineIsPC(dasm[pos], pc):
+			ret += "\t\t<<<<<<<<<<<"
+		ret += "\n"
+		pos += 1
+	return ret
+
+def toAscii(char):
+	if char >= 32 and char <= 126:
+		return chr(char)
+	return "."
+
+def main():
+	parseArgs()
+
+	b43 = B43(phy)
+
+	# Fetch the hardware information
+	b43.ucodeStop()
+	gpr = b43.getGprs()
+	lr = b43.getLinkRegs()
+	off = b43.getOffsetRegs()
+	if dumpShm or dumpShmBin:
+		shm = b43.shmSharedRead()
+	dbg = b43.getPsmDebug()
+	psmcond = b43.getPsmConditions()
+	b43.ucodeStart()
+
+	if dumpShmBin:
+		# Only do a binary SHM dump
+		stdout.write(shm)
+		sys.exit(0)
+
+	print "--- B43 microcode state dump ---"
+	print "PC: %03X  PSM-COND: %04X" % (dbg.getPc(), psmcond)
+	print "Link registers:"
+	dump_regs("lr", lr)
+	print "Offset registers:"
+	dump_regs("off", off)
+	print "General purpose registers:"
+	dump_regs("r", gpr)
+
+	print "Code:"
+	if binary:
+		try:
+			bintext = file(binary, "r").read()
+		except IOError, e:
+			print "Could not read binary file %s: %s" % (binary, e.strerror)
+			sys.exit(1)
+		dasm = Disassembler(bintext, dasmopt + "--paddr").getAsm()
+		print makeShortDump(dasm, dbg.getPc())
+	else:
+		print "<No binary supplied. See --binary option>"
+
+	if dumpShm:
+		print "Shared memory:"
+		ascii = ""
+		for i in range(0, len(shm)):
+			if i % 16 == 0 and i != 0:
+				stdout.write("  " + ascii + "\n")
+				ascii = ""
+			if i % 16 == 0:
+				stdout.write("0x%04X:  " % i)
+			c = ord(shm[i])
+			stdout.write("%02X" % c)
+			if (i % 2 != 0):
+				stdout.write(" ")
+			ascii += toAscii(c)
+		stdout.write("  " + ascii + "\n")
+	return
+
+
+try:
+	main()
+except B43Exception:
+	sys.exit(1)

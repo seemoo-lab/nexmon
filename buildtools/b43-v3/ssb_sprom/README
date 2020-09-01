@@ -1,0 +1,116 @@
+
+	Broadcom-SSB SPROM data modification tool
+	=========================================
+
+About this software
+-------------------
+
+A tool for the convenient modification of the
+Broadcom Sonics Silicon Backplane SPROM.
+This tool automatically adjusts the CRC after the modification.
+
+Requirements
+------------
+
+1)	C99 compatible compiler.
+
+
+Usage
+-----
+
+The contents of the sprom are exposed to the user in sysfs. This
+tool can, in principle, read and write the sprom in place; however,
+making a mistake during sprom writing could render your device
+unusable. For this reason, we recommend copying the sprom contents
+to disk as the first step. This copy can then be modified until it
+contains the desired new information. Only then and with caution
+should the sprom be rewritten. DO NOT MAKE ANY CHANGES UNLESS YOU
+KNOW WHAT YOU ARE DOING!!!! You have been warned!!!
+
+Obtaining a disk copy of the sprom contents
+-------------------------------------------
+
+This file name for the sprom contents depends on the bus layout of
+the specific computer being used and will be something like
+
+/sys/devices/pci0000:00/0000:00:0d.0/0000:04:00.0/ssb_sprom
+
+It is not recommended that you try to type the name. Instead, you
+should use the following commands to get and check the path for the
+sprom file:
+
+SSB_SPROM=$(find /sys -name ssb_sprom)
+echo $SSB_SPROM
+
+If the echo command only results in a single instance of "/sys/...",
+you may proceed. For systems with more than one SSB-based interface,
+there will be such a string for each, and the command that sets the
+SSB_SPROM symbol will have to be changed. In the name above, the
+sequence states that this device is attached to the 0'th PCI bus via
+bridge 0d.0 and is device 04:00.0 on that bridge. To find which of
+your SSB devices to select, use the 'lspci -v' command. On my system,
+the first line of such output for my interface is "04:00.0 Network
+controller: Broadcom Corporation BCM94311MCG wlan mini-PCI (rev 02)".
+To select only this device, one would use
+
+SSB_SPROM=$(find /sys -name ssb_sprom | grep 04:00.0)
+echo $SSB_SPROM
+
+Of course, the "04:00.0" needs to match your system, and check the
+output value to determine that there is now a single instance of
+"/sys..." and that the path matches the device whose SPROM is to be
+changed. If not, adjust the string after 'grep' accordingly.
+
+Once the SSB_SPROM variable matches the path to ssb_sprom for your
+device, get a working copy of the sprom contents with
+
+sudo cat $SSB_SPROM > ssb_sprom_copy
+
+Modifying the contents of the working copy
+------------------------------------------
+
+You may now see the contents of your sprom with the command
+
+ssb-sprom -i ssb_sprom_copy -P
+
+As an example, let us suppose that you have purchased a Dell mini-pci
+card to use in an HP laptop. The HP BIOS refuses to use the card when
+the pcivendor is Dell (code 0x1028), not HP (code 0x103C). From the
+information provided by an "ssb-prom --help" command, we learn that
+the switch needed to change this vendor code is "--subv". To change
+that code, we use the command
+
+ssb-sprom -i ssb_sprom_copy -o new_ssb_sprom_copy --subv 0x103C
+
+to write the HP vendor ID to our working copy. I use different
+input and output files so as not to destroy the original. If further
+changes are needed, for example the PCI product ID, the command
+
+ssb-sprom -i new_ssb_sprom_copy -o new_ssb_sprom_copy --subp 0x137C
+
+would be used. Note that the input and output files may be the same.
+Once you think you have updated correctly, use
+
+ssb-sprom -i new_ssb_sprom_copy -P
+
+to check the contents.
+
+Rewriting the sprom contents
+----------------------------
+
+Once the sprom contents are the way you want them, and presumably
+correct, you are ready to rewrite the file. First, use
+
+echo $SSB_SPROM
+
+to ensure that this symbol still contains the SPROM path. If not,
+then it will have to be reloaded as discussed above.
+
+You are then ready to rewrite the sprom with
+
+sudo cp new_ssb_sprom_copy $SSB_SPROM
+
+Once again, you are urged to be absolutely certain of the contents
+of the working copy BEFORE taking this step. If your interface
+becomes unusable as a result of writing incorrect data into the
+sprom, the responsibility is YOURS. Once again, you have been warned.

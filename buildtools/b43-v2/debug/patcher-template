@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+"""
+#  Copyright (C) 2008 Michael Buesch <m@bues.ch>
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License version 3
+#  as published by the Free Software Foundation.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+import sys
+from libb43 import *
+
+
+if len(sys.argv) != 3 and len(sys.argv) != 2:
+	print "Usage: %s INPUT_FILE [OUTPUT_FILE]" % sys.argv[0]
+	sys.exit(1)
+
+infile = sys.argv[1]
+outfile = None
+if len(sys.argv) == 3:
+	outfile = sys.argv[2]
+
+try:
+
+	asm = Disassembler(file(infile).read(), "").getAsm()
+	p = TextPatcher(asm, "c053515533b60977d212fbcfa4fc2546") # TODO adjust the MD5SUM
+
+	# TODO
+	# Use p.addText() and p.delLine() for modifying the code
+
+	if outfile:
+		bin = Assembler(p.getText(), "--psize").getBinary()
+		file(outfile, "w").write(bin)
+	else:
+		sys.stdout.write(p.getText())
+
+except B43Exception:
+	print "Could not patch. Do you use the correct input file?"
+	sys.exit(1)

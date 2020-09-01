@@ -91,7 +91,7 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
             }
             break;
 
-                case NEX_INJECT_FRAME:
+        case NEX_INJECT_FRAME:
             {
                 sk_buff *p;
                 int bytes_used = 0;

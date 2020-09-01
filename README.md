@@ -22,26 +22,29 @@ Our software may damage your hardware and may void your hardware’s warranty! Y
 # Supported Devices
 The following devices are currently supported by our nexmon firmware patch.
 
-WiFi Chip                | Firmware Version     | Used in                   | Operating System          |  M  | RT  |  I  | FP  | UC  | CT 
------------------------- | -------------------- | ------------------------- | ------------------------- | --- | --- | --- | --- | --- | ---
-bcm4330                  | 5_90_100_41_sta      | Samsung Galaxy S2         | Cyanogenmod 13.0          |  X  |  X  |     |  X  |  X  |  O 
-bcm4335b0                | 6.30.171.1_sta       | Samsung Galaxy S4         | LineageOS 14.1            |  X  |  X  |  X  |     |  X  |  O 
-bcm4339                  | 6_37_34_43           | Nexus 5                   | Android 6 Stock           |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43430a1<sup>1</sup>   | 7_45_41_26           | Raspberry Pi 3 and Zero W | Raspbian 8                |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43430a1<sup>1</sup>   | 7_45_41_46           | Raspberry Pi 3 and Zero W | Raspbian Stretch          |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43451b1               | 7_63_43_0            | iPhone 6                  | iOS 10.1.1 (14B100)       |     |     |     |  X  |  X  |    
-bcm43455                 | 7_45_77_0_hw         | Huawei P9                 | Android 7 Stock           |  X  |  X  |  X  |  X  |  X  |    
-bcm43455                 | 7_120_5_1_sta_C0     | Galaxy J7 2017            | ?                         |     |     |     |  X  |  X  |    
-bcm43455                 | 7_45_77_0_hw(8-2017) | Huawei P9                 | Android 7 Stock           |  X  |  X  |  X  |  X  |  X  |    
-bcm43455c0               | 7_45_154             | Raspberry Pi B3+/B4       | Raspbian Kernel 4.9/14/19 |  X  |  X  |     |  X  |  X  |    
-bcm43455c0               | 7_45_189             | Raspberry Pi B3+/B4       | Raspbian Kernel 4.19      |  X  |  X  |     |  X  |  X  |    
-bcm4356                  | 7_35_101_5_sta       | Nexus 6                   | Android 7.1.2             |  X  |  X  |     |  X  |  X  |  O 
-bcm4358                  | 7_112_200_17_sta     | Nexus 6P                  | Android 7 Stock           |  X  |  X  |     |  X  |  X  |  O 
-bcm4358                  | 7_112_201_3_sta      | Nexus 6P                  | Android 7.1.2 Stock       |  X  |  X  |     |  X  |  X  |  O 
-bcm4358<sup>2</sup>      | 7_112_300_14_sta     | Nexus 6P                  | Android 8.0.0 Stock       |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43596a0<sup>3</sup>   | 9_75_155_45_sta_c0   | Samsung Galaxy S7         | Android 7 Stock           |  X  |     |     |  O  |  X  |    
-bcm43596a0<sup>3,2</sup> | 9_96_4_sta_c0        | Samsung Galaxy S7         | LineageOS 14.1            |  X  |  X  |  X  |  O  |  X  |    
-qca9500<sup>4</sup>      | 4-1-0_55             | TP-Link Talon AD7200      | Custom LEDE Image         |     |     |     |     |     |    
+WiFi Chip                 | Firmware Version     | Used in                   | Operating System             |  M  | RT  |  I  | FP  | UC  | CT 
+------------------------- | -------------------- | ------------------------- | ---------------------------- | --- | --- | --- | --- | --- | ---
+bcm4330                   | 5_90_100_41_sta      | Samsung Galaxy S2         | Cyanogenmod 13.0             |  X  |  X  |     |  X  |  X  |  O 
+bcm4335b0                 | 6.30.171.1_sta       | Samsung Galaxy S4         | LineageOS 14.1               |  X  |  X  |  X  |     |  X  |  O 
+bcm4339                   | 6_37_34_43           | Nexus 5                   | Android 6 Stock              |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43430a1<sup>1</sup>    | 7_45_41_26           | Raspberry Pi 3 and Zero W | Raspbian 8                   |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43430a1<sup>1</sup>    | 7_45_41_46           | Raspberry Pi 3 and Zero W | Raspbian Stretch             |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43451b1                | 7_63_43_0            | iPhone 6                  | iOS 10.1.1 (14B100)          |     |     |     |  X  |  X  |    
+bcm43455                  | 7_45_77_0_hw         | Huawei P9                 | Android 7 Stock              |  X  |  X  |  X  |  X  |  X  |    
+bcm43455                  | 7_120_5_1_sta_C0     | Galaxy J7 2017            | ?                            |     |     |     |  X  |  X  |    
+bcm43455                  | 7_45_77_0_hw(8-2017) | Huawei P9                 | Android 7 Stock              |  X  |  X  |  X  |  X  |  X  |    
+bcm43455<sup>5</sup>      | 7_46_77_11_hw        | Huawei P9                 | Android 8 China Stock        |  X  |  X  |  X  |  X  |  X  |    
+bcm43455                  | 7_45_59_16           | Sony Xperia Z5 Compact    | LineageOS 14.1               |  X  |  X  |  X  |  X  |  X  |    
+bcm43455c0                | 7_45_154             | Raspberry Pi B3+/B4       | Raspbian Kernel 4.9/14/19    |  X  |  X  |     |  X  |  X  |    
+bcm43455c0                | 7_45_189             | Raspberry Pi B3+/B4       | Raspbian Kernel 4.14/19, 5.4 |  X  |  X  |     |  X  |  X  |    
+bcm4356                   | 7_35_101_5_sta       | Nexus 6                   | Android 7.1.2                |  X  |  X  |     |  X  |  X  |  O 
+bcm4358                   | 7_112_200_17_sta     | Nexus 6P                  | Android 7 Stock              |  X  |  X  |     |  X  |  X  |  O 
+bcm4358                   | 7_112_201_3_sta      | Nexus 6P                  | Android 7.1.2 Stock          |  X  |  X  |     |  X  |  X  |  O 
+bcm4358<sup>2</sup>       | 7_112_300_14_sta     | Nexus 6P                  | Android 8.0.0 Stock          |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43596a0<sup>3</sup>    | 9_75_155_45_sta_c0   | Samsung Galaxy S7         | Android 7 Stock              |  X  |     |     |  O  |  X  |    
+bcm43596a0<sup>3,2</sup>  | 9_96_4_sta_c0        | Samsung Galaxy S7         | LineageOS 14.1               |  X  |  X  |  X  |  O  |  X  |    
+bcm4375b1<sup>3,5,6</sup> | 18_38_18_sta         | Samsung Galaxy S10        | LineageOS 16                 |     |     |     |  O  |  X  |    
+qca9500<sup>4</sup>       | 4-1-0_55             | TP-Link Talon AD7200      | Custom LEDE Image            |     |     |     |     |     |    
 
 <sup>1</sup> bcm43430a1 was wrongly labeled bcm43438 in the past.
 
@@ -50,6 +53,10 @@ qca9500<sup>4</sup>      | 4-1-0_55             | TP-Link Talon AD7200      | Cu
 <sup>3</sup> flash patches need to be 8 bytes long and aligned on an 8 byte boundary
 
 <sup>4</sup> 802.11ad Wi-Fi chip from first 60 GHz Wi-Fi router Talon AD7200. Patch your firmware using [nexmon-arc](https://github.com/seemoo-lab/nexmon-arc) and run it with our custom LEDE image [lede-ad7200](https://github.com/seemoo-lab/lede-ad7200)
+
+<sup>5</sup> Disabled the execution protection (called Execute Never) on region 1, because it interferes with the nexmon code (Permission fault on Section)
+
+<sup>6</sup> To use nexutil, you need to deactivate SELinux or set it to permissive
 
 ## Legend
 - M = Monitor Mode
@@ -104,7 +111,7 @@ To be able to communicate with the firmware without root priviledges, we created
 * Check if `/usr/lib/arm-linux-gnueabihf/libisl.so.10` exists, if not, compile it from source:
   * `cd buildtools/isl-0.10`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libisl.so /usr/lib/arm-linux-gnueabihf/libisl.so.10`
 * Check if `/usr/lib/arm-linux-gnueabihf/libmpfr.so.4` exists, if not, compile it from source:
-  * `cd buildtools/mpfr-3.1.4`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libmpfr.so /usr/lib/arm-linux-gnueabihf/libmpfr.so.4`
+  * `cd buildtools/mpfr-3.1.4`, `autoreconf -f -i`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libmpfr.so /usr/lib/arm-linux-gnueabihf/libmpfr.so.4`
 * Then you can setup the build environment for compiling firmware patches
   * Setup the build environment: `source setup_env.sh`
   * Compile some build tools and extract the ucode and flashpatches from the original firmware files: `make`
@@ -219,6 +226,8 @@ make rom.bin
 * [monmob](https://github.com/tuter/monmob): Monitor Mode and Frame Injection for the bcm4325, bcm4329 and bcm4330
 * [P4wnP1](https://github.com/mame82/P4wnP1): Highly customizable attack platform, based on Raspberry Pi Zero W and Nexmon
 * [kali Nethunter OS](https://github.com/nethunteros): ROM that brings Kali Linux to smartphones with Nexmon support
+* [dustcloud-nexmon](https://github.com/dgiese/dustcloud-nexmon): Nexmon for Xiaomi IoT devices (ARM based)
+* [InternalBlue](https://github.com/seemoo-lab/internalblue): Bluetooth experimentation framework based on Reverse Engineering of Broadcom Bluetooth Controllers
 
 # Interesting articles on firmware hacks
 If you know more projects that use nexmon or perform similar firmware hacks, let us know and we will add a link.
@@ -232,9 +241,12 @@ If you know more projects that use nexmon or perform similar firmware hacks, let
 * Matthias Schulz. [**Teaching Your Wireless Card New Tricks: Smartphone Performance and Security Enhancements through Wi-Fi Firmware Modifications**](http://tuprints.ulb.tu-darmstadt.de/7243/). Dr.-Ing. thesis, Technische Universität Darmstadt, Germany, February 2018. [pdf](http://tuprints.ulb.tu-darmstadt.de/7243/7/dissertation_2018_matthias_thomas_schulz.pdf)
 
 # Read our papers
-* M. Schulz, D. Wegemer, and M. Hollick. [**The Nexmon Firmware Analysis and Modification Framework: Empowering Researchers to Enhance Wi-Fi Devices**](https://doi.org/10.1016/j.comcom.2018.05.015). Accepted to appear in Elsevier Computer Communications (COMCOM) Journal. 2018.
-* M. Schulz, J. Link, F. Gringoli, and M. Hollick. **Shadow Wi-Fi: Teaching Smart- phones to Transmit Raw Signals and to Extract Channel State Information to Implement Practical Covert Channels over Wi-Fi**. Accepted to appear in *Proceedings of the 16th ACM International Conference on Mobile Systems, Applications, and Services*, MobiSys 2018, June 2018.
-* D. Steinmetzer, D. Wegemer, M. Schulz, J. Widmer, M. Hollick. **Compressive Millimeter-Wave Sector Selection in Off-the-Shelf IEEE 802.11ad Devices**. *Proceedings of the 13th International Conference on emerging Networking EXperiments and Technologies*, CoNEXT 2017, December 2017.
+* F. Gringoli, M. Schulz, J. Link, and M. Hollick. [**Free Your CSI: A Channel State Information Extraction Platform For Modern Wi-Fi Chipsets**](https://doi.org/10.1145/3349623.3355477). Accepted to appear in *Proceedings of the 13th Workshop on Wireless Network Testbeds, Experimental evaluation & CHaracterization (WiNTECH 2019)*, October 2019. [code](https://nexmon.org/csi)
+* D. Mantz, J. Classen, M. Schulz, and M. Hollick. [**InternalBlue - Bluetooth Binary Patching and Experimentation Framework**](https://dl.acm.org/citation.cfm?id=3326089). *In Proceedings of the 17th Annual International Conference on Mobile Systems, Applications, and Services (MobiSys '19)*. June 2019.
+* M. Schuß, C. A. Boano, M. Weber, M. Schulz, M. Hollick, K. Römer. [**JamLab-NG: Benchmarking Low-Power Wireless Protocols under Controlable and Repeatable Wi-Fi Interference**](https://dl.acm.org/citation.cfm?id=3324331). *Proceedings of the 2019 International Conference on Embedded Wireless Systems and Networks (EWSN 2019)*, February 2019.
+* M. Schulz, D. Wegemer, and M. Hollick. [**The Nexmon Firmware Analysis and Modification Framework: Empowering Researchers to Enhance Wi-Fi Devices**](https://doi.org/10.1016/j.comcom.2018.05.015). *Elsevier Computer Communications (COMCOM) Journal*. 2018.
+* M. Schulz, J. Link, F. Gringoli, and M. Hollick. [**Shadow Wi-Fi: Teaching Smart- phones to Transmit Raw Signals and to Extract Channel State Information to Implement Practical Covert Channels over Wi-Fi**](https://dl.acm.org/citation.cfm?id=3210333). Accepted to appear in *Proceedings of the 16th ACM International Conference on Mobile Systems, Applications, and Services*, MobiSys 2018, June 2018.
+* D. Steinmetzer, D. Wegemer, M. Schulz, J. Widmer, M. Hollick. [**Compressive Millimeter-Wave Sector Selection in Off-the-Shelf IEEE 802.11ad Devices**](https://dl.acm.org/citation.cfm?id=3143384). *Proceedings of the 13th International Conference on emerging Networking EXperiments and Technologies*, CoNEXT 2017, December 2017.
 * M. Schulz, D. Wegemer, M. Hollick. [**Nexmon: Build Your Own Wi-Fi Testbeds With Low-Level MAC and PHY-Access Using Firmware Patches on Off-the-Shelf Mobile Devices**](https://dl.acm.org/citation.cfm?id=3131476). *Proceedings of the 11th ACM International Workshop on Wireless Network Testbeds, Experimental Evaluation & Characterization (WiNTECH 2017)*, October 2017. [pdf](https://www.seemoo.tu-darmstadt.de/mschulz/wintech2017) [video](https://youtu.be/m5Zrk4n4hoE)
 * M. Schulz, F. Knapp, E. Deligeorgopoulos, D. Wegemer, F. Gringoli, M. Hollick. [**DEMO: Nexmon in Action: Advanced Applications Powered by the Nexmon Firmware Patching Framework**](https://dl.acm.org/citation.cfm?id=3133333), Accepted for publication in *Proceedings of the 11th ACM International Workshop on Wireless Network Testbeds, Experimental Evaluation & Characterization (WiNTECH 2017)*, October 2017. [pdf](https://www.seemoo.tu-darmstadt.de/mschulz/wintech2017demo)
 * M. Schulz, F. Gringoli, D. Steinmetzer, M. Koch and M. Hollick. [**Massive Reactive Smartphone-Based Jamming using Arbitrary Waveforms and Adaptive Power Control**](https://dl.acm.org/citation.cfm?id=3098253). Proceedings of the *10th ACM Conference on Security and Privacy in Wireless and Mobile Networks (WiSec 2017)*, July 2017. [pdf](https://www.seemoo.tu-darmstadt.de/mschulz/wisec2017) [video](https://youtu.be/S2XPBK0KdiQ)

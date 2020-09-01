@@ -15,17 +15,16 @@ public class FirmwareUtil {
 
     private FirmwareUtil() {
         instance = this;
-
     }
-
+	
     public static FirmwareUtil getInstance() {
-        return instance == null ? new FirmwareUtil() : instance;
+    	return instance == null ? new FirmwareUtil() : instance;
     }
 
     public static boolean isBroadcomChip() {
         Shell.SU.run("ifconfig wlan0 up");
         return Nexutil.getInstance().getIntIoctl(0) == 0x14e46c77;
-    }
+	}
 
     public static String getCapabilities() {
         Shell.SU.run("ifconfig wlan0 up");

@@ -51,10 +51,6 @@ import android.view.LayoutInflater;
 import android.view.WindowManager;
 import android.widget.Toast;
 
-import com.google.android.gms.analytics.GoogleAnalytics;
-import com.google.android.gms.analytics.HitBuilders;
-import com.google.android.gms.analytics.Tracker;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -77,30 +73,6 @@ import eu.chainfire.libsuperuser.Shell;
 public class MyApplication extends Application {
 
     public static boolean isAppVisible = false;
-
-    private static Tracker mTracker;
-
-    public static final int SURVEY_NOTIFICATION_ID = 99999;
-    private static SpannableStringBuilder installInfo;
-
-    /**
-     * Gets the default {@link Tracker} for this {@link Application}.
-     * @return tracker
-     */
-    synchronized public static Tracker getDefaultTracker() {
-        if (mTracker == null) {
-            GoogleAnalytics analytics = GoogleAnalytics.getInstance(getAppContext());
-            // To enable debug logging use: adb shell setprop log.tag.GAv4 DEBUG
-            mTracker = analytics.newTracker(R.xml.global_tracker);
-            mTracker.set("&uid", nexmonUID);
-            mTracker.send(new HitBuilders.EventBuilder()
-                    .setCategory("Device to Client-ID")
-                    .setLabel("Device: " + Build.MODEL + " Client-ID: " + nexmonUID)
-                    .setAction("Tracking started")
-                    .build());
-        }
-        return mTracker;
-    }
 
     private static final String TAG = "PenTestSuite";
 
