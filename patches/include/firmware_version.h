@@ -98,6 +98,7 @@
 // for CHIP_VER_BCM43455c0
 #define FW_VER_7_45_154                    110
 #define FW_VER_7_45_189                    111
+#define FW_VER_7_45_206                    112
 
 // for CHIP_VER_BCM43909b0
 #define FW_VER_7_15_168_108                210
