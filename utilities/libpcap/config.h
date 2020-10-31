@@ -38,7 +38,7 @@
 /* #undef HAVE_DAG_VDAG */
 
 /* Define to 1 if you have the declaration of `ether_hostton' */
-#define HAVE_DECL_ETHER_HOSTTON 1
+/* #undef HAVE_DECL_ETHER_HOSTTON */
 
 /* Define to 1 if `dl_module_id_1' is a member of `dl_hp_ppa_info_t'. */
 /* #undef HAVE_DL_HP_PPA_INFO_T_DL_MODULE_ID_1 */
@@ -59,7 +59,7 @@
 /* #undef HAVE_GETSPNAM */
 
 /* Define to 1 if you have a GNU-style `strerror_r' function. */
-#define HAVE_GNU_STRERROR_R /**/
+/* #undef HAVE_GNU_STRERROR_R */
 
 /* on HP-UX 10.20 or later */
 /* #undef HAVE_HPUX10_20_OR_LATER */
@@ -107,19 +107,19 @@
 /* #undef HAVE_LINUX_GETPROTOBYNAME_R */
 
 /* Define to 1 if you have the <linux/if_bonding.h> header file. */
-#define HAVE_LINUX_IF_BONDING_H 1
+/* #undef HAVE_LINUX_IF_BONDING_H */
 
 /* Define to 1 if you have the <linux/net_tstamp.h> header file. */
-#define HAVE_LINUX_NET_TSTAMP_H 1
+/* #undef HAVE_LINUX_NET_TSTAMP_H */
 
 /* Define to 1 if you have the <linux/socket.h> header file. */
-#define HAVE_LINUX_SOCKET_H 1
+/* #undef HAVE_LINUX_SOCKET_H */
 
 /* Define to 1 if you have the <linux/sockios.h> header file. */
-#define HAVE_LINUX_SOCKIOS_H 1
+/* #undef HAVE_LINUX_SOCKIOS_H */
 
 /* Define to 1 if you have the <linux/usbdevice_fs.h> header file. */
-#define HAVE_LINUX_USBDEVICE_FS_H 1
+/* #undef HAVE_LINUX_USBDEVICE_FS_H */
 
 /* Define to 1 if you have the <linux/wireless.h> header file. */
 #define HAVE_LINUX_WIRELESS_H 1
@@ -158,7 +158,7 @@
 /* #undef HAVE_PF_NAT_THROUGH_PF_NORDR */
 
 /* Define to 1 if you have a POSIX-style `strerror_r' function. */
-#define HAVE_POSIX_STRERROR_R 1
+#define HAVE_POSIX_STRERROR_R /**/
 
 /* define if you have the Septel API */
 /* #undef HAVE_SEPTEL_API */
@@ -203,11 +203,7 @@
 #define HAVE_STRLCAT 1
 
 /* Define to 1 if you have the `strlcpy' function. */
-#if defined(__ANDROID__)
 #define HAVE_STRLCPY 1
-#else
-#undef HAVE_STRLCPY
-#endif
 
 /* Define to 1 if you have the `strtok_r' function. */
 #define HAVE_STRTOK_R 1
@@ -241,7 +237,7 @@
 
 /* Define to 1 if `bRequestType' is a member of `struct
    usbdevfs_ctrltransfer'. */
-#define HAVE_STRUCT_USBDEVFS_CTRLTRANSFER_BREQUESTTYPE 1
+/* #undef HAVE_STRUCT_USBDEVFS_CTRLTRANSFER_BREQUESTTYPE */
 
 /* Define to 1 if you have the <sys/bufmod.h> header file. */
 /* #undef HAVE_SYS_BUFMOD_H */
@@ -286,13 +282,13 @@
 #define INET6 1
 
 /* if unaligned access fails */
-/* #undef LBL_ALIGN */
+#define LBL_ALIGN 1
 
 /* path for device for USB sniffing */
-#define LINUX_USB_MON_DEV "/dev/usbmon"
+/* #undef LINUX_USB_MON_DEV */
 
 /* Define to 1 if netinet/ether.h declares `ether_hostton' */
-#define NETINET_ETHER_H_DECLARES_ETHER_HOSTTON /**/
+/* #undef NETINET_ETHER_H_DECLARES_ETHER_HOSTTON */
 
 /* Define to 1 if netinet/if_ether.h declares `ether_hostton' */
 /* #undef NETINET_IF_ETHER_H_DECLARES_ETHER_HOSTTON */
@@ -331,7 +327,7 @@
 /* #undef PCAP_SUPPORT_DBUS */
 
 /* target host supports netfilter sniffing */
-#define PCAP_SUPPORT_NETFILTER 1
+/* #undef PCAP_SUPPORT_NETFILTER */
 
 /* target host supports netmap */
 /* #undef PCAP_SUPPORT_NETMAP */
@@ -343,7 +339,7 @@
 /* #undef PCAP_SUPPORT_RDMASNIFF */
 
 /* target host supports USB sniffing */
-#define PCAP_SUPPORT_USB 1
+/* #undef PCAP_SUPPORT_USB */
 
 /* include ACN support */
 /* #undef SITA */
@@ -362,7 +358,7 @@
 
 /* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
    `char[]'. */
-#define YYTEXT_POINTER 1
+/* #undef YYTEXT_POINTER */
 
 /* Enable large inode numbers on Mac OS X 10.5.  */
 #ifndef _DARWIN_USE_64_BIT_INODE
