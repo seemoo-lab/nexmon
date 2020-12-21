@@ -4532,7 +4532,7 @@ write_ram_to_buffer(void) {
     my_rom_buffer[0] = 0;
     my_rom_buffer_len = 0;
 	
-	sdio_claim_host(my_sdio->sdiodev->func[1]);
+	sdio_claim_host(my_sdio->sdiodev->func1);
 	brcmf_sdio_bus_sleep(my_sdio, false, false);
     brcmf_sdio_clkctl(my_sdio, CLK_AVAIL, false);
    
@@ -4551,7 +4551,7 @@ write_ram_to_buffer(void) {
     print_hex_dump_bytes("", DUMP_PREFIX_NONE, my_rom_buffer, 0x100);
 	
     my_sdio->alp_only = false;
-    sdio_release_host(my_sdio->sdiodev->func[1]);
+    sdio_release_host(my_sdio->sdiodev->func1);
     
     return 0;
 

@@ -14,6 +14,7 @@
 #include "fweh.h"
 #include "debug.h"
 
+#ifdef DEBUG
 int brcmf_debug_create_memdump(struct brcmf_bus *bus, const void *data,
 			       size_t len)
 {
@@ -57,3 +58,4 @@ int brcmf_debugfs_add_entry(struct brcmf_pub *drvr, const char *fn,
 					drvr->wiphy->debugfsdir, read_fn);
 	return PTR_ERR_OR_ZERO(e);
 }
+#endif
