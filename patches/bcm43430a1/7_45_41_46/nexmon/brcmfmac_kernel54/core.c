@@ -1589,7 +1589,13 @@ int __init brcmf_core_init(void)
 
 void __exit brcmf_core_exit(void)
 {
-	cancel_work_sync(&brcmf_driver_work);
+  /*NEXMON netlink */
+  netlink_kernel_release(nl_sock);
+
+  /*NEXMON procfs*/
+  remove_proc_entry("nexmon_consoledump", NULL);
+
+  cancel_work_sync(&brcmf_driver_work);
 
 #ifdef CONFIG_BRCMFMAC_SDIO
 	brcmf_sdio_exit();
