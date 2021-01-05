@@ -78,6 +78,16 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p,
         p_len_new = p->len + sizeof(struct nexmon_radiotap_header);
     }
 
+//    if (p->len > 300)
+//        printf("mon: %d\n", p->len);
+
+    char* t = (char*)p->data;
+    if (t[38] == 0x88 && t[39] == 0x8e)
+    {
+        printf("got an EAPOL frame\n");
+        printf("frame size=%d\n",p->len - 6);
+    }
+
     // We figured out that frames larger than 2032 will not arrive in user space
     if (p_len_new > 2032) {
         printf("ERR: frame too large\n");

@@ -22,27 +22,31 @@ Our software may damage your hardware and may void your hardware’s warranty! Y
 # Supported Devices
 The following devices are currently supported by our nexmon firmware patch.
 
-WiFi Chip                | Firmware Version     | Used in                   | Operating System          |  M  | RT  |  I  | FP  | UC  | CT 
------------------------- | -------------------- | ------------------------- | ------------------------- | --- | --- | --- | --- | --- | ---
-bcm4330                  | 5_90_100_41_sta      | Samsung Galaxy S2         | Cyanogenmod 13.0          |  X  |  X  |     |  X  |  X  |  O 
-bcm4335b0                | 6.30.171.1_sta       | Samsung Galaxy S4         | LineageOS 14.1            |  X  |  X  |  X  |     |  X  |  O 
-bcm4339                  | 6_37_34_43           | Nexus 5                   | Android 6 Stock           |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43430a1<sup>1</sup>   | 7_45_41_26           | Raspberry Pi 3 and Zero W | Raspbian 8                |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43430a1<sup>1</sup>   | 7_45_41_46           | Raspberry Pi 3 and Zero W | Raspbian Stretch          |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43451b1               | 7_63_43_0            | iPhone 6                  | iOS 10.1.1 (14B100)       |     |     |     |  X  |  X  |    
-bcm43455                 | 7_45_77_0_hw         | Huawei P9                 | Android 7 Stock           |  X  |  X  |  X  |  X  |  X  |    
-bcm43455                 | 7_120_5_1_sta_C0     | Galaxy J7 2017            | ?                         |     |     |     |  X  |  X  |    
-bcm43455                 | 7_45_77_0_hw(8-2017) | Huawei P9                 | Android 7 Stock           |  X  |  X  |  X  |  X  |  X  |    
-bcm43455                 | 7_45_88_10_C0        | LG G5                     | Android 7 Stock           |     |     |     |  X  |  X  |    
-bcm43455c0               | 7_45_154             | Raspberry Pi B3+/B4       | Raspbian Kernel 4.9/14/19 |  X  |  X  |     |  X  |  X  |    
-bcm43455c0               | 7_45_189             | Raspberry Pi B3+/B4       | Raspbian Kernel 4.14/19   |  X  |  X  |     |  X  |  X  |    
-bcm4356                  | 7_35_101_5_sta       | Nexus 6                   | Android 7.1.2             |  X  |  X  |     |  X  |  X  |  O 
-bcm4358                  | 7_112_200_17_sta     | Nexus 6P                  | Android 7 Stock           |  X  |  X  |     |  X  |  X  |  O 
-bcm4358                  | 7_112_201_3_sta      | Nexus 6P                  | Android 7.1.2 Stock       |  X  |  X  |     |  X  |  X  |  O 
-bcm4358<sup>2</sup>      | 7_112_300_14_sta     | Nexus 6P                  | Android 8.0.0 Stock       |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43596a0<sup>3</sup>   | 9_75_155_45_sta_c0   | Samsung Galaxy S7         | Android 7 Stock           |  X  |     |     |  O  |  X  |    
-bcm43596a0<sup>3,2</sup> | 9_96_4_sta_c0        | Samsung Galaxy S7         | LineageOS 14.1            |  X  |  X  |  X  |  O  |  X  |    
-qca9500<sup>4</sup>      | 4-1-0_55             | TP-Link Talon AD7200      | Custom LEDE Image         |     |     |     |     |     |    
+WiFi Chip                 | Firmware Version     | Used in                   | Operating System             |  M  | RT  |  I  | FP  | UC  | CT 
+------------------------- | -------------------- | ------------------------- | ---------------------------- | --- | --- | --- | --- | --- | ---
+bcm4330                   | 5_90_100_41_sta      | Samsung Galaxy S2         | Cyanogenmod 13.0             |  X  |  X  |     |  X  |  X  |  O 
+bcm4335b0                 | 6.30.171.1_sta       | Samsung Galaxy S4         | LineageOS 14.1               |  X  |  X  |  X  |     |  X  |  O 
+bcm4339                   | 6_37_34_43           | Nexus 5                   | Android 6 Stock              |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43430a1<sup>1</sup>    | 7_45_41_26           | Raspberry Pi 3 and Zero W | Raspbian 8                   |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43430a1<sup>1</sup>    | 7_45_41_46           | Raspberry Pi 3 and Zero W | Raspbian Stretch             |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43451b1                | 7_63_43_0            | iPhone 6                  | iOS 10.1.1 (14B100)          |     |     |     |  X  |  X  |    
+bcm43455                  | 7_45_77_0_hw         | Huawei P9                 | Android 7 Stock              |  X  |  X  |  X  |  X  |  X  |    
+bcm43455                  | 7_45_88_10_C0        | LG G5                     | Android 7 Stock              |     |     |     |  X  |  X  |  
+bcm43455                  | 7_120_5_1_sta_C0     | Galaxy J7 2017            | ?                            |     |     |     |  X  |  X  |    
+bcm43455                  | 7_45_77_0_hw(8-2017) | Huawei P9                 | Android 7 Stock              |  X  |  X  |  X  |  X  |  X  |    
+bcm43455<sup>5</sup>      | 7_46_77_11_hw        | Huawei P9                 | Android 8 China Stock        |  X  |  X  |  X  |  X  |  X  |    
+bcm43455                  | 7_45_59_16           | Sony Xperia Z5 Compact    | LineageOS 14.1               |  X  |  X  |  X  |  X  |  X  |    
+bcm43455c0                | 7_45_154             | Raspberry Pi B3+/B4       | Raspbian Kernel 4.9/14/19    |  X  |  X  |     |  X  |  X  |    
+bcm43455c0                | 7_45_189             | Raspberry Pi B3+/B4       | Raspbian Kernel 4.14/19, 5.4 |  X  |  X  |     |  X  |  X  |    
+bcm43455c0                | 7_45_206             | Raspberry Pi B3+/B4       | Raspberry Pi OS Kernel 5.4   |  X  |  X  |  X  |  X  |  X  |    
+bcm4356                   | 7_35_101_5_sta       | Nexus 6                   | Android 7.1.2                |  X  |  X  |     |  X  |  X  |  O 
+bcm4358                   | 7_112_200_17_sta     | Nexus 6P                  | Android 7 Stock              |  X  |  X  |     |  X  |  X  |  O 
+bcm4358                   | 7_112_201_3_sta      | Nexus 6P                  | Android 7.1.2 Stock          |  X  |  X  |     |  X  |  X  |  O 
+bcm4358<sup>2</sup>       | 7_112_300_14_sta     | Nexus 6P                  | Android 8.0.0 Stock          |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43596a0<sup>3</sup>    | 9_75_155_45_sta_c0   | Samsung Galaxy S7         | Android 7 Stock              |  X  |     |     |  O  |  X  |    
+bcm43596a0<sup>3,2</sup>  | 9_96_4_sta_c0        | Samsung Galaxy S7         | LineageOS 14.1               |  X  |  X  |  X  |  O  |  X  |    
+bcm4375b1<sup>3,5,6</sup> | 18_38_18_sta         | Samsung Galaxy S10        | LineageOS 16                 |     |     |     |  O  |  X  |    
+qca9500<sup>4</sup>       | 4-1-0_55             | TP-Link Talon AD7200      | Custom LEDE Image            |     |     |     |     |     |    
 
 <sup>1</sup> bcm43430a1 was wrongly labeled bcm43438 in the past.
 
@@ -51,6 +55,10 @@ qca9500<sup>4</sup>      | 4-1-0_55             | TP-Link Talon AD7200      | Cu
 <sup>3</sup> flash patches need to be 8 bytes long and aligned on an 8 byte boundary
 
 <sup>4</sup> 802.11ad Wi-Fi chip from first 60 GHz Wi-Fi router Talon AD7200. Patch your firmware using [nexmon-arc](https://github.com/seemoo-lab/nexmon-arc) and run it with our custom LEDE image [lede-ad7200](https://github.com/seemoo-lab/lede-ad7200)
+
+<sup>5</sup> Disabled the execution protection (called Execute Never) on region 1, because it interferes with the nexmon code (Permission fault on Section)
+
+<sup>6</sup> To use nexutil, you need to deactivate SELinux or set it to permissive
 
 ## Legend
 - M = Monitor Mode
@@ -95,8 +103,8 @@ To be able to communicate with the firmware without root priviledges, we created
 * Set the security cookie as root: `nexutil -x<cookie (uint)>`
 * Start a UDP connection for example to activate monitor mode: `nexutil -X<cookie> -m1`
 
-## Build patches for bcm43430a1 on the RPI3/Zero W or bcm434355c0 on the RPI3+/RPI4 using Raspbian (recommended)
-**Note:** We currently support Kernel Version 4.4 (depricated), 4.9, 4.14 and 4.19. Raspbian contains firmware version 7.45.154 for the bcm43455c0. We also support the newer firmware release 7.45.189 from Cypress. Please, try which works best for you.
+## Build patches for bcm43430a1 on the RPI3/Zero W or bcm434355c0 on the RPI3+/RPI4 using Raspbian/Raspberry Pi OS (recommended)
+**Note:** We currently support Kernel Version 4.4 (depricated), 4.9, 4.14, 4.19 and 5.4. Raspbian contains firmware version 7.45.154 for the bcm43455c0. We also support the newer firmware release 7.45.189 from Cypress. Raspberry Pi OS contains firmware version 7.45.206. Please, try which works best for you.
 * Make sure the following commands are executed as root: `sudo su`
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
 * Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk qpdf bison flex make`
@@ -105,7 +113,7 @@ To be able to communicate with the firmware without root priviledges, we created
 * Check if `/usr/lib/arm-linux-gnueabihf/libisl.so.10` exists, if not, compile it from source:
   * `cd buildtools/isl-0.10`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libisl.so /usr/lib/arm-linux-gnueabihf/libisl.so.10`
 * Check if `/usr/lib/arm-linux-gnueabihf/libmpfr.so.4` exists, if not, compile it from source:
-  * `cd buildtools/mpfr-3.1.4`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libmpfr.so /usr/lib/arm-linux-gnueabihf/libmpfr.so.4`
+  * `cd buildtools/mpfr-3.1.4`, `autoreconf -f -i`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libmpfr.so /usr/lib/arm-linux-gnueabihf/libmpfr.so.4`
 * Then you can setup the build environment for compiling firmware patches
   * Setup the build environment: `source setup_env.sh`
   * Compile some build tools and extract the ucode and flashpatches from the original firmware files: `make`
