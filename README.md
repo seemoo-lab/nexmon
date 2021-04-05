@@ -7,9 +7,6 @@ mode with radiotap headers and frame injection.
 
 Before we started to work on this repository, we developed patches for the Nexus 5 (with bcm4339 WiFi chip) in the [bcm-public](https://github.com/seemoo-lab/bcm-public)  repository and those for the Raspberry Pi 3 (with bcm43430a1 WiFi chip) in the [bcm-rpi3](https://github.com/seemoo-lab/bcm-rpi3) repository. To remove the development overhead of maintaining multiple separate repositories, we decided to merge them in this repository and add support for some additional devices. In contrast to the former repositories, here, you can only build the firmware patch without drivers and kernels. The Raspberry Pi 3 makes an exception, as here it is always required to also build the driver.
 
-# Give Feedback
-We setup a survey to learn about who uses Nexmon to which purpose and how we could improve Nexmon. We would be happy if every Nexmon user filled out this survey: https://nexmon.org/survey
-
 # WARNING
 Our software may damage your hardware and may void your hardware’s warranty! You use our tools at your own risk and responsibility! If you don't like these terms, don't use nexmon!
 
@@ -44,7 +41,8 @@ bcm4358                   | 7_112_201_3_sta      | Nexus 6P                  | A
 bcm4358<sup>2</sup>       | 7_112_300_14_sta     | Nexus 6P                  | Android 8.0.0 Stock          |  X  |  X  |  X  |  X  |  X  |  O 
 bcm43596a0<sup>3</sup>    | 9_75_155_45_sta_c0   | Samsung Galaxy S7         | Android 7 Stock              |  X  |     |     |  O  |  X  |    
 bcm43596a0<sup>3,2</sup>  | 9_96_4_sta_c0        | Samsung Galaxy S7         | LineageOS 14.1               |  X  |  X  |  X  |  O  |  X  |    
-bcm4375b1<sup>3,5,6</sup> | 18_38_18_sta         | Samsung Galaxy S10        | LineageOS 16                 |     |     |     |  O  |  X  |    
+bcm4375b1<sup>3,5,6</sup> | 18_38_18_sta         | Samsung Galaxy S10        | Rooted + disabled SELinux    |  X  |  X  |  X  |  O  |  X  |    
+bcm4375b1<sup>3,5,6</sup> | 18_41_8_9_sta        | Samsung Galaxy S20        | Rooted + disabled SELinux    |  X  |  X  |  X  |  O  |  X  |    
 qca9500<sup>4</sup>       | 4-1-0_55             | TP-Link Talon AD7200      | Custom LEDE Image            |     |     |     |     |     |    
 
 <sup>1</sup> bcm43430a1 was wrongly labeled bcm43438 in the past.
