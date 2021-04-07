@@ -5,18 +5,27 @@ Nexmon is our C-based firmware patching framework for Broadcom/Cypress WiFi chip
 that enables you to write your own firmware patches, for example, to enable monitor
 mode with radiotap headers and frame injection.
 
-Before we started to work on this repository, we developed patches for the Nexus 5 (with bcm4339 WiFi chip) in the [bcm-public](https://github.com/seemoo-lab/bcm-public)  repository and those for the Raspberry Pi 3 (with bcm43430a1 WiFi chip) in the [bcm-rpi3](https://github.com/seemoo-lab/bcm-rpi3) repository. To remove the development overhead of maintaining multiple separate repositories, we decided to merge them in this repository and add support for some additional devices. In contrast to the former repositories, here, you can only build the firmware patch without drivers and kernels. The Raspberry Pi 3 makes an exception, as here it is always required to also build the driver.
+Below, you find an overview what is possible with nexmon. This repository mainly
+focuses on enabling monitor mode and frame injection on many chips. If you want
+additional features, the following projects might be interesting for you:
+
+* http://nexmon.org/jammer: A real Wi-Fi jammer that allows to overlay ongoing frame transmissions with an arbitrary jamming signal.
+  * It uses the Wi-Fi chip as a Software-defined Radio to generate jamming signals
+  * It allows using non-standard channels such as 80 MHz bandwidth in the 2.4 GHz bands
+  * It allows to set arbitrary transmission powers
+  * It allows patching the D11 core's real-time MAC implementation
+* http://nexmon.org/csi: Channel State Information extractor for various Wi-Fi chips
+  * It allows to extract CSI of up to 4x4 MIMO transmissions at 80 MHz bandwidth
+* http://nexmon.org/debugger: Debugging ARM microcontrollers without JTAG access
+  * It allows low-level access to debugging registers to set breakpoints and watchpoints and allows single stepping
+* http://nexmon.org/covert_channel: Covert Channel that hides information in Wi-Fi signals
+  * More advanced Software-defined Radio capabilities than the jammer
+  * Example application for channel state information extraction
 
 ![NexMon logo](https://github.com/seemoo-lab/nexmon/raw/master/gfx/nexmon_overview.svg)
 
 # WARNING
 Our software may damage your hardware and may void your hardware’s warranty! You use our tools at your own risk and responsibility! If you don't like these terms, don't use nexmon!
-
-# Important changes
-* We started to collect usage statistics. In the file [STATISTICS.md](STATISTICS.md), you can find information on which data we collect and how you can opt-out of the statistics collection
-* Starting with commit 4f8697743dc46ffc37d87d960825367531baeef9 the brcmfmac driver for the RPi3 can now be used as a regular interface. You need to use nexutil to activate monitor mode (`nexutil -m2` for monitor mode with radiotap headers), which will automtically adjust the interface type.
-* Starting with commit 184480edd6696392aae5f818f305f244606f2d17 you can choose different monitor mode options using nexutil. Use `nexutil -m1` to activate monitor mode without radiotap headers, `nexutil -m2` to activate it with radiotap headers. The numbers were chosen as non-Nexmon firmwares also support native monitor mode without radiotap headers by activating monitor mode with `nexutil -m1`.
-* Starting with commit 1bcfdc95b4395c2e8bdd962791ae20c4ba602f5b we changed the nexutil interface. Instead of calling `nexutil -m true` to activate monitor mode, you should now write `nexutil -m1`. To get the current monitor mode state execute `nexutil -m` instead of `nexutil -n`.
 
 # Supported Devices
 The following devices are currently supported by our nexmon firmware patch.
