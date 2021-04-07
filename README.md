@@ -21,6 +21,8 @@ additional features, the following projects might be interesting for you:
 * http://nexmon.org/covert_channel: Covert Channel that hides information in Wi-Fi signals
   * More advanced Software-defined Radio capabilities than the jammer
   * Example application for channel state information extraction
+* http://nexmon.org/sdr: Use your Wi-Fi chip as Software-defined Radio
+  * Currently only transmissions are working in both 2.4 and 5 GHz Wi-Fi bands
 
 ![NexMon logo](https://github.com/seemoo-lab/nexmon/raw/master/gfx/nexmon_overview.svg)
 
